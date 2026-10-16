@@ -3,6 +3,8 @@ import { canTransition, isGuestCancellable, type Order, type OrderStatus } from 
 import { InvalidOrderTransitionError } from "../../errors/InvalidOrderTransitionError";
 import { NotFoundError } from "../../errors/NotFoundError";
 
+import { statusPostings } from "./orderLedger";
+
 import type { IOrderRepository } from "../../repositories/IOrderRepository";
 
 /**
@@ -21,15 +23,22 @@ export class ChangeOrderStatus {
     if (!order) throw new NotFoundError("order", orderId);
     if (!canTransition(order.status, to)) throw new InvalidOrderTransitionError(order.status, to);
 
-    return this.orderRepo.transition(orderId, order.status, to, actor, (saved) => ({
-      actorId: actor.id,
-      actorName: actor.name,
-      action: "order.stageChanged",
-      entityType: "order",
-      entityId: saved.id,
-      entityLabel: `#${saved.orderNumber}`,
-      changes: singleChange("status", order.status, saved.status),
-    }));
+    return this.orderRepo.transition(
+      orderId,
+      order.status,
+      to,
+      actor,
+      (saved) => ({
+        actorId: actor.id,
+        actorName: actor.name,
+        action: "order.stageChanged",
+        entityType: "order",
+        entityId: saved.id,
+        entityLabel: `#${saved.orderNumber}`,
+        changes: singleChange("status", order.status, saved.status),
+      }),
+      statusPostings(actor),
+    );
   }
 }
 
@@ -46,6 +55,7 @@ export class CancelOwnOrder {
     if (order?.userId !== guest.id) throw new NotFoundError("order", orderId);
     if (!isGuestCancellable(order.status)) throw new InvalidOrderTransitionError(order.status, "cancelled");
 
-    return this.orderRepo.transition(orderId, order.status, "cancelled", guest);
+    // A guest who paid online and then withdraws gets the money back on the books too.
+    return this.orderRepo.transition(orderId, order.status, "cancelled", guest, undefined, statusPostings(guest));
   }
 }

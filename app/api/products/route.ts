@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { productFormSchema } from "@/src/contracts/product-schema";
-import type { Product } from "@/src/domain/entities/Product";
+import { withoutCost, type Product } from "@/src/domain/entities/Product";
 import { hasProductSearchCriteria } from "@/src/domain/entities/ProductFilters";
 import { CreateProduct } from "@/src/domain/use-cases/products/CreateProduct";
 import { GetFeaturedProducts } from "@/src/domain/use-cases/products/GetFeaturedProducts";
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     } else {
       products = await new GetProducts(productRepository).execute(locale);
     }
-    return NextResponse.json(products);
+    return NextResponse.json(products.map(withoutCost));
   } catch (error) {
     return errorResponseFromException(error, "GET /api/products failed");
   }

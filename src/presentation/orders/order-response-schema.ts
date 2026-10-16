@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import type { OrderStatusCounts } from "@/src/domain/entities/AdminOrderFilters";
-import { ORDER_STATUSES, PAYMENT_STATUSES, SERVICE_TYPES, type Order } from "@/src/domain/entities/Order";
+import { ORDER_STATUSES, PAYMENT_METHODS, PAYMENT_STATUSES, SERVICE_TYPES, type Order } from "@/src/domain/entities/Order";
 import type { OrderStatusEvent } from "@/src/domain/entities/OrderStatusEvent";
 import { PRODUCT_KINDS } from "@/src/domain/entities/Product";
 
@@ -21,6 +21,7 @@ export const orderResponseSchema = z.object({
   tableLabel: z.string().optional(),
   note: z.string().optional(),
   paymentStatus: z.enum(PAYMENT_STATUSES),
+  paymentMethod: z.enum(PAYMENT_METHODS).optional(),
   items: z.array(
     z.object({
       id: z.string(),
@@ -29,6 +30,9 @@ export const orderResponseSchema = z.object({
       name: z.string(),
       imageUrl: z.string(),
       unitPrice: z.number(),
+      // Staff endpoints only; guest endpoints strip it.
+      unitCost: z.number().optional(),
+      taxExempt: z.boolean().optional(),
       quantity: z.number(),
       note: z.string().optional(),
     }),

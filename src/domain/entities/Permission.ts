@@ -37,6 +37,13 @@ export const PERMISSIONS = [
   "team.manage",
   /** Change cafe-wide configuration (tax, opening hours, …). Admin and owner. */
   "settings.write",
+  /** Read the books: journal, accounts, statements, expenses. Admin and owner. */
+  "accounting.view",
+  /**
+   * Write to the books: record and pay expenses, post and reverse manual entries,
+   * manage accounts and suppliers, set the VAT rate and close periods. Admin and owner.
+   */
+  "accounting.write",
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];
@@ -68,6 +75,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
     "reports.view",
     "activity.view",
     "settings.write",
+    "accounting.view",
+    "accounting.write",
   ],
   owner: [
     "dashboard.view",
@@ -82,6 +91,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
     "activity.view",
     "team.manage",
     "settings.write",
+    "accounting.view",
+    "accounting.write",
   ],
 };
 

@@ -45,6 +45,7 @@ const FORM_FIELDS = [
   "categoryId",
   "price",
   "originalPrice",
+  "costPrice",
   "stockQuantity",
   "imageUrl",
   "badge",
@@ -73,6 +74,7 @@ function toDefaults(product?: Product, translations?: ProductTranslationInput[])
     categoryId: product?.categoryId ?? "",
     price: product != null ? String(product.price) : "",
     originalPrice: product?.originalPrice != null ? String(product.originalPrice) : "",
+    costPrice: product?.costPrice != null ? String(product.costPrice) : "",
     stockQuantity: product != null ? String(product.stockQuantity) : "",
     imageUrl: product?.imageUrl ?? "",
     isFeatured: product?.isFeatured ?? false,
@@ -87,7 +89,7 @@ function toDefaults(product?: Product, translations?: ProductTranslationInput[])
     dietary: product?.dietary ?? [],
     // A new product is exempt by default, matching the column — an operator opts a
     // product *in* to VAT deliberately.
-    taxExempt: product?.taxExempt ?? true,
+    taxExempt: product?.taxExempt ?? false,
     bookAuthor: product?.book?.author ?? "",
     bookIsbn: product?.book?.isbn ?? "",
     bookAvailability: product?.book?.availability ?? "sale",
@@ -366,6 +368,16 @@ export function ProductForm(props: ProductFormProps) {
           )}
         </TextField>
       </div>
+
+      <TextField
+        label={t("costPriceLabel")}
+        description={t("costPriceDescription")}
+        error={fieldError(errors.costPrice?.message)}
+      >
+        {(control) => (
+          <Input {...control} {...register("costPrice")} inputMode="numeric" placeholder={t("pricePlaceholder")} />
+        )}
+      </TextField>
 
       <TextField
         label={t("stockLabel")}

@@ -18,6 +18,8 @@ export const productResponseSchema = z.object({
   name: z.string(),
   price: z.number(),
   originalPrice: z.number().optional(),
+  // Only the dashboard's endpoints return it.
+  costPrice: z.number().optional(),
   discountPercent: z.number().optional(),
   rating: z.number(),
   ratingCount: z.number(),

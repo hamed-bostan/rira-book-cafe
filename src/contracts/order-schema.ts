@@ -5,8 +5,9 @@ import {
   MAX_ORDER_NOTE_TEXT_LENGTH,
   MAX_TABLE_LABEL_LENGTH,
   ORDER_STATUSES,
-  PAYMENT_STATUSES,
+  PAYMENT_METHODS,
   SERVICE_TYPES,
+  SETTABLE_PAYMENT_STATUSES,
 } from "@/src/domain/entities/Order";
 
 /**
@@ -62,9 +63,19 @@ export const orderStatusChangeSchema = z.object({
 
 export type OrderStatusChangeInput = z.infer<typeof orderStatusChangeSchema>;
 
-/** Staff marking an order paid or unpaid. */
-export const orderPaymentSchema = z.object({
-  paymentStatus: z.enum(PAYMENT_STATUSES, { message: "statusInvalid" }),
-});
+/**
+ * Staff marking an order paid (and how) or unpaid. `refunded` isn't settable — it
+ * follows from cancelling a paid order. A method is required when marking paid: it
+ * decides which account the money lands in.
+ */
+export const orderPaymentSchema = z
+  .object({
+    paymentStatus: z.enum(SETTABLE_PAYMENT_STATUSES, { message: "statusInvalid" }),
+    paymentMethod: z.enum(PAYMENT_METHODS, { message: "methodInvalid" }).optional(),
+  })
+  .refine((value) => value.paymentStatus !== "paid" || value.paymentMethod !== undefined, {
+    message: "methodRequired",
+    path: ["paymentMethod"],
+  });
 
 export type OrderPaymentInput = z.infer<typeof orderPaymentSchema>;

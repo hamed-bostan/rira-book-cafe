@@ -78,6 +78,8 @@ export const productFormSchema = z
     categoryId: z.string().min(1, "categoryRequired"),
     price: priceField,
     originalPrice: optionalPriceField,
+    // What one unit costs the cafe — optional; feeds cost of sales and margins.
+    costPrice: optionalPriceField,
     imageUrl: imageUrlField("imageRequired"),
     stockQuantity: stockField,
     isFeatured: z.boolean(),

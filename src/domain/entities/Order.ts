@@ -31,9 +31,33 @@ export type OrderStatus = (typeof ORDER_STATUSES)[number];
 /** Statuses an order is still being worked in — the queue a barista watches. */
 export const ACTIVE_ORDER_STATUSES = ["pending", "accepted", "preparing", "ready"] as const satisfies readonly OrderStatus[];
 
-/** Whether the guest has paid. Payment is taken at the counter, so staff mark it. */
-export const PAYMENT_STATUSES = ["unpaid", "paid"] as const;
+/**
+ * Whether the guest has paid. Payment is taken at the counter, so staff mark it.
+ * `refunded` is set automatically when a paid order is cancelled — the money went
+ * back to the guest, and the ledger records the refund.
+ */
+export const PAYMENT_STATUSES = ["unpaid", "paid", "refunded"] as const;
 export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
+
+/** The statuses staff set by hand; `refunded` only ever follows a cancellation. */
+export const SETTABLE_PAYMENT_STATUSES = ["unpaid", "paid"] as const satisfies readonly PaymentStatus[];
+export type SettablePaymentStatus = (typeof SETTABLE_PAYMENT_STATUSES)[number];
+
+/**
+ * How the guest paid. Each lands in a different ledger account: cash in the till,
+ * card (POS) and card-to-card transfers in the bank, online payments in the
+ * gateway's clearing account until the gateway pays out.
+ */
+export const PAYMENT_METHODS = ["cash", "card", "transfer", "online"] as const;
+export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
+
+/**
+ * The order as its guest may see it: without the cost snapshotted on each line,
+ * which is the cafe's business (margins). Staff endpoints return it whole.
+ */
+export function withoutCosts(order: Order): Order {
+  return { ...order, items: order.items.map(({ unitCost: _unitCost, ...item }) => item) };
+}
 
 /** Longest table label accepted, e.g. "12" or "Terrace 3". */
 export const MAX_TABLE_LABEL_LENGTH = 20;
@@ -55,6 +79,10 @@ export type OrderItem = {
   imageUrl: string;
   /** Price per unit in Toman, at the moment the order was placed. */
   unitPrice: number;
+  /** Cost per unit in Toman when it was placed, if the item has a cost — for cost of sales. */
+  unitCost?: number;
+  /** VAT-exempt when placed (books); everything else carries VAT inside its price. */
+  taxExempt?: boolean;
   quantity: number;
   /** The guest's request for this line, e.g. "oat milk, no sugar". */
   note?: string;
@@ -76,6 +104,8 @@ export type Order = {
   /** A note for the whole order, e.g. "birthday — bring candles with the cake". */
   note?: string;
   paymentStatus: PaymentStatus;
+  /** How it was paid, once paid (kept after a refund, so the refund goes back the same way). */
+  paymentMethod?: PaymentMethod;
   items: OrderItem[];
   /** Sum of the lines, in Toman. */
   subtotal: number;

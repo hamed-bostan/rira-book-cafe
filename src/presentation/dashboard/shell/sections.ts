@@ -26,7 +26,7 @@ import type { LucideIcon } from "lucide-react";
  */
 
 /** A navigation group's stable id, which is also its label key under `dashboard`. */
-export type DashboardSectionGroup = "groupOverview" | "groupService" | "groupMenu" | "groupInsights" | "groupStore";
+export type DashboardSectionGroup = "groupOverview" | "groupService" | "groupMenu" | "groupInsights" | "groupFinance" | "groupStore";
 
 /** A section's label key under the `dashboard` namespace — spelled out so `t()` can check it. */
 export type DashboardSectionLabelKey =
@@ -76,7 +76,7 @@ const SECTIONS = [
 ] as const satisfies readonly DashboardSection[];
 
 /** The groups in sidebar order. */
-const GROUP_ORDER: readonly DashboardSectionGroup[] = ["groupOverview", "groupService", "groupMenu", "groupInsights", "groupStore"];
+const GROUP_ORDER: readonly DashboardSectionGroup[] = ["groupOverview", "groupService", "groupMenu", "groupInsights", "groupFinance", "groupStore"];
 
 export type DashboardNavGroup = {
   id: DashboardSectionGroup;

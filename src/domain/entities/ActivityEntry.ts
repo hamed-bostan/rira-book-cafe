@@ -31,6 +31,10 @@ export const ACTIVITY_ENTITY_TYPES = [
   "user",
   "reservation",
   "event",
+  // Accounting: journal entries, the chart of accounts and its settings ("ledger"),
+  // and supplier bills ("expense").
+  "ledger",
+  "expense",
 ] as const;
 
 /**
@@ -86,6 +90,15 @@ export const ACTIVITY_ACTIONS = [
   "event.updated",
   "event.deleted",
   "event.registrationCancelled",
+  // The books. Order postings aren't logged here — the order's own status and
+  // payment entries already are, and the journal names who posted each line.
+  "ledger.entryPosted",
+  "ledger.entryReversed",
+  "ledger.accountChanged",
+  "ledger.settingsChanged",
+  "expense.recorded",
+  "expense.paid",
+  "expense.voided",
   // Another event rather than a change to anything stored — an admin downloaded a
   // customer-data export. Recorded through `IActivityLog.recordEvent`, same as
   // `order.customerNotified`: the file has already left the moment this is

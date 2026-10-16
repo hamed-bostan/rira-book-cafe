@@ -67,6 +67,8 @@ model Product {
   name             String
   price            Int
   originalPrice    Int?     @map("original_price")
+  // What one unit costs the cafe (Toman), for cost of sales. Never shown to guests.
+  costPrice        Int?     @map("cost_price")
   rating           Float    @default(0)
   ratingCount      Int      @default(0) @map("rating_count")
   stockQuantity    Int      @default(0) @map("stock_quantity")
@@ -80,7 +82,8 @@ model Product {
   nutrition        String?
   origin           String?
   dietary          String[] @default([])
-  taxExempt        Boolean  @default(true) @map("tax_exempt")
+  // VAT-exempt (books, in Iran). Prices are VAT-inclusive; exempt items carry none.
+  taxExempt        Boolean  @default(false) @map("tax_exempt")
   bookAuthor       String?  @map("book_author")
   bookIsbn         String?  @map("book_isbn")
   bookAvailability String?  @map("book_availability")
@@ -148,6 +151,8 @@ model Order {
   tableLabel    String?     @map("table_label")
   note          String?
   paymentStatus String      @default("unpaid") @map("payment_status")
+  // cash | card | transfer | online, once paid (kept after a refund).
+  paymentMethod String?     @map("payment_method")
   subtotal      Int
   total         Int
   items         OrderItem[]
@@ -169,6 +174,10 @@ model OrderItem {
   name      String
   imageUrl  String  @map("image_url")
   unitPrice Int     @map("unit_price")
+  // Cost per unit when placed, if the item had one — for cost of sales.
+  unitCost  Int?    @map("unit_cost")
+  // Whether the item was VAT-exempt when placed (books are); the sale's VAT comes from the rest.
+  taxExempt Boolean @default(false) @map("tax_exempt")
   quantity  Int
   note      String?
   position  Int
@@ -264,4 +273,119 @@ model EventRegistration {
   @@index([eventId, status])
   @@index([userId, createdAt])
   @@map("event_registrations")
+}
+
+// ── Accounting ───────────────────────────────────────────────────────────────
+// Double-entry general ledger in whole Toman. Amounts are BIGINT so large
+// purchases can't overflow. Balance, immutability and amount rules are also
+// enforced in the database (see the accounting migration), not only in app code.
+
+model LedgerAccount {
+  // Stable code; the first digit is the type (1 asset, 2 liability, 3 equity, 4 revenue, 5–6 expense).
+  code      String        @id
+  name      String
+  nameFa    String        @map("name_fa")
+  // asset | liability | equity | revenue | expense
+  type      String
+  isSystem  Boolean       @default(false) @map("is_system")
+  isActive  Boolean       @default(true) @map("is_active")
+  lines     JournalLine[]
+  expenses  Expense[]
+  createdAt DateTime      @default(now()) @map("created_at")
+
+  @@map("ledger_accounts")
+}
+
+model JournalEntry {
+  id            String        @id @default(uuid())
+  number        Int           @unique @default(autoincrement())
+  // The accounting date (a cafe day).
+  date          DateTime      @db.Date
+  description   String
+  source        String
+  sourceId      String?       @map("source_id")
+  // Postings that must happen once (an order's sale) carry a key; a second is refused.
+  uniqueKey     String?       @unique @map("unique_key")
+  // On a reversing entry: the entry it reverses (each entry can be reversed once).
+  reversesId    String?       @unique @map("reverses_id")
+  // On a reversed entry: the reversing entry. The only column that may change after posting.
+  reversedById  String?       @map("reversed_by_id")
+  createdById   String        @map("created_by_id")
+  createdByName String        @map("created_by_name")
+  lines         JournalLine[]
+  createdAt     DateTime      @default(now()) @map("created_at")
+
+  @@index([date])
+  @@index([source, sourceId])
+  @@map("journal_entries")
+}
+
+model JournalLine {
+  id          String        @id @default(uuid())
+  entryId     String        @map("entry_id")
+  entry       JournalEntry  @relation(fields: [entryId], references: [id], onDelete: Restrict)
+  accountCode String        @map("account_code")
+  account     LedgerAccount @relation(fields: [accountCode], references: [code], onDelete: Restrict)
+  debit       BigInt        @default(0)
+  credit      BigInt        @default(0)
+  memo        String?
+  position    Int
+
+  @@index([entryId])
+  @@index([accountCode])
+  @@map("journal_lines")
+}
+
+// One row (id = 1).
+model AccountingSettings {
+  id                 Int       @id @default(1)
+  // VAT included in menu prices, in basis points (1000 = 10%).
+  vatRateBps         Int       @default(1000) @map("vat_rate_bps")
+  // Nothing may be posted on or before this day.
+  booksClosedThrough DateTime? @map("books_closed_through") @db.Date
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  @@map("accounting_settings")
+}
+
+model Supplier {
+  id        String    @id @default(uuid())
+  name      String
+  phone     String?
+  note      String?
+  isActive  Boolean   @default(true) @map("is_active")
+  expenses  Expense[]
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@map("suppliers")
+}
+
+model Expense {
+  id            String        @id @default(uuid())
+  number        Int           @unique @default(autoincrement())
+  date          DateTime      @db.Date
+  supplierId    String?       @map("supplier_id")
+  supplier      Supplier?     @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  supplierName  String?       @map("supplier_name")
+  accountCode   String        @map("account_code")
+  account       LedgerAccount @relation(fields: [accountCode], references: [code], onDelete: Restrict)
+  description   String
+  amount        BigInt
+  vatAmount     BigInt        @default(0) @map("vat_amount")
+  // unpaid | paid | void
+  status        String
+  // cash | bank, once paid
+  paidFrom      String?       @map("paid_from")
+  paidOn        DateTime?     @map("paid_on") @db.Date
+  receiptUrl    String?       @map("receipt_url")
+  createdById   String        @map("created_by_id")
+  createdByName String        @map("created_by_name")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  @@index([date])
+  @@index([status])
+  @@index([supplierId])
+  @@map("expenses")
 }

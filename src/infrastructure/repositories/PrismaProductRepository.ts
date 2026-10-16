@@ -307,6 +307,7 @@ function toRowData(product: Omit<NewProduct, "translations">) {
   return {
     ...rest,
     originalPrice: rest.originalPrice ?? null,
+    costPrice: rest.costPrice ?? null,
     badge: rest.badge ?? null,
     unit: rest.unit ?? null,
     description: rest.description ?? null,
@@ -326,6 +327,7 @@ type ProductRow = {
   name: string;
   price: number;
   originalPrice: number | null;
+  costPrice: number | null;
   rating: number;
   ratingCount: number;
   stockQuantity: number;
@@ -372,6 +374,7 @@ function toProduct(row: ProductRow): Product {
     price: row.price,
     originalPrice,
     discountPercent: originalPrice != null ? Math.round((1 - row.price / originalPrice) * 100) : undefined,
+    costPrice: row.costPrice ?? undefined,
     rating: row.rating,
     ratingCount: row.ratingCount,
     stockQuantity: row.stockQuantity,

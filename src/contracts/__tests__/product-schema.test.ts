@@ -8,6 +8,7 @@ const BASE: ProductFormInput = {
   categoryId: "cat-1",
   price: "185000",
   originalPrice: "",
+  costPrice: "",
   imageUrl: "https://example.supabase.co/storage/v1/object/public/images/latte.png",
   stockQuantity: "12",
   isFeatured: false,

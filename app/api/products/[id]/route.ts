@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { productFormSchema } from "@/src/contracts/product-schema";
+import { withoutCost } from "@/src/domain/entities/Product";
 import { DeleteProduct } from "@/src/domain/use-cases/products/DeleteProduct";
 import { GetPublishedProduct } from "@/src/domain/use-cases/products/GetPublishedProduct";
 import { UpdateProduct } from "@/src/domain/use-cases/products/UpdateProduct";
@@ -30,7 +31,7 @@ export async function GET(request: NextRequest, { params }: RouteContext): Promi
   try {
     const product = await new GetPublishedProduct(productRepository).execute(id, getRequestLocale(request));
     if (!product) return errorResponse(404, { message: "Product not found.", code: "NOT_FOUND" });
-    return NextResponse.json(product);
+    return NextResponse.json(withoutCost(product));
   } catch (error) {
     return errorResponseFromException(error, `GET /api/products/${id} failed`);
   }

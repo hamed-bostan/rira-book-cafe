@@ -75,6 +75,9 @@ export class PlaceOrder {
         name: product.name,
         imageUrl: product.imageUrl,
         unitPrice: product.price,
+        // Snapshotted like the price, so a later cost change doesn't rewrite past margins.
+        unitCost: product.costPrice,
+        taxExempt: product.taxExempt,
         quantity: line.quantity,
         note: lineNote,
       };

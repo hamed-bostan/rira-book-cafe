@@ -30,6 +30,12 @@ type ApiErrorKey =
   | "revokeSelf"
   | "revokeOwner"
   | "revokeBreakGlass"
+  | "alreadyPosted"
+  | "alreadyReversed"
+  | "notReversible"
+  | "periodClosed"
+  | "accountInactive"
+  | "unbalanced"
   | "timeout"
   | "network"
   | "server";
@@ -51,6 +57,13 @@ const CODE_KEYS: Readonly<Record<string, ApiErrorKey>> = {
   REVOKE_SELF: "revokeSelf",
   REVOKE_OWNER: "revokeOwner",
   REVOKE_BREAK_GLASS: "revokeBreakGlass",
+  // The books refusing a posting.
+  ALREADY_POSTED: "alreadyPosted",
+  ALREADY_REVERSED: "alreadyReversed",
+  NOT_REVERSIBLE: "notReversible",
+  PERIOD_CLOSED: "periodClosed",
+  ACCOUNT_INACTIVE: "accountInactive",
+  UNBALANCED: "unbalanced",
   INTERNAL: "server",
   EBADRESPONSE: "server",
   // Transport failures normalized by the Axios interceptor / server client.

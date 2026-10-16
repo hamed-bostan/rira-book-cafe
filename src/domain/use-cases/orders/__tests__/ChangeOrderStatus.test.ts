@@ -42,7 +42,7 @@ describe("ChangeOrderStatus", () => {
   it("passes the status it read, so a concurrent change can't be overwritten", async () => {
     const { repo, transition } = repoWith(order("accepted"));
     await new ChangeOrderStatus(repo).execute("o1", "preparing", STAFF);
-    expect(transition).toHaveBeenCalledWith("o1", "accepted", "preparing", STAFF, expect.any(Function));
+    expect(transition).toHaveBeenCalledWith("o1", "accepted", "preparing", STAFF, expect.any(Function), expect.any(Function));
   });
 
   it("audits the change as order #number", async () => {

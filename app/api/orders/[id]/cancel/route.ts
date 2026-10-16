@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { withoutCosts } from "@/src/domain/entities/Order";
 import { CancelOwnOrder } from "@/src/domain/use-cases/orders/ChangeOrderStatus";
 import { orderRepository } from "@/src/infrastructure/container";
 import { errorResponseFromException, unauthorizedResponse } from "@/src/lib/api/responses";
@@ -21,7 +22,7 @@ export async function POST(_request: Request, { params }: RouteContext): Promise
       id: session.user.id,
       name: session.user.name ?? session.user.id,
     });
-    return NextResponse.json(order);
+    return NextResponse.json(withoutCosts(order));
   } catch (error) {
     return errorResponseFromException(error, `POST /api/orders/${id}/cancel failed`);
   }

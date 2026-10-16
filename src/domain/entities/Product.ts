@@ -31,6 +31,12 @@ export type Product = {
   price: number;
   /** Pre-discount price in Toman, when the item is on offer. */
   originalPrice?: number;
+  /**
+   * What one unit costs the cafe, in Toman — ingredients for a drink, the purchase
+   * price of a book. Optional; when set, every sale also books its cost of sales,
+   * which is what gross margins are made of. Never shown to guests.
+   */
+  costPrice?: number;
   discountPercent?: number;
   rating: number;
   ratingCount: number;
@@ -65,6 +71,15 @@ export type Product = {
 };
 
 /** True for items that can be sold to take home — everything except a reading-only book. */
+/**
+ * The product as guests may see it: without its cost price, which is the cafe's
+ * business (margins) and only ever returned by the dashboard's endpoints.
+ */
+export function withoutCost(product: Product): Product {
+  const { costPrice: _costPrice, ...rest } = product;
+  return rest;
+}
+
 export function isSellable(product: Pick<Product, "kind" | "book">): boolean {
   return product.kind !== "book" || product.book?.availability !== "reading";
 }

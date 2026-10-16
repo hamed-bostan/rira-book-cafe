@@ -121,7 +121,23 @@
     "tableTooLong": "That table label is too long.",
     "nothingToChange": "Nothing to change.",
     "capacityWhole": "Seats must be a whole number.",
-    "seatsInvalid": "Choose 1 to 6 seats."
+    "seatsInvalid": "Choose 1 to 6 seats.",
+    "amountInvalid": "Enter a whole number of Toman.",
+    "dateRequired": "Choose a date.",
+    "textTooLong": "That's too long.",
+    "accountRequired": "Choose an account.",
+    "linesTooFew": "An entry needs at least two lines.",
+    "linesTooMany": "That's more lines than one entry can hold.",
+    "lineOneSide": "Each line is either a debit or a credit.",
+    "entryUnbalanced": "Debits and credits must be equal.",
+    "reasonRequired": "Say why.",
+    "accountCodeInvalid": "Account codes are four digits.",
+    "accountTypeInvalid": "Choose a type.",
+    "vatRateInvalid": "Enter a rate from 0 to 50, e.g. 10 or 9.5.",
+    "paymentInvalid": "Choose how it was paid.",
+    "vatTooHigh": "VAT must be less than the total.",
+    "methodInvalid": "Choose a payment method.",
+    "methodRequired": "Choose how the guest paid."
   },
   "apiErrors": {
     "badRequest": "The request couldn't be read. Please try again.",
@@ -141,7 +157,13 @@
     "tableTaken": "That table is already booked at that time.",
     "eventFull": "This event is full.",
     "eventClosed": "Sign-ups for this event are closed.",
-    "alreadyRegistered": "Already signed up for this event."
+    "alreadyRegistered": "Already signed up for this event.",
+    "alreadyPosted": "That has already been booked.",
+    "alreadyReversed": "That entry has already been reversed.",
+    "notReversible": "Entries posted by an order or an expense are corrected from that order or expense.",
+    "periodClosed": "The books are closed for that date. Use a date after the closing day.",
+    "accountInactive": "One of the accounts is inactive or doesn't exist.",
+    "unbalanced": "Debits and credits must be equal."
   },
   "meta": {
     "siteName": "Rira Book Cafe",
@@ -185,7 +207,10 @@
     "navReservations": "Reservations",
     "navEvents": "Events",
     "navReports": "Reports",
-    "groupInsights": "Insights"
+    "groupInsights": "Insights",
+    "groupFinance": "Finance",
+    "navAccounting": "Accounting",
+    "navExpenses": "Expenses"
   },
   "dashTeam": {
     "membersHeading": "Team members",
@@ -325,6 +350,8 @@
     "pricePlaceholder": "0",
     "originalPriceLabel": "Original price",
     "originalPriceDescription": "Optional — shows a discount when higher than price",
+    "costPriceLabel": "Cost price",
+    "costPriceDescription": "Optional — what one unit costs the cafe, for cost of sales and margins. Never shown to guests",
     "stockLabel": "Stock",
     "stockDescription": "Units on hand. 0 marks the item sold out.",
     "stockPlaceholder": "0",
@@ -548,7 +575,14 @@
     },
     "payment": {
       "unpaid": "Unpaid",
-      "paid": "Paid"
+      "paid": "Paid",
+      "refunded": "Refunded"
+    },
+    "paymentMethod": {
+      "cash": "Cash",
+      "card": "Card (POS)",
+      "transfer": "Card-to-card",
+      "online": "Online"
     },
     "table": "Table {table}",
     "searchLabel": "Search orders",
@@ -584,6 +618,11 @@
     "serviceHeading": "Service",
     "guestNote": "Guest's note",
     "paidLabel": "Paid",
+    "paidWith": "Paid · {method}",
+    "paymentMethodLabel": "How did the guest pay?",
+    "unmarkPaid": "Unmark",
+    "refundedNote": "Refunded — the order was cancelled after payment.",
+    "markPaid": "Mark paid",
     "paymentError": "Couldn't update the payment. Please try again.",
     "statusError": "Couldn't update the order. Please try again.",
     "cancelOrder": "Cancel order",
@@ -594,7 +633,8 @@
     "timelineHeading": "History",
     "timelineEmpty": "No history recorded.",
     "timelinePlaced": "Placed",
-    "timelineBy": "by {name}"
+    "timelineBy": "by {name}",
+    "cancelChoice": "Cancel"
   },
   "dashOrderNotes": {
     "label": "Internal note",
@@ -625,7 +665,9 @@
       "unknown": "Other",
       "category": "Categories",
       "reservation": "Reservations",
-      "event": "Events"
+      "event": "Events",
+      "ledger": "Books",
+      "expense": "Expenses"
     },
     "action": {
       "product": {
@@ -662,6 +704,17 @@
         "updated": "{actor} edited event {entity}",
         "deleted": "{actor} deleted event {entity}",
         "registrationCancelled": "{actor} cancelled a sign-up for {entity}"
+      },
+      "ledger": {
+        "entryPosted": "{actor} posted journal entry {entity}",
+        "entryReversed": "{actor} reversed journal entry {entity}",
+        "accountChanged": "{actor} changed account {entity}",
+        "settingsChanged": "{actor} changed the accounting settings"
+      },
+      "expense": {
+        "recorded": "{actor} recorded expense {entity}",
+        "paid": "{actor} paid expense {entity}",
+        "voided": "{actor} voided expense {entity}"
       }
     },
     "role": {
@@ -708,7 +761,13 @@
       "startsAt": "Starts",
       "endsAt": "Ends",
       "capacity": "Seats",
-      "registration": "Sign-up"
+      "registration": "Sign-up",
+      "amount": "Amount",
+      "costPrice": "Cost price",
+      "paymentMethod": "Payment method",
+      "reversedBy": "Reversed by",
+      "vatRateBps": "VAT rate (basis points)",
+      "booksClosedThrough": "Books closed through"
     },
     "filterField": "Filter by what changed",
     "allFields": "Any change",
@@ -1083,6 +1142,342 @@
       "mySignUps": "My event sign-ups",
       "noSignUps": "You haven't signed up for anything coming up.",
       "signOut": "Sign out"
+    }
+  },
+  "dashAccounting": {
+    "heading": "Accounting",
+    "subtitle": "Double-entry books: every sale, payment, refund and expense is posted as it happens.",
+    "tabsLabel": "Accounting sections",
+    "breadcrumbLabel": "Breadcrumb",
+    "cancel": "Cancel",
+    "tab": {
+      "overview": "Overview",
+      "journal": "Journal",
+      "accounts": "Accounts",
+      "statements": "Statements",
+      "settings": "Settings"
+    },
+    "overview": {
+      "balanced": "The books balance — total debits equal total credits.",
+      "unbalanced": "The books don't balance. Nothing should be able to cause this; please contact support.",
+      "closedThrough": "Closed through {date}",
+      "noneClosed": "No period closed yet",
+      "balancesHeading": "Balances today",
+      "balance": {
+        "cash": "Cash register",
+        "bank": "Bank",
+        "gateway": "Online gateway (not yet paid out)",
+        "receivables": "Guests owe",
+        "payables": "Owed to suppliers",
+        "vat": "VAT payable"
+      },
+      "resultsHeading": "Results for the period",
+      "revenue": "Revenue (net of VAT)",
+      "grossProfit": "Gross profit",
+      "expenses": "Operating expenses",
+      "netProfit": "Net profit",
+      "fullStatement": "Full profit and loss",
+      "recordExpense": "Record expense"
+    },
+    "journal": {
+      "heading": "Journal",
+      "subtitle": "Every entry in the books. Entries are never edited or deleted — a mistake is corrected by reversing it.",
+      "newEntry": "New manual entry",
+      "filterSource": "Posted by",
+      "allSources": "Anything",
+      "colNumber": "No.",
+      "colDate": "Date",
+      "colDescription": "Description",
+      "colSource": "Source",
+      "colAmount": "Amount",
+      "reversed": "Reversed",
+      "empty": "No entries in this period."
+    },
+    "source": {
+      "orderSale": "Sale",
+      "orderCost": "Cost of sales",
+      "orderPayment": "Payment",
+      "orderPaymentReversal": "Payment unmarked",
+      "orderRefund": "Refund",
+      "expense": "Expense",
+      "expensePayment": "Bill payment",
+      "manual": "Manual",
+      "reversal": "Reversal"
+    },
+    "entry": {
+      "title": "Journal entry JE-{number}",
+      "postedBy": "Posted by {name}, {at}",
+      "colAccount": "Account",
+      "colMemo": "Memo",
+      "colDebit": "Debit",
+      "colCredit": "Credit",
+      "totals": "Totals",
+      "reversedNotice": "This entry has been reversed.",
+      "viewReversal": "View the reversing entry",
+      "reversesNotice": "This entry reverses another.",
+      "viewOriginal": "View the original",
+      "automaticNotice": "Posted automatically.",
+      "viewOrder": "View the order",
+      "viewExpense": "View the expense",
+      "reverse": "Reverse",
+      "reverseTitle": "Reverse JE-{number}",
+      "reverseDescription": "Posts the mirror image of this entry so it nets to zero. Both stay in the books.",
+      "reverseDate": "Reversal date",
+      "reverseReason": "Reason",
+      "reverseConfirm": "Post reversal",
+      "reverseError": "Couldn't reverse the entry. Please try again."
+    },
+    "form": {
+      "title": "New manual entry",
+      "subtitle": "For what isn't an order or an expense: the owner's capital, VAT paid to the tax office, opening balances, corrections.",
+      "dateLabel": "Date",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "e.g. VAT for Shahrivar paid",
+      "linesLabel": "Lines",
+      "accountLabel": "Account",
+      "accountPlaceholder": "Choose an account",
+      "debitLabel": "Debit",
+      "creditLabel": "Credit",
+      "memoLabel": "Memo",
+      "addLine": "Add line",
+      "removeLine": "Remove line",
+      "totals": "Debits {debits} · Credits {credits}",
+      "balanced": "Balanced",
+      "difference": "Off by {amount}",
+      "post": "Post entry",
+      "error": "Couldn't post the entry. Please try again."
+    },
+    "accounts": {
+      "heading": "Chart of accounts",
+      "subtitle": "Balances as of today. System accounts are used by automatic postings and always stay on.",
+      "system": "System",
+      "inactive": "Inactive",
+      "activeLabel": "Account {code} active",
+      "new": "New account",
+      "codeLabel": "Code",
+      "codeHint": "Four digits. The first sets the type: 1 assets, 2 liabilities, 3 equity, 4 revenue, 5–9 expenses.",
+      "nameLabel": "Name (English)",
+      "nameFaLabel": "Name (Persian)",
+      "typeLabel": "Type",
+      "create": "Create account",
+      "error": "Couldn't save the account. Please try again."
+    },
+    "accountType": {
+      "asset": "Assets",
+      "liability": "Liabilities",
+      "equity": "Equity",
+      "revenue": "Revenue",
+      "expense": "Expenses"
+    },
+    "ledger": {
+      "opening": "Opening balance",
+      "closing": "Closing balance",
+      "colBalance": "Balance",
+      "empty": "No postings in this period."
+    },
+    "period": {
+      "fiscalYearLabel": "Fiscal year",
+      "periodLabel": "Period",
+      "wholeYear": "Whole year",
+      "custom": "Custom dates",
+      "from": "From",
+      "to": "To",
+      "apply": "Apply",
+      "asOf": "As of",
+      "today": "Today",
+      "caption": "{from} – {to}",
+      "toDate": "to date",
+      "month": {
+        "1": "Farvardin",
+        "2": "Ordibehesht",
+        "3": "Khordad",
+        "4": "Tir",
+        "5": "Mordad",
+        "6": "Shahrivar",
+        "7": "Mehr",
+        "8": "Aban",
+        "9": "Azar",
+        "10": "Dey",
+        "11": "Bahman",
+        "12": "Esfand"
+      }
+    },
+    "settings": {
+      "heading": "Accounting settings",
+      "subtitle": "The VAT rate inside menu prices, and which periods are closed.",
+      "vatRateLabel": "VAT rate (%)",
+      "vatRateHint": "Menu prices include VAT; this rate takes it back out of each sale. VAT-exempt items (books) carry none.",
+      "closedThroughLabel": "Books closed through",
+      "closedThroughHint": "Nothing dated on or before this day can be posted or reversed — close a month once it's reconciled. Leave blank to keep every period open.",
+      "save": "Save settings",
+      "saved": "Saved.",
+      "error": "Couldn't save the settings. Please try again."
+    },
+    "statements": {
+      "heading": "Statements",
+      "subtitle": "Built from the ledger on demand — there's no second copy of any number.",
+      "noMovement": "Nothing posted.",
+      "profit-and-loss": {
+        "title": "Profit and loss",
+        "description": "Revenue, cost of sales and expenses for a period.",
+        "subtitle": "What the period earned, net of VAT, and what it cost."
+      },
+      "balance-sheet": {
+        "title": "Balance sheet",
+        "description": "What the cafe owns, owes and is worth on a day.",
+        "subtitle": "Assets against liabilities and equity, as of a day."
+      },
+      "trial-balance": {
+        "title": "Trial balance",
+        "description": "Every account's balance — the check that the books add up.",
+        "subtitle": "Each account netted to its debit or credit side, as of a day."
+      },
+      "vat": {
+        "title": "VAT",
+        "description": "VAT collected on sales against VAT paid on bills.",
+        "subtitle": "The period's VAT: what was collected, what can be offset, and what's still owed."
+      },
+      "margins": {
+        "title": "Item margins",
+        "description": "What each menu item earned against what it cost.",
+        "subtitle": "Sales net of VAT against cost, for orders completed in the period."
+      }
+    },
+    "pl": {
+      "revenue": "Revenue",
+      "totalRevenue": "Total revenue",
+      "costOfSales": "Cost of sales",
+      "totalCostOfSales": "Total cost of sales",
+      "grossProfit": "Gross profit",
+      "expenses": "Operating expenses",
+      "totalExpenses": "Total operating expenses",
+      "netProfit": "Net profit",
+      "netLoss": "Net loss",
+      "vatNote": "Revenue excludes VAT, which is owed to the tax office rather than earned."
+    },
+    "bs": {
+      "balanced": "Assets equal liabilities plus equity.",
+      "unbalanced": "Assets don't equal liabilities plus equity. Please contact support.",
+      "totalAssets": "Total assets",
+      "totalLiabilities": "Total liabilities",
+      "totalEquity": "Total equity",
+      "currentEarnings": "Profit to date (not yet closed)"
+    },
+    "tb": {
+      "balanced": "Total debits equal total credits.",
+      "unbalanced": "Debits and credits differ. Please contact support."
+    },
+    "vat": {
+      "output": "VAT on sales",
+      "outputHint": "Collected inside menu prices.",
+      "input": "VAT on bills",
+      "inputHint": "Paid to suppliers; offset against VAT on sales.",
+      "net": "Owed for the period",
+      "netHint": "VAT on sales less VAT on bills.",
+      "settled": "Paid to the tax office",
+      "settledHint": "Manual entries debiting VAT payable in the period.",
+      "closing": "Still owed at the end of the period",
+      "closingHint": "The VAT payable balance.",
+      "settleHint": "Record a payment to the tax office as a manual entry: debit VAT payable (2200), credit the bank (1120)."
+    },
+    "margins": {
+      "netRevenue": "Sales (net of VAT)",
+      "cost": "Cost",
+      "grossProfit": "Gross profit",
+      "marginRate": "Margin",
+      "colItem": "Item",
+      "colQuantity": "Sold",
+      "noCost": "No cost price",
+      "missingCost": "{amount} of sales came from items with no cost price, so their margin isn't counted. Add cost prices on the menu to include them.",
+      "empty": "No completed sales in this period."
+    }
+  },
+  "dashExpenses": {
+    "heading": "Expenses",
+    "subtitle": "Bills and purchases. Each is booked to the ledger the moment it's recorded.",
+    "breadcrumbLabel": "Breadcrumb",
+    "cancel": "Cancel",
+    "new": "Record expense",
+    "owed": "Owed to suppliers now",
+    "filterStatus": "Status",
+    "allStatuses": "All",
+    "filterSupplier": "Supplier",
+    "allSuppliers": "All suppliers",
+    "empty": "No expenses in this period.",
+    "colNumber": "No.",
+    "colDate": "Date",
+    "colDescription": "Description",
+    "colAccount": "Booked to",
+    "colStatus": "Status",
+    "colAmount": "Total",
+    "status": {
+      "unpaid": "Owed",
+      "paid": "Paid",
+      "void": "Void"
+    },
+    "form": {
+      "title": "Record an expense",
+      "subtitle": "A bill, an invoice or a purchase. It's booked as soon as you save it.",
+      "dateLabel": "Date",
+      "supplierLabel": "Supplier",
+      "noSupplier": "No supplier",
+      "accountLabel": "Booked to",
+      "accountHint": "An expense account — or Inventory for stock bought to sell, Equipment for things the cafe keeps.",
+      "accountPlaceholder": "Choose an account",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "e.g. Electricity, Mehr",
+      "amountLabel": "Total (VAT included)",
+      "vatLabel": "VAT on the invoice",
+      "vatHint": "Leave blank if the invoice shows no VAT.",
+      "breakdown": "{net} net + {vat} VAT = {total}",
+      "paymentLabel": "Payment",
+      "payment": {
+        "unpaid": "Owed — pay later",
+        "cash": "Paid in cash",
+        "bank": "Paid from the bank"
+      },
+      "save": "Record expense",
+      "error": "Couldn't record the expense. Please try again."
+    },
+    "detail": {
+      "title": "Expense EX-{number}",
+      "recordedBy": "Recorded by {name}",
+      "payment": "Payment",
+      "paidFrom": "Paid from {source} on {date}",
+      "source": {
+        "cash": "cash",
+        "bank": "the bank"
+      },
+      "net": "Net of VAT",
+      "vat": "VAT",
+      "total": "Total",
+      "entriesHeading": "Journal entries",
+      "pay": "Pay",
+      "payTitle": "Pay EX-{number}",
+      "paySource": "Pay from",
+      "paidOn": "Paid on",
+      "payConfirm": "Record payment",
+      "payError": "Couldn't record the payment. Please try again.",
+      "void": "Void",
+      "voidTitle": "Void EX-{number}?",
+      "voidMessage": "Everything it posted is reversed today. The expense stays on record, marked void. This can't be undone.",
+      "voidReason": "Reason (optional)",
+      "voidConfirm": "Void expense",
+      "voidError": "Couldn't void the expense. Please try again."
+    },
+    "suppliers": {
+      "heading": "Suppliers",
+      "subtitle": "Who the cafe buys from. Switch a supplier off rather than deleting it — past bills keep its name.",
+      "new": "Add supplier",
+      "edit": "Edit {name}",
+      "nameLabel": "Name",
+      "phoneLabel": "Phone",
+      "noteLabel": "Note",
+      "activeLabel": "Active",
+      "inactive": "Inactive",
+      "save": "Save",
+      "empty": "No suppliers yet.",
+      "error": "Couldn't save the supplier. Please try again."
     }
   }
 }

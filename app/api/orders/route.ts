@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { placeOrderSchema } from "@/src/contracts/order-schema";
+import { withoutCosts } from "@/src/domain/entities/Order";
 import { ListOwnOrders } from "@/src/domain/use-cases/orders/OrderQueries";
 import { PlaceOrder } from "@/src/domain/use-cases/orders/PlaceOrder";
 import { orderRepository, productRepository, userRepository } from "@/src/infrastructure/container";
@@ -23,7 +24,7 @@ export async function GET(): Promise<NextResponse> {
 
   try {
     const orders = await new ListOwnOrders(orderRepository).execute(session.user.id);
-    return NextResponse.json(orders);
+    return NextResponse.json(orders.map(withoutCosts));
   } catch (error) {
     return errorResponseFromException(error, "GET /api/orders failed");
   }
@@ -57,7 +58,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     if (!guest) return unauthorizedResponse();
 
     const order = await new PlaceOrder(orderRepository, productRepository).execute(parsed.data, guest);
-    return NextResponse.json(order, { status: 201 });
+    return NextResponse.json(withoutCosts(order), { status: 201 });
   } catch (error) {
     return errorResponseFromException(error, "POST /api/orders failed");
   }

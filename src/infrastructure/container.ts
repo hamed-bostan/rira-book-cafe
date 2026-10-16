@@ -4,7 +4,9 @@ import type { IAuthRepository } from "@/src/domain/repositories/IAuthRepository"
 import type { ICategoryRepository } from "@/src/domain/repositories/ICategoryRepository";
 import type { IEmailSender } from "@/src/domain/repositories/IEmailSender";
 import type { IEventRepository } from "@/src/domain/repositories/IEventRepository";
+import type { IExpenseRepository } from "@/src/domain/repositories/IExpenseRepository";
 import type { IImageStorageRepository } from "@/src/domain/repositories/IImageStorageRepository";
+import type { ILedgerRepository } from "@/src/domain/repositories/ILedgerRepository";
 import type { IOrderNoteRepository } from "@/src/domain/repositories/IOrderNoteRepository";
 import type { IOrderRepository } from "@/src/domain/repositories/IOrderRepository";
 import type { IProductRepository } from "@/src/domain/repositories/IProductRepository";
@@ -20,6 +22,8 @@ import { PrismaActivityLog } from "./repositories/PrismaActivityLog";
 import { PrismaAnalyticsRepository } from "./repositories/PrismaAnalyticsRepository";
 import { PrismaCategoryRepository } from "./repositories/PrismaCategoryRepository";
 import { PrismaEventRepository } from "./repositories/PrismaEventRepository";
+import { PrismaExpenseRepository } from "./repositories/PrismaExpenseRepository";
+import { PrismaLedgerRepository } from "./repositories/PrismaLedgerRepository";
 import { PrismaOrderNoteRepository } from "./repositories/PrismaOrderNoteRepository";
 import { PrismaOrderRepository } from "./repositories/PrismaOrderRepository";
 import { PrismaProductRepository } from "./repositories/PrismaProductRepository";
@@ -59,6 +63,12 @@ export const eventRepository: IEventRepository = new PrismaEventRepository();
 // PostgreSQL from the same rows the repositories above write, so there is no
 // second copy of the numbers to drift.
 export const analyticsRepository: IAnalyticsRepository = new PrismaAnalyticsRepository();
+
+// Accounting — a double-entry general ledger plus expenses and suppliers, in
+// PostgreSQL. Orders and expenses post their journal entries inside their own
+// transactions; the database itself refuses unbalanced or edited entries.
+export const ledgerRepository: ILedgerRepository = new PrismaLedgerRepository();
+export const expenseRepository: IExpenseRepository = new PrismaExpenseRepository();
 
 // Append-only audit trail of admin changes. Read-only here: entries are written by
 // the repositories that make the changes they describe, inside the same

@@ -263,6 +263,9 @@ async function seedCategories(): Promise<Map<string, string>> {
   return ids;
 }
 
+/** Rough share of the price an item costs the cafe, for sample margins. */
+const COST_RATIO: Record<SeedItem["kind"], number> = { drink: 0.3, food: 0.4, book: 0.65 };
+
 async function seedItems(categoryIds: Map<string, string>): Promise<void> {
   for (const item of ITEMS) {
     const categoryId = categoryIds.get(item.category);
@@ -272,6 +275,8 @@ async function seedItems(categoryIds: Map<string, string>): Promise<void> {
       name: item.name,
       price: item.price,
       originalPrice: item.originalPrice ?? null,
+      costPrice: Math.round((item.price * COST_RATIO[item.kind]) / 1000) * 1000,
+      taxExempt: item.kind === "book",
       stockQuantity: item.stock,
       imageUrl: item.image,
       categoryId,

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { withoutCosts } from "@/src/domain/entities/Order";
 import { GetOwnOrder } from "@/src/domain/use-cases/orders/OrderQueries";
 import { orderRepository } from "@/src/infrastructure/container";
 import { errorResponse, errorResponseFromException, unauthorizedResponse } from "@/src/lib/api/responses";
@@ -22,7 +23,7 @@ export async function GET(_request: Request, { params }: RouteContext): Promise<
   try {
     const order = await new GetOwnOrder(orderRepository).execute(id, session.user.id);
     if (!order) return errorResponse(404, { message: "Order not found.", code: "NOT_FOUND" });
-    return NextResponse.json(order);
+    return NextResponse.json(withoutCosts(order));
   } catch (error) {
     return errorResponseFromException(error, `GET /api/orders/${id} failed`);
   }

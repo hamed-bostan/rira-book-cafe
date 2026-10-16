@@ -127,9 +127,17 @@ export async function OrderDetailScreen({ order, events, notes, canFulfill, canN
             </dl>
             <div className="mt-4 border-t border-border pt-4">
               {canFulfill ? (
-                <OrderPaymentToggle orderId={order.id} paymentStatus={order.paymentStatus} />
+                <OrderPaymentToggle
+                  orderId={order.id}
+                  paymentStatus={order.paymentStatus}
+                  paymentMethod={order.paymentMethod}
+                  cancelled={order.status === "cancelled"}
+                />
               ) : (
-                <p className="text-body-small text-foreground">{t(`payment.${order.paymentStatus}`)}</p>
+                <p className="text-body-small text-foreground">
+                  {t(`payment.${order.paymentStatus}`)}
+                  {order.paymentMethod ? ` · ${t(`paymentMethod.${order.paymentMethod}`)}` : null}
+                </p>
               )}
             </div>
           </DashboardPanel>

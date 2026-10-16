@@ -1,5 +1,7 @@
 import {
   BarChart3,
+  BedDouble,
+  BookOpen,
   Boxes,
   Calculator,
   CalendarClock,
@@ -37,6 +39,8 @@ export type DashboardSectionLabelKey =
   | "navDashboard"
   | "navOrders"
   | "navReservations"
+  | "navSuite"
+  | "navBookLoans"
   | "navEvents"
   | "navProducts"
   | "navCategories"
@@ -66,6 +70,10 @@ const SECTIONS = [
   // The day's bookings — readable by everyone on the floor; acting on them is
   // `reservations.manage`, gated inside the page.
   { href: "/dashboard/reservations", labelKey: "navReservations", icon: CalendarClock, needs: "dashboard.view", group: "groupService" },
+  // The suite's stays and the shelf's lending book — readable by everyone on the
+  // floor; acting on them is `reservations.manage` / `loans.manage`, gated inside.
+  { href: "/dashboard/suite", labelKey: "navSuite", icon: BedDouble, needs: "dashboard.view", group: "groupService" },
+  { href: "/dashboard/book-loans", labelKey: "navBookLoans", icon: BookOpen, needs: "dashboard.view", group: "groupService" },
   { href: "/dashboard/events", labelKey: "navEvents", icon: PartyPopper, needs: "dashboard.view", group: "groupService" },
 
   // The menu list is a read for everyone with the dashboard — it's how staff answer

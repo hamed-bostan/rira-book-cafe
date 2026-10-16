@@ -269,6 +269,59 @@ model Reservation {
   @@map("reservations")
 }
 
+// A stay in the cafe's suite. check_in/check_out are cafe days; the guest sleeps
+// the nights from check_in up to (not including) check_out. Two stays holding the
+// suite (confirmed, checkedIn) can't overlap — also enforced by an exclusion
+// constraint in the migration, not only in app code.
+model SuiteBooking {
+  id         String   @id @default(uuid())
+  reference  Int      @unique @default(autoincrement())
+  userId     String   @map("user_id")
+  guestName  String   @map("guest_name")
+  guestPhone String   @map("guest_phone")
+  guests     Int
+  checkIn    DateTime @map("check_in") @db.Date
+  checkOut   DateTime @map("check_out") @db.Date
+  status     String   @default("requested")
+  note       String?
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@index([checkOut, checkIn])
+  @@index([userId, checkIn])
+  @@map("suite_bookings")
+}
+
+// A book lent from the shelf: who has it and when it's due back. The book's title
+// is snapshotted, like an order line, so the record survives the catalog changing.
+// One borrower can't hold two open loans of the same book (partial unique index in
+// the migration).
+model BookLoan {
+  id            String    @id @default(uuid())
+  reference     Int       @unique @default(autoincrement())
+  productId     String    @map("product_id")
+  bookTitle     String    @map("book_title")
+  bookAuthor    String?   @map("book_author")
+  userId        String?   @map("user_id")
+  borrowerName  String    @map("borrower_name")
+  borrowerPhone String    @map("borrower_phone")
+  lentAt        DateTime  @map("lent_at")
+  dueAt         DateTime  @map("due_at")
+  status        String    @default("out")
+  returnedAt    DateTime? @map("returned_at")
+  note          String?
+  lentById      String    @map("lent_by_id")
+  lentByName    String    @map("lent_by_name")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  @@index([status, dueAt])
+  @@index([productId, status])
+  @@index([borrowerPhone])
+  @@index([userId, lentAt])
+  @@map("book_loans")
+}
+
 // Something guests sign up for — a book club, a reading, a workshop.
 model Event {
   id            String              @id @default(uuid())

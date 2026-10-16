@@ -147,7 +147,10 @@
     "ingredientRepeated": "Each ingredient appears once — add the amounts together.",
     "overheadSourceInvalid": "Choose where running costs come from.",
     "overheadRequired": "Enter the monthly running costs.",
-    "deliveryTotalRequired": "Enter what the delivery cost."
+    "deliveryTotalRequired": "Enter what the delivery cost.",
+    "bookRequired": "Choose a book.",
+    "suiteGuestsInvalid": "Choose 1 to 4 guests.",
+    "checkOutBeforeCheckIn": "Check-out must be after check-in."
   },
   "apiErrors": {
     "badRequest": "The request couldn't be read. Please try again.",
@@ -178,7 +181,9 @@
     "paymentInProgress": "A payment for this order is being confirmed. Please wait a moment.",
     "gatewayUnavailable": "The payment gateway isn't available right now. Please try again shortly.",
     "stockUsed": "Some of this delivery has already been used, so it can't be voided. Record a count or waste instead.",
-    "yearNotEnded": "That fiscal year hasn't ended yet."
+    "yearNotEnded": "That fiscal year hasn't ended yet.",
+    "suiteTaken": "The suite is already booked for some of those nights.",
+    "alreadyOnLoan": "This person already has this book on loan."
   },
   "meta": {
     "siteName": "Rira Book Cafe",
@@ -227,7 +232,9 @@
     "navAccounting": "Accounting",
     "navExpenses": "Expenses",
     "navPricing": "Pricing",
-    "navInventory": "Inventory"
+    "navInventory": "Inventory",
+    "navSuite": "Suite",
+    "navBookLoans": "Book loans"
   },
   "dashTeam": {
     "membersHeading": "Team members",
@@ -684,7 +691,9 @@
       "reservation": "Reservations",
       "event": "Events",
       "ledger": "Books",
-      "expense": "Expenses"
+      "expense": "Expenses",
+      "suiteBooking": "Suite",
+      "bookLoan": "Book loans"
     },
     "action": {
       "product": {
@@ -732,6 +741,14 @@
         "recorded": "{actor} recorded expense {entity}",
         "paid": "{actor} paid expense {entity}",
         "voided": "{actor} voided expense {entity}"
+      },
+      "suiteBooking": {
+        "changed": "{actor} updated suite booking {entity}"
+      },
+      "bookLoan": {
+        "lent": "{actor} lent a book ({entity})",
+        "returned": "{actor} marked loan {entity} returned",
+        "lost": "{actor} marked loan {entity} lost"
       }
     },
     "role": {
@@ -1171,7 +1188,41 @@
       "dashboard": "Staff dashboard",
       "mySignUps": "My event sign-ups",
       "noSignUps": "You haven't signed up for anything coming up.",
-      "signOut": "Sign out"
+      "signOut": "Sign out",
+      "mySuiteStays": "My suite stays",
+      "myBookLoans": "Books I've borrowed"
+    },
+    "suite": {
+      "heading": "Book the suite",
+      "subtitle": "Stay the night with us. Pick your dates — we'll confirm your stay.",
+      "checkIn": "Check-in",
+      "checkOut": "Check-out",
+      "guests": "Guests",
+      "notePlaceholder": "e.g. arriving late, an extra blanket",
+      "hint": "Stays of up to {nights} nights. Check-out is the morning you leave.",
+      "submit": "Request the suite",
+      "sent": "Request sent — we'll confirm it soon.",
+      "error": "Couldn't send your request. Please try again.",
+      "takenHeading": "Already booked",
+      "allFree": "Every night is free right now.",
+      "myHeading": "My stays",
+      "empty": "No upcoming stays.",
+      "past": "Past stays",
+      "nights": "{count, plural, one {{formatted} night} other {{formatted} nights}}",
+      "cancel": "Cancel",
+      "cancelTitle": "Cancel this stay?",
+      "cancelMessage": "The suite will be released for those nights.",
+      "cancelError": "Couldn't cancel the stay. Please try again.",
+      "promoTitle": "Staying the night?",
+      "promoBody": "Book our suite."
+    },
+    "loans": {
+      "heading": "Books I've borrowed",
+      "subtitle": "Books you took home from our shelf. Please bring them back by the due date.",
+      "empty": "You don't have any of our books right now.",
+      "past": "Earlier loans",
+      "dueOn": "Due {date}",
+      "returnedOn": "Returned {date}"
     }
   },
   "dashAccounting": {
@@ -1784,5 +1835,93 @@
       "by": "By",
       "empty": "No stock movements yet."
     }
+  },
+  "dashBookLoans": {
+    "heading": "Book loans",
+    "subtitle": "Who has which book from the shelf, and when it's due back.",
+    "lend": "Lend a book",
+    "lendTitle": "Lend a book",
+    "book": "Book",
+    "pickBook": "Choose a book…",
+    "copiesOut": "{count, plural, one {{formatted} out} other {{formatted} out}}",
+    "borrowerName": "Borrower's name",
+    "borrowerPhone": "Borrower's phone",
+    "dueOn": "Due back on",
+    "note": "Note (optional)",
+    "notePlaceholder": "e.g. condition, deposit taken",
+    "phoneHint": "If the phone matches a guest account, they'll see this loan on their account page.",
+    "lendSubmit": "Record loan",
+    "lending": "Saving…",
+    "lendError": "Couldn't record the loan. Please try again.",
+    "dialogCancel": "Back",
+    "searchLabel": "Search loans",
+    "searchPlaceholder": "Name, phone or book",
+    "viewLabel": "Show",
+    "viewOption": "Show: {view}",
+    "view": {
+      "open": "On loan",
+      "overdue": "Overdue",
+      "returned": "Returned",
+      "lost": "Lost",
+      "all": "All"
+    },
+    "status": {
+      "out": "On loan",
+      "returned": "Returned",
+      "lost": "Lost"
+    },
+    "overdue": "Overdue",
+    "action": {
+      "out": "Back on loan",
+      "returned": "Returned",
+      "lost": "Lost"
+    },
+    "overdueSummary": "{count, plural, one {# book is overdue} other {# books are overdue}}.",
+    "lentOn": "Lent {date} by {by}",
+    "dueOnDate": "Due {date}",
+    "returnedOn": "Returned {date}",
+    "confirmLostTitle": "Mark L-{reference} as lost?",
+    "confirmLostMessage": "If the book turns up later you can still mark it returned.",
+    "updateError": "Couldn't update the loan. Please try again.",
+    "emptyTitle": "No books here",
+    "emptyBody": "Books you lend will show up here.",
+    "noMatchesTitle": "No matches",
+    "noMatchesBody": "No loans match that search."
+  },
+  "dashSuite": {
+    "heading": "Suite",
+    "subtitle": "{waiting, plural, =0 {Stays from today on.} one {Stays from today on · # request waiting.} other {Stays from today on · # requests waiting.}}",
+    "filterStatusLabel": "Filter by status",
+    "filterStatusAll": "All",
+    "filterStatusOption": "Status: {status}",
+    "status": {
+      "requested": "Requested",
+      "confirmed": "Confirmed",
+      "checkedIn": "Checked in",
+      "checkedOut": "Checked out",
+      "cancelled": "Cancelled",
+      "noShow": "No-show"
+    },
+    "action": {
+      "requested": "Reopen",
+      "confirmed": "Confirm",
+      "checkedIn": "Check in",
+      "checkedOut": "Check out",
+      "cancelled": "Cancel",
+      "noShow": "No-show"
+    },
+    "nights": "{count, plural, one {{formatted} night} other {{formatted} nights}}",
+    "guests": "{count, plural, one {{formatted} guest} other {{formatted} guests}}",
+    "dialogCancel": "Back",
+    "confirmTitle": {
+      "cancelled": "Cancel S-{reference}?",
+      "noShow": "Mark S-{reference} as a no-show?"
+    },
+    "confirmMessage": "This frees the suite for those nights and can't be undone.",
+    "updateError": "Couldn't update the booking. Please try again.",
+    "emptyTitle": "No stays coming up",
+    "emptyBody": "Suite requests guests make will show up here.",
+    "noMatchesTitle": "No matches",
+    "noMatchesBody": "No upcoming stays have that status."
   }
 }

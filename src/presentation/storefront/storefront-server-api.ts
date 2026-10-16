@@ -1,11 +1,14 @@
 import { profileResponseSchema, type ProfileWire } from "@/src/contracts/profile-schema";
+import type { BookLoan } from "@/src/domain/entities/BookLoan";
 import type { CafeEvent, EventRegistration } from "@/src/domain/entities/CafeEvent";
 import type { Category } from "@/src/domain/entities/Category";
 import type { Order } from "@/src/domain/entities/Order";
 import type { Product } from "@/src/domain/entities/Product";
 import type { Reservation } from "@/src/domain/entities/Reservation";
+import type { SuiteBooking, SuiteBusyRange } from "@/src/domain/entities/SuiteBooking";
 import { ApiError } from "@/src/lib/api/ApiError";
 import { serverApiGet } from "@/src/lib/api/server-client";
+import { bookLoanListResponseSchema } from "@/src/presentation/book-loans/book-loan-response-schema";
 import { categoryListResponseSchema } from "@/src/presentation/category/category-response-schema";
 import {
   eventListResponseSchema,
@@ -15,6 +18,10 @@ import {
 import { orderListResponseSchema, orderResponseSchema } from "@/src/presentation/orders/order-response-schema";
 import { productListResponseSchema, productResponseSchema } from "@/src/presentation/product/product-response-schema";
 import { reservationListResponseSchema } from "@/src/presentation/reservations/reservation-response-schema";
+import {
+  suiteBookingListResponseSchema,
+  suiteBusyListResponseSchema,
+} from "@/src/presentation/suite-bookings/suite-booking-response-schema";
 
 /** `null` for a 404, so a page can `notFound()`; everything else propagates to the error boundary. */
 async function orNull<T>(read: Promise<T>): Promise<T | null> {
@@ -69,6 +76,20 @@ export const storefrontServerApi = {
 
   myReservations(): Promise<Reservation[]> {
     return serverApiGet("/reservations", reservationListResponseSchema);
+  },
+
+  mySuiteBookings(): Promise<SuiteBooking[]> {
+    return serverApiGet("/suite-bookings", suiteBookingListResponseSchema);
+  },
+
+  /** The nights the suite is already held, from today on — no names. */
+  suiteAvailability(): Promise<SuiteBusyRange[]> {
+    return serverApiGet("/suite-bookings/availability", suiteBusyListResponseSchema);
+  },
+
+  /** Books the guest has borrowed (loans staff linked to their phone). */
+  myBookLoans(): Promise<BookLoan[]> {
+    return serverApiGet("/book-loans", bookLoanListResponseSchema);
   },
 
   myRegistrations(): Promise<EventRegistration[]> {

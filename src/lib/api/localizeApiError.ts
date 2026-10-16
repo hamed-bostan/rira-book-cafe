@@ -23,6 +23,8 @@ type ApiErrorKey =
   | "insufficientStock"
   | "invalidTransition"
   | "tableTaken"
+  | "suiteTaken"
+  | "alreadyOnLoan"
   | "eventFull"
   | "eventClosed"
   | "alreadyRegistered"
@@ -55,6 +57,8 @@ const CODE_KEYS: Readonly<Record<string, ApiErrorKey>> = {
   INSUFFICIENT_STOCK: "insufficientStock",
   INVALID_TRANSITION: "invalidTransition",
   TABLE_TAKEN: "tableTaken",
+  SUITE_TAKEN: "suiteTaken",
+  ALREADY_ON_LOAN: "alreadyOnLoan",
   EVENT_FULL: "eventFull",
   EVENT_CLOSED: "eventClosed",
   ALREADY_REGISTERED: "alreadyRegistered",

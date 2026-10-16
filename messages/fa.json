@@ -147,7 +147,10 @@
     "ingredientRepeated": "هر ماده فقط یک بار می‌آید — مقدارها را با هم جمع کنید.",
     "overheadSourceInvalid": "منبع هزینه‌های جاری را انتخاب کنید.",
     "overheadRequired": "هزینه‌های جاری ماهانه را وارد کنید.",
-    "deliveryTotalRequired": "مبلغ محموله را وارد کنید."
+    "deliveryTotalRequired": "مبلغ محموله را وارد کنید.",
+    "bookRequired": "یک کتاب انتخاب کنید.",
+    "suiteGuestsInvalid": "تعداد مهمان را از ۱ تا ۴ انتخاب کنید.",
+    "checkOutBeforeCheckIn": "تاریخ خروج باید بعد از تاریخ ورود باشد."
   },
   "apiErrors": {
     "alreadyPosted": "این مورد قبلاً ثبت شده است.",
@@ -178,7 +181,9 @@
     "paymentInProgress": "پرداخت این سفارش در حال تأیید است. لطفاً کمی صبر کنید.",
     "gatewayUnavailable": "درگاه پرداخت در حال حاضر در دسترس نیست. لطفاً کمی بعد دوباره تلاش کنید.",
     "stockUsed": "بخشی از این محموله مصرف شده و نمی‌توان آن را باطل کرد. به جای آن انبارگردانی یا ضایعات ثبت کنید.",
-    "yearNotEnded": "این سال مالی هنوز تمام نشده است."
+    "yearNotEnded": "این سال مالی هنوز تمام نشده است.",
+    "suiteTaken": "سوئیت برای بعضی از این شب‌ها رزرو شده است.",
+    "alreadyOnLoan": "این کتاب همین حالا به امانت دست همین شخص است."
   },
   "meta": {
     "siteName": "کافه کتاب ریرا",
@@ -227,7 +232,9 @@
     "navAccounting": "حسابداری",
     "navExpenses": "هزینه‌ها",
     "navPricing": "قیمت‌گذاری",
-    "navInventory": "انبار"
+    "navInventory": "انبار",
+    "navSuite": "سوئیت",
+    "navBookLoans": "امانت کتاب"
   },
   "dashTeam": {
     "membersHeading": "اعضای تیم",
@@ -684,7 +691,9 @@
       "reservation": "رزروها",
       "event": "رویدادها",
       "ledger": "دفاتر",
-      "expense": "هزینه‌ها"
+      "expense": "هزینه‌ها",
+      "suiteBooking": "سوئیت",
+      "bookLoan": "امانت کتاب"
     },
     "action": {
       "product": {
@@ -732,6 +741,14 @@
         "recorded": "{actor} هزینهٔ {entity} را ثبت کرد",
         "paid": "{actor} هزینهٔ {entity} را پرداخت کرد",
         "voided": "{actor} هزینهٔ {entity} را باطل کرد"
+      },
+      "suiteBooking": {
+        "changed": "{actor} رزرو سوئیت {entity} را به‌روز کرد"
+      },
+      "bookLoan": {
+        "lent": "{actor} کتابی به امانت داد ({entity})",
+        "returned": "{actor} امانت {entity} را بازگشته ثبت کرد",
+        "lost": "{actor} امانت {entity} را گم‌شده ثبت کرد"
       }
     },
     "role": {
@@ -1171,7 +1188,41 @@
       "dashboard": "داشبورد کارکنان",
       "mySignUps": "ثبت‌نام‌های رویداد من",
       "noSignUps": "برای رویداد پیش‌رویی ثبت‌نام نکرده‌اید.",
-      "signOut": "خروج"
+      "signOut": "خروج",
+      "mySuiteStays": "اقامت‌های من در سوئیت",
+      "myBookLoans": "کتاب‌های امانتی من"
+    },
+    "suite": {
+      "heading": "رزرو سوئیت",
+      "subtitle": "شب را پیش ما بمانید. تاریخ‌ها را انتخاب کنید تا اقامتتان را تأیید کنیم.",
+      "checkIn": "تاریخ ورود",
+      "checkOut": "تاریخ خروج",
+      "guests": "مهمان‌ها",
+      "notePlaceholder": "مثلاً دیر می‌رسیم، یک پتوی اضافه",
+      "hint": "حداکثر {nights} شب. تاریخ خروج صبح روزی است که می‌روید.",
+      "submit": "درخواست سوئیت",
+      "sent": "درخواست ارسال شد — به‌زودی تأیید می‌کنیم.",
+      "error": "ارسال درخواست ممکن نشد. دوباره تلاش کنید.",
+      "takenHeading": "شب‌های رزروشده",
+      "allFree": "فعلاً همهٔ شب‌ها آزاد است.",
+      "myHeading": "اقامت‌های من",
+      "empty": "اقامت پیش‌رویی ندارید.",
+      "past": "اقامت‌های گذشته",
+      "nights": "{count, plural, other {{formatted} شب}}",
+      "cancel": "لغو",
+      "cancelTitle": "این اقامت لغو شود؟",
+      "cancelMessage": "سوئیت برای آن شب‌ها آزاد می‌شود.",
+      "cancelError": "لغو اقامت ممکن نشد. دوباره تلاش کنید.",
+      "promoTitle": "شب می‌مانید؟",
+      "promoBody": "سوئیت ما را رزرو کنید."
+    },
+    "loans": {
+      "heading": "کتاب‌های امانتی من",
+      "subtitle": "کتاب‌هایی که از قفسهٔ ما به امانت برده‌اید. لطفاً تا موعد برگردانید.",
+      "empty": "الان کتابی از ما به امانت ندارید.",
+      "past": "امانت‌های قبلی",
+      "dueOn": "موعد {date}",
+      "returnedOn": "بازگشت {date}"
     }
   },
   "dashAccounting": {
@@ -1784,5 +1835,93 @@
       "by": "توسط",
       "empty": "هنوز گردشی ثبت نشده."
     }
+  },
+  "dashBookLoans": {
+    "heading": "امانت کتاب",
+    "subtitle": "چه کسی کدام کتاب قفسه را برده و کی باید برگرداند.",
+    "lend": "امانت دادن کتاب",
+    "lendTitle": "امانت دادن کتاب",
+    "book": "کتاب",
+    "pickBook": "یک کتاب انتخاب کنید…",
+    "copiesOut": "{count, plural, other {{formatted} نسخه بیرون}}",
+    "borrowerName": "نام امانت‌گیرنده",
+    "borrowerPhone": "تلفن امانت‌گیرنده",
+    "dueOn": "تاریخ بازگرداندن",
+    "note": "یادداشت (اختیاری)",
+    "notePlaceholder": "مثلاً وضعیت کتاب، ودیعهٔ دریافتی",
+    "phoneHint": "اگر این شماره حساب کاربری داشته باشد، مهمان این امانت را در صفحهٔ حسابش می‌بیند.",
+    "lendSubmit": "ثبت امانت",
+    "lending": "در حال ذخیره…",
+    "lendError": "ثبت امانت ممکن نشد. دوباره تلاش کنید.",
+    "dialogCancel": "بازگشت",
+    "searchLabel": "جست‌وجوی امانت‌ها",
+    "searchPlaceholder": "نام، تلفن یا کتاب",
+    "viewLabel": "نمایش",
+    "viewOption": "نمایش: {view}",
+    "view": {
+      "open": "در امانت",
+      "overdue": "دیرکرد",
+      "returned": "بازگشته",
+      "lost": "گم‌شده",
+      "all": "همه"
+    },
+    "status": {
+      "out": "در امانت",
+      "returned": "بازگشته",
+      "lost": "گم‌شده"
+    },
+    "overdue": "دیرکرد",
+    "action": {
+      "out": "امانت دوباره",
+      "returned": "برگشت",
+      "lost": "گم شد"
+    },
+    "overdueSummary": "{count, plural, other {# کتاب دیرکرد دارد}}.",
+    "lentOn": "امانت در {date} توسط {by}",
+    "dueOnDate": "موعد {date}",
+    "returnedOn": "بازگشت {date}",
+    "confirmLostTitle": "L-{reference} گم‌شده ثبت شود؟",
+    "confirmLostMessage": "اگر کتاب بعداً پیدا شد، هنوز می‌توانید آن را بازگشته ثبت کنید.",
+    "updateError": "به‌روزرسانی امانت ممکن نشد. دوباره تلاش کنید.",
+    "emptyTitle": "کتابی اینجا نیست",
+    "emptyBody": "کتاب‌هایی که امانت می‌دهید اینجا نمایش داده می‌شوند.",
+    "noMatchesTitle": "نتیجه‌ای نیست",
+    "noMatchesBody": "هیچ امانتی با این جست‌وجو پیدا نشد."
+  },
+  "dashSuite": {
+    "heading": "سوئیت",
+    "subtitle": "{waiting, plural, =0 {اقامت‌ها از امروز به بعد.} other {اقامت‌ها از امروز به بعد · # درخواست در انتظار.}}",
+    "filterStatusLabel": "فیلتر وضعیت",
+    "filterStatusAll": "همه",
+    "filterStatusOption": "وضعیت: {status}",
+    "status": {
+      "requested": "درخواست‌شده",
+      "confirmed": "تأییدشده",
+      "checkedIn": "پذیرش‌شده",
+      "checkedOut": "تسویه‌شده",
+      "cancelled": "لغوشده",
+      "noShow": "نیامد"
+    },
+    "action": {
+      "requested": "بازگشایی",
+      "confirmed": "تأیید",
+      "checkedIn": "پذیرش",
+      "checkedOut": "تسویه و خروج",
+      "cancelled": "لغو",
+      "noShow": "نیامد"
+    },
+    "nights": "{count, plural, other {{formatted} شب}}",
+    "guests": "{count, plural, other {{formatted} نفر}}",
+    "dialogCancel": "بازگشت",
+    "confirmTitle": {
+      "cancelled": "S-{reference} لغو شود؟",
+      "noShow": "S-{reference} «نیامد» ثبت شود؟"
+    },
+    "confirmMessage": "سوئیت برای آن شب‌ها آزاد می‌شود و این کار برگشت‌پذیر نیست.",
+    "updateError": "به‌روزرسانی رزرو ممکن نشد. دوباره تلاش کنید.",
+    "emptyTitle": "اقامتی در پیش نیست",
+    "emptyBody": "درخواست‌های سوئیت مهمان‌ها اینجا نمایش داده می‌شوند.",
+    "noMatchesTitle": "نتیجه‌ای نیست",
+    "noMatchesBody": "هیچ اقامت پیش‌رویی با این وضعیت نیست."
   }
 }

@@ -1,4 +1,4 @@
-import { CalendarClock, ChevronRight, ClipboardList, LayoutDashboard } from "lucide-react";
+import { BedDouble, BookOpen, CalendarClock, ChevronRight, ClipboardList, LayoutDashboard } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import type { ProfileWire } from "@/src/contracts/profile-schema";
@@ -33,6 +33,8 @@ export async function AccountScreen({ profile, signUps, canOpenDashboard }: Acco
   const links: { href: string; label: string; icon: LucideIcon }[] = [
     { href: "/orders", label: t("account.myOrders"), icon: ClipboardList },
     { href: "/reservations", label: t("account.myReservations"), icon: CalendarClock },
+    { href: "/suite", label: t("account.mySuiteStays"), icon: BedDouble },
+    { href: "/loans", label: t("account.myBookLoans"), icon: BookOpen },
     ...(canOpenDashboard ? [{ href: "/dashboard", label: t("account.dashboard"), icon: LayoutDashboard }] : []),
   ];
 

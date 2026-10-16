@@ -25,8 +25,10 @@ export const PERMISSIONS = [
   "reviews.moderate",
   /** Create and change promo codes and other commercial levers. */
   "promotions.write",
-  /** Confirm, seat and close table reservations — a floor job, so staff hold it. */
+  /** Confirm, seat and close table reservations and suite stays — a floor job, so staff hold it. */
   "reservations.manage",
+  /** Lend books from the shelf and close loans (returned, lost) — a floor job, so staff hold it. */
+  "loans.manage",
   /** Create and change events (book clubs, readings) and manage their sign-ups. */
   "events.manage",
   /** Read revenue and the sales, payment and guest reports. Admin and owner. */
@@ -66,7 +68,7 @@ export type Permission = (typeof PERMISSIONS)[number];
 export const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
   customer: [],
   support: ["dashboard.view", "orders.note", "activity.view"],
-  staff: ["dashboard.view", "orders.fulfill", "orders.note", "reservations.manage", "activity.view", "inventory.view"],
+  staff: ["dashboard.view", "orders.fulfill", "orders.note", "reservations.manage", "loans.manage", "activity.view", "inventory.view"],
   admin: [
     "dashboard.view",
     "orders.fulfill",
@@ -75,6 +77,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
     "reviews.moderate",
     "promotions.write",
     "reservations.manage",
+    "loans.manage",
     "events.manage",
     "reports.view",
     "activity.view",
@@ -92,6 +95,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
     "reviews.moderate",
     "promotions.write",
     "reservations.manage",
+    "loans.manage",
     "events.manage",
     "reports.view",
     "activity.view",

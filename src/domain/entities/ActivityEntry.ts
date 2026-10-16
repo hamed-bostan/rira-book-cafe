@@ -30,6 +30,8 @@ export const ACTIVITY_ENTITY_TYPES = [
   "promoCode",
   "user",
   "reservation",
+  "suiteBooking",
+  "bookLoan",
   "event",
   // Accounting: journal entries, the chart of accounts and its settings ("ledger"),
   // and supplier bills ("expense").
@@ -86,6 +88,11 @@ export const ACTIVITY_ACTIONS = [
   "promoCode.activeChanged",
   "user.roleChanged",
   "reservation.changed",
+  "suiteBooking.changed",
+  // A book handed over, brought back, or written off.
+  "bookLoan.lent",
+  "bookLoan.returned",
+  "bookLoan.lost",
   "event.created",
   "event.updated",
   "event.deleted",

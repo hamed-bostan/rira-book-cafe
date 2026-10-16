@@ -17,6 +17,8 @@ export class ConflictError extends Error {
 
 export type ConflictCode =
   | "TABLE_TAKEN"
+  | "SUITE_TAKEN"
+  | "ALREADY_ON_LOAN"
   | "EVENT_FULL"
   | "EVENT_CLOSED"
   | "ALREADY_REGISTERED"

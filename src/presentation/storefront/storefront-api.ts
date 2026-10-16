@@ -2,14 +2,17 @@ import type { EventRegistrationInput } from "@/src/contracts/event-schema";
 import type { PlaceOrderInput } from "@/src/contracts/order-schema";
 import { profileResponseSchema, type ProfileUpdateInput, type ProfileWire } from "@/src/contracts/profile-schema";
 import type { RequestReservationInput } from "@/src/contracts/reservation-schema";
+import type { RequestSuiteBookingInput } from "@/src/contracts/suite-booking-schema";
 import type { EventRegistration } from "@/src/domain/entities/CafeEvent";
 import type { Order } from "@/src/domain/entities/Order";
 import type { Reservation } from "@/src/domain/entities/Reservation";
+import type { SuiteBooking } from "@/src/domain/entities/SuiteBooking";
 import { apiDelete, apiPost, apiPut } from "@/src/lib/api/client";
 import { eventRegistrationResponseSchema } from "@/src/presentation/events/event-response-schema";
 import { orderResponseSchema } from "@/src/presentation/orders/order-response-schema";
 import { paymentSessionResponseSchema, type PaymentSessionResponse } from "@/src/presentation/orders/payment-response-schema";
 import { reservationResponseSchema } from "@/src/presentation/reservations/reservation-response-schema";
+import { suiteBookingResponseSchema } from "@/src/presentation/suite-bookings/suite-booking-response-schema";
 
 /**
  * Typed client for the guest's own actions on the public site. Each rejects with
@@ -36,6 +39,14 @@ export const storefrontApi = {
 
   cancelReservation(id: string): Promise<Reservation> {
     return apiPost(`/reservations/${id}/cancel`, {}, reservationResponseSchema);
+  },
+
+  requestSuiteBooking(input: RequestSuiteBookingInput): Promise<SuiteBooking> {
+    return apiPost("/suite-bookings", input, suiteBookingResponseSchema);
+  },
+
+  cancelSuiteBooking(id: string): Promise<SuiteBooking> {
+    return apiPost(`/suite-bookings/${id}/cancel`, {}, suiteBookingResponseSchema);
   },
 
   registerForEvent(eventId: string, input: EventRegistrationInput): Promise<EventRegistration> {

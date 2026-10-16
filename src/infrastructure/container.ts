@@ -1,6 +1,7 @@
 import type { IActivityLog } from "@/src/domain/repositories/IActivityLog";
 import type { IAnalyticsRepository } from "@/src/domain/repositories/IAnalyticsRepository";
 import type { IAuthRepository } from "@/src/domain/repositories/IAuthRepository";
+import type { IBookLoanRepository } from "@/src/domain/repositories/IBookLoanRepository";
 import type { ICategoryRepository } from "@/src/domain/repositories/ICategoryRepository";
 import type { IEmailSender } from "@/src/domain/repositories/IEmailSender";
 import type { IEventRepository } from "@/src/domain/repositories/IEventRepository";
@@ -15,6 +16,7 @@ import type { IPaymentGateway } from "@/src/domain/repositories/IPaymentGateway"
 import type { IPricingRepository } from "@/src/domain/repositories/IPricingRepository";
 import type { IProductRepository } from "@/src/domain/repositories/IProductRepository";
 import type { IReservationRepository } from "@/src/domain/repositories/IReservationRepository";
+import type { ISuiteBookingRepository } from "@/src/domain/repositories/ISuiteBookingRepository";
 import type { ITeamNotifier } from "@/src/domain/repositories/ITeamNotifier";
 import type { IUserRepository } from "@/src/domain/repositories/IUserRepository";
 
@@ -25,6 +27,7 @@ import { ZarinpalPaymentGateway } from "./payments/ZarinpalPaymentGateway";
 import { MockAuthRepository } from "./repositories/mock/MockAuthRepository";
 import { PrismaActivityLog } from "./repositories/PrismaActivityLog";
 import { PrismaAnalyticsRepository } from "./repositories/PrismaAnalyticsRepository";
+import { PrismaBookLoanRepository } from "./repositories/PrismaBookLoanRepository";
 import { PrismaCategoryRepository } from "./repositories/PrismaCategoryRepository";
 import { PrismaEventRepository } from "./repositories/PrismaEventRepository";
 import { PrismaExpenseRepository } from "./repositories/PrismaExpenseRepository";
@@ -36,6 +39,7 @@ import { PrismaPaymentAttemptRepository } from "./repositories/PrismaPaymentAtte
 import { PrismaPricingRepository } from "./repositories/PrismaPricingRepository";
 import { PrismaProductRepository } from "./repositories/PrismaProductRepository";
 import { PrismaReservationRepository } from "./repositories/PrismaReservationRepository";
+import { PrismaSuiteBookingRepository } from "./repositories/PrismaSuiteBookingRepository";
 import { PrismaUserRepository } from "./repositories/PrismaUserRepository";
 import { SmsIrAuthRepository } from "./repositories/SmsIrAuthRepository";
 import { SupabaseImageStorageRepository } from "./repositories/SupabaseImageStorageRepository";
@@ -75,6 +79,11 @@ export const paymentAttemptRepository: IPaymentAttemptRepository = new PrismaPay
 // Table clashes and event capacity are enforced inside the repositories under locks.
 export const reservationRepository: IReservationRepository = new PrismaReservationRepository();
 export const eventRepository: IEventRepository = new PrismaEventRepository();
+
+// The suite (one room, stays by the night) and the shelf's lending book. Suite
+// overlaps and duplicate loans are refused under locks, with database triggers as a backstop.
+export const suiteBookingRepository: ISuiteBookingRepository = new PrismaSuiteBookingRepository();
+export const bookLoanRepository: IBookLoanRepository = new PrismaBookLoanRepository();
 
 // Cafe aggregates — revenue, busy hours, best sellers, guests — computed in
 // PostgreSQL from the same rows the repositories above write, so there is no

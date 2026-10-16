@@ -1,0 +1,70 @@
+import { z } from "zod";
+
+import {
+  MAX_LINE_QUANTITY,
+  MAX_ORDER_NOTE_TEXT_LENGTH,
+  MAX_TABLE_LABEL_LENGTH,
+  ORDER_STATUSES,
+  PAYMENT_STATUSES,
+  SERVICE_TYPES,
+} from "@/src/domain/entities/Order";
+
+/**
+ * Order contracts shared by the route handlers and their clients (defensive
+ * re-validation — never trust the client). Framework-free, so they stay importable
+ * from both halves of the BFF. Validation messages are `formErrors` message keys.
+ */
+
+/** Most distinct lines in one order — a generous table, not a catering job. */
+export const MAX_ORDER_LINES = 30;
+
+/** Optional free text: trimmed, blank → `undefined`. */
+function optionalText(max: number) {
+  return z
+    .string()
+    .trim()
+    .max(max, "noteTooLong")
+    .optional()
+    .transform((value) => (value ? value : undefined));
+}
+
+/**
+ * Placing an order. Only *which* items and how many — prices and names come from
+ * the menu on the server. A dine-in order must name its table.
+ */
+export const placeOrderSchema = z
+  .object({
+    items: z
+      .array(
+        z.object({
+          productId: z.string().min(1, "productRequired"),
+          quantity: z.number().int("quantityWhole").min(1, "quantityMin").max(MAX_LINE_QUANTITY, "quantityMax"),
+          note: optionalText(MAX_ORDER_NOTE_TEXT_LENGTH),
+        }),
+      )
+      .min(1, "itemsRequired")
+      .max(MAX_ORDER_LINES, "itemsTooMany"),
+    serviceType: z.enum(SERVICE_TYPES, { message: "serviceTypeInvalid" }),
+    tableLabel: optionalText(MAX_TABLE_LABEL_LENGTH),
+    note: optionalText(MAX_ORDER_NOTE_TEXT_LENGTH),
+  })
+  .refine((data) => data.serviceType !== "dineIn" || data.tableLabel !== undefined, {
+    path: ["tableLabel"],
+    message: "tableRequired",
+  });
+
+export type PlaceOrderInput = z.input<typeof placeOrderSchema>;
+
+/** Staff moving an order along the workflow. The current status is read server-side. */
+export const orderStatusChangeSchema = z.object({
+  status: z.enum(ORDER_STATUSES, { message: "statusInvalid" }),
+});
+
+export type OrderStatusChangeInput = z.infer<typeof orderStatusChangeSchema>;
+
+/** Staff marking an order paid or unpaid. */
+export const orderPaymentSchema = z.object({
+  paymentStatus: z.enum(PAYMENT_STATUSES, { message: "statusInvalid" }),
+});
+
+export type OrderPaymentInput = z.infer<typeof orderPaymentSchema>;

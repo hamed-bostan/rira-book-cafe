@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 
+import { InsufficientStockError } from "@/src/domain/errors/InsufficientStockError";
+import { InvalidOrderTransitionError } from "@/src/domain/errors/InvalidOrderTransitionError";
 import { NotFoundError } from "@/src/domain/errors/NotFoundError";
 import { ResourceInUseError } from "@/src/domain/errors/ResourceInUseError";
 import { UniqueConstraintError } from "@/src/domain/errors/UniqueConstraintError";
@@ -77,6 +79,18 @@ export function errorResponseFromException(error: unknown, context: string): Nex
   // Something still depends on the record being removed (e.g. a delivery window
   // with orders booked into it). Well-formed request, refusing state → 409, and the
   // message names what's in the way.
+  // An order asked for more than is on hand (or an item sold out meanwhile).
+  // 409 Conflict — the message names what's short.
+  if (error instanceof InsufficientStockError) {
+    return errorResponse(409, { message: error.message, code: "INSUFFICIENT_STOCK" });
+  }
+
+  // A status change the workflow refuses, or one that lost a race with another
+  // change. 409 — the client refreshes to show the order's real state.
+  if (error instanceof InvalidOrderTransitionError) {
+    return errorResponse(409, { message: error.message, code: "INVALID_TRANSITION" });
+  }
+
   if (error instanceof ResourceInUseError) {
     return errorResponse(409, { message: error.message, code: "IN_USE" });
   }

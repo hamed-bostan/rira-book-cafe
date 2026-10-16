@@ -68,6 +68,7 @@ export const ACTIVITY_ACTIONS = [
   // and the order row already records who that is. The log exists for the changes
   // *staff* make to something stored.
   "order.stageChanged",
+  "order.paymentChanged",
   // The one action here that isn't a change to anything stored — an admin sent the
   // customer a message about their order. Recorded through
   // `IActivityLog.recordEvent` rather than an audit hook, because there is no

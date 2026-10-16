@@ -20,6 +20,8 @@ type ApiErrorKey =
   | "unauthorized"
   | "notFound"
   | "conflict"
+  | "insufficientStock"
+  | "invalidTransition"
   | "inUse"
   | "revokeSelf"
   | "revokeOwner"
@@ -35,6 +37,8 @@ const CODE_KEYS: Readonly<Record<string, ApiErrorKey>> = {
   UNAUTHORIZED: "unauthorized",
   NOT_FOUND: "notFound",
   UNIQUE_CONSTRAINT: "conflict",
+  INSUFFICIENT_STOCK: "insufficientStock",
+  INVALID_TRANSITION: "invalidTransition",
   IN_USE: "inUse",
   REVOKE_SELF: "revokeSelf",
   REVOKE_OWNER: "revokeOwner",

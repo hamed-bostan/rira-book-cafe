@@ -1,6 +1,6 @@
 "use client";
 
-import { Coffee, LayoutDashboard, MoreHorizontal } from "lucide-react";
+import { ClipboardList, Coffee, LayoutDashboard, MoreHorizontal } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { Link, usePathname } from "@/src/i18n/navigation";
@@ -14,7 +14,7 @@ import type { LucideIcon } from "lucide-react";
 type BottomNavItem = {
   href: string;
   /** Label key under `dashboard.bottomNav`. */
-  labelKey: "dashboard" | "products";
+  labelKey: "dashboard" | "orders" | "products";
   icon: LucideIcon;
 };
 
@@ -23,10 +23,11 @@ type BottomNavItem = {
  * driven by `sections.ts`: the rail's full, permission-filtered list belongs in the
  * drawer (the `More` tab opens it), not spread across cramped icons. Only list
  * sections every `dashboard.view` holder can open, so there is no permission check
- * to thread through here. Add orders, menu, etc. as those features land.
+ * to thread through here.
  */
 const ITEMS: readonly BottomNavItem[] = [
   { href: "/dashboard", labelKey: "dashboard", icon: LayoutDashboard },
+  { href: "/dashboard/orders", labelKey: "orders", icon: ClipboardList },
   { href: "/dashboard/products", labelKey: "products", icon: Coffee },
 ];
 

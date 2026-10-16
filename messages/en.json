@@ -76,7 +76,7 @@
     "labelTooLong": "Label is too long.",
     "nameRequired": "Name is required.",
     "nameTooLong": "Name is too long.",
-    "noteTooLong": "Keep the note under 160 characters.",
+    "noteTooLong": "That note is too long.",
     "originalPriceHigher": "Original price must be higher than the price.",
     "paymentMethodRequired": "Choose a payment method.",
     "phoneInvalid": "Enter a valid phone number.",
@@ -86,7 +86,7 @@
     "priceInvalid": "Enter a valid price.",
     "pricePositive": "Price must be greater than 0.",
     "priceRequired": "Enter a price.",
-    "productRequired": "A product is required.",
+    "productRequired": "Choose an item.",
     "rateInvalid": "Enter a valid rate.",
     "rateRange": "Enter a rate between 0 and 100.",
     "rateRequired": "Enter a rate.",
@@ -105,7 +105,16 @@
     "kindInvalid": "Choose drink, food or book.",
     "authorRequired": "A book needs an author.",
     "isbnInvalid": "Enter a valid ISBN-10 or ISBN-13.",
-    "availabilityInvalid": "Choose how the book can be used."
+    "availabilityInvalid": "Choose how the book can be used.",
+    "quantityWhole": "Quantities must be whole numbers.",
+    "quantityMin": "Order at least one.",
+    "quantityMax": "That's more than one order can take.",
+    "itemsRequired": "Add at least one item.",
+    "itemsTooMany": "That's too many items for one order.",
+    "serviceTypeInvalid": "Choose dine-in or takeaway.",
+    "tableRequired": "Choose a table for a dine-in order.",
+    "statusInvalid": "That status isn't valid.",
+    "noteRequired": "Write a note first."
   },
   "apiErrors": {
     "badRequest": "The request couldn't be read. Please try again.",
@@ -119,7 +128,9 @@
     "timeout": "The request timed out. Please try again.",
     "network": "Can't reach the server. Check your connection and try again.",
     "server": "Something went wrong. Please try again.",
-    "inUse": "That's still in use and can't be removed yet."
+    "inUse": "That's still in use and can't be removed yet.",
+    "insufficientStock": "Not enough stock for one of the items.",
+    "invalidTransition": "This order was just changed by someone else. Showing its current state."
   },
   "meta": {
     "siteName": "Rira Book Cafe",
@@ -134,7 +145,8 @@
       "dashboard": "Dashboard",
       "more": "More",
       "moreAria": "More options",
-      "products": "Menu"
+      "products": "Menu",
+      "orders": "Orders"
     },
     "collapseSidebar": "Collapse sidebar",
     "errorBody": "We couldn't load this page. Please try again.",
@@ -155,7 +167,9 @@
     "overviewBody": "The dashboard foundation is ready. Sections appear in the sidebar as features ship.",
     "navCategories": "Categories",
     "navProducts": "Menu",
-    "groupMenu": "Menu"
+    "groupMenu": "Menu",
+    "navOrders": "Orders",
+    "groupService": "Service"
   },
   "dashTeam": {
     "role": {
@@ -427,5 +441,88 @@
     "Dairy-Free": "Dairy-Free",
     "Sugar-Free": "Sugar-Free",
     "Caffeine-Free": "Caffeine-Free"
+  },
+  "dashOrders": {
+    "heading": "Orders",
+    "activeSummary": "{count, plural, =0 {Nothing in the queue} one {# order in the queue} other {# orders in the queue}}",
+    "tabsLabel": "Order status",
+    "tabAll": "All",
+    "tabActive": "In queue",
+    "status": {
+      "pending": "New",
+      "accepted": "Accepted",
+      "preparing": "Preparing",
+      "ready": "Ready",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "advance": {
+      "pending": "Mark new",
+      "accepted": "Accept order",
+      "preparing": "Start preparing",
+      "ready": "Mark ready",
+      "completed": "Complete",
+      "cancelled": "Cancel"
+    },
+    "service": {
+      "dineIn": "Dine-in",
+      "takeaway": "Takeaway"
+    },
+    "payment": {
+      "unpaid": "Unpaid",
+      "paid": "Paid"
+    },
+    "table": "Table {table}",
+    "searchLabel": "Search orders",
+    "searchPlaceholder": "Order number, table, guest or phone…",
+    "sortLabel": "Sort orders",
+    "sortNewest": "Newest first",
+    "sortOldest": "Oldest first",
+    "sortTotalHigh": "Total: high to low",
+    "sortTotalLow": "Total: low to high",
+    "filterServiceLabel": "Filter by service",
+    "filterServiceAll": "Any",
+    "filterServiceOption": "Service: {service}",
+    "filterPaymentLabel": "Filter by payment",
+    "filterPaymentAll": "Any",
+    "filterPaymentOption": "Payment: {payment}",
+    "emptyTitle": "No orders yet",
+    "emptyBody": "Orders guests place will show up here.",
+    "colOrder": "Order",
+    "colGuest": "Guest",
+    "colService": "Service",
+    "colItems": "Items",
+    "colStatus": "Status",
+    "colPlaced": "Placed",
+    "colTotal": "Total",
+    "itemCount": "{count, plural, one {# item} other {# items}}",
+    "viewOrderAria": "View order #{number}",
+    "backToOrders": "Back to orders",
+    "orderNumber": "Order #{number}",
+    "placedOn": "Placed {date}",
+    "itemsHeading": "Items",
+    "total": "Total",
+    "notesHeading": "Internal notes",
+    "serviceHeading": "Service",
+    "guestNote": "Guest's note",
+    "paidLabel": "Paid",
+    "paymentError": "Couldn't update the payment. Please try again.",
+    "statusError": "Couldn't update the order. Please try again.",
+    "cancelOrder": "Cancel order",
+    "cancelTitle": "Cancel order #{number}?",
+    "cancelMessage": "The guest's items go back into stock. This can't be undone.",
+    "cancelConfirm": "Cancel order",
+    "cancelKeep": "Keep order",
+    "timelineHeading": "History",
+    "timelineEmpty": "No history recorded.",
+    "timelinePlaced": "Placed",
+    "timelineBy": "by {name}"
+  },
+  "dashOrderNotes": {
+    "label": "Internal note",
+    "placeholder": "Something the team should know — never shown to the guest.",
+    "add": "Add note",
+    "addError": "Couldn't add the note. Please try again.",
+    "empty": "No notes yet."
   }
 }

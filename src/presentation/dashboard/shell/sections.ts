@@ -1,4 +1,4 @@
-import { Coffee, LayoutDashboard, Tag } from "lucide-react";
+import { ClipboardList, Coffee, LayoutDashboard, Tag } from "lucide-react";
 
 import type { Permission } from "@/src/domain/entities/Permission";
 
@@ -16,10 +16,10 @@ import type { LucideIcon } from "lucide-react";
  */
 
 /** A navigation group's stable id, which is also its label key under `dashboard`. */
-export type DashboardSectionGroup = "groupOverview" | "groupMenu";
+export type DashboardSectionGroup = "groupOverview" | "groupService" | "groupMenu";
 
 /** A section's label key under the `dashboard` namespace — spelled out so `t()` can check it. */
-export type DashboardSectionLabelKey = "navDashboard" | "navProducts" | "navCategories";
+export type DashboardSectionLabelKey = "navDashboard" | "navOrders" | "navProducts" | "navCategories";
 
 export type DashboardSection = {
   href: string;
@@ -33,6 +33,10 @@ export type DashboardSection = {
 const SECTIONS = [
   { href: "/dashboard", labelKey: "navDashboard", icon: LayoutDashboard, needs: "dashboard.view", group: "groupOverview" },
 
+  // The live queue. Reading it is for everyone with the dashboard; moving orders is
+  // `orders.fulfill`, gated inside the page.
+  { href: "/dashboard/orders", labelKey: "navOrders", icon: ClipboardList, needs: "dashboard.view", group: "groupService" },
+
   // The menu list is a read for everyone with the dashboard — it's how staff answer
   // "do we still have this?". The write controls inside it are gated on `catalog.write`.
   { href: "/dashboard/products", labelKey: "navProducts", icon: Coffee, needs: "dashboard.view", group: "groupMenu" },
@@ -40,7 +44,7 @@ const SECTIONS = [
 ] as const satisfies readonly DashboardSection[];
 
 /** The groups in sidebar order. */
-const GROUP_ORDER: readonly DashboardSectionGroup[] = ["groupOverview", "groupMenu"];
+const GROUP_ORDER: readonly DashboardSectionGroup[] = ["groupOverview", "groupService", "groupMenu"];
 
 export type DashboardNavGroup = {
   id: DashboardSectionGroup;

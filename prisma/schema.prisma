@@ -131,3 +131,74 @@ model ActivityEntry {
   @@index([actorId, createdAt])
   @@map("activity_log")
 }
+
+// A cafe order. Guest name/phone and every line's name/price are snapshotted at
+// placement so the order reads correctly after the menu or the account changes.
+// status / service_type / payment_status are plain strings matching the domain
+// unions (enum-free style).
+model Order {
+  id            String      @id @default(uuid())
+  // Short sequential number staff call out.
+  orderNumber   Int         @unique @default(autoincrement()) @map("order_number")
+  userId        String      @map("user_id")
+  customerName  String      @map("customer_name")
+  customerPhone String      @map("customer_phone")
+  status        String      @default("pending")
+  serviceType   String      @map("service_type")
+  tableLabel    String?     @map("table_label")
+  note          String?
+  paymentStatus String      @default("unpaid") @map("payment_status")
+  subtotal      Int
+  total         Int
+  items         OrderItem[]
+  placedAt      DateTime    @default(now()) @map("placed_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+
+  @@index([status, placedAt])
+  @@index([userId, placedAt])
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String  @id @default(uuid())
+  orderId   String  @map("order_id")
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  // Plain reference, not a foreign key: deleting a menu item must not touch history.
+  productId String  @map("product_id")
+  kind      String
+  name      String
+  imageUrl  String  @map("image_url")
+  unitPrice Int     @map("unit_price")
+  quantity  Int
+  note      String?
+  position  Int
+
+  @@index([orderId])
+  @@map("order_items")
+}
+
+// Append-only: one row per status change (and one for placement, with from = null).
+model OrderStatusEvent {
+  id         String   @id @default(uuid())
+  orderId    String   @map("order_id")
+  fromStatus String?  @map("from_status")
+  toStatus   String   @map("to_status")
+  actorId    String   @map("actor_id")
+  actorName  String   @map("actor_name")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([orderId, createdAt])
+  @@map("order_status_events")
+}
+
+model OrderNote {
+  id         String   @id @default(uuid())
+  orderId    String   @map("order_id")
+  authorId   String   @map("author_id")
+  authorName String   @map("author_name")
+  body       String
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([orderId, createdAt])
+  @@map("order_notes")
+}

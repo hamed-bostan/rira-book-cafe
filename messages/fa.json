@@ -76,7 +76,7 @@
     "labelTooLong": "عنوان بیش از حد طولانی است.",
     "nameRequired": "نام الزامی است.",
     "nameTooLong": "نام بیش از حد طولانی است.",
-    "noteTooLong": "یادداشت باید کمتر از ۱۶۰ نویسه باشد.",
+    "noteTooLong": "این یادداشت خیلی طولانی است.",
     "originalPriceHigher": "قیمت اصلی باید بیشتر از قیمت فروش باشد.",
     "paymentMethodRequired": "روش پرداخت را انتخاب کنید.",
     "phoneInvalid": "شماره تلفن معتبری وارد کنید.",
@@ -86,7 +86,7 @@
     "priceInvalid": "قیمت معتبری وارد کنید.",
     "pricePositive": "قیمت باید بیشتر از صفر باشد.",
     "priceRequired": "قیمت را وارد کنید.",
-    "productRequired": "انتخاب محصول الزامی است.",
+    "productRequired": "یک آیتم انتخاب کنید.",
     "rateInvalid": "نرخ معتبری وارد کنید.",
     "rateRange": "نرخی بین ۰ تا ۱۰۰ وارد کنید.",
     "rateRequired": "نرخ را وارد کنید.",
@@ -105,7 +105,16 @@
     "kindInvalid": "نوشیدنی، غذا یا کتاب را انتخاب کنید.",
     "authorRequired": "کتاب باید نویسنده داشته باشد.",
     "isbnInvalid": "شابک ۱۰ یا ۱۳ رقمی معتبر وارد کنید.",
-    "availabilityInvalid": "نحوهٔ استفاده از کتاب را انتخاب کنید."
+    "availabilityInvalid": "نحوهٔ استفاده از کتاب را انتخاب کنید.",
+    "quantityWhole": "تعداد باید عدد صحیح باشد.",
+    "quantityMin": "حداقل یک عدد سفارش دهید.",
+    "quantityMax": "این تعداد برای یک سفارش زیاد است.",
+    "itemsRequired": "حداقل یک آیتم اضافه کنید.",
+    "itemsTooMany": "تعداد آیتم‌ها برای یک سفارش زیاد است.",
+    "serviceTypeInvalid": "سرو در کافه یا بیرون‌بر را انتخاب کنید.",
+    "tableRequired": "برای سرو در کافه، میز را انتخاب کنید.",
+    "statusInvalid": "این وضعیت معتبر نیست.",
+    "noteRequired": "ابتدا یادداشت را بنویسید."
   },
   "apiErrors": {
     "badRequest": "درخواست قابل پردازش نبود. دوباره تلاش کنید.",
@@ -119,7 +128,9 @@
     "timeout": "درخواست زمان زیادی طول کشید. دوباره تلاش کنید.",
     "network": "ارتباط با سرور برقرار نشد. اتصال اینترنت را بررسی کنید و دوباره تلاش کنید.",
     "server": "مشکلی پیش آمد. دوباره تلاش کنید.",
-    "inUse": "این مورد هنوز در حال استفاده است و فعلاً حذف نمی‌شود."
+    "inUse": "این مورد هنوز در حال استفاده است و فعلاً حذف نمی‌شود.",
+    "insufficientStock": "موجودی یکی از آیتم‌ها کافی نیست.",
+    "invalidTransition": "این سفارش همین الان توسط فرد دیگری تغییر کرد. وضعیت فعلی نمایش داده می‌شود."
   },
   "meta": {
     "siteName": "کافه کتاب ریرا",
@@ -134,7 +145,8 @@
       "dashboard": "داشبورد",
       "more": "بیشتر",
       "moreAria": "گزینه‌های بیشتر",
-      "products": "منو"
+      "products": "منو",
+      "orders": "سفارش‌ها"
     },
     "collapseSidebar": "جمع کردن نوار کناری",
     "errorBody": "بارگذاری این صفحه ممکن نشد. لطفاً دوباره تلاش کنید.",
@@ -155,7 +167,9 @@
     "overviewBody": "زیرساخت داشبورد آماده است. بخش‌ها با اضافه شدن قابلیت‌ها در منوی کناری نمایش داده می‌شوند.",
     "navCategories": "دسته‌بندی‌ها",
     "navProducts": "منو",
-    "groupMenu": "منو"
+    "groupMenu": "منو",
+    "navOrders": "سفارش‌ها",
+    "groupService": "سرویس"
   },
   "dashTeam": {
     "role": {
@@ -427,5 +441,88 @@
     "Dairy-Free": "بدون لبنیات",
     "Sugar-Free": "بدون شکر",
     "Caffeine-Free": "بدون کافئین"
+  },
+  "dashOrders": {
+    "heading": "سفارش‌ها",
+    "activeSummary": "{count, plural, =0 {صفی وجود ندارد} other {# سفارش در صف}}",
+    "tabsLabel": "وضعیت سفارش",
+    "tabAll": "همه",
+    "tabActive": "در صف",
+    "status": {
+      "pending": "جدید",
+      "accepted": "پذیرفته‌شده",
+      "preparing": "در حال آماده‌سازی",
+      "ready": "آماده",
+      "completed": "تحویل‌شده",
+      "cancelled": "لغوشده"
+    },
+    "advance": {
+      "pending": "علامت جدید",
+      "accepted": "پذیرش سفارش",
+      "preparing": "شروع آماده‌سازی",
+      "ready": "آماده شد",
+      "completed": "تحویل شد",
+      "cancelled": "لغو"
+    },
+    "service": {
+      "dineIn": "سرو در کافه",
+      "takeaway": "بیرون‌بر"
+    },
+    "payment": {
+      "unpaid": "پرداخت‌نشده",
+      "paid": "پرداخت‌شده"
+    },
+    "table": "میز {table}",
+    "searchLabel": "جستجوی سفارش‌ها",
+    "searchPlaceholder": "شمارهٔ سفارش، میز، نام یا تلفن…",
+    "sortLabel": "مرتب‌سازی سفارش‌ها",
+    "sortNewest": "جدیدترین",
+    "sortOldest": "قدیمی‌ترین",
+    "sortTotalHigh": "مبلغ: زیاد به کم",
+    "sortTotalLow": "مبلغ: کم به زیاد",
+    "filterServiceLabel": "فیلتر نوع سرویس",
+    "filterServiceAll": "همه",
+    "filterServiceOption": "سرویس: {service}",
+    "filterPaymentLabel": "فیلتر پرداخت",
+    "filterPaymentAll": "همه",
+    "filterPaymentOption": "پرداخت: {payment}",
+    "emptyTitle": "هنوز سفارشی ثبت نشده",
+    "emptyBody": "سفارش‌های مهمان‌ها اینجا نمایش داده می‌شوند.",
+    "colOrder": "سفارش",
+    "colGuest": "مهمان",
+    "colService": "سرویس",
+    "colItems": "آیتم‌ها",
+    "colStatus": "وضعیت",
+    "colPlaced": "زمان ثبت",
+    "colTotal": "مبلغ کل",
+    "itemCount": "{count, plural, other {# آیتم}}",
+    "viewOrderAria": "مشاهدهٔ سفارش #{number}",
+    "backToOrders": "بازگشت به سفارش‌ها",
+    "orderNumber": "سفارش #{number}",
+    "placedOn": "ثبت‌شده در {date}",
+    "itemsHeading": "آیتم‌ها",
+    "total": "مبلغ کل",
+    "notesHeading": "یادداشت‌های داخلی",
+    "serviceHeading": "سرویس",
+    "guestNote": "یادداشت مهمان",
+    "paidLabel": "پرداخت شد",
+    "paymentError": "به‌روزرسانی پرداخت ممکن نشد. دوباره تلاش کنید.",
+    "statusError": "به‌روزرسانی سفارش ممکن نشد. دوباره تلاش کنید.",
+    "cancelOrder": "لغو سفارش",
+    "cancelTitle": "سفارش #{number} لغو شود؟",
+    "cancelMessage": "آیتم‌های این سفارش به موجودی برمی‌گردند. این کار قابل بازگشت نیست.",
+    "cancelConfirm": "لغو سفارش",
+    "cancelKeep": "نگه داشتن سفارش",
+    "timelineHeading": "تاریخچه",
+    "timelineEmpty": "تاریخچه‌ای ثبت نشده.",
+    "timelinePlaced": "ثبت شد",
+    "timelineBy": "توسط {name}"
+  },
+  "dashOrderNotes": {
+    "label": "یادداشت داخلی",
+    "placeholder": "نکته‌ای برای تیم — هرگز به مهمان نشان داده نمی‌شود.",
+    "add": "افزودن یادداشت",
+    "addError": "افزودن یادداشت ممکن نشد. دوباره تلاش کنید.",
+    "empty": "هنوز یادداشتی ثبت نشده."
   }
 }

@@ -131,3 +131,24 @@ export function fiscalYearDays(jy: number): { fromDay: string; toDay: string } {
 export function jalaliToday(now: Date): JalaliDate {
   return toJalali(cafeDayOf(now));
 }
+
+/**
+ * The `count` complete Persian months before the month `today` falls in — the
+ * span averages are taken over, so a half-finished month never drags them down.
+ */
+export function completeMonthsBefore(today: JalaliDate, count: number): { fromDay: string; toDay: string } {
+  let jy = today.jy;
+  let jm = today.jm - 1;
+  if (jm === 0) {
+    jy -= 1;
+    jm = 12;
+  }
+  const toDay = jalaliMonthDays(jy, jm).toDay;
+  let sy = jy;
+  let sm = jm - (count - 1);
+  while (sm <= 0) {
+    sy -= 1;
+    sm += 12;
+  }
+  return { fromDay: jalaliMonthDays(sy, sm).fromDay, toDay };
+}

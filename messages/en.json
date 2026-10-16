@@ -137,7 +137,15 @@
     "paymentInvalid": "Choose how it was paid.",
     "vatTooHigh": "VAT must be less than the total.",
     "methodInvalid": "Choose a payment method.",
-    "methodRequired": "Choose how the guest paid."
+    "methodRequired": "Choose how the guest paid.",
+    "quantityInvalid": "Enter a quantity above zero, e.g. 18 or 0.5.",
+    "markupInvalid": "Enter a profit percentage, e.g. 30.",
+    "numberInvalid": "Enter a whole number.",
+    "unitInvalid": "Choose a unit.",
+    "ingredientRequired": "Choose an ingredient.",
+    "ingredientRepeated": "Each ingredient appears once — add the amounts together.",
+    "overheadSourceInvalid": "Choose where running costs come from.",
+    "overheadRequired": "Enter the monthly running costs."
   },
   "apiErrors": {
     "badRequest": "The request couldn't be read. Please try again.",
@@ -210,7 +218,8 @@
     "groupInsights": "Insights",
     "groupFinance": "Finance",
     "navAccounting": "Accounting",
-    "navExpenses": "Expenses"
+    "navExpenses": "Expenses",
+    "navPricing": "Pricing"
   },
   "dashTeam": {
     "membersHeading": "Team members",
@@ -1478,6 +1487,131 @@
       "save": "Save",
       "empty": "No suppliers yet.",
       "error": "Couldn't save the supplier. Please try again."
+    }
+  },
+  "dashPricing": {
+    "heading": "Pricing",
+    "subtitle": "What each item really costs, and the menu price that earns the profit you want on it.",
+    "tabsLabel": "Pricing sections",
+    "breadcrumbLabel": "Breadcrumb",
+    "cancel": "Cancel",
+    "save": "Save",
+    "tab": {
+      "items": "Menu items",
+      "ingredients": "Ingredients",
+      "settings": "Settings"
+    },
+    "summary": {
+      "monthlyOverhead": "Running costs per month",
+      "monthlyUnits": "Items sold per month",
+      "overheadPerUnit": "Running costs per item",
+      "fromBooks": "Average of recorded expenses, last {months} months",
+      "manual": "Your planned figure",
+      "fromSales": "Average of completed sales, last {months} months",
+      "expected": "Your expected figure",
+      "defaultProfit": "Default profit {percent}%",
+      "span": "Averaged over {from} – {to}."
+    },
+    "noOverhead": "Running costs aren't included yet — record expenses such as rent, salaries and utilities, or enter a planned monthly figure in",
+    "formula": "Suggested price = (ingredients + running costs per item) + your profit %, plus VAT for taxable items, rounded up.",
+    "col": {
+      "item": "Item",
+      "ingredients": "Ingredients",
+      "overhead": "Running costs",
+      "fullCost": "Full cost",
+      "profit": "Profit %",
+      "suggested": "Suggested price",
+      "current": "Price now",
+      "earnsNow": "Earns now (per item)"
+    },
+    "kind": {
+      "drink": "Drink",
+      "food": "Food",
+      "book": "Book"
+    },
+    "costSource": {
+      "recipe": "From recipe · edit",
+      "manual": "Manual cost · add recipe",
+      "none": "No cost · add recipe"
+    },
+    "vatExempt": "VAT-exempt",
+    "perMonth": "{count}/month",
+    "markupLabel": "Profit % for this item",
+    "markupError": "Couldn't save the profit. Please try again.",
+    "apply": "Use this price",
+    "applyTitle": "Change the price of {name}?",
+    "applyMessage": "The menu price goes from {from} to {to}. Guests see it immediately.",
+    "applyConfirm": "Change price",
+    "applyError": "Couldn't change the price. Please try again.",
+    "unit": {
+      "g": "g",
+      "ml": "ml",
+      "piece": "pc"
+    },
+    "unitName": {
+      "g": "Grams",
+      "ml": "Millilitres",
+      "piece": "Pieces"
+    },
+    "ingredients": {
+      "heading": "Ingredients",
+      "subtitle": "What menu items are made from, at what you pay. Update a price when it changes — every recipe that uses it is re-costed.",
+      "new": "Add ingredient",
+      "edit": "Edit {name}",
+      "empty": "No ingredients yet. Add coffee beans, milk, tea, cups…",
+      "colName": "Ingredient",
+      "colBought": "Bought at",
+      "colUnitCost": "Cost per unit",
+      "bought": "{price} for {quantity} {unit}",
+      "perUnit": "{cost} Toman / {unit}",
+      "inactive": "Inactive",
+      "nameLabel": "Name",
+      "namePlaceholder": "e.g. Espresso beans",
+      "unitLabel": "Measured in",
+      "priceLabel": "Price paid (Toman)",
+      "quantityLabel": "For how much",
+      "priceHint": "As on the invoice, e.g. 1,200,000 Toman for 1000 g.",
+      "activeLabel": "Active",
+      "error": "Couldn't save the ingredient. Please try again."
+    },
+    "recipe": {
+      "title": "Recipe: {name}",
+      "subtitle": "What goes into one serving. Saving makes the total this item's cost price, used for margins and the books.",
+      "empty": "No ingredients yet.",
+      "ingredientLabel": "Ingredient",
+      "ingredientPlaceholder": "Choose an ingredient",
+      "quantityLabel": "Amount per serving",
+      "addLine": "Add ingredient",
+      "removeLine": "Remove",
+      "total": "Ingredients cost {cost} per serving",
+      "noIngredients": "Add ingredients first:",
+      "save": "Save recipe",
+      "error": "Couldn't save the recipe. Please try again."
+    },
+    "settings": {
+      "heading": "Pricing settings",
+      "subtitle": "The assumptions behind every suggested price.",
+      "defaultMarkupLabel": "Default profit (%)",
+      "defaultMarkupHint": "Added on top of full cost for items without their own profit %. 30 means an item costing 100,000 sells for 130,000 before VAT.",
+      "overheadSourceLabel": "Running costs (rent, salaries, utilities…)",
+      "source": {
+        "ledger": "From recorded expenses",
+        "manual": "A planned monthly figure"
+      },
+      "sourceHint": {
+        "ledger": "The monthly average of operating expenses in the books.",
+        "manual": "For a new cafe, or when you expect costs to change."
+      },
+      "manualOverheadLabel": "Running costs per month (Toman)",
+      "manualOverheadHint": "Rent, salaries, electricity, gas, water, internet… everything that isn't an ingredient.",
+      "monthsLabel": "Average over (months)",
+      "monthsHint": "Complete months before this one, 1–12.",
+      "expectedUnitsLabel": "Items sold per month (optional)",
+      "expectedUnitsHint": "Leave blank to use your recent sales. Running costs are shared equally across every item sold.",
+      "roundingLabel": "Round prices up to (Toman)",
+      "roundingHint": "e.g. 5000 turns 126,698 into 130,000.",
+      "saved": "Saved.",
+      "error": "Couldn't save the settings. Please try again."
     }
   }
 }

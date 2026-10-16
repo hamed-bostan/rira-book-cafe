@@ -9,6 +9,7 @@ import type { IImageStorageRepository } from "@/src/domain/repositories/IImageSt
 import type { ILedgerRepository } from "@/src/domain/repositories/ILedgerRepository";
 import type { IOrderNoteRepository } from "@/src/domain/repositories/IOrderNoteRepository";
 import type { IOrderRepository } from "@/src/domain/repositories/IOrderRepository";
+import type { IPricingRepository } from "@/src/domain/repositories/IPricingRepository";
 import type { IProductRepository } from "@/src/domain/repositories/IProductRepository";
 import type { IReservationRepository } from "@/src/domain/repositories/IReservationRepository";
 import type { ITeamNotifier } from "@/src/domain/repositories/ITeamNotifier";
@@ -26,6 +27,7 @@ import { PrismaExpenseRepository } from "./repositories/PrismaExpenseRepository"
 import { PrismaLedgerRepository } from "./repositories/PrismaLedgerRepository";
 import { PrismaOrderNoteRepository } from "./repositories/PrismaOrderNoteRepository";
 import { PrismaOrderRepository } from "./repositories/PrismaOrderRepository";
+import { PrismaPricingRepository } from "./repositories/PrismaPricingRepository";
 import { PrismaProductRepository } from "./repositories/PrismaProductRepository";
 import { PrismaReservationRepository } from "./repositories/PrismaReservationRepository";
 import { PrismaUserRepository } from "./repositories/PrismaUserRepository";
@@ -69,6 +71,11 @@ export const analyticsRepository: IAnalyticsRepository = new PrismaAnalyticsRepo
 // transactions; the database itself refuses unbalanced or edited entries.
 export const ledgerRepository: ILedgerRepository = new PrismaLedgerRepository();
 export const expenseRepository: IExpenseRepository = new PrismaExpenseRepository();
+
+// Pricing — ingredients, recipes and the advisor's settings. Recipes keep each
+// item's cost price (what orders snapshot for cost of sales) in step with what
+// its ingredients cost.
+export const pricingRepository: IPricingRepository = new PrismaPricingRepository();
 
 // Append-only audit trail of admin changes. Read-only here: entries are written by
 // the repositories that make the changes they describe, inside the same

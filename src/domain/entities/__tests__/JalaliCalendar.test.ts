@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  completeMonthsBefore,
   fiscalYearDays,
   fromJalali,
   isLeapJalaliYear,
@@ -51,5 +52,20 @@ describe("JalaliCalendar", () => {
   it("spans months and fiscal years", () => {
     expect(jalaliMonthDays(1405, 7)).toEqual({ fromDay: "2026-09-23", toDay: "2026-10-22" });
     expect(fiscalYearDays(1405)).toEqual({ fromDay: "2026-03-21", toDay: "2027-03-20" });
+  });
+});
+
+describe("completeMonthsBefore", () => {
+  it("takes whole months before the current one, across the new year", () => {
+    // In Mehr 1405, the last three complete months are Tir–Shahrivar.
+    expect(completeMonthsBefore({ jy: 1405, jm: 7, jd: 24 }, 3)).toEqual({
+      fromDay: jalaliMonthDays(1405, 4).fromDay,
+      toDay: jalaliMonthDays(1405, 6).toDay,
+    });
+    // In Ordibehesht 1405, two months back reaches Esfand 1404.
+    expect(completeMonthsBefore({ jy: 1405, jm: 2, jd: 1 }, 2)).toEqual({
+      fromDay: jalaliMonthDays(1404, 12).fromDay,
+      toDay: jalaliMonthDays(1405, 1).toDay,
+    });
   });
 });

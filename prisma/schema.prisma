@@ -62,33 +62,37 @@ model CategoryTranslation {
 // otherwise); kind and book_availability are plain strings matching the domain
 // unions (enum-free style).
 model Product {
-  id               String   @id @default(uuid())
-  kind             String   @default("drink")
+  id               String       @id @default(uuid())
+  kind             String       @default("drink")
   name             String
   price            Int
-  originalPrice    Int?     @map("original_price")
+  originalPrice    Int?         @map("original_price")
   // What one unit costs the cafe (Toman), for cost of sales. Never shown to guests.
-  costPrice        Int?     @map("cost_price")
-  rating           Float    @default(0)
-  ratingCount      Int      @default(0) @map("rating_count")
-  stockQuantity    Int      @default(0) @map("stock_quantity")
-  imageUrl         String   @map("image_url")
-  categoryId       String   @map("category_id")
-  isFeatured       Boolean  @default(false) @map("is_featured")
-  isPublished      Boolean  @default(true) @map("is_published")
+  costPrice        Int?         @map("cost_price")
+  rating           Float        @default(0)
+  ratingCount      Int          @default(0) @map("rating_count")
+  stockQuantity    Int          @default(0) @map("stock_quantity")
+  imageUrl         String       @map("image_url")
+  categoryId       String       @map("category_id")
+  isFeatured       Boolean      @default(false) @map("is_featured")
+  isPublished      Boolean      @default(true) @map("is_published")
   badge            String?
   unit             String?
   description      String?
   nutrition        String?
   origin           String?
-  dietary          String[] @default([])
+  dietary          String[]     @default([])
   // VAT-exempt (books, in Iran). Prices are VAT-inclusive; exempt items carry none.
-  taxExempt        Boolean  @default(false) @map("tax_exempt")
-  bookAuthor       String?  @map("book_author")
-  bookIsbn         String?  @map("book_isbn")
-  bookAvailability String?  @map("book_availability")
-  createdAt        DateTime @default(now()) @map("created_at")
-  updatedAt        DateTime @updatedAt @map("updated_at")
+  taxExempt        Boolean      @default(false) @map("tax_exempt")
+  bookAuthor       String?      @map("book_author")
+  bookIsbn         String?      @map("book_isbn")
+  bookAvailability String?      @map("book_availability")
+  // The owner's profit target for this item, as a markup on full cost in basis
+  // points (3000 = 30%); null uses the cafe-wide default in pricing settings.
+  targetMarkupBps  Int?         @map("target_markup_bps")
+  recipeLines      RecipeLine[]
+  createdAt        DateTime     @default(now()) @map("created_at")
+  updatedAt        DateTime     @updatedAt @map("updated_at")
 
   @@index([categoryId])
   @@index([isPublished])
@@ -388,4 +392,52 @@ model Expense {
   @@index([status])
   @@index([supplierId])
   @@map("expenses")
+}
+
+// --- Pricing: ingredients, recipes and the advisor's settings.
+
+// Something menu items are made from, priced as bought: purchase_price Toman for
+// purchase_quantity units (g, ml or piece).
+model Ingredient {
+  id               String       @id @default(uuid())
+  name             String
+  unit             String
+  purchasePrice    Int          @map("purchase_price")
+  purchaseQuantity Float        @map("purchase_quantity")
+  isActive         Boolean      @default(true) @map("is_active")
+  recipeLines      RecipeLine[]
+  createdAt        DateTime     @default(now()) @map("created_at")
+  updatedAt        DateTime     @updatedAt @map("updated_at")
+
+  @@map("ingredients")
+}
+
+// One ingredient in a menu item's recipe. An ingredient in use can't be deleted
+// (Restrict) — it's switched off instead.
+model RecipeLine {
+  id           String     @id @default(uuid())
+  productId    String     @map("product_id")
+  product      Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  ingredientId String     @map("ingredient_id")
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Restrict)
+  quantity     Float
+  position     Int
+
+  @@unique([productId, ingredientId])
+  @@index([ingredientId])
+  @@map("recipe_lines")
+}
+
+// The pricing advisor's settings — a single row.
+model PricingSettings {
+  id                    Int      @id @default(1)
+  defaultMarkupBps      Int      @default(3000) @map("default_markup_bps")
+  roundingStep          Int      @default(5000) @map("rounding_step")
+  overheadSource        String   @default("ledger") @map("overhead_source")
+  manualMonthlyOverhead BigInt?  @map("manual_monthly_overhead")
+  expectedMonthlyUnits  Int?     @map("expected_monthly_units")
+  overheadMonths        Int      @default(3) @map("overhead_months")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  @@map("pricing_settings")
 }

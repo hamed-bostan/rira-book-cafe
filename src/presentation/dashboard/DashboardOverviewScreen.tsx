@@ -1,12 +1,14 @@
 import { CalendarClock, ClipboardList, Coins, PartyPopper, Receipt } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
+import type { StockItem } from "@/src/domain/entities/Inventory";
 import { Link } from "@/src/i18n/navigation";
 import { formatCafeDayMedium } from "@/src/lib/formatCafeDay";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { AutoRefresh } from "@/src/presentation/components/AutoRefresh";
 
+import { LowStockAlert } from "./inventory/LowStockAlert";
 import { DailySalesChart } from "./reports/DailySalesChart";
 import { TopItemsTable } from "./reports/TopItemsTable";
 import { StatCard } from "./StatCard";
@@ -19,6 +21,8 @@ type DashboardOverviewScreenProps = {
   overview: DashboardOverviewWire;
   /** The last 7 days' sales — present only for viewers with `reports.view`. */
   week: SalesReportWire | null;
+  /** Stock items, for the low-stock warning (empty without `inventory.view`). */
+  stockItems: StockItem[];
 };
 
 /**
@@ -27,7 +31,7 @@ type DashboardOverviewScreenProps = {
  * (today's takings, the week's trend, best sellers) is drawn only for viewers who
  * may see revenue.
  */
-export async function DashboardOverviewScreen({ overview, week }: DashboardOverviewScreenProps) {
+export async function DashboardOverviewScreen({ overview, week, stockItems }: DashboardOverviewScreenProps) {
   const t = await getTranslations("dashOverview");
   const tReports = await getTranslations("dashReports");
   const locale = await getLocale();
@@ -41,6 +45,8 @@ export async function DashboardOverviewScreen({ overview, week }: DashboardOverv
         <h1 className="dashboard-page-title">{t("heading")}</h1>
         <p className="mt-1 text-body-small text-muted-foreground">{formatCafeDayMedium(overview.today, locale)}</p>
       </div>
+
+      <LowStockAlert items={stockItems} />
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
         <StatCard

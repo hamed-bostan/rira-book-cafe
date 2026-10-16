@@ -79,10 +79,13 @@ export function saleEntry(order: Order, vatRateBps: number, date: string, actor:
 
 /** What a completed order's items cost the cafe, from the costs snapshotted at placement; 0 when none are known. */
 export function orderCost(order: Pick<Order, "items">): number {
-  return order.items.reduce((sum, item) => sum + (item.unitCost ?? 0) * item.quantity, 0);
+  return order.items.reduce((sum, item) => sum + (item.stockTracked ? (item.unitCost ?? 0) * item.quantity : 0), 0);
 }
 
-/** Cost of sales for a completed order, or `null` when none of its items has a cost. */
+/**
+ * Cost of sales for a completed order: the stock its recipes consumed, at average
+ * cost — exactly the value that left Inventory. `null` when nothing was consumed.
+ */
 export function costOfSalesEntry(order: Order, date: string, actor: Actor): NewJournalEntry | null {
   const cost = orderCost(order);
   if (cost <= 0) return null;
@@ -213,6 +216,32 @@ export function gatewaySettlementEntry(settlement: GatewaySettlement, actor: Act
       { accountCode: SYSTEM_ACCOUNTS.gatewayFees, debit: settlement.fee, credit: 0 },
       { accountCode: SYSTEM_ACCOUNTS.gatewayClearing, debit: 0, credit: settledAmount(settlement) },
     ],
+    createdById: actor.id,
+    createdByName: actor.name,
+  };
+}
+
+/**
+ * Closing a fiscal year: every revenue and expense account's balance for the year
+ * is brought to zero against retained earnings (3200), so the next year's profit
+ * and loss starts from nothing and the year's result sits in equity.
+ * `movements` are the year's net debits − credits per revenue/expense account.
+ */
+export function yearCloseEntry(input: { fiscalYear: number; toDay: string; movements: readonly { accountCode: string; net: number }[] }, actor: Actor): NewJournalEntry | null {
+  const lines = input.movements
+    .filter((row) => row.net !== 0)
+    .map((row) => (row.net > 0 ? { accountCode: row.accountCode, debit: 0, credit: row.net } : { accountCode: row.accountCode, debit: -row.net, credit: 0 }));
+  if (lines.length === 0) return null;
+  // Credits beat debits for a profit: the plug credits retained earnings.
+  const result = input.movements.reduce((sum, row) => sum + row.net, 0);
+  if (result < 0) lines.push({ accountCode: SYSTEM_ACCOUNTS.retainedEarnings, debit: 0, credit: -result });
+  if (result > 0) lines.push({ accountCode: SYSTEM_ACCOUNTS.retainedEarnings, debit: result, credit: 0 });
+  return {
+    date: input.toDay,
+    description: `Close fiscal year ${input.fiscalYear}`,
+    source: "yearClose",
+    uniqueKey: `yearClose:${input.fiscalYear}`,
+    lines,
     createdById: actor.id,
     createdByName: actor.name,
   };

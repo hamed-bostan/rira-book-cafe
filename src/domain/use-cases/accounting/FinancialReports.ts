@@ -38,7 +38,7 @@ export class FinancialReports {
   /** Revenue, cost of sales and expenses for entries dated within the span. */
   async profitAndLoss(fromDay: string, toDay: string): Promise<ProfitAndLoss> {
     assertSpan(fromDay, toDay);
-    const [accounts, movements] = await Promise.all([this.ledger.listAccounts(), this.ledger.movements(fromDay, toDay)]);
+    const [accounts, movements] = await Promise.all([this.ledger.listAccounts(), this.ledger.movements(fromDay, toDay, { excludeClosing: true })]);
     return buildProfitAndLoss(fromDay, toDay, accounts, movements);
   }
 

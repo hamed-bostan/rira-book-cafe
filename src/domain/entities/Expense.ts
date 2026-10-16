@@ -63,11 +63,14 @@ const MONEY_ACCOUNTS: readonly string[] = [
   SYSTEM_ACCOUNTS.bank,
   SYSTEM_ACCOUNTS.gatewayClearing,
   SYSTEM_ACCOUNTS.guestReceivables,
+  // Inventory only moves with stock — goods for stock come in as deliveries.
+  SYSTEM_ACCOUNTS.inventory,
 ];
 
 /**
  * What an expense can be booked to: an expense account (rent, salaries, …) or an
- * asset it buys — stock (inventory) or equipment. Not money accounts, liabilities,
+ * asset it buys — equipment. Not money accounts, inventory (deliveries come in
+ * through stock, so stock and the books stay equal), liabilities,
  * equity or revenue.
  */
 export function isExpenseTarget(account: Pick<Account, "code" | "type">): boolean {

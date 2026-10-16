@@ -81,6 +81,10 @@ export const JOURNAL_SOURCES = [
   "expense",
   "expensePayment",
   "gatewaySettlement",
+  "stockWaste",
+  "stockCount",
+  "stockOpening",
+  "yearClose",
   "manual",
   "reversal",
 ] as const;

@@ -170,22 +170,24 @@ model Order {
 }
 
 model OrderItem {
-  id        String  @id @default(uuid())
-  orderId   String  @map("order_id")
-  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  id           String  @id @default(uuid())
+  orderId      String  @map("order_id")
+  order        Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   // Plain reference, not a foreign key: deleting a menu item must not touch history.
-  productId String  @map("product_id")
-  kind      String
-  name      String
-  imageUrl  String  @map("image_url")
-  unitPrice Int     @map("unit_price")
+  productId    String  @map("product_id")
+  kind         String
+  name         String
+  imageUrl     String  @map("image_url")
+  unitPrice    Int     @map("unit_price")
   // Cost per unit when placed, if the item had one — for cost of sales.
-  unitCost  Int?    @map("unit_cost")
+  unitCost     Int?    @map("unit_cost")
   // Whether the item was VAT-exempt when placed (books are); the sale's VAT comes from the rest.
-  taxExempt Boolean @default(false) @map("tax_exempt")
-  quantity  Int
-  note      String?
-  position  Int
+  taxExempt    Boolean @default(false) @map("tax_exempt")
+  // Set at completion when the line's recipe was taken out of stock (unit_cost is then actual).
+  stockTracked Boolean @default(false) @map("stock_tracked")
+  quantity     Int
+  note         String?
+  position     Int
 
   @@index([orderId])
   @@map("order_items")
@@ -427,15 +429,23 @@ model Expense {
 // Something menu items are made from, priced as bought: purchase_price Toman for
 // purchase_quantity units (g, ml or piece).
 model Ingredient {
-  id               String       @id @default(uuid())
+  id               String          @id @default(uuid())
   name             String
   unit             String
-  purchasePrice    Int          @map("purchase_price")
-  purchaseQuantity Float        @map("purchase_quantity")
-  isActive         Boolean      @default(true) @map("is_active")
+  purchasePrice    Int             @map("purchase_price")
+  purchaseQuantity Float           @map("purchase_quantity")
+  isActive         Boolean         @default(true) @map("is_active")
+  // Perpetual inventory: on hand (in unit), its value in Toman (always equal to
+  // what the Inventory account holds for it), weighted average cost per unit, and
+  // the level at or below which it shows as running low.
+  onHand           Float           @default(0) @map("on_hand")
+  stockValue       BigInt          @default(0) @map("stock_value")
+  averageCost      Float           @default(0) @map("average_cost")
+  reorderLevel     Float?          @map("reorder_level")
   recipeLines      RecipeLine[]
-  createdAt        DateTime     @default(now()) @map("created_at")
-  updatedAt        DateTime     @updatedAt @map("updated_at")
+  stockMovements   StockMovement[]
+  createdAt        DateTime        @default(now()) @map("created_at")
+  updatedAt        DateTime        @updatedAt @map("updated_at")
 
   @@map("ingredients")
 }
@@ -468,4 +478,27 @@ model PricingSettings {
   updatedAt             DateTime @updatedAt @map("updated_at")
 
   @@map("pricing_settings")
+}
+
+// One change to one stock item — append-only, like the journal. Quantity and value
+// are signed (in positive, out negative); reference_id is the order, receipt
+// (expense) or count it belongs to.
+model StockMovement {
+  id            String     @id @default(uuid())
+  ingredientId  String     @map("ingredient_id")
+  ingredient    Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Restrict)
+  kind          String
+  quantity      Float
+  value         BigInt
+  date          DateTime   @db.Date
+  referenceId   String?    @map("reference_id")
+  note          String?
+  createdById   String     @map("created_by_id")
+  createdByName String     @map("created_by_name")
+  createdAt     DateTime   @default(now()) @map("created_at")
+
+  @@index([ingredientId, date])
+  @@index([referenceId])
+  @@index([date])
+  @@map("stock_movements")
 }

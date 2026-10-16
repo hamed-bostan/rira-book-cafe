@@ -12,6 +12,12 @@ export type LedgerHook<T> = (result: T, settings: AccountingSettings) => NewJour
 
 export type NewAccount = Pick<Account, "code" | "name" | "nameFa" | "type">;
 
+/**
+ * `excludeClosing` leaves out year-end closing entries — for anything measuring a
+ * period's activity (P&L, overhead), which the close would otherwise zero out.
+ */
+export type MovementOptions = { excludeClosing?: boolean };
+
 export type JournalFilters = {
   fromDay?: string;
   toDay?: string;
@@ -86,7 +92,12 @@ export type ILedgerRepository = {
   entriesFor(sourceId: string): Promise<JournalEntry[]>;
 
   /** Total debits/credits per account for entries dated within `[fromDay, toDay]` (either bound optional). */
-  movements(fromDay?: string, toDay?: string): Promise<AccountMovement[]>;
+  movements(fromDay?: string, toDay?: string, options?: MovementOptions): Promise<AccountMovement[]>;
+  /**
+   * Post a fiscal year's closing entry and lock the books through its last day, in
+   * one transaction; `ALREADY_POSTED` when the year is already closed.
+   */
+  closeYear(entry: NewJournalEntry, closeThrough: string, audit?: AuditHook<JournalEntry>): Promise<JournalEntry>;
   /** One account's lines within the span, in posting order. */
   accountLines(code: string, fromDay: string, toDay: string): Promise<RawLedgerLine[]>;
   vatMovement(fromDay: string, toDay: string): Promise<VatMovement>;

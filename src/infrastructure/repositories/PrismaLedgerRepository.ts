@@ -11,6 +11,7 @@ import type {
   ILedgerRepository,
   ItemSalesCost,
   JournalFilters,
+  MovementOptions,
   NewAccount,
   RawLedgerLine,
   VatMovement,
@@ -79,6 +80,22 @@ export class PrismaLedgerRepository implements ILedgerRepository {
     });
   }
 
+  async closeYear(entry: NewJournalEntry, closeThrough: string, audit?: AuditHook<JournalEntry>): Promise<JournalEntry> {
+    return prisma.$transaction(async (tx) => {
+      const posted = await postEntry(tx, entry);
+      const settings = await readSettings(tx);
+      if (!settings.booksClosedThrough || settings.booksClosedThrough < closeThrough) {
+        await tx.accountingSettings.upsert({
+          where: { id: 1 },
+          create: { id: 1, vatRateBps: settings.vatRateBps, booksClosedThrough: dayToDate(closeThrough) },
+          update: { booksClosedThrough: dayToDate(closeThrough) },
+        });
+      }
+      await recordAudit(tx, posted, audit);
+      return posted;
+    });
+  }
+
   async post(entry: NewJournalEntry, audit?: AuditHook<JournalEntry>): Promise<JournalEntry> {
     return prisma.$transaction(async (tx) => {
       const posted = await postEntry(tx, entry);
@@ -121,7 +138,13 @@ export class PrismaLedgerRepository implements ILedgerRepository {
     };
     const { skip, take } = toSkipTake(page);
     const [rows, total] = await prisma.$transaction([
-      prisma.journalEntry.findMany({ where, orderBy: [{ date: "desc" }, { number: "desc" }], skip, take, include: ENTRY_WITH_LINES }),
+      prisma.journalEntry.findMany({
+        where,
+        orderBy: [{ date: page.direction ?? "desc" }, { number: page.direction ?? "desc" }],
+        skip,
+        take,
+        include: ENTRY_WITH_LINES,
+      }),
       prisma.journalEntry.count({ where }),
     ]);
     return createPage(rows.map(toJournalEntry), total, page);
@@ -136,12 +159,13 @@ export class PrismaLedgerRepository implements ILedgerRepository {
     return rows.map(toJournalEntry);
   }
 
-  async movements(fromDay?: string, toDay?: string): Promise<AccountMovement[]> {
+  async movements(fromDay?: string, toDay?: string, options: MovementOptions = {}): Promise<AccountMovement[]> {
     const rows = await prisma.$queryRaw<{ account_code: string; debit: bigint | null; credit: bigint | null }[]>`
       SELECT l.account_code, SUM(l.debit) AS debit, SUM(l.credit) AS credit
       FROM journal_lines l JOIN journal_entries e ON e.id = l.entry_id
       WHERE (${fromDay ?? null}::date IS NULL OR e.date >= ${fromDay ?? null}::date)
         AND (${toDay ?? null}::date IS NULL OR e.date <= ${toDay ?? null}::date)
+        AND (${options.excludeClosing === true} = false OR e.source <> 'yearClose')
       GROUP BY l.account_code`;
     return rows.map((row) => ({ accountCode: row.account_code, debit: Number(row.debit ?? 0), credit: Number(row.credit ?? 0) }));
   }

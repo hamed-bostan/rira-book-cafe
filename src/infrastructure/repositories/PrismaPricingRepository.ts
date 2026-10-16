@@ -149,6 +149,12 @@ export class PrismaPricingRepository implements IPricingRepository {
   }
 }
 
+/** Re-cost every item whose recipe uses any of these ingredients (after a price change). */
+export async function recostProductsUsing(tx: Prisma.TransactionClient, ingredientIds: readonly string[]): Promise<void> {
+  const affected = await tx.recipeLine.findMany({ where: { ingredientId: { in: [...ingredientIds] } }, select: { productId: true } });
+  for (const productId of new Set(affected.map((line) => line.productId))) await recostProduct(tx, productId);
+}
+
 /** Set a product's cost price from its recipe; a product without a recipe keeps its manual cost. */
 async function recostProduct(tx: Prisma.TransactionClient, productId: string): Promise<void> {
   const lines = await tx.recipeLine.findMany({ where: { productId }, include: { ingredient: true } });

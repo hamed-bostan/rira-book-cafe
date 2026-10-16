@@ -40,3 +40,19 @@ export function optionalTextField(max: number) {
     .max(max, "textTooLong")
     .transform((value) => (value.length > 0 ? value : undefined));
 }
+
+/** A quantity above zero as typed: "18", "0.5", "1000" (up to 3 decimals). */
+export const quantityField = z
+  .string()
+  .trim()
+  .regex(/^\d+(\.\d{1,3})?$/, "quantityInvalid")
+  .transform(Number)
+  .refine((n) => n > 0 && n <= 10_000_000, "quantityInvalid");
+
+/** A counted quantity: zero or more. */
+export const countField = z
+  .string()
+  .trim()
+  .regex(/^\d+(\.\d{1,3})?$/, "quantityInvalid")
+  .transform(Number)
+  .refine((n) => n <= 10_000_000, "quantityInvalid");

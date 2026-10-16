@@ -1,5 +1,6 @@
 import {
   BarChart3,
+  Boxes,
   Calculator,
   CalendarClock,
   ClipboardList,
@@ -39,6 +40,7 @@ export type DashboardSectionLabelKey =
   | "navEvents"
   | "navProducts"
   | "navCategories"
+  | "navInventory"
   | "navReports"
   | "navAccounting"
   | "navExpenses"
@@ -70,6 +72,8 @@ const SECTIONS = [
   // "do we still have this?". The write controls inside it are gated on `catalog.write`.
   { href: "/dashboard/products", labelKey: "navProducts", icon: Coffee, needs: "dashboard.view", group: "groupMenu" },
   { href: "/dashboard/categories", labelKey: "navCategories", icon: Tag, needs: "catalog.write", group: "groupMenu" },
+  // What's on the shelves — everyone on the floor sees what's running out.
+  { href: "/dashboard/inventory", labelKey: "navInventory", icon: Boxes, needs: "inventory.view", group: "groupMenu" },
 
   // Revenue and the reports behind it — admin and owner only.
   { href: "/dashboard/reports", labelKey: "navReports", icon: BarChart3, needs: "reports.view", group: "groupInsights" },

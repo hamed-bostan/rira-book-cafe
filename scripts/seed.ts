@@ -10,13 +10,12 @@
  * Images are the bundled SVGs under `public/images/seed`, so no Supabase setup is
  * needed to see the menu.
  */
-import { PrismaClient } from "@prisma/client";
-
 import { cafeDayOf, shiftCafeDay, wallTimeToDate } from "@/src/domain/entities/CafeTime";
+import { openingStockEntry } from "@/src/domain/entities/Inventory";
 import { isPlausiblePhone, normalizePhone } from "@/src/domain/entities/Phone";
 import { recipeCost } from "@/src/domain/entities/Pricing";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/src/infrastructure/prisma/client";
+import { PrismaInventoryRepository } from "@/src/infrastructure/repositories/PrismaInventoryRepository";
 
 const img = (name: string) => `/images/seed/${name}.svg`;
 
@@ -358,22 +357,29 @@ async function seedOwner(): Promise<string | null> {
 }
 
 /**
- * Sample ingredients at plausible Tehran prices, and recipes for the drinks and
- * the omelette, so the pricing advisor has real costs to work with. Cakes and
- * books keep their manual cost price (bought in whole).
+ * Sample stock at plausible Tehran prices: ingredients, and the resale goods
+ * (books, cakes bought whole) that are sold one piece at a time. Each has a
+ * reorder level and an opening quantity; a few are deliberately low or empty so
+ * the low-stock warnings show on a fresh database.
  */
-const INGREDIENTS = [
-  { id: "seed-ing-beans", name: "Espresso beans", unit: "g", purchasePrice: 1_800_000, purchaseQuantity: 1000 },
-  { id: "seed-ing-milk", name: "Milk", unit: "ml", purchasePrice: 70_000, purchaseQuantity: 1000 },
-  { id: "seed-ing-saffron", name: "Saffron", unit: "g", purchasePrice: 1_200_000, purchaseQuantity: 4 },
-  { id: "seed-ing-tea", name: "Black tea", unit: "g", purchasePrice: 900_000, purchaseQuantity: 500 },
-  { id: "seed-ing-sugar", name: "Sugar", unit: "g", purchasePrice: 80_000, purchaseQuantity: 1000 },
-  { id: "seed-ing-condensed", name: "Condensed milk", unit: "g", purchasePrice: 180_000, purchaseQuantity: 400 },
-  { id: "seed-ing-lemon", name: "Lemon juice", unit: "ml", purchasePrice: 150_000, purchaseQuantity: 1000 },
-  { id: "seed-ing-mint", name: "Fresh mint", unit: "g", purchasePrice: 60_000, purchaseQuantity: 250 },
-  { id: "seed-ing-cup", name: "Cold cup and lid", unit: "piece", purchasePrice: 400_000, purchaseQuantity: 50 },
-  { id: "seed-ing-eggs", name: "Eggs", unit: "piece", purchasePrice: 750_000, purchaseQuantity: 30 },
-  { id: "seed-ing-bread", name: "Barbari bread", unit: "piece", purchasePrice: 20_000, purchaseQuantity: 1 },
+const STOCK_ITEMS = [
+  { id: "seed-ing-beans", name: "Espresso beans", unit: "g", purchasePrice: 1_800_000, purchaseQuantity: 1000, reorderLevel: 2000, opening: 6000 },
+  { id: "seed-ing-milk", name: "Milk", unit: "ml", purchasePrice: 70_000, purchaseQuantity: 1000, reorderLevel: 10_000, opening: 8000 },
+  { id: "seed-ing-saffron", name: "Saffron", unit: "g", purchasePrice: 1_200_000, purchaseQuantity: 4, reorderLevel: 4, opening: 2 },
+  { id: "seed-ing-tea", name: "Black tea", unit: "g", purchasePrice: 900_000, purchaseQuantity: 500, reorderLevel: 500, opening: 1500 },
+  { id: "seed-ing-sugar", name: "Sugar", unit: "g", purchasePrice: 80_000, purchaseQuantity: 1000, reorderLevel: 2000, opening: 5000 },
+  { id: "seed-ing-condensed", name: "Condensed milk", unit: "g", purchasePrice: 180_000, purchaseQuantity: 400, reorderLevel: 800, opening: 1600 },
+  { id: "seed-ing-lemon", name: "Lemon juice", unit: "ml", purchasePrice: 150_000, purchaseQuantity: 1000, reorderLevel: 1000, opening: 3000 },
+  { id: "seed-ing-mint", name: "Fresh mint", unit: "g", purchasePrice: 60_000, purchaseQuantity: 250, reorderLevel: 100, opening: 0 },
+  { id: "seed-ing-cup", name: "Cold cup and lid", unit: "piece", purchasePrice: 400_000, purchaseQuantity: 50, reorderLevel: 50, opening: 200 },
+  { id: "seed-ing-eggs", name: "Eggs", unit: "piece", purchasePrice: 750_000, purchaseQuantity: 30, reorderLevel: 30, opening: 90 },
+  { id: "seed-ing-bread", name: "Barbari bread", unit: "piece", purchasePrice: 20_000, purchaseQuantity: 1, reorderLevel: 5, opening: 12 },
+  { id: "seed-ing-cheese", name: "Lighvan cheese", unit: "g", purchasePrice: 500_000, purchaseQuantity: 1000, reorderLevel: 500, opening: 2000 },
+  { id: "seed-ing-saffron-cake", name: "Saffron cake (slice)", unit: "piece", purchasePrice: 440_000, purchaseQuantity: 10, reorderLevel: 4, opening: 10 },
+  { id: "seed-ing-carrot-cake", name: "Carrot cake (slice)", unit: "piece", purchasePrice: 480_000, purchaseQuantity: 10, reorderLevel: 4, opening: 3 },
+  { id: "seed-ing-book-blind-owl", name: "The Blind Owl (copy)", unit: "piece", purchasePrice: 182_000, purchaseQuantity: 1, reorderLevel: 2, opening: 6 },
+  { id: "seed-ing-book-savushun", name: "Savushun (copy)", unit: "piece", purchasePrice: 228_000, purchaseQuantity: 1, reorderLevel: 2, opening: 5 },
+  { id: "seed-ing-book-uncle-napoleon", name: "My Uncle Napoleon (copy)", unit: "piece", purchasePrice: 273_000, purchaseQuantity: 1, reorderLevel: 2, opening: 2 },
 ] as const;
 
 const RECIPES: Record<string, { ingredientId: string; quantity: number }[]> = {
@@ -408,20 +414,43 @@ const RECIPES: Record<string, { ingredientId: string; quantity: number }[]> = {
     { ingredientId: "seed-ing-eggs", quantity: 3 },
     { ingredientId: "seed-ing-bread", quantity: 1 },
   ],
+  "seed-breakfast-plate": [
+    { ingredientId: "seed-ing-eggs", quantity: 2 },
+    { ingredientId: "seed-ing-bread", quantity: 1 },
+    { ingredientId: "seed-ing-cheese", quantity: 60 },
+  ],
+  // Resale goods: one piece per sale.
+  "seed-saffron-cake": [{ ingredientId: "seed-ing-saffron-cake", quantity: 1 }],
+  "seed-carrot-cake": [{ ingredientId: "seed-ing-carrot-cake", quantity: 1 }],
+  "seed-book-blind-owl": [{ ingredientId: "seed-ing-book-blind-owl", quantity: 1 }],
+  "seed-book-savushun": [{ ingredientId: "seed-ing-book-savushun", quantity: 1 }],
+  "seed-book-uncle-napoleon": [{ ingredientId: "seed-ing-book-uncle-napoleon", quantity: 1 }],
 };
 
 async function seedRecipes(): Promise<void> {
-  for (const ingredient of INGREDIENTS) {
-    const { id, ...data } = ingredient;
-    await prisma.ingredient.upsert({ where: { id }, create: ingredient, update: data });
+  for (const { opening: _opening, ...item } of STOCK_ITEMS) {
+    const { id, ...data } = item;
+    await prisma.ingredient.upsert({ where: { id }, create: item, update: data });
   }
-  const byId = new Map<string, { purchasePrice: number; purchaseQuantity: number }>(INGREDIENTS.map((ingredient) => [ingredient.id, ingredient]));
+  const byId = new Map<string, { purchasePrice: number; purchaseQuantity: number }>(STOCK_ITEMS.map((item) => [item.id, item]));
   for (const [productId, lines] of Object.entries(RECIPES)) {
     await prisma.recipeLine.deleteMany({ where: { productId } });
     await prisma.recipeLine.createMany({ data: lines.map((line, position) => ({ productId, ...line, position })) });
     // The item's cost price follows its recipe, as it does when edited in the dashboard.
     const cost = recipeCost(lines, byId);
     if (cost !== null) await prisma.product.update({ where: { id: productId }, data: { costPrice: cost } });
+  }
+
+  // Opening stock goes through the real path (stock movements + the journal entry),
+  // so stock and the Inventory account agree from the start. Only on a fresh stock.
+  if ((await prisma.stockMovement.count()) === 0) {
+    const lines = STOCK_ITEMS.filter((item) => item.opening > 0).map((item) => ({
+      ingredientId: item.id,
+      quantity: item.opening,
+      cost: Math.round((item.purchasePrice / item.purchaseQuantity) * item.opening),
+    }));
+    const actor = { id: "seed", name: "Seed" };
+    await new PrismaInventoryRepository().recordOpening({ date: cafeDayOf(new Date()), lines }, (event) => openingStockEntry(event, actor), actor);
   }
 }
 

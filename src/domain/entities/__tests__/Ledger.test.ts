@@ -19,9 +19,9 @@ const ORDER: Order = {
   tableLabel: "4",
   paymentStatus: "unpaid",
   items: [
-    { id: "i1", productId: "p1", kind: "drink", name: "Cappuccino", imageUrl: "", unitPrice: 145000, unitCost: 40000, quantity: 2 },
+    { id: "i1", productId: "p1", kind: "drink", name: "Cappuccino", imageUrl: "", unitPrice: 145000, unitCost: 40000, stockTracked: true, quantity: 2 },
     { id: "i2", productId: "p2", kind: "food", name: "Cake", imageUrl: "", unitPrice: 110000, quantity: 1 },
-    { id: "i3", productId: "p3", kind: "book", name: "Book", imageUrl: "", unitPrice: 280000, unitCost: 180000, quantity: 1 },
+    { id: "i3", productId: "p3", kind: "book", name: "Book", imageUrl: "", unitPrice: 280000, unitCost: 180000, stockTracked: true, quantity: 1 },
   ],
   subtotal: 680000,
   total: 680000,
@@ -84,7 +84,7 @@ describe("posting rules", () => {
     expect(totals(entry)).toEqual({ debit: 680000, credit: 680000 });
   });
 
-  it("books cost of sales only for items with a cost", () => {
+  it("books cost of sales only for lines whose recipe used stock", () => {
     const entry = costOfSalesEntry(ORDER, "2026-10-16", ACTOR);
     expect(entry?.lines).toEqual([
       { accountCode: "5100", debit: 260000, credit: 0 },

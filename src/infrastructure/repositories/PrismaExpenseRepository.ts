@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 
+import { cafeDayOf } from "@/src/domain/entities/CafeTime";
 import {
   EXPENSE_STATUSES,
   PAYMENT_SOURCES,
@@ -8,6 +9,7 @@ import {
   type PaymentSource,
   type Supplier,
 } from "@/src/domain/entities/Expense";
+import { roundQuantity } from "@/src/domain/entities/Inventory";
 import type { JournalEntry, NewJournalEntry } from "@/src/domain/entities/Ledger";
 import { createPage, toSkipTake, type Page, type PageRequest } from "@/src/domain/entities/Pagination";
 import { ConflictError } from "@/src/domain/errors/ConflictError";
@@ -16,9 +18,11 @@ import type { AuditHook } from "@/src/domain/repositories/AuditHook";
 import type { ExpenseFilters, IExpenseRepository, NewExpense, NewSupplier } from "@/src/domain/repositories/IExpenseRepository";
 import type { LedgerHook } from "@/src/domain/repositories/ILedgerRepository";
 import { prisma } from "@/src/infrastructure/prisma/client";
+import { inTransaction, type PrismaDb } from "@/src/infrastructure/prisma/transaction";
 
 import { recordAudit } from "./writeActivityEntry";
 import { dateToDay, dayToDate, ENTRY_WITH_LINES, postHook, reverseEntry, toJournalEntry } from "./writeJournal";
+import { lockStock, writeMovement } from "./writeStock";
 
 type ExpenseRow = Prisma.ExpenseGetPayload<object>;
 
@@ -28,6 +32,9 @@ type ExpenseRow = Prisma.ExpenseGetPayload<object>;
  * its entry (or be paid without the payment being booked).
  */
 export class PrismaExpenseRepository implements IExpenseRepository {
+  /** The root client, or a transaction to join — a stock receipt records its bill inside its own. */
+  constructor(private readonly db: PrismaDb = prisma) {}
+
   async listSuppliers(includeInactive: boolean): Promise<Supplier[]> {
     const rows = await prisma.supplier.findMany({
       where: includeInactive ? {} : { isActive: true },
@@ -94,7 +101,7 @@ export class PrismaExpenseRepository implements IExpenseRepository {
   }
 
   async create(input: NewExpense, ledger: LedgerHook<Expense>, audit?: AuditHook<Expense>): Promise<Expense> {
-    return prisma.$transaction(async (tx) => {
+    return inTransaction(this.db, async (tx) => {
       const supplier = input.supplierId ? await tx.supplier.findUnique({ where: { id: input.supplierId } }) : null;
       if (input.supplierId && !supplier) throw new NotFoundError("supplier", input.supplierId);
 
@@ -129,7 +136,7 @@ export class PrismaExpenseRepository implements IExpenseRepository {
     ledger: LedgerHook<Expense>,
     audit?: AuditHook<Expense>,
   ): Promise<Expense> {
-    return prisma.$transaction(async (tx) => {
+    return inTransaction(this.db, async (tx) => {
       // Guarded on still being unpaid: paying twice (two clicks, two tabs) books nothing twice.
       const result = await tx.expense.updateMany({
         where: { id, status: "unpaid" },
@@ -148,7 +155,7 @@ export class PrismaExpenseRepository implements IExpenseRepository {
   }
 
   async void(id: string, reverse: (entry: JournalEntry) => NewJournalEntry, audit?: AuditHook<Expense>): Promise<Expense> {
-    return prisma.$transaction(async (tx) => {
+    return inTransaction(this.db, async (tx) => {
       const result = await tx.expense.updateMany({ where: { id, status: { not: "void" } }, data: { status: "void" } });
       if (result.count === 0) {
         const current = await tx.expense.findUnique({ where: { id } });
@@ -164,10 +171,44 @@ export class PrismaExpenseRepository implements IExpenseRepository {
       for (const entry of entries) {
         await reverseEntry(tx, toJournalEntry(entry), reverse);
       }
+      await returnReceivedStock(tx, id);
       const expense = toExpense(await tx.expense.findUniqueOrThrow({ where: { id } }));
       await recordAudit(tx, expense, audit);
       return expense;
     });
+  }
+}
+
+/**
+ * A voided stock receipt takes the goods back out at what they cost, matching the
+ * reversal of its Dr Inventory. Refused when some of it has already been used —
+ * then a count or waste entry is the honest correction.
+ */
+async function returnReceivedStock(tx: Prisma.TransactionClient, expenseId: string): Promise<void> {
+  const received = await tx.stockMovement.findMany({ where: { referenceId: expenseId, kind: "receipt" } });
+  if (received.length === 0) return;
+  const net = new Map<string, { quantity: number; value: number }>();
+  for (const row of received) {
+    const total = net.get(row.ingredientId) ?? { quantity: 0, value: 0 };
+    net.set(row.ingredientId, { quantity: total.quantity + row.quantity, value: total.value + Number(row.value) });
+  }
+  const stock = await lockStock(tx, [...net.keys()]);
+  const today = cafeDayOf(new Date());
+  for (const [ingredientId, { quantity, value }] of net) {
+    const current = stock.get(ingredientId);
+    if (!current || quantity <= 0) continue;
+    if (current.onHand + 1e-9 < quantity) {
+      throw new ConflictError("STOCK_USED", `Some of the ${current.name} from this delivery has already been used, so it can't be voided.`);
+    }
+    const onHand = roundQuantity(current.onHand - quantity);
+    const remaining = current.value - value;
+    await writeMovement(
+      tx,
+      current,
+      { onHand, value: remaining, averageCost: onHand > 0 ? remaining / onHand : current.averageCost },
+      { kind: "receipt", quantity: -quantity, value: -value, date: today, referenceId: expenseId, note: "Delivery voided" },
+      { id: "system", name: "Void" },
+    );
   }
 }
 

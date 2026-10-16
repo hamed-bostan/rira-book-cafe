@@ -83,6 +83,13 @@ export type OrderItem = {
   unitCost?: number;
   /** VAT-exempt when placed (books); everything else carries VAT inside its price. */
   taxExempt?: boolean;
+  /**
+   * Set when the order completes and the line's recipe was taken out of stock: its
+   * `unitCost` is then the actual average cost consumed, and it's booked as cost of
+   * sales. Lines without a recipe aren't stock-tracked — their purchases were
+   * expensed when bought — so they carry a cost for margins but book none.
+   */
+  stockTracked?: boolean;
   quantity: number;
   /** The guest's request for this line, e.g. "oat milk, no sugar". */
   note?: string;

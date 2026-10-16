@@ -25,8 +25,8 @@ function order(overrides: Partial<Order> = {}): Order {
     serviceType: "dineIn",
     paymentStatus: "unpaid",
     items: [
-      { id: "i1", productId: "p1", kind: "drink", name: "Latte", imageUrl: "", unitPrice: 110_000, unitCost: 40_000, quantity: 2 },
-      { id: "i2", productId: "p2", kind: "book", name: "Novel", imageUrl: "", unitPrice: 330_000, unitCost: 220_000, quantity: 1 },
+      { id: "i1", productId: "p1", kind: "drink", name: "Latte", imageUrl: "", unitPrice: 110_000, unitCost: 40_000, stockTracked: true, quantity: 2 },
+      { id: "i2", productId: "p2", kind: "book", name: "Novel", imageUrl: "", unitPrice: 330_000, unitCost: 220_000, stockTracked: true, quantity: 1 },
     ],
     subtotal: 550_000,
     total: 550_000,

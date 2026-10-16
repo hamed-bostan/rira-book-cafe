@@ -45,7 +45,7 @@ export class GetPricingReport {
     ]);
 
     const span = completeMonthsBefore(jalaliToday(now), settings.overheadMonths);
-    const [movements, sales] = await Promise.all([this.ledger.movements(span.fromDay, span.toDay), this.ledger.itemSalesCost(span.fromDay, span.toDay)]);
+    const [movements, sales] = await Promise.all([this.ledger.movements(span.fromDay, span.toDay, { excludeClosing: true }), this.ledger.itemSalesCost(span.fromDay, span.toDay)]);
 
     const operating = new Set(accounts.filter((account) => account.type === "expense" && !isCostOfSales(account)).map((account) => account.code));
     const recordedOverhead = movements.filter((row) => operating.has(row.accountCode)).reduce((sum, row) => sum + row.debit - row.credit, 0);

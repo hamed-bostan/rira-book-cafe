@@ -146,7 +146,8 @@
     "ingredientRequired": "Choose an ingredient.",
     "ingredientRepeated": "Each ingredient appears once — add the amounts together.",
     "overheadSourceInvalid": "Choose where running costs come from.",
-    "overheadRequired": "Enter the monthly running costs."
+    "overheadRequired": "Enter the monthly running costs.",
+    "deliveryTotalRequired": "Enter what the delivery cost."
   },
   "apiErrors": {
     "badRequest": "The request couldn't be read. Please try again.",
@@ -175,7 +176,9 @@
     "unbalanced": "Debits and credits must be equal.",
     "notPayable": "This order can't be paid online — it's already paid or was cancelled.",
     "paymentInProgress": "A payment for this order is being confirmed. Please wait a moment.",
-    "gatewayUnavailable": "The payment gateway isn't available right now. Please try again shortly."
+    "gatewayUnavailable": "The payment gateway isn't available right now. Please try again shortly.",
+    "stockUsed": "Some of this delivery has already been used, so it can't be voided. Record a count or waste instead.",
+    "yearNotEnded": "That fiscal year hasn't ended yet."
   },
   "meta": {
     "siteName": "Rira Book Cafe",
@@ -223,7 +226,8 @@
     "groupFinance": "Finance",
     "navAccounting": "Accounting",
     "navExpenses": "Expenses",
-    "navPricing": "Pricing"
+    "navPricing": "Pricing",
+    "navInventory": "Inventory"
   },
   "dashTeam": {
     "membersHeading": "Team members",
@@ -1243,7 +1247,11 @@
       "expensePayment": "Bill payment",
       "manual": "Manual",
       "reversal": "Reversal",
-      "gatewaySettlement": "Gateway payout"
+      "gatewaySettlement": "Gateway payout",
+      "stockWaste": "Waste",
+      "stockCount": "Stock count",
+      "stockOpening": "Opening stock",
+      "yearClose": "Year-end close"
     },
     "entry": {
       "title": "Journal entry JE-{number}",
@@ -1431,6 +1439,18 @@
       "noCost": "No cost price",
       "missingCost": "{amount} of sales came from items with no cost price, so their margin isn't counted. Add cost prices on the menu to include them.",
       "empty": "No completed sales in this period."
+    },
+    "yearClose": {
+      "heading": "Fiscal year close",
+      "description": "Closing a finished year moves its profit into retained earnings and locks the books through its last day. Do it after the year's final stock count and adjustments.",
+      "year": "Year {year}",
+      "closed": "Closed",
+      "open": "In progress",
+      "toClose": "Ready to close",
+      "close": "Close year",
+      "confirmTitle": "Close fiscal year {year}?",
+      "confirmMessage": "The year's revenue and expenses move into retained earnings, and nothing dated in the year can be posted afterwards. This can't be undone from here.",
+      "error": "Couldn't close the year. Please try again."
     }
   },
   "dashExpenses": {
@@ -1644,6 +1664,125 @@
       "roundingHint": "e.g. 5000 turns 126,698 into 130,000.",
       "saved": "Saved.",
       "error": "Couldn't save the settings. Please try again."
+    }
+  },
+  "dashInventory": {
+    "heading": "Inventory",
+    "subtitle": "What's on the shelves, valued at average cost. Sales use stock up through their recipes.",
+    "breadcrumbLabel": "Breadcrumb",
+    "cancel": "Cancel",
+    "dateLabel": "Date",
+    "filterLabel": "Show",
+    "filter": {
+      "all": "All items",
+      "low": "Running low",
+      "out": "Out of stock"
+    },
+    "level": {
+      "out": "Out of stock",
+      "low": "Running low",
+      "ok": "In stock"
+    },
+    "unit": {
+      "g": "g",
+      "ml": "ml",
+      "piece": "pc"
+    },
+    "perUnit": "{cost} / {unit}",
+    "summary": {
+      "low": "Running low",
+      "lowHint": "At or below their reorder level",
+      "out": "Out of stock",
+      "outHint": "Nothing left — order now",
+      "value": "Stock value",
+      "valueHint": "At average cost",
+      "reconciled": "Stock value matches the Inventory account in the books.",
+      "notReconciled": "Stock is worth {stock} but the Inventory account holds {books} — something was booked to Inventory outside a delivery, count or waste entry."
+    },
+    "col": {
+      "item": "Item",
+      "onHand": "On hand",
+      "reorder": "Reorder at",
+      "status": "Status",
+      "averageCost": "Average cost",
+      "value": "Value"
+    },
+    "empty": "No stock items yet.",
+    "emptyFiltered": "Nothing here — every item is stocked.",
+    "addItems": "Add ingredients and resale goods",
+    "reorderLabel": "Reorder level",
+    "reorderError": "Couldn't save the reorder level. Please try again.",
+    "openingHint": "Starting out with stock already on the shelves?",
+    "alert": {
+      "title": "{count, plural, one {# item needs restocking} other {# items need restocking}}",
+      "open": "Open inventory",
+      "more": "and {count} more"
+    },
+    "lines": {
+      "label": "Items",
+      "item": "Item",
+      "itemPlaceholder": "Choose an item",
+      "quantity": "Quantity",
+      "add": "Add item",
+      "remove": "Remove",
+      "total": "Total {total}"
+    },
+    "receive": {
+      "heading": "Receive delivery",
+      "subtitle": "Goods from a supplier. Stock comes in at cost and the bill is booked — owed or paid.",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "e.g. Weekly coffee and milk order",
+      "costLabel": "Cost before VAT",
+      "save": "Receive delivery",
+      "error": "Couldn't receive the delivery. Please try again."
+    },
+    "count": {
+      "heading": "Count stock",
+      "subtitle": "Enter what's actually on the shelves for the items you counted; blank ones are left as they are. Differences are posted to inventory variance.",
+      "noteLabel": "Note",
+      "notePlaceholder": "e.g. End-of-month count",
+      "expected": "System says",
+      "counted": "Counted",
+      "countedFor": "Counted {name}",
+      "difference": "Difference",
+      "varianceTotal": "Variance to post: {amount}",
+      "invalid": "Counts are numbers, e.g. 1250 or 0.5.",
+      "save": "{count, plural, one {Save count (# item)} other {Save count (# items)}}",
+      "error": "Couldn't save the count. Please try again."
+    },
+    "opening": {
+      "heading": "Opening stock",
+      "subtitle": "Stock already on the shelves when you start tracking, at what it's worth. It's brought into the books as the owner's investment.",
+      "costLabel": "Worth",
+      "save": "Record opening stock",
+      "error": "Couldn't record the opening stock. Please try again."
+    },
+    "waste": {
+      "open": "Record waste of {name}",
+      "title": "Waste: {name}",
+      "description": "Spoiled, spilled or expired stock leaves inventory at average cost and shows on the P&L as waste.",
+      "quantityLabel": "Quantity ({unit})",
+      "noteLabel": "Reason",
+      "notePlaceholder": "e.g. Milk past its date",
+      "confirm": "Record waste",
+      "error": "Couldn't record the waste. Please try again."
+    },
+    "kind": {
+      "opening": "Opening stock",
+      "receipt": "Delivery",
+      "sale": "Sale",
+      "waste": "Waste",
+      "count": "Count"
+    },
+    "movements": {
+      "heading": "Stock history",
+      "subtitle": "Every change to stock, newest first: deliveries, what sales used, waste and counts.",
+      "allItems": "All items",
+      "kindLabel": "Type",
+      "allKinds": "All types",
+      "quantity": "Quantity",
+      "by": "By",
+      "empty": "No stock movements yet."
     }
   }
 }

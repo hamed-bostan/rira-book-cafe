@@ -33,6 +33,7 @@ export const orderResponseSchema = z.object({
       // Staff endpoints only; guest endpoints strip it.
       unitCost: z.number().optional(),
       taxExempt: z.boolean().optional(),
+      stockTracked: z.boolean().optional(),
       quantity: z.number(),
       note: z.string().optional(),
     }),

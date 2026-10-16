@@ -28,4 +28,6 @@ export type ConflictCode =
   | "ACCOUNT_INACTIVE"
   | "UNBALANCED"
   | "NOT_PAYABLE"
-  | "PAYMENT_IN_PROGRESS";
+  | "PAYMENT_IN_PROGRESS"
+  | "STOCK_USED"
+  | "YEAR_NOT_ENDED";

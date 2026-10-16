@@ -6,6 +6,7 @@ import type { IEmailSender } from "@/src/domain/repositories/IEmailSender";
 import type { IEventRepository } from "@/src/domain/repositories/IEventRepository";
 import type { IExpenseRepository } from "@/src/domain/repositories/IExpenseRepository";
 import type { IImageStorageRepository } from "@/src/domain/repositories/IImageStorageRepository";
+import type { IInventoryRepository } from "@/src/domain/repositories/IInventoryRepository";
 import type { ILedgerRepository } from "@/src/domain/repositories/ILedgerRepository";
 import type { IOrderNoteRepository } from "@/src/domain/repositories/IOrderNoteRepository";
 import type { IOrderRepository } from "@/src/domain/repositories/IOrderRepository";
@@ -27,6 +28,7 @@ import { PrismaAnalyticsRepository } from "./repositories/PrismaAnalyticsReposit
 import { PrismaCategoryRepository } from "./repositories/PrismaCategoryRepository";
 import { PrismaEventRepository } from "./repositories/PrismaEventRepository";
 import { PrismaExpenseRepository } from "./repositories/PrismaExpenseRepository";
+import { PrismaInventoryRepository } from "./repositories/PrismaInventoryRepository";
 import { PrismaLedgerRepository } from "./repositories/PrismaLedgerRepository";
 import { PrismaOrderNoteRepository } from "./repositories/PrismaOrderNoteRepository";
 import { PrismaOrderRepository } from "./repositories/PrismaOrderRepository";
@@ -89,6 +91,11 @@ export const expenseRepository: IExpenseRepository = new PrismaExpenseRepository
 // item's cost price (what orders snapshot for cost of sales) in step with what
 // its ingredients cost.
 export const pricingRepository: IPricingRepository = new PrismaPricingRepository();
+
+// Perpetual inventory at average cost. Deliveries, waste, counts and sales move
+// stock and post the matching entries in one transaction, so the stock list and
+// the Inventory account always agree.
+export const inventoryRepository: IInventoryRepository = new PrismaInventoryRepository();
 
 // Append-only audit trail of admin changes. Read-only here: entries are written by
 // the repositories that make the changes they describe, inside the same

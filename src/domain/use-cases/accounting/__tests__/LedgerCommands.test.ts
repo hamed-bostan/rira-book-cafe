@@ -91,9 +91,10 @@ describe("chart of accounts and settings", () => {
 });
 
 describe("expenses", () => {
-  it("books to expense, stock or equipment — never to money accounts", () => {
+  it("books to expense or equipment — never to money accounts or inventory", () => {
     expect(isExpenseTarget({ code: "6100", type: "expense" })).toBe(true);
-    expect(isExpenseTarget({ code: "1200", type: "asset" })).toBe(true);
+    expect(isExpenseTarget({ code: "1200", type: "asset" })).toBe(false);
+    expect(isExpenseTarget({ code: "1500", type: "asset" })).toBe(true);
     expect(isExpenseTarget({ code: "1110", type: "asset" })).toBe(false);
     expect(isExpenseTarget({ code: "2100", type: "liability" })).toBe(false);
   });

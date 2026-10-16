@@ -36,6 +36,8 @@ type ApiErrorKey =
   | "periodClosed"
   | "accountInactive"
   | "unbalanced"
+  | "stockUsed"
+  | "yearNotEnded"
   | "notPayable"
   | "paymentInProgress"
   | "gatewayUnavailable"
@@ -67,6 +69,8 @@ const CODE_KEYS: Readonly<Record<string, ApiErrorKey>> = {
   PERIOD_CLOSED: "periodClosed",
   ACCOUNT_INACTIVE: "accountInactive",
   UNBALANCED: "unbalanced",
+  STOCK_USED: "stockUsed",
+  YEAR_NOT_ENDED: "yearNotEnded",
   // Online payments.
   NOT_PAYABLE: "notPayable",
   PAYMENT_IN_PROGRESS: "paymentInProgress",

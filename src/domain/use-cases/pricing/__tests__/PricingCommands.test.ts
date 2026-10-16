@@ -41,7 +41,7 @@ describe("GetPricingReport", () => {
   it("averages operating expenses (not cost of sales) over the last complete months", async () => {
     const { pricing, ledger, movements } = setup();
     const report = await new GetPricingReport(pricing, ledger).execute(NOW);
-    expect(movements).toHaveBeenCalledWith("2026-06-22", "2026-09-22");
+    expect(movements).toHaveBeenCalledWith("2026-06-22", "2026-09-22", { excludeClosing: true });
     expect(report.basis).toMatchObject({ source: "ledger", monthlyOverhead: 300_000_000, monthlyUnits: 6000 });
     expect(report.overheadPerUnit).toBe(50_000);
     // (40,000 + 50,000) × 1.3 = 117,000; + 10% VAT = 128,700 → 130,000.

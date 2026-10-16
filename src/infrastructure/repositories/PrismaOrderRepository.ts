@@ -7,6 +7,7 @@ import {
   type AdminOrderSort,
   type OrderStatusCounts,
 } from "@/src/domain/entities/AdminOrderFilters";
+import { cafeDayOf } from "@/src/domain/entities/CafeTime";
 import {
   ACTIVE_ORDER_STATUSES,
   ORDER_STATUSES,
@@ -35,6 +36,7 @@ import { inTransaction, type PrismaDb } from "@/src/infrastructure/prisma/transa
 
 import { recordAudit } from "./writeActivityEntry";
 import { postHook } from "./writeJournal";
+import { consumeStockForOrder } from "./writeStock";
 
 /** Every read loads the lines with the order, in the order the guest listed them. */
 const WITH_ITEMS = { items: { orderBy: { position: "asc" } } } satisfies Prisma.OrderInclude;
@@ -178,6 +180,10 @@ export class PrismaOrderRepository implements IOrderRepository {
         if (!current) throw new NotFoundError("order", id);
         throw new InvalidOrderTransitionError(toStatus(current.status), to);
       }
+
+      // A completed order uses up its recipes' stock, at average cost; the lines
+      // then carry that cost, which the cost-of-sales posting below books.
+      if (to === "completed") await consumeStockForOrder(tx, id, cafeDayOf(new Date()), actor);
 
       const row = await tx.order.findUniqueOrThrow({ where: { id }, include: WITH_ITEMS });
 
@@ -323,6 +329,7 @@ function toOrder(row: OrderRow): Order {
         unitPrice: item.unitPrice,
         unitCost: item.unitCost ?? undefined,
         taxExempt: item.taxExempt,
+        stockTracked: item.stockTracked,
         quantity: item.quantity,
         note: item.note ?? undefined,
       }),

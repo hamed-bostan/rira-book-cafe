@@ -30,3 +30,104 @@ model User {
   @@index([role])
   @@map("users")
 }
+
+model Category {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  iconUrl   String   @map("icon_url")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([isActive])
+  @@map("categories")
+}
+
+model CategoryTranslation {
+  id         String   @id @default(uuid())
+  categoryId String   @map("category_id")
+  locale     String
+  name       String
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@unique([categoryId, locale])
+  @@index([categoryId])
+  @@map("category_translations")
+}
+
+// A menu item: a drink, a food item, or a book on the shelf. Prices are whole
+// Toman. Book columns are set only when kind = "book" (the repository clears them
+// otherwise); kind and book_availability are plain strings matching the domain
+// unions (enum-free style).
+model Product {
+  id               String   @id @default(uuid())
+  kind             String   @default("drink")
+  name             String
+  price            Int
+  originalPrice    Int?     @map("original_price")
+  rating           Float    @default(0)
+  ratingCount      Int      @default(0) @map("rating_count")
+  stockQuantity    Int      @default(0) @map("stock_quantity")
+  imageUrl         String   @map("image_url")
+  categoryId       String   @map("category_id")
+  isFeatured       Boolean  @default(false) @map("is_featured")
+  isPublished      Boolean  @default(true) @map("is_published")
+  badge            String?
+  unit             String?
+  description      String?
+  nutrition        String?
+  origin           String?
+  dietary          String[] @default([])
+  taxExempt        Boolean  @default(true) @map("tax_exempt")
+  bookAuthor       String?  @map("book_author")
+  bookIsbn         String?  @map("book_isbn")
+  bookAvailability String?  @map("book_availability")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@index([categoryId])
+  @@index([isPublished])
+  @@index([kind])
+  @@map("products")
+}
+
+model ProductTranslation {
+  id          String   @id @default(uuid())
+  productId   String   @map("product_id")
+  locale      String
+  name        String
+  unit        String?
+  description String?
+  nutrition   String?
+  origin      String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@unique([productId, locale])
+  @@index([productId])
+  @@map("product_translations")
+}
+
+// Append-only audit trail of admin changes. Written by repositories inside the
+// same transaction as the change they describe.
+model ActivityEntry {
+  id            String   @id @default(uuid())
+  actorId       String   @map("actor_id")
+  actorName     String   @map("actor_name")
+  action        String
+  entityType    String   @map("entity_type")
+  entityId      String   @map("entity_id")
+  entityLabel   String?  @map("entity_label")
+  // `[{ field, before, after }]` with string values.
+  changes       Json
+  // Field names from `changes`, denormalized so "every price change" is an index scan.
+  changedFields String[] @map("changed_fields")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@index([entityType, entityId, createdAt])
+  @@index([actorId, createdAt])
+  @@map("activity_log")
+}

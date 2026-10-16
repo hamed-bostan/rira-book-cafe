@@ -1,8 +1,14 @@
+import type { IActivityLog } from "@/src/domain/repositories/IActivityLog";
 import type { IAuthRepository } from "@/src/domain/repositories/IAuthRepository";
+import type { ICategoryRepository } from "@/src/domain/repositories/ICategoryRepository";
 import type { IImageStorageRepository } from "@/src/domain/repositories/IImageStorageRepository";
+import type { IProductRepository } from "@/src/domain/repositories/IProductRepository";
 import type { IUserRepository } from "@/src/domain/repositories/IUserRepository";
 
 import { MockAuthRepository } from "./repositories/mock/MockAuthRepository";
+import { PrismaActivityLog } from "./repositories/PrismaActivityLog";
+import { PrismaCategoryRepository } from "./repositories/PrismaCategoryRepository";
+import { PrismaProductRepository } from "./repositories/PrismaProductRepository";
 import { PrismaUserRepository } from "./repositories/PrismaUserRepository";
 import { SmsIrAuthRepository } from "./repositories/SmsIrAuthRepository";
 import { SupabaseImageStorageRepository } from "./repositories/SupabaseImageStorageRepository";
@@ -19,6 +25,15 @@ import { SupabaseImageStorageRepository } from "./repositories/SupabaseImageStor
 // Users — PostgreSQL via Prisma. Rows are created on first sign-in
 // (auth `authorize` → GetOrCreateUser).
 export const userRepository: IUserRepository = new PrismaUserRepository();
+
+// The menu: categories and items (drinks, food, books) — PostgreSQL via Prisma.
+export const categoryRepository: ICategoryRepository = new PrismaCategoryRepository();
+export const productRepository: IProductRepository = new PrismaProductRepository();
+
+// Append-only audit trail of admin changes. Read-only here: entries are written by
+// the repositories that make the changes they describe, inside the same
+// transaction, from a `NewActivityEntry` the use-case built (see `AuditHook`).
+export const activityLog: IActivityLog = new PrismaActivityLog();
 
 // Real SMS OTP when an SMS.ir key is configured; the in-memory mock otherwise so
 // local dev works without credentials (the mock surfaces the code in the UI).

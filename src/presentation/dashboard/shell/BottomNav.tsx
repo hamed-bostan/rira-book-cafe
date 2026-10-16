@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, MoreHorizontal } from "lucide-react";
+import { Coffee, LayoutDashboard, MoreHorizontal } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { Link, usePathname } from "@/src/i18n/navigation";
@@ -14,7 +14,7 @@ import type { LucideIcon } from "lucide-react";
 type BottomNavItem = {
   href: string;
   /** Label key under `dashboard.bottomNav`. */
-  labelKey: "dashboard";
+  labelKey: "dashboard" | "products";
   icon: LucideIcon;
 };
 
@@ -25,7 +25,10 @@ type BottomNavItem = {
  * sections every `dashboard.view` holder can open, so there is no permission check
  * to thread through here. Add orders, menu, etc. as those features land.
  */
-const ITEMS: readonly BottomNavItem[] = [{ href: "/dashboard", labelKey: "dashboard", icon: LayoutDashboard }];
+const ITEMS: readonly BottomNavItem[] = [
+  { href: "/dashboard", labelKey: "dashboard", icon: LayoutDashboard },
+  { href: "/dashboard/products", labelKey: "products", icon: Coffee },
+];
 
 type BottomNavProps = {
   /** Opens the same nav drawer the top bar's hamburger does — the `More` tab's whole list. */

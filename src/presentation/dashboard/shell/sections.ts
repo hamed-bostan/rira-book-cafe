@@ -1,4 +1,4 @@
-import { LayoutDashboard } from "lucide-react";
+import { Coffee, LayoutDashboard, Tag } from "lucide-react";
 
 import type { Permission } from "@/src/domain/entities/Permission";
 
@@ -16,10 +16,10 @@ import type { LucideIcon } from "lucide-react";
  */
 
 /** A navigation group's stable id, which is also its label key under `dashboard`. */
-export type DashboardSectionGroup = "groupOverview";
+export type DashboardSectionGroup = "groupOverview" | "groupMenu";
 
 /** A section's label key under the `dashboard` namespace — spelled out so `t()` can check it. */
-export type DashboardSectionLabelKey = "navDashboard";
+export type DashboardSectionLabelKey = "navDashboard" | "navProducts" | "navCategories";
 
 export type DashboardSection = {
   href: string;
@@ -32,10 +32,15 @@ export type DashboardSection = {
 
 const SECTIONS = [
   { href: "/dashboard", labelKey: "navDashboard", icon: LayoutDashboard, needs: "dashboard.view", group: "groupOverview" },
+
+  // The menu list is a read for everyone with the dashboard — it's how staff answer
+  // "do we still have this?". The write controls inside it are gated on `catalog.write`.
+  { href: "/dashboard/products", labelKey: "navProducts", icon: Coffee, needs: "dashboard.view", group: "groupMenu" },
+  { href: "/dashboard/categories", labelKey: "navCategories", icon: Tag, needs: "catalog.write", group: "groupMenu" },
 ] as const satisfies readonly DashboardSection[];
 
 /** The groups in sidebar order. */
-const GROUP_ORDER: readonly DashboardSectionGroup[] = ["groupOverview"];
+const GROUP_ORDER: readonly DashboardSectionGroup[] = ["groupOverview", "groupMenu"];
 
 export type DashboardNavGroup = {
   id: DashboardSectionGroup;

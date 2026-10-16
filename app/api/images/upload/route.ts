@@ -23,8 +23,12 @@ const ALLOWED_FOLDERS = new Set<string>([...MANAGED_IMAGE_FOLDERS, AVATAR_IMAGE_
 export async function POST(request: NextRequest): Promise<NextResponse> {
   // Decide which session this caller has up front; the folder check below picks
   // the right requirement. (Admins satisfy the user check too.)
-  const [adminSession, userSession] = await Promise.all([getSessionWith("catalog.write"), getUserSession()]);
-  if (!adminSession && !userSession) return unauthorizedResponse();
+  const [catalogSession, eventsSession, userSession] = await Promise.all([
+    getSessionWith("catalog.write"),
+    getSessionWith("events.manage"),
+    getUserSession(),
+  ]);
+  if (!catalogSession && !eventsSession && !userSession) return unauthorizedResponse();
 
   let formData: FormData;
   try {
@@ -46,7 +50,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   // An unspecified folder (or any managed catalog folder) is admin-only; only the
   // `avatars` folder is reachable by a non-admin signed-in user.
-  if ((!folder || ADMIN_FOLDERS.has(folder)) && !adminSession) return unauthorizedResponse();
+  // Event images need `events.manage`; every other managed folder needs the catalog.
+  const writer = folder === "events" ? eventsSession : catalogSession;
+  if ((!folder || ADMIN_FOLDERS.has(folder)) && !writer) return unauthorizedResponse();
 
   try {
     const image = await new UploadImage(imageStorageRepository).execute({

@@ -29,6 +29,8 @@ export const ACTIVITY_ENTITY_TYPES = [
   "review",
   "promoCode",
   "user",
+  "reservation",
+  "event",
 ] as const;
 
 /**
@@ -79,6 +81,11 @@ export const ACTIVITY_ACTIONS = [
   "promoCode.updated",
   "promoCode.activeChanged",
   "user.roleChanged",
+  "reservation.changed",
+  "event.created",
+  "event.updated",
+  "event.deleted",
+  "event.registrationCancelled",
   // Another event rather than a change to anything stored — an admin downloaded a
   // customer-data export. Recorded through `IActivityLog.recordEvent`, same as
   // `order.customerNotified`: the file has already left the moment this is

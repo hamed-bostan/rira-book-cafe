@@ -114,7 +114,13 @@
     "serviceTypeInvalid": "Choose dine-in or takeaway.",
     "tableRequired": "Choose a table for a dine-in order.",
     "statusInvalid": "That status isn't valid.",
-    "noteRequired": "Write a note first."
+    "noteRequired": "Write a note first.",
+    "dateTimeInvalid": "Choose a valid date and time.",
+    "partySizeInvalid": "Choose a party size from 1 to 12.",
+    "tableTooLong": "That table label is too long.",
+    "nothingToChange": "Nothing to change.",
+    "capacityWhole": "Seats must be a whole number.",
+    "seatsInvalid": "Choose 1 to 6 seats."
   },
   "apiErrors": {
     "badRequest": "The request couldn't be read. Please try again.",
@@ -130,7 +136,11 @@
     "server": "Something went wrong. Please try again.",
     "inUse": "That's still in use and can't be removed yet.",
     "insufficientStock": "Not enough stock for one of the items.",
-    "invalidTransition": "This order was just changed by someone else. Showing its current state."
+    "invalidTransition": "This order was just changed by someone else. Showing its current state.",
+    "tableTaken": "That table is already booked at that time.",
+    "eventFull": "This event is full.",
+    "eventClosed": "Sign-ups for this event are closed.",
+    "alreadyRegistered": "Already signed up for this event."
   },
   "meta": {
     "siteName": "Rira Book Cafe",
@@ -172,7 +182,9 @@
     "groupService": "Service",
     "navActivity": "Activity",
     "navTeam": "Team",
-    "groupStore": "Cafe"
+    "groupStore": "Cafe",
+    "navReservations": "Reservations",
+    "navEvents": "Events"
   },
   "dashTeam": {
     "membersHeading": "Team members",
@@ -615,7 +627,9 @@
       "promoCode": "Promo codes",
       "user": "Team access",
       "unknown": "Other",
-      "category": "Categories"
+      "category": "Categories",
+      "reservation": "Reservations",
+      "event": "Events"
     },
     "action": {
       "product": {
@@ -643,6 +657,15 @@
         "created": "{actor} created category {entity}",
         "updated": "{actor} edited category {entity}",
         "deleted": "{actor} deleted category {entity}"
+      },
+      "reservation": {
+        "changed": "{actor} updated reservation {entity}"
+      },
+      "event": {
+        "created": "{actor} created event {entity}",
+        "updated": "{actor} edited event {entity}",
+        "deleted": "{actor} deleted event {entity}",
+        "registrationCancelled": "{actor} cancelled a sign-up for {entity}"
       }
     },
     "role": {
@@ -682,7 +705,14 @@
       "bookAvailability": "Book availability",
       "isPublished": "Published",
       "isActive": "Active",
-      "paymentStatus": "Payment"
+      "paymentStatus": "Payment",
+      "tableLabel": "Table",
+      "titleFa": "Persian title",
+      "descriptionFa": "Persian description",
+      "startsAt": "Starts",
+      "endsAt": "Ends",
+      "capacity": "Seats",
+      "registration": "Sign-up"
     },
     "filterField": "Filter by what changed",
     "allFields": "Any change",
@@ -695,5 +725,118 @@
       "paymentStatus": "Payment changes",
       "role": "Access changes"
     }
+  },
+  "dashReservations": {
+    "heading": "Reservations",
+    "summary": "{bookings, plural, =0 {No bookings} one {{bookingsFormatted} booking} other {{bookingsFormatted} bookings}} · {covers, plural, one {{coversFormatted} guest} other {{coversFormatted} guests}}",
+    "today": "Today",
+    "previousDay": "Previous day",
+    "nextDay": "Next day",
+    "pickDay": "Pick a day",
+    "filterStatusLabel": "Filter by status",
+    "filterStatusAll": "All",
+    "filterStatusOption": "Status: {status}",
+    "status": {
+      "requested": "Requested",
+      "confirmed": "Confirmed",
+      "seated": "Seated",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "noShow": "No-show"
+    },
+    "action": {
+      "requested": "Reopen",
+      "confirmed": "Confirm",
+      "seated": "Seat",
+      "completed": "Complete",
+      "cancelled": "Cancel",
+      "noShow": "No-show"
+    },
+    "changeTable": "Change table",
+    "partySize": "{count, plural, one {{formatted} guest} other {{formatted} guests}}",
+    "table": "Table {table}",
+    "noTable": "No table yet",
+    "tableDialogTitle": "Table for R-{reference}",
+    "tableLabelRequired": "Table",
+    "tableLabelOptional": "Table (optional)",
+    "saveTable": "Save table",
+    "dialogCancel": "Back",
+    "confirmTitle": {
+      "cancelled": "Cancel R-{reference}?",
+      "noShow": "Mark R-{reference} as a no-show?"
+    },
+    "confirmMessage": "This frees the table and can't be undone.",
+    "updateError": "Couldn't update the reservation. Please try again.",
+    "emptyTitle": "No bookings this day",
+    "emptyBody": "Reservations guests make will show up here.",
+    "noMatchesTitle": "No matches",
+    "noMatchesBody": "No bookings this day have that status."
+  },
+  "dashEvents": {
+    "heading": "Events",
+    "summary": "{count, plural, =0 {Nothing coming up} one {# upcoming event} other {# upcoming events}}",
+    "newEvent": "New event",
+    "createSubtitle": "Plan a book club, a reading or a workshop.",
+    "editHeading": "Edit event",
+    "upcomingHeading": "Upcoming",
+    "pastHeading": "Past",
+    "noUpcoming": "Nothing scheduled yet.",
+    "emptyTitle": "No events yet",
+    "emptyBody": "Create a book club meeting, an author reading or a workshop.",
+    "kind": {
+      "bookClub": "Book club",
+      "reading": "Reading",
+      "workshop": "Workshop",
+      "other": "Event"
+    },
+    "published": "Published",
+    "draft": "Draft",
+    "full": "Full",
+    "free": "Free",
+    "seatsTaken": "{taken} / {capacity} seats taken",
+    "seatsTakenUnlimited": "{taken} seats taken",
+    "kindLabel": "Kind",
+    "titleLabel": "Title",
+    "titlePlaceholder": "Book club: The Blind Owl",
+    "descriptionLabel": "Description",
+    "localeTabBase": "English",
+    "localeTabFa": "فارسی (Persian)",
+    "translationDescription": "Optional Persian copy for guests using Persian. Leave blank to fall back to the English tab.",
+    "startsAtLabel": "Starts",
+    "endsAtLabel": "Ends",
+    "timeZoneHint": "Times are on the cafe's clock (Tehran).",
+    "capacityLabel": "Seats",
+    "capacityDescription": "Leave blank for no limit.",
+    "priceLabel": "Ticket price",
+    "priceDescription": "In Toman. 0 is free.",
+    "imageLabel": "Cover image",
+    "imagePreviewAlt": "Event image preview",
+    "uploading": "Uploading…",
+    "replaceImage": "Replace image",
+    "uploadImage": "Upload image",
+    "removeImage": "Remove",
+    "uploadFailed": "Upload failed.",
+    "uploadHint": "PNG, JPG, WebP or AVIF · up to 5 MB",
+    "publishedLabel": "Published",
+    "publishedDescription": "Guests can see published events and sign up until they start.",
+    "saveChanges": "Save changes",
+    "createEvent": "Create event",
+    "cancel": "Cancel",
+    "formError": "Something went wrong. Please try again.",
+    "delete": "Delete",
+    "deleteTitle": "Delete event?",
+    "deleteMessage": "\"{title}\" will be permanently removed.",
+    "deleteConfirm": "Delete",
+    "deleteErrorTitle": "Couldn't delete event",
+    "deleteTryAgain": "Try again",
+    "deleteError": "Couldn't delete the event. Please try again.",
+    "registrationsHeading": "Guest list",
+    "registrationsEmpty": "Nobody has signed up yet.",
+    "registrationCancelled": "Cancelled",
+    "seatCount": "{count, plural, one {{formatted} seat} other {{formatted} seats}}",
+    "cancelRegistration": "Cancel sign-up",
+    "cancelRegistrationTitle": "Cancel {name}'s sign-up?",
+    "cancelRegistrationMessage": "Their seats become free for other guests.",
+    "cancelRegistrationError": "Couldn't cancel the sign-up. Please try again."
   }
 }

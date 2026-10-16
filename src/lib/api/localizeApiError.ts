@@ -22,6 +22,10 @@ type ApiErrorKey =
   | "conflict"
   | "insufficientStock"
   | "invalidTransition"
+  | "tableTaken"
+  | "eventFull"
+  | "eventClosed"
+  | "alreadyRegistered"
   | "inUse"
   | "revokeSelf"
   | "revokeOwner"
@@ -39,6 +43,10 @@ const CODE_KEYS: Readonly<Record<string, ApiErrorKey>> = {
   UNIQUE_CONSTRAINT: "conflict",
   INSUFFICIENT_STOCK: "insufficientStock",
   INVALID_TRANSITION: "invalidTransition",
+  TABLE_TAKEN: "tableTaken",
+  EVENT_FULL: "eventFull",
+  EVENT_CLOSED: "eventClosed",
+  ALREADY_REGISTERED: "alreadyRegistered",
   IN_USE: "inUse",
   REVOKE_SELF: "revokeSelf",
   REVOKE_OWNER: "revokeOwner",

@@ -114,7 +114,13 @@
     "serviceTypeInvalid": "سرو در کافه یا بیرون‌بر را انتخاب کنید.",
     "tableRequired": "برای سرو در کافه، میز را انتخاب کنید.",
     "statusInvalid": "این وضعیت معتبر نیست.",
-    "noteRequired": "ابتدا یادداشت را بنویسید."
+    "noteRequired": "ابتدا یادداشت را بنویسید.",
+    "dateTimeInvalid": "تاریخ و ساعت معتبر انتخاب کنید.",
+    "partySizeInvalid": "تعداد نفرات را از ۱ تا ۱۲ انتخاب کنید.",
+    "tableTooLong": "نام میز خیلی طولانی است.",
+    "nothingToChange": "تغییری برای ثبت نیست.",
+    "capacityWhole": "ظرفیت باید عدد صحیح باشد.",
+    "seatsInvalid": "۱ تا ۶ جا انتخاب کنید."
   },
   "apiErrors": {
     "badRequest": "درخواست قابل پردازش نبود. دوباره تلاش کنید.",
@@ -130,7 +136,11 @@
     "server": "مشکلی پیش آمد. دوباره تلاش کنید.",
     "inUse": "این مورد هنوز در حال استفاده است و فعلاً حذف نمی‌شود.",
     "insufficientStock": "موجودی یکی از آیتم‌ها کافی نیست.",
-    "invalidTransition": "این سفارش همین الان توسط فرد دیگری تغییر کرد. وضعیت فعلی نمایش داده می‌شود."
+    "invalidTransition": "این سفارش همین الان توسط فرد دیگری تغییر کرد. وضعیت فعلی نمایش داده می‌شود.",
+    "tableTaken": "این میز در آن زمان رزرو شده است.",
+    "eventFull": "ظرفیت این رویداد تکمیل است.",
+    "eventClosed": "ثبت‌نام این رویداد بسته شده است.",
+    "alreadyRegistered": "قبلاً در این رویداد ثبت‌نام شده است."
   },
   "meta": {
     "siteName": "کافه کتاب ریرا",
@@ -172,7 +182,9 @@
     "groupService": "سرویس",
     "navActivity": "فعالیت‌ها",
     "navTeam": "تیم",
-    "groupStore": "کافه"
+    "groupStore": "کافه",
+    "navReservations": "رزروها",
+    "navEvents": "رویدادها"
   },
   "dashTeam": {
     "membersHeading": "اعضای تیم",
@@ -615,7 +627,9 @@
       "promoCode": "کدهای تخفیف",
       "user": "دسترسی تیم",
       "unknown": "سایر",
-      "category": "دسته‌بندی‌ها"
+      "category": "دسته‌بندی‌ها",
+      "reservation": "رزروها",
+      "event": "رویدادها"
     },
     "action": {
       "product": {
@@ -643,6 +657,15 @@
         "created": "{actor} دسته‌بندی {entity} را ساخت",
         "updated": "{actor} دسته‌بندی {entity} را ویرایش کرد",
         "deleted": "{actor} دسته‌بندی {entity} را حذف کرد"
+      },
+      "reservation": {
+        "changed": "{actor} رزرو {entity} را به‌روزرسانی کرد"
+      },
+      "event": {
+        "created": "{actor} رویداد {entity} را ایجاد کرد",
+        "updated": "{actor} رویداد {entity} را ویرایش کرد",
+        "deleted": "{actor} رویداد {entity} را حذف کرد",
+        "registrationCancelled": "{actor} یک ثبت‌نام در {entity} را لغو کرد"
       }
     },
     "role": {
@@ -682,7 +705,14 @@
       "bookAvailability": "نحوهٔ استفادهٔ کتاب",
       "isPublished": "منتشرشده",
       "isActive": "فعال",
-      "paymentStatus": "پرداخت"
+      "paymentStatus": "پرداخت",
+      "tableLabel": "میز",
+      "titleFa": "عنوان فارسی",
+      "descriptionFa": "توضیحات فارسی",
+      "startsAt": "شروع",
+      "endsAt": "پایان",
+      "capacity": "ظرفیت",
+      "registration": "ثبت‌نام"
     },
     "filterField": "فیلتر بر اساس نوع تغییر",
     "allFields": "همه تغییرها",
@@ -695,5 +725,118 @@
       "paymentStatus": "تغییر پرداخت",
       "role": "تغییر دسترسی"
     }
+  },
+  "dashReservations": {
+    "heading": "رزروها",
+    "summary": "{bookings, plural, =0 {بدون رزرو} other {{bookingsFormatted} رزرو}} · {covers, plural, other {{coversFormatted} مهمان}}",
+    "today": "امروز",
+    "previousDay": "روز قبل",
+    "nextDay": "روز بعد",
+    "pickDay": "انتخاب روز",
+    "filterStatusLabel": "فیلتر وضعیت",
+    "filterStatusAll": "همه",
+    "filterStatusOption": "وضعیت: {status}",
+    "status": {
+      "requested": "درخواست‌شده",
+      "confirmed": "تأییدشده",
+      "seated": "نشسته",
+      "completed": "پایان‌یافته",
+      "cancelled": "لغوشده",
+      "noShow": "نیامد"
+    },
+    "action": {
+      "requested": "بازگشایی",
+      "confirmed": "تأیید",
+      "seated": "نشاندن",
+      "completed": "پایان",
+      "cancelled": "لغو",
+      "noShow": "نیامد"
+    },
+    "changeTable": "تغییر میز",
+    "partySize": "{count, plural, other {{formatted} نفر}}",
+    "table": "میز {table}",
+    "noTable": "هنوز میزی تعیین نشده",
+    "tableDialogTitle": "میز برای R-{reference}",
+    "tableLabelRequired": "میز",
+    "tableLabelOptional": "میز (اختیاری)",
+    "saveTable": "ذخیرهٔ میز",
+    "dialogCancel": "بازگشت",
+    "confirmTitle": {
+      "cancelled": "R-{reference} لغو شود؟",
+      "noShow": "R-{reference} به‌عنوان «نیامد» ثبت شود؟"
+    },
+    "confirmMessage": "میز آزاد می‌شود و این کار قابل بازگشت نیست.",
+    "updateError": "به‌روزرسانی رزرو ممکن نشد. دوباره تلاش کنید.",
+    "emptyTitle": "در این روز رزروی نیست",
+    "emptyBody": "رزروهای مهمان‌ها اینجا نمایش داده می‌شوند.",
+    "noMatchesTitle": "موردی پیدا نشد",
+    "noMatchesBody": "در این روز رزروی با این وضعیت نیست."
+  },
+  "dashEvents": {
+    "heading": "رویدادها",
+    "summary": "{count, plural, =0 {رویداد پیش‌رویی نیست} other {# رویداد پیش‌رو}}",
+    "newEvent": "رویداد جدید",
+    "createSubtitle": "یک جلسهٔ کتاب‌خوانی، کتاب‌خوانی با نویسنده یا کارگاه برنامه‌ریزی کنید.",
+    "editHeading": "ویرایش رویداد",
+    "upcomingHeading": "پیش‌رو",
+    "pastHeading": "گذشته",
+    "noUpcoming": "هنوز برنامه‌ای نیست.",
+    "emptyTitle": "هنوز رویدادی ثبت نشده",
+    "emptyBody": "یک جلسهٔ باشگاه کتاب، کتاب‌خوانی با نویسنده یا کارگاه بسازید.",
+    "kind": {
+      "bookClub": "باشگاه کتاب",
+      "reading": "کتاب‌خوانی",
+      "workshop": "کارگاه",
+      "other": "رویداد"
+    },
+    "published": "منتشرشده",
+    "draft": "پیش‌نویس",
+    "full": "تکمیل",
+    "free": "رایگان",
+    "seatsTaken": "{taken} از {capacity} جا رزرو شده",
+    "seatsTakenUnlimited": "{taken} جا رزرو شده",
+    "kindLabel": "نوع",
+    "titleLabel": "عنوان",
+    "titlePlaceholder": "باشگاه کتاب: بوف کور",
+    "descriptionLabel": "توضیحات",
+    "localeTabBase": "English",
+    "localeTabFa": "فارسی (Persian)",
+    "translationDescription": "متن فارسی اختیاری برای مهمان‌های فارسی‌زبان. اگر خالی بماند، متن انگلیسی نمایش داده می‌شود.",
+    "startsAtLabel": "شروع",
+    "endsAtLabel": "پایان",
+    "timeZoneHint": "زمان‌ها به وقت کافه (تهران) هستند.",
+    "capacityLabel": "ظرفیت",
+    "capacityDescription": "برای ظرفیت نامحدود خالی بگذارید.",
+    "priceLabel": "قیمت بلیت",
+    "priceDescription": "به تومان. صفر یعنی رایگان.",
+    "imageLabel": "تصویر کاور",
+    "imagePreviewAlt": "پیش‌نمایش تصویر رویداد",
+    "uploading": "در حال بارگذاری…",
+    "replaceImage": "تعویض تصویر",
+    "uploadImage": "بارگذاری تصویر",
+    "removeImage": "حذف",
+    "uploadFailed": "بارگذاری ناموفق بود.",
+    "uploadHint": "PNG، JPG، WebP یا AVIF · تا ۵ مگابایت",
+    "publishedLabel": "منتشرشده",
+    "publishedDescription": "مهمان‌ها رویدادهای منتشرشده را می‌بینند و تا شروع می‌توانند ثبت‌نام کنند.",
+    "saveChanges": "ذخیرهٔ تغییرات",
+    "createEvent": "ایجاد رویداد",
+    "cancel": "انصراف",
+    "formError": "مشکلی پیش آمد. دوباره تلاش کنید.",
+    "delete": "حذف",
+    "deleteTitle": "رویداد حذف شود؟",
+    "deleteMessage": "«{title}» برای همیشه حذف می‌شود.",
+    "deleteConfirm": "حذف",
+    "deleteErrorTitle": "حذف رویداد ممکن نشد",
+    "deleteTryAgain": "تلاش دوباره",
+    "deleteError": "حذف رویداد ممکن نشد. دوباره تلاش کنید.",
+    "registrationsHeading": "فهرست مهمان‌ها",
+    "registrationsEmpty": "هنوز کسی ثبت‌نام نکرده.",
+    "registrationCancelled": "لغوشده",
+    "seatCount": "{count, plural, other {{formatted} جا}}",
+    "cancelRegistration": "لغو ثبت‌نام",
+    "cancelRegistrationTitle": "ثبت‌نام {name} لغو شود؟",
+    "cancelRegistrationMessage": "جاهای او برای مهمان‌های دیگر آزاد می‌شود.",
+    "cancelRegistrationError": "لغو ثبت‌نام ممکن نشد. دوباره تلاش کنید."
   }
 }

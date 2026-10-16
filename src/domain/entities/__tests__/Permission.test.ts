@@ -22,6 +22,13 @@ describe("ROLE_PERMISSIONS", () => {
     expect(roleHasPermission("admin", "catalog.write")).toBe(true);
   });
 
+  it("lets the floor manage reservations but only admins run events", () => {
+    expect(roleHasPermission("staff", "reservations.manage")).toBe(true);
+    expect(roleHasPermission("support", "reservations.manage")).toBe(false);
+    expect(roleHasPermission("staff", "events.manage")).toBe(false);
+    expect(roleHasPermission("admin", "events.manage")).toBe(true);
+  });
+
   it("derives dashboard roles from dashboard.view", () => {
     expect(DASHBOARD_ROLES).toEqual(["support", "staff", "admin", "owner"]);
   });

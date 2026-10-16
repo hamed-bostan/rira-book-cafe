@@ -1,4 +1,4 @@
-import { ClipboardList, Coffee, History, LayoutDashboard, ShieldCheck, Tag } from "lucide-react";
+import { CalendarClock, ClipboardList, Coffee, History, LayoutDashboard, PartyPopper, ShieldCheck, Tag } from "lucide-react";
 
 import type { Permission } from "@/src/domain/entities/Permission";
 
@@ -22,6 +22,8 @@ export type DashboardSectionGroup = "groupOverview" | "groupService" | "groupMen
 export type DashboardSectionLabelKey =
   | "navDashboard"
   | "navOrders"
+  | "navReservations"
+  | "navEvents"
   | "navProducts"
   | "navCategories"
   | "navActivity"
@@ -42,6 +44,10 @@ const SECTIONS = [
   // The live queue. Reading it is for everyone with the dashboard; moving orders is
   // `orders.fulfill`, gated inside the page.
   { href: "/dashboard/orders", labelKey: "navOrders", icon: ClipboardList, needs: "dashboard.view", group: "groupService" },
+  // The day's bookings — readable by everyone on the floor; acting on them is
+  // `reservations.manage`, gated inside the page.
+  { href: "/dashboard/reservations", labelKey: "navReservations", icon: CalendarClock, needs: "dashboard.view", group: "groupService" },
+  { href: "/dashboard/events", labelKey: "navEvents", icon: PartyPopper, needs: "dashboard.view", group: "groupService" },
 
   // The menu list is a read for everyone with the dashboard — it's how staff answer
   // "do we still have this?". The write controls inside it are gated on `catalog.write`.

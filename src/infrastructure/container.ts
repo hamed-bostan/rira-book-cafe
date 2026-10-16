@@ -2,10 +2,12 @@ import type { IActivityLog } from "@/src/domain/repositories/IActivityLog";
 import type { IAuthRepository } from "@/src/domain/repositories/IAuthRepository";
 import type { ICategoryRepository } from "@/src/domain/repositories/ICategoryRepository";
 import type { IEmailSender } from "@/src/domain/repositories/IEmailSender";
+import type { IEventRepository } from "@/src/domain/repositories/IEventRepository";
 import type { IImageStorageRepository } from "@/src/domain/repositories/IImageStorageRepository";
 import type { IOrderNoteRepository } from "@/src/domain/repositories/IOrderNoteRepository";
 import type { IOrderRepository } from "@/src/domain/repositories/IOrderRepository";
 import type { IProductRepository } from "@/src/domain/repositories/IProductRepository";
+import type { IReservationRepository } from "@/src/domain/repositories/IReservationRepository";
 import type { ITeamNotifier } from "@/src/domain/repositories/ITeamNotifier";
 import type { IUserRepository } from "@/src/domain/repositories/IUserRepository";
 
@@ -15,9 +17,11 @@ import { TeamNotifier } from "./notifications/TeamNotifier";
 import { MockAuthRepository } from "./repositories/mock/MockAuthRepository";
 import { PrismaActivityLog } from "./repositories/PrismaActivityLog";
 import { PrismaCategoryRepository } from "./repositories/PrismaCategoryRepository";
+import { PrismaEventRepository } from "./repositories/PrismaEventRepository";
 import { PrismaOrderNoteRepository } from "./repositories/PrismaOrderNoteRepository";
 import { PrismaOrderRepository } from "./repositories/PrismaOrderRepository";
 import { PrismaProductRepository } from "./repositories/PrismaProductRepository";
+import { PrismaReservationRepository } from "./repositories/PrismaReservationRepository";
 import { PrismaUserRepository } from "./repositories/PrismaUserRepository";
 import { SmsIrAuthRepository } from "./repositories/SmsIrAuthRepository";
 import { SupabaseImageStorageRepository } from "./repositories/SupabaseImageStorageRepository";
@@ -43,6 +47,11 @@ export const productRepository: IProductRepository = new PrismaProductRepository
 // transaction as the order; internal notes are append-only.
 export const orderRepository: IOrderRepository = new PrismaOrderRepository();
 export const orderNoteRepository: IOrderNoteRepository = new PrismaOrderNoteRepository();
+
+// Table reservations and events (book clubs, readings) — PostgreSQL via Prisma.
+// Table clashes and event capacity are enforced inside the repositories under locks.
+export const reservationRepository: IReservationRepository = new PrismaReservationRepository();
+export const eventRepository: IEventRepository = new PrismaEventRepository();
 
 // Append-only audit trail of admin changes. Read-only here: entries are written by
 // the repositories that make the changes they describe, inside the same

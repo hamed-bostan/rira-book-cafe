@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 
 import { AdminRevokeError } from "@/src/domain/errors/AdminRevokeError";
+import { ConflictError } from "@/src/domain/errors/ConflictError";
 import { InsufficientStockError } from "@/src/domain/errors/InsufficientStockError";
 import { InvalidOrderTransitionError } from "@/src/domain/errors/InvalidOrderTransitionError";
 import { NotFoundError } from "@/src/domain/errors/NotFoundError";
@@ -80,6 +81,12 @@ export function errorResponseFromException(error: unknown, context: string): Nex
   // Something still depends on the record being removed (e.g. a delivery window
   // with orders booked into it). Well-formed request, refusing state → 409, and the
   // message names what's in the way.
+  // The state refuses the request (table taken, event full, …). 409 with the
+  // machine-readable reason as the code, which the client localizes.
+  if (error instanceof ConflictError) {
+    return errorResponse(409, { message: error.message, code: error.code });
+  }
+
   // An order asked for more than is on hand (or an item sold out meanwhile).
   // 409 Conflict — the message names what's short.
   if (error instanceof InsufficientStockError) {

@@ -1,0 +1,42 @@
+import { z } from "zod";
+
+import { isWallTime } from "@/src/domain/entities/CafeTime";
+import {
+  MAX_PARTY_SIZE,
+  MAX_RESERVATION_NOTE_LENGTH,
+  MAX_TABLE_LABEL_LENGTH,
+  MIN_PARTY_SIZE,
+  RESERVATION_STATUSES,
+} from "@/src/domain/entities/Reservation";
+
+/**
+ * Reservation contracts shared by the route handlers and their clients. Times
+ * travel as cafe wall time (`YYYY-MM-DDTHH:mm`, what a `datetime-local` input
+ * holds); the route converts to a UTC instant. Messages are `formErrors` keys.
+ */
+
+/** A guest asking for a table. */
+export const requestReservationSchema = z.object({
+  startsAt: z.string().refine(isWallTime, "dateTimeInvalid"),
+  partySize: z.number().int("partySizeInvalid").min(MIN_PARTY_SIZE, "partySizeInvalid").max(MAX_PARTY_SIZE, "partySizeInvalid"),
+  note: z
+    .string()
+    .trim()
+    .max(MAX_RESERVATION_NOTE_LENGTH, "noteTooLong")
+    .optional()
+    .transform((value) => (value ? value : undefined)),
+});
+
+export type RequestReservationInput = z.input<typeof requestReservationSchema>;
+
+/** Staff acting on a reservation: a new status, a table, or both. */
+export const reservationUpdateSchema = z
+  .object({
+    status: z.enum(RESERVATION_STATUSES, { message: "statusInvalid" }).optional(),
+    tableLabel: z.string().trim().max(MAX_TABLE_LABEL_LENGTH, "tableTooLong").nullable().optional(),
+  })
+  .refine((data) => data.status !== undefined || data.tableLabel !== undefined, {
+    message: "nothingToChange",
+  });
+
+export type ReservationUpdateInput = z.input<typeof reservationUpdateSchema>;

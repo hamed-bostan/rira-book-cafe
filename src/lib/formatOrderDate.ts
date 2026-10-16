@@ -1,7 +1,9 @@
+import { CAFE_TIME_ZONE } from "@/src/domain/entities/CafeTime";
 import type { Locale } from "@/src/i18n/routing";
 
-// Deterministic, locale-aware order date/time formatting. A fixed UTC time zone
-// keeps output identical on the server and its client hydration (no mismatch).
+// Deterministic, locale-aware date/time formatting on the cafe's wall clock. A fixed
+// time zone (Tehran, see `CafeTime`) keeps output identical on the server and its
+// client hydration (no mismatch), and shows staff the times their clock shows.
 // Under `fa` the Persian (Jalali) calendar and Persian numerals come from the
 // `fa-IR-u-ca-persian` BCP-47 tag — `Intl` does the Gregorian→Jalali conversion
 // natively, so no extra date library is needed. `en` stays Gregorian/Latin.
@@ -30,18 +32,18 @@ function getFormatters(locale: Locale): OrderFormatters {
 
   const tag = INTL_LOCALE[locale];
   const formatters: OrderFormatters = {
-    weekday: new Intl.DateTimeFormat(tag, { weekday: "long", timeZone: "UTC" }),
-    month: new Intl.DateTimeFormat(tag, { month: "long", timeZone: "UTC" }),
-    monthShort: new Intl.DateTimeFormat(tag, { month: "short", timeZone: "UTC" }),
-    day: new Intl.DateTimeFormat(tag, { day: "numeric", timeZone: "UTC" }),
-    year: new Intl.DateTimeFormat(tag, { year: "numeric", timeZone: "UTC" }),
+    weekday: new Intl.DateTimeFormat(tag, { weekday: "long", timeZone: CAFE_TIME_ZONE }),
+    month: new Intl.DateTimeFormat(tag, { month: "long", timeZone: CAFE_TIME_ZONE }),
+    monthShort: new Intl.DateTimeFormat(tag, { month: "short", timeZone: CAFE_TIME_ZONE }),
+    day: new Intl.DateTimeFormat(tag, { day: "numeric", timeZone: CAFE_TIME_ZONE }),
+    year: new Intl.DateTimeFormat(tag, { year: "numeric", timeZone: CAFE_TIME_ZONE }),
     // `fa` uses a 24-hour clock (idiomatic in Iran, and avoids the long
     // "بعدازظهر" day-period marker overflowing tight time rows); `en` keeps 12-hour.
     time: new Intl.DateTimeFormat(tag, {
       hour: "2-digit",
       minute: "2-digit",
       hour12: locale === "en",
-      timeZone: "UTC",
+      timeZone: CAFE_TIME_ZONE,
     }),
   };
   cache.set(locale, formatters);
@@ -98,8 +100,8 @@ function getCompactFormatters(locale: Locale): { date: Intl.DateTimeFormat; time
   if (cached) return cached;
 
   const formatters = {
-    date: new Intl.DateTimeFormat(COMPACT_DATE_TAG[locale], { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }),
-    time: new Intl.DateTimeFormat(COMPACT_TIME_TAG[locale], { hour: "2-digit", minute: "2-digit", hour12: locale === "en", timeZone: "UTC" }),
+    date: new Intl.DateTimeFormat(COMPACT_DATE_TAG[locale], { day: "numeric", month: "short", year: "numeric", timeZone: CAFE_TIME_ZONE }),
+    time: new Intl.DateTimeFormat(COMPACT_TIME_TAG[locale], { hour: "2-digit", minute: "2-digit", hour12: locale === "en", timeZone: CAFE_TIME_ZONE }),
   };
   compactCache.set(locale, formatters);
   return formatters;

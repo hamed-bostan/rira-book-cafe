@@ -15,7 +15,7 @@ export function activityEntityHref(
   entityId: string,
   action: ActivityAction,
 ): string | null {
-  if (action === "product.deleted" || action === "category.deleted") return null;
+  if (action === "product.deleted" || action === "category.deleted" || action === "event.deleted") return null;
 
   switch (entityType) {
     case "product":
@@ -24,6 +24,8 @@ export function activityEntityHref(
       return `/dashboard/orders/${entityId}`;
     case "category":
       return `/dashboard/categories/${entityId}/edit`;
+    case "event":
+      return `/dashboard/events/${entityId}/edit`;
     default:
       return null;
   }

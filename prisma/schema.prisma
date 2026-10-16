@@ -140,24 +140,25 @@ model ActivityEntry {
 // status / service_type / payment_status are plain strings matching the domain
 // unions (enum-free style).
 model Order {
-  id            String      @id @default(uuid())
+  id              String           @id @default(uuid())
   // Short sequential number staff call out.
-  orderNumber   Int         @unique @default(autoincrement()) @map("order_number")
-  userId        String      @map("user_id")
-  customerName  String      @map("customer_name")
-  customerPhone String      @map("customer_phone")
-  status        String      @default("pending")
-  serviceType   String      @map("service_type")
-  tableLabel    String?     @map("table_label")
-  note          String?
-  paymentStatus String      @default("unpaid") @map("payment_status")
+  orderNumber     Int              @unique @default(autoincrement()) @map("order_number")
+  userId          String           @map("user_id")
+  customerName    String           @map("customer_name")
+  customerPhone   String           @map("customer_phone")
+  status          String           @default("pending")
+  serviceType     String           @map("service_type")
+  tableLabel      String?          @map("table_label")
+  note            String?
+  paymentStatus   String           @default("unpaid") @map("payment_status")
   // cash | card | transfer | online, once paid (kept after a refund).
-  paymentMethod String?     @map("payment_method")
-  subtotal      Int
-  total         Int
-  items         OrderItem[]
-  placedAt      DateTime    @default(now()) @map("placed_at")
-  updatedAt     DateTime    @updatedAt @map("updated_at")
+  paymentMethod   String?          @map("payment_method")
+  subtotal        Int
+  total           Int
+  items           OrderItem[]
+  paymentAttempts PaymentAttempt[]
+  placedAt        DateTime         @default(now()) @map("placed_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
 
   @@index([status, placedAt])
   @@index([userId, placedAt])
@@ -184,6 +185,33 @@ model OrderItem {
 
   @@index([orderId])
   @@map("order_items")
+}
+
+// One try at paying an order online (see domain/entities/PaymentAttempt).
+// Amounts are whole Toman, like the order's total.
+model PaymentAttempt {
+  id            String   @id @default(uuid())
+  orderId       String   @map("order_id")
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  // zarinpal
+  provider      String
+  // The gateway's id for the try; a callback names exactly one attempt.
+  authority     String   @unique
+  amount        Int
+  // pending | verifying | paid | failed | unapplied
+  status        String   @default("pending")
+  // The order id while the attempt is live (pending/verifying), null after: the
+  // unique index allows one live attempt per order.
+  liveOrderId   String?  @unique @map("live_order_id")
+  failureReason String?  @map("failure_reason")
+  gatewayCode   String?  @map("gateway_code")
+  refId         String?  @map("ref_id")
+  cardPan       String?  @map("card_pan")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@index([orderId, createdAt])
+  @@map("payment_attempts")
 }
 
 // Append-only: one row per status change (and one for placement, with from = null).

@@ -1,7 +1,7 @@
 import { ChevronRight } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
-import type { Account, JournalEntry } from "@/src/domain/entities/Ledger";
+import { isReversibleSource, type Account, type JournalEntry } from "@/src/domain/entities/Ledger";
 import { Link } from "@/src/i18n/navigation";
 import { formatCafeDayMedium } from "@/src/lib/formatCafeDay";
 import { formatMoney } from "@/src/lib/formatMoney";
@@ -26,7 +26,7 @@ export async function JournalEntryScreen({ entry, accounts, canWrite, today }: J
   const byCode = new Map(accounts.map((account) => [account.code, account]));
   const total = entryTotal(entry);
   const documentHref = sourceHref(entry);
-  const reversible = entry.source === "manual" && !entry.reversedById;
+  const reversible = isReversibleSource(entry.source) && !entry.reversedById;
 
   return (
     <div className="flex min-w-0 flex-col gap-6">

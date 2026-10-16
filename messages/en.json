@@ -137,7 +137,8 @@
     "paymentInvalid": "Choose how it was paid.",
     "vatTooHigh": "VAT must be less than the total.",
     "methodInvalid": "Choose a payment method.",
-    "methodRequired": "Choose how the guest paid."
+    "methodRequired": "Choose how the guest paid.",
+    "exceedsGatewayBalance": "That's more than the gateway holds for the cafe on that date."
   },
   "apiErrors": {
     "badRequest": "The request couldn't be read. Please try again.",
@@ -163,7 +164,10 @@
     "notReversible": "Entries posted by an order or an expense are corrected from that order or expense.",
     "periodClosed": "The books are closed for that date. Use a date after the closing day.",
     "accountInactive": "One of the accounts is inactive or doesn't exist.",
-    "unbalanced": "Debits and credits must be equal."
+    "unbalanced": "Debits and credits must be equal.",
+    "notPayable": "This order can't be paid online — it's already paid or was cancelled.",
+    "paymentInProgress": "A payment for this order is being confirmed. Please wait a moment.",
+    "gatewayUnavailable": "The payment gateway isn't available right now. Please try again shortly."
   },
   "meta": {
     "siteName": "Rira Book Cafe",
@@ -1079,7 +1083,20 @@
       "cancel": "Cancel order",
       "cancelTitle": "Cancel this order?",
       "cancelMessage": "You can cancel until the team accepts it.",
-      "cancelError": "Couldn't cancel the order. It may already be accepted."
+      "cancelError": "Couldn't cancel the order. It may already be accepted.",
+      "pay": {
+        "button": "Pay online",
+        "redirecting": "Taking you to the payment page…",
+        "hint": "Pay securely with any Shetab card through Zarinpal.",
+        "error": "Couldn't start the payment. Please try again."
+      },
+      "payOutcome": {
+        "paid": "Payment received — thank you!",
+        "failed": "The payment didn't go through. If money left your account, it returns automatically within 72 hours.",
+        "processing": "We're confirming your payment. This page will update in a moment.",
+        "review": "Your payment arrived after this order was already paid. The cafe will refund it.",
+        "error": "We couldn't confirm the payment yet. Please refresh, or ask at the counter."
+      }
     },
     "book": {
       "heading": "Book a table",
@@ -1177,7 +1194,21 @@
       "expenses": "Operating expenses",
       "netProfit": "Net profit",
       "fullStatement": "Full profit and loss",
-      "recordExpense": "Record expense"
+      "recordExpense": "Record expense",
+      "settlement": {
+        "heading": "Record a gateway payout",
+        "hint": "When Zarinpal pays out, enter what reached the bank and the fee it kept. Together they leave the gateway balance.",
+        "date": "Paid out on",
+        "deposited": "Deposited in the bank",
+        "fee": "Gateway fee",
+        "feeHint": "Leave blank if there was none.",
+        "reference": "Payout reference",
+        "referencePlaceholder": "e.g. the settlement number",
+        "clears": "Clears {amount} from the gateway balance.",
+        "submit": "Record payout",
+        "saved": "Payout recorded.",
+        "error": "Couldn't record the payout. Please try again."
+      }
     },
     "journal": {
       "heading": "Journal",
@@ -1202,7 +1233,8 @@
       "expense": "Expense",
       "expensePayment": "Bill payment",
       "manual": "Manual",
-      "reversal": "Reversal"
+      "reversal": "Reversal",
+      "gatewaySettlement": "Gateway payout"
     },
     "entry": {
       "title": "Journal entry JE-{number}",

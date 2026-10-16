@@ -36,6 +36,9 @@ type ApiErrorKey =
   | "periodClosed"
   | "accountInactive"
   | "unbalanced"
+  | "notPayable"
+  | "paymentInProgress"
+  | "gatewayUnavailable"
   | "timeout"
   | "network"
   | "server";
@@ -64,6 +67,10 @@ const CODE_KEYS: Readonly<Record<string, ApiErrorKey>> = {
   PERIOD_CLOSED: "periodClosed",
   ACCOUNT_INACTIVE: "accountInactive",
   UNBALANCED: "unbalanced",
+  // Online payments.
+  NOT_PAYABLE: "notPayable",
+  PAYMENT_IN_PROGRESS: "paymentInProgress",
+  GATEWAY_UNAVAILABLE: "gatewayUnavailable",
   INTERNAL: "server",
   EBADRESPONSE: "server",
   // Transport failures normalized by the Axios interceptor / server client.

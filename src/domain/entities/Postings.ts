@@ -181,3 +181,39 @@ export function expensePaymentEntry(expense: Expense, source: PaymentSource, dat
     createdByName: actor.name,
   };
 }
+
+/** A gateway payout as the bank statement shows it: what was deposited and the fee kept back. */
+export type GatewaySettlement = {
+  date: string;
+  /** Whole Toman that arrived in the bank. */
+  deposited: number;
+  /** Whole Toman the gateway kept as its fee (0 when none). */
+  fee: number;
+  /** The payout's reference, e.g. the settlement or transfer number. */
+  reference?: string;
+};
+
+/** What a payout takes off the gateway clearing account: the deposit plus the fee. */
+export function settledAmount(settlement: Pick<GatewaySettlement, "deposited" | "fee">): number {
+  return settlement.deposited + settlement.fee;
+}
+
+/**
+ * The gateway paid out: Dr Bank (deposited) + Dr Bank & gateway fees (fee) /
+ * Cr Gateway clearing (both). A mistaken payout is reversed from the journal.
+ */
+export function gatewaySettlementEntry(settlement: GatewaySettlement, actor: Actor): NewJournalEntry {
+  const reference = settlement.reference?.trim() || undefined;
+  return {
+    date: settlement.date,
+    description: reference ? `Gateway payout ${reference}` : "Gateway payout",
+    source: "gatewaySettlement",
+    lines: [
+      { accountCode: SYSTEM_ACCOUNTS.bank, debit: settlement.deposited, credit: 0, memo: reference },
+      { accountCode: SYSTEM_ACCOUNTS.gatewayFees, debit: settlement.fee, credit: 0 },
+      { accountCode: SYSTEM_ACCOUNTS.gatewayClearing, debit: 0, credit: settledAmount(settlement) },
+    ],
+    createdById: actor.id,
+    createdByName: actor.name,
+  };
+}

@@ -1,6 +1,7 @@
 import { diffFields, singleChange, type ActivityActor } from "../../entities/ActivityEntry";
 import { cafeDayOf } from "../../entities/CafeTime";
-import { MAX_VAT_RATE_BPS, reversalOf, typeForCode, type Account, type AccountingSettings, type JournalEntry } from "../../entities/Ledger";
+import { isReversibleSource, MAX_VAT_RATE_BPS, reversalOf, SYSTEM_ACCOUNTS, typeForCode, type Account, type AccountingSettings, type JournalEntry } from "../../entities/Ledger";
+import { gatewaySettlementEntry, settledAmount, type GatewaySettlement } from "../../entities/Postings";
 import { ConflictError } from "../../errors/ConflictError";
 import { NotFoundError } from "../../errors/NotFoundError";
 import { ValidationError } from "../../errors/ValidationError";
@@ -52,9 +53,46 @@ export class PostManualEntry {
 }
 
 /**
- * Reverse a manual entry. Entries an order or expense posted are corrected from
- * that order or expense (cancel, unmark, void) so the document and the books can't
- * disagree; reversing them here is refused.
+ * Record a payout from the online gateway: the bank received `deposited`, the
+ * gateway kept `fee`, and together they leave the gateway clearing account
+ * (Dr Bank, Dr Bank & gateway fees / Cr Gateway clearing). A payout can't clear
+ * more than the gateway holds for the cafe as of its date — that would mean money
+ * the books never saw come in.
+ */
+export class RecordGatewaySettlement {
+  constructor(private readonly ledger: ILedgerRepository) {}
+
+  async execute(settlement: GatewaySettlement, actor: ActivityActor, now: Date = new Date()): Promise<JournalEntry> {
+    assertNotFuture("date", settlement.date, now);
+    const amounts = [settlement.deposited, settlement.fee];
+    if (amounts.some((value) => !Number.isSafeInteger(value) || value < 0) || settledAmount(settlement) <= 0) {
+      throw new ValidationError("deposited", "Enter the amount paid out.");
+    }
+
+    const clearing = (await this.ledger.movements(undefined, settlement.date)).find(
+      (movement) => movement.accountCode === SYSTEM_ACCOUNTS.gatewayClearing,
+    );
+    const held = clearing ? clearing.debit - clearing.credit : 0;
+    if (settledAmount(settlement) > held) {
+      throw new ValidationError("deposited", "exceedsGatewayBalance");
+    }
+
+    return this.ledger.post(gatewaySettlementEntry(settlement, actor), (posted) => ({
+      actorId: actor.id,
+      actorName: actor.name,
+      action: "ledger.entryPosted",
+      entityType: "ledger",
+      entityId: posted.id,
+      entityLabel: entryLabel(posted),
+      changes: singleChange("amount", null, entryTotal(posted)),
+    }));
+  }
+}
+
+/**
+ * Reverse a manual entry or a gateway payout. Entries an order or expense posted
+ * are corrected from that order or expense (cancel, unmark, void) so the document
+ * and the books can't disagree; reversing them here is refused.
  */
 export class ReverseJournalEntry {
   constructor(private readonly ledger: ILedgerRepository) {}
@@ -62,7 +100,7 @@ export class ReverseJournalEntry {
   async execute(entryId: string, date: string, reason: string, actor: ActivityActor, now: Date = new Date()): Promise<JournalEntry> {
     const entry = await this.ledger.getEntry(entryId);
     if (!entry) throw new NotFoundError("journal entry", entryId);
-    if (entry.source !== "manual") {
+    if (!isReversibleSource(entry.source)) {
       throw new ConflictError("NOT_REVERSIBLE", "This entry was posted by an order or an expense — correct it there.");
     }
     assertNotFuture("date", date, now);

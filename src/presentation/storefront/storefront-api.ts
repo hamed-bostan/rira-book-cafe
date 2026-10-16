@@ -8,6 +8,7 @@ import type { Reservation } from "@/src/domain/entities/Reservation";
 import { apiDelete, apiPost, apiPut } from "@/src/lib/api/client";
 import { eventRegistrationResponseSchema } from "@/src/presentation/events/event-response-schema";
 import { orderResponseSchema } from "@/src/presentation/orders/order-response-schema";
+import { paymentSessionResponseSchema, type PaymentSessionResponse } from "@/src/presentation/orders/payment-response-schema";
 import { reservationResponseSchema } from "@/src/presentation/reservations/reservation-response-schema";
 
 /**
@@ -22,6 +23,11 @@ export const storefrontApi = {
 
   cancelOrder(id: string): Promise<Order> {
     return apiPost(`/orders/${id}/cancel`, {}, orderResponseSchema);
+  },
+
+  /** Opens an online payment; send the guest to `redirectUrl`. 409 `NOT_PAYABLE` once paid or cancelled. */
+  payOrder(id: string): Promise<PaymentSessionResponse> {
+    return apiPost(`/orders/${id}/pay`, {}, paymentSessionResponseSchema);
   },
 
   requestReservation(input: RequestReservationInput): Promise<Reservation> {

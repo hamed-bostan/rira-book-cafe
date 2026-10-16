@@ -4,6 +4,7 @@ import type {
   ManualEntryFormInput,
   ReverseEntryInput,
 } from "@/src/contracts/accounting-schema";
+import type { GatewaySettlementInput } from "@/src/contracts/payment-schema";
 import type { Account, AccountingSettings, JournalEntry } from "@/src/domain/entities/Ledger";
 import { apiPatch, apiPost, apiPut } from "@/src/lib/api/client";
 
@@ -35,5 +36,12 @@ export const accountsApi = {
 
   updateSettings(values: AccountingSettingsInput): Promise<AccountingSettings> {
     return apiPut("/admin/accounting/settings", values, accountingSettingsResponseSchema);
+  },
+};
+
+export const settlementsApi = {
+  /** Books a gateway payout; 400 `exceedsGatewayBalance` on `deposited` when it clears more than the gateway holds. */
+  create(values: GatewaySettlementInput): Promise<JournalEntry> {
+    return apiPost("/admin/accounting/settlements", values, journalEntryResponseSchema);
   },
 };

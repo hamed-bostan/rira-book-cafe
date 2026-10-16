@@ -11,6 +11,7 @@ import { Button } from "@/src/presentation/design-system";
 import { StatCard } from "../StatCard";
 
 import { AccountingTabs } from "./AccountingTabs";
+import { GatewaySettlementForm } from "./GatewaySettlementForm";
 import { PeriodPicker } from "./PeriodPicker";
 
 type AccountingOverviewScreenProps = {
@@ -20,6 +21,8 @@ type AccountingOverviewScreenProps = {
   profitAndLoss: ProfitAndLoss;
   settings: AccountingSettings;
   canWrite: boolean;
+  /** The cafe day today — the latest a payout can be dated. */
+  today: string;
 };
 
 /** Where the money sits, as the books see it; liabilities read positive. */
@@ -36,7 +39,7 @@ const BALANCES = [
  * The books at a glance: today's balances in the money accounts and what's owed
  * either way, the period's profit, and whether the ledger balances.
  */
-export async function AccountingOverviewScreen({ trialBalance, profitAndLoss, settings, canWrite }: AccountingOverviewScreenProps) {
+export async function AccountingOverviewScreen({ trialBalance, profitAndLoss, settings, canWrite, today }: AccountingOverviewScreenProps) {
   const t = await getTranslations("dashAccounting");
   const locale = await getLocale();
   const balanceOf = (code: string) => trialBalance.rows.find((row) => row.account.code === code)?.balance ?? 0;
@@ -109,6 +112,8 @@ export async function AccountingOverviewScreen({ trialBalance, profitAndLoss, se
           </Button>
         </div>
       ) : null}
+
+      {canWrite ? <GatewaySettlementForm today={today} /> : null}
     </div>
   );
 }

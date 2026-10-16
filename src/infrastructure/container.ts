@@ -9,6 +9,8 @@ import type { IImageStorageRepository } from "@/src/domain/repositories/IImageSt
 import type { ILedgerRepository } from "@/src/domain/repositories/ILedgerRepository";
 import type { IOrderNoteRepository } from "@/src/domain/repositories/IOrderNoteRepository";
 import type { IOrderRepository } from "@/src/domain/repositories/IOrderRepository";
+import type { IPaymentAttemptRepository } from "@/src/domain/repositories/IPaymentAttemptRepository";
+import type { IPaymentGateway } from "@/src/domain/repositories/IPaymentGateway";
 import type { IProductRepository } from "@/src/domain/repositories/IProductRepository";
 import type { IReservationRepository } from "@/src/domain/repositories/IReservationRepository";
 import type { ITeamNotifier } from "@/src/domain/repositories/ITeamNotifier";
@@ -17,6 +19,7 @@ import type { IUserRepository } from "@/src/domain/repositories/IUserRepository"
 import { LoggingEmailSender } from "./email/LoggingEmailSender";
 import { SmtpEmailSender } from "./email/SmtpEmailSender";
 import { TeamNotifier } from "./notifications/TeamNotifier";
+import { ZarinpalPaymentGateway } from "./payments/ZarinpalPaymentGateway";
 import { MockAuthRepository } from "./repositories/mock/MockAuthRepository";
 import { PrismaActivityLog } from "./repositories/PrismaActivityLog";
 import { PrismaAnalyticsRepository } from "./repositories/PrismaAnalyticsRepository";
@@ -26,6 +29,7 @@ import { PrismaExpenseRepository } from "./repositories/PrismaExpenseRepository"
 import { PrismaLedgerRepository } from "./repositories/PrismaLedgerRepository";
 import { PrismaOrderNoteRepository } from "./repositories/PrismaOrderNoteRepository";
 import { PrismaOrderRepository } from "./repositories/PrismaOrderRepository";
+import { PrismaPaymentAttemptRepository } from "./repositories/PrismaPaymentAttemptRepository";
 import { PrismaProductRepository } from "./repositories/PrismaProductRepository";
 import { PrismaReservationRepository } from "./repositories/PrismaReservationRepository";
 import { PrismaUserRepository } from "./repositories/PrismaUserRepository";
@@ -53,6 +57,15 @@ export const productRepository: IProductRepository = new PrismaProductRepository
 // transaction as the order; internal notes are append-only.
 export const orderRepository: IOrderRepository = new PrismaOrderRepository();
 export const orderNoteRepository: IOrderNoteRepository = new PrismaOrderNoteRepository();
+
+// Online payments — Zarinpal. Without `ZARINPAL_MERCHANT_ID` (or with
+// `ZARINPAL_SANDBOX=true`) payments go to Zarinpal's sandbox, so local dev and
+// staging work end to end without moving money. Attempts live in PostgreSQL.
+export const paymentGateway: IPaymentGateway = new ZarinpalPaymentGateway({
+  merchantId: process.env.ZARINPAL_MERCHANT_ID,
+  sandbox: process.env.ZARINPAL_SANDBOX === "true",
+});
+export const paymentAttemptRepository: IPaymentAttemptRepository = new PrismaPaymentAttemptRepository();
 
 // Table reservations and events (book clubs, readings) — PostgreSQL via Prisma.
 // Table clashes and event capacity are enforced inside the repositories under locks.

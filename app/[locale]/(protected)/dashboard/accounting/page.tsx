@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import { cafeDayOf } from "@/src/domain/entities/CafeTime";
 import { parseDaySpan } from "@/src/lib/api/accounting-params";
 import { toSearchParams } from "@/src/lib/api/searchParams";
 import { requirePermission, sessionHas } from "@/src/lib/require-permission";
@@ -21,5 +22,5 @@ export default async function AccountingPage({ searchParams }: AccountingPagePro
     auth().then((session) => sessionHas(session, "accounting.write")),
   ]);
 
-  return <AccountingOverviewScreen trialBalance={trialBalance} profitAndLoss={profitAndLoss} settings={settings} canWrite={canWrite} />;
+  return <AccountingOverviewScreen trialBalance={trialBalance} profitAndLoss={profitAndLoss} settings={settings} canWrite={canWrite} today={cafeDayOf(new Date())} />;
 }

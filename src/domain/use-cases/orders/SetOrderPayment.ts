@@ -14,7 +14,9 @@ import type { IOrderRepository } from "../../repositories/IOrderRepository";
  * booked: paying posts the money into the method's account, unmarking reverses it.
  *
  * A cancelled order can't be marked paid (there's nothing to pay for) and a
- * refunded one is settled for good. Setting the status it already has is a no-op.
+ * refunded one is settled for good. Setting the status it already has is a no-op —
+ * unless `strict`, for a caller that must know its own mark took effect (an online
+ * payment the gateway captured): then it's a `ConflictError` instead.
  */
 export class SetOrderPayment {
   constructor(private readonly orderRepo: IOrderRepository) {}
@@ -24,10 +26,14 @@ export class SetOrderPayment {
     paymentStatus: SettablePaymentStatus,
     method: PaymentMethod | undefined,
     actor: ActivityActor,
+    options: { strict?: boolean } = {},
   ): Promise<Order> {
     const order = await this.orderRepo.getById(orderId);
     if (!order) throw new NotFoundError("order", orderId);
-    if (order.paymentStatus === paymentStatus) return order;
+    if (order.paymentStatus === paymentStatus) {
+      if (options.strict) throw new ConflictError("INVALID_TRANSITION", `The payment is already ${order.paymentStatus}.`);
+      return order;
+    }
     if (order.paymentStatus === "refunded") {
       throw new ConflictError("INVALID_TRANSITION", "A refunded order's payment can't be changed.");
     }

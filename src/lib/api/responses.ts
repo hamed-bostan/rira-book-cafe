@@ -6,6 +6,7 @@ import { ConflictError } from "@/src/domain/errors/ConflictError";
 import { InsufficientStockError } from "@/src/domain/errors/InsufficientStockError";
 import { InvalidOrderTransitionError } from "@/src/domain/errors/InvalidOrderTransitionError";
 import { NotFoundError } from "@/src/domain/errors/NotFoundError";
+import { PaymentGatewayError } from "@/src/domain/errors/PaymentGatewayError";
 import { ResourceInUseError } from "@/src/domain/errors/ResourceInUseError";
 import { UniqueConstraintError } from "@/src/domain/errors/UniqueConstraintError";
 import { ValidationError } from "@/src/domain/errors/ValidationError";
@@ -113,8 +114,15 @@ export function errorResponseFromException(error: unknown, context: string): Nex
     return errorResponse(409, { message: error.message, code: "IN_USE" });
   }
 
+  // The payment gateway was unreachable or refused. Logged (it's an upstream
+  // problem worth seeing), answered 502 so the client says "try again".
+  if (error instanceof PaymentGatewayError) {
+    console.error(`${context}:`, error);
+    return errorResponse(502, { message: "The payment gateway isn't available right now.", code: "GATEWAY_UNAVAILABLE" });
+  }
+
   console.error(`${context}:`, error);
-  return errorResponse(500, { message: "Something went wrong. Please try again.", code: "INTERNAL" });
+  return errorResponse(500,{ message: "Something went wrong. Please try again.", code: "INTERNAL" });
 }
 
 /** Read and JSON-parse a request body, distinguishing "absent/invalid" from valid. */

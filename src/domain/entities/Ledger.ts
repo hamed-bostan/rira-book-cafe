@@ -68,6 +68,7 @@ export const SYSTEM_ACCOUNTS = {
   salesFood: "4200",
   salesBooks: "4300",
   costOfSales: "5100",
+  gatewayFees: "6700",
 } as const;
 
 /** What an automatic posting or a manual entry came from — for drill-down and duplicate protection. */
@@ -79,6 +80,7 @@ export const JOURNAL_SOURCES = [
   "orderRefund",
   "expense",
   "expensePayment",
+  "gatewaySettlement",
   "manual",
   "reversal",
 ] as const;
@@ -210,3 +212,12 @@ export type AccountingSettings = {
    */
   booksClosedThrough?: string;
 };
+
+/**
+ * Entries that are corrected by reversing them in the journal. Everything an order
+ * or an expense posted is corrected from that order or expense instead (cancel,
+ * unmark, void), so the document and the books can't disagree.
+ */
+export function isReversibleSource(source: JournalSource): boolean {
+  return source === "manual" || source === "gatewaySettlement";
+}

@@ -2,6 +2,7 @@ import { ChevronLeft } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { isActiveOrder, isGuestCancellable, type Order } from "@/src/domain/entities/Order";
+import type { PaymentOutcome } from "@/src/domain/entities/PaymentAttempt";
 import { Link } from "@/src/i18n/navigation";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
@@ -12,21 +13,38 @@ import { Badge, Icon } from "@/src/presentation/design-system";
 
 import { CancelMyOrderButton } from "./CancelMyOrderButton";
 import { OrderProgress } from "./OrderProgress";
+import { PaymentOutcomeNotice } from "./PaymentOutcomeNotice";
+import { PayOnlineButton } from "./PayOnlineButton";
+
+type MyOrderScreenProps = {
+  order: Order;
+  /** How the online payment went, when the guest just came back from the gateway. */
+  paymentOutcome?: PaymentOutcome | "error";
+};
+
+/** Whether the guest can still pay the order online. */
+function isPayableOnline(order: Order): boolean {
+  return order.status !== "cancelled" && order.paymentStatus === "unpaid" && order.total > 0;
+}
 
 /**
  * The guest's order: number to listen for, progress, what they ordered and what it
- * cost. While it's in the queue the page re-reads itself, so "Ready" shows up
- * without a reload.
+ * cost, and — until it's paid — a way to pay online. While it's in the queue the
+ * page re-reads itself, so "Ready" shows up without a reload.
  */
-export async function MyOrderScreen({ order }: { order: Order }) {
+export async function MyOrderScreen({ order, paymentOutcome }: MyOrderScreenProps) {
   const t = await getTranslations("site");
   const tOrders = await getTranslations("dashOrders");
   const locale = await getLocale();
   const active = isActiveOrder(order.status);
+  // Another request was still confirming the payment: re-read until it lands.
+  const confirming = paymentOutcome === "processing" && order.paymentStatus === "unpaid";
+  const outcome = paymentOutcome === "processing" && order.paymentStatus === "paid" ? "paid" : paymentOutcome;
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
-      {active ? <AutoRefresh intervalSeconds={15} /> : null}
+      {active || confirming ? <AutoRefresh intervalSeconds={confirming ? 5 : 15} /> : null}
+      {outcome ? <PaymentOutcomeNotice outcome={outcome} /> : null}
 
       <Link href="/orders" className="inline-flex w-fit items-center gap-1 text-body-small-strong text-muted-foreground hover:text-foreground">
         <Icon icon={ChevronLeft} size="xs" className="rtl:-scale-x-100" />
@@ -73,6 +91,7 @@ export async function MyOrderScreen({ order }: { order: Order }) {
         {order.note ? <p className="mt-3 text-body-small text-muted-foreground">{order.note}</p> : null}
       </section>
 
+      {isPayableOnline(order) ? <PayOnlineButton orderId={order.id} /> : null}
       {isGuestCancellable(order.status) ? <CancelMyOrderButton orderId={order.id} /> : null}
     </div>
   );

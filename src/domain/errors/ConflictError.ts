@@ -26,4 +26,6 @@ export type ConflictCode =
   | "NOT_REVERSIBLE"
   | "PERIOD_CLOSED"
   | "ACCOUNT_INACTIVE"
-  | "UNBALANCED";
+  | "UNBALANCED"
+  | "NOT_PAYABLE"
+  | "PAYMENT_IN_PROGRESS";

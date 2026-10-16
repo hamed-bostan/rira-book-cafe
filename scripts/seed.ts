@@ -14,6 +14,7 @@ import { PrismaClient } from "@prisma/client";
 
 import { cafeDayOf, shiftCafeDay, wallTimeToDate } from "@/src/domain/entities/CafeTime";
 import { isPlausiblePhone, normalizePhone } from "@/src/domain/entities/Phone";
+import { recipeCost } from "@/src/domain/entities/Pricing";
 
 const prisma = new PrismaClient();
 
@@ -356,9 +357,78 @@ async function seedOwner(): Promise<string | null> {
   return id;
 }
 
+/**
+ * Sample ingredients at plausible Tehran prices, and recipes for the drinks and
+ * the omelette, so the pricing advisor has real costs to work with. Cakes and
+ * books keep their manual cost price (bought in whole).
+ */
+const INGREDIENTS = [
+  { id: "seed-ing-beans", name: "Espresso beans", unit: "g", purchasePrice: 1_800_000, purchaseQuantity: 1000 },
+  { id: "seed-ing-milk", name: "Milk", unit: "ml", purchasePrice: 70_000, purchaseQuantity: 1000 },
+  { id: "seed-ing-saffron", name: "Saffron", unit: "g", purchasePrice: 1_200_000, purchaseQuantity: 4 },
+  { id: "seed-ing-tea", name: "Black tea", unit: "g", purchasePrice: 900_000, purchaseQuantity: 500 },
+  { id: "seed-ing-sugar", name: "Sugar", unit: "g", purchasePrice: 80_000, purchaseQuantity: 1000 },
+  { id: "seed-ing-condensed", name: "Condensed milk", unit: "g", purchasePrice: 180_000, purchaseQuantity: 400 },
+  { id: "seed-ing-lemon", name: "Lemon juice", unit: "ml", purchasePrice: 150_000, purchaseQuantity: 1000 },
+  { id: "seed-ing-mint", name: "Fresh mint", unit: "g", purchasePrice: 60_000, purchaseQuantity: 250 },
+  { id: "seed-ing-cup", name: "Cold cup and lid", unit: "piece", purchasePrice: 400_000, purchaseQuantity: 50 },
+  { id: "seed-ing-eggs", name: "Eggs", unit: "piece", purchasePrice: 750_000, purchaseQuantity: 30 },
+  { id: "seed-ing-bread", name: "Barbari bread", unit: "piece", purchasePrice: 20_000, purchaseQuantity: 1 },
+] as const;
+
+const RECIPES: Record<string, { ingredientId: string; quantity: number }[]> = {
+  "seed-espresso": [{ ingredientId: "seed-ing-beans", quantity: 18 }],
+  "seed-cappuccino": [
+    { ingredientId: "seed-ing-beans", quantity: 18 },
+    { ingredientId: "seed-ing-milk", quantity: 150 },
+  ],
+  "seed-saffron-latte": [
+    { ingredientId: "seed-ing-beans", quantity: 18 },
+    { ingredientId: "seed-ing-milk", quantity: 200 },
+    { ingredientId: "seed-ing-saffron", quantity: 0.1 },
+    { ingredientId: "seed-ing-sugar", quantity: 10 },
+  ],
+  "seed-persian-tea": [
+    { ingredientId: "seed-ing-tea", quantity: 6 },
+    { ingredientId: "seed-ing-sugar", quantity: 15 },
+  ],
+  "seed-iced-spanish-latte": [
+    { ingredientId: "seed-ing-beans", quantity: 18 },
+    { ingredientId: "seed-ing-milk", quantity: 150 },
+    { ingredientId: "seed-ing-condensed", quantity: 30 },
+    { ingredientId: "seed-ing-cup", quantity: 1 },
+  ],
+  "seed-mint-lemonade": [
+    { ingredientId: "seed-ing-lemon", quantity: 60 },
+    { ingredientId: "seed-ing-mint", quantity: 5 },
+    { ingredientId: "seed-ing-sugar", quantity: 30 },
+    { ingredientId: "seed-ing-cup", quantity: 1 },
+  ],
+  "seed-omelette": [
+    { ingredientId: "seed-ing-eggs", quantity: 3 },
+    { ingredientId: "seed-ing-bread", quantity: 1 },
+  ],
+};
+
+async function seedRecipes(): Promise<void> {
+  for (const ingredient of INGREDIENTS) {
+    const { id, ...data } = ingredient;
+    await prisma.ingredient.upsert({ where: { id }, create: ingredient, update: data });
+  }
+  const byId = new Map<string, { purchasePrice: number; purchaseQuantity: number }>(INGREDIENTS.map((ingredient) => [ingredient.id, ingredient]));
+  for (const [productId, lines] of Object.entries(RECIPES)) {
+    await prisma.recipeLine.deleteMany({ where: { productId } });
+    await prisma.recipeLine.createMany({ data: lines.map((line, position) => ({ productId, ...line, position })) });
+    // The item's cost price follows its recipe, as it does when edited in the dashboard.
+    const cost = recipeCost(lines, byId);
+    if (cost !== null) await prisma.product.update({ where: { id: productId }, data: { costPrice: cost } });
+  }
+}
+
 async function main(): Promise<void> {
   const categoryIds = await seedCategories();
   await seedItems(categoryIds);
+  await seedRecipes();
   await seedEvents();
   const owner = await seedOwner();
 

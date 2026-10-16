@@ -1,11 +1,14 @@
 import {
   BarChart3,
+  Calculator,
   CalendarClock,
   ClipboardList,
   Coffee,
   History,
   LayoutDashboard,
+  Landmark,
   PartyPopper,
+  Receipt,
   ShieldCheck,
   Tag,
 } from "lucide-react";
@@ -37,6 +40,9 @@ export type DashboardSectionLabelKey =
   | "navProducts"
   | "navCategories"
   | "navReports"
+  | "navAccounting"
+  | "navExpenses"
+  | "navPricing"
   | "navActivity"
   | "navTeam";
 
@@ -67,6 +73,11 @@ const SECTIONS = [
 
   // Revenue and the reports behind it — admin and owner only.
   { href: "/dashboard/reports", labelKey: "navReports", icon: BarChart3, needs: "reports.view", group: "groupInsights" },
+
+  // The books, the bills that feed them, and what each item should cost — admin and owner.
+  { href: "/dashboard/accounting", labelKey: "navAccounting", icon: Landmark, needs: "accounting.view", group: "groupFinance" },
+  { href: "/dashboard/expenses", labelKey: "navExpenses", icon: Receipt, needs: "accounting.view", group: "groupFinance" },
+  { href: "/dashboard/pricing", labelKey: "navPricing", icon: Calculator, needs: "accounting.view", group: "groupFinance" },
 
   // The cafe's own record of itself. Activity is visible to everyone holding
   // `activity.view` (team-access entries stay owner-only, see `activity-visibility`);

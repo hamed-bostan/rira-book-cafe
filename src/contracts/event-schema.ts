@@ -8,6 +8,8 @@ import {
 } from "@/src/domain/entities/CafeEvent";
 import { isWallTime, wallTimeToDate } from "@/src/domain/entities/CafeTime";
 
+import { isImageUrl } from "./image-url";
+
 /**
  * Event contracts shared by the admin form, the guest sign-up and the route
  * handlers. The form authors strings (what its controls emit); the schema's
@@ -35,7 +37,7 @@ export const eventFormSchema = z
       .string()
       .trim()
       .transform((value) => (value.length > 0 ? value : undefined))
-      .refine((value) => value === undefined || z.string().url().safeParse(value).success, "imageInvalid"),
+      .refine((value) => value === undefined || isImageUrl(value), "imageInvalid"),
     /** Cafe wall time, `YYYY-MM-DDTHH:mm`. */
     startsAt: wallTime,
     endsAt: wallTime,

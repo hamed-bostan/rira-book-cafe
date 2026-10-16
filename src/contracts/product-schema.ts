@@ -3,6 +3,8 @@ import { z } from "zod";
 import { BOOK_AVAILABILITIES, PRODUCT_KINDS } from "@/src/domain/entities/Product";
 import { DIETARY_TAGS } from "@/src/domain/entities/ProductFilters";
 
+import { imageUrlField } from "./image-url";
+
 const DIETARY_SET = new Set<string>(DIETARY_TAGS);
 
 /**
@@ -76,7 +78,7 @@ export const productFormSchema = z
     categoryId: z.string().min(1, "categoryRequired"),
     price: priceField,
     originalPrice: optionalPriceField,
-    imageUrl: z.string().min(1, "imageRequired").url("imageInvalid"),
+    imageUrl: imageUrlField("imageRequired"),
     stockQuantity: stockField,
     isFeatured: z.boolean(),
     isPublished: z.boolean(),

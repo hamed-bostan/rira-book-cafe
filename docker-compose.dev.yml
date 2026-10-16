@@ -1,0 +1,37 @@
+name: rira-dev
+
+# Local development database only — the Next.js app runs on the host (`npm run dev`)
+# and connects via DATABASE_URL in `.env`:
+#   postgresql://rira:devpassword@localhost:5545/rira
+# Host port 5545 (not 5432): Windows' WinNAT reserves a range covering 5432, and
+# 5544 is freshdrop's dev database, so both can run side by side.
+#
+# Usage:
+#   docker compose -f docker-compose.dev.yml up -d     # start (survives reboots)
+#   docker compose -f docker-compose.dev.yml down       # stop (keeps data)
+#   docker compose -f docker-compose.dev.yml down -v    # stop AND delete data
+
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: rira-db
+    restart: unless-stopped
+    environment:
+      # Local-dev throwaway credentials — must match DATABASE_URL in `.env`.
+      POSTGRES_USER: rira
+      POSTGRES_PASSWORD: devpassword
+      POSTGRES_DB: rira
+    ports:
+      # Bound to loopback only — the dev DB is never exposed on the LAN.
+      - "127.0.0.1:5545:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rira -d rira"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  pgdata:

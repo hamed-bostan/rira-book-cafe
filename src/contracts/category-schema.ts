@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { imageUrlField } from "./image-url";
+
 /**
  * The single source of truth for category form input, shared by the client form
  * (React Hook Form resolver) and the REST route handlers (defensive re-validation
@@ -16,7 +18,7 @@ export const categoryFormSchema = z
       .min(1, "slugRequired")
       .max(60, "slugTooLong")
       .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "slugFormat"),
-    iconUrl: z.string().min(1, "iconRequired").url("imageInvalid"),
+    iconUrl: imageUrlField("iconRequired"),
     // A new category is active by default, matching the column — an operator who
     // wants to stage one deactivates it deliberately.
     isActive: z.boolean().default(true),

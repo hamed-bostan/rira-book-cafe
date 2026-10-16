@@ -1,12 +1,17 @@
 import type { IActivityLog } from "@/src/domain/repositories/IActivityLog";
 import type { IAuthRepository } from "@/src/domain/repositories/IAuthRepository";
 import type { ICategoryRepository } from "@/src/domain/repositories/ICategoryRepository";
+import type { IEmailSender } from "@/src/domain/repositories/IEmailSender";
 import type { IImageStorageRepository } from "@/src/domain/repositories/IImageStorageRepository";
 import type { IOrderNoteRepository } from "@/src/domain/repositories/IOrderNoteRepository";
 import type { IOrderRepository } from "@/src/domain/repositories/IOrderRepository";
 import type { IProductRepository } from "@/src/domain/repositories/IProductRepository";
+import type { ITeamNotifier } from "@/src/domain/repositories/ITeamNotifier";
 import type { IUserRepository } from "@/src/domain/repositories/IUserRepository";
 
+import { LoggingEmailSender } from "./email/LoggingEmailSender";
+import { SmtpEmailSender } from "./email/SmtpEmailSender";
+import { TeamNotifier } from "./notifications/TeamNotifier";
 import { MockAuthRepository } from "./repositories/mock/MockAuthRepository";
 import { PrismaActivityLog } from "./repositories/PrismaActivityLog";
 import { PrismaCategoryRepository } from "./repositories/PrismaCategoryRepository";
@@ -56,6 +61,47 @@ export const authRepository: IAuthRepository =
         baseUrl: process.env.SMS_IR_BASE_URL,
       })
     : new MockAuthRepository();
+
+/** Read a numeric env var, returning `undefined` when unset or not a number. */
+function numericEnv(name: string): number | undefined {
+  const raw = process.env[name];
+  if (!raw) return undefined;
+  const value = Number(raw);
+  return Number.isFinite(value) ? value : undefined;
+}
+
+// Transactional email. Real SMTP when a host is configured, a logging stub
+// otherwise, so local dev and a fresh deployment work without mail credentials.
+// SMTP rather than a provider HTTP API: hosted mail APIs geo-block Iranian servers.
+export const emailSender: IEmailSender = process.env.SMTP_HOST
+  ? new SmtpEmailSender({
+      host: process.env.SMTP_HOST,
+      port: numericEnv("SMTP_PORT") ?? 587,
+      // Implicit TLS on 465; STARTTLS on 587 and everything else.
+      secure: (numericEnv("SMTP_PORT") ?? 587) === 465,
+      user: process.env.SMTP_USER,
+      password: process.env.SMTP_PASSWORD,
+      from: process.env.SMTP_FROM ?? "Rira Book Cafe <no-reply@localhost>",
+    })
+  : new LoggingEmailSender();
+
+// Announces team changes — an admin grant, and both sides of an ownership move —
+// over email (when an address is on file) and SMS (when an approved pattern
+// template is configured for that event). Best-effort: the change is real either way.
+export const teamNotifier: ITeamNotifier = new TeamNotifier(
+  emailSender,
+  process.env.SMS_IR_API_KEY
+    ? {
+        apiKey: process.env.SMS_IR_API_KEY,
+        baseUrl: process.env.SMS_IR_BASE_URL,
+        templates: {
+          adminGranted: numericEnv("SMS_IR_ADMIN_INVITE_TEMPLATE_ID"),
+          ownershipReceived: numericEnv("SMS_IR_OWNERSHIP_RECEIVED_TEMPLATE_ID"),
+          ownershipLost: numericEnv("SMS_IR_OWNERSHIP_LOST_TEMPLATE_ID"),
+        },
+      }
+    : undefined,
+);
 
 // Supabase Storage for images. Server-side only — it holds the service-role key,
 // so it must never be imported by client components. `SUPABASE_URL` falls back to

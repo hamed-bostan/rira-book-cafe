@@ -169,9 +169,79 @@
     "navProducts": "Menu",
     "groupMenu": "Menu",
     "navOrders": "Orders",
-    "groupService": "Service"
+    "groupService": "Service",
+    "navActivity": "Activity",
+    "navTeam": "Team",
+    "groupStore": "Cafe"
   },
   "dashTeam": {
+    "membersHeading": "Team members",
+    "heading": "Team",
+    "summary": "{count, plural, one {# person has} other {# people have}} dashboard access",
+    "grantHeading": "Add a team member",
+    "grantDescription": "Enter the phone number they sign in with. They'll get dashboard access the next time they sign in — only the holder of that number can use it.",
+    "phoneLabel": "Phone number",
+    "phonePlaceholder": "09xxxxxxxxx",
+    "emailLabel": "Email",
+    "emailHint": "Optional — we'll email them the invitation too.",
+    "emailPlaceholder": "name@example.com",
+    "grantSubmit": "Grant access",
+    "granting": "Granting…",
+    "grantError": "Couldn't grant access. Please try again.",
+    "colMember": "Member",
+    "colPhone": "Phone",
+    "colAccess": "Access",
+    "colActions": "Actions",
+    "youSuffix": "(you)",
+    "managedInEnv": "Set in server config",
+    "revokeBlocked": {
+      "breakGlass": "Set in server config — remove them from ADMIN_USER_IDS instead.",
+      "owner": "Can't remove the owner — transfer ownership first.",
+      "self": "You can't remove your own access."
+    },
+    "ownership": {
+      "transfer": {
+        "aria": "Make {name} the owner",
+        "title": "Transfer ownership?",
+        "message": "{name} becomes the owner and can manage the team. You stay an admin and keep running the cafe, but you'll no longer be able to add or remove people.",
+        "confirm": "Transfer ownership"
+      },
+      "claim": {
+        "aria": "Become the owner",
+        "title": "Become the owner?",
+        "message": "Nobody owns this cafe yet. You'll hold the owner role in the database rather than only through the server config, so you can manage the team without ADMIN_USER_IDS.",
+        "confirm": "Become owner"
+      },
+      "takeOver": {
+        "aria": "Take ownership of the cafe",
+        "title": "Take ownership?",
+        "message": "Someone else owns this cafe. You can take it because your access is set in the server config — this is the recovery path for a lost owner account, not a routine change. The current owner becomes an admin.",
+        "confirm": "Take ownership"
+      }
+    },
+    "activityHeading": "Access history",
+    "activityDescription": "Every change to who can reach the dashboard. Kept permanently.",
+    "activityEmpty": "No changes recorded yet.",
+    "activity": {
+      "granted": "{actor} gave {user} admin access",
+      "revoked": "{actor} removed {user}'s access",
+      "ownershipTransferred": "{actor} made {user} the owner",
+      "ownershipClaimed": "{user} took ownership",
+      "steppedDown": "{user} stopped being the owner",
+      "unknown": "{actor} changed {user}'s access"
+    },
+    "transferErrorTitle": "Couldn't transfer ownership",
+    "transferError": "Couldn't transfer ownership. Please try again.",
+    "transferTryAgain": "Try again",
+    "revokeAria": "Remove admin access for {name}",
+    "revokeTitle": "Remove admin access?",
+    "revokeMessage": "{name} will lose access to the dashboard. Their account and order history stay untouched.",
+    "revokeConfirm": "Remove access",
+    "revokeErrorTitle": "Couldn't remove access",
+    "revokeError": "Couldn't remove access. Please try again.",
+    "revokeTryAgain": "Try again",
+    "roleLabel": "Role",
+    "roleHint": "What they can do.",
     "role": {
       "support": "Support",
       "staff": "Staff",
@@ -524,5 +594,106 @@
     "add": "Add note",
     "addError": "Couldn't add the note. Please try again.",
     "empty": "No notes yet."
+  },
+  "dashActivity": {
+    "heading": "Activity",
+    "summary": "Every change made from the dashboard, newest first. Kept permanently.",
+    "empty": "No activity yet",
+    "emptyBody": "Changes made from the dashboard will appear here.",
+    "filterActor": "Filter by who made the change",
+    "filterEntity": "Filter by what was changed",
+    "allActors": "Anyone",
+    "allEntities": "Anything",
+    "open": "Open",
+    "panelHeading": "Activity",
+    "panelDescription": "Every change made to this from the dashboard.",
+    "panelEmpty": "No changes recorded yet.",
+    "entity": {
+      "product": "Products",
+      "order": "Orders",
+      "review": "Reviews",
+      "promoCode": "Promo codes",
+      "user": "Team access",
+      "unknown": "Other",
+      "category": "Categories"
+    },
+    "action": {
+      "product": {
+        "created": "{actor} created {entity}",
+        "updated": "{actor} edited {entity}",
+        "deleted": "{actor} deleted {entity}"
+      },
+      "order": {
+        "stageChanged": "{actor} changed the status of order {entity}",
+        "customerNotified": "{actor} messaged the guest about order {entity}",
+        "placed": "{actor} placed order {entity}",
+        "paymentChanged": "{actor} changed the payment of order {entity}"
+      },
+      "review": {
+        "moderated": "{actor} moderated {entity}'s review",
+        "submitted": "{actor} submitted a new review"
+      },
+      "promoCode": {
+        "created": "{actor} created promo code {entity}",
+        "updated": "{actor} edited promo code {entity}",
+        "activeChanged": "{actor} switched promo code {entity} on or off"
+      },
+      "unknown": "{actor} changed {entity}",
+      "category": {
+        "created": "{actor} created category {entity}",
+        "updated": "{actor} edited category {entity}",
+        "deleted": "{actor} deleted category {entity}"
+      }
+    },
+    "role": {
+      "granted": "{actor} gave {user} admin access",
+      "revoked": "{actor} removed {user}'s access",
+      "ownershipTransferred": "{actor} made {user} the owner",
+      "ownershipClaimed": "{user} took ownership",
+      "steppedDown": "{user} stopped being the owner",
+      "unknown": "{actor} changed {user}'s access"
+    },
+    "field": {
+      "name": "Name",
+      "price": "Price",
+      "originalPrice": "Original price",
+      "stockQuantity": "Stock",
+      "categoryId": "Category",
+      "isFeatured": "Featured",
+      "badge": "Badge",
+      "unit": "Size",
+      "imageUrl": "Image",
+      "description": "Description",
+      "nutrition": "Nutrition",
+      "origin": "Origin",
+      "dietary": "Dietary tags",
+      "note": "Note",
+      "code": "Code",
+      "title": "Title",
+      "discountPercent": "Discount",
+      "active": "Active",
+      "status": "Status",
+      "role": "Role",
+      "slug": "Slug",
+      "iconUrl": "Icon",
+      "kind": "Type",
+      "bookAuthor": "Author",
+      "bookIsbn": "ISBN",
+      "bookAvailability": "Book availability",
+      "isPublished": "Published",
+      "isActive": "Active",
+      "paymentStatus": "Payment"
+    },
+    "filterField": "Filter by what changed",
+    "allFields": "Any change",
+    "fieldOption": {
+      "price": "Price changes",
+      "stockQuantity": "Stock changes",
+      "isPublished": "Publish / unpublish",
+      "isActive": "Category on/off",
+      "status": "Order status changes",
+      "paymentStatus": "Payment changes",
+      "role": "Access changes"
+    }
   }
 }

@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 
+import { DEFAULT_ACTIVITY_LIMIT } from "@/src/domain/entities/ActivityEntry";
 import { requirePermission } from "@/src/lib/require-permission";
+import { activityServerApi } from "@/src/presentation/dashboard/activity/activity-server-api";
 import { categoriesServerApi } from "@/src/presentation/dashboard/categories/category-server-api";
 import { EditCategoryScreen } from "@/src/presentation/dashboard/categories/EditCategoryScreen";
 
@@ -17,11 +19,12 @@ export default async function EditCategoryPage({ params }: EditCategoryPageProps
   await requirePermission("catalog.write");
 
   const { id } = await params;
-  const [category, translations] = await Promise.all([
+  const [category, translations, activity] = await Promise.all([
     categoriesServerApi.getById(id),
     categoriesServerApi.getTranslations(id),
+    activityServerApi.listForEntity("category", id, DEFAULT_ACTIVITY_LIMIT),
   ]);
   if (!category) notFound();
 
-  return <EditCategoryScreen category={category} translations={translations} />;
+  return <EditCategoryScreen category={category} translations={translations} activity={activity} />;
 }

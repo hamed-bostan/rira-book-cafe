@@ -2,6 +2,8 @@ import { getTranslations } from "next-intl/server";
 
 import type { Category } from "@/src/domain/entities/Category";
 import type { CategoryTranslationInput } from "@/src/domain/repositories/ICategoryRepository";
+import type { ActivityEntryWire } from "@/src/presentation/dashboard/activity/activity-response-schema";
+import { ActivityPanel } from "@/src/presentation/dashboard/activity/ActivityPanel";
 
 import { CategoryForm } from "./CategoryForm";
 
@@ -13,9 +15,12 @@ import { CategoryForm } from "./CategoryForm";
 export async function EditCategoryScreen({
   category,
   translations,
+  activity,
 }: {
   category: Category;
   translations: CategoryTranslationInput[];
+  /** The category's recent admin activity, for the panel under the form. */
+  activity: ActivityEntryWire[];
 }) {
   const t = await getTranslations("dashCategories");
 
@@ -26,6 +31,7 @@ export async function EditCategoryScreen({
         <p className="text-body-small text-muted-foreground">{t("editSubtitle", { name: category.name })}</p>
       </div>
       <CategoryForm mode="edit" category={category} translations={translations} />
+      <ActivityPanel entries={activity} />
     </div>
   );
 }

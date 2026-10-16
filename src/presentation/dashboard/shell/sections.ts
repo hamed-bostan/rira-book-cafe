@@ -1,4 +1,4 @@
-import { ClipboardList, Coffee, LayoutDashboard, Tag } from "lucide-react";
+import { ClipboardList, Coffee, History, LayoutDashboard, ShieldCheck, Tag } from "lucide-react";
 
 import type { Permission } from "@/src/domain/entities/Permission";
 
@@ -16,10 +16,16 @@ import type { LucideIcon } from "lucide-react";
  */
 
 /** A navigation group's stable id, which is also its label key under `dashboard`. */
-export type DashboardSectionGroup = "groupOverview" | "groupService" | "groupMenu";
+export type DashboardSectionGroup = "groupOverview" | "groupService" | "groupMenu" | "groupStore";
 
 /** A section's label key under the `dashboard` namespace — spelled out so `t()` can check it. */
-export type DashboardSectionLabelKey = "navDashboard" | "navOrders" | "navProducts" | "navCategories";
+export type DashboardSectionLabelKey =
+  | "navDashboard"
+  | "navOrders"
+  | "navProducts"
+  | "navCategories"
+  | "navActivity"
+  | "navTeam";
 
 export type DashboardSection = {
   href: string;
@@ -41,10 +47,16 @@ const SECTIONS = [
   // "do we still have this?". The write controls inside it are gated on `catalog.write`.
   { href: "/dashboard/products", labelKey: "navProducts", icon: Coffee, needs: "dashboard.view", group: "groupMenu" },
   { href: "/dashboard/categories", labelKey: "navCategories", icon: Tag, needs: "catalog.write", group: "groupMenu" },
+
+  // The cafe's own record of itself. Activity is visible to everyone holding
+  // `activity.view` (team-access entries stay owner-only, see `activity-visibility`);
+  // Team is the owner's alone.
+  { href: "/dashboard/activity", labelKey: "navActivity", icon: History, needs: "activity.view", group: "groupStore" },
+  { href: "/dashboard/team", labelKey: "navTeam", icon: ShieldCheck, needs: "team.manage", group: "groupStore" },
 ] as const satisfies readonly DashboardSection[];
 
 /** The groups in sidebar order. */
-const GROUP_ORDER: readonly DashboardSectionGroup[] = ["groupOverview", "groupService", "groupMenu"];
+const GROUP_ORDER: readonly DashboardSectionGroup[] = ["groupOverview", "groupService", "groupMenu", "groupStore"];
 
 export type DashboardNavGroup = {
   id: DashboardSectionGroup;

@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 
+import { DEFAULT_ACTIVITY_LIMIT } from "@/src/domain/entities/ActivityEntry";
 import { requirePermission } from "@/src/lib/require-permission";
+import { activityServerApi } from "@/src/presentation/dashboard/activity/activity-server-api";
 import { categoriesServerApi } from "@/src/presentation/dashboard/categories/category-server-api";
 import { EditProductScreen } from "@/src/presentation/dashboard/products/EditProductScreen";
 import { productsServerApi } from "@/src/presentation/dashboard/products/product-server-api";
@@ -21,10 +23,11 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
   await requirePermission("catalog.write");
 
   const { id } = await params;
-  const [product, categories, translations] = await Promise.all([
+  const [product, categories, translations, activity] = await Promise.all([
     productsServerApi.getById(id),
     categoriesServerApi.list(),
     productsServerApi.getTranslations(id),
+    activityServerApi.listForEntity("product", id, DEFAULT_ACTIVITY_LIMIT),
   ]);
   if (!product) notFound();
 
@@ -33,6 +36,7 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
       product={product}
       categories={categories}
       translations={translations}
+      activity={activity}
     />
   );
 }

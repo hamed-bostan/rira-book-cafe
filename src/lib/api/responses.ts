@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 
+import { AdminRevokeError } from "@/src/domain/errors/AdminRevokeError";
 import { InsufficientStockError } from "@/src/domain/errors/InsufficientStockError";
 import { InvalidOrderTransitionError } from "@/src/domain/errors/InvalidOrderTransitionError";
 import { NotFoundError } from "@/src/domain/errors/NotFoundError";
@@ -89,6 +90,16 @@ export function errorResponseFromException(error: unknown, context: string): Nex
   // change. 409 — the client refreshes to show the order's real state.
   if (error instanceof InvalidOrderTransitionError) {
     return errorResponse(409, { message: error.message, code: "INVALID_TRANSITION" });
+  }
+
+  // Removing an admin was refused to keep the dashboard reachable (self-removal,
+  // or the owner). The input was fine, the state wasn't → 409, and `reason` picks
+  // the precise copy client-side.
+  if (error instanceof AdminRevokeError) {
+    return errorResponse(409, {
+      message: error.message,
+      code: error.reason === "self" ? "REVOKE_SELF" : "REVOKE_OWNER",
+    });
   }
 
   if (error instanceof ResourceInUseError) {

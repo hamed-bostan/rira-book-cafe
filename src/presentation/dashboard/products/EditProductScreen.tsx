@@ -3,6 +3,8 @@ import { getTranslations } from "next-intl/server";
 import type { Category } from "@/src/domain/entities/Category";
 import type { Product } from "@/src/domain/entities/Product";
 import type { ProductTranslationInput } from "@/src/domain/repositories/IProductRepository";
+import type { ActivityEntryWire } from "@/src/presentation/dashboard/activity/activity-response-schema";
+import { ActivityPanel } from "@/src/presentation/dashboard/activity/ActivityPanel";
 
 import { ProductForm } from "./ProductForm";
 
@@ -16,10 +18,13 @@ export async function EditProductScreen({
   product,
   categories,
   translations,
+  activity,
 }: {
   product: Product;
   categories: Category[];
   translations: ProductTranslationInput[];
+  /** The item's recent admin activity, for the panel under the form. */
+  activity: ActivityEntryWire[];
 }) {
   const t = await getTranslations("dashProducts");
 
@@ -30,6 +35,7 @@ export async function EditProductScreen({
         <p className="text-body-small text-muted-foreground">{t("editSubtitle", { name: product.name })}</p>
       </div>
       <ProductForm mode="edit" product={product} categories={categories} translations={translations} />
+      <ActivityPanel entries={activity} />
     </div>
   );
 }

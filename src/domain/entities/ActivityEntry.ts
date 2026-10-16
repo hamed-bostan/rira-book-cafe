@@ -298,10 +298,9 @@ export function changedFields(changes: readonly ActivityChange[]): string[] {
 export const FILTERABLE_ACTIVITY_FIELDS = [
   "price",
   "stockQuantity",
-  "discountPercent",
-  "active",
+  "isPublished",
+  "isActive",
   "status",
-  "stage",
-  "capacity",
+  "paymentStatus",
   "role",
 ] as const;

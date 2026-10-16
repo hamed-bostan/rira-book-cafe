@@ -169,9 +169,79 @@
     "navProducts": "منو",
     "groupMenu": "منو",
     "navOrders": "سفارش‌ها",
-    "groupService": "سرویس"
+    "groupService": "سرویس",
+    "navActivity": "فعالیت‌ها",
+    "navTeam": "تیم",
+    "groupStore": "کافه"
   },
   "dashTeam": {
+    "membersHeading": "اعضای تیم",
+    "heading": "تیم",
+    "summary": "{count, plural, other {# نفر}} به داشبورد دسترسی دارند",
+    "grantHeading": "افزودن عضو تیم",
+    "grantDescription": "شماره تلفنی را که با آن وارد می‌شوند وارد کنید. از ورود بعدی‌شان به داشبورد دسترسی خواهند داشت — فقط دارندهٔ همان شماره می‌تواند از آن استفاده کند.",
+    "phoneLabel": "شماره تلفن",
+    "phonePlaceholder": "09xxxxxxxxx",
+    "emailLabel": "ایمیل",
+    "emailHint": "اختیاری — دعوت‌نامه را با ایمیل هم برایشان می‌فرستیم.",
+    "emailPlaceholder": "name@example.com",
+    "grantSubmit": "اعطای دسترسی",
+    "granting": "در حال اعطا…",
+    "grantError": "اعطای دسترسی انجام نشد. دوباره تلاش کنید.",
+    "colMember": "عضو",
+    "colPhone": "تلفن",
+    "colAccess": "دسترسی",
+    "colActions": "عملیات",
+    "youSuffix": "(شما)",
+    "managedInEnv": "تنظیم‌شده در پیکربندی سرور",
+    "revokeBlocked": {
+      "breakGlass": "در پیکربندی سرور تنظیم شده — به‌جای این، از ADMIN_USER_IDS حذفش کنید.",
+      "owner": "مالک را نمی‌توان حذف کرد — ابتدا مالکیت را واگذار کنید.",
+      "self": "نمی‌توانید دسترسی خودتان را حذف کنید."
+    },
+    "ownership": {
+      "transfer": {
+        "aria": "واگذاری مالکیت به {name}",
+        "title": "مالکیت واگذار شود؟",
+        "message": "{name} مالک می‌شود و می‌تواند تیم را مدیریت کند. شما مدیر می‌مانید و همچنان کافه را اداره می‌کنید، اما دیگر نمی‌توانید کسی را اضافه یا حذف کنید.",
+        "confirm": "واگذاری مالکیت"
+      },
+      "claim": {
+        "aria": "مالک شدن",
+        "title": "مالک شوید؟",
+        "message": "هنوز کسی مالک این کافه نیست. نقش مالک در پایگاه داده ثبت می‌شود، نه فقط از طریق پیکربندی سرور؛ بنابراین بدون ADMIN_USER_IDS هم می‌توانید تیم را مدیریت کنید.",
+        "confirm": "مالک شدن"
+      },
+      "takeOver": {
+        "aria": "به‌دست گرفتن مالکیت کافه",
+        "title": "مالکیت را به‌دست می‌گیرید؟",
+        "message": "فرد دیگری مالک این کافه است. چون دسترسی شما در پیکربندی سرور تنظیم شده می‌توانید مالکیت را به‌دست بگیرید — این مسیر بازیابی برای حساب مالکِ ازدست‌رفته است، نه یک تغییر معمول. مالک فعلی به مدیر تبدیل می‌شود.",
+        "confirm": "به‌دست گرفتن مالکیت"
+      }
+    },
+    "activityHeading": "تاریخچهٔ دسترسی",
+    "activityDescription": "هر تغییری در اینکه چه کسی به داشبورد دسترسی دارد. برای همیشه نگهداری می‌شود.",
+    "activityEmpty": "هنوز تغییری ثبت نشده است.",
+    "activity": {
+      "granted": "{actor} به {user} دسترسی مدیریت داد",
+      "revoked": "{actor} دسترسی {user} را حذف کرد",
+      "ownershipTransferred": "{actor}، {user} را مالک کرد",
+      "ownershipClaimed": "{user} مالکیت را به‌دست گرفت",
+      "steppedDown": "{user} دیگر مالک نیست",
+      "unknown": "{actor} دسترسی {user} را تغییر داد"
+    },
+    "transferErrorTitle": "واگذاری مالکیت انجام نشد",
+    "transferError": "واگذاری مالکیت انجام نشد. دوباره تلاش کنید.",
+    "transferTryAgain": "تلاش دوباره",
+    "revokeAria": "حذف دسترسی مدیریتی {name}",
+    "revokeTitle": "دسترسی مدیریتی حذف شود؟",
+    "revokeMessage": "{name} دسترسی خود به داشبورد را از دست می‌دهد. حساب کاربری و تاریخچهٔ سفارش‌هایش دست‌نخورده می‌ماند.",
+    "revokeConfirm": "حذف دسترسی",
+    "revokeErrorTitle": "حذف دسترسی انجام نشد",
+    "revokeError": "حذف دسترسی انجام نشد. دوباره تلاش کنید.",
+    "revokeTryAgain": "تلاش دوباره",
+    "roleLabel": "نقش",
+    "roleHint": "کارهایی که می‌تواند انجام دهد.",
     "role": {
       "support": "پشتیبانی",
       "staff": "کارمند",
@@ -524,5 +594,106 @@
     "add": "افزودن یادداشت",
     "addError": "افزودن یادداشت ممکن نشد. دوباره تلاش کنید.",
     "empty": "هنوز یادداشتی ثبت نشده."
+  },
+  "dashActivity": {
+    "heading": "فعالیت‌ها",
+    "summary": "هر تغییری که از داشبورد انجام شده، از جدیدترین. برای همیشه نگه داشته می‌شود.",
+    "empty": "هنوز فعالیتی نیست",
+    "emptyBody": "تغییرهایی که از داشبورد انجام شود اینجا می‌آید.",
+    "filterActor": "فیلتر بر اساس انجام‌دهنده",
+    "filterEntity": "فیلتر بر اساس نوع تغییر",
+    "allActors": "همه",
+    "allEntities": "همه موارد",
+    "open": "باز کردن",
+    "panelHeading": "فعالیت‌ها",
+    "panelDescription": "هر تغییری که از داشبورد روی این مورد انجام شده.",
+    "panelEmpty": "هنوز تغییری ثبت نشده.",
+    "entity": {
+      "product": "آیتم‌ها",
+      "order": "سفارش‌ها",
+      "review": "نظرها",
+      "promoCode": "کدهای تخفیف",
+      "user": "دسترسی تیم",
+      "unknown": "سایر",
+      "category": "دسته‌بندی‌ها"
+    },
+    "action": {
+      "product": {
+        "created": "{actor} آیتم {entity} را ساخت",
+        "updated": "{actor} آیتم {entity} را ویرایش کرد",
+        "deleted": "{actor} آیتم {entity} را حذف کرد"
+      },
+      "order": {
+        "stageChanged": "{actor} وضعیت سفارش {entity} را تغییر داد",
+        "customerNotified": "{actor} دربارهٔ سفارش {entity} به مهمان پیام داد",
+        "placed": "{actor} سفارش {entity} را ثبت کرد",
+        "paymentChanged": "{actor} وضعیت پرداخت سفارش {entity} را تغییر داد"
+      },
+      "review": {
+        "moderated": "{actor} نظر {entity} را بررسی کرد",
+        "submitted": "{actor} نظر جدیدی ثبت کرد"
+      },
+      "promoCode": {
+        "created": "{actor} کد تخفیف {entity} را ساخت",
+        "updated": "{actor} کد تخفیف {entity} را ویرایش کرد",
+        "activeChanged": "{actor} کد تخفیف {entity} را روشن یا خاموش کرد"
+      },
+      "unknown": "{actor} مورد {entity} را تغییر داد",
+      "category": {
+        "created": "{actor} دسته‌بندی {entity} را ساخت",
+        "updated": "{actor} دسته‌بندی {entity} را ویرایش کرد",
+        "deleted": "{actor} دسته‌بندی {entity} را حذف کرد"
+      }
+    },
+    "role": {
+      "granted": "{actor} به {user} دسترسی مدیریت داد",
+      "revoked": "{actor} دسترسی {user} را گرفت",
+      "ownershipTransferred": "{actor}، {user} را مالک کرد",
+      "ownershipClaimed": "{user} مالکیت را به دست گرفت",
+      "steppedDown": "{user} دیگر مالک نیست",
+      "unknown": "{actor} دسترسی {user} را تغییر داد"
+    },
+    "field": {
+      "name": "نام",
+      "price": "قیمت",
+      "originalPrice": "قیمت اصلی",
+      "stockQuantity": "موجودی",
+      "categoryId": "دسته‌بندی",
+      "isFeatured": "ویژه",
+      "badge": "برچسب",
+      "unit": "اندازه",
+      "imageUrl": "تصویر",
+      "description": "توضیحات",
+      "nutrition": "ارزش غذایی",
+      "origin": "خاستگاه",
+      "dietary": "برچسب‌های رژیمی",
+      "note": "یادداشت",
+      "code": "کد",
+      "title": "عنوان",
+      "discountPercent": "درصد تخفیف",
+      "active": "فعال",
+      "status": "وضعیت",
+      "role": "نقش",
+      "slug": "اسلاگ",
+      "iconUrl": "آیکون",
+      "kind": "نوع",
+      "bookAuthor": "نویسنده",
+      "bookIsbn": "شابک",
+      "bookAvailability": "نحوهٔ استفادهٔ کتاب",
+      "isPublished": "منتشرشده",
+      "isActive": "فعال",
+      "paymentStatus": "پرداخت"
+    },
+    "filterField": "فیلتر بر اساس نوع تغییر",
+    "allFields": "همه تغییرها",
+    "fieldOption": {
+      "price": "تغییر قیمت",
+      "stockQuantity": "تغییر موجودی",
+      "isPublished": "انتشار / لغو انتشار",
+      "isActive": "روشن/خاموش کردن دسته",
+      "status": "تغییر وضعیت سفارش",
+      "paymentStatus": "تغییر پرداخت",
+      "role": "تغییر دسترسی"
+    }
   }
 }

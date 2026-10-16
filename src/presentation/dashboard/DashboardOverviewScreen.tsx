@@ -5,8 +5,8 @@ import { Link } from "@/src/i18n/navigation";
 import { formatCafeDayMedium } from "@/src/lib/formatCafeDay";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
+import { AutoRefresh } from "@/src/presentation/components/AutoRefresh";
 
-import { AutoRefresh } from "./orders/AutoRefresh";
 import { DailySalesChart } from "./reports/DailySalesChart";
 import { TopItemsTable } from "./reports/TopItemsTable";
 import { StatCard } from "./StatCard";

@@ -11,6 +11,7 @@ import {
 import { PAYMENT_STATUSES, SERVICE_TYPES, type Order } from "@/src/domain/entities/Order";
 import type { Page } from "@/src/domain/entities/Pagination";
 import { Link } from "@/src/i18n/navigation";
+import { AutoRefresh } from "@/src/presentation/components/AutoRefresh";
 import {
   ListFilterSelect,
   ListPager,
@@ -19,7 +20,6 @@ import {
   type ListSortOption,
 } from "@/src/presentation/dashboard/list";
 
-import { AutoRefresh } from "./AutoRefresh";
 import { OrdersTable } from "./OrdersTable";
 import { OrderStatusTabs } from "./OrderStatusTabs";
 

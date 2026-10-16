@@ -29,7 +29,7 @@ const LOCALE_NAMES: Record<Locale, string> = {
  * no room for a full settings row.
  */
 export function LocaleToggle() {
-  const t = useTranslations("dashboard");
+  const t = useTranslations("common");
   const locale = useLocale();
   const [pending, setPending] = React.useState(false);
 

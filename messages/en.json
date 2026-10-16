@@ -1,7 +1,8 @@
 {
   "common": {
     "goBack": "Go back",
-    "viewAll": "View all"
+    "viewAll": "View all",
+    "languageAria": "Change language"
   },
   "notFound": {
     "title": "Page not found",
@@ -261,11 +262,6 @@
       "owner": "Owner",
       "customer": "No access"
     }
-  },
-  "home": {
-    "title": "Rira Book Cafe",
-    "body": "Coffee, food and books — coming soon.",
-    "dashboard": "Go to dashboard"
   },
   "dashProducts": {
     "sortLabel": "Sort items",
@@ -921,6 +917,172 @@
       "topGuestsHeading": "Top guests",
       "events": "Events held",
       "eventsHint": "{seats} seats taken"
+    }
+  },
+  "site": {
+    "brand": "Rira Book Cafe",
+    "navLabel": "Main navigation",
+    "nav": {
+      "home": "Home",
+      "menu": "Menu",
+      "book": "Book a table",
+      "events": "Events",
+      "account": "Account"
+    },
+    "signIn": "Sign in",
+    "keep": "Keep it",
+    "basketAria": "{count, plural, =0 {Basket, empty} one {Basket, # item} other {Basket, # items}}",
+    "home": {
+      "title": "Coffee, food and a shelf full of books",
+      "tagline": "Order at your table or take it with you, book a table for later, and join our book club and readings.",
+      "seeMenu": "See the menu",
+      "bookTable": "Book a table",
+      "featured": "Today's favourites",
+      "fullMenu": "Full menu",
+      "whatsOn": "What's on",
+      "allEvents": "All events",
+      "booksTitle": "Books to buy or to read here",
+      "booksBody": "Browse the shelf — some are for sale, some for reading over a coffee.",
+      "browseBooks": "Browse books"
+    },
+    "menu": {
+      "heading": "Menu",
+      "subtitle": "Drinks, food and books. Add what you'd like and order from your table or for takeaway.",
+      "kindFilter": "Filter by type",
+      "categoryFilter": "Filter by category",
+      "all": "Everything",
+      "allCategories": "All categories",
+      "empty": "Nothing here right now.",
+      "add": "Add",
+      "added": "Added",
+      "addAria": "Add {name} to basket",
+      "addWithTotal": "Add to basket · {total}",
+      "soldOut": "Sold out",
+      "soldOutLong": "Sold out for now — check back later.",
+      "readingOnly": "Read here",
+      "back": "Back to menu",
+      "byAuthor": "by {author}",
+      "bookAvailability": {
+        "sale": "For sale — take it home.",
+        "reading": "For reading in the cafe — not for sale.",
+        "both": "Buy it, or read it here over a coffee."
+      },
+      "noteLabel": "Any requests?",
+      "notePlaceholder": "e.g. oat milk, less sugar",
+      "quantity": "Quantity",
+      "decrease": "Decrease quantity",
+      "increase": "Increase quantity",
+      "viewBasket": "View basket",
+      "about": "About",
+      "origin": "Origin",
+      "nutrition": "Nutrition & allergens"
+    },
+    "basket": {
+      "heading": "Your basket",
+      "emptyTitle": "Your basket is empty",
+      "emptyBody": "Add something from the menu to get started.",
+      "removeAria": "Remove {name}",
+      "serviceHeading": "How would you like it?",
+      "dineIn": "At my table",
+      "takeaway": "Takeaway",
+      "tableLabel": "Table number",
+      "tableHint": "It's on the card on your table.",
+      "tableRequired": "Tell us which table you're at.",
+      "noteLabel": "Note for the order (optional)",
+      "total": "Total",
+      "payAtCounter": "Pay at the counter. Prices are confirmed when you order.",
+      "placeOrder": "Place order",
+      "placing": "Placing your order…",
+      "signInToOrder": "Sign in to order",
+      "orderError": "Couldn't place your order. Please try again."
+    },
+    "orders": {
+      "heading": "My orders",
+      "empty": "You haven't ordered yet.",
+      "back": "My orders",
+      "yourNumber": "Your order number",
+      "itemCount": "{count, plural, one {{formatted} item} other {{formatted} items}}",
+      "cancelled": "This order was cancelled.",
+      "step": {
+        "pending": "Sent",
+        "accepted": "Accepted",
+        "preparing": "Preparing",
+        "ready": "Ready",
+        "completed": "Done"
+      },
+      "statusLine": {
+        "pending": "We've got your order — the team will accept it shortly.",
+        "accepted": "Accepted. It'll be made shortly.",
+        "preparing": "Being prepared now.",
+        "ready": "Ready! We'll bring it over, or collect it at the counter.",
+        "completed": "Enjoy! Thanks for coming."
+      },
+      "cancel": "Cancel order",
+      "cancelTitle": "Cancel this order?",
+      "cancelMessage": "You can cancel until the team accepts it.",
+      "cancelError": "Couldn't cancel the order. It may already be accepted."
+    },
+    "book": {
+      "heading": "Book a table",
+      "subtitle": "Tell us when and how many — we'll confirm and save you a table.",
+      "day": "Day",
+      "time": "Time",
+      "partySize": "Guests",
+      "guests": "{count, plural, one {{formatted} guest} other {{formatted} guests}}",
+      "note": "Anything we should know? (optional)",
+      "notePlaceholder": "e.g. a quiet corner, it's a birthday",
+      "hint": "For more than {max} guests, please call us.",
+      "submit": "Request a table",
+      "sending": "Sending…",
+      "error": "Couldn't send your request. Please try again."
+    },
+    "reservations": {
+      "heading": "My reservations",
+      "new": "New booking",
+      "empty": "No upcoming bookings.",
+      "past": "Past bookings",
+      "table": "Table {table}",
+      "cancel": "Cancel",
+      "cancelTitle": "Cancel this booking?",
+      "cancelMessage": "Your table will be released.",
+      "cancelError": "Couldn't cancel the booking. Please try again."
+    },
+    "events": {
+      "heading": "Events",
+      "subtitle": "Book clubs, readings and workshops at the cafe.",
+      "none": "Nothing scheduled right now — check back soon.",
+      "back": "All events",
+      "free": "Free",
+      "perSeat": "{price} per seat",
+      "full": "Full",
+      "seatsLeft": "{count, plural, one {{formatted} seat left} other {{formatted} seats left}}",
+      "seatCount": "{count, plural, one {{formatted} seat} other {{formatted} seats}}",
+      "seats": "Seats",
+      "join": "Sign up",
+      "joining": "Signing up…",
+      "signInToJoin": "Sign in to sign up",
+      "signedUp": "You're signed up — {count, plural, one {{formatted} seat} other {{formatted} seats}}.",
+      "cancelSignUp": "Cancel sign-up",
+      "cancelTitle": "Cancel your sign-up?",
+      "cancelMessage": "Your seats will go to someone else.",
+      "closed": "Sign-ups are closed for this event.",
+      "error": "Something went wrong. Please try again."
+    },
+    "account": {
+      "heading": "My account",
+      "name": "Name",
+      "email": "Email",
+      "phone": "Phone",
+      "setName": "Please add your name — it's how we call out your order.",
+      "save": "Save",
+      "saved": "Saved.",
+      "saveError": "Couldn't save. Please try again.",
+      "myOrders": "My orders",
+      "myReservations": "My reservations",
+      "dashboard": "Staff dashboard",
+      "mySignUps": "My event sign-ups",
+      "noSignUps": "You haven't signed up for anything coming up.",
+      "signOut": "Sign out"
     }
   }
 }

@@ -1,19 +1,18 @@
-import { getTranslations } from "next-intl/server";
+import { HomeScreen } from "@/src/presentation/storefront/home/HomeScreen";
+import { storefrontServerApi } from "@/src/presentation/storefront/storefront-server-api";
 
-import { Link } from "@/src/i18n/navigation";
-import { Button } from "@/src/presentation/design-system";
+// Featured items and upcoming events are read over the REST API (BFF) per request,
+// in the guest's language.
+export const dynamic = "force-dynamic";
 
-/** Public home. A placeholder until the storefront (menu, books, reservations) is built. */
 export default async function HomePage() {
-  const t = await getTranslations("home");
+  const [featured, events, categories] = await Promise.all([
+    storefrontServerApi.featured(),
+    storefrontServerApi.upcomingEvents(),
+    storefrontServerApi.categories(),
+  ]);
+  // A featured item in a hidden category stays hidden.
+  const activeCategoryIds = new Set(categories.map((category) => category.id));
 
-  return (
-    <section className="flex min-h-dvh flex-col items-center justify-center gap-3 px-6 text-center">
-      <h1 className="text-heading-page text-foreground">{t("title")}</h1>
-      <p className="text-body-default text-muted-foreground">{t("body")}</p>
-      <Button asChild variant="outline" size="sm">
-        <Link href="/dashboard">{t("dashboard")}</Link>
-      </Button>
-    </section>
-  );
+  return <HomeScreen featured={featured.filter((item) => activeCategoryIds.has(item.categoryId))} events={events} />;
 }

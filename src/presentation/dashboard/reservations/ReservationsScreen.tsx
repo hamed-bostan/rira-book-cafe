@@ -4,8 +4,8 @@ import { cafeDayRange } from "@/src/domain/entities/CafeTime";
 import { RESERVATION_STATUSES, type Reservation } from "@/src/domain/entities/Reservation";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { formatOrderDate } from "@/src/lib/formatOrderDate";
+import { AutoRefresh } from "@/src/presentation/components/AutoRefresh";
 import { ListFilterSelect } from "@/src/presentation/dashboard/list";
-import { AutoRefresh } from "@/src/presentation/dashboard/orders/AutoRefresh";
 
 import { ReservationCard } from "./ReservationCard";
 import { ReservationDayPicker } from "./ReservationDayPicker";

@@ -8,11 +8,11 @@ import { Link } from "@/src/i18n/navigation";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { formatOrderDate } from "@/src/lib/formatOrderDate";
+import { AutoRefresh } from "@/src/presentation/components/AutoRefresh";
 import { DashboardPanel, DashboardPanelHeader } from "@/src/presentation/dashboard/DashboardPanel";
 import { ProductThumbnail } from "@/src/presentation/dashboard/ProductThumbnail";
 import { Icon } from "@/src/presentation/design-system";
 
-import { AutoRefresh } from "./AutoRefresh";
 import { OrderNotesPanel } from "./OrderNotesPanel";
 import { OrderPaymentToggle } from "./OrderPaymentToggle";
 import { OrderServiceLabel } from "./OrderServiceLabel";

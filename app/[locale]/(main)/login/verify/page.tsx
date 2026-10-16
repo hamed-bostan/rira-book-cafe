@@ -12,5 +12,9 @@ export default async function VerifyPage({ searchParams }: VerifyPageProps) {
   // Reached without a phone (e.g. direct nav) → start the flow over.
   if (!phone) redirect("/login");
 
-  return <OtpScreen phone={phone} callbackUrl={callbackUrl} />;
+  return (
+    <div className="mx-auto w-full max-w-md">
+      <OtpScreen phone={phone} callbackUrl={callbackUrl} />
+    </div>
+  );
 }

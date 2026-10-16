@@ -29,6 +29,13 @@ describe("ROLE_PERMISSIONS", () => {
     expect(roleHasPermission("admin", "events.manage")).toBe(true);
   });
 
+  it("keeps revenue to admins and the owner", () => {
+    expect(roleHasPermission("staff", "reports.view")).toBe(false);
+    expect(roleHasPermission("support", "reports.view")).toBe(false);
+    expect(roleHasPermission("admin", "reports.view")).toBe(true);
+    expect(roleHasPermission("owner", "reports.view")).toBe(true);
+  });
+
   it("derives dashboard roles from dashboard.view", () => {
     expect(DASHBOARD_ROLES).toEqual(["support", "staff", "admin", "owner"]);
   });

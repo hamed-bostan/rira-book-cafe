@@ -29,6 +29,8 @@ export const PERMISSIONS = [
   "reservations.manage",
   /** Create and change events (book clubs, readings) and manage their sign-ups. */
   "events.manage",
+  /** Read revenue and the sales, payment and guest reports. Admin and owner. */
+  "reports.view",
   /** Read the activity log. */
   "activity.view",
   /** Grant and revoke dashboard access, and transfer ownership. Owner only. */
@@ -63,6 +65,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
     "promotions.write",
     "reservations.manage",
     "events.manage",
+    "reports.view",
     "activity.view",
     "settings.write",
   ],
@@ -75,6 +78,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
     "promotions.write",
     "reservations.manage",
     "events.manage",
+    "reports.view",
     "activity.view",
     "team.manage",
     "settings.write",

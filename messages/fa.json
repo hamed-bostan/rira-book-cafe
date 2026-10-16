@@ -173,8 +173,6 @@
     "tryAgain": "تلاش مجدد",
     "viewStore": "مشاهدهٔ سایت",
     "brand": "ریرا",
-    "overviewTitle": "نمای کلی",
-    "overviewBody": "زیرساخت داشبورد آماده است. بخش‌ها با اضافه شدن قابلیت‌ها در منوی کناری نمایش داده می‌شوند.",
     "navCategories": "دسته‌بندی‌ها",
     "navProducts": "منو",
     "groupMenu": "منو",
@@ -184,7 +182,9 @@
     "navTeam": "تیم",
     "groupStore": "کافه",
     "navReservations": "رزروها",
-    "navEvents": "رویدادها"
+    "navEvents": "رویدادها",
+    "navReports": "گزارش‌ها",
+    "groupInsights": "تحلیل"
   },
   "dashTeam": {
     "membersHeading": "اعضای تیم",
@@ -838,5 +838,89 @@
     "cancelRegistrationTitle": "ثبت‌نام {name} لغو شود؟",
     "cancelRegistrationMessage": "جاهای او برای مهمان‌های دیگر آزاد می‌شود.",
     "cancelRegistrationError": "لغو ثبت‌نام ممکن نشد. دوباره تلاش کنید."
+  },
+  "dashOverview": {
+    "heading": "امروز",
+    "activeOrders": "سفارش‌های در صف",
+    "activeOrdersHint": "جدید، پذیرفته، در حال آماده‌سازی یا آماده",
+    "todayBookings": "رزروهای امروز",
+    "awaitingConfirmation": "{count, plural, other {# در انتظار تأیید}}",
+    "covers": "{count, plural, other {{formatted} مهمان}}",
+    "upcomingEvents": "رویدادهای این هفته",
+    "upcomingEventsHint": "منتشرشده، در ۷ روز آینده",
+    "todayRevenue": "فروش امروز",
+    "weekRevenue": "{value} در ۷ روز گذشته",
+    "todayOrders": "سفارش‌های تحویل‌شدهٔ امروز",
+    "weekOrders": "{count, plural, other {{formatted} سفارش}} در ۷ روز گذشته",
+    "weekHeading": "۷ روز گذشته",
+    "allReports": "همهٔ گزارش‌ها"
+  },
+  "dashReports": {
+    "heading": "گزارش‌ها",
+    "summary": "فروش، پرداخت‌ها و مهمان‌ها در هر بازهٔ زمانی. درآمد از سفارش‌های تحویل‌شده حساب می‌شود.",
+    "openReport": "باز کردن {title}",
+    "breadcrumbLabel": "مسیر",
+    "rangeLabel": "بازهٔ زمانی",
+    "preset": {
+      "today": "امروز",
+      "7d": "۷ روز",
+      "30d": "۳۰ روز",
+      "90d": "۹۰ روز"
+    },
+    "presetCustom": "دلخواه",
+    "rangeFrom": "از",
+    "rangeTo": "تا",
+    "apply": "اعمال",
+    "rangeCaption": "{from} تا {to}",
+    "comparedWith": "در مقایسه با {from} تا {to}",
+    "vsPrevious": "نسبت به دورهٔ قبل",
+    "thisPeriod": "این دوره",
+    "previousPeriod": "دورهٔ قبل",
+    "noSales": "در این بازه سفارش تحویل‌شده‌ای نیست.",
+    "orderCount": "{count, plural, other {{formatted} سفارش}}",
+    "unitsSold": "{count, plural, other {{formatted} فروش}}",
+    "topItemsHeading": "پرفروش‌ها",
+    "topItemsSort": {
+      "revenue": "بر اساس درآمد",
+      "quantity": "بر اساس تعداد"
+    },
+    "sales": {
+      "title": "فروش",
+      "subtitle": "درآمد، سفارش‌ها، ساعت‌های شلوغ و پرفروش‌ها.",
+      "revenue": "درآمد",
+      "orders": "سفارش‌ها",
+      "averageOrder": "میانگین سفارش",
+      "cancelled": "سفارش‌های لغوشده",
+      "cancelledValue": "{value} دریافت نشد",
+      "dailyHeading": "فروش روزانه",
+      "hourlyHeading": "ساعت‌های شلوغ",
+      "hourlyDescription": "سفارش‌های تحویل‌شده بر اساس ساعت ثبت (به وقت کافه).",
+      "byKindHeading": "نوشیدنی، غذا و کتاب",
+      "byServiceHeading": "سرو در کافه یا بیرون‌بر"
+    },
+    "payments": {
+      "title": "پرداخت‌ها",
+      "subtitle": "آنچه در صندوق پرداخت شده و آنچه نشده.",
+      "paid": "پرداخت‌شده",
+      "unpaid": "پرداخت‌نشده",
+      "splitHeading": "پرداخت‌شده و پرداخت‌نشده",
+      "unpaidHeading": "تحویل‌شده ولی پرداخت‌نشده",
+      "unpaidDescription": "سفارش‌های آماده یا تحویل‌شده که هنوز پرداخت ثبت نشده، قدیمی‌ترین اول.",
+      "allPaid": "همهٔ سفارش‌های تحویل‌شدهٔ این بازه پرداخت شده‌اند."
+    },
+    "guests": {
+      "title": "مهمان‌ها",
+      "subtitle": "چه کسانی آمدند، چند بار، و رزروها و رویدادها چطور پیش رفت.",
+      "guests": "مهمان‌ها",
+      "newGuests": "مهمان‌های جدید",
+      "returning": "{count, plural, other {{formatted} مهمان قدیمی}}",
+      "repeatRate": "بازگشت",
+      "repeatRateHint": "مهمان‌هایی با دو سفارش یا بیشتر در این بازه",
+      "bookings": "رزروها",
+      "bookingsHint": "{covers} مهمان · {noShowRate} نیامدند",
+      "topGuestsHeading": "مهمان‌های برتر",
+      "events": "رویدادهای برگزارشده",
+      "eventsHint": "{seats} جا رزرو شد"
+    }
   }
 }

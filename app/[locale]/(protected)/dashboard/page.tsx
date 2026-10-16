@@ -1,17 +1,22 @@
-import { getTranslations } from "next-intl/server";
+import { auth } from "@/auth";
+import { sessionHas } from "@/src/lib/require-permission";
+import { DashboardOverviewScreen } from "@/src/presentation/dashboard/DashboardOverviewScreen";
+import { reportsServerApi } from "@/src/presentation/dashboard/reports/report-server-api";
 
-/**
- * Dashboard overview. A placeholder until the first features (menu, orders) land —
- * then it reads its numbers over the BFF via a server-side service and hands them
- * to a presentational screen, like every other dashboard page.
- */
+// The overview is read over the REST API (BFF) per request. The operational
+// numbers are for everyone with the dashboard; the week's sales are fetched only
+// for viewers who may see revenue (`reports.view`) — the endpoint would refuse
+// anyone else anyway.
+export const dynamic = "force-dynamic";
+
 export default async function DashboardPage() {
-  const t = await getTranslations("dashboard");
+  const session = await auth();
+  const canViewReports = await sessionHas(session, "reports.view");
 
-  return (
-    <section className="flex flex-col gap-2">
-      <h1 className="dashboard-page-title">{t("overviewTitle")}</h1>
-      <p className="text-body-small text-muted-foreground">{t("overviewBody")}</p>
-    </section>
-  );
+  const [overview, week] = await Promise.all([
+    reportsServerApi.overview(),
+    canViewReports ? reportsServerApi.sales({ range: "7d", sort: "revenue" }) : Promise.resolve(null),
+  ]);
+
+  return <DashboardOverviewScreen overview={overview} week={week} />;
 }

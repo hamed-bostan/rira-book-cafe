@@ -1,4 +1,14 @@
-import { CalendarClock, ClipboardList, Coffee, History, LayoutDashboard, PartyPopper, ShieldCheck, Tag } from "lucide-react";
+import {
+  BarChart3,
+  CalendarClock,
+  ClipboardList,
+  Coffee,
+  History,
+  LayoutDashboard,
+  PartyPopper,
+  ShieldCheck,
+  Tag,
+} from "lucide-react";
 
 import type { Permission } from "@/src/domain/entities/Permission";
 
@@ -16,7 +26,7 @@ import type { LucideIcon } from "lucide-react";
  */
 
 /** A navigation group's stable id, which is also its label key under `dashboard`. */
-export type DashboardSectionGroup = "groupOverview" | "groupService" | "groupMenu" | "groupStore";
+export type DashboardSectionGroup = "groupOverview" | "groupService" | "groupMenu" | "groupInsights" | "groupStore";
 
 /** A section's label key under the `dashboard` namespace — spelled out so `t()` can check it. */
 export type DashboardSectionLabelKey =
@@ -26,6 +36,7 @@ export type DashboardSectionLabelKey =
   | "navEvents"
   | "navProducts"
   | "navCategories"
+  | "navReports"
   | "navActivity"
   | "navTeam";
 
@@ -54,6 +65,9 @@ const SECTIONS = [
   { href: "/dashboard/products", labelKey: "navProducts", icon: Coffee, needs: "dashboard.view", group: "groupMenu" },
   { href: "/dashboard/categories", labelKey: "navCategories", icon: Tag, needs: "catalog.write", group: "groupMenu" },
 
+  // Revenue and the reports behind it — admin and owner only.
+  { href: "/dashboard/reports", labelKey: "navReports", icon: BarChart3, needs: "reports.view", group: "groupInsights" },
+
   // The cafe's own record of itself. Activity is visible to everyone holding
   // `activity.view` (team-access entries stay owner-only, see `activity-visibility`);
   // Team is the owner's alone.
@@ -62,7 +76,7 @@ const SECTIONS = [
 ] as const satisfies readonly DashboardSection[];
 
 /** The groups in sidebar order. */
-const GROUP_ORDER: readonly DashboardSectionGroup[] = ["groupOverview", "groupService", "groupMenu", "groupStore"];
+const GROUP_ORDER: readonly DashboardSectionGroup[] = ["groupOverview", "groupService", "groupMenu", "groupInsights", "groupStore"];
 
 export type DashboardNavGroup = {
   id: DashboardSectionGroup;

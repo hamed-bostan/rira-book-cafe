@@ -173,8 +173,6 @@
     "tryAgain": "Try again",
     "viewStore": "View site",
     "brand": "Rira",
-    "overviewTitle": "Overview",
-    "overviewBody": "The dashboard foundation is ready. Sections appear in the sidebar as features ship.",
     "navCategories": "Categories",
     "navProducts": "Menu",
     "groupMenu": "Menu",
@@ -184,7 +182,9 @@
     "navTeam": "Team",
     "groupStore": "Cafe",
     "navReservations": "Reservations",
-    "navEvents": "Events"
+    "navEvents": "Events",
+    "navReports": "Reports",
+    "groupInsights": "Insights"
   },
   "dashTeam": {
     "membersHeading": "Team members",
@@ -838,5 +838,89 @@
     "cancelRegistrationTitle": "Cancel {name}'s sign-up?",
     "cancelRegistrationMessage": "Their seats become free for other guests.",
     "cancelRegistrationError": "Couldn't cancel the sign-up. Please try again."
+  },
+  "dashOverview": {
+    "heading": "Today",
+    "activeOrders": "Orders in the queue",
+    "activeOrdersHint": "New, accepted, preparing or ready",
+    "todayBookings": "Bookings today",
+    "awaitingConfirmation": "{count, plural, one {# awaiting confirmation} other {# awaiting confirmation}}",
+    "covers": "{count, plural, one {{formatted} guest} other {{formatted} guests}}",
+    "upcomingEvents": "Events this week",
+    "upcomingEventsHint": "Published, in the next 7 days",
+    "todayRevenue": "Today's takings",
+    "weekRevenue": "{value} over the last 7 days",
+    "todayOrders": "Orders served today",
+    "weekOrders": "{count, plural, one {{formatted} order} other {{formatted} orders}} over the last 7 days",
+    "weekHeading": "Last 7 days",
+    "allReports": "All reports"
+  },
+  "dashReports": {
+    "heading": "Reports",
+    "summary": "Sales, payments and guests over any range. Revenue counts completed orders.",
+    "openReport": "Open {title}",
+    "breadcrumbLabel": "Breadcrumb",
+    "rangeLabel": "Date range",
+    "preset": {
+      "today": "Today",
+      "7d": "7 days",
+      "30d": "30 days",
+      "90d": "90 days"
+    },
+    "presetCustom": "Custom",
+    "rangeFrom": "From",
+    "rangeTo": "To",
+    "apply": "Apply",
+    "rangeCaption": "{from} – {to}",
+    "comparedWith": "compared with {from} – {to}",
+    "vsPrevious": "vs previous period",
+    "thisPeriod": "This period",
+    "previousPeriod": "Previous period",
+    "noSales": "No completed orders in this range.",
+    "orderCount": "{count, plural, one {{formatted} order} other {{formatted} orders}}",
+    "unitsSold": "{count, plural, one {{formatted} sold} other {{formatted} sold}}",
+    "topItemsHeading": "Best sellers",
+    "topItemsSort": {
+      "revenue": "By revenue",
+      "quantity": "By units"
+    },
+    "sales": {
+      "title": "Sales",
+      "subtitle": "Revenue, orders, busy hours and best sellers.",
+      "revenue": "Revenue",
+      "orders": "Orders",
+      "averageOrder": "Average order",
+      "cancelled": "Cancelled orders",
+      "cancelledValue": "{value} not taken",
+      "dailyHeading": "Sales by day",
+      "hourlyHeading": "Busy hours",
+      "hourlyDescription": "Completed orders by the hour they came in (cafe time).",
+      "byKindHeading": "Drinks, food and books",
+      "byServiceHeading": "Dine-in vs takeaway"
+    },
+    "payments": {
+      "title": "Payments",
+      "subtitle": "What's been paid at the counter, and what hasn't.",
+      "paid": "Paid",
+      "unpaid": "Unpaid",
+      "splitHeading": "Paid vs unpaid",
+      "unpaidHeading": "Served but unpaid",
+      "unpaidDescription": "Ready or completed orders not yet marked paid, oldest first.",
+      "allPaid": "Everything served in this range is paid."
+    },
+    "guests": {
+      "title": "Guests",
+      "subtitle": "Who came, how often, and how bookings and events went.",
+      "guests": "Guests",
+      "newGuests": "New guests",
+      "returning": "{count, plural, one {{formatted} returning} other {{formatted} returning}}",
+      "repeatRate": "Came back",
+      "repeatRateHint": "Guests with two or more orders in the range",
+      "bookings": "Bookings",
+      "bookingsHint": "{covers} guests · {noShowRate} no-shows",
+      "topGuestsHeading": "Top guests",
+      "events": "Events held",
+      "eventsHint": "{seats} seats taken"
+    }
   }
 }

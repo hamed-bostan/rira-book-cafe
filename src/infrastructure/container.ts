@@ -1,4 +1,5 @@
 import type { IActivityLog } from "@/src/domain/repositories/IActivityLog";
+import type { IAnalyticsRepository } from "@/src/domain/repositories/IAnalyticsRepository";
 import type { IAuthRepository } from "@/src/domain/repositories/IAuthRepository";
 import type { ICategoryRepository } from "@/src/domain/repositories/ICategoryRepository";
 import type { IEmailSender } from "@/src/domain/repositories/IEmailSender";
@@ -16,6 +17,7 @@ import { SmtpEmailSender } from "./email/SmtpEmailSender";
 import { TeamNotifier } from "./notifications/TeamNotifier";
 import { MockAuthRepository } from "./repositories/mock/MockAuthRepository";
 import { PrismaActivityLog } from "./repositories/PrismaActivityLog";
+import { PrismaAnalyticsRepository } from "./repositories/PrismaAnalyticsRepository";
 import { PrismaCategoryRepository } from "./repositories/PrismaCategoryRepository";
 import { PrismaEventRepository } from "./repositories/PrismaEventRepository";
 import { PrismaOrderNoteRepository } from "./repositories/PrismaOrderNoteRepository";
@@ -52,6 +54,11 @@ export const orderNoteRepository: IOrderNoteRepository = new PrismaOrderNoteRepo
 // Table clashes and event capacity are enforced inside the repositories under locks.
 export const reservationRepository: IReservationRepository = new PrismaReservationRepository();
 export const eventRepository: IEventRepository = new PrismaEventRepository();
+
+// Cafe aggregates — revenue, busy hours, best sellers, guests — computed in
+// PostgreSQL from the same rows the repositories above write, so there is no
+// second copy of the numbers to drift.
+export const analyticsRepository: IAnalyticsRepository = new PrismaAnalyticsRepository();
 
 // Append-only audit trail of admin changes. Read-only here: entries are written by
 // the repositories that make the changes they describe, inside the same

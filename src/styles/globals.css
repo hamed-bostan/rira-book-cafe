@@ -1,0 +1,70 @@
+@import "tailwindcss";
+@import "./tokens.css";
+@plugin "tailwindcss-animate";
+
+@custom-variant dark (&:is(.dark *));
+/* Tablet-width dashboards use the compact rail and a fluid content canvas in
+ * both orientations. The historical variant name is retained to avoid a broad
+ * class-name migration across the dashboard. */
+@custom-variant dashboard-landscape (@media (min-width: 48rem) and (max-width: 79.999rem));
+@custom-variant dashboard-short (@media (max-width: 47.999rem) and (max-height: 50rem) and (orientation: landscape));
+@custom-variant dashboard-phone (@media (max-width: 30rem));
+
+/* Hide the scrollbar while keeping the element scrollable (e.g. card carousels).
+ * Plain rule (not @utility) so it applies without a dev-server restart. */
+.scrollbar-hide {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* legacy Edge/IE */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Chromium / Safari */
+}
+
+/* One semantic title treatment for every dashboard page. Keeping this as a
+ * plain class also makes nested report and detail screens follow the same
+ * responsive hierarchy as the primary navigation destinations. */
+.dashboard-page-title {
+  @apply text-heading-section sm:text-heading-page;
+  color: var(--color-foreground);
+}
+
+/* Opt in for articles, policies and extended help, in either direction. */
+.reading-text {
+  @apply text-body-reading;
+  max-inline-size: 65ch;
+  overflow-wrap: anywhere;
+}
+
+.reading-text :where(p + p) {
+  margin-block-start: 1em;
+}
+
+@layer base {
+  html {
+    --font-ui: var(--font-inter);
+  }
+
+  html:lang(fa) {
+    --font-ui: var(--font-vazirmatn);
+  }
+
+  *,
+  *::before,
+  *::after {
+    border-color: var(--color-border);
+  }
+
+  body {
+    @apply bg-background text-foreground text-body-default;
+    font-family: var(--font-sans);
+    /* Long words and identifiers must not force overflow at enlarged sizes. */
+    overflow-wrap: anywhere;
+  }
+}
+
+/* Connected Persian letterforms must not inherit Latin tracking utilities.
+ * User !important spacing overrides still win. */
+:where(:lang(fa)) {
+  letter-spacing: normal;
+}

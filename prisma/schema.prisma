@@ -1,0 +1,32 @@
+// Rira Book Cafe database schema.
+// Data lives in PostgreSQL. Images live in Supabase Storage — rows store only the image's URL.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  // id is the user's normalized phone digits — the stable identifier carried on
+  // the Auth.js session (and matched against ADMIN_USER_IDS), so it is supplied
+  // at creation rather than database-generated.
+  id        String   @id
+  phone     String
+  name      String
+  email     String?
+  avatarUrl String?  @map("avatar_url")
+  // Access level: "customer" (default), "support", "staff", "admin", or "owner" —
+  // stored as a plain string matching the domain union (enum-free style). This is
+  // the source of truth for dashboard access; ADMIN_USER_IDS remains only as a
+  // break-glass allowlist so an owner can always get back in.
+  role      String   @default("customer")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([role])
+  @@map("users")
+}

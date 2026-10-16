@@ -1,0 +1,43 @@
+import type { IAuthRepository } from "@/src/domain/repositories/IAuthRepository";
+import type { IImageStorageRepository } from "@/src/domain/repositories/IImageStorageRepository";
+import type { IUserRepository } from "@/src/domain/repositories/IUserRepository";
+
+import { MockAuthRepository } from "./repositories/mock/MockAuthRepository";
+import { PrismaUserRepository } from "./repositories/PrismaUserRepository";
+import { SmsIrAuthRepository } from "./repositories/SmsIrAuthRepository";
+import { SupabaseImageStorageRepository } from "./repositories/SupabaseImageStorageRepository";
+
+/**
+ * Composition root.
+ *
+ * The single place that binds domain repository *interfaces* to concrete
+ * *implementations*. This is the only module that imports concrete repositories;
+ * everything else (use-cases, route handlers) depends on the interfaces —
+ * Dependency Inversion in practice. New features add their bindings here.
+ */
+
+// Users — PostgreSQL via Prisma. Rows are created on first sign-in
+// (auth `authorize` → GetOrCreateUser).
+export const userRepository: IUserRepository = new PrismaUserRepository();
+
+// Real SMS OTP when an SMS.ir key is configured; the in-memory mock otherwise so
+// local dev works without credentials (the mock surfaces the code in the UI).
+// `OTP_MOCK=true` forces the mock even when a key is present.
+const forceMockAuth = process.env.OTP_MOCK === "true";
+export const authRepository: IAuthRepository =
+  process.env.SMS_IR_API_KEY && process.env.SMS_IR_TEMPLATE_ID && !forceMockAuth
+    ? new SmsIrAuthRepository({
+        apiKey: process.env.SMS_IR_API_KEY,
+        templateId: Number(process.env.SMS_IR_TEMPLATE_ID),
+        baseUrl: process.env.SMS_IR_BASE_URL,
+      })
+    : new MockAuthRepository();
+
+// Supabase Storage for images. Server-side only — it holds the service-role key,
+// so it must never be imported by client components. `SUPABASE_URL` falls back to
+// the public URL since they're the same origin.
+export const imageStorageRepository: IImageStorageRepository = new SupabaseImageStorageRepository({
+  url: process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+  serviceRoleKey: process.env.SUPABASE_SECRET_KEY ?? "",
+  bucket: process.env.SUPABASE_IMAGES_BUCKET ?? "images",
+});

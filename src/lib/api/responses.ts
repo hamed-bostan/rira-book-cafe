@@ -1,0 +1,104 @@
+import { NextResponse } from "next/server";
+import { ZodError } from "zod";
+
+import { NotFoundError } from "@/src/domain/errors/NotFoundError";
+import { ResourceInUseError } from "@/src/domain/errors/ResourceInUseError";
+import { UniqueConstraintError } from "@/src/domain/errors/UniqueConstraintError";
+import { ValidationError } from "@/src/domain/errors/ValidationError";
+
+/**
+ * Server-side helpers for REST route handlers (Next.js `app/api/**` only — never
+ * import these from client code; they pull in `next/server`).
+ *
+ * They keep every endpoint speaking one consistent JSON contract:
+ *   success → the resource (or 204 No Content)
+ *   failure → `{ error: { message, code?, fieldErrors? } }`
+ * so the Axios response interceptor can normalize failures uniformly.
+ */
+
+type ErrorBody = {
+  message: string;
+  code?: string;
+  fieldErrors?: Record<string, string>;
+};
+
+/** Build a failure response with the standard envelope. */
+export function errorResponse(status: number, body: ErrorBody): NextResponse {
+  return NextResponse.json({ error: body }, { status });
+}
+
+/** 401 for a missing/non-admin session on a protected (write) endpoint. */
+export function unauthorizedResponse(): NextResponse {
+  return errorResponse(401, { message: "You're not authorized to do that.", code: "UNAUTHORIZED" });
+}
+
+/**
+ * Translate a thrown error into the correct HTTP response. Known domain errors
+ * map to 4xx with a user-presentable message; anything else is an unexpected 500
+ * and is logged server-side (its detail is never leaked to the client).
+ */
+export function errorResponseFromException(error: unknown, context: string): NextResponse {
+  // A query-param or body schema rejected the request — the client's fault, not
+  // an unexpected failure, so it's a 400 with per-field detail rather than a
+  // logged 500.
+  if (error instanceof ZodError) {
+    return errorResponse(400, {
+      message: "One or more query parameters are invalid.",
+      code: "VALIDATION",
+      fieldErrors: firstFieldErrors(error),
+    });
+  }
+
+  if (error instanceof UniqueConstraintError) {
+    const message = error.fields.length
+      ? `That ${error.fields.join(", ")} is already taken.`
+      : "That value is already taken.";
+    return errorResponse(409, {
+      message,
+      code: "UNIQUE_CONSTRAINT",
+      // `fieldErrors` speak `formErrors` message keys (like the Zod schemas the routes
+      // re-validate with), so the client translates them at display time.
+      fieldErrors: Object.fromEntries(error.fields.map((field) => [field, "alreadyTaken"])),
+    });
+  }
+
+  if (error instanceof ValidationError) {
+    return errorResponse(400, {
+      message: error.message,
+      code: "VALIDATION",
+      fieldErrors: { [error.field]: error.message },
+    });
+  }
+
+  if (error instanceof NotFoundError) {
+    return errorResponse(404, { message: `That ${error.entity} no longer exists.`, code: "NOT_FOUND" });
+  }
+
+  // Something still depends on the record being removed (e.g. a delivery window
+  // with orders booked into it). Well-formed request, refusing state → 409, and the
+  // message names what's in the way.
+  if (error instanceof ResourceInUseError) {
+    return errorResponse(409, { message: error.message, code: "IN_USE" });
+  }
+
+  console.error(`${context}:`, error);
+  return errorResponse(500, { message: "Something went wrong. Please try again.", code: "INTERNAL" });
+}
+
+/** Read and JSON-parse a request body, distinguishing "absent/invalid" from valid. */
+export async function parseJsonBody(request: Request): Promise<{ ok: true; data: unknown } | { ok: false }> {
+  try {
+    return { ok: true, data: await request.json() };
+  } catch {
+    return { ok: false };
+  }
+}
+
+/** Collapse a Zod error into one message per field for the `fieldErrors` envelope. */
+export function firstFieldErrors(error: ZodError): Record<string, string> {
+  const result: Record<string, string> = {};
+  for (const [field, messages] of Object.entries(error.flatten().fieldErrors)) {
+    if (messages && messages.length > 0) result[field] = messages[0];
+  }
+  return result;
+}

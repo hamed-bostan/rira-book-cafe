@@ -36,6 +36,7 @@ export const orderResponseSchema = z.object({
       stockTracked: z.boolean().optional(),
       quantity: z.number(),
       note: z.string().optional(),
+      servedAt: z.string().optional(),
     }),
   ),
   subtotal: z.number(),

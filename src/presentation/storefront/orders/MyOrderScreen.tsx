@@ -1,13 +1,14 @@
 import { ChevronLeft } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
-import { isActiveOrder, isGuestCancellable, type Order } from "@/src/domain/entities/Order";
+import { canServeItems, isActiveOrder, isGuestCancellable, type Order } from "@/src/domain/entities/Order";
 import type { PaymentOutcome } from "@/src/domain/entities/PaymentAttempt";
 import { Link } from "@/src/i18n/navigation";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { formatOrderDate } from "@/src/lib/formatOrderDate";
 import { AutoRefresh } from "@/src/presentation/components/AutoRefresh";
+import { OrderItemStateBadge } from "@/src/presentation/dashboard/orders/OrderItemStateBadge";
 import { OrderServiceLabel } from "@/src/presentation/dashboard/orders/OrderServiceLabel";
 import { Badge, Icon } from "@/src/presentation/design-system";
 
@@ -79,6 +80,11 @@ export async function MyOrderScreen({ order, paymentOutcome }: MyOrderScreenProp
                   {formatNumber(item.quantity, locale)}× {item.name}
                 </p>
                 {item.note ? <p className="text-body-caption text-muted-foreground">{item.note}</p> : null}
+                {canServeItems(order.status) ? (
+                  <div className="mt-1">
+                    <OrderItemStateBadge item={item} />
+                  </div>
+                ) : null}
               </div>
               <span className="text-body-small text-foreground">{formatMoney(item.unitPrice * item.quantity, locale)}</span>
             </li>

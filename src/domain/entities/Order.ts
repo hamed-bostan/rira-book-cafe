@@ -93,6 +93,11 @@ export type OrderItem = {
   quantity: number;
   /** The guest's request for this line, e.g. "oat milk, no sugar". */
   note?: string;
+  /**
+   * ISO 8601 timestamp (UTC) of when staff marked the line served — taken to the
+   * table or handed over. Absent while it's still being prepared.
+   */
+  servedAt?: string;
 };
 
 export type Order = {
@@ -163,6 +168,31 @@ export function isGuestCancellable(status: OrderStatus): boolean {
 /** Whether the order is still in the queue (not completed or cancelled). */
 export function isActiveOrder(status: OrderStatus): boolean {
   return (ACTIVE_ORDER_STATUSES as readonly OrderStatus[]).includes(status);
+}
+
+/**
+ * Statuses in which staff tick lines off as they go out: once the order is taken
+ * and until it's finished. A dine-in order often goes out in parts — the drinks
+ * first, the cake when it's plated — so each line is marked on its own. Completing
+ * the order marks whatever is left served.
+ */
+export const SERVING_ORDER_STATUSES = ["accepted", "preparing", "ready"] as const satisfies readonly OrderStatus[];
+
+/** Whether staff may mark the order's lines served (or take a mark back). */
+export function canServeItems(status: OrderStatus): boolean {
+  return (SERVING_ORDER_STATUSES as readonly OrderStatus[]).includes(status);
+}
+
+/** Where one line stands: still being made, or already with the guest. */
+export type OrderItemServiceState = "preparing" | "served";
+
+export function itemServiceState(item: Pick<OrderItem, "servedAt">): OrderItemServiceState {
+  return item.servedAt ? "served" : "preparing";
+}
+
+/** How many of the order's lines have been served, out of how many. */
+export function servedLineCount(order: Pick<Order, "items">): { served: number; total: number } {
+  return { served: order.items.filter((item) => item.servedAt).length, total: order.items.length };
 }
 
 /** Total units across all lines. */

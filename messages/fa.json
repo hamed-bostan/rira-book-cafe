@@ -658,7 +658,18 @@
     "timelineEmpty": "تاریخچه‌ای ثبت نشده.",
     "timelinePlaced": "ثبت شد",
     "timelineBy": "توسط {name}",
-    "cancelChoice": "انصراف"
+    "cancelChoice": "انصراف",
+    "itemState": {
+      "preparing": "در حال آماده‌سازی",
+      "served": "سرو شده"
+    },
+    "markServed": "سرو شد",
+    "unmarkServed": "برگرداندن",
+    "markServedAria": "علامت سرو برای {name}",
+    "unmarkServedAria": "برداشتن علامت سرو از {name}",
+    "servedProgress": "{served, number} از {total, number} سرو شده",
+    "servedAt": "سرو: {time}",
+    "serveError": "ثبت سرو ممکن نشد. شاید وضعیت سفارش تغییر کرده باشد."
   },
   "dashOrderNotes": {
     "label": "یادداشت داخلی",

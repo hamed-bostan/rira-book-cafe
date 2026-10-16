@@ -1,18 +1,20 @@
 import { ChevronLeft } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
-import { orderItemCount, type Order } from "@/src/domain/entities/Order";
+import { canServeItems, orderItemCount, servedLineCount, type Order } from "@/src/domain/entities/Order";
 import type { OrderNote } from "@/src/domain/entities/OrderNote";
 import type { OrderStatusEvent } from "@/src/domain/entities/OrderStatusEvent";
 import { Link } from "@/src/i18n/navigation";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
-import { formatOrderDate } from "@/src/lib/formatOrderDate";
+import { formatOrderDate, formatOrderTime } from "@/src/lib/formatOrderDate";
 import { AutoRefresh } from "@/src/presentation/components/AutoRefresh";
 import { DashboardPanel, DashboardPanelHeader } from "@/src/presentation/dashboard/DashboardPanel";
 import { ProductThumbnail } from "@/src/presentation/dashboard/ProductThumbnail";
 import { Icon } from "@/src/presentation/design-system";
 
+import { OrderItemServeToggle } from "./OrderItemServeToggle";
+import { OrderItemStateBadge } from "./OrderItemStateBadge";
 import { OrderNotesPanel } from "./OrderNotesPanel";
 import { OrderPaymentToggle } from "./OrderPaymentToggle";
 import { OrderServiceLabel } from "./OrderServiceLabel";
@@ -41,6 +43,7 @@ type OrderDetailScreenProps = {
 export async function OrderDetailScreen({ order, events, notes, canFulfill, canNote }: OrderDetailScreenProps) {
   const t = await getTranslations("dashOrders");
   const locale = (await getLocale());
+  const serving = canServeItems(order.status);
 
   return (
     <div className="flex flex-col gap-6">
@@ -73,7 +76,12 @@ export async function OrderDetailScreen({ order, events, notes, canFulfill, canN
           <DashboardPanel>
             <DashboardPanelHeader
               title={t("itemsHeading")}
-              action={<span className="text-body-small text-muted-foreground">{t("itemCount", { count: orderItemCount(order) })}</span>}
+              action={
+                <span className="text-body-small text-muted-foreground">
+                  {t("itemCount", { count: orderItemCount(order) })}
+                  {serving ? ` · ${t("servedProgress", servedLineCount(order))}` : null}
+                </span>
+              }
             />
             <ul className="mt-4 flex flex-col divide-y divide-border">
               {order.items.map((item) => (
@@ -84,10 +92,25 @@ export async function OrderDetailScreen({ order, events, notes, canFulfill, canN
                       <span className="tabular-nums">{formatNumber(item.quantity, locale)}×</span> {item.name}
                     </p>
                     {item.note ? <p className="text-body-small text-warning-foreground">{item.note}</p> : null}
+                    {serving || item.servedAt ? (
+                      <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                        <OrderItemStateBadge item={item} />
+                        {item.servedAt ? (
+                          <span className="text-body-caption text-muted-foreground">
+                            {t("servedAt", { time: formatOrderTime(item.servedAt, locale) })}
+                          </span>
+                        ) : null}
+                      </div>
+                    ) : null}
                   </div>
-                  <span className="whitespace-nowrap text-body-small-emphasis text-foreground">
-                    {formatMoney(item.unitPrice * item.quantity, locale)}
-                  </span>
+                  <div className="flex flex-col items-end gap-2">
+                    <span className="whitespace-nowrap text-body-small-emphasis text-foreground">
+                      {formatMoney(item.unitPrice * item.quantity, locale)}
+                    </span>
+                    {serving && canFulfill ? (
+                      <OrderItemServeToggle orderId={order.id} itemId={item.id} itemName={item.name} served={Boolean(item.servedAt)} />
+                    ) : null}
+                  </div>
                 </li>
               ))}
             </ul>

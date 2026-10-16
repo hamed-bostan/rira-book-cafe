@@ -658,7 +658,18 @@
     "timelineEmpty": "No history recorded.",
     "timelinePlaced": "Placed",
     "timelineBy": "by {name}",
-    "cancelChoice": "Cancel"
+    "cancelChoice": "Cancel",
+    "itemState": {
+      "preparing": "Preparing",
+      "served": "Served"
+    },
+    "markServed": "Mark served",
+    "unmarkServed": "Undo",
+    "markServedAria": "Mark {name} served",
+    "unmarkServedAria": "Take back the served mark on {name}",
+    "servedProgress": "{served, number} of {total, number} served",
+    "servedAt": "Served {time}",
+    "serveError": "Couldn't update the item. The order may have changed."
   },
   "dashOrderNotes": {
     "label": "Internal note",

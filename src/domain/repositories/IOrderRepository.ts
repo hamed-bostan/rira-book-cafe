@@ -53,6 +53,13 @@ export type IOrderRepository = {
    * commit with it; the loser of a race gets `InvalidPaymentChangeError`.
    */
   setPaymentStatus(id: string, change: PaymentChange, audit?: AuditHook<Order>, ledger?: LedgerHook<Order>): Promise<Order>;
+  /**
+   * Mark one line served (stamped now) or take the mark back, guarded so it only
+   * lands while the order is in a serving status. Setting the state a line already
+   * has changes nothing. An unknown order or line is `NotFoundError`; an order that
+   * moved out of serving meanwhile is a `ConflictError`.
+   */
+  setItemServed(orderId: string, itemId: string, served: boolean): Promise<Order>;
   /** The order's status history, oldest first — placement, then each change. */
   listStatusEvents(orderId: string): Promise<OrderStatusEvent[]>;
 };

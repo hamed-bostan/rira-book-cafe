@@ -63,6 +63,13 @@ export const orderStatusChangeSchema = z.object({
 
 export type OrderStatusChangeInput = z.infer<typeof orderStatusChangeSchema>;
 
+/** Staff ticking one line of an order off as served, or taking the tick back. */
+export const orderItemServedSchema = z.object({
+  served: z.boolean({ message: "statusInvalid" }),
+});
+
+export type OrderItemServedInput = z.infer<typeof orderItemServedSchema>;
+
 /**
  * Staff marking an order paid (and how) or unpaid. `refunded` isn't settable — it
  * follows from cancelling a paid order. A method is required when marking paid: it

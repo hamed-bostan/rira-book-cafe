@@ -1,6 +1,6 @@
 import { useLocale, useTranslations } from "next-intl";
 
-import { orderItemCount, type Order } from "@/src/domain/entities/Order";
+import { canServeItems, orderItemCount, servedLineCount, type Order } from "@/src/domain/entities/Order";
 import { Link } from "@/src/i18n/navigation";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formatOrderTime } from "@/src/lib/formatOrderDate";
@@ -37,7 +37,9 @@ export function OrderCard({ order }: { order: Order }) {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <OrderServiceLabel order={order} />
         <span className="text-body-small text-muted-foreground">
-          {t("itemCount", { count: orderItemCount(order) })} · {formatOrderTime(order.placedAt, locale)}
+          {t("itemCount", { count: orderItemCount(order) })}
+          {canServeItems(order.status) ? ` (${t("servedProgress", servedLineCount(order))})` : null} ·{" "}
+          {formatOrderTime(order.placedAt, locale)}
         </span>
       </div>
       <div className="flex items-center justify-between gap-2 border-t border-border pt-3">

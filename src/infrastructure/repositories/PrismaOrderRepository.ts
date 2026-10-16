@@ -14,6 +14,8 @@ import {
   PAYMENT_METHODS,
   PAYMENT_STATUSES,
   SERVICE_TYPES,
+  SERVING_ORDER_STATUSES,
+  canServeItems,
   type Order,
   type OrderItem,
   type OrderStatus,
@@ -184,6 +186,10 @@ export class PrismaOrderRepository implements IOrderRepository {
       // A completed order uses up its recipes' stock, at average cost; the lines
       // then carry that cost, which the cost-of-sales posting below books.
       if (to === "completed") await consumeStockForOrder(tx, id, cafeDayOf(new Date()), actor);
+      // Completing means everything reached the guest: lines nobody ticked off are served now.
+      if (to === "completed") {
+        await tx.orderItem.updateMany({ where: { orderId: id, servedAt: null }, data: { servedAt: new Date() } });
+      }
 
       const row = await tx.order.findUniqueOrThrow({ where: { id }, include: WITH_ITEMS });
 
@@ -229,6 +235,30 @@ export class PrismaOrderRepository implements IOrderRepository {
       const order = toOrder(await tx.order.findUniqueOrThrow({ where: { id }, include: WITH_ITEMS }));
       await recordAudit(tx, order, audit);
       await postHook(tx, order, ledger);
+      return order;
+    });
+  }
+
+  async setItemServed(orderId: string, itemId: string, served: boolean): Promise<Order> {
+    return inTransaction(this.db, async (tx) => {
+      // Guarded on the order's status in the same statement: a line can't be marked
+      // after another tab completed or cancelled the order.
+      await tx.orderItem.updateMany({
+        where: {
+          id: itemId,
+          orderId,
+          servedAt: served ? null : { not: null },
+          order: { status: { in: [...SERVING_ORDER_STATUSES] } },
+        },
+        data: { servedAt: served ? new Date() : null },
+      });
+      const row = await tx.order.findUnique({ where: { id: orderId }, include: WITH_ITEMS });
+      if (!row) throw new NotFoundError("order", orderId);
+      if (!row.items.some((item) => item.id === itemId)) throw new NotFoundError("orderItem", itemId);
+      const order = toOrder(row);
+      if (!canServeItems(order.status)) {
+        throw new ConflictError("INVALID_TRANSITION", `A ${order.status} order's items can't be marked served.`);
+      }
       return order;
     });
   }
@@ -332,6 +362,7 @@ function toOrder(row: OrderRow): Order {
         stockTracked: item.stockTracked,
         quantity: item.quantity,
         note: item.note ?? undefined,
+        servedAt: item.servedAt?.toISOString(),
       }),
     ),
     subtotal: row.subtotal,

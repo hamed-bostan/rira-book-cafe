@@ -1,6 +1,6 @@
 import { useLocale, useTranslations } from "next-intl";
 
-import { orderItemCount, type Order } from "@/src/domain/entities/Order";
+import { canServeItems, orderItemCount, servedLineCount, type Order } from "@/src/domain/entities/Order";
 import { Link } from "@/src/i18n/navigation";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formatOrderDateShort, formatOrderTime } from "@/src/lib/formatOrderDate";
@@ -40,7 +40,12 @@ export function OrderRow({ order }: { order: Order }) {
       </TableCell>
 
       <TableCell>
-        <span className="text-body-small text-muted-foreground">{t("itemCount", { count: orderItemCount(order) })}</span>
+        <span className="block text-body-small text-muted-foreground">{t("itemCount", { count: orderItemCount(order) })}</span>
+        {canServeItems(order.status) ? (
+          <span className="block whitespace-nowrap text-body-caption text-muted-foreground">
+            {t("servedProgress", servedLineCount(order))}
+          </span>
+        ) : null}
       </TableCell>
 
       <TableCell>

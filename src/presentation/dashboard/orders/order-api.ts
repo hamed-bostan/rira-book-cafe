@@ -1,6 +1,6 @@
 import type { OrderNoteInput } from "@/src/contracts/order-note-schema";
 import { orderNoteResponseSchema } from "@/src/contracts/order-note-schema";
-import type { OrderPaymentInput, OrderStatusChangeInput } from "@/src/contracts/order-schema";
+import type { OrderItemServedInput, OrderPaymentInput, OrderStatusChangeInput } from "@/src/contracts/order-schema";
 import type { Order } from "@/src/domain/entities/Order";
 import type { OrderNote } from "@/src/domain/entities/OrderNote";
 import { apiPatch, apiPost } from "@/src/lib/api/client";
@@ -19,6 +19,11 @@ export const ordersApi = {
 
   setPayment(id: string, values: OrderPaymentInput): Promise<Order> {
     return apiPatch(`/admin/orders/${id}/payment`, values, orderResponseSchema);
+  },
+
+  /** Tick one line off as served, or take the tick back. 409 once the order is finished. */
+  setItemServed(id: string, itemId: string, values: OrderItemServedInput): Promise<Order> {
+    return apiPatch(`/admin/orders/${id}/items/${itemId}`, values, orderResponseSchema);
   },
 
   addNote(id: string, values: OrderNoteInput): Promise<OrderNote> {

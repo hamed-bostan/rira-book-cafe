@@ -188,6 +188,8 @@ model OrderItem {
   quantity     Int
   note         String?
   position     Int
+  // When staff marked the line served; null while it's still being prepared.
+  servedAt     DateTime? @map("served_at")
 
   @@index([orderId])
   @@map("order_items")

@@ -48,6 +48,12 @@ export const PERMISSIONS = [
   "inventory.view",
   /** Receive deliveries, count stock, record opening stock and set reorder levels. Admin and owner. */
   "inventory.manage",
+  /**
+   * Count the till and close the cash register for the day — whoever runs the
+   * register, so staff hold it. A blind count: seeing what the till *should* hold
+   * is `accounting.view`.
+   */
+  "cash.close",
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];
@@ -66,7 +72,7 @@ export type Permission = (typeof PERMISSIONS)[number];
 export const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
   customer: [],
   support: ["dashboard.view", "orders.note", "activity.view"],
-  staff: ["dashboard.view", "orders.fulfill", "orders.note", "reservations.manage", "activity.view", "inventory.view"],
+  staff: ["dashboard.view", "orders.fulfill", "orders.note", "reservations.manage", "activity.view", "inventory.view", "cash.close"],
   admin: [
     "dashboard.view",
     "orders.fulfill",
@@ -83,6 +89,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
     "accounting.write",
     "inventory.view",
     "inventory.manage",
+    "cash.close",
   ],
   owner: [
     "dashboard.view",
@@ -101,6 +108,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
     "accounting.write",
     "inventory.view",
     "inventory.manage",
+    "cash.close",
   ],
 };
 

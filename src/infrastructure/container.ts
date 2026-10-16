@@ -1,6 +1,8 @@
 import type { IActivityLog } from "@/src/domain/repositories/IActivityLog";
 import type { IAnalyticsRepository } from "@/src/domain/repositories/IAnalyticsRepository";
 import type { IAuthRepository } from "@/src/domain/repositories/IAuthRepository";
+import type { IBankReconciliationRepository } from "@/src/domain/repositories/IBankReconciliationRepository";
+import type { ICashRegisterRepository } from "@/src/domain/repositories/ICashRegisterRepository";
 import type { ICategoryRepository } from "@/src/domain/repositories/ICategoryRepository";
 import type { IEmailSender } from "@/src/domain/repositories/IEmailSender";
 import type { IEventRepository } from "@/src/domain/repositories/IEventRepository";
@@ -25,6 +27,8 @@ import { ZarinpalPaymentGateway } from "./payments/ZarinpalPaymentGateway";
 import { MockAuthRepository } from "./repositories/mock/MockAuthRepository";
 import { PrismaActivityLog } from "./repositories/PrismaActivityLog";
 import { PrismaAnalyticsRepository } from "./repositories/PrismaAnalyticsRepository";
+import { PrismaBankReconciliationRepository } from "./repositories/PrismaBankReconciliationRepository";
+import { PrismaCashRegisterRepository } from "./repositories/PrismaCashRegisterRepository";
 import { PrismaCategoryRepository } from "./repositories/PrismaCategoryRepository";
 import { PrismaEventRepository } from "./repositories/PrismaEventRepository";
 import { PrismaExpenseRepository } from "./repositories/PrismaExpenseRepository";
@@ -96,6 +100,12 @@ export const pricingRepository: IPricingRepository = new PrismaPricingRepository
 // stock and post the matching entries in one transaction, so the stock list and
 // the Inventory account always agree.
 export const inventoryRepository: IInventoryRepository = new PrismaInventoryRepository();
+
+// Cash and bank controls. The daily till close compares the count with Cash on hand
+// and posts the over/short in the same transaction; bank statements are matched
+// line by line to the Bank account and signed off once they reconcile.
+export const cashRegisterRepository: ICashRegisterRepository = new PrismaCashRegisterRepository();
+export const bankReconciliationRepository: IBankReconciliationRepository = new PrismaBankReconciliationRepository();
 
 // Append-only audit trail of admin changes. Read-only here: entries are written by
 // the repositories that make the changes they describe, inside the same

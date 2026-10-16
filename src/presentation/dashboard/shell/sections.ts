@@ -12,6 +12,7 @@ import {
   Receipt,
   ShieldCheck,
   Tag,
+  Wallet,
 } from "lucide-react";
 
 import type { Permission } from "@/src/domain/entities/Permission";
@@ -38,6 +39,7 @@ export type DashboardSectionLabelKey =
   | "navOrders"
   | "navReservations"
   | "navEvents"
+  | "navCash"
   | "navProducts"
   | "navCategories"
   | "navInventory"
@@ -67,6 +69,8 @@ const SECTIONS = [
   // `reservations.manage`, gated inside the page.
   { href: "/dashboard/reservations", labelKey: "navReservations", icon: CalendarClock, needs: "dashboard.view", group: "groupService" },
   { href: "/dashboard/events", labelKey: "navEvents", icon: PartyPopper, needs: "dashboard.view", group: "groupService" },
+  // Counting the till at the end of the day — whoever runs the register.
+  { href: "/dashboard/cash", labelKey: "navCash", icon: Wallet, needs: "cash.close", group: "groupService" },
 
   // The menu list is a read for everyone with the dashboard — it's how staff answer
   // "do we still have this?". The write controls inside it are gated on `catalog.write`.

@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { sessionHas } from "@/src/lib/require-permission";
+import { cashClosesServerApi } from "@/src/presentation/dashboard/cash/cash-close-server-api";
 import { DashboardOverviewScreen } from "@/src/presentation/dashboard/DashboardOverviewScreen";
 import { inventoryServerApi } from "@/src/presentation/dashboard/inventory/inventory-server-api";
 import { reportsServerApi } from "@/src/presentation/dashboard/reports/report-server-api";
@@ -12,14 +13,20 @@ export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
   const session = await auth();
-  const [canViewReports, canViewStock] = await Promise.all([sessionHas(session, "reports.view"), sessionHas(session, "inventory.view")]);
+  const [canViewReports, canViewStock, canCloseCash] = await Promise.all([
+    sessionHas(session, "reports.view"),
+    sessionHas(session, "inventory.view"),
+    sessionHas(session, "cash.close"),
+  ]);
 
-  const [overview, week, stock] = await Promise.all([
+  const [overview, week, stock, cash] = await Promise.all([
     reportsServerApi.overview(),
     canViewReports ? reportsServerApi.sales({ range: "7d", sort: "revenue" }) : Promise.resolve(null),
     // Low and empty stock is everyone-on-the-floor's business, shown at the top.
     canViewStock ? inventoryServerApi.getSummary() : Promise.resolve(null),
+    // Days the till was never closed — for whoever runs the register.
+    canCloseCash ? cashClosesServerApi.getStatus() : Promise.resolve(null),
   ]);
 
-  return <DashboardOverviewScreen overview={overview} week={week} stockItems={stock?.items ?? []} />;
+  return <DashboardOverviewScreen overview={overview} week={week} stockItems={stock?.items ?? []} cashStatus={cash} />;
 }

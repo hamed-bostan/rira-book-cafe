@@ -67,8 +67,10 @@ export const SYSTEM_ACCOUNTS = {
   salesDrinks: "4100",
   salesFood: "4200",
   salesBooks: "4300",
+  bankInterest: "4800",
   costOfSales: "5100",
   gatewayFees: "6700",
+  cashOverShort: "6800",
 } as const;
 
 /** What an automatic posting or a manual entry came from — for drill-down and duplicate protection. */
@@ -81,6 +83,9 @@ export const JOURNAL_SOURCES = [
   "expense",
   "expensePayment",
   "gatewaySettlement",
+  "cashClose",
+  "bankFee",
+  "bankInterest",
   "stockWaste",
   "stockCount",
   "stockOpening",

@@ -30,4 +30,15 @@ export type ConflictCode =
   | "NOT_PAYABLE"
   | "PAYMENT_IN_PROGRESS"
   | "STOCK_USED"
-  | "YEAR_NOT_ENDED";
+  | "YEAR_NOT_ENDED"
+  // The cash register close.
+  | "DAY_ALREADY_CLOSED"
+  | "CLOSE_OUT_OF_ORDER"
+  | "CASH_CHANGED"
+  // Bank reconciliation.
+  | "STATEMENT_OVERLAP"
+  | "STATEMENT_RECONCILED"
+  | "ALREADY_MATCHED"
+  | "MATCH_UNBALANCED"
+  | "NOT_RECONCILED"
+  | "PREVIOUS_NOT_RECONCILED";

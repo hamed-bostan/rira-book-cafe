@@ -4,13 +4,14 @@ import { Link } from "@/src/i18n/navigation";
 import { cn } from "@/src/lib/utils";
 import { focusRing } from "@/src/presentation/design-system";
 
-export type AccountingTab = "overview" | "journal" | "accounts" | "statements" | "settings";
+export type AccountingTab = "overview" | "journal" | "accounts" | "statements" | "bank" | "settings";
 
 const TABS: readonly { tab: AccountingTab; href: string }[] = [
   { tab: "overview", href: "/dashboard/accounting" },
   { tab: "journal", href: "/dashboard/accounting/journal" },
   { tab: "accounts", href: "/dashboard/accounting/accounts" },
   { tab: "statements", href: "/dashboard/accounting/statements" },
+  { tab: "bank", href: "/dashboard/accounting/bank" },
   { tab: "settings", href: "/dashboard/accounting/settings" },
 ];
 

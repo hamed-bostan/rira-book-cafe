@@ -147,7 +147,16 @@
     "ingredientRepeated": "Each ingredient appears once — add the amounts together.",
     "overheadSourceInvalid": "Choose where running costs come from.",
     "overheadRequired": "Enter the monthly running costs.",
-    "deliveryTotalRequired": "Enter what the delivery cost."
+    "deliveryTotalRequired": "Enter what the delivery cost.",
+    "depositExceedsCount": "You can't deposit more than you counted.",
+    "periodEndsBeforeStart": "The period ends before it starts.",
+    "lineOutsidePeriod": "Every line must fall inside the statement's period.",
+    "openingMustMatchPrevious": "The opening balance must be the previous statement's closing balance.",
+    "linesRequired": "Add at least one line.",
+    "wrongDirection": "That doesn't fit this line — fees go out, interest and payouts come in.",
+    "outsideMatchRange": "That ledger line is outside what this statement can match.",
+    "wrongAccount": "Only lines on the bank account can be matched.",
+    "postingKindInvalid": "Choose what the line is."
   },
   "apiErrors": {
     "badRequest": "The request couldn't be read. Please try again.",
@@ -178,7 +187,16 @@
     "paymentInProgress": "A payment for this order is being confirmed. Please wait a moment.",
     "gatewayUnavailable": "The payment gateway isn't available right now. Please try again shortly.",
     "stockUsed": "Some of this delivery has already been used, so it can't be voided. Record a count or waste instead.",
-    "yearNotEnded": "That fiscal year hasn't ended yet."
+    "yearNotEnded": "That fiscal year hasn't ended yet.",
+    "dayAlreadyClosed": "The till is already closed for that day.",
+    "closeOutOfOrder": "A later day is already closed. Days are closed in order — this day's cash is part of the next close.",
+    "cashChanged": "Cash moved since the expected amount was shown. Check the new figure and count again.",
+    "statementOverlap": "A statement already covers part of that period. Start after the last statement ends.",
+    "statementReconciled": "This statement is reconciled and can no longer change.",
+    "alreadyMatched": "One of those lines is already matched.",
+    "matchUnbalanced": "The lines picked on each side don't add up to the same amount.",
+    "notReconciled": "The statement doesn't reconcile yet — match every line and clear the difference first.",
+    "previousNotReconciled": "Reconcile the earlier statements first."
   },
   "meta": {
     "siteName": "Rira Book Cafe",
@@ -227,7 +245,8 @@
     "navAccounting": "Accounting",
     "navExpenses": "Expenses",
     "navPricing": "Pricing",
-    "navInventory": "Inventory"
+    "navInventory": "Inventory",
+    "navCash": "Cash register"
   },
   "dashTeam": {
     "membersHeading": "Team members",
@@ -726,7 +745,12 @@
         "entryPosted": "{actor} posted journal entry {entity}",
         "entryReversed": "{actor} reversed journal entry {entity}",
         "accountChanged": "{actor} changed account {entity}",
-        "settingsChanged": "{actor} changed the accounting settings"
+        "settingsChanged": "{actor} changed the accounting settings",
+        "cashClosed": "{actor} closed the till ({entity})",
+        "bankStatementChanged": "{actor} updated {entity}",
+        "bankMatched": "{actor} matched lines on {entity}",
+        "bankUnmatched": "{actor} unmatched lines on {entity}",
+        "bankReconciled": "{actor} reconciled {entity}"
       },
       "expense": {
         "recorded": "{actor} recorded expense {entity}",
@@ -784,7 +808,15 @@
       "paymentMethod": "Payment method",
       "reversedBy": "Reversed by",
       "vatRateBps": "VAT rate (basis points)",
-      "booksClosedThrough": "Books closed through"
+      "booksClosedThrough": "Books closed through",
+      "counted": "Counted",
+      "difference": "Over/short",
+      "deposited": "Deposited",
+      "closingBalance": "Closing balance",
+      "linesAdded": "Lines added",
+      "linesRemoved": "Lines removed",
+      "matched": "Matches made",
+      "unmatched": "Matches undone"
     },
     "filterField": "Filter by what changed",
     "allFields": "Any change",
@@ -1185,7 +1217,8 @@
       "journal": "Journal",
       "accounts": "Accounts",
       "statements": "Statements",
-      "settings": "Settings"
+      "settings": "Settings",
+      "bank": "Bank"
     },
     "overview": {
       "balanced": "The books balance — total debits equal total credits.",
@@ -1221,7 +1254,9 @@
         "submit": "Record payout",
         "saved": "Payout recorded.",
         "error": "Couldn't record the payout. Please try again."
-      }
+      },
+      "closeTill": "Close the till",
+      "reconcileBank": "Reconcile the bank"
     },
     "journal": {
       "heading": "Journal",
@@ -1251,7 +1286,10 @@
       "stockWaste": "Waste",
       "stockCount": "Stock count",
       "stockOpening": "Opening stock",
-      "yearClose": "Year-end close"
+      "yearClose": "Year-end close",
+      "cashClose": "Cash close",
+      "bankFee": "Bank fee",
+      "bankInterest": "Bank interest"
     },
     "entry": {
       "title": "Journal entry JE-{number}",
@@ -1783,6 +1821,171 @@
       "quantity": "Quantity",
       "by": "By",
       "empty": "No stock movements yet."
+    }
+  },
+  "dashCash": {
+    "heading": "Cash register",
+    "subtitle": "Count the till at the end of each day. Any over or short is booked, and cash taken to the bank is recorded.",
+    "dayLabel": "Day",
+    "showDay": "Show",
+    "lastClosed": "Last closed: {date}",
+    "neverClosed": "The till hasn't been closed yet.",
+    "dayClosed": "The till was closed for {date} by {by}.",
+    "dayLocked": "{date} can't be closed any more: a later day is already closed, so this day's cash is part of that close.",
+    "alert": {
+      "title": "{count, plural, one {# day without a till close} other {# days without a till close}}",
+      "open": "Close the till",
+      "more": "and {count} more",
+      "hint": "Days are closed in order, oldest first. Until then, the cash on hand can't be trusted."
+    },
+    "form": {
+      "heading": "Count the till",
+      "hint": "Count every note and coin in the till, then enter the total. The over/short updates as you type.",
+      "blindHint": "Count every note and coin in the till and enter the total. You'll see whether it matches once the day is closed.",
+      "counted": "Cash counted",
+      "countedHint": "Everything in the till, in Toman.",
+      "deposited": "Taken to the bank",
+      "depositedHint": "Leave blank if nothing goes to the bank tonight.",
+      "differenceLabel": "Over/short",
+      "closingFloat": "Left in the till",
+      "note": "Note",
+      "noteHint": "Explain any difference, e.g. a refund paid from the till.",
+      "submit": "Close the day",
+      "error": "Couldn't close the till. Please try again.",
+      "closedHeading": "Day closed",
+      "closedSummary": "Counted {counted} against {expected} expected.",
+      "depositedSummary": "{amount} recorded as taken to the bank."
+    },
+    "difference": {
+      "exact": "Exact — no difference",
+      "over": "Over by {amount}",
+      "short": "Short by {amount}"
+    },
+    "day": {
+      "heading": "What the till should hold",
+      "openingFloat": "In the till at the start of the day",
+      "expected": "Expected in the till",
+      "lines": "{count, plural, one {# cash movement} other {# cash movements}}",
+      "noLines": "No cash moved this day."
+    },
+    "group": {
+      "sales": "Cash sales",
+      "refunds": "Refunds paid in cash",
+      "expenses": "Bills paid from the till",
+      "other": "Other cash movements"
+    },
+    "history": {
+      "heading": "Closes",
+      "empty": "No day has been closed yet.",
+      "day": "Day",
+      "expected": "Expected",
+      "counted": "Counted",
+      "difference": "Over/short",
+      "deposited": "To the bank",
+      "closingFloat": "Left in the till",
+      "closedBy": "Closed by"
+    }
+  },
+  "dashBank": {
+    "heading": "Bank statements",
+    "subtitle": "Match each bank statement to the books, line by line, and sign off each month once they agree.",
+    "newStatement": "Enter a statement",
+    "empty": "No statement entered yet. Enter last month's statement to start reconciling.",
+    "cancel": "Cancel",
+    "unmatchedCount": "{count} unmatched",
+    "status": {
+      "open": "Open",
+      "reconciled": "Reconciled"
+    },
+    "col": {
+      "period": "Period",
+      "opening": "Opening balance",
+      "closing": "Closing balance",
+      "lines": "Lines",
+      "status": "Status"
+    },
+    "statementTitle": "Statement {period}",
+    "statementBalances": "Opening {opening} · closing {closing}",
+    "form": {
+      "heading": "Enter a bank statement",
+      "subtitle": "Copy the balances from the statement and paste or type its lines.",
+      "fromDay": "From",
+      "toDay": "To",
+      "openingBalance": "Opening balance",
+      "openingHint": "The previous statement's closing balance.",
+      "openingHintFirst": "As printed on the statement. Reconciling starts from this statement.",
+      "closingBalance": "Closing balance",
+      "closingHint": "As printed on the statement.",
+      "addsUp": "The lines take the opening balance to the closing balance.",
+      "gap": "The lines are {amount} away from the closing balance — a line may be missing.",
+      "submit": "Save statement",
+      "error": "Couldn't save the statement. Please try again."
+    },
+    "lines": {
+      "label": "Lines",
+      "pasteLabel": "Paste from the bank's export",
+      "pastePlaceholder": "1405/07/01, POS deposit, 2500000, 123456",
+      "pasteHint": "One line per row: date, description, amount (− for money out), reference — or date, description, withdrawal, deposit, reference. Persian or Gregorian dates.",
+      "import": "Read lines",
+      "imported": "{count, plural, one {# line added} other {# lines added}}.",
+      "importedSkipped": "{count, plural, one {# line added} other {# lines added}}; couldn't read rows {rows}.",
+      "date": "Date",
+      "description": "Description",
+      "reference": "Reference",
+      "amount": "Amount (− out)",
+      "remove": "Remove line",
+      "add": "Add line",
+      "total": "{count, plural, one {# line} other {# lines}} · net {amount}"
+    },
+    "addLines": {
+      "open": "Add lines",
+      "heading": "Add lines to this statement",
+      "submit": "Add lines",
+      "error": "Couldn't add the lines. Please try again."
+    },
+    "summary": {
+      "heading": "Reconciliation",
+      "bookBalance": "Bank account in the books on {date}",
+      "outstanding": "{count, plural, one {Less # item not yet on a statement} other {Less # items not yet on a statement}}",
+      "clearedAfter": "Plus items cleared before the books recorded them",
+      "adjustedBook": "Adjusted book balance",
+      "closingBalance": "Statement closing balance",
+      "difference": "Difference",
+      "linesAddUp": "The lines add up to the closing balance.",
+      "linesGap": "The lines are {amount} short of the closing balance.",
+      "allMatched": "Every statement line is matched.",
+      "unmatched": "{count, plural, one {# statement line to match} other {# statement lines to match}}",
+      "reconcile": "Mark reconciled",
+      "confirmTitle": "Mark this statement reconciled?",
+      "confirmMessage": "Its lines and matches will be locked for good.",
+      "reconcileError": "Couldn't mark the statement reconciled.",
+      "reconciledBy": "Reconciled by {by} on {date}."
+    },
+    "workspace": {
+      "autoMatch": "{count, plural, one {Match # sure pair} other {Match # sure pairs}}",
+      "autoMatched": "{count, plural, one {# pair matched.} other {# pairs matched.}}",
+      "selection": "Picked: statement {bank} · books {books}",
+      "match": "Match picked lines",
+      "matchError": "Couldn't change the matches. Please try again.",
+      "bankSide": "{count, plural, one {On the statement, not in the books (#)} other {On the statement, not in the books (#)}}",
+      "bookSide": "{count, plural, one {In the books, not on the statement (#)} other {In the books, not on the statement (#)}}",
+      "bankDone": "Every statement line is matched.",
+      "bookDone": "Nothing outstanding in the books.",
+      "pick": "Pick {description}",
+      "lineActions": "Line actions",
+      "recordFee": "Book as a bank fee",
+      "recordInterest": "Book as interest",
+      "recordPayout": "Book as a gateway payout…",
+      "removeLine": "Remove line",
+      "removeError": "Couldn't remove the line.",
+      "recordError": "Couldn't book the line.",
+      "recorded": "Booked as JE-{number} and matched.",
+      "payoutTitle": "Gateway payout",
+      "payoutDescription": "{amount} reached the bank from the online gateway. Enter the fee it kept, if any — together they leave the gateway balance.",
+      "payoutFee": "Gateway fee",
+      "payoutConfirm": "Book payout",
+      "matched": "{count, plural, one {# match} other {# matches}}",
+      "unmatch": "Unmatch"
     }
   }
 }

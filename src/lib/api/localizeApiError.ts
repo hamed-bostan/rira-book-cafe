@@ -38,6 +38,15 @@ type ApiErrorKey =
   | "unbalanced"
   | "stockUsed"
   | "yearNotEnded"
+  | "dayAlreadyClosed"
+  | "closeOutOfOrder"
+  | "cashChanged"
+  | "statementOverlap"
+  | "statementReconciled"
+  | "alreadyMatched"
+  | "matchUnbalanced"
+  | "notReconciled"
+  | "previousNotReconciled"
   | "notPayable"
   | "paymentInProgress"
   | "gatewayUnavailable"
@@ -71,6 +80,17 @@ const CODE_KEYS: Readonly<Record<string, ApiErrorKey>> = {
   UNBALANCED: "unbalanced",
   STOCK_USED: "stockUsed",
   YEAR_NOT_ENDED: "yearNotEnded",
+  // The till close.
+  DAY_ALREADY_CLOSED: "dayAlreadyClosed",
+  CLOSE_OUT_OF_ORDER: "closeOutOfOrder",
+  CASH_CHANGED: "cashChanged",
+  // Bank reconciliation.
+  STATEMENT_OVERLAP: "statementOverlap",
+  STATEMENT_RECONCILED: "statementReconciled",
+  ALREADY_MATCHED: "alreadyMatched",
+  MATCH_UNBALANCED: "matchUnbalanced",
+  NOT_RECONCILED: "notReconciled",
+  PREVIOUS_NOT_RECONCILED: "previousNotReconciled",
   // Online payments.
   NOT_PAYABLE: "notPayable",
   PAYMENT_IN_PROGRESS: "paymentInProgress",

@@ -96,6 +96,14 @@ export const ACTIVITY_ACTIONS = [
   "ledger.entryReversed",
   "ledger.accountChanged",
   "ledger.settingsChanged",
+  // The till counted and closed for a day (with its over/short and deposit).
+  "ledger.cashClosed",
+  // Bank reconciliation: a statement entered or its lines changed, lines matched
+  // or unmatched, and the statement signed off.
+  "ledger.bankStatementChanged",
+  "ledger.bankMatched",
+  "ledger.bankUnmatched",
+  "ledger.bankReconciled",
   "expense.recorded",
   "expense.paid",
   "expense.voided",

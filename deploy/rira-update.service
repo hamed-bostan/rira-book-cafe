@@ -1,0 +1,9 @@
+[Unit]
+Description=Pull latest Rira image from ghcr and redeploy
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+User=deploy
+ExecStart=/usr/local/bin/rira-update.sh

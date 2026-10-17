@@ -1,0 +1,10 @@
+[Unit]
+Description=Check ghcr for a new Rira image every 2 minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=2min
+Unit=rira-update.service
+
+[Install]
+WantedBy=timers.target

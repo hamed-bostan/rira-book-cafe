@@ -7,7 +7,7 @@
  * leaves anything you added yourself alone. Run with `npm run db:seed`
  * (`prisma db seed`, which loads `.env`).
  *
- * Images are the bundled SVGs under `public/images/seed`, so no Supabase setup is
+ * Images are the bundled SVGs under `public/images/seed`, so no upload storage is
  * needed to see the menu.
  */
 import { cafeDayOf, shiftCafeDay, wallTimeToDate } from "@/src/domain/entities/CafeTime";

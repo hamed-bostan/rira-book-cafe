@@ -32,6 +32,7 @@ import { SmtpEmailSender } from "./email/SmtpEmailSender";
 import { CustomerNotifier } from "./notifications/CustomerNotifier";
 import { TeamNotifier } from "./notifications/TeamNotifier";
 import { ZarinpalPaymentGateway } from "./payments/ZarinpalPaymentGateway";
+import { LocalDiskImageStorageRepository } from "./repositories/LocalDiskImageStorageRepository";
 import { MockAuthRepository } from "./repositories/mock/MockAuthRepository";
 import { PrismaActivityLog } from "./repositories/PrismaActivityLog";
 import { PrismaAnalyticsRepository } from "./repositories/PrismaAnalyticsRepository";
@@ -56,7 +57,6 @@ import { PrismaReviewRepository } from "./repositories/PrismaReviewRepository";
 import { PrismaSuiteBookingRepository } from "./repositories/PrismaSuiteBookingRepository";
 import { PrismaUserRepository } from "./repositories/PrismaUserRepository";
 import { SmsIrAuthRepository } from "./repositories/SmsIrAuthRepository";
-import { SupabaseImageStorageRepository } from "./repositories/SupabaseImageStorageRepository";
 
 /**
  * Composition root.
@@ -201,11 +201,13 @@ export const teamNotifier: ITeamNotifier = new TeamNotifier(
     : undefined,
 );
 
-// Supabase Storage for images. Server-side only — it holds the service-role key,
-// so it must never be imported by client components. `SUPABASE_URL` falls back to
-// the public URL since they're the same origin.
-export const imageStorageRepository: IImageStorageRepository = new SupabaseImageStorageRepository({
-  url: process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
-  serviceRoleKey: process.env.SUPABASE_SECRET_KEY ?? "",
-  bucket: process.env.SUPABASE_IMAGES_BUCKET ?? "images",
+// Images on the server's own disk (a Docker volume in production), served back by
+// `app/uploads/[...path]/route.ts`. Server-side only. `UPLOADS_DIR` defaults to
+// `./storage/uploads` (gitignored) for local dev.
+const localImageStorage = new LocalDiskImageStorageRepository({
+  rootDir: process.env.UPLOADS_DIR || `${process.cwd()}/storage/uploads`,
+  publicPathPrefix: "/uploads",
 });
+export const imageStorageRepository: IImageStorageRepository = localImageStorage;
+/** Absolute file for a stored image path, or null when it escapes the uploads root. */
+export const resolveStoredImageFile = (objectPath: string): string | null => localImageStorage.resolve(objectPath);

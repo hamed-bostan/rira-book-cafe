@@ -1,0 +1,33 @@
+# Dependencies & build artifacts (rebuilt inside the image)
+node_modules
+.next
+out
+build
+
+# Generated at build time by the `prebuild` hook
+src/styles/tokens.css
+
+# VCS & CI
+.git
+.github
+
+# Local env & secrets — injected at runtime, never baked into the image
+.env*
+
+# Editor / OS cruft
+.idea
+.vscode
+.DS_Store
+
+# Docker & docs (not needed inside the image)
+Dockerfile
+.dockerignore
+docker-compose*.yml
+README.md
+
+# Logs
+*.log
+npm-debug.log*
+
+# Local uploads (production keeps them in a Docker volume)
+storage

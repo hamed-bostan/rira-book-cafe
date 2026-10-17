@@ -12,8 +12,8 @@ const ALLOWED_FOLDERS = new Set<string>([...MANAGED_IMAGE_FOLDERS, AVATAR_IMAGE_
 
 /**
  * Image upload endpoint: `POST /api/images/upload` with `multipart/form-data`
- * (`file`, optional `folder`). The actual write to Supabase Storage happens here,
- * server-side, using the service-role key (see `SupabaseImageStorageRepository`).
+ * (`file`, optional `folder`). The file is written to the server's disk here,
+ * server-side (see `LocalDiskImageStorageRepository`), and served from `/uploads`.
  *
  * Authorization is per-folder: the catalog folders (products/categories/misc)
  * are admin-only — they back the storefront and feed the orphan sweep. The

@@ -21,7 +21,7 @@ const ACCEPT = "image/png,image/jpeg,image/webp,image/avif";
 
 /**
  * Product image picker: uploads the chosen file to `/api/images/upload`
- * (Supabase, folder `products`) and lifts the resulting public URL via
+ * (server disk, folder `products`) and lifts the resulting public URL via
  * `onChange`, showing a live preview and any upload error. Mirrors the
  * category `IconUpload`.
  */

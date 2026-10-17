@@ -1,9 +1,9 @@
 import { z } from "zod";
 
 /**
- * What an image field accepts: an absolute http(s) URL (an upload in Supabase
- * Storage) or a path on this site (`/images/...`, e.g. the bundled sample images
- * the seed uses). Protocol-relative (`//host`) and other schemes are refused.
+ * What an image field accepts: an absolute http(s) URL (an external image) or a
+ * path on this site (`/uploads/...` for uploads, `/images/...` for the bundled
+ * sample images the seed uses). Protocol-relative (`//host`) and other schemes are refused.
  */
 export function isImageUrl(value: string): boolean {
   if (/^\/(?!\/)/.test(value)) return true;

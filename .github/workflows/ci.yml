@@ -1,0 +1,53 @@
+name: CI / Publish
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  ci:
+    name: Lint, build & publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      # --- Lint, typecheck & test (fast feedback on the runner) ---
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Test
+        run: npm run test
+
+      # --- Build the image (this runs `next build` => also type-checks) ---
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        if: github.event_name == 'push'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # On PRs: build only (validation). On push to main: build AND publish.
+      - name: Build image (and publish on main)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: ${{ github.event_name == 'push' }}
+          tags: |
+            ghcr.io/hamed-bostan/rira-book-cafe:production
+            ghcr.io/hamed-bostan/rira-book-cafe:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

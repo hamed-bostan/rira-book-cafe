@@ -4,8 +4,8 @@ import type { ImageFolder } from "@/src/lib/imageFolders";
 import { imageUploadResponseSchema } from "./image-response-schema";
 
 /**
- * Typed client for the shared image-upload endpoint (Supabase, written server-side
- * with the service-role key). The one place the multipart upload is expressed: the
+ * Typed client for the shared image-upload endpoint (written to the server's disk
+ * and served from `/uploads`). The one place the multipart upload is expressed: the
  * category and product pickers and the profile avatar flow all call it, and each
  * rejects with an `ApiError` — `401` when the caller may not write to that folder,
  * `EBADRESPONSE` when the body isn't the expected envelope.

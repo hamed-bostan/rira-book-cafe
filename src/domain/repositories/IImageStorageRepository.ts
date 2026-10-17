@@ -30,7 +30,7 @@ export type UploadImageInput = {
 /**
  * Boundary between the app and whatever object-storage provider holds images.
  * Implementations live in `infrastructure` and are bound in the container, so
- * swapping Supabase Storage for S3/R2 never touches the domain or UI.
+ * swapping local disk for S3/R2 never touches the domain or UI.
  */
 export type IImageStorageRepository = {
   /** Store image bytes and return its path + public URL. */

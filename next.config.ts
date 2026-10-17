@@ -5,11 +5,8 @@ import type { NextConfig } from "next";
 // Points next-intl at the per-request config (locale resolution + message loading).
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
-const nextConfig: NextConfig = {
-  // Images are served from Supabase Storage — allow next/image to load them.
-  images: {
-    remotePatterns: [{ protocol: "https", hostname: "*.supabase.co" }],
-  },
-};
+// Images are self-hosted: uploads are served by this app from `/uploads`
+// (see `app/uploads/[...path]/route.ts`), so next/image needs no remote hosts.
+const nextConfig: NextConfig = {};
 
 export default withNextIntl(nextConfig);

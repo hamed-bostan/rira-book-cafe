@@ -21,7 +21,7 @@ const ACCEPT = "image/png,image/jpeg,image/webp,image/avif";
 
 /**
  * Category icon picker: uploads the chosen file to `/api/images/upload`
- * (Supabase, folder `categories`) and lifts the resulting public URL via
+ * (server disk, folder `categories`) and lifts the resulting public URL via
  * `onChange`, showing a live preview and any upload error.
  */
 export function IconUpload({ value, onChange, id, ...aria }: IconUploadProps) {

@@ -26,8 +26,8 @@ Open http://localhost:3000.
   (`/dashboard`) is open to you. `ADMIN_USER_IDS` does the same without the seed.
 - **Sample data:** 5 categories, 13 menu items (including 3 books — one for sale,
   one for reading in the cafe only, one either way) and 2 upcoming events. Images
-  are bundled under `public/images/seed`, so Supabase isn't needed to try it.
-  Uploading new images does need the Supabase variables in `.env`.
+  are bundled under `public/images/seed`, so no upload storage is needed to try it.
+  Uploaded images are written to `storage/uploads` (or `UPLOADS_DIR`) and served from `/uploads`.
 
 Re-running `npm run db:seed` refreshes the samples (prices, event dates) without
 duplicating them and leaves your own data alone.

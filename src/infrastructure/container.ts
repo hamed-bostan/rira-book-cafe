@@ -1,6 +1,7 @@
 import type { IActivityLog } from "@/src/domain/repositories/IActivityLog";
 import type { IAnalyticsRepository } from "@/src/domain/repositories/IAnalyticsRepository";
 import type { IAuthRepository } from "@/src/domain/repositories/IAuthRepository";
+import type { IBankReconciliationRepository } from "@/src/domain/repositories/IBankReconciliationRepository";
 import type { IBookLoanRepository } from "@/src/domain/repositories/IBookLoanRepository";
 import type { IBookWaitlistRepository } from "@/src/domain/repositories/IBookWaitlistRepository";
 import type { ICashShiftRepository } from "@/src/domain/repositories/ICashShiftRepository";
@@ -36,6 +37,7 @@ import { LocalDiskImageStorageRepository } from "./repositories/LocalDiskImageSt
 import { MockAuthRepository } from "./repositories/mock/MockAuthRepository";
 import { PrismaActivityLog } from "./repositories/PrismaActivityLog";
 import { PrismaAnalyticsRepository } from "./repositories/PrismaAnalyticsRepository";
+import { PrismaBankReconciliationRepository } from "./repositories/PrismaBankReconciliationRepository";
 import { PrismaBookLoanRepository } from "./repositories/PrismaBookLoanRepository";
 import { PrismaBookWaitlistRepository } from "./repositories/PrismaBookWaitlistRepository";
 import { PrismaCashShiftRepository } from "./repositories/PrismaCashShiftRepository";
@@ -141,6 +143,10 @@ export const pricingRepository: IPricingRepository = new PrismaPricingRepository
 // stock and post the matching entries in one transaction, so the stock list and
 // the Inventory account always agree.
 export const inventoryRepository: IInventoryRepository = new PrismaInventoryRepository();
+
+// Bank reconciliation: statements are matched line by line to the Bank account and
+// signed off once they reconcile. (The till is counted per shift — see cash shifts.)
+export const bankReconciliationRepository: IBankReconciliationRepository = new PrismaBankReconciliationRepository();
 
 // Append-only audit trail of admin changes. Read-only here: entries are written by
 // the repositories that make the changes they describe, inside the same

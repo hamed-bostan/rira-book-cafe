@@ -381,16 +381,17 @@ model EventRegistration {
 
 model LedgerAccount {
   // Stable code; the first digit is the type (1 asset, 2 liability, 3 equity, 4 revenue, 5–6 expense).
-  code      String        @id
-  name      String
-  nameFa    String        @map("name_fa")
+  code           String          @id
+  name           String
+  nameFa         String          @map("name_fa")
   // asset | liability | equity | revenue | expense
-  type      String
-  isSystem  Boolean       @default(false) @map("is_system")
-  isActive  Boolean       @default(true) @map("is_active")
-  lines     JournalLine[]
-  expenses  Expense[]
-  createdAt DateTime      @default(now()) @map("created_at")
+  type           String
+  isSystem       Boolean         @default(false) @map("is_system")
+  isActive       Boolean         @default(true) @map("is_active")
+  lines          JournalLine[]
+  expenses       Expense[]
+  bankStatements BankStatement[]
+  createdAt      DateTime        @default(now()) @map("created_at")
 
   @@map("ledger_accounts")
 }
@@ -420,15 +421,16 @@ model JournalEntry {
 }
 
 model JournalLine {
-  id          String        @id @default(uuid())
-  entryId     String        @map("entry_id")
-  entry       JournalEntry  @relation(fields: [entryId], references: [id], onDelete: Restrict)
-  accountCode String        @map("account_code")
-  account     LedgerAccount @relation(fields: [accountCode], references: [code], onDelete: Restrict)
-  debit       BigInt        @default(0)
-  credit      BigInt        @default(0)
+  id          String               @id @default(uuid())
+  entryId     String               @map("entry_id")
+  entry       JournalEntry         @relation(fields: [entryId], references: [id], onDelete: Restrict)
+  accountCode String               @map("account_code")
+  account     LedgerAccount        @relation(fields: [accountCode], references: [code], onDelete: Restrict)
+  debit       BigInt               @default(0)
+  credit      BigInt               @default(0)
   memo        String?
   position    Int
+  bankMatch   BankMatchLedgerLine?
 
   @@index([entryId])
   @@index([accountCode])
@@ -715,4 +717,78 @@ model CashShift {
 
   @@index([openedAt])
   @@map("cash_shifts")
+}
+
+// ── Bank reconciliation ──────────────────────────────────────────────────────
+// Bank statements matched line by line to the Bank account. The database keeps
+// them honest too: matches balance and a reconciled statement is frozen (see the
+// migration).
+
+model BankStatement {
+  id               String              @id @default(uuid())
+  accountCode      String              @default("1120") @map("account_code")
+  account          LedgerAccount       @relation(fields: [accountCode], references: [code], onDelete: Restrict)
+  fromDay          DateTime            @map("from_day") @db.Date
+  toDay            DateTime            @map("to_day") @db.Date
+  openingBalance   BigInt              @map("opening_balance")
+  closingBalance   BigInt              @map("closing_balance")
+  // open | reconciled
+  status           String              @default("open")
+  lines            BankStatementLine[]
+  matches          BankMatch[]
+  createdById      String              @map("created_by_id")
+  createdByName    String              @map("created_by_name")
+  createdAt        DateTime            @default(now()) @map("created_at")
+  reconciledById   String?             @map("reconciled_by_id")
+  reconciledByName String?             @map("reconciled_by_name")
+  reconciledAt     DateTime?           @map("reconciled_at")
+
+  @@unique([accountCode, fromDay])
+  @@index([accountCode, toDay])
+  @@map("bank_statements")
+}
+
+model BankStatementLine {
+  id          String        @id @default(uuid())
+  statementId String        @map("statement_id")
+  statement   BankStatement @relation(fields: [statementId], references: [id], onDelete: Restrict)
+  date        DateTime      @db.Date
+  description String
+  reference   String?
+  // Signed whole Toman: positive into the account, negative out.
+  amount      BigInt
+  position    Int
+  matchId     String?       @map("match_id")
+  match       BankMatch?    @relation(fields: [matchId], references: [id], onDelete: Restrict)
+  createdAt   DateTime      @default(now()) @map("created_at")
+
+  @@index([statementId, position])
+  @@index([matchId])
+  @@map("bank_statement_lines")
+}
+
+// Statement lines and ledger lines that are the same money; both sides total the same.
+model BankMatch {
+  id             String                @id @default(uuid())
+  statementId    String                @map("statement_id")
+  statement      BankStatement         @relation(fields: [statementId], references: [id], onDelete: Restrict)
+  statementLines BankStatementLine[]
+  ledgerLines    BankMatchLedgerLine[]
+  createdById    String                @map("created_by_id")
+  createdByName  String                @map("created_by_name")
+  createdAt      DateTime              @default(now()) @map("created_at")
+
+  @@index([statementId])
+  @@map("bank_matches")
+}
+
+model BankMatchLedgerLine {
+  matchId       String      @map("match_id")
+  match         BankMatch   @relation(fields: [matchId], references: [id], onDelete: Restrict)
+  // A ledger line clears once.
+  journalLineId String      @unique @map("journal_line_id")
+  journalLine   JournalLine @relation(fields: [journalLineId], references: [id], onDelete: Restrict)
+
+  @@id([matchId, journalLineId])
+  @@map("bank_match_ledger_lines")
 }

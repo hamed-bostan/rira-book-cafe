@@ -156,7 +156,15 @@
     "promoValueInvalid": "Enter how much it takes off.",
     "percentTooHigh": "A percentage can't be over 100.",
     "limitInvalid": "Enter a whole number above zero, or leave it blank.",
-    "pointsInvalid": "Enter a whole number of points (use − to take away)."
+    "pointsInvalid": "Enter a whole number of points (use − to take away).",
+    "periodEndsBeforeStart": "The period ends before it starts.",
+    "lineOutsidePeriod": "Every line must fall inside the statement's period.",
+    "openingMustMatchPrevious": "The opening balance must be the previous statement's closing balance.",
+    "linesRequired": "Add at least one line.",
+    "wrongDirection": "That doesn't fit this line — fees go out, interest and payouts come in.",
+    "outsideMatchRange": "That ledger line is outside what this statement can match.",
+    "wrongAccount": "Only lines on the bank account can be matched.",
+    "postingKindInvalid": "Choose what the line is."
   },
   "apiErrors": {
     "badRequest": "The request couldn't be read. Please try again.",
@@ -200,7 +208,13 @@
     "alreadyWaiting": "You're already on the waitlist for this book.",
     "bookOnShelf": "This book is on the shelf right now — ask at the counter.",
     "shiftAlreadyOpen": "A shift is already open. Close it first.",
-    "noOpenShift": "There's no open shift."
+    "noOpenShift": "There's no open shift.",
+    "statementOverlap": "A statement already covers part of that period. Start after the last statement ends.",
+    "statementReconciled": "This statement is reconciled and can no longer change.",
+    "alreadyMatched": "One of those lines is already matched.",
+    "matchUnbalanced": "The lines picked on each side don't add up to the same amount.",
+    "notReconciled": "The statement doesn't reconcile yet — match every line and clear the difference first.",
+    "previousNotReconciled": "Reconcile the earlier statements first."
   },
   "meta": {
     "siteName": "Rira Book Cafe",
@@ -771,7 +785,11 @@
         "entryPosted": "{actor} posted journal entry {entity}",
         "entryReversed": "{actor} reversed journal entry {entity}",
         "accountChanged": "{actor} changed account {entity}",
-        "settingsChanged": "{actor} changed the accounting settings"
+        "settingsChanged": "{actor} changed the accounting settings",
+        "bankStatementChanged": "{actor} updated {entity}",
+        "bankMatched": "{actor} matched lines on {entity}",
+        "bankUnmatched": "{actor} unmatched lines on {entity}",
+        "bankReconciled": "{actor} reconciled {entity}"
       },
       "expense": {
         "recorded": "{actor} recorded expense {entity}",
@@ -837,7 +855,15 @@
       "paymentMethod": "Payment method",
       "reversedBy": "Reversed by",
       "vatRateBps": "VAT rate (basis points)",
-      "booksClosedThrough": "Books closed through"
+      "booksClosedThrough": "Books closed through",
+      "counted": "Counted",
+      "difference": "Over/short",
+      "deposited": "Deposited",
+      "closingBalance": "Closing balance",
+      "linesAdded": "Lines added",
+      "linesRemoved": "Lines removed",
+      "matched": "Matches made",
+      "unmatched": "Matches undone"
     },
     "filterField": "Filter by what changed",
     "allFields": "Any change",
@@ -1410,7 +1436,8 @@
       "journal": "Journal",
       "accounts": "Accounts",
       "statements": "Statements",
-      "settings": "Settings"
+      "settings": "Settings",
+      "bank": "Bank"
     },
     "overview": {
       "balanced": "The books balance — total debits equal total credits.",
@@ -1446,7 +1473,8 @@
         "submit": "Record payout",
         "saved": "Payout recorded.",
         "error": "Couldn't record the payout. Please try again."
-      }
+      },
+      "reconcileBank": "Reconcile the bank"
     },
     "journal": {
       "heading": "Journal",
@@ -1477,7 +1505,9 @@
       "stockCount": "Stock count",
       "stockOpening": "Opening stock",
       "yearClose": "Year-end close",
-      "cashShift": "Cash shift"
+      "cashShift": "Cash shift",
+      "bankFee": "Bank fee",
+      "bankInterest": "Bank interest"
     },
     "entry": {
       "title": "Journal entry JE-{number}",
@@ -2263,5 +2293,107 @@
     },
     "laneEmpty": "Nothing here.",
     "minutes": "{minutes} min"
+  },
+  "dashBank": {
+    "heading": "Bank statements",
+    "subtitle": "Match each bank statement to the books, line by line, and sign off each month once they agree.",
+    "newStatement": "Enter a statement",
+    "empty": "No statement entered yet. Enter last month's statement to start reconciling.",
+    "cancel": "Cancel",
+    "unmatchedCount": "{count} unmatched",
+    "status": {
+      "open": "Open",
+      "reconciled": "Reconciled"
+    },
+    "col": {
+      "period": "Period",
+      "opening": "Opening balance",
+      "closing": "Closing balance",
+      "lines": "Lines",
+      "status": "Status"
+    },
+    "statementTitle": "Statement {period}",
+    "statementBalances": "Opening {opening} · closing {closing}",
+    "form": {
+      "heading": "Enter a bank statement",
+      "subtitle": "Copy the balances from the statement and paste or type its lines.",
+      "fromDay": "From",
+      "toDay": "To",
+      "openingBalance": "Opening balance",
+      "openingHint": "The previous statement's closing balance.",
+      "openingHintFirst": "As printed on the statement. Reconciling starts from this statement.",
+      "closingBalance": "Closing balance",
+      "closingHint": "As printed on the statement.",
+      "addsUp": "The lines take the opening balance to the closing balance.",
+      "gap": "The lines are {amount} away from the closing balance — a line may be missing.",
+      "submit": "Save statement",
+      "error": "Couldn't save the statement. Please try again."
+    },
+    "lines": {
+      "label": "Lines",
+      "pasteLabel": "Paste from the bank's export",
+      "pastePlaceholder": "1405/07/01, POS deposit, 2500000, 123456",
+      "pasteHint": "One line per row: date, description, amount (− for money out), reference — or date, description, withdrawal, deposit, reference. Persian or Gregorian dates.",
+      "import": "Read lines",
+      "imported": "{count, plural, one {# line added} other {# lines added}}.",
+      "importedSkipped": "{count, plural, one {# line added} other {# lines added}}; couldn't read rows {rows}.",
+      "date": "Date",
+      "description": "Description",
+      "reference": "Reference",
+      "amount": "Amount (− out)",
+      "remove": "Remove line",
+      "add": "Add line",
+      "total": "{count, plural, one {# line} other {# lines}} · net {amount}"
+    },
+    "addLines": {
+      "open": "Add lines",
+      "heading": "Add lines to this statement",
+      "submit": "Add lines",
+      "error": "Couldn't add the lines. Please try again."
+    },
+    "summary": {
+      "heading": "Reconciliation",
+      "bookBalance": "Bank account in the books on {date}",
+      "outstanding": "{count, plural, one {Less # item not yet on a statement} other {Less # items not yet on a statement}}",
+      "clearedAfter": "Plus items cleared before the books recorded them",
+      "adjustedBook": "Adjusted book balance",
+      "closingBalance": "Statement closing balance",
+      "difference": "Difference",
+      "linesAddUp": "The lines add up to the closing balance.",
+      "linesGap": "The lines are {amount} short of the closing balance.",
+      "allMatched": "Every statement line is matched.",
+      "unmatched": "{count, plural, one {# statement line to match} other {# statement lines to match}}",
+      "reconcile": "Mark reconciled",
+      "confirmTitle": "Mark this statement reconciled?",
+      "confirmMessage": "Its lines and matches will be locked for good.",
+      "reconcileError": "Couldn't mark the statement reconciled.",
+      "reconciledBy": "Reconciled by {by} on {date}."
+    },
+    "workspace": {
+      "autoMatch": "{count, plural, one {Match # sure pair} other {Match # sure pairs}}",
+      "autoMatched": "{count, plural, one {# pair matched.} other {# pairs matched.}}",
+      "selection": "Picked: statement {bank} · books {books}",
+      "match": "Match picked lines",
+      "matchError": "Couldn't change the matches. Please try again.",
+      "bankSide": "{count, plural, one {On the statement, not in the books (#)} other {On the statement, not in the books (#)}}",
+      "bookSide": "{count, plural, one {In the books, not on the statement (#)} other {In the books, not on the statement (#)}}",
+      "bankDone": "Every statement line is matched.",
+      "bookDone": "Nothing outstanding in the books.",
+      "pick": "Pick {description}",
+      "lineActions": "Line actions",
+      "recordFee": "Book as a bank fee",
+      "recordInterest": "Book as interest",
+      "recordPayout": "Book as a gateway payout…",
+      "removeLine": "Remove line",
+      "removeError": "Couldn't remove the line.",
+      "recordError": "Couldn't book the line.",
+      "recorded": "Booked as JE-{number} and matched.",
+      "payoutTitle": "Gateway payout",
+      "payoutDescription": "{amount} reached the bank from the online gateway. Enter the fee it kept, if any — together they leave the gateway balance.",
+      "payoutFee": "Gateway fee",
+      "payoutConfirm": "Book payout",
+      "matched": "{count, plural, one {# match} other {# matches}}",
+      "unmatch": "Unmatch"
+    }
   }
 }

@@ -47,4 +47,11 @@ export type ConflictCode =
   | "BOOK_ON_SHELF"
   // Cash shifts.
   | "SHIFT_ALREADY_OPEN"
-  | "NO_OPEN_SHIFT";
+  | "NO_OPEN_SHIFT"
+  // Bank reconciliation.
+  | "STATEMENT_OVERLAP"
+  | "STATEMENT_RECONCILED"
+  | "ALREADY_MATCHED"
+  | "MATCH_UNBALANCED"
+  | "NOT_RECONCILED"
+  | "PREVIOUS_NOT_RECONCILED";

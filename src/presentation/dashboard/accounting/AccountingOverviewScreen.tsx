@@ -110,6 +110,9 @@ export async function AccountingOverviewScreen({ trialBalance, profitAndLoss, se
           <Button asChild size="sm" variant="outline">
             <Link href="/dashboard/accounting/journal/new">{t("journal.newEntry")}</Link>
           </Button>
+          <Button asChild size="sm" variant="outline">
+            <Link href="/dashboard/accounting/bank">{t("overview.reconcileBank")}</Link>
+          </Button>
         </div>
       ) : null}
 

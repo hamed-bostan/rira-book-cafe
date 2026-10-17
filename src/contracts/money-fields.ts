@@ -29,6 +29,20 @@ export const optionalMoneyField = z
   .transform((value) => (value === "" ? 0 : Number(value)))
   .refine((n) => n <= MAX_MONEY_AMOUNT, "amountInvalid");
 
+const SIGNED_DIGITS = /^-?\d+$/;
+
+/** A required signed amount — a balance, which can be overdrawn. "-" is money out. */
+export const balanceField = z
+  .string()
+  .trim()
+  .min(1, "amountRequired")
+  .regex(SIGNED_DIGITS, "amountInvalid")
+  .transform(Number)
+  .refine((n) => Math.abs(n) <= MAX_MONEY_AMOUNT, "amountInvalid");
+
+/** A signed movement: positive in, negative out, never zero. */
+export const signedAmountField = balanceField.refine((n) => n !== 0, "amountInvalid");
+
 /** A cafe day, `YYYY-MM-DD` (what a date input emits). */
 export const dayField = z.string().trim().min(1, "dateRequired").refine(isCafeDay, "dateInvalid");
 

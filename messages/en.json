@@ -2398,5 +2398,29 @@
       "matched": "{count, plural, one {# match} other {# matches}}",
       "unmatch": "Unmatch"
     }
+  },
+  "errors": {
+    "title": "Something went wrong",
+    "body": "We couldn't load this page. Check your connection and try again.",
+    "retry": "Try again",
+    "goHome": "Back to home",
+    "reference": "Error reference: {digest}"
+  },
+  "siteErrors": {
+    "home": "We couldn't load the home page",
+    "account": "We couldn't load your account",
+    "basket": "We couldn't load your basket",
+    "book": "We couldn't load table booking",
+    "events": "We couldn't load the events",
+    "event": "We couldn't load this event",
+    "loans": "We couldn't load your book loans",
+    "menu": "We couldn't load the menu",
+    "product": "We couldn't load this item",
+    "notifications": "We couldn't load your notifications",
+    "orders": "We couldn't load your orders",
+    "order": "We couldn't load this order",
+    "reservations": "We couldn't load your reservations",
+    "rewards": "We couldn't load your rewards",
+    "suite": "We couldn't load the suite"
   }
 }

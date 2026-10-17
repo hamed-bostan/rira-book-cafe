@@ -1,3 +1,5 @@
+import { randomInt } from "node:crypto";
+
 import type { AuthIdentity, IAuthRepository } from "@/src/domain/repositories/IAuthRepository";
 
 import { normalizePhone, sendPatternSms } from "../sms/smsIrClient";
@@ -51,7 +53,8 @@ export class SmsIrAuthRepository implements IAuthRepository {
       return false;
     }
 
-    const code = String(Math.floor(1000 + Math.random() * 9000));
+    // CSPRNG: `Math.random()` output is predictable from earlier values.
+    const code = String(randomInt(1000, 10_000));
 
     const sent = await sendPatternSms(this.config, mobile, this.config.templateId, [
       { name: "CODE", value: code },

@@ -11,12 +11,15 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
     "generate:tokens": "tsx src/presentation/design-system/scripts/generate-css.ts",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
     "db:dev:up": "docker compose -f docker-compose.dev.yml up -d",
+    "db:test:up": "docker compose -f docker-compose.test.yml up -d --wait",
+    "db:test:down": "docker compose -f docker-compose.test.yml down",
     "db:setup": "prisma migrate deploy && prisma db seed"
   },
   "dependencies": {

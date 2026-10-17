@@ -1,4 +1,5 @@
 import type { AuthIdentity, IAuthRepository } from "@/src/domain/repositories/IAuthRepository";
+import type { ILogger } from "@/src/domain/repositories/ILogger";
 
 import { normalizePhone, sendPatternSms } from "../sms/smsIrClient";
 
@@ -15,6 +16,8 @@ export type SmsIrConfig = {
   templateId: number;
   /** Override the API host (defaults to the public SMS.ir endpoint). */
   baseUrl?: string;
+  /** Where send failures are logged. */
+  logger: ILogger;
 }
 
 type StoredCode = {

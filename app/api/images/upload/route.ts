@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { UploadImage } from "@/src/domain/use-cases/images/UploadImage";
 import { imageStorageRepository } from "@/src/infrastructure/container";
+import { requestLogger } from "@/src/lib/api/requestLogger";
 import { errorResponse, unauthorizedResponse } from "@/src/lib/api/responses";
 import { AVATAR_IMAGE_FOLDER, MANAGED_IMAGE_FOLDERS } from "@/src/lib/imageFolders";
 import { getUserSession } from "@/src/lib/require-auth";
@@ -63,7 +64,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     return NextResponse.json({ image }, { status: 201 });
   } catch (error) {
-    console.error("Image upload failed:", error);
+    requestLogger(request).error("Image upload failed", { error, folder });
     return errorResponse(502, { message: "Image upload failed. Please try again.", code: "UPLOAD_FAILED" });
   }
 }

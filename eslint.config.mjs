@@ -127,6 +127,16 @@ const eslintConfig = defineConfig([
     },
   },
 
+  // Server code logs through the `ILogger` port (container `logger`) — structured
+  // JSON in production, request-id correlated, errors forwarded to the tracker.
+  {
+    files: ["app/api/**/*.ts", "app/uploads/**/*.ts", "src/domain/**/*.ts", "src/infrastructure/**/*.ts"],
+    ignores: ["**/__tests__/**", "**/*.test.ts"],
+    rules: {
+      "no-console": "error",
+    },
+  },
+
   // --- Clean Architecture boundaries (CLAUDE.md § Architecture) ---
   // `domain` is framework-free: it must never import outward, from
   // `infrastructure`, `presentation`, `app`, or Next.js itself.

@@ -1,4 +1,5 @@
 import type { EmailMessage, IEmailSender } from "@/src/domain/repositories/IEmailSender";
+import type { ILogger } from "@/src/domain/repositories/ILogger";
 
 /**
  * Logs the email server-side instead of delivering it — the stand-in when no SMTP
@@ -8,7 +9,13 @@ import type { EmailMessage, IEmailSender } from "@/src/domain/repositories/IEmai
  * composition root. Best-effort by construction — logging never throws.
  */
 export class LoggingEmailSender implements IEmailSender {
+  constructor(private readonly logger: ILogger) {}
+
   async send(message: EmailMessage): Promise<void> {
-    console.info(`[email:log] to ${message.to} — ${message.subject}\n${message.text}`);
+    this.logger.info("Email logged instead of sent (no SMTP host)", {
+      to: message.to,
+      subject: message.subject,
+      text: message.text,
+    });
   }
 }

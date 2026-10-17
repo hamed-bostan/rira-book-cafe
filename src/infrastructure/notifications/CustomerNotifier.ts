@@ -1,4 +1,5 @@
 import type { NewNotification } from "@/src/domain/entities/Notification";
+import type { ILogger } from "@/src/domain/repositories/ILogger";
 import type { ICustomerNotifier, INotificationRepository } from "@/src/domain/repositories/INotificationRepository";
 
 /**
@@ -8,13 +9,16 @@ import type { ICustomerNotifier, INotificationRepository } from "@/src/domain/re
  * successful request into an error.
  */
 export class CustomerNotifier implements ICustomerNotifier {
-  constructor(private readonly notifications: INotificationRepository) {}
+  constructor(
+    private readonly notifications: INotificationRepository,
+    private readonly logger: ILogger,
+  ) {}
 
   async notify(input: NewNotification): Promise<void> {
     try {
       await this.notifications.create(input);
     } catch (error) {
-      console.error(`Couldn't deliver the ${input.kind} notification to ${input.userId}:`, error);
+      this.logger.error("Notification delivery failed", { error, kind: input.kind, userId: input.userId });
     }
   }
 }

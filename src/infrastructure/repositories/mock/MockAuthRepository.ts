@@ -1,4 +1,5 @@
 import type { AuthIdentity, IAuthRepository } from "@/src/domain/repositories/IAuthRepository";
+import type { ILogger } from "@/src/domain/repositories/ILogger";
 
 import { normalizePhone } from "../../sms/smsIrClient";
 import { getOtpStore } from "../otpStore";
@@ -18,6 +19,8 @@ export class MockAuthRepository implements IAuthRepository {
   // there when `/login/verify` reads it. See getOtpStore.
   private readonly codes = getOtpStore<string>("mock-auth");
 
+  constructor(private readonly logger: ILogger) {}
+
   async requestOtp(phone: string): Promise<boolean> {
     const mobile = normalizePhone(phone);
     if (mobile.length < MIN_PHONE_DIGITS) {
@@ -26,7 +29,9 @@ export class MockAuthRepository implements IAuthRepository {
 
     const code = String(Math.floor(1000 + Math.random() * 9000));
     this.codes.set(mobile, code);
-    console.log(`📱 [dev] OTP for ${phone}: ${code}`);
+    // A dev stand-in for the SMS: the message carries the code, not a field, so
+    // phone/OTP redaction leaves it readable in the terminal.
+    this.logger.info(`[dev] OTP for ${mobile}: ${code}`);
     return true;
   }
 

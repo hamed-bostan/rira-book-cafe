@@ -3,6 +3,7 @@ import path from "node:path";
 
 import { resolveStoredImageFile } from "@/src/infrastructure/container";
 import { IMAGE_EXTENSION_BY_MIME } from "@/src/infrastructure/repositories/LocalDiskImageStorageRepository";
+import { requestLogger } from "@/src/lib/api/requestLogger";
 
 const MIME_BY_EXTENSION: Record<string, string> = Object.fromEntries(
   Object.entries(IMAGE_EXTENSION_BY_MIME).map(([mime, extension]) => [`.${extension}`, mime]),
@@ -15,7 +16,7 @@ type RouteContext = { params: Promise<{ path: string[] }> };
  * Names are random UUIDs and never rewritten, so responses are cached forever.
  * Only image extensions are served, and paths can't escape the uploads root.
  */
-export async function GET(_request: Request, { params }: RouteContext): Promise<Response> {
+export async function GET(request: Request,{ params }: RouteContext): Promise<Response> {
   const segments = (await params).path;
   const contentType = MIME_BY_EXTENSION[path.extname(segments.at(-1) ?? "").toLowerCase()];
   const file = contentType ? resolveStoredImageFile(segments.join("/")) : null;
@@ -32,7 +33,7 @@ export async function GET(_request: Request, { params }: RouteContext): Promise<
     });
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") return new Response("Not found", { status: 404 });
-    console.error("Serving upload failed:", error);
+    requestLogger(request).error("Serving upload failed", { error, path: segments.join("/") });
     return new Response("Server error", { status: 500 });
   }
 }

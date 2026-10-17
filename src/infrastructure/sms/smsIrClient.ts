@@ -1,3 +1,5 @@
+import type { ILogger } from "@/src/domain/repositories/ILogger";
+
 /**
  * Shared SMS.ir "verify"/pattern-send client.
  *
@@ -24,6 +26,8 @@ export type SmsIrClientConfig = {
   apiKey: string;
   /** Override the API host (defaults to the public SMS.ir endpoint). */
   baseUrl?: string;
+  /** Where send failures are logged (sends are best-effort, so failures never throw). */
+  logger: ILogger;
 };
 
 /** The slice of the SMS.ir response we act on. */
@@ -75,19 +79,19 @@ export async function sendPatternSms(
     });
 
     if (!response.ok) {
-      console.error(`[sms.ir] send failed: HTTP ${response.status}`);
+      config.logger.error("SMS.ir send failed", { status: response.status, templateId });
       return false;
     }
 
     const data = (await response.json()) as SmsIrSendResponse;
     if (data.status !== SMS_IR_OK) {
-      console.error(`[sms.ir] send rejected: ${data.message ?? "unknown error"}`);
+      config.logger.error("SMS.ir rejected the send", { reason: data.message ?? "unknown error", templateId });
       return false;
     }
 
     return true;
   } catch (error) {
-    console.error("[sms.ir] send failed:", error instanceof Error ? error.message : error);
+    config.logger.error("SMS.ir send failed", { error, templateId });
     return false;
   }
 }

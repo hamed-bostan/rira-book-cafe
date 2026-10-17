@@ -12,6 +12,7 @@ import type { IExpenseRepository } from "@/src/domain/repositories/IExpenseRepos
 import type { IImageStorageRepository } from "@/src/domain/repositories/IImageStorageRepository";
 import type { IInventoryRepository } from "@/src/domain/repositories/IInventoryRepository";
 import type { ILedgerRepository } from "@/src/domain/repositories/ILedgerRepository";
+import type { ILogger } from "@/src/domain/repositories/ILogger";
 import type { ILoyaltyRepository } from "@/src/domain/repositories/ILoyaltyRepository";
 import type { ICustomerNotifier, INotificationRepository } from "@/src/domain/repositories/INotificationRepository";
 import type { IOrderNoteRepository } from "@/src/domain/repositories/IOrderNoteRepository";
@@ -30,6 +31,8 @@ import { CheckoutPricing } from "@/src/domain/use-cases/orders/CheckoutPricing";
 
 import { LoggingEmailSender } from "./email/LoggingEmailSender";
 import { SmtpEmailSender } from "./email/SmtpEmailSender";
+import { createPinoLogger } from "./logging/PinoLogger";
+import { reportErrorToSentry } from "./logging/reportErrorToSentry";
 import { CustomerNotifier } from "./notifications/CustomerNotifier";
 import { TeamNotifier } from "./notifications/TeamNotifier";
 import { ZarinpalPaymentGateway } from "./payments/ZarinpalPaymentGateway";
@@ -68,6 +71,20 @@ import { SmsIrAuthRepository } from "./repositories/SmsIrAuthRepository";
  * everything else (use-cases, route handlers) depends on the interfaces —
  * Dependency Inversion in practice. New features add their bindings here.
  */
+
+// Structured logging — one JSON object per line on stdout in production (what
+// `docker logs` and any log shipper want), colored pretty lines in dev, silent
+// under tests. `LOG_LEVEL` overrides the level. Error-level lines are also
+// reported to the error tracker (a no-op without a Sentry/GlitchTip DSN).
+// Bound first: the adapters below log through it.
+export const logger: ILogger = createPinoLogger({
+  level:
+    process.env.LOG_LEVEL ||
+    (process.env.NODE_ENV === "test" ? "silent" : process.env.NODE_ENV === "production" ? "info" : "debug"),
+  pretty: process.env.NODE_ENV !== "production",
+  base: { service: "rira-book-cafe" },
+  reportError: reportErrorToSentry,
+});
 
 // Users — PostgreSQL via Prisma. Rows are created on first sign-in
 // (auth `authorize` → GetOrCreateUser).
@@ -117,7 +134,7 @@ export const reviewRepository: IReviewRepository = new PrismaReviewRepository();
 // Guest notifications — an inbox on the account page, no SMS. Written after the
 // change they announce has committed, best-effort (see `ICustomerNotifier`).
 export const notificationRepository: INotificationRepository = new PrismaNotificationRepository();
-export const customerNotifier: ICustomerNotifier = new CustomerNotifier(notificationRepository);
+export const customerNotifier: ICustomerNotifier = new CustomerNotifier(notificationRepository, logger);
 
 // Cafe aggregates — revenue, busy hours, best sellers, guests — computed in
 // PostgreSQL from the same rows the repositories above write, so there is no
@@ -151,7 +168,7 @@ export const bankReconciliationRepository: IBankReconciliationRepository = new P
 // Append-only audit trail of admin changes. Read-only here: entries are written by
 // the repositories that make the changes they describe, inside the same
 // transaction, from a `NewActivityEntry` the use-case built (see `AuditHook`).
-export const activityLog: IActivityLog = new PrismaActivityLog();
+export const activityLog: IActivityLog = new PrismaActivityLog(logger);
 
 // Real SMS OTP when an SMS.ir key is configured; the in-memory mock otherwise so
 // local dev works without credentials (the mock surfaces the code in the UI).
@@ -163,8 +180,9 @@ export const authRepository: IAuthRepository =
         apiKey: process.env.SMS_IR_API_KEY,
         templateId: Number(process.env.SMS_IR_TEMPLATE_ID),
         baseUrl: process.env.SMS_IR_BASE_URL,
+        logger,
       })
-    : new MockAuthRepository();
+    : new MockAuthRepository(logger);
 
 /** Read a numeric env var, returning `undefined` when unset or not a number. */
 function numericEnv(name: string): number | undefined {
@@ -178,16 +196,19 @@ function numericEnv(name: string): number | undefined {
 // otherwise, so local dev and a fresh deployment work without mail credentials.
 // SMTP rather than a provider HTTP API: hosted mail APIs geo-block Iranian servers.
 export const emailSender: IEmailSender = process.env.SMTP_HOST
-  ? new SmtpEmailSender({
-      host: process.env.SMTP_HOST,
-      port: numericEnv("SMTP_PORT") ?? 587,
-      // Implicit TLS on 465; STARTTLS on 587 and everything else.
-      secure: (numericEnv("SMTP_PORT") ?? 587) === 465,
-      user: process.env.SMTP_USER,
-      password: process.env.SMTP_PASSWORD,
-      from: process.env.SMTP_FROM ?? "Rira Book Cafe <no-reply@localhost>",
-    })
-  : new LoggingEmailSender();
+  ? new SmtpEmailSender(
+      {
+        host: process.env.SMTP_HOST,
+        port: numericEnv("SMTP_PORT") ?? 587,
+        // Implicit TLS on 465; STARTTLS on 587 and everything else.
+        secure: (numericEnv("SMTP_PORT") ?? 587) === 465,
+        user: process.env.SMTP_USER,
+        password: process.env.SMTP_PASSWORD,
+        from: process.env.SMTP_FROM ?? "Rira Book Cafe <no-reply@localhost>",
+      },
+      logger,
+    )
+  : new LoggingEmailSender(logger);
 
 // Announces team changes — an admin grant, and both sides of an ownership move —
 // over email (when an address is on file) and SMS (when an approved pattern
@@ -198,6 +219,7 @@ export const teamNotifier: ITeamNotifier = new TeamNotifier(
     ? {
         apiKey: process.env.SMS_IR_API_KEY,
         baseUrl: process.env.SMS_IR_BASE_URL,
+        logger,
         templates: {
           adminGranted: numericEnv("SMS_IR_ADMIN_INVITE_TEMPLATE_ID"),
           ownershipReceived: numericEnv("SMS_IR_OWNERSHIP_RECEIVED_TEMPLATE_ID"),
@@ -210,10 +232,13 @@ export const teamNotifier: ITeamNotifier = new TeamNotifier(
 // Images on the server's own disk (a Docker volume in production), served back by
 // `app/uploads/[...path]/route.ts`. Server-side only. `UPLOADS_DIR` defaults to
 // `./storage/uploads` (gitignored) for local dev.
-const localImageStorage = new LocalDiskImageStorageRepository({
-  rootDir: process.env.UPLOADS_DIR || `${process.cwd()}/storage/uploads`,
-  publicPathPrefix: "/uploads",
-});
+const localImageStorage = new LocalDiskImageStorageRepository(
+  {
+    rootDir: process.env.UPLOADS_DIR || `${process.cwd()}/storage/uploads`,
+    publicPathPrefix: "/uploads",
+  },
+  logger,
+);
 export const imageStorageRepository: IImageStorageRepository = localImageStorage;
 /** Absolute file for a stored image path, or null when it escapes the uploads root. */
 export const resolveStoredImageFile = (objectPath: string): string | null => localImageStorage.resolve(objectPath);

@@ -4,6 +4,7 @@ import { type PaymentOutcome } from "@/src/domain/entities/PaymentAttempt";
 import { NotFoundError } from "@/src/domain/errors/NotFoundError";
 import { VerifyOnlinePayment } from "@/src/domain/use-cases/payments/OnlinePayment";
 import { orderRepository, paymentAttemptRepository, paymentGateway } from "@/src/infrastructure/container";
+import { requestLogger } from "@/src/lib/api/requestLogger";
 import { getAppUrl } from "@/src/lib/appUrl";
 
 export const dynamic = "force-dynamic";
@@ -36,7 +37,9 @@ export async function GET(request: NextRequest, { params }: RouteContext): Promi
         completed: query.get("Status") === "OK",
       });
     } catch (error) {
-      if (!(error instanceof NotFoundError)) console.error(`GET /api/orders/${id}/pay/callback failed:`, error);
+      if (!(error instanceof NotFoundError)) {
+        requestLogger(request).error("Payment callback verification failed", { error, orderId: id });
+      }
       outcome = error instanceof NotFoundError ? "failed" : "error";
     }
   }

@@ -17,7 +17,9 @@
     "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
     "db:dev:up": "docker compose -f docker-compose.dev.yml up -d",
-    "db:setup": "prisma migrate deploy && prisma db seed"
+    "db:setup": "prisma migrate deploy && prisma db seed",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -51,6 +53,8 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.5",
+    "prettier": "^3.9.10",
+    "prettier-plugin-tailwindcss": "^0.8.1",
     "prisma": "^6.3.0",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",

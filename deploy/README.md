@@ -8,11 +8,11 @@ internet ──▶ host nginx :8080 ──▶ 127.0.0.1:3100 ──▶ app conta
              (nginx-rira.conf)                       (ghcr.io/…:production)    (postgres:17, volume pgdata)
 ```
 
-| File | Where it goes | What it does |
-|---|---|---|
-| `bootstrap.sh` | run once as root | Creates the `deploy` user and `/opt/rira`, installs the compose file, a `.env.production` stub and the update timer |
-| `nginx-rira.conf` | `/etc/nginx/sites-available/rira` | The host nginx site (installed by hand — that nginx is shared) |
-| `rira-update.sh` / `.service` / `.timer` | systemd | Every ~2 min: pull `:production`, recreate `app` if the image changed |
+| File                                     | Where it goes                     | What it does                                                                                                        |
+| ---------------------------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `bootstrap.sh`                           | run once as root                  | Creates the `deploy` user and `/opt/rira`, installs the compose file, a `.env.production` stub and the update timer |
+| `nginx-rira.conf`                        | `/etc/nginx/sites-available/rira` | The host nginx site (installed by hand — that nginx is shared)                                                      |
+| `rira-update.sh` / `.service` / `.timer` | systemd                           | Every ~2 min: pull `:production`, recreate `app` if the image changed                                               |
 
 CI builds and publishes the image on every push to `main`; the timer picks it up.
 Migrations run on container start (`prisma migrate deploy`).
@@ -22,7 +22,12 @@ Migrations run on container start (`prisma migrate deploy`).
 `GET /api/health` (also `HEAD`) — public, uncached, answers within ~2s:
 
 ```json
-{ "status": "ok", "checks": { "database": { "status": "ok", "latencyMs": 3 } }, "version": "0.1.0", "uptimeSeconds": 5120 }
+{
+  "status": "ok",
+  "checks": { "database": { "status": "ok", "latencyMs": 3 } },
+  "version": "0.1.0",
+  "uptimeSeconds": 5120
+}
 ```
 
 - **200** — the server is up and the database answered.

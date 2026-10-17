@@ -2,7 +2,9 @@ name: rira
 
 # Production stack on the VPS (lives in /opt/rira next to `.env.production`).
 # CI publishes ghcr.io/hamed-bostan/rira-book-cafe:production; rira-update.timer
-# pulls it and recreates `app` when the image changed.
+# pulls it and recreates `app` when the image changed. The host's own nginx
+# (shared with other sites on this VPS) proxies to 127.0.0.1:3100 — see
+# deploy/nginx-rira.conf. Port 3000 on the host is taken by another app.
 
 services:
   app:
@@ -18,8 +20,9 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    expose:
-      - "3000"
+    ports:
+      # Loopback only: reachable through the host nginx, never directly from the internet.
+      - "127.0.0.1:3100:3000"
     volumes:
       - uploads:/app/storage/uploads
     networks:
@@ -50,21 +53,6 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
-
-  nginx:
-    image: nginx:1.27-alpine
-    restart: unless-stopped
-    depends_on:
-      - app
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx/conf.d:/etc/nginx/conf.d:ro
-      - ./certbot/www:/var/www/certbot:ro
-      - ./certbot/conf:/etc/letsencrypt:ro
-    networks:
-      - web
 
 networks:
   web:

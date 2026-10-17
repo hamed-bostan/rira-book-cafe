@@ -3,7 +3,6 @@
 # the version string unparseable. Keep it LF regardless of core.autocrlf.
 .nvmrc text eol=lf
 
-# Shell scripts, systemd units and nginx config run on the Linux VPS.
+# Shell scripts, systemd units and the nginx site run on the Linux VPS.
 *.sh text eol=lf
 deploy/* text eol=lf
-nginx/** text eol=lf

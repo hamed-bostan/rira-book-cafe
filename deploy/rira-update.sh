@@ -5,6 +5,11 @@ set -euo pipefail
 
 cd /opt/rira
 
+# One deploy at a time: a manual run racing the timer makes both try to create
+# the same containers. A second run just exits.
+exec 9>/tmp/rira-update.lock
+flock -n 9 || { echo "Another rira update is running; skipping."; exit 0; }
+
 # Fetch the latest :production manifest. No download if the digest is unchanged.
 docker compose pull --quiet
 

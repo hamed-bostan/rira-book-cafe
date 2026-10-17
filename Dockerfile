@@ -24,7 +24,19 @@ ENV DATABASE_URL="postgresql://build:build@localhost:5432/build?schema=public"
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npx prisma generate
-RUN npm run build
+# Error tracking (optional). The browser DSN is inlined into the client bundle at
+# build time, so it is a build arg; the server reads SENTRY_DSN at runtime from
+# .env.production. Source maps are uploaded only when the `sentry_auth_token`
+# build secret is provided (`--secret id=sentry_auth_token,env=SENTRY_AUTH_TOKEN`),
+# which keeps the token out of the image layers and history.
+ARG NEXT_PUBLIC_SENTRY_DSN
+ARG NEXT_PUBLIC_SENTRY_ENVIRONMENT
+ARG NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE
+ARG SENTRY_URL
+ARG SENTRY_ORG
+ARG SENTRY_PROJECT
+ARG SENTRY_RELEASE
+RUN --mount=type=secret,id=sentry_auth_token,env=SENTRY_AUTH_TOKEN npm run build
 
 # ---- runner: production server. Full node_modules so Prisma's client, engine, and
 #      migrate CLI are all present — no standalone file-tracing to fight. ----

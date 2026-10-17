@@ -8,11 +8,13 @@ export const dynamic = "force-dynamic";
 export default async function AccountPage() {
   const session = await requireAuth();
 
-  const [profile, registrations, events, canOpenDashboard] = await Promise.all([
+  const [profile, registrations, events, canOpenDashboard, unreadNotifications, loyalty] = await Promise.all([
     storefrontServerApi.profile(),
     storefrontServerApi.myRegistrations(),
     storefrontServerApi.upcomingEvents(),
     sessionHas(session, "dashboard.view"),
+    storefrontServerApi.unreadNotificationCount(),
+    storefrontServerApi.loyalty(),
   ]);
 
   // Upcoming sign-ups only: the public event list holds the events still ahead.
@@ -22,5 +24,13 @@ export default async function AccountPage() {
     return registration.status === "registered" && event ? [{ registration, event }] : [];
   });
 
-  return <AccountScreen profile={profile} signUps={signUps} canOpenDashboard={canOpenDashboard} />;
+  return (
+    <AccountScreen
+      profile={profile}
+      signUps={signUps}
+      canOpenDashboard={canOpenDashboard}
+      unreadNotifications={unreadNotifications}
+      pointsBalance={loyalty.balance}
+    />
+  );
 }

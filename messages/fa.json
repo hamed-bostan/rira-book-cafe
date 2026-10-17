@@ -59,7 +59,7 @@
     "codeFormat": "فقط از حروف، ارقام، خط تیره و زیرخط استفاده کنید.",
     "codeRequired": "وارد کردن کد الزامی است.",
     "codeTooLong": "کد بیش از حد طولانی است.",
-    "commentTooLong": "نظر را کوتاه‌تر از ۲۰۰۰ نویسه نگه دارید.",
+    "commentTooLong": "متن نظر خیلی طولانی است.",
     "dateInvalid": "تاریخ معتبر وارد کنید.",
     "descriptionRequired": "وارد کردن توضیح الزامی است.",
     "descriptionTooLong": "توضیح بیش از حد طولانی است.",
@@ -150,7 +150,13 @@
     "deliveryTotalRequired": "مبلغ محموله را وارد کنید.",
     "bookRequired": "یک کتاب انتخاب کنید.",
     "suiteGuestsInvalid": "تعداد مهمان را از ۱ تا ۴ انتخاب کنید.",
-    "checkOutBeforeCheckIn": "تاریخ خروج باید بعد از تاریخ ورود باشد."
+    "checkOutBeforeCheckIn": "تاریخ خروج باید بعد از تاریخ ورود باشد.",
+    "ratingInvalid": "از ۱ تا ۵ ستاره انتخاب کنید.",
+    "promoCodeInvalid": "۳ تا ۲۰ حرف انگلیسی، عدد، - یا _ وارد کنید.",
+    "promoValueInvalid": "مقدار تخفیف را وارد کنید.",
+    "percentTooHigh": "درصد نمی‌تواند بیشتر از ۱۰۰ باشد.",
+    "limitInvalid": "یک عدد صحیح بزرگ‌تر از صفر وارد کنید، یا خالی بگذارید.",
+    "pointsInvalid": "تعداد امتیاز را به عدد صحیح وارد کنید (برای کم کردن از − استفاده کنید)."
   },
   "apiErrors": {
     "alreadyPosted": "این مورد قبلاً ثبت شده است.",
@@ -183,7 +189,18 @@
     "stockUsed": "بخشی از این محموله مصرف شده و نمی‌توان آن را باطل کرد. به جای آن انبارگردانی یا ضایعات ثبت کنید.",
     "yearNotEnded": "این سال مالی هنوز تمام نشده است.",
     "suiteTaken": "سوئیت برای بعضی از این شب‌ها رزرو شده است.",
-    "alreadyOnLoan": "این کتاب همین حالا به امانت دست همین شخص است."
+    "alreadyOnLoan": "این کتاب همین حالا به امانت دست همین شخص است.",
+    "notPurchased": "وقتی این را اینجا امتحان کردید، می‌توانید نظر بدهید.",
+    "promoInvalid": "این کد معتبر نیست.",
+    "promoExpired": "این کد منقضی شده یا هنوز فعال نشده است.",
+    "promoUsedUp": "ظرفیت استفاده از این کد تمام شده است.",
+    "promoMinSubtotal": "مبلغ سفارش هنوز به حداقل لازم برای این کد نرسیده است.",
+    "notEnoughPoints": "امتیاز کافی ندارید.",
+    "loyaltyDisabled": "فعلاً امکان استفاده از امتیاز نیست.",
+    "alreadyWaiting": "شما در صف انتظار این کتاب هستید.",
+    "bookOnShelf": "این کتاب الان در قفسه است — سر پیشخوان بپرسید.",
+    "shiftAlreadyOpen": "یک شیفت باز است. اول آن را ببندید.",
+    "noOpenShift": "شیفت بازی وجود ندارد."
   },
   "meta": {
     "siteName": "کافه کتاب ریرا",
@@ -234,7 +251,11 @@
     "navPricing": "قیمت‌گذاری",
     "navInventory": "انبار",
     "navSuite": "سوئیت",
-    "navBookLoans": "امانت کتاب"
+    "navBookLoans": "امانت کتاب",
+    "navKitchen": "نمایشگر آشپزخانه",
+    "navReviews": "نظرها",
+    "navPromotions": "تخفیف و باشگاه",
+    "navCashShifts": "شیفت صندوق"
   },
   "dashTeam": {
     "membersHeading": "اعضای تیم",
@@ -669,7 +690,11 @@
     "unmarkServedAria": "برداشتن علامت سرو از {name}",
     "servedProgress": "{served, number} از {total, number} سرو شده",
     "servedAt": "سرو: {time}",
-    "serveError": "ثبت سرو ممکن نشد. شاید وضعیت سفارش تغییر کرده باشد."
+    "serveError": "ثبت سرو ممکن نشد. شاید وضعیت سفارش تغییر کرده باشد.",
+    "subtotal": "جمع اقلام",
+    "promoDiscount": "کد تخفیف {code}",
+    "pointsDiscount": "{points} امتیاز",
+    "pointsEarned": "{points} امتیاز باشگاه گرفت"
   },
   "dashOrderNotes": {
     "label": "یادداشت داخلی",
@@ -1098,7 +1123,19 @@
       "placeOrder": "ثبت سفارش",
       "placing": "در حال ثبت سفارش…",
       "signInToOrder": "برای سفارش وارد شوید",
-      "orderError": "ثبت سفارش ممکن نشد. دوباره تلاش کنید."
+      "orderError": "ثبت سفارش ممکن نشد. دوباره تلاش کنید.",
+      "promoLabel": "کد تخفیف",
+      "promoPlaceholder": "کد را وارد کنید",
+      "promoApply": "اعمال",
+      "promoRemove": "حذف کد تخفیف",
+      "promoError": "این کد روی این سفارش قابل استفاده نیست.",
+      "subtotal": "جمع اقلام",
+      "promoDiscount": "کد تخفیف",
+      "pointsDiscount": "امتیاز",
+      "pointsBalance": "{points} امتیاز دارید",
+      "pointsUse": "استفاده از {points} امتیاز برای {amount} تخفیف",
+      "pointsMinimum": "وقتی {points} امتیاز داشته باشید می‌توانید خرجشان کنید.",
+      "pointsToEarn": "با این سفارش {points} امتیاز می‌گیرید."
     },
     "orders": {
       "heading": "سفارش‌های من",
@@ -1201,7 +1238,10 @@
       "noSignUps": "برای رویداد پیش‌رویی ثبت‌نام نکرده‌اید.",
       "signOut": "خروج",
       "mySuiteStays": "اقامت‌های من در سوئیت",
-      "myBookLoans": "کتاب‌های امانتی من"
+      "myBookLoans": "کتاب‌های امانتی من",
+      "notifications": "اعلان‌ها",
+      "rewards": "باشگاه مشتریان",
+      "pointsBalance": "{points} امتیاز"
     },
     "suite": {
       "heading": "رزرو سوئیت",
@@ -1234,6 +1274,129 @@
       "past": "امانت‌های قبلی",
       "dueOn": "موعد {date}",
       "returnedOn": "بازگشت {date}"
+    },
+    "notifications": {
+      "heading": "اعلان‌ها",
+      "subtitle": "خبرهای سفارش‌ها، رزروها و کتاب‌هایی که امانت گرفته‌اید.",
+      "empty": "فعلاً خبری نیست. هر تغییری باشد، همین‌جا خبرتان می‌کنیم.",
+      "unread": "خوانده‌نشده",
+      "bellAria": "{count, plural, =0 {اعلان‌ها} other {اعلان‌ها، # خوانده‌نشده}}",
+      "kinds": {
+        "orderAccepted": {
+          "title": "سفارش #{orderNumber} دریافت شد",
+          "body": "آماده‌کردن سفارشتان را شروع کردیم."
+        },
+        "orderReady": {
+          "title": "سفارش #{orderNumber} آماده است",
+          "body": "{serviceType, select, takeaway {سر پیشخوان منتظر شماست.} other {در راه میز شماست.}}"
+        },
+        "orderCompleted": {
+          "title": "سفارش #{orderNumber} تحویل شد",
+          "body": "ممنون که آمدید — نوش جان!"
+        },
+        "orderCancelled": {
+          "title": "سفارش #{orderNumber} لغو شد",
+          "body": "اگر پرداخت کرده بودید، مبلغ از همان راه برمی‌گردد."
+        },
+        "reservationConfirmed": {
+          "title": "میزتان تأیید شد",
+          "body": "R-{reference}: {startsAt}، برای {partySize} نفر."
+        },
+        "reservationCancelled": {
+          "title": "رزروتان لغو شد",
+          "body": "رزرو R-{reference} برای {startsAt} دیگر برقرار نیست."
+        },
+        "suiteConfirmed": {
+          "title": "اقامت در سوئیت تأیید شد",
+          "body": "S-{reference}: {checkIn} ← {checkOut}."
+        },
+        "suiteCancelled": {
+          "title": "اقامت در سوئیت لغو شد",
+          "body": "رزرو S-{reference} ({checkIn} ← {checkOut}) دیگر برقرار نیست."
+        },
+        "loanStarted": {
+          "title": "«{title}» را امانت گرفتید",
+          "body": "لطفاً تا {dueAt} برگردانید."
+        },
+        "loanDueSoon": {
+          "title": "موعد «{title}» نزدیک است",
+          "body": "باید تا {dueAt} برگردد."
+        },
+        "loanOverdue": {
+          "title": "موعد «{title}» گذشته است",
+          "body": "موعدش {dueAt} بود. لطفاً به قفسه برگردانید."
+        },
+        "bookAvailable": {
+          "title": "«{title}» به قفسه برگشت",
+          "body": "نفر اول صف شمایید — برای امانت گرفتن سر پیشخوان بپرسید."
+        },
+        "pointsEarned": {
+          "title": "{points} امتیاز گرفتید",
+          "body": "از سفارش #{orderNumber}. موقع پرداخت خرجشان کنید."
+        },
+        "reviewApproved": {
+          "title": "نظرتان منتشر شد",
+          "body": "ممنون که درباره‌ی {productName} نوشتید."
+        }
+      }
+    },
+    "reviews": {
+      "heading": "نظرها",
+      "summary": "{rating} · {count, plural, other {{formatted} نظر}}",
+      "empty": "هنوز نظری ثبت نشده است.",
+      "anonymous": "یک مهمان",
+      "verified": "اینجا امتحانش کرده",
+      "signInToReview": "برای ثبت نظر وارد شوید",
+      "notYetHad": "وقتی این را اینجا امتحان کردید، می‌توانید نظر بدهید.",
+      "write": "نظرتان را بنویسید",
+      "yourReview": "نظر شما",
+      "ratingLabel": "امتیاز شما",
+      "commentLabel": "نظر شما",
+      "commentPlaceholder": "نظرتان چه بود؟ (اختیاری)",
+      "moderationHint": "نظرها بعد از بررسی تیم ما نمایش داده می‌شوند.",
+      "pickRating": "تعداد ستاره را انتخاب کنید.",
+      "submit": "ثبت نظر",
+      "update": "به‌روزرسانی نظر",
+      "saving": "در حال ذخیره…",
+      "saved": "ممنون! نظرتان بعد از تأیید نمایش داده می‌شود.",
+      "saveError": "ذخیره‌ی نظر ممکن نشد. دوباره تلاش کنید.",
+      "status": {
+        "pending": "در انتظار تأیید",
+        "approved": "منتشر شده",
+        "rejected": "منتشر نشده"
+      }
+    },
+    "waitlist": {
+      "onLoan": "{count, plural, other {{formatted} نسخه امانت داده شده است.}}",
+      "inLine": "{count, plural, other {{formatted} نفر در صف انتظارند.}}",
+      "join": "وقتی برگشت خبرم کن",
+      "leave": "خروج از صف",
+      "signIn": "برای رفتن به صف انتظار وارد شوید",
+      "position": "نفر {position} صف هستید",
+      "yourTurn": "برگشته — سر پیشخوان بپرسید",
+      "waiting": "در انتظار",
+      "heading": "کتاب‌هایی که منتظرشان هستم",
+      "joinedOn": "از {date}",
+      "error": "به‌روزرسانی صف انتظار ممکن نشد. دوباره تلاش کنید."
+    },
+    "rewards": {
+      "heading": "باشگاه مشتریان",
+      "subtitle": "با هر سفارش امتیاز بگیرید و آن را به‌جای پول خرج کنید.",
+      "balance": "{points} امتیاز",
+      "worth": "معادل {amount} تخفیف روی سفارش بعدی",
+      "howHeading": "چطور کار می‌کند",
+      "howEarn": "به ازای هر {amount} خرید، ۱ امتیاز می‌گیرید.",
+      "howSpend": "هر امتیاز {amount} از مبلغ سفارش کم می‌کند.",
+      "howMinimum": "وقتی دست‌کم {points} امتیاز داشته باشید، موقع پرداخت خرجشان کنید.",
+      "paused": "باشگاه مشتریان فعلاً متوقف است. امتیازهایتان محفوظ است.",
+      "historyHeading": "امتیازهای شما",
+      "empty": "هنوز امتیازی ندارید — با تحویل اولین سفارش امتیاز می‌گیرید.",
+      "reason": {
+        "earn": "دریافت از سفارش #{orderNumber}",
+        "redeem": "خرج در سفارش #{orderNumber}",
+        "refund": "برگشت از سفارش #{orderNumber}",
+        "adjust": "اصلاح توسط کافه"
+      }
     }
   },
   "dashAccounting": {
@@ -1313,7 +1476,8 @@
       "stockWaste": "ضایعات",
       "stockCount": "انبارگردانی",
       "stockOpening": "موجودی اول دوره",
-      "yearClose": "بستن سال مالی"
+      "yearClose": "بستن سال مالی",
+      "cashShift": "شیفت صندوق"
     },
     "entry": {
       "title": "سند JE-{number}",
@@ -1897,7 +2061,11 @@
     "emptyTitle": "کتابی اینجا نیست",
     "emptyBody": "کتاب‌هایی که امانت می‌دهید اینجا نمایش داده می‌شوند.",
     "noMatchesTitle": "نتیجه‌ای نیست",
-    "noMatchesBody": "هیچ امانتی با این جست‌وجو پیدا نشد."
+    "noMatchesBody": "هیچ امانتی با این جست‌وجو پیدا نشد.",
+    "waitlistHeading": "صف انتظار",
+    "waitlistSubtitle": "مهمان‌هایی که منتظر کتابی هستند که امانت رفته. وقتی نسخه‌ای برگردد، نفر اول صف در حسابش باخبر می‌شود.",
+    "waitlistNotified": "باخبر شده",
+    "waitlistRemoveAria": "حذف {name} از صف انتظار"
   },
   "dashSuite": {
     "heading": "سوئیت",
@@ -1934,5 +2102,166 @@
     "emptyBody": "درخواست‌های سوئیت مهمان‌ها اینجا نمایش داده می‌شوند.",
     "noMatchesTitle": "نتیجه‌ای نیست",
     "noMatchesBody": "هیچ اقامت پیش‌رویی با این وضعیت نیست."
+  },
+  "dashReviews": {
+    "heading": "نظرها",
+    "subtitle": "آنچه مهمان‌ها درباره‌ی سفارش‌هایشان نوشته‌اند. تا تأیید نکنید چیزی نمایش داده نمی‌شود.",
+    "searchLabel": "جست‌وجوی نظرها",
+    "searchPlaceholder": "محصول، مهمان یا متن",
+    "viewLabel": "نمایش",
+    "viewOption": "نمایش: {view}",
+    "viewOptionCount": "نمایش: {view} ({count})",
+    "view": {
+      "pending": "در انتظار",
+      "approved": "تأییدشده",
+      "rejected": "ردشده",
+      "all": "همه"
+    },
+    "status": {
+      "pending": "در انتظار",
+      "approved": "تأییدشده",
+      "rejected": "ردشده"
+    },
+    "action": {
+      "approved": "تأیید",
+      "rejected": "رد"
+    },
+    "anonymous": "یک مهمان",
+    "moderatedBy": "{name}، {date}",
+    "updateError": "به‌روزرسانی نظر ممکن نشد. دوباره تلاش کنید.",
+    "emptyTitle": "چیزی در انتظار نیست",
+    "emptyBody": "نظرهای تازه اینجا نمایش داده می‌شوند.",
+    "noMatchesTitle": "نتیجه‌ای نیست",
+    "noMatchesBody": "نظری با این جست‌وجو پیدا نشد."
+  },
+  "dashPromotions": {
+    "heading": "تخفیف و باشگاه",
+    "subtitle": "کدهای تخفیف، باشگاه مشتریان و امتیاز مهمان‌ها سر پیشخوان.",
+    "codesHeading": "کدهای تخفیف",
+    "codesEmpty": "هنوز کد تخفیفی ساخته نشده است.",
+    "newCode": "کد جدید",
+    "newTitle": "کد تخفیف جدید",
+    "editTitle": "ویرایش {code}",
+    "editAria": "ویرایش {code}",
+    "activeAria": "{code} فعال است",
+    "descriptionPlaceholder": "مثلاً اعضای باشگاه کتاب",
+    "optional": "اختیاری",
+    "unlimited": "نامحدود",
+    "field": {
+      "code": "کد",
+      "description": "یادداشت",
+      "kind": "نوع",
+      "value": "مقدار",
+      "maxDiscount": "حداکثر (تومان)",
+      "minSubtotal": "حداقل سفارش (تومان)",
+      "startsOn": "از",
+      "endsOn": "تا",
+      "usageLimit": "کل دفعات استفاده",
+      "perGuestLimit": "دفعات برای هر مهمان",
+      "isActive": "فعال"
+    },
+    "kind": {
+      "percent": "درصدی",
+      "fixed": "مبلغ ثابت"
+    },
+    "state": {
+      "active": "فعال",
+      "inactive": "خاموش",
+      "scheduled": "زمان‌بندی‌شده",
+      "expired": "منقضی",
+      "usedUp": "تمام‌شده"
+    },
+    "percentOff": "{value}٪ تخفیف",
+    "amountOff": "{amount} تخفیف",
+    "upTo": "تا سقف {amount}",
+    "uses": "{uses} بار استفاده شده",
+    "usesOf": "{uses} از {limit} بار",
+    "perGuest": "{limit} بار برای هر مهمان",
+    "minimum": "حداقل {amount}",
+    "from": "از {date}",
+    "until": "تا {date}",
+    "cancel": "بازگشت",
+    "save": "ذخیره",
+    "saving": "در حال ذخیره…",
+    "saved": "ذخیره شد.",
+    "saveError": "ذخیره ممکن نشد. دوباره تلاش کنید.",
+    "loyaltyHeading": "باشگاه مشتریان",
+    "loyaltyDescription": "مهمان‌ها با تحویل سفارش امتیاز می‌گیرند و آن را به‌جای پول خرج می‌کنند.",
+    "loyaltyEnabled": "باشگاه فعال است",
+    "loyaltyInvalid": "عدد صحیح وارد کنید (دو مورد اول بزرگ‌تر از صفر).",
+    "loyalty": {
+      "tomanPerPoint": "تومان به ازای هر امتیاز",
+      "pointValue": "ارزش هر امتیاز (تومان)",
+      "minRedeemPoints": "حداقل برای خرج"
+    },
+    "loyaltyHint": {
+      "tomanPerPoint": "با این مبلغ خرید ۱ امتیاز می‌گیرد.",
+      "pointValue": "هر امتیاز این مبلغ کم می‌کند.",
+      "minRedeemPoints": "کمترین امتیاز برای یک‌بار خرج."
+    },
+    "guestHeading": "امتیاز یک مهمان",
+    "guestDescription": "مهمان را با شماره تلفن پیدا کنید و دستی امتیاز اضافه یا کم کنید.",
+    "guestPhone": "تلفن مهمان",
+    "lookup": "جست‌وجو",
+    "lookupError": "جست‌وجوی مهمان ممکن نشد. دوباره تلاش کنید.",
+    "guestNotFound": "حسابی با این شماره تلفن پیدا نشد.",
+    "balance": "{points} امتیاز",
+    "adjustPoints": "امتیاز (+/−)",
+    "adjustNote": "دلیل",
+    "adjust": "ثبت",
+    "reason": {
+      "earn": "دریافت",
+      "redeem": "خرج",
+      "refund": "برگشت",
+      "adjust": "اصلاح"
+    }
+  },
+  "dashCashShifts": {
+    "heading": "شیفت صندوق",
+    "subtitle": "صندوق را با تنخواه باز کنید و آخر شیفت بشمارید. هر اختلافی به‌عنوان کسری یا اضافی صندوق ثبت می‌شود.",
+    "openHeading": "باز کردن شیفت",
+    "openDescription": "پولی را که برای شروع در صندوق می‌گذارید بشمارید.",
+    "openingFloat": "تنخواه اول شیفت (تومان)",
+    "openingFloatHint": "پول خرد داخل صندوق پیش از اولین فروش.",
+    "note": "یادداشت (اختیاری)",
+    "open": "باز کردن شیفت",
+    "openShift": "شیفت Z-{number} باز است",
+    "openedBy": "باز شده توسط {name}، {date}",
+    "float": "تنخواه",
+    "expected": "نقد مورد انتظار در صندوق",
+    "bank": "کارت و کارت‌به‌کارت",
+    "online": "آنلاین",
+    "paymentsCount": "{count, plural, other {{formatted} پرداخت در این شیفت}}",
+    "closeHeading": "بستن شیفت",
+    "closeDescription": "پول نقد صندوق را بشمارید. دفاتر انتظار دارند: تنخواه به‌علاوه‌ی دریافتی‌های نقدی، منهای برگشتی‌ها و پرداخت‌های نقدی.",
+    "countedCash": "نقد شمرده‌شده (تومان)",
+    "closeNotePlaceholder": "مثلاً دلیل کسری",
+    "close": "بستن شیفت",
+    "exact": "دقیق — صندوق با دفاتر می‌خواند.",
+    "over": "{amount} اضافی",
+    "short": "{amount} کسری",
+    "amountInvalid": "مبلغ را به تومان و عدد صحیح وارد کنید.",
+    "saveError": "ذخیره ممکن نشد. دوباره تلاش کنید.",
+    "historyHeading": "شیفت‌های گذشته",
+    "historyEmpty": "هنوز شیفت بسته‌شده‌ای نیست.",
+    "by": "باز: {opened}، بسته: {closed}",
+    "expectedCounted": "مورد انتظار {expected} · شمرده‌شده {counted}"
+  },
+  "dashKitchen": {
+    "heading": "نمایشگر آشپزخانه",
+    "subtitle": "صف زنده‌ی بار و آشپزخانه. خودش به‌روز می‌شود.",
+    "stationLabel": "ایستگاه",
+    "station": {
+      "all": "همه",
+      "bar": "بار",
+      "kitchen": "آشپزخانه"
+    },
+    "lane": {
+      "new": "جدید",
+      "making": "در حال آماده‌سازی",
+      "ready": "آماده"
+    },
+    "laneEmpty": "چیزی نیست.",
+    "minutes": "{minutes} دقیقه"
   }
 }

@@ -1,0 +1,18 @@
+import type { AuditHook } from "./AuditHook";
+import type { PromoCode, PromoCodeWithUses, PromoUsage } from "../entities/Promotion";
+
+/** A code as staff write it. Id and timestamps are the repository's. */
+export type PromoCodeInput = Omit<PromoCode, "id" | "createdAt" | "updatedAt">;
+
+export type IPromotionRepository = {
+  /** Every code, newest first, with its live uses. */
+  list(): Promise<PromoCodeWithUses[]>;
+  getById(id: string): Promise<PromoCode | null>;
+  /** By its (normalized) code. */
+  getByCode(code: string): Promise<PromoCode | null>;
+  /** How many live (not cancelled) orders carry the code — in all, and the guest's. */
+  usage(promoId: string, userId: string): Promise<PromoUsage>;
+  /** A taken code is `UniqueConstraintError(["code"])`. */
+  create(input: PromoCodeInput, audit?: AuditHook<PromoCode>): Promise<PromoCode>;
+  update(id: string, input: PromoCodeInput, audit?: AuditHook<PromoCode>): Promise<PromoCode>;
+};

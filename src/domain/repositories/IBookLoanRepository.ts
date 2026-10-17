@@ -37,6 +37,8 @@ export type IBookLoanRepository = {
   listForUser(userId: string): Promise<BookLoan[]>;
   /** Every book in the catalog, published or not, with how many copies are out. */
   listLendableBooks(): Promise<LendableBook[]>;
+  /** How many copies of the book are out right now. */
+  countOpenForBook(productId: string): Promise<number>;
   /** The book's title and author, or `null` when the id isn't a book. */
   getBook(productId: string): Promise<{ title: string; author?: string } | null>;
   /**

@@ -12,6 +12,7 @@ import { AutoRefresh } from "@/src/presentation/components/AutoRefresh";
 import { DashboardPanel, DashboardPanelHeader } from "@/src/presentation/dashboard/DashboardPanel";
 import { ProductThumbnail } from "@/src/presentation/dashboard/ProductThumbnail";
 import { Icon } from "@/src/presentation/design-system";
+import { OrderTotals } from "@/src/presentation/orders/OrderTotals";
 
 import { OrderItemServeToggle } from "./OrderItemServeToggle";
 import { OrderItemStateBadge } from "./OrderItemStateBadge";
@@ -114,9 +115,8 @@ export async function OrderDetailScreen({ order, events, notes, canFulfill, canN
                 </li>
               ))}
             </ul>
-            <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
-              <span className="text-body-strong text-foreground">{t("total")}</span>
-              <span className="text-body-strong text-foreground">{formatMoney(order.total, locale)}</span>
+            <div className="mt-4">
+              <OrderTotals order={order} />
             </div>
           </DashboardPanel>
 

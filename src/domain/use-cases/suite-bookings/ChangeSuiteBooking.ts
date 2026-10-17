@@ -7,8 +7,10 @@ import {
 } from "../../entities/SuiteBooking";
 import { ConflictError } from "../../errors/ConflictError";
 import { NotFoundError } from "../../errors/NotFoundError";
+import { suiteNotification } from "../notifications/guestNotifications";
 
 import type { ActivityActor } from "../../entities/ActivityEntry";
+import type { ICustomerNotifier } from "../../repositories/INotificationRepository";
 import type { ISuiteBookingRepository } from "../../repositories/ISuiteBookingRepository";
 
 /**
@@ -17,7 +19,11 @@ import type { ISuiteBookingRepository } from "../../repositories/ISuiteBookingRe
  * refuses to confirm nights another stay already holds.
  */
 export class ChangeSuiteBooking {
-  constructor(private readonly suiteRepo: ISuiteBookingRepository) {}
+  constructor(
+    private readonly suiteRepo: ISuiteBookingRepository,
+    /** Tells the guest their stay was confirmed or cancelled. */
+    private readonly notifier?: ICustomerNotifier,
+  ) {}
 
   async execute(id: string, status: SuiteBookingStatus, staff: ActivityActor): Promise<SuiteBooking> {
     const current = await this.suiteRepo.getById(id);
@@ -27,7 +33,7 @@ export class ChangeSuiteBooking {
       throw new ConflictError("INVALID_TRANSITION", `A suite booking can't move from "${current.status}" to "${status}".`);
     }
 
-    return this.suiteRepo.applyStatus(id, current.status, status, (saved) => ({
+    const saved = await this.suiteRepo.applyStatus(id, current.status, status, (saved) => ({
       actorId: staff.id,
       actorName: staff.name,
       action: "suiteBooking.changed",
@@ -36,6 +42,10 @@ export class ChangeSuiteBooking {
       entityLabel: `S-${saved.reference}`,
       changes: [{ field: "status", before: current.status, after: saved.status }],
     }));
+
+    const notification = suiteNotification(saved);
+    if (notification && this.notifier) await this.notifier.notify(notification);
+    return saved;
   }
 }
 

@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { orderStatusChangeSchema } from "@/src/contracts/order-schema";
 import { ChangeOrderStatus } from "@/src/domain/use-cases/orders/ChangeOrderStatus";
 import { ListOrderStatusEvents } from "@/src/domain/use-cases/orders/OrderQueries";
-import { orderRepository } from "@/src/infrastructure/container";
+import { customerNotifier, orderRepository } from "@/src/infrastructure/container";
 import {
   errorResponse,
   errorResponseFromException,
@@ -52,7 +52,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext): Pro
   }
 
   try {
-    const order = await new ChangeOrderStatus(orderRepository).execute(id, parsed.data.status, {
+    const order = await new ChangeOrderStatus(orderRepository, customerNotifier).execute(id, parsed.data.status, {
       id: session.user.id,
       name: session.user.name ?? session.user.id,
     });

@@ -42,6 +42,17 @@ type ApiErrorKey =
   | "yearNotEnded"
   | "notPayable"
   | "paymentInProgress"
+  | "notPurchased"
+  | "promoInvalid"
+  | "promoExpired"
+  | "promoUsedUp"
+  | "promoMinSubtotal"
+  | "notEnoughPoints"
+  | "loyaltyDisabled"
+  | "alreadyWaiting"
+  | "bookOnShelf"
+  | "shiftAlreadyOpen"
+  | "noOpenShift"
   | "gatewayUnavailable"
   | "timeout"
   | "network"
@@ -79,6 +90,17 @@ const CODE_KEYS: Readonly<Record<string, ApiErrorKey>> = {
   NOT_PAYABLE: "notPayable",
   PAYMENT_IN_PROGRESS: "paymentInProgress",
   GATEWAY_UNAVAILABLE: "gatewayUnavailable",
+  NOT_PURCHASED: "notPurchased",
+  PROMO_INVALID: "promoInvalid",
+  PROMO_EXPIRED: "promoExpired",
+  PROMO_USED_UP: "promoUsedUp",
+  PROMO_MIN_SUBTOTAL: "promoMinSubtotal",
+  NOT_ENOUGH_POINTS: "notEnoughPoints",
+  LOYALTY_DISABLED: "loyaltyDisabled",
+  ALREADY_WAITING: "alreadyWaiting",
+  BOOK_ON_SHELF: "bookOnShelf",
+  SHIFT_ALREADY_OPEN: "shiftAlreadyOpen",
+  NO_OPEN_SHIFT: "noOpenShift",
   INTERNAL: "server",
   EBADRESPONSE: "server",
   // Transport failures normalized by the Axios interceptor / server client.

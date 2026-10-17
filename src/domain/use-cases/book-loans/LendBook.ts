@@ -8,9 +8,12 @@ import {
 import { cafeDayOf, cafeDayRange, isCafeDay, shiftCafeDay } from "../../entities/CafeTime";
 import { isPlausiblePhone, normalizePhone } from "../../entities/Phone";
 import { ValidationError } from "../../errors/ValidationError";
+import { loanStartedNotification } from "../notifications/guestNotifications";
 
 import type { ActivityActor } from "../../entities/ActivityEntry";
 import type { IBookLoanRepository } from "../../repositories/IBookLoanRepository";
+import type { IBookWaitlistRepository } from "../../repositories/IBookWaitlistRepository";
+import type { ICustomerNotifier } from "../../repositories/INotificationRepository";
 import type { IUserRepository } from "../../repositories/IUserRepository";
 
 export type LendBookInput = {
@@ -25,12 +28,15 @@ export type LendBookInput = {
 /**
  * Staff hand a book to a guest. The borrower is whoever is at the counter — they
  * needn't have an account — but when their phone matches one, the loan is linked
- * so the guest sees it on their account page.
+ * so the guest sees it on their account page (and is told about it). Lending the
+ * book to someone in its waitlist takes them out of the line.
  */
 export class LendBook {
   constructor(
     private readonly loanRepo: IBookLoanRepository,
     private readonly userRepo: Pick<IUserRepository, "getById">,
+    private readonly waitlistRepo?: Pick<IBookWaitlistRepository, "fulfill">,
+    private readonly notifier?: ICustomerNotifier,
   ) {}
 
   async execute(input: LendBookInput, staff: ActivityActor, now: Date): Promise<BookLoan> {
@@ -57,7 +63,7 @@ export class LendBook {
     // A user's id is their normalized phone, so this is the account lookup.
     const account = await this.userRepo.getById(borrowerPhone);
 
-    return this.loanRepo.create(
+    const loan = await this.loanRepo.create(
       {
         productId: input.productId,
         bookTitle: book.title,
@@ -82,5 +88,10 @@ export class LendBook {
         changes: [],
       }),
     );
+
+    if (this.waitlistRepo) await this.waitlistRepo.fulfill(loan.productId, { userId: loan.userId, phone: loan.borrowerPhone });
+    const notification = loanStartedNotification(loan);
+    if (notification && this.notifier) await this.notifier.notify(notification);
+    return loan;
   }
 }

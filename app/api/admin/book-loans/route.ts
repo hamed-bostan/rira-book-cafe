@@ -4,7 +4,7 @@ import { lendBookSchema } from "@/src/contracts/book-loan-schema";
 import { BOOK_LOAN_VIEWS, type BookLoanView } from "@/src/domain/repositories/IBookLoanRepository";
 import { ListBookLoans } from "@/src/domain/use-cases/book-loans/BookLoanQueries";
 import { LendBook } from "@/src/domain/use-cases/book-loans/LendBook";
-import { bookLoanRepository, userRepository } from "@/src/infrastructure/container";
+import { bookLoanRepository, bookWaitlistRepository, customerNotifier, userRepository } from "@/src/infrastructure/container";
 import {
   errorResponse,
   errorResponseFromException,
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   try {
-    const loan = await new LendBook(bookLoanRepository, userRepository).execute(
+    const loan = await new LendBook(bookLoanRepository, userRepository, bookWaitlistRepository, customerNotifier).execute(
       parsed.data,
       { id: session.user.id, name: session.user.name ?? session.user.id },
       new Date(),

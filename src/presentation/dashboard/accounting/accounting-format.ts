@@ -21,6 +21,7 @@ export function sourceHref(entry: Pick<JournalEntry, "source" | "sourceId">): st
   if (!entry.sourceId) return null;
   if (entry.source.startsWith("order")) return `/dashboard/orders/${entry.sourceId}`;
   if (entry.source.startsWith("expense")) return `/dashboard/expenses/${entry.sourceId}`;
+  if (entry.source === "cashShift") return "/dashboard/cash-shifts";
   return null;
 }
 

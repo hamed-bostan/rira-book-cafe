@@ -11,8 +11,13 @@ import { PUBLIC_NAV, isPublicNavActive } from "./publicNavigation";
 /** Focused flows hide the bar so their own action button owns the bottom of the screen. */
 const HIDE_ON = ["/basket", "/login"];
 
+type PublicBottomNavProps = {
+  /** Unread notifications — a dot on the account tab, where the inbox lives. */
+  unreadNotifications: number;
+};
+
 /** Thumb-reach navigation on phones; the header carries the same sections from `md` up. */
-export function PublicBottomNav() {
+export function PublicBottomNav({ unreadNotifications }: PublicBottomNavProps) {
   const t = useTranslations("site");
   const pathname = usePathname();
 
@@ -35,8 +40,11 @@ export function PublicBottomNav() {
               active ? "text-primary" : "text-muted-foreground",
             )}
           >
-            <span className={cn("grid size-9 place-items-center rounded-full", active ? "bg-accent" : "")}>
+            <span className={cn("relative grid size-9 place-items-center rounded-full", active ? "bg-accent" : "")}>
               <Icon icon={item.icon} size="sm" />
+              {item.key === "account" && unreadNotifications > 0 ? (
+                <span aria-label={t("notifications.unread")} role="img" className="absolute end-1 top-1 size-2 rounded-full bg-primary" />
+              ) : null}
             </span>
             <span className="truncate text-body-caption">{t(`nav.${item.key}`)}</span>
           </Link>

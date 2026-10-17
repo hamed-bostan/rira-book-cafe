@@ -158,6 +158,15 @@ model Order {
   // cash | card | transfer | online, once paid (kept after a refund).
   paymentMethod   String?          @map("payment_method")
   subtotal        Int
+  // The promo code applied at placement (snapshotted text; the id counts its uses).
+  promoCodeId     String?          @map("promo_code_id")
+  promoCode       String?          @map("promo_code")
+  promoDiscount   Int              @default(0) @map("promo_discount")
+  // Loyalty points spent on this order, and the Toman they took off.
+  pointsRedeemed  Int              @default(0) @map("points_redeemed")
+  pointsDiscount  Int              @default(0) @map("points_discount")
+  // Points the guest earned when it was completed.
+  pointsEarned    Int              @default(0) @map("points_earned")
   total           Int
   items           OrderItem[]
   paymentAttempts PaymentAttempt[]
@@ -166,25 +175,26 @@ model Order {
 
   @@index([status, placedAt])
   @@index([userId, placedAt])
+  @@index([promoCodeId])
   @@map("orders")
 }
 
 model OrderItem {
-  id           String  @id @default(uuid())
-  orderId      String  @map("order_id")
-  order        Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  id           String    @id @default(uuid())
+  orderId      String    @map("order_id")
+  order        Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
   // Plain reference, not a foreign key: deleting a menu item must not touch history.
-  productId    String  @map("product_id")
+  productId    String    @map("product_id")
   kind         String
   name         String
-  imageUrl     String  @map("image_url")
-  unitPrice    Int     @map("unit_price")
+  imageUrl     String    @map("image_url")
+  unitPrice    Int       @map("unit_price")
   // Cost per unit when placed, if the item had one — for cost of sales.
-  unitCost     Int?    @map("unit_cost")
+  unitCost     Int?      @map("unit_cost")
   // Whether the item was VAT-exempt when placed (books are); the sale's VAT comes from the rest.
-  taxExempt    Boolean @default(false) @map("tax_exempt")
+  taxExempt    Boolean   @default(false) @map("tax_exempt")
   // Set at completion when the line's recipe was taken out of stock (unit_cost is then actual).
-  stockTracked Boolean @default(false) @map("stock_tracked")
+  stockTracked Boolean   @default(false) @map("stock_tracked")
   quantity     Int
   note         String?
   position     Int
@@ -556,4 +566,153 @@ model StockMovement {
   @@index([referenceId])
   @@index([date])
   @@map("stock_movements")
+}
+
+// A message to one guest, shown on their account (no SMS): an order is ready, a
+// booking was confirmed, a borrowed book is due. The copy is rendered from `kind`
+// and `params` in the guest's language.
+model Notification {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  kind      String
+  // The values the message is filled with, e.g. `{ "orderNumber": 42 }`.
+  params    Json      @default("{}")
+  // Where tapping it goes, a site path such as `/orders/…`.
+  link      String?
+  // Notifications that must happen at most once (a loan's due-soon reminder) carry a key.
+  dedupeKey String?   @unique @map("dedupe_key")
+  readAt    DateTime? @map("read_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@index([userId, createdAt])
+  @@map("notifications")
+}
+
+// A guest's star rating (and optional words) for something they bought. Shown once
+// staff approve it; the item's rating is the average of its approved reviews.
+model ProductReview {
+  id              String    @id @default(uuid())
+  productId       String    @map("product_id")
+  productName     String    @map("product_name")
+  userId          String    @map("user_id")
+  authorName      String    @map("author_name")
+  rating          Int
+  comment         String?
+  status          String    @default("pending")
+  moderatedById   String?   @map("moderated_by_id")
+  moderatedByName String?   @map("moderated_by_name")
+  moderatedAt     DateTime? @map("moderated_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@unique([productId, userId])
+  @@index([status, createdAt])
+  @@index([productId, status, createdAt])
+  @@map("product_reviews")
+}
+
+// A guest waiting for a book that's out on loan. When a copy comes back the first
+// one waiting is told it's on the shelf; lending it to them closes the entry.
+model BookWaitlistEntry {
+  id         String    @id @default(uuid())
+  productId  String    @map("product_id")
+  bookTitle  String    @map("book_title")
+  userId     String    @map("user_id")
+  guestName  String    @map("guest_name")
+  guestPhone String    @map("guest_phone")
+  status     String    @default("waiting")
+  notifiedAt DateTime? @map("notified_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+
+  @@index([productId, status, createdAt])
+  @@index([userId, createdAt])
+  @@map("book_waitlist")
+}
+
+// A code guests type at checkout for money off. Uses are counted from the orders
+// that carry it (cancelled ones give the use back).
+model PromoCode {
+  id            String    @id @default(uuid())
+  // Stored upper-case; guests can type it in any case.
+  code          String    @unique
+  description   String?
+  // percent | fixed
+  kind          String
+  // Whole percent (1–100) or Toman off.
+  value         Int
+  // Cap on a percent discount, in Toman.
+  maxDiscount   Int?      @map("max_discount")
+  minSubtotal   Int       @default(0) @map("min_subtotal")
+  startsAt      DateTime? @map("starts_at")
+  endsAt        DateTime? @map("ends_at")
+  usageLimit    Int?      @map("usage_limit")
+  perGuestLimit Int?      @map("per_guest_limit")
+  isActive      Boolean   @default(true) @map("is_active")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  @@map("promo_codes")
+}
+
+// The loyalty club's points, as an append-only ledger per guest: the balance is the
+// sum of the deltas. Earned on completed orders, spent at checkout, given back when
+// an order that spent them is cancelled, and adjusted by hand.
+model LoyaltyTransaction {
+  id            String   @id @default(uuid())
+  userId        String   @map("user_id")
+  delta         Int
+  // earn | redeem | refund | adjust
+  reason        String
+  orderId       String?  @map("order_id")
+  orderNumber   Int?     @map("order_number")
+  note          String?
+  // Postings that must happen once (an order's earn) carry a key; a second is refused.
+  dedupeKey     String?  @unique @map("dedupe_key")
+  createdById   String?  @map("created_by_id")
+  createdByName String?  @map("created_by_name")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([userId, createdAt])
+  @@map("loyalty_transactions")
+}
+
+model LoyaltySettings {
+  id              Int      @id @default(1)
+  enabled         Boolean  @default(true)
+  // Spend this many Toman to earn one point.
+  tomanPerPoint   Int      @default(10000) @map("toman_per_point")
+  // One point takes this many Toman off an order.
+  pointValue      Int      @default(1000) @map("point_value")
+  // The fewest points a guest can spend at once.
+  minRedeemPoints Int      @default(50) @map("min_redeem_points")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("loyalty_settings")
+}
+
+// A till shift: opened with a float, closed by counting the drawer. The expected
+// cash is the float plus everything the Cash account moved during the shift; any
+// difference is booked as cash over/short when it closes.
+model CashShift {
+  id           String    @id @default(uuid())
+  number       Int       @unique @default(autoincrement())
+  status       String    @default("open")
+  openedAt     DateTime  @default(now()) @map("opened_at")
+  openedById   String    @map("opened_by_id")
+  openedByName String    @map("opened_by_name")
+  openingFloat Int       @map("opening_float")
+  closedAt     DateTime? @map("closed_at")
+  closedById   String?   @map("closed_by_id")
+  closedByName String?   @map("closed_by_name")
+  // Snapshotted at close: what the drawer should hold, what was counted, and counted − expected.
+  expectedCash Int?      @map("expected_cash")
+  countedCash  Int?      @map("counted_cash")
+  difference   Int?
+  note         String?
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  @@index([openedAt])
+  @@map("cash_shifts")
 }

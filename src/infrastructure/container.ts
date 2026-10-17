@@ -2,6 +2,8 @@ import type { IActivityLog } from "@/src/domain/repositories/IActivityLog";
 import type { IAnalyticsRepository } from "@/src/domain/repositories/IAnalyticsRepository";
 import type { IAuthRepository } from "@/src/domain/repositories/IAuthRepository";
 import type { IBookLoanRepository } from "@/src/domain/repositories/IBookLoanRepository";
+import type { IBookWaitlistRepository } from "@/src/domain/repositories/IBookWaitlistRepository";
+import type { ICashShiftRepository } from "@/src/domain/repositories/ICashShiftRepository";
 import type { ICategoryRepository } from "@/src/domain/repositories/ICategoryRepository";
 import type { IEmailSender } from "@/src/domain/repositories/IEmailSender";
 import type { IEventRepository } from "@/src/domain/repositories/IEventRepository";
@@ -9,36 +11,48 @@ import type { IExpenseRepository } from "@/src/domain/repositories/IExpenseRepos
 import type { IImageStorageRepository } from "@/src/domain/repositories/IImageStorageRepository";
 import type { IInventoryRepository } from "@/src/domain/repositories/IInventoryRepository";
 import type { ILedgerRepository } from "@/src/domain/repositories/ILedgerRepository";
+import type { ILoyaltyRepository } from "@/src/domain/repositories/ILoyaltyRepository";
+import type { ICustomerNotifier, INotificationRepository } from "@/src/domain/repositories/INotificationRepository";
 import type { IOrderNoteRepository } from "@/src/domain/repositories/IOrderNoteRepository";
 import type { IOrderRepository } from "@/src/domain/repositories/IOrderRepository";
 import type { IPaymentAttemptRepository } from "@/src/domain/repositories/IPaymentAttemptRepository";
 import type { IPaymentGateway } from "@/src/domain/repositories/IPaymentGateway";
 import type { IPricingRepository } from "@/src/domain/repositories/IPricingRepository";
 import type { IProductRepository } from "@/src/domain/repositories/IProductRepository";
+import type { IPromotionRepository } from "@/src/domain/repositories/IPromotionRepository";
 import type { IReservationRepository } from "@/src/domain/repositories/IReservationRepository";
+import type { IReviewRepository } from "@/src/domain/repositories/IReviewRepository";
 import type { ISuiteBookingRepository } from "@/src/domain/repositories/ISuiteBookingRepository";
 import type { ITeamNotifier } from "@/src/domain/repositories/ITeamNotifier";
 import type { IUserRepository } from "@/src/domain/repositories/IUserRepository";
+import { CheckoutPricing } from "@/src/domain/use-cases/orders/CheckoutPricing";
 
 import { LoggingEmailSender } from "./email/LoggingEmailSender";
 import { SmtpEmailSender } from "./email/SmtpEmailSender";
+import { CustomerNotifier } from "./notifications/CustomerNotifier";
 import { TeamNotifier } from "./notifications/TeamNotifier";
 import { ZarinpalPaymentGateway } from "./payments/ZarinpalPaymentGateway";
 import { MockAuthRepository } from "./repositories/mock/MockAuthRepository";
 import { PrismaActivityLog } from "./repositories/PrismaActivityLog";
 import { PrismaAnalyticsRepository } from "./repositories/PrismaAnalyticsRepository";
 import { PrismaBookLoanRepository } from "./repositories/PrismaBookLoanRepository";
+import { PrismaBookWaitlistRepository } from "./repositories/PrismaBookWaitlistRepository";
+import { PrismaCashShiftRepository } from "./repositories/PrismaCashShiftRepository";
 import { PrismaCategoryRepository } from "./repositories/PrismaCategoryRepository";
 import { PrismaEventRepository } from "./repositories/PrismaEventRepository";
 import { PrismaExpenseRepository } from "./repositories/PrismaExpenseRepository";
 import { PrismaInventoryRepository } from "./repositories/PrismaInventoryRepository";
 import { PrismaLedgerRepository } from "./repositories/PrismaLedgerRepository";
+import { PrismaLoyaltyRepository } from "./repositories/PrismaLoyaltyRepository";
+import { PrismaNotificationRepository } from "./repositories/PrismaNotificationRepository";
 import { PrismaOrderNoteRepository } from "./repositories/PrismaOrderNoteRepository";
 import { PrismaOrderRepository } from "./repositories/PrismaOrderRepository";
 import { PrismaPaymentAttemptRepository } from "./repositories/PrismaPaymentAttemptRepository";
 import { PrismaPricingRepository } from "./repositories/PrismaPricingRepository";
 import { PrismaProductRepository } from "./repositories/PrismaProductRepository";
+import { PrismaPromotionRepository } from "./repositories/PrismaPromotionRepository";
 import { PrismaReservationRepository } from "./repositories/PrismaReservationRepository";
+import { PrismaReviewRepository } from "./repositories/PrismaReviewRepository";
 import { PrismaSuiteBookingRepository } from "./repositories/PrismaSuiteBookingRepository";
 import { PrismaUserRepository } from "./repositories/PrismaUserRepository";
 import { SmsIrAuthRepository } from "./repositories/SmsIrAuthRepository";
@@ -66,6 +80,13 @@ export const productRepository: IProductRepository = new PrismaProductRepository
 export const orderRepository: IOrderRepository = new PrismaOrderRepository();
 export const orderNoteRepository: IOrderNoteRepository = new PrismaOrderNoteRepository();
 
+// Promo codes and the loyalty club. Checkout prices discounts through one
+// `CheckoutPricing` (the basket's preview and the placed order agree); the order
+// repository re-checks code limits and spends/earns points inside its transactions.
+export const promotionRepository: IPromotionRepository = new PrismaPromotionRepository();
+export const loyaltyRepository: ILoyaltyRepository = new PrismaLoyaltyRepository();
+export const checkoutPricing: CheckoutPricing = new CheckoutPricing(promotionRepository, loyaltyRepository);
+
 // Online payments — Zarinpal. Without `ZARINPAL_MERCHANT_ID` (or with
 // `ZARINPAL_SANDBOX=true`) payments go to Zarinpal's sandbox, so local dev and
 // staging work end to end without moving money. Attempts live in PostgreSQL.
@@ -84,6 +105,17 @@ export const eventRepository: IEventRepository = new PrismaEventRepository();
 // overlaps and duplicate loans are refused under locks, with database triggers as a backstop.
 export const suiteBookingRepository: ISuiteBookingRepository = new PrismaSuiteBookingRepository();
 export const bookLoanRepository: IBookLoanRepository = new PrismaBookLoanRepository();
+// Guests in line for a book that's out; the front of the line is told when a copy comes back.
+export const bookWaitlistRepository: IBookWaitlistRepository = new PrismaBookWaitlistRepository();
+
+// Guest reviews of what they had, approved by staff before they're shown. The
+// item's rating is recomputed from its approved reviews on every change.
+export const reviewRepository: IReviewRepository = new PrismaReviewRepository();
+
+// Guest notifications — an inbox on the account page, no SMS. Written after the
+// change they announce has committed, best-effort (see `ICustomerNotifier`).
+export const notificationRepository: INotificationRepository = new PrismaNotificationRepository();
+export const customerNotifier: ICustomerNotifier = new CustomerNotifier(notificationRepository);
 
 // Cafe aggregates — revenue, busy hours, best sellers, guests — computed in
 // PostgreSQL from the same rows the repositories above write, so there is no
@@ -95,6 +127,10 @@ export const analyticsRepository: IAnalyticsRepository = new PrismaAnalyticsRepo
 // transactions; the database itself refuses unbalanced or edited entries.
 export const ledgerRepository: ILedgerRepository = new PrismaLedgerRepository();
 export const expenseRepository: IExpenseRepository = new PrismaExpenseRepository();
+
+// Till shifts: the drawer's expected cash is read from the journal's Cash account,
+// and a count's over/short is posted in the same transaction that closes the shift.
+export const cashShiftRepository: ICashShiftRepository = new PrismaCashShiftRepository();
 
 // Pricing — ingredients, recipes and the advisor's settings. Recipes keep each
 // item's cost price (what orders snapshot for cost of sales) in step with what

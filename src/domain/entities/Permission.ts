@@ -50,6 +50,8 @@ export const PERMISSIONS = [
   "inventory.view",
   /** Receive deliveries, count stock, record opening stock and set reorder levels. Admin and owner. */
   "inventory.manage",
+  /** Open and close till shifts (count the drawer) — a floor job, so staff hold it. */
+  "shifts.manage",
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];
@@ -68,7 +70,7 @@ export type Permission = (typeof PERMISSIONS)[number];
 export const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
   customer: [],
   support: ["dashboard.view", "orders.note", "activity.view"],
-  staff: ["dashboard.view", "orders.fulfill", "orders.note", "reservations.manage", "loans.manage", "activity.view", "inventory.view"],
+  staff: ["dashboard.view", "orders.fulfill", "orders.note", "reservations.manage", "loans.manage", "activity.view", "inventory.view", "shifts.manage"],
   admin: [
     "dashboard.view",
     "orders.fulfill",
@@ -86,6 +88,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
     "accounting.write",
     "inventory.view",
     "inventory.manage",
+    "shifts.manage",
   ],
   owner: [
     "dashboard.view",
@@ -105,6 +108,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
     "accounting.write",
     "inventory.view",
     "inventory.manage",
+    "shifts.manage",
   ],
 };
 

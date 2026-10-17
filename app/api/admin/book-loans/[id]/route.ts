@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { bookLoanUpdateSchema } from "@/src/contracts/book-loan-schema";
 import { ChangeBookLoan } from "@/src/domain/use-cases/book-loans/ChangeBookLoan";
-import { bookLoanRepository } from "@/src/infrastructure/container";
+import { bookLoanRepository, bookWaitlistRepository, customerNotifier } from "@/src/infrastructure/container";
 import {
   errorResponse,
   errorResponseFromException,
@@ -36,7 +36,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext): Pro
   }
 
   try {
-    const loan = await new ChangeBookLoan(bookLoanRepository).execute(
+    const loan = await new ChangeBookLoan(bookLoanRepository, bookWaitlistRepository, customerNotifier).execute(
       id,
       parsed.data.status,
       { id: session.user.id, name: session.user.name ?? session.user.id },

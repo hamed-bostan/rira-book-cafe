@@ -11,6 +11,7 @@ import { AutoRefresh } from "@/src/presentation/components/AutoRefresh";
 import { OrderItemStateBadge } from "@/src/presentation/dashboard/orders/OrderItemStateBadge";
 import { OrderServiceLabel } from "@/src/presentation/dashboard/orders/OrderServiceLabel";
 import { Badge, Icon } from "@/src/presentation/design-system";
+import { OrderTotals } from "@/src/presentation/orders/OrderTotals";
 
 import { CancelMyOrderButton } from "./CancelMyOrderButton";
 import { OrderProgress } from "./OrderProgress";
@@ -90,9 +91,8 @@ export async function MyOrderScreen({ order, paymentOutcome }: MyOrderScreenProp
             </li>
           ))}
         </ul>
-        <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
-          <span className="text-body-strong text-foreground">{t("basket.total")}</span>
-          <span className="text-body-strong text-foreground">{formatMoney(order.total, locale)}</span>
+        <div className="mt-3">
+          <OrderTotals order={order} />
         </div>
         {order.note ? <p className="mt-3 text-body-small text-muted-foreground">{order.note}</p> : null}
       </section>

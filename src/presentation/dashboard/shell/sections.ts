@@ -5,15 +5,19 @@ import {
   Boxes,
   Calculator,
   CalendarClock,
+  ChefHat,
   ClipboardList,
   Coffee,
+  Gift,
   History,
   LayoutDashboard,
   Landmark,
   PartyPopper,
   Receipt,
   ShieldCheck,
+  Star,
   Tag,
+  Wallet,
 } from "lucide-react";
 
 import type { Permission } from "@/src/domain/entities/Permission";
@@ -38,6 +42,7 @@ export type DashboardSectionGroup = "groupOverview" | "groupService" | "groupMen
 export type DashboardSectionLabelKey =
   | "navDashboard"
   | "navOrders"
+  | "navKitchen"
   | "navReservations"
   | "navSuite"
   | "navBookLoans"
@@ -45,6 +50,9 @@ export type DashboardSectionLabelKey =
   | "navProducts"
   | "navCategories"
   | "navInventory"
+  | "navReviews"
+  | "navPromotions"
+  | "navCashShifts"
   | "navReports"
   | "navAccounting"
   | "navExpenses"
@@ -67,6 +75,8 @@ const SECTIONS = [
   // The live queue. Reading it is for everyone with the dashboard; moving orders is
   // `orders.fulfill`, gated inside the page.
   { href: "/dashboard/orders", labelKey: "navOrders", icon: ClipboardList, needs: "dashboard.view", group: "groupService" },
+  // The bar and kitchen's live board of what's being made — the same queue, sized for a wall screen.
+  { href: "/dashboard/kitchen", labelKey: "navKitchen", icon: ChefHat, needs: "dashboard.view", group: "groupService" },
   // The day's bookings — readable by everyone on the floor; acting on them is
   // `reservations.manage`, gated inside the page.
   { href: "/dashboard/reservations", labelKey: "navReservations", icon: CalendarClock, needs: "dashboard.view", group: "groupService" },
@@ -82,11 +92,16 @@ const SECTIONS = [
   { href: "/dashboard/categories", labelKey: "navCategories", icon: Tag, needs: "catalog.write", group: "groupMenu" },
   // What's on the shelves — everyone on the floor sees what's running out.
   { href: "/dashboard/inventory", labelKey: "navInventory", icon: Boxes, needs: "inventory.view", group: "groupMenu" },
+  // What guests said about it, and the levers that bring them back — promo codes and the loyalty club.
+  { href: "/dashboard/reviews", labelKey: "navReviews", icon: Star, needs: "reviews.moderate", group: "groupMenu" },
+  { href: "/dashboard/promotions", labelKey: "navPromotions", icon: Gift, needs: "promotions.write", group: "groupMenu" },
 
   // Revenue and the reports behind it — admin and owner only.
   { href: "/dashboard/reports", labelKey: "navReports", icon: BarChart3, needs: "reports.view", group: "groupInsights" },
 
   // The books, the bills that feed them, and what each item should cost — admin and owner.
+  // The till: open a shift with a float, count the drawer at the end — a floor job, so staff hold it.
+  { href: "/dashboard/cash-shifts", labelKey: "navCashShifts", icon: Wallet, needs: "shifts.manage", group: "groupFinance" },
   { href: "/dashboard/accounting", labelKey: "navAccounting", icon: Landmark, needs: "accounting.view", group: "groupFinance" },
   { href: "/dashboard/expenses", labelKey: "navExpenses", icon: Receipt, needs: "accounting.view", group: "groupFinance" },
   { href: "/dashboard/pricing", labelKey: "navPricing", icon: Calculator, needs: "accounting.view", group: "groupFinance" },

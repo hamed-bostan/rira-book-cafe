@@ -121,7 +121,17 @@ export type Order = {
   items: OrderItem[];
   /** Sum of the lines, in Toman. */
   subtotal: number;
-  /** What the guest pays, in Toman. Equals the subtotal until promotions and tax land. */
+  /** The promo code applied at checkout (normalized), and the code's id that counts its uses. */
+  promoCode?: string;
+  promoCodeId?: string;
+  /** Taken off by the promo code, in Toman. */
+  promoDiscount: number;
+  /** Loyalty points spent on the order, and the Toman they took off. */
+  pointsRedeemed: number;
+  pointsDiscount: number;
+  /** Points the guest earned when it was completed (0 until then). */
+  pointsEarned: number;
+  /** What the guest pays, in Toman: the subtotal less the promo and the points. VAT is inside it. */
   total: number;
   /** ISO 8601 timestamp (UTC). */
   placedAt: string;

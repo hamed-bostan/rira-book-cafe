@@ -22,9 +22,10 @@ export default async function DashboardBookLoansPage({ searchParams }: Dashboard
   const view = viewParam && VIEW_SET.has(viewParam) ? (viewParam as BookLoanView) : "open";
   const q = params.get("q")?.trim() || undefined;
 
-  const [loans, books, canManage] = await Promise.all([
+  const [loans, books, waitlist, canManage] = await Promise.all([
     bookLoansServerApi.list(view, q),
     bookLoansServerApi.listBooks(),
+    bookLoansServerApi.listWaitlist(),
     auth().then((session) => sessionHas(session, "loans.manage")),
   ]);
 
@@ -33,6 +34,7 @@ export default async function DashboardBookLoansPage({ searchParams }: Dashboard
     <BookLoansScreen
       loans={loans}
       books={books}
+      waitlist={waitlist}
       view={view}
       isSearching={q !== undefined}
       now={now.toISOString()}

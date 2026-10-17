@@ -124,6 +124,10 @@ export class PrismaBookLoanRepository implements IBookLoanRepository {
     }));
   }
 
+  countOpenForBook(productId: string): Promise<number> {
+    return this.db.bookLoan.count({ where: { productId, status: "out" } });
+  }
+
   async getBook(productId: string): Promise<{ title: string; author?: string } | null> {
     const book = await this.db.product.findFirst({
       where: { id: productId, kind: "book" },

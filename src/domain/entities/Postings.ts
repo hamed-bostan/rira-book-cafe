@@ -1,5 +1,6 @@
 import { allocate, SYSTEM_ACCOUNTS, vatIncluded, type NewJournalEntry } from "./Ledger";
 
+import type { CashShift } from "./CashShift";
 import type { Expense, PaymentSource } from "./Expense";
 import type { Order, PaymentMethod } from "./Order";
 import type { ProductKind } from "./Product";
@@ -179,6 +180,31 @@ export function expensePaymentEntry(expense: Expense, source: PaymentSource, dat
     lines: [
       { accountCode: SYSTEM_ACCOUNTS.accountsPayable, debit: expense.amount, credit: 0, memo: expense.supplierName },
       { accountCode: SOURCE_ACCOUNT[source], debit: 0, credit: expense.amount },
+    ],
+    createdById: actor.id,
+    createdByName: actor.name,
+  };
+}
+
+/**
+ * A shift's drawer didn't match the books: an overage is cash the books didn't
+ * know about (Dr Cash / Cr Cash over and short), a shortage is cash that's gone
+ * (Dr Cash over and short / Cr Cash). `null` when the count was exact.
+ */
+export function cashOverShortEntry(shift: CashShift, date: string, actor: Actor): NewJournalEntry | null {
+  const difference = shift.difference ?? 0;
+  if (difference === 0) return null;
+  const amount = Math.abs(difference);
+  const over = difference > 0;
+  return {
+    date,
+    description: `Shift Z-${shift.number} — cash ${over ? "over" : "short"}`,
+    source: "cashShift",
+    sourceId: shift.id,
+    uniqueKey: `cashShift:${shift.id}`,
+    lines: [
+      { accountCode: over ? SYSTEM_ACCOUNTS.cash : SYSTEM_ACCOUNTS.cashOverShort, debit: amount, credit: 0 },
+      { accountCode: over ? SYSTEM_ACCOUNTS.cashOverShort : SYSTEM_ACCOUNTS.cash, debit: 0, credit: amount },
     ],
     createdById: actor.id,
     createdByName: actor.name,

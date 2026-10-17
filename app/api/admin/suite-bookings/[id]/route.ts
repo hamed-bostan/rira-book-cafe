@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { suiteBookingUpdateSchema } from "@/src/contracts/suite-booking-schema";
 import { ChangeSuiteBooking } from "@/src/domain/use-cases/suite-bookings/ChangeSuiteBooking";
-import { suiteBookingRepository } from "@/src/infrastructure/container";
+import { customerNotifier, suiteBookingRepository } from "@/src/infrastructure/container";
 import {
   errorResponse,
   errorResponseFromException,
@@ -37,7 +37,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext): Pro
   }
 
   try {
-    const booking = await new ChangeSuiteBooking(suiteBookingRepository).execute(id, parsed.data.status, {
+    const booking = await new ChangeSuiteBooking(suiteBookingRepository, customerNotifier).execute(id, parsed.data.status, {
       id: session.user.id,
       name: session.user.name ?? session.user.id,
     });

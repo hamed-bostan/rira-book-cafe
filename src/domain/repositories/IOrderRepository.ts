@@ -12,7 +12,7 @@ export type PaymentChange = { from: PaymentStatus; to: SettablePaymentStatus; me
 /** An order about to be placed. Id, number, status and timestamps are the repository's to assign. */
 export type NewOrder = Omit<
   Order,
-  "id" | "orderNumber" | "status" | "paymentStatus" | "paymentMethod" | "placedAt" | "updatedAt" | "items"
+  "id" | "orderNumber" | "status" | "paymentStatus" | "paymentMethod" | "placedAt" | "updatedAt" | "items" | "pointsEarned"
 > & {
   items: Omit<OrderItem, "id">[];
 };
@@ -23,6 +23,11 @@ export type IOrderRepository = {
    * the shelf (guarded, so two orders can't both take the last slice), insert the
    * order and its lines, and record the placement event. If any line is short,
    * nothing changes and `InsufficientStockError` names what's missing.
+   *
+   * A promo code's usage limits are re-checked under the code's lock
+   * (`ConflictError("PROMO_USED_UP")`), and redeemed points are taken off the
+   * guest's balance under theirs (`ConflictError("NOT_ENOUGH_POINTS")`) — so two
+   * orders racing for the last use, or the same points, can't both win.
    */
   place(input: NewOrder, placedBy: ActivityActor): Promise<Order>;
   getById(id: string): Promise<Order | null>;
@@ -37,7 +42,8 @@ export type IOrderRepository = {
    * can't be overwritten (the loser gets `InvalidOrderTransitionError`). Writes the
    * status event, the audit entry and the ledger postings in the same
    * transaction; moving to `cancelled` also puts the lines' units back on the
-   * shelf, and turns a `paid` order `refunded`.
+   * shelf, turns a `paid` order `refunded` and gives back the points it spent.
+   * Moving to `completed` earns the guest their loyalty points.
    */
   transition(
     id: string,

@@ -1,4 +1,4 @@
-import { BedDouble, BookOpen, CalendarClock, ChevronRight, ClipboardList, LayoutDashboard } from "lucide-react";
+import { BedDouble, Bell, BookOpen, CalendarClock, ChevronRight, ClipboardList, Gift, LayoutDashboard } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import type { ProfileWire } from "@/src/contracts/profile-schema";
@@ -23,14 +23,25 @@ type AccountScreenProps = {
   signUps: { registration: EventRegistration; event: CafeEvent }[];
   /** Whether to offer a link to the staff dashboard. */
   canOpenDashboard: boolean;
+  /** Unread notifications, counted beside the inbox link. */
+  unreadNotifications: number;
+  /** Loyalty points, shown beside the rewards link. */
+  pointsBalance: number;
 };
 
 /** The guest's account: profile, shortcuts to their orders and bookings, their event sign-ups, language and sign out. */
-export async function AccountScreen({ profile, signUps, canOpenDashboard }: AccountScreenProps) {
+export async function AccountScreen({ profile, signUps, canOpenDashboard, unreadNotifications, pointsBalance }: AccountScreenProps) {
   const t = await getTranslations("site");
   const locale = await getLocale();
 
-  const links: { href: string; label: string; icon: LucideIcon }[] = [
+  const links: { href: string; label: string; icon: LucideIcon; count?: number; detail?: string }[] = [
+    { href: "/notifications", label: t("account.notifications"), icon: Bell, count: unreadNotifications },
+    {
+      href: "/rewards",
+      label: t("account.rewards"),
+      icon: Gift,
+      detail: t("account.pointsBalance", { points: formatNumber(pointsBalance, locale) }),
+    },
     { href: "/orders", label: t("account.myOrders"), icon: ClipboardList },
     { href: "/reservations", label: t("account.myReservations"), icon: CalendarClock },
     { href: "/suite", label: t("account.mySuiteStays"), icon: BedDouble },
@@ -49,6 +60,10 @@ export async function AccountScreen({ profile, signUps, canOpenDashboard }: Acco
           <Link key={link.href} href={link.href} className={cn("flex items-center gap-3 px-4 py-4 hover:bg-muted", focusRing)}>
             <Icon icon={link.icon} size="sm" className="text-primary" />
             <span className="flex-1 text-body-small-strong text-foreground">{link.label}</span>
+            {link.detail ? <span className="text-body-caption text-muted-foreground">{link.detail}</span> : null}
+            {link.count ? (
+              <span className="rounded-full bg-primary px-2 py-0.5 text-body-caption text-primary-foreground">{formatNumber(link.count, locale)}</span>
+            ) : null}
             <Icon icon={ChevronRight} size="xs" className="text-muted-foreground rtl:-scale-x-100" />
           </Link>
         ))}

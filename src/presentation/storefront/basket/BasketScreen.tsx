@@ -18,7 +18,12 @@ import { Button, FormMessage, Icon, Input, Textarea, focusRing } from "@/src/pre
 import { storefrontApi } from "../storefront-api";
 
 import { basketToOrderItems, basketTotal } from "./basket";
+import { BasketDiscounts } from "./BasketDiscounts";
 import { useBasket } from "./BasketProvider";
+import { useOrderQuote } from "./useOrderQuote";
+
+/** Refusals that are about the promo code: shown under its field, and the code is dropped. */
+const PROMO_ERRORS: ReadonlySet<string> = new Set(["PROMO_INVALID", "PROMO_EXPIRED", "PROMO_USED_UP", "PROMO_MIN_SUBTOTAL"]);
 
 type BasketScreenProps = {
   /** Whether a guest is signed in — ordering needs an account. */
@@ -45,6 +50,24 @@ export function BasketScreen({ signedIn }: BasketScreenProps) {
   const [error, setError] = React.useState<string | null>(null);
   const [tableError, setTableError] = React.useState<string | null>(null);
   const [pending, startTransition] = React.useTransition();
+  const [appliedPromo, setAppliedPromo] = React.useState<string | undefined>(undefined);
+  const [promoError, setPromoError] = React.useState<string | null>(null);
+  const [redeemPoints, setRedeemPoints] = React.useState(false);
+
+  // A code the server refuses is dropped (with the reason shown), and so is a points
+  // request it can't honour — the totals fall back to what the basket can have.
+  const onQuoteRejected = React.useCallback(
+    (rejection: ApiError) => {
+      if (rejection.code && PROMO_ERRORS.has(rejection.code)) {
+        setPromoError(localizeApiError(rejection, tApiErrors, t("basket.promoError")));
+        setAppliedPromo(undefined);
+      } else if (rejection.code === "NOT_ENOUGH_POINTS" || rejection.code === "LOYALTY_DISABLED") {
+        setRedeemPoints(false);
+      }
+    },
+    [tApiErrors, t],
+  );
+  const quoteState = useOrderQuote({ basket, promoCode: appliedPromo, redeemPoints, enabled: signedIn && ready, onRejected: onQuoteRejected });
 
   if (!ready) return null;
 
@@ -77,6 +100,8 @@ export function BasketScreen({ signedIn }: BasketScreenProps) {
           serviceType,
           tableLabel: serviceType === "dineIn" ? tableLabel : undefined,
           note,
+          promoCode: appliedPromo,
+          redeemPoints,
         });
         clear();
         router.push(`/orders/${order.id}`);
@@ -88,6 +113,8 @@ export function BasketScreen({ signedIn }: BasketScreenProps) {
         const fieldMessage = err instanceof ApiError ? err.fieldErrors?.tableLabel : undefined;
         if (fieldMessage) setTableError(formErrorMessage(tFormErrors, fieldMessage) ?? fieldMessage);
         else setError(localizeApiError(err, tApiErrors, t("basket.orderError")));
+        // The discounts may have changed underneath the guest (a code used up meanwhile).
+        if (err instanceof ApiError) onQuoteRejected(err);
       }
     });
   }
@@ -176,16 +203,31 @@ export function BasketScreen({ signedIn }: BasketScreenProps) {
           <Textarea value={note} onChange={(event) => setNote(event.target.value)} maxLength={MAX_ORDER_NOTE_TEXT_LENGTH} rows={2} />
         </label>
 
-        <div className="flex items-center justify-between border-t border-border pt-4">
-          <span className="text-body-strong text-foreground">{t("basket.total")}</span>
-          <span className="text-body-strong text-foreground">{formatMoney(basketTotal(basket), locale)}</span>
-        </div>
+        {signedIn ? (
+          <BasketDiscounts
+            quoteState={quoteState}
+            appliedPromo={appliedPromo}
+            onPromoChange={(code) => {
+              setPromoError(null);
+              setAppliedPromo(code);
+            }}
+            promoError={promoError}
+            redeemPoints={redeemPoints}
+            onRedeemChange={setRedeemPoints}
+            fallbackTotal={basketTotal(basket)}
+          />
+        ) : (
+          <div className="flex items-center justify-between border-t border-border pt-4">
+            <span className="text-body-strong text-foreground">{t("basket.total")}</span>
+            <span className="text-body-strong text-foreground">{formatMoney(basketTotal(basket), locale)}</span>
+          </div>
+        )}
         <p className="text-body-caption text-muted-foreground">{t("basket.payAtCounter")}</p>
 
         {error ? <FormMessage>{error}</FormMessage> : null}
 
         {signedIn ? (
-          <Button type="button" onClick={placeOrder} disabled={pending}>
+          <Button type="button" onClick={placeOrder} disabled={pending || quoteState.loading}>
             {pending ? t("basket.placing") : t("basket.placeOrder")}
           </Button>
         ) : (

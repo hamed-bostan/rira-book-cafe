@@ -32,4 +32,19 @@ export type ConflictCode =
   | "NOT_PAYABLE"
   | "PAYMENT_IN_PROGRESS"
   | "STOCK_USED"
-  | "YEAR_NOT_ENDED";
+  | "YEAR_NOT_ENDED"
+  // Reviews: only guests who've had the item may review it.
+  | "NOT_PURCHASED"
+  // Promo codes and loyalty points at checkout.
+  | "PROMO_INVALID"
+  | "PROMO_EXPIRED"
+  | "PROMO_USED_UP"
+  | "PROMO_MIN_SUBTOTAL"
+  | "NOT_ENOUGH_POINTS"
+  | "LOYALTY_DISABLED"
+  // The book waitlist.
+  | "ALREADY_WAITING"
+  | "BOOK_ON_SHELF"
+  // Cash shifts.
+  | "SHIFT_ALREADY_OPEN"
+  | "NO_OPEN_SHIFT";

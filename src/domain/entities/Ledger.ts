@@ -69,6 +69,7 @@ export const SYSTEM_ACCOUNTS = {
   salesBooks: "4300",
   costOfSales: "5100",
   gatewayFees: "6700",
+  cashOverShort: "6800",
 } as const;
 
 /** What an automatic posting or a manual entry came from — for drill-down and duplicate protection. */
@@ -85,6 +86,7 @@ export const JOURNAL_SOURCES = [
   "stockCount",
   "stockOpening",
   "yearClose",
+  "cashShift",
   "manual",
   "reversal",
 ] as const;

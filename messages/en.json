@@ -59,7 +59,7 @@
     "codeFormat": "Use letters, numbers, dashes and underscores only.",
     "codeRequired": "A code is required.",
     "codeTooLong": "Code is too long.",
-    "commentTooLong": "Keep it under 2000 characters.",
+    "commentTooLong": "That review is too long.",
     "dateInvalid": "Enter a valid date.",
     "descriptionRequired": "A description is required.",
     "descriptionTooLong": "Description is too long.",
@@ -150,7 +150,13 @@
     "deliveryTotalRequired": "Enter what the delivery cost.",
     "bookRequired": "Choose a book.",
     "suiteGuestsInvalid": "Choose 1 to 4 guests.",
-    "checkOutBeforeCheckIn": "Check-out must be after check-in."
+    "checkOutBeforeCheckIn": "Check-out must be after check-in.",
+    "ratingInvalid": "Choose 1 to 5 stars.",
+    "promoCodeInvalid": "Use 3–20 letters, digits, - or _.",
+    "promoValueInvalid": "Enter how much it takes off.",
+    "percentTooHigh": "A percentage can't be over 100.",
+    "limitInvalid": "Enter a whole number above zero, or leave it blank.",
+    "pointsInvalid": "Enter a whole number of points (use − to take away)."
   },
   "apiErrors": {
     "badRequest": "The request couldn't be read. Please try again.",
@@ -183,7 +189,18 @@
     "stockUsed": "Some of this delivery has already been used, so it can't be voided. Record a count or waste instead.",
     "yearNotEnded": "That fiscal year hasn't ended yet.",
     "suiteTaken": "The suite is already booked for some of those nights.",
-    "alreadyOnLoan": "This person already has this book on loan."
+    "alreadyOnLoan": "This person already has this book on loan.",
+    "notPurchased": "You can review this once you've had it here.",
+    "promoInvalid": "That code isn't valid.",
+    "promoExpired": "That code has expired or isn't active yet.",
+    "promoUsedUp": "That code has already been used up.",
+    "promoMinSubtotal": "Your order doesn't reach the minimum for that code yet.",
+    "notEnoughPoints": "You don't have enough points for that.",
+    "loyaltyDisabled": "Points can't be used right now.",
+    "alreadyWaiting": "You're already on the waitlist for this book.",
+    "bookOnShelf": "This book is on the shelf right now — ask at the counter.",
+    "shiftAlreadyOpen": "A shift is already open. Close it first.",
+    "noOpenShift": "There's no open shift."
   },
   "meta": {
     "siteName": "Rira Book Cafe",
@@ -234,7 +251,11 @@
     "navPricing": "Pricing",
     "navInventory": "Inventory",
     "navSuite": "Suite",
-    "navBookLoans": "Book loans"
+    "navBookLoans": "Book loans",
+    "navKitchen": "Kitchen display",
+    "navReviews": "Reviews",
+    "navPromotions": "Promotions",
+    "navCashShifts": "Cash shifts"
   },
   "dashTeam": {
     "membersHeading": "Team members",
@@ -669,7 +690,11 @@
     "unmarkServedAria": "Take back the served mark on {name}",
     "servedProgress": "{served, number} of {total, number} served",
     "servedAt": "Served {time}",
-    "serveError": "Couldn't update the item. The order may have changed."
+    "serveError": "Couldn't update the item. The order may have changed.",
+    "subtotal": "Subtotal",
+    "promoDiscount": "Promo code {code}",
+    "pointsDiscount": "{points} points",
+    "pointsEarned": "Earned {points} loyalty points"
   },
   "dashOrderNotes": {
     "label": "Internal note",
@@ -1098,7 +1123,19 @@
       "placeOrder": "Place order",
       "placing": "Placing your order…",
       "signInToOrder": "Sign in to order",
-      "orderError": "Couldn't place your order. Please try again."
+      "orderError": "Couldn't place your order. Please try again.",
+      "promoLabel": "Promo code",
+      "promoPlaceholder": "Enter a code",
+      "promoApply": "Apply",
+      "promoRemove": "Remove promo code",
+      "promoError": "That code can't be used on this order.",
+      "subtotal": "Subtotal",
+      "promoDiscount": "Promo code",
+      "pointsDiscount": "Points",
+      "pointsBalance": "You have {points} points",
+      "pointsUse": "Use {points} points for {amount} off",
+      "pointsMinimum": "You can spend points once you have {points}.",
+      "pointsToEarn": "You'll earn {points} points with this order."
     },
     "orders": {
       "heading": "My orders",
@@ -1201,7 +1238,10 @@
       "noSignUps": "You haven't signed up for anything coming up.",
       "signOut": "Sign out",
       "mySuiteStays": "My suite stays",
-      "myBookLoans": "Books I've borrowed"
+      "myBookLoans": "Books I've borrowed",
+      "notifications": "Notifications",
+      "rewards": "Rewards club",
+      "pointsBalance": "{points} points"
     },
     "suite": {
       "heading": "Book the suite",
@@ -1234,6 +1274,129 @@
       "past": "Earlier loans",
       "dueOn": "Due {date}",
       "returnedOn": "Returned {date}"
+    },
+    "notifications": {
+      "heading": "Notifications",
+      "subtitle": "Updates on your orders, bookings and the books you've borrowed.",
+      "empty": "Nothing yet. We'll let you know here when something changes.",
+      "unread": "Unread",
+      "bellAria": "{count, plural, =0 {Notifications} one {Notifications, # unread} other {Notifications, # unread}}",
+      "kinds": {
+        "orderAccepted": {
+          "title": "Order #{orderNumber} is in hand",
+          "body": "We've started on your order."
+        },
+        "orderReady": {
+          "title": "Order #{orderNumber} is ready",
+          "body": "{serviceType, select, takeaway {It's waiting for you at the counter.} other {It's on its way to your table.}}"
+        },
+        "orderCompleted": {
+          "title": "Order #{orderNumber} is done",
+          "body": "Thanks for coming — enjoy!"
+        },
+        "orderCancelled": {
+          "title": "Order #{orderNumber} was cancelled",
+          "body": "If you'd paid, the money goes back the way it came."
+        },
+        "reservationConfirmed": {
+          "title": "Your table is confirmed",
+          "body": "R-{reference}: {startsAt}, for {partySize}."
+        },
+        "reservationCancelled": {
+          "title": "Your reservation was cancelled",
+          "body": "R-{reference} for {startsAt} is no longer held."
+        },
+        "suiteConfirmed": {
+          "title": "Your suite stay is confirmed",
+          "body": "S-{reference}: {checkIn} → {checkOut}."
+        },
+        "suiteCancelled": {
+          "title": "Your suite stay was cancelled",
+          "body": "S-{reference} ({checkIn} → {checkOut}) is no longer held."
+        },
+        "loanStarted": {
+          "title": "You borrowed “{title}”",
+          "body": "Please bring it back by {dueAt}."
+        },
+        "loanDueSoon": {
+          "title": "“{title}” is due soon",
+          "body": "It's due back by {dueAt}."
+        },
+        "loanOverdue": {
+          "title": "“{title}” is overdue",
+          "body": "It was due on {dueAt}. Please bring it back to the shelf."
+        },
+        "bookAvailable": {
+          "title": "“{title}” is back on the shelf",
+          "body": "You're first in line — ask at the counter to borrow it."
+        },
+        "pointsEarned": {
+          "title": "You earned {points} points",
+          "body": "From order #{orderNumber}. Spend them at checkout."
+        },
+        "reviewApproved": {
+          "title": "Your review is up",
+          "body": "Thanks for reviewing {productName}."
+        }
+      }
+    },
+    "reviews": {
+      "heading": "Reviews",
+      "summary": "{rating} · {count, plural, one {{formatted} review} other {{formatted} reviews}}",
+      "empty": "No reviews yet.",
+      "anonymous": "A guest",
+      "verified": "Had it here",
+      "signInToReview": "Sign in to review this",
+      "notYetHad": "You can review this once you've had it here.",
+      "write": "Write a review",
+      "yourReview": "Your review",
+      "ratingLabel": "Your rating",
+      "commentLabel": "Your review",
+      "commentPlaceholder": "What did you think? (optional)",
+      "moderationHint": "Reviews appear once our team has read them.",
+      "pickRating": "Choose how many stars.",
+      "submit": "Post review",
+      "update": "Update review",
+      "saving": "Saving…",
+      "saved": "Thanks! Your review will appear once it's approved.",
+      "saveError": "Couldn't save your review. Please try again.",
+      "status": {
+        "pending": "Waiting for approval",
+        "approved": "Published",
+        "rejected": "Not published"
+      }
+    },
+    "waitlist": {
+      "onLoan": "{count, plural, one {{formatted} copy is out on loan.} other {{formatted} copies are out on loan.}}",
+      "inLine": "{count, plural, one {{formatted} guest is waiting.} other {{formatted} guests are waiting.}}",
+      "join": "Tell me when it's back",
+      "leave": "Leave the line",
+      "signIn": "Sign in to join the waitlist",
+      "position": "You're number {position} in line",
+      "yourTurn": "It's back — ask at the counter",
+      "waiting": "Waiting",
+      "heading": "Books I'm waiting for",
+      "joinedOn": "Joined {date}",
+      "error": "Couldn't update the waitlist. Please try again."
+    },
+    "rewards": {
+      "heading": "Rewards club",
+      "subtitle": "Earn points every time you order, and spend them as money off.",
+      "balance": "{points} points",
+      "worth": "Worth {amount} off your next order",
+      "howHeading": "How it works",
+      "howEarn": "Earn 1 point for every {amount} you spend.",
+      "howSpend": "Each point takes {amount} off an order.",
+      "howMinimum": "Spend points at checkout once you have at least {points}.",
+      "paused": "The rewards club is paused for now. Your points are safe.",
+      "historyHeading": "Your points",
+      "empty": "No points yet — they arrive when your first order is done.",
+      "reason": {
+        "earn": "Earned on order #{orderNumber}",
+        "redeem": "Spent on order #{orderNumber}",
+        "refund": "Returned from order #{orderNumber}",
+        "adjust": "Adjusted by the cafe"
+      }
     }
   },
   "dashAccounting": {
@@ -1313,7 +1476,8 @@
       "stockWaste": "Waste",
       "stockCount": "Stock count",
       "stockOpening": "Opening stock",
-      "yearClose": "Year-end close"
+      "yearClose": "Year-end close",
+      "cashShift": "Cash shift"
     },
     "entry": {
       "title": "Journal entry JE-{number}",
@@ -1897,7 +2061,11 @@
     "emptyTitle": "No books here",
     "emptyBody": "Books you lend will show up here.",
     "noMatchesTitle": "No matches",
-    "noMatchesBody": "No loans match that search."
+    "noMatchesBody": "No loans match that search.",
+    "waitlistHeading": "Waitlist",
+    "waitlistSubtitle": "Guests waiting for a book that's out. The first in line is told on their account when a copy comes back.",
+    "waitlistNotified": "Told it's back",
+    "waitlistRemoveAria": "Take {name} off the waitlist"
   },
   "dashSuite": {
     "heading": "Suite",
@@ -1934,5 +2102,166 @@
     "emptyBody": "Suite requests guests make will show up here.",
     "noMatchesTitle": "No matches",
     "noMatchesBody": "No upcoming stays have that status."
+  },
+  "dashReviews": {
+    "heading": "Reviews",
+    "subtitle": "What guests wrote about what they had. Nothing is shown until you approve it.",
+    "searchLabel": "Search reviews",
+    "searchPlaceholder": "Item, guest or words",
+    "viewLabel": "Show",
+    "viewOption": "Show: {view}",
+    "viewOptionCount": "Show: {view} ({count})",
+    "view": {
+      "pending": "Waiting",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "all": "All"
+    },
+    "status": {
+      "pending": "Waiting",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    },
+    "action": {
+      "approved": "Approve",
+      "rejected": "Reject"
+    },
+    "anonymous": "A guest",
+    "moderatedBy": "{name}, {date}",
+    "updateError": "Couldn't update the review. Please try again.",
+    "emptyTitle": "Nothing waiting",
+    "emptyBody": "New reviews will show up here.",
+    "noMatchesTitle": "No matches",
+    "noMatchesBody": "No reviews match that search."
+  },
+  "dashPromotions": {
+    "heading": "Promotions",
+    "subtitle": "Promo codes, the rewards club, and a guest's points at the counter.",
+    "codesHeading": "Promo codes",
+    "codesEmpty": "No promo codes yet.",
+    "newCode": "New code",
+    "newTitle": "New promo code",
+    "editTitle": "Edit {code}",
+    "editAria": "Edit {code}",
+    "activeAria": "{code} is active",
+    "descriptionPlaceholder": "e.g. Book club members",
+    "optional": "Optional",
+    "unlimited": "Unlimited",
+    "field": {
+      "code": "Code",
+      "description": "Note",
+      "kind": "Type",
+      "value": "Amount",
+      "maxDiscount": "At most (Toman)",
+      "minSubtotal": "Minimum order (Toman)",
+      "startsOn": "From",
+      "endsOn": "Until",
+      "usageLimit": "Total uses",
+      "perGuestLimit": "Uses per guest",
+      "isActive": "Active"
+    },
+    "kind": {
+      "percent": "Percent off",
+      "fixed": "Toman off"
+    },
+    "state": {
+      "active": "Active",
+      "inactive": "Off",
+      "scheduled": "Scheduled",
+      "expired": "Expired",
+      "usedUp": "Used up"
+    },
+    "percentOff": "{value}% off",
+    "amountOff": "{amount} off",
+    "upTo": "up to {amount}",
+    "uses": "Used {uses} times",
+    "usesOf": "Used {uses} of {limit}",
+    "perGuest": "{limit} per guest",
+    "minimum": "Min. {amount}",
+    "from": "From {date}",
+    "until": "Until {date}",
+    "cancel": "Back",
+    "save": "Save",
+    "saving": "Saving…",
+    "saved": "Saved.",
+    "saveError": "Couldn't save. Please try again.",
+    "loyaltyHeading": "Rewards club",
+    "loyaltyDescription": "Guests earn points on completed orders and spend them as money off.",
+    "loyaltyEnabled": "Club is on",
+    "loyaltyInvalid": "Enter whole numbers (the first two above zero).",
+    "loyalty": {
+      "tomanPerPoint": "Toman per point",
+      "pointValue": "Point value (Toman)",
+      "minRedeemPoints": "Minimum to spend"
+    },
+    "loyaltyHint": {
+      "tomanPerPoint": "Spend this much to earn 1 point.",
+      "pointValue": "What 1 point takes off.",
+      "minRedeemPoints": "Fewest points spent at once."
+    },
+    "guestHeading": "A guest's points",
+    "guestDescription": "Look a guest up by phone, and add or take away points by hand.",
+    "guestPhone": "Guest's phone",
+    "lookup": "Look up",
+    "lookupError": "Couldn't look the guest up. Please try again.",
+    "guestNotFound": "No guest account has that phone number.",
+    "balance": "{points} points",
+    "adjustPoints": "Points (+/−)",
+    "adjustNote": "Reason",
+    "adjust": "Adjust",
+    "reason": {
+      "earn": "Earned",
+      "redeem": "Spent",
+      "refund": "Returned",
+      "adjust": "Adjusted"
+    }
+  },
+  "dashCashShifts": {
+    "heading": "Cash shifts",
+    "subtitle": "Open the till with a float, count the drawer at the end. Any difference is booked as cash over or short.",
+    "openHeading": "Open a shift",
+    "openDescription": "Count the cash you're putting in the drawer to start.",
+    "openingFloat": "Opening float (Toman)",
+    "openingFloatHint": "The change in the drawer before the first sale.",
+    "note": "Note (optional)",
+    "open": "Open shift",
+    "openShift": "Shift Z-{number} is open",
+    "openedBy": "Opened by {name}, {date}",
+    "float": "Float",
+    "expected": "Cash expected in the drawer",
+    "bank": "Card & transfer",
+    "online": "Online",
+    "paymentsCount": "{count, plural, one {{formatted} payment taken this shift} other {{formatted} payments taken this shift}}",
+    "closeHeading": "Close the shift",
+    "closeDescription": "Count the cash in the drawer. The books expect the float plus every cash payment, less cash refunds and cash paid out.",
+    "countedCash": "Cash counted (Toman)",
+    "closeNotePlaceholder": "e.g. why it's short",
+    "close": "Close shift",
+    "exact": "Exact — the drawer matches the books.",
+    "over": "{amount} over",
+    "short": "{amount} short",
+    "amountInvalid": "Enter a whole number of Toman.",
+    "saveError": "Couldn't save. Please try again.",
+    "historyHeading": "Past shifts",
+    "historyEmpty": "No closed shifts yet.",
+    "by": "Opened by {opened}, closed by {closed}",
+    "expectedCounted": "Expected {expected} · counted {counted}"
+  },
+  "dashKitchen": {
+    "heading": "Kitchen display",
+    "subtitle": "The live queue for the bar and the kitchen. Refreshes on its own.",
+    "stationLabel": "Station",
+    "station": {
+      "all": "Everything",
+      "bar": "Bar",
+      "kitchen": "Kitchen"
+    },
+    "lane": {
+      "new": "New",
+      "making": "Being made",
+      "ready": "Ready"
+    },
+    "laneEmpty": "Nothing here.",
+    "minutes": "{minutes} min"
   }
 }

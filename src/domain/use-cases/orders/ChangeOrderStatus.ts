@@ -2,9 +2,11 @@ import { singleChange, type ActivityActor } from "../../entities/ActivityEntry";
 import { canTransition, isGuestCancellable, type Order, type OrderStatus } from "../../entities/Order";
 import { InvalidOrderTransitionError } from "../../errors/InvalidOrderTransitionError";
 import { NotFoundError } from "../../errors/NotFoundError";
+import { orderStatusNotification } from "../notifications/guestNotifications";
 
 import { statusPostings } from "./orderLedger";
 
+import type { ICustomerNotifier } from "../../repositories/INotificationRepository";
 import type { IOrderRepository } from "../../repositories/IOrderRepository";
 
 /**
@@ -16,14 +18,18 @@ import type { IOrderRepository } from "../../repositories/IOrderRepository";
  * made by someone else in the meantime fails rather than being overwritten.
  */
 export class ChangeOrderStatus {
-  constructor(private readonly orderRepo: IOrderRepository) {}
+  constructor(
+    private readonly orderRepo: IOrderRepository,
+    /** Tells the guest their order moved (accepted, ready, done, cancelled). */
+    private readonly notifier?: ICustomerNotifier,
+  ) {}
 
   async execute(orderId: string, to: OrderStatus, actor: ActivityActor): Promise<Order> {
     const order = await this.orderRepo.getById(orderId);
     if (!order) throw new NotFoundError("order", orderId);
     if (!canTransition(order.status, to)) throw new InvalidOrderTransitionError(order.status, to);
 
-    return this.orderRepo.transition(
+    const saved = await this.orderRepo.transition(
       orderId,
       order.status,
       to,
@@ -39,6 +45,10 @@ export class ChangeOrderStatus {
       }),
       statusPostings(actor),
     );
+
+    const notification = orderStatusNotification(saved);
+    if (notification && this.notifier) await this.notifier.notify(notification);
+    return saved;
   }
 }
 

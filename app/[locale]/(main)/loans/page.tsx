@@ -6,6 +6,6 @@ export const dynamic = "force-dynamic";
 
 export default async function MyBookLoansPage() {
   await requireAuth();
-  const loans = await storefrontServerApi.myBookLoans();
-  return <MyBookLoansScreen loans={loans} now={new Date().toISOString()} />;
+  const [loans, waitlist] = await Promise.all([storefrontServerApi.myBookLoans(), storefrontServerApi.myBookWaitlist()]);
+  return <MyBookLoansScreen loans={loans} waitlist={waitlist} now={new Date().toISOString()} />;
 }

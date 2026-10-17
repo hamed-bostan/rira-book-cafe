@@ -29,25 +29,38 @@ function optionalText(max: number) {
     .transform((value) => (value ? value : undefined));
 }
 
+/** Longest promo code accepted as typed (codes themselves are 3–20 characters). */
+const MAX_PROMO_INPUT_LENGTH = 30;
+
+const orderLines = z
+  .array(
+    z.object({
+      productId: z.string().min(1, "productRequired"),
+      quantity: z.number().int("quantityWhole").min(1, "quantityMin").max(MAX_LINE_QUANTITY, "quantityMax"),
+      note: optionalText(MAX_ORDER_NOTE_TEXT_LENGTH),
+    }),
+  )
+  .min(1, "itemsRequired")
+  .max(MAX_ORDER_LINES, "itemsTooMany");
+
+/** The discounts a guest asks for: a promo code as typed, and whether to spend points. */
+const discountFields = {
+  promoCode: optionalText(MAX_PROMO_INPUT_LENGTH),
+  redeemPoints: z.boolean().optional(),
+};
+
 /**
  * Placing an order. Only *which* items and how many — prices and names come from
- * the menu on the server. A dine-in order must name its table.
+ * the menu on the server, and so do the discounts. A dine-in order must name its
+ * table.
  */
 export const placeOrderSchema = z
   .object({
-    items: z
-      .array(
-        z.object({
-          productId: z.string().min(1, "productRequired"),
-          quantity: z.number().int("quantityWhole").min(1, "quantityMin").max(MAX_LINE_QUANTITY, "quantityMax"),
-          note: optionalText(MAX_ORDER_NOTE_TEXT_LENGTH),
-        }),
-      )
-      .min(1, "itemsRequired")
-      .max(MAX_ORDER_LINES, "itemsTooMany"),
+    items: orderLines,
     serviceType: z.enum(SERVICE_TYPES, { message: "serviceTypeInvalid" }),
     tableLabel: optionalText(MAX_TABLE_LABEL_LENGTH),
     note: optionalText(MAX_ORDER_NOTE_TEXT_LENGTH),
+    ...discountFields,
   })
   .refine((data) => data.serviceType !== "dineIn" || data.tableLabel !== undefined, {
     path: ["tableLabel"],
@@ -55,6 +68,11 @@ export const placeOrderSchema = z
   });
 
 export type PlaceOrderInput = z.input<typeof placeOrderSchema>;
+
+/** Previewing the basket's total with a promo code and/or points. */
+export const quoteOrderSchema = z.object({ items: orderLines, ...discountFields });
+
+export type QuoteOrderInput = z.input<typeof quoteOrderSchema>;
 
 /** Staff moving an order along the workflow. The current status is read server-side. */
 export const orderStatusChangeSchema = z.object({

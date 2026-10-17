@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { reservationUpdateSchema } from "@/src/contracts/reservation-schema";
 import { ChangeReservation } from "@/src/domain/use-cases/reservations/ChangeReservation";
-import { reservationRepository } from "@/src/infrastructure/container";
+import { customerNotifier, reservationRepository } from "@/src/infrastructure/container";
 import {
   errorResponse,
   errorResponseFromException,
@@ -37,7 +37,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext): Pro
   }
 
   try {
-    const reservation = await new ChangeReservation(reservationRepository).execute(id, parsed.data, {
+    const reservation = await new ChangeReservation(reservationRepository, customerNotifier).execute(id, parsed.data, {
       id: session.user.id,
       name: session.user.name ?? session.user.id,
     });

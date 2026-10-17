@@ -38,6 +38,7 @@ import { inTransaction, type PrismaDb } from "@/src/infrastructure/prisma/transa
 
 import { recordAudit } from "./writeActivityEntry";
 import { postHook } from "./writeJournal";
+import { earnPoints, redeemPoints, refundPoints } from "./writeLoyalty";
 import { consumeStockForOrder } from "./writeStock";
 
 /** Every read loads the lines with the order, in the order the guest listed them. */
@@ -77,6 +78,10 @@ export class PrismaOrderRepository implements IOrderRepository {
       // Throwing aborts the transaction, so decrements already applied roll back.
       if (shortfalls.length > 0) throw new InsufficientStockError(shortfalls);
 
+      // The code's limits are re-checked here, under its lock: the use-case priced the
+      // order, but two guests racing for the last use must not both get it.
+      if (input.promoCodeId) await claimPromoUse(tx, input.promoCodeId, input.userId);
+
       const created = await tx.order.create({
         data: {
           userId: input.userId,
@@ -86,6 +91,11 @@ export class PrismaOrderRepository implements IOrderRepository {
           tableLabel: input.tableLabel ?? null,
           note: input.note ?? null,
           subtotal: input.subtotal,
+          promoCodeId: input.promoCodeId ?? null,
+          promoCode: input.promoCode ?? null,
+          promoDiscount: input.promoDiscount,
+          pointsRedeemed: input.pointsRedeemed,
+          pointsDiscount: input.pointsDiscount,
           total: input.total,
           items: {
             create: input.items.map((item, position) => ({
@@ -104,6 +114,9 @@ export class PrismaOrderRepository implements IOrderRepository {
         },
         include: WITH_ITEMS,
       });
+
+      // Points spent come off the guest's balance with the order, or not at all.
+      await redeemPoints(tx, created, input.pointsRedeemed);
 
       await tx.orderStatusEvent.create({
         data: {
@@ -192,6 +205,11 @@ export class PrismaOrderRepository implements IOrderRepository {
       }
 
       const row = await tx.order.findUniqueOrThrow({ where: { id }, include: WITH_ITEMS });
+
+      // The loyalty club: a completed order earns points on what was paid; a cancelled
+      // one gives back the points it spent.
+      if (to === "completed") row.pointsEarned = (await earnPoints(tx, row)) || row.pointsEarned;
+      if (to === "cancelled") await refundPoints(tx, row);
 
       // A cancelled order's units go back on the shelf, in the same transaction.
       if (to === "cancelled") {
@@ -290,6 +308,24 @@ function mergeLines<T extends { productId: string; name: string; quantity: numbe
   return [...byProduct.values()].sort((a, b) => a.productId.localeCompare(b.productId));
 }
 
+/**
+ * Take one use of a promo code for this guest, refusing it when the code's overall
+ * or per-guest limit is already reached by live (not cancelled) orders. Serialized
+ * per code, so the count can't race.
+ */
+async function claimPromoUse(tx: Prisma.TransactionClient, promoCodeId: string, userId: string): Promise<void> {
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`promo:${promoCodeId}`}))`;
+  const promo = await tx.promoCode.findUnique({ where: { id: promoCodeId }, select: { isActive: true, usageLimit: true, perGuestLimit: true } });
+  if (!promo?.isActive) throw new ConflictError("PROMO_INVALID", "That promo code is no longer active.");
+  const live = { promoCodeId, status: { not: "cancelled" } } satisfies Prisma.OrderWhereInput;
+  if (promo.usageLimit !== null && (await tx.order.count({ where: live })) >= promo.usageLimit) {
+    throw new ConflictError("PROMO_USED_UP", "That promo code has been used up.");
+  }
+  if (promo.perGuestLimit !== null && (await tx.order.count({ where: { ...live, userId } })) >= promo.perGuestLimit) {
+    throw new ConflictError("PROMO_USED_UP", "You've already used that promo code.");
+  }
+}
+
 /** `WHERE` for the dashboard list. An empty filter matches every order. */
 function adminWhere(filters: AdminOrderFilters): Prisma.OrderWhereInput {
   const and: Prisma.OrderWhereInput[] = [];
@@ -366,6 +402,12 @@ function toOrder(row: OrderRow): Order {
       }),
     ),
     subtotal: row.subtotal,
+    promoCode: row.promoCode ?? undefined,
+    promoCodeId: row.promoCodeId ?? undefined,
+    promoDiscount: row.promoDiscount,
+    pointsRedeemed: row.pointsRedeemed,
+    pointsDiscount: row.pointsDiscount,
+    pointsEarned: row.pointsEarned,
     total: row.total,
     placedAt: row.placedAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),

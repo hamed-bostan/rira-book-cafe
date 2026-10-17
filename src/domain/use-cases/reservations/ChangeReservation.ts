@@ -9,7 +9,9 @@ import {
 import { ConflictError } from "../../errors/ConflictError";
 import { NotFoundError } from "../../errors/NotFoundError";
 import { ValidationError } from "../../errors/ValidationError";
+import { reservationNotification } from "../notifications/guestNotifications";
 
+import type { ICustomerNotifier } from "../../repositories/INotificationRepository";
 import type { IReservationRepository } from "../../repositories/IReservationRepository";
 
 export type ReservationUpdate = {
@@ -26,7 +28,11 @@ export type ReservationUpdate = {
  * overlapping booking already holds.
  */
 export class ChangeReservation {
-  constructor(private readonly reservationRepo: IReservationRepository) {}
+  constructor(
+    private readonly reservationRepo: IReservationRepository,
+    /** Tells the guest their table was confirmed or cancelled. */
+    private readonly notifier?: ICustomerNotifier,
+  ) {}
 
   async execute(id: string, update: ReservationUpdate, actor: ActivityActor): Promise<Reservation> {
     const current = await this.reservationRepo.getById(id);
@@ -48,7 +54,7 @@ export class ChangeReservation {
     }
     if (status === current.status && tableLabel === (current.tableLabel ?? null)) return current;
 
-    return this.reservationRepo.applyChange(id, current.status, { status, tableLabel }, actor, (saved) => {
+    const saved = await this.reservationRepo.applyChange(id, current.status, { status, tableLabel }, actor, (saved) => {
       const changes: ActivityChange[] = [];
       if (saved.status !== current.status) {
         changes.push({ field: "status", before: current.status, after: saved.status });
@@ -66,6 +72,12 @@ export class ChangeReservation {
         changes,
       };
     });
+
+    if (saved.status !== current.status && this.notifier) {
+      const notification = reservationNotification(saved);
+      if (notification) await this.notifier.notify(notification);
+    }
+    return saved;
   }
 }
 

@@ -2,18 +2,32 @@ import { ChevronLeft, ShoppingBag } from "lucide-react";
 import Image from "next/image";
 import { getLocale, getTranslations } from "next-intl/server";
 
+import type { BookWaitlistStatus } from "@/src/domain/entities/BookWaitlist";
 import { isSellable, type Product } from "@/src/domain/entities/Product";
+import type { PublicReview, ReviewEligibility } from "@/src/domain/entities/ProductReview";
 import { Link } from "@/src/i18n/navigation";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { Badge, Icon } from "@/src/presentation/design-system";
 
 import { AddToBasketForm } from "./AddToBasketForm";
+import { BookWaitlistPanel } from "./BookWaitlistPanel";
+import { ProductReviews } from "./ProductReviews";
+
+type MenuItemScreenProps = {
+  item: Product;
+  reviews: PublicReview[];
+  /** The signed-in guest's review standing; `null` when signed out. */
+  reviewEligibility: ReviewEligibility | null;
+  /** For books: the lending line. `null` for drinks and food. */
+  waitlist: BookWaitlistStatus | null;
+  signedIn: boolean;
+};
 
 /**
  * One item's page: photo, price, the copy staff wrote (description, nutrition,
- * origin), book details for books, and the add-to-basket form.
+ * origin), book details for books, the add-to-basket form, and what guests thought.
  */
-export async function MenuItemScreen({ item }: { item: Product }) {
+export async function MenuItemScreen({ item, reviews, reviewEligibility, waitlist, signedIn }: MenuItemScreenProps) {
   const t = await getTranslations("site");
   const tProducts = await getTranslations("dashProducts");
   const tDietary = await getTranslations("dietary");
@@ -62,6 +76,8 @@ export async function MenuItemScreen({ item }: { item: Product }) {
             </p>
           ) : null}
 
+          {waitlist ? <BookWaitlistPanel productId={item.id} status={waitlist} signedIn={signedIn} /> : null}
+
           {!sellable ? null : soldOut ? (
             <p className="rounded-card-md border border-border px-4 py-3 text-body-small text-muted-foreground">{t("menu.soldOutLong")}</p>
           ) : (
@@ -93,6 +109,14 @@ export async function MenuItemScreen({ item }: { item: Product }) {
           ) : null}
         </div>
       </div>
+
+      <ProductReviews
+        productId={item.id}
+        rating={item.rating}
+        ratingCount={item.ratingCount}
+        reviews={reviews}
+        eligibility={reviewEligibility}
+      />
     </div>
   );
 }

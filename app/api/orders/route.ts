@@ -4,7 +4,7 @@ import { placeOrderSchema } from "@/src/contracts/order-schema";
 import { withoutCosts } from "@/src/domain/entities/Order";
 import { ListOwnOrders } from "@/src/domain/use-cases/orders/OrderQueries";
 import { PlaceOrder } from "@/src/domain/use-cases/orders/PlaceOrder";
-import { orderRepository, productRepository, userRepository } from "@/src/infrastructure/container";
+import { checkoutPricing, orderRepository, productRepository, userRepository } from "@/src/infrastructure/container";
 import {
   errorResponse,
   errorResponseFromException,
@@ -34,7 +34,9 @@ export async function GET(): Promise<NextResponse> {
  * POST /api/orders — place an order as the signed-in guest. 201 with the order.
  *
  * Thin controller: authenticate → validate (shared Zod contract) → delegate to
- * `PlaceOrder`, which prices every line from the menu. 409 when an item sold out.
+ * `PlaceOrder`, which prices every line from the menu and applies any promo code
+ * and points. 409 when an item sold out, the code can't be used, or the points
+ * aren't there.
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const session = await getUserSession();
@@ -57,7 +59,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const guest = await userRepository.getById(session.user.id);
     if (!guest) return unauthorizedResponse();
 
-    const order = await new PlaceOrder(orderRepository, productRepository).execute(parsed.data, guest);
+    const order = await new PlaceOrder(orderRepository, productRepository, checkoutPricing).execute(parsed.data, guest);
     return NextResponse.json(withoutCosts(order), { status: 201 });
   } catch (error) {
     return errorResponseFromException(error, "POST /api/orders failed");

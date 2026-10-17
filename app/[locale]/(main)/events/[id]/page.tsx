@@ -2,7 +2,10 @@ import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { auth } from "@/auth";
+import { cafeIdentity } from "@/src/presentation/seo/cafeIdentity";
+import { JsonLd } from "@/src/presentation/seo/JsonLd";
 import { pageMetadata } from "@/src/presentation/seo/pageMetadata";
+import { eventJsonLd } from "@/src/presentation/seo/structuredData";
 import { eventDescription, eventTitle } from "@/src/presentation/storefront/eventCopy";
 import { EventDetailScreen } from "@/src/presentation/storefront/events/EventDetailScreen";
 import { storefrontServerApi } from "@/src/presentation/storefront/storefront-server-api";
@@ -36,13 +39,29 @@ export default async function EventPage({ params }: EventPageProps) {
   const session = await auth();
   const signedIn = Boolean(session?.user);
 
-  const [event, registrations] = await Promise.all([
+  const [event, registrations, cafe, locale] = await Promise.all([
     storefrontServerApi.event(id),
     signedIn ? storefrontServerApi.myRegistrations() : Promise.resolve([]),
+    cafeIdentity(),
+    getLocale(),
   ]);
   if (!event) notFound();
 
   const registration = registrations.find((r) => r.eventId === event.id && r.status === "registered");
 
-  return <EventDetailScreen event={event} signedIn={signedIn} registration={registration} now={new Date().toISOString()} />;
+  return (
+    <>
+      <JsonLd
+        data={eventJsonLd({
+          event,
+          title: eventTitle(event, locale),
+          description: eventDescription(event, locale),
+          url: new URL(`/events/${event.id}`, cafe.url).toString(),
+          image: event.imageUrl ? new URL(event.imageUrl, cafe.url).toString() : undefined,
+          cafe,
+        })}
+      />
+      <EventDetailScreen event={event} signedIn={signedIn} registration={registration} now={new Date().toISOString()} />
+    </>
+  );
 }

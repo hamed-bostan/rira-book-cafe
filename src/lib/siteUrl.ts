@@ -12,8 +12,3 @@ export async function getSiteUrl(): Promise<URL> {
   const configured = process.env.NEXT_PUBLIC_SITE_URL;
   return new URL(configured ? configured : await getAppUrl());
 }
-
-/** An app path (`/menu/abc`) as an absolute URL on the public origin. */
-export async function absoluteUrl(path: string): Promise<string> {
-  return new URL(path, await getSiteUrl()).toString();
-}

@@ -1,7 +1,10 @@
 import { notFound } from "next/navigation";
 
 import { auth } from "@/auth";
+import { getSiteUrl } from "@/src/lib/siteUrl";
+import { JsonLd } from "@/src/presentation/seo/JsonLd";
 import { pageMetadata } from "@/src/presentation/seo/pageMetadata";
+import { productJsonLd } from "@/src/presentation/seo/structuredData";
 import { MenuItemScreen } from "@/src/presentation/storefront/menu/MenuItemScreen";
 import { storefrontServerApi } from "@/src/presentation/storefront/storefront-server-api";
 
@@ -33,12 +36,22 @@ export default async function MenuItemPage({ params }: MenuItemPageProps) {
   const [item, reviews, session] = await Promise.all([storefrontServerApi.item(id), storefrontServerApi.productReviews(id), auth()]);
   if (!item) notFound();
   const signedIn = Boolean(session?.user);
-  const [reviewEligibility, waitlist] = await Promise.all([
+  const [reviewEligibility, waitlist, siteUrl] = await Promise.all([
     signedIn ? storefrontServerApi.myReviewEligibility(id) : null,
     item.kind === "book" ? storefrontServerApi.bookWaitlist(id) : null,
+    getSiteUrl(),
   ]);
 
   return (
-    <MenuItemScreen item={item} reviews={reviews} reviewEligibility={reviewEligibility} waitlist={waitlist} signedIn={signedIn} />
+    <>
+      <JsonLd
+        data={productJsonLd({
+          product: item,
+          url: new URL(`/menu/${item.id}`, siteUrl).toString(),
+          image: new URL(item.imageUrl, siteUrl).toString(),
+        })}
+      />
+      <MenuItemScreen item={item} reviews={reviews} reviewEligibility={reviewEligibility} waitlist={waitlist} signedIn={signedIn} />
+    </>
   );
 }

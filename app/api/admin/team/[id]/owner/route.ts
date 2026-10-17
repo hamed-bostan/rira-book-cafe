@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { TransferOwnership } from "@/src/domain/use-cases/team/TransferOwnership";
 import { teamNotifier, userRepository } from "@/src/infrastructure/container";
+import { enforceRateLimit, RATE_LIMITS } from "@/src/lib/api/rate-limit";
 import { errorResponseFromException, unauthorizedResponse } from "@/src/lib/api/responses";
 import { getAppUrl } from "@/src/lib/appUrl";
 import { getOwnerSession } from "@/src/lib/require-admin";
@@ -20,9 +21,12 @@ type RouteContext = { params: Promise<{ id: string }> };
  * is, which is what lets "the owner can't be removed" be a safe rule rather than
  * a trap.
  */
-export async function PUT(_request: Request, { params }: RouteContext): Promise<NextResponse> {
+export async function PUT(request: Request, { params }: RouteContext): Promise<NextResponse> {
   const session = await getOwnerSession();
   if (!session) return unauthorizedResponse();
+
+  const limited = await enforceRateLimit(request, RATE_LIMITS.teamNotice, session.user.id);
+  if (limited) return limited;
 
   const { id } = await params;
 

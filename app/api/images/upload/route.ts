@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { UploadImage } from "@/src/domain/use-cases/images/UploadImage";
 import { imageStorageRepository } from "@/src/infrastructure/container";
+import { enforceRateLimit, RATE_LIMITS } from "@/src/lib/api/rate-limit";
 import { errorResponse, unauthorizedResponse } from "@/src/lib/api/responses";
 import { AVATAR_IMAGE_FOLDER, MANAGED_IMAGE_FOLDERS } from "@/src/lib/imageFolders";
 import { getUserSession } from "@/src/lib/require-auth";
@@ -29,6 +30,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     getUserSession(),
   ]);
   if (!catalogSession && !eventsSession && !userSession) return unauthorizedResponse();
+
+  const limited = await enforceRateLimit(request, RATE_LIMITS.imageUpload, userSession?.user.id);
+  if (limited) return limited;
 
   let formData: FormData;
   try {

@@ -21,6 +21,7 @@ import type { IPaymentGateway } from "@/src/domain/repositories/IPaymentGateway"
 import type { IPricingRepository } from "@/src/domain/repositories/IPricingRepository";
 import type { IProductRepository } from "@/src/domain/repositories/IProductRepository";
 import type { IPromotionRepository } from "@/src/domain/repositories/IPromotionRepository";
+import type { IRateLimiter } from "@/src/domain/repositories/IRateLimiter";
 import type { IReservationRepository } from "@/src/domain/repositories/IReservationRepository";
 import type { IReviewRepository } from "@/src/domain/repositories/IReviewRepository";
 import type { ISuiteBookingRepository } from "@/src/domain/repositories/ISuiteBookingRepository";
@@ -33,6 +34,7 @@ import { SmtpEmailSender } from "./email/SmtpEmailSender";
 import { CustomerNotifier } from "./notifications/CustomerNotifier";
 import { TeamNotifier } from "./notifications/TeamNotifier";
 import { ZarinpalPaymentGateway } from "./payments/ZarinpalPaymentGateway";
+import { InMemoryRateLimiter } from "./rate-limit/InMemoryRateLimiter";
 import { LocalDiskImageStorageRepository } from "./repositories/LocalDiskImageStorageRepository";
 import { MockAuthRepository } from "./repositories/mock/MockAuthRepository";
 import { PrismaActivityLog } from "./repositories/PrismaActivityLog";
@@ -165,6 +167,13 @@ export const authRepository: IAuthRepository =
         baseUrl: process.env.SMS_IR_BASE_URL,
       })
     : new MockAuthRepository();
+
+// Rate limiting for sign-in, orders, uploads and team notices — counted in this
+// process's memory, which is exact while the app runs as one container. Anchored
+// to `globalThis` (like the OTP store) so dev re-evaluation doesn't reset counts.
+// Scaling out means binding a shared-store (Redis) `IRateLimiter` here instead.
+const rateLimiterRegistry = globalThis as typeof globalThis & { __rateLimiter?: IRateLimiter };
+export const rateLimiter: IRateLimiter = (rateLimiterRegistry.__rateLimiter ??= new InMemoryRateLimiter());
 
 /** Read a numeric env var, returning `undefined` when unset or not a number. */
 function numericEnv(name: string): number | undefined {

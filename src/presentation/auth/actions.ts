@@ -1,13 +1,34 @@
 "use server";
 
+import { headers } from "next/headers";
 import { AuthError } from "next-auth";
 
 import { signIn, signOut } from "@/auth";
+import { normalizePhone } from "@/src/domain/entities/Phone";
 import { RequestOtp } from "@/src/domain/use-cases/auth/RequestOtp";
 import { authRepository } from "@/src/infrastructure/container";
+import { checkRateLimit, RATE_LIMITS, type RateLimitPolicy } from "@/src/lib/api/rate-limit";
+import { clientIp } from "@/src/lib/security/client-ip";
+
+const TOO_MANY_ATTEMPTS = "Too many attempts. Please wait a few minutes and try again.";
+
+/**
+ * Count a sign-in attempt per caller IP and per phone; true when it's over the
+ * limit. Per phone so a code can't be brute-forced (or a number SMS-bombed) by
+ * spreading attempts across addresses.
+ */
+async function isRateLimited(policy: RateLimitPolicy, phone: string): Promise<boolean> {
+  const decision = await checkRateLimit(policy, {
+    ip: clientIp(await headers()),
+    subject: normalizePhone(phone) || null,
+  });
+  return !decision.allowed;
+}
 
 /** Sends a one-time code to the phone. */
 export async function requestOtp(phone: string) {
+  if (await isRateLimited(RATE_LIMITS.otpRequest, phone)) return { error: TOO_MANY_ATTEMPTS };
+
   const sent = await new RequestOtp(authRepository).execute(phone);
   // `false` covers both an invalid number and an SMS-provider failure.
   return sent ? { ok: true as const } : { error: "Couldn't send the code. Check the number and try again." };
@@ -32,6 +53,10 @@ export async function verifyOtp(input: { phone: string; code: string; callbackUr
   // Only allow relative same-origin paths (guards against open-redirect).
   const target = input.callbackUrl;
   const redirectTo = target && target.startsWith("/") && !target.startsWith("//") ? target : "/";
+
+  if (await isRateLimited(RATE_LIMITS.otpVerify, input.phone)) {
+    return { error: TOO_MANY_ATTEMPTS, rateLimited: true };
+  }
 
   try {
     await signIn("credentials", { phone: input.phone, code: input.code, redirectTo });

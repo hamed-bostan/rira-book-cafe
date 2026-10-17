@@ -16,6 +16,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   // proxied Host/X-Forwarded-Host, or it raises an `UntrustedHost` configuration
   // error ("There was a problem with the server configuration") on auth flows.
   trustHost: true,
+  // Cookies keep Auth.js's defaults on purpose: HttpOnly + SameSite=Lax always,
+  // and Secure (with the `__Secure-`/`__Host-` name prefixes) whenever the public
+  // URL is HTTPS — detected from nginx's X-Forwarded-Proto. Not forced on: while
+  // the site is served over plain HTTP a Secure cookie would never be sent back,
+  // and sign-in would silently fail. Cross-site API writes are also refused by the
+  // Origin check in `proxy.ts`.
   providers: [
     Credentials({
       credentials: {

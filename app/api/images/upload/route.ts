@@ -1,15 +1,20 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { UploadImage } from "@/src/domain/use-cases/images/UploadImage";
+import { ValidationError } from "@/src/domain/errors/ValidationError";
+import { MAX_IMAGE_BYTES, UploadImage } from "@/src/domain/use-cases/images/UploadImage";
 import { imageStorageRepository } from "@/src/infrastructure/container";
 import { enforceRateLimit, RATE_LIMITS } from "@/src/lib/api/rate-limit";
-import { errorResponse, unauthorizedResponse } from "@/src/lib/api/responses";
+import { readBodyWithLimit } from "@/src/lib/api/read-body";
+import { errorResponse, errorResponseFromException, unauthorizedResponse } from "@/src/lib/api/responses";
 import { AVATAR_IMAGE_FOLDER, MANAGED_IMAGE_FOLDERS } from "@/src/lib/imageFolders";
 import { getUserSession } from "@/src/lib/require-auth";
 import { getSessionWith } from "@/src/lib/require-permission";
 
 const ADMIN_FOLDERS = new Set<string>(MANAGED_IMAGE_FOLDERS);
 const ALLOWED_FOLDERS = new Set<string>([...MANAGED_IMAGE_FOLDERS, AVATAR_IMAGE_FOLDER]);
+
+/** The image limit plus room for the multipart envelope (boundaries, part headers, `folder`). */
+const MAX_BODY_BYTES = MAX_IMAGE_BYTES + 64 * 1024;
 
 /**
  * Image upload endpoint: `POST /api/images/upload` with `multipart/form-data`
@@ -34,9 +39,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const limited = await enforceRateLimit(request, RATE_LIMITS.imageUpload, userSession?.user.id);
   if (limited) return limited;
 
+  // Cap the body *before* buffering it: `request.formData()` alone would read an
+  // arbitrarily large upload into memory first.
+  const body = await readBodyWithLimit(request, MAX_BODY_BYTES);
+  if (!body.ok) {
+    return body.reason === "too-large"
+      ? errorResponse(413, { message: "The image is larger than 5 MB.", code: "PAYLOAD_TOO_LARGE" })
+      : errorResponse(400, { message: "Expected multipart/form-data.", code: "BAD_REQUEST" });
+  }
+
   let formData: FormData;
   try {
-    formData = await request.formData();
+    formData = await new Response(body.bytes, {
+      headers: { "content-type": request.headers.get("content-type") ?? "" },
+    }).formData();
   } catch {
     return errorResponse(400, { message: "Expected multipart/form-data.", code: "BAD_REQUEST" });
   }
@@ -67,6 +83,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     return NextResponse.json({ image }, { status: 201 });
   } catch (error) {
+    // Empty, oversized or not an image — the client's fault, answered 400.
+    if (error instanceof ValidationError) return errorResponseFromException(error, "Image upload rejected");
     console.error("Image upload failed:", error);
     return errorResponse(502, { message: "Image upload failed. Please try again.", code: "UPLOAD_FAILED" });
   }

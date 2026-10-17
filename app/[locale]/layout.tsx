@@ -8,6 +8,7 @@ import { getLangDir } from "@/src/i18n/direction";
 import { routing } from "@/src/i18n/routing";
 import { getSiteUrl } from "@/src/lib/siteUrl";
 import { DirectionProvider } from "@/src/presentation/components/DirectionProvider";
+import { defaultShareImage } from "@/src/presentation/seo/shareImage";
 
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
@@ -62,7 +63,9 @@ export async function generateMetadata({
       description: t("description"),
       locale: isFa ? "fa_IR" : "en_US",
       alternateLocale: isFa ? "en_US" : "fa_IR",
+      images: [defaultShareImage(locale, t("siteName"))],
     },
+    twitter: { card: "summary_large_image" },
   };
 }
 

@@ -19,7 +19,12 @@ export async function generateMetadata({ params }: MenuItemPageProps): Promise<M
   const item = await storefrontServerApi.item(id);
   if (!item) return {};
 
-  return pageMetadata({ title: item.name, description: item.description, path: `/menu/${item.id}` });
+  return pageMetadata({
+    title: item.name,
+    description: item.description,
+    path: `/menu/${item.id}`,
+    image: item.imageUrl ? { url: item.imageUrl, alt: item.name } : undefined,
+  });
 }
 
 /** One published item; an unpublished or deleted one is the not-found page. */

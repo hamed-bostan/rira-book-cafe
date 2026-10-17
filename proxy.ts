@@ -28,6 +28,8 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // App routes only — skip Next internals, API routes, and any file with an extension.
-  matcher: ["/((?!api|_next|_vercel|.*\\..*).*)"],
+  // App routes only — skip Next internals, API routes, the generated share card
+  // (`/<locale>/opengraph-image`, a static metadata route the locale redirect would
+  // otherwise bounce), and any file with an extension.
+  matcher: ["/((?!api|_next|_vercel|[^/]+/opengraph-image|.*\\..*).*)"],
 };

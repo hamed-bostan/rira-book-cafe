@@ -2,6 +2,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 
 import type { Locale } from "@/src/i18n/routing";
 
+import { defaultShareImage, type ShareImage } from "./shareImage";
 import { toSnippet } from "./toSnippet";
 
 import type { Metadata } from "next";
@@ -16,6 +17,8 @@ type PageMetadataInput = {
   description?: string;
   /** The page's canonical path (`/menu/abc`), resolved against `metadataBase`. */
   path: string;
+  /** The share-card image (an item's or event's photo); defaults to the generated brand card. */
+  image?: ShareImage;
 };
 
 /**
@@ -27,7 +30,7 @@ type PageMetadataInput = {
  * `openGraph` is rebuilt in full on every page because Next merges metadata
  * shallowly: a page's `openGraph` replaces the layout's rather than extending it.
  */
-export async function pageMetadata({ title, description, path }: PageMetadataInput): Promise<Metadata> {
+export async function pageMetadata({ title, description, path, image }: PageMetadataInput): Promise<Metadata> {
   const locale = await getLocale();
   const t = await getTranslations("meta");
   const snippet = toSnippet(description ?? t("description"));
@@ -46,6 +49,9 @@ export async function pageMetadata({ title, description, path }: PageMetadataInp
       alternateLocale: Object.entries(OG_LOCALES)
         .filter(([other]) => other !== locale)
         .map(([, tag]) => tag),
+      images: [image ?? defaultShareImage(locale, t("siteName"))],
     },
+    // Title, description and image are inherited from `openGraph`.
+    twitter: { card: "summary_large_image" },
   };
 }

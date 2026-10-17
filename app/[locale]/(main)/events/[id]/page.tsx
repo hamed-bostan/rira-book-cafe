@@ -21,10 +21,12 @@ export async function generateMetadata({ params }: EventPageProps): Promise<Meta
   const [event, locale, t] = await Promise.all([storefrontServerApi.event(id), getLocale(), getTranslations("site")]);
   if (!event) return {};
 
+  const title = eventTitle(event, locale);
   return pageMetadata({
-    title: eventTitle(event, locale),
+    title,
     description: eventDescription(event, locale) ?? t("events.subtitle"),
     path: `/events/${event.id}`,
+    image: event.imageUrl ? { url: event.imageUrl, alt: title } : undefined,
   });
 }
 

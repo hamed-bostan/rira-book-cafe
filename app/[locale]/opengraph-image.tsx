@@ -1,21 +1,25 @@
 import { ImageResponse } from "next/og";
 
+import { routing } from "@/src/i18n/routing";
 import { neutral, primary } from "@/src/presentation/design-system/tokens/primitives/colors";
 
 /**
  * The site's default share card (1200×630), used by every page without a photo of
  * its own — menu items and events share their own image instead (see
  * `src/presentation/seo/pageMetadata.ts`). It takes no request data, so it's
- * prerendered at build time (one per locale segment, from the layout's static
- * params) and served as a static PNG. It lives under `[locale]` so it resolves
- * against the layout's `metadataBase`, and `proxy.ts` lets `/<locale>/opengraph-image`
- * through without the locale redirect. The copy is Latin-only — the renderer doesn't
- * shape right-to-left scripts — so the built-in font covers it and no font file has
- * to ship with the server.
+ * prerendered at build time, one per locale, and served as a static PNG. It lives
+ * under `[locale]` so it resolves against the layout's `metadataBase`, and `proxy.ts`
+ * lets `/<locale>/opengraph-image` through without the locale redirect. The copy is
+ * Latin-only — the renderer doesn't shape right-to-left scripts — so the built-in
+ * font covers it and no font file has to ship with the server.
  */
 export const alt = "Rira Book Cafe — coffee, food and books";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
+
+export function generateStaticParams(): { locale: string }[] {
+  return routing.locales.map((locale) => ({ locale }));
+}
 
 export default function OpengraphImage(): ImageResponse {
   return new ImageResponse(

@@ -44,7 +44,7 @@ export async function MenuItemScreen({ item, reviews, reviewEligibility, waitlis
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <div className="relative aspect-square overflow-hidden rounded-card-lg bg-muted">
-          <Image src={item.imageUrl} alt={item.name} fill sizes="(min-width: 768px) 50vw, 100vw" className="object-cover" priority />
+          <Image src={item.imageUrl} alt={item.name} fill sizes="(min-width: 1152px) 548px, (min-width: 768px) 50vw, 100vw" className="object-cover" preload />
         </div>
 
         <div className="flex flex-col gap-4">

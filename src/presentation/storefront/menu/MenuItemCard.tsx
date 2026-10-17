@@ -24,7 +24,7 @@ export async function MenuItemCard({ item }: { item: Product }) {
     <article className="flex flex-col overflow-hidden rounded-card-lg border border-border bg-background">
       <Link href={`/menu/${item.id}`} className={cn("block", focusRing)}>
         <div className="relative aspect-[4/3] bg-muted">
-          <Image src={item.imageUrl} alt="" fill sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw" className="object-cover" />
+          <Image src={item.imageUrl} alt="" fill sizes="(min-width: 1152px) 272px, (min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw" className="object-cover" />
           {item.badge ? (
             <span className="absolute start-2 top-2">
               <Badge variant="primary">{item.badge}</Badge>

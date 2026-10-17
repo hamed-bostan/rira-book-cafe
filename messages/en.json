@@ -41,7 +41,10 @@
     "confirmYes": "Yes",
     "close": "Close",
     "confirmKeep": "Keep",
-    "confirmWorking": "Working…"
+    "confirmWorking": "Working…",
+    "loading": "Loading…",
+    "notifications": "Notifications ({hotkey})",
+    "notification": "Notification"
   },
   "formErrors": {
     "alreadyTaken": "Already taken.",

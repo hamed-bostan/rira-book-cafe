@@ -7,6 +7,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { getLangDir } from "@/src/i18n/direction";
 import { routing } from "@/src/i18n/routing";
 import { DirectionProvider } from "@/src/presentation/components/DirectionProvider";
+import { Toaster } from "@/src/presentation/design-system";
 
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
@@ -94,7 +95,11 @@ export default async function LocaleLayout({
           {/* Reading direction for every Radix primitive (Radix reads this context,
               not the DOM `dir`), so RTL under `fa` flips roving focus + alignment
               app-wide — no per-component `dir` prop needed. */}
-          <DirectionProvider dir={getLangDir(locale)}>{children}</DirectionProvider>
+          <DirectionProvider dir={getLangDir(locale)}>
+            {/* Inside both providers: toasts are localized and swipe with the
+                reading direction. */}
+            <Toaster>{children}</Toaster>
+          </DirectionProvider>
         </NextIntlClientProvider>
       </body>
     </html>

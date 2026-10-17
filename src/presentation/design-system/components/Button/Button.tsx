@@ -102,6 +102,9 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       >
         {loading && (
           <Spinner
+            // The button's own `aria-busy` announces the wait; a second live
+            // region inside it would only repeat it.
+            decorative
             size="xs"
             className={cn(!iconOnly && React.Children.count(children) > 0 && "me-2")}
           />

@@ -1,11 +1,12 @@
 /**
  * Sample data for a local run: a small menu (drinks, food, books), a couple of
- * upcoming events, and — when SEED_OWNER_PHONE is set — an owner account.
+ * upcoming events, and — when an owner phone is given — an owner account.
  *
  * Idempotent: every row has a stable id or unique key and is upserted, so running
  * it again refreshes the samples (prices, dates) instead of duplicating them, and
- * leaves anything you added yourself alone. Run with `npm run db:seed`
- * (`prisma db seed`, which loads `.env`).
+ * leaves anything you added yourself alone. `scripts/seed.ts` is the CLI
+ * (`npm run db:seed`); the integration and E2E tests call `seedSampleData` to put
+ * a freshly reset test database back into the same known state.
  *
  * Images are the bundled SVGs under `public/images/seed`, so no upload storage is
  * needed to see the menu.
@@ -342,10 +343,10 @@ async function seedEvents(): Promise<void> {
   }
 }
 
-async function seedOwner(): Promise<string | null> {
-  const phone = process.env.SEED_OWNER_PHONE?.trim();
+async function seedOwner(ownerPhone: string | undefined): Promise<string | null> {
+  const phone = ownerPhone?.trim();
   if (!phone) return null;
-  if (!isPlausiblePhone(phone)) throw new Error(`SEED_OWNER_PHONE "${phone}" isn't a valid phone number.`);
+  if (!isPlausiblePhone(phone)) throw new Error(`Owner phone "${phone}" isn't a valid phone number.`);
   const id = normalizePhone(phone);
   // Keep any name the person already set; only make sure they own the dashboard.
   await prisma.user.upsert({
@@ -454,22 +455,14 @@ async function seedRecipes(): Promise<void> {
   }
 }
 
-async function main(): Promise<void> {
+export type SeedSummary = { categories: number; items: number; events: number; ownerId: string | null };
+
+/** Load (or refresh) the sample data; an `ownerPhone` also makes that phone the owner. */
+export async function seedSampleData(ownerPhone?: string): Promise<SeedSummary> {
   const categoryIds = await seedCategories();
   await seedItems(categoryIds);
   await seedRecipes();
   await seedEvents();
-  const owner = await seedOwner();
-
-  console.warn(
-    `Seeded ${CATEGORIES.length} categories, ${ITEMS.length} menu items and 2 events` +
-      (owner ? `; ${owner} is the owner.` : ". Set SEED_OWNER_PHONE to also create an owner."),
-  );
+  const ownerId = await seedOwner(ownerPhone);
+  return { categories: CATEGORIES.length, items: ITEMS.length, events: 2, ownerId };
 }
-
-main()
-  .catch((error: unknown) => {
-    console.error(error);
-    process.exitCode = 1;
-  })
-  .finally(() => prisma.$disconnect());

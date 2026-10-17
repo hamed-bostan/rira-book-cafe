@@ -6,9 +6,17 @@ import { Link } from "@/src/i18n/navigation";
 import { requireAuth } from "@/src/lib/require-auth";
 import { cn } from "@/src/lib/utils";
 import { Icon, focusRing } from "@/src/presentation/design-system";
+import { noIndexMetadata } from "@/src/presentation/seo/noIndexMetadata";
 import { BookTableForm } from "@/src/presentation/storefront/reservations/BookTableForm";
 
+import type { Metadata } from "next";
+
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("site");
+  return noIndexMetadata(t("book.heading"));
+}
 
 /** Ask for a table. Booking needs an account (staff see the guest's name and phone), so signed-out guests sign in first. */
 export default async function BookTablePage() {

@@ -1,14 +1,26 @@
 import { notFound } from "next/navigation";
 
 import { auth } from "@/auth";
+import { pageMetadata } from "@/src/presentation/seo/pageMetadata";
 import { MenuItemScreen } from "@/src/presentation/storefront/menu/MenuItemScreen";
 import { storefrontServerApi } from "@/src/presentation/storefront/storefront-server-api";
+
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
 
 type MenuItemPageProps = {
   params: Promise<{ id: string }>;
 };
+
+/** The item's own title and copy; the same request in the page body is memoized, not refetched. */
+export async function generateMetadata({ params }: MenuItemPageProps): Promise<Metadata> {
+  const { id } = await params;
+  const item = await storefrontServerApi.item(id);
+  if (!item) return {};
+
+  return pageMetadata({ title: item.name, description: item.description, path: `/menu/${item.id}` });
+}
 
 /** One published item; an unpublished or deleted one is the not-found page. */
 export default async function MenuItemPage({ params }: MenuItemPageProps) {

@@ -6,6 +6,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { getLangDir } from "@/src/i18n/direction";
 import { routing } from "@/src/i18n/routing";
+import { getSiteUrl } from "@/src/lib/siteUrl";
 import { DirectionProvider } from "@/src/presentation/components/DirectionProvider";
 
 import type { Metadata } from "next";
@@ -35,8 +36,9 @@ export function generateStaticParams(): { locale: string }[] {
  * description. Locale is negotiated per request from the `NEXT_LOCALE` cookie, so a page
  * lives at a single locale-agnostic URL (no per-locale paths → no `hreflang` alternates);
  * the served `<html lang>` and copy reflect the active locale. `openGraph.locale` still
- * advertises that language. URLs resolve against `metadataBase` (`NEXT_PUBLIC_SITE_URL`,
- * unset in dev → relative).
+ * advertises that language. Pages add their own canonical URL and Open Graph data
+ * (`src/presentation/seo/pageMetadata.ts`), resolved against `metadataBase` — the public
+ * origin from `getSiteUrl`.
  */
 export async function generateMetadata({
   params,
@@ -47,10 +49,9 @@ export async function generateMetadata({
   const locale = hasLocale(routing.locales, requested) ? requested : routing.defaultLocale;
   const t = await getTranslations({ locale, namespace: "meta" });
   const isFa = locale === "fa";
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
 
   return {
-    metadataBase: siteUrl ? new URL(siteUrl) : undefined,
+    metadataBase: await getSiteUrl(),
     title: { default: t("title"), template: t("titleTemplate") },
     description: t("description"),
     applicationName: t("siteName"),

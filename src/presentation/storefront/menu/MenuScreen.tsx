@@ -1,10 +1,11 @@
+import { Coffee, SearchX } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
 import type { Category } from "@/src/domain/entities/Category";
 import { PRODUCT_KINDS, type Product, type ProductKind } from "@/src/domain/entities/Product";
 import { Link } from "@/src/i18n/navigation";
 import { cn } from "@/src/lib/utils";
-import { focusRing } from "@/src/presentation/design-system";
+import { Button, EmptyState, focusRing } from "@/src/presentation/design-system";
 
 import { MenuItemCard } from "./MenuItemCard";
 
@@ -32,6 +33,8 @@ export async function MenuScreen({ categories, items, categoryId, kind }: MenuSc
       (!categoryId || item.categoryId === categoryId) &&
       (!kind || item.kind === kind),
   );
+  // Empty because of the filters (the unfiltered menu has something), not because the menu is.
+  const isFiltered = Boolean(kind || categoryId) && items.some((item) => activeCategoryIds.has(item.categoryId));
   // Categories worth offering: ones with something of the chosen type in them.
   const offered = categories.filter((category) =>
     items.some((item) => item.categoryId === category.id && (!kind || item.kind === kind)),
@@ -95,9 +98,18 @@ export async function MenuScreen({ categories, items, categoryId, kind }: MenuSc
           ))}
         </div>
       ) : (
-        <p className="rounded-card-lg border border-dashed border-border px-6 py-16 text-center text-body-small text-muted-foreground">
-          {t("menu.empty")}
-        </p>
+        <EmptyState
+          icon={isFiltered ? SearchX : Coffee}
+          title={isFiltered ? t("menu.noResults") : t("menu.empty")}
+          action={
+            isFiltered ? (
+              <Button asChild size="sm" variant="outline">
+                <Link href="/menu">{t("menu.clearFilters")}</Link>
+              </Button>
+            ) : undefined
+          }
+          className="rounded-card-lg border border-dashed border-border"
+        />
       )}
     </div>
   );

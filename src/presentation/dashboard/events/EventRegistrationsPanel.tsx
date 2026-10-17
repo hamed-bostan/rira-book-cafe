@@ -1,10 +1,11 @@
+import { Users } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { seatsLeft, type CafeEvent, type EventRegistration } from "@/src/domain/entities/CafeEvent";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { formatOrderDateShort } from "@/src/lib/formatOrderDate";
 import { DashboardPanel, DashboardPanelHeader } from "@/src/presentation/dashboard/DashboardPanel";
-import { Badge } from "@/src/presentation/design-system";
+import { Badge, EmptyState } from "@/src/presentation/design-system";
 
 import { CancelRegistrationButton } from "./CancelRegistrationButton";
 
@@ -36,7 +37,7 @@ export async function EventRegistrationsPanel({ event, registrations, canManage 
         }
       />
       {registrations.length === 0 ? (
-        <p className="mt-4 text-body-small text-muted-foreground">{t("registrationsEmpty")}</p>
+        <EmptyState icon={Users} title={t("registrationsEmpty")} className="py-8" />
       ) : (
         <ul className="mt-4 flex flex-col divide-y divide-border">
           {registrations.map((registration) => (

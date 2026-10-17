@@ -6,7 +6,7 @@ import { Link } from "@/src/i18n/navigation";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { cn } from "@/src/lib/utils";
-import { Button, focusRing } from "@/src/presentation/design-system";
+import { Button, EmptyState, focusRing } from "@/src/presentation/design-system";
 
 import { StatCard } from "../StatCard";
 
@@ -122,14 +122,17 @@ export async function InventoryScreen({ summary, filter, canManage }: InventoryS
 
       <section className="min-w-0 overflow-x-auto rounded-card-lg border border-border bg-background">
         {items.length === 0 ? (
-          <p className="px-6 py-16 text-center text-body-small-emphasis text-muted-foreground">
-            {filter === "all" ? t("empty") : t("emptyFiltered")}{" "}
-            {filter === "all" ? (
-              <Link href="/dashboard/pricing/ingredients" className="text-primary underline underline-offset-4">
-                {t("addItems")}
-              </Link>
-            ) : null}
-          </p>
+          <EmptyState
+            icon={filter === "all" ? Boxes : CircleCheck}
+            title={filter === "all" ? t("empty") : t("emptyFiltered")}
+            action={
+              filter === "all" ? (
+                <Button asChild size="sm">
+                  <Link href="/dashboard/pricing/ingredients">{t("addItems")}</Link>
+                </Button>
+              ) : undefined
+            }
+          />
         ) : (
           <table className="w-full min-w-[44rem] text-body-small">
             <thead className="bg-surface text-body-caption text-muted-foreground">

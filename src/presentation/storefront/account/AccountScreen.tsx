@@ -1,4 +1,4 @@
-import { BedDouble, Bell, BookOpen, CalendarClock, ChevronRight, ClipboardList, Gift, LayoutDashboard } from "lucide-react";
+import { BedDouble, Bell, BookOpen, CalendarClock, CalendarDays, ChevronRight, ClipboardList, Gift, LayoutDashboard } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import type { ProfileWire } from "@/src/contracts/profile-schema";
@@ -8,7 +8,7 @@ import { formatNumber } from "@/src/lib/formatNumber";
 import { formatOrderDate } from "@/src/lib/formatOrderDate";
 import { cn } from "@/src/lib/utils";
 import { LocaleToggle } from "@/src/presentation/components/LocaleToggle";
-import { Icon, focusRing } from "@/src/presentation/design-system";
+import { Button, EmptyState, Icon, focusRing } from "@/src/presentation/design-system";
 
 import { eventTitle } from "../eventCopy";
 
@@ -72,7 +72,16 @@ export async function AccountScreen({ profile, signUps, canOpenDashboard, unread
       <section className="flex flex-col gap-3">
         <h2 className="text-body-lead text-foreground">{t("account.mySignUps")}</h2>
         {signUps.length === 0 ? (
-          <p className="text-body-small text-muted-foreground">{t("account.noSignUps")}</p>
+          <EmptyState
+            icon={CalendarDays}
+            title={t("account.noSignUps")}
+            action={
+              <Button asChild size="sm" variant="outline">
+                <Link href="/events">{t("home.allEvents")}</Link>
+              </Button>
+            }
+            className="rounded-card-lg border border-dashed border-border py-10"
+          />
         ) : (
           <ul className="flex flex-col gap-2">
             {signUps.map(({ registration, event }) => (

@@ -1,11 +1,11 @@
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, ScrollText } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import type { AccountLedger } from "@/src/domain/entities/AccountingReports";
 import { Link } from "@/src/i18n/navigation";
 import { formatCafeDayMedium } from "@/src/lib/formatCafeDay";
 import { formatMoney } from "@/src/lib/formatMoney";
-import { Badge } from "@/src/presentation/design-system";
+import { Badge, EmptyState } from "@/src/presentation/design-system";
 
 import { accountName } from "./accounting-format";
 import { PeriodPicker } from "./PeriodPicker";
@@ -59,8 +59,8 @@ export async function AccountLedgerScreen({ ledger }: { ledger: AccountLedger })
             </tr>
             {ledger.lines.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">
-                  {t("ledger.empty")}
+                <td colSpan={6}>
+                  <EmptyState icon={ScrollText} title={t("ledger.empty")} className="py-10" />
                 </td>
               </tr>
             ) : (

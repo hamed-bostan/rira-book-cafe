@@ -7,7 +7,7 @@ import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { formatOrderDateShort } from "@/src/lib/formatOrderDate";
 import { cn } from "@/src/lib/utils";
-import { Icon } from "@/src/presentation/design-system";
+import { EmptyState, Icon } from "@/src/presentation/design-system";
 
 /**
  * The guest's place in the loyalty club: their balance and what it's worth, how
@@ -53,7 +53,7 @@ export async function RewardsScreen({ overview }: { overview: GuestLoyaltyOvervi
       <section className="flex flex-col gap-3">
         <h2 className="text-body-lead text-foreground">{t("rewards.historyHeading")}</h2>
         {history.length === 0 ? (
-          <p className="text-body-small text-muted-foreground">{t("rewards.empty")}</p>
+          <EmptyState icon={Gift} title={t("rewards.empty")} className="rounded-card-lg border border-dashed border-border py-10" />
         ) : (
           <ul className="flex flex-col divide-y divide-border rounded-card-lg border border-border">
             {history.map((entry) => (

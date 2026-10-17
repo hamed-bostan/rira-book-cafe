@@ -1156,7 +1156,9 @@
       "viewBasket": "View basket",
       "about": "About",
       "origin": "Origin",
-      "nutrition": "Nutrition & allergens"
+      "nutrition": "Nutrition & allergens",
+      "noResults": "Nothing matches this filter.",
+      "clearFilters": "Show everything"
     },
     "basket": {
       "heading": "Your basket",
@@ -2467,7 +2469,8 @@
       "matchedToast": "Lines matched",
       "unmatchedToast": "Match undone",
       "lineRemoved": "Line removed"
-    }
+    },
+    "emptyTitle": "No statements yet"
   },
   "errors": {
     "title": "Something went wrong",

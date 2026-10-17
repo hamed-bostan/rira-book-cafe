@@ -1,3 +1,4 @@
+import { TicketPercent } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import type { LoyaltySettings } from "@/src/domain/entities/Loyalty";
@@ -6,7 +7,7 @@ import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { formatOrderDateShort } from "@/src/lib/formatOrderDate";
 import { DashboardPanel, DashboardPanelHeader } from "@/src/presentation/dashboard/DashboardPanel";
-import { Badge } from "@/src/presentation/design-system";
+import { Badge, EmptyState } from "@/src/presentation/design-system";
 
 import { GuestPointsPanel } from "./GuestPointsPanel";
 import { LoyaltySettingsForm } from "./LoyaltySettingsForm";
@@ -50,7 +51,7 @@ export async function PromotionsScreen({ promoCodes, loyaltySettings, now }: Pro
       <DashboardPanel>
         <DashboardPanelHeader title={t("codesHeading")} action={<PromoCodeDialog />} />
         {promoCodes.length === 0 ? (
-          <p className="mt-4 text-body-small text-muted-foreground">{t("codesEmpty")}</p>
+          <EmptyState icon={TicketPercent} title={t("codesEmpty")} className="py-10" />
         ) : (
           <ul className="mt-4 flex flex-col divide-y divide-border">
             {promoCodes.map((promo) => {

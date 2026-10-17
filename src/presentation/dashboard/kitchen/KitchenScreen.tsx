@@ -1,4 +1,4 @@
-import { Clock, StickyNote } from "lucide-react";
+import { Clock, Inbox, StickyNote } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import {
@@ -14,7 +14,7 @@ import { Link } from "@/src/i18n/navigation";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { cn } from "@/src/lib/utils";
 import { AutoRefresh } from "@/src/presentation/components/AutoRefresh";
-import { Icon, focusRing } from "@/src/presentation/design-system";
+import { EmptyState, Icon, focusRing } from "@/src/presentation/design-system";
 
 import { OrderItemServeToggle } from "../orders/OrderItemServeToggle";
 import { OrderServiceLabel } from "../orders/OrderServiceLabel";
@@ -81,7 +81,7 @@ export async function KitchenScreen({ orders, station, now, canFulfill }: Kitche
               </span>
             </h2>
             {lanes[lane].length === 0 ? (
-              <p className="px-1 py-6 text-center text-body-small text-muted-foreground">{t("laneEmpty")}</p>
+              <EmptyState icon={Inbox} title={t("laneEmpty")} className="px-1 py-6" />
             ) : (
               <ul className="flex flex-col gap-3">
                 {lanes[lane].map((order) => {

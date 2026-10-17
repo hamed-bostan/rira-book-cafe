@@ -1,4 +1,4 @@
-import { Truck } from "lucide-react";
+import { Receipt, Search, Truck } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { EXPENSE_STATUSES, type Supplier } from "@/src/domain/entities/Expense";
@@ -10,7 +10,7 @@ import { accountName } from "@/src/presentation/dashboard/accounting/accounting-
 import type { ExpensePageWire } from "@/src/presentation/dashboard/accounting/accounting-response-schema";
 import { PeriodPicker } from "@/src/presentation/dashboard/accounting/PeriodPicker";
 import { ListFilterSelect, ListPager } from "@/src/presentation/dashboard/list";
-import { Button } from "@/src/presentation/design-system";
+import { Button, EmptyState } from "@/src/presentation/design-system";
 
 import { StatCard } from "../StatCard";
 
@@ -29,7 +29,10 @@ type ExpensesScreenProps = {
 /** Bills and purchases for a period, with what's owed to suppliers right now. */
 export async function ExpensesScreen({ page, accounts, suppliers, fromDay, toDay, keep, canWrite }: ExpensesScreenProps) {
   const t = await getTranslations("dashExpenses");
+  const tList = await getTranslations("dashList");
   const locale = await getLocale();
+  /** A status or supplier filter narrows the period — "no matches" rather than "nothing recorded". */
+  const isFiltered = Boolean(keep.status || keep.supplier);
   const accountsByCode = new Map(accounts.map((account) => [account.code, account]));
 
   return (
@@ -81,7 +84,18 @@ export async function ExpensesScreen({ page, accounts, suppliers, fromDay, toDay
 
       <section className="min-w-0 overflow-hidden rounded-card-lg border border-border bg-background">
         {page.items.length === 0 ? (
-          <p className="px-6 py-16 text-center text-body-small-emphasis text-muted-foreground">{t("empty")}</p>
+          <EmptyState
+            icon={isFiltered ? Search : Receipt}
+            title={isFiltered ? tList("noResultsTitle") : t("empty")}
+            description={isFiltered ? tList("noResultsBody") : undefined}
+            action={
+              !isFiltered && canWrite ? (
+                <Button asChild size="sm">
+                  <Link href="/dashboard/expenses/new">{t("new")}</Link>
+                </Button>
+              ) : undefined
+            }
+          />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[44rem] text-body-small">

@@ -7,7 +7,7 @@ import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { formatOrderDate, formatOrderTime } from "@/src/lib/formatOrderDate";
 import { cn } from "@/src/lib/utils";
-import { Badge, Button, Icon, focusRing } from "@/src/presentation/design-system";
+import { Badge, Button, EmptyState, Icon, focusRing } from "@/src/presentation/design-system";
 
 type EventsScreenProps = {
   events: CafeEvent[];
@@ -67,6 +67,15 @@ export async function EventsScreen({ events, canManage, now }: EventsScreenProps
     );
   }
 
+  const createAction = canManage ? (
+    <Button asChild size="sm">
+      <Link href="/dashboard/events/create">
+        <Icon icon={Plus} size="sm" className="me-1.5" />
+        {t("newEvent")}
+      </Link>
+    </Button>
+  ) : undefined;
+
   return (
     <div className="flex min-w-0 flex-col gap-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -85,10 +94,13 @@ export async function EventsScreen({ events, canManage, now }: EventsScreenProps
       </div>
 
       {events.length === 0 ? (
-        <div className="rounded-card-lg border border-dashed border-border px-6 py-16 text-center">
-          <p className="text-body-strong text-foreground">{t("emptyTitle")}</p>
-          <p className="mt-1 text-body-small text-muted-foreground">{t("emptyBody")}</p>
-        </div>
+        <EmptyState
+          icon={CalendarDays}
+          title={t("emptyTitle")}
+          description={t("emptyBody")}
+          action={createAction}
+          className="rounded-card-lg border border-dashed border-border"
+        />
       ) : (
         <>
           <section className="flex flex-col gap-3">
@@ -96,7 +108,7 @@ export async function EventsScreen({ events, canManage, now }: EventsScreenProps
             {upcoming.length > 0 ? (
               <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">{upcoming.map(card)}</ul>
             ) : (
-              <p className="text-body-small text-muted-foreground">{t("noUpcoming")}</p>
+              <EmptyState icon={CalendarDays} title={t("noUpcoming")} action={createAction} className="rounded-card-lg border border-dashed border-border py-10" />
             )}
           </section>
           {past.length > 0 ? (

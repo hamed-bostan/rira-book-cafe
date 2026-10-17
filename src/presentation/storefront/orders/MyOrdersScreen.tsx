@@ -1,3 +1,4 @@
+import { ClipboardList } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { orderItemCount, type Order } from "@/src/domain/entities/Order";
@@ -7,7 +8,7 @@ import { formatNumber } from "@/src/lib/formatNumber";
 import { formatOrderDateShort, formatOrderTime } from "@/src/lib/formatOrderDate";
 import { cn } from "@/src/lib/utils";
 import { OrderStatusBadge } from "@/src/presentation/dashboard/orders/OrderStatusBadge";
-import { Button, focusRing } from "@/src/presentation/design-system";
+import { Button, EmptyState, focusRing } from "@/src/presentation/design-system";
 
 /** The guest's order history, newest first; each links to its live status page. */
 export async function MyOrdersScreen({ orders }: { orders: Order[] }) {
@@ -18,12 +19,16 @@ export async function MyOrdersScreen({ orders }: { orders: Order[] }) {
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
       <h1 className="text-heading-page text-foreground">{t("orders.heading")}</h1>
       {orders.length === 0 ? (
-        <div className="flex flex-col items-start gap-3 rounded-card-lg border border-dashed border-border px-6 py-10">
-          <p className="text-body-small text-muted-foreground">{t("orders.empty")}</p>
-          <Button asChild size="sm">
-            <Link href="/menu">{t("home.seeMenu")}</Link>
-          </Button>
-        </div>
+        <EmptyState
+          icon={ClipboardList}
+          title={t("orders.empty")}
+          action={
+            <Button asChild size="sm">
+              <Link href="/menu">{t("home.seeMenu")}</Link>
+            </Button>
+          }
+          className="rounded-card-lg border border-dashed border-border py-10"
+        />
       ) : (
         <ul className="flex flex-col gap-3">
           {orders.map((order) => (

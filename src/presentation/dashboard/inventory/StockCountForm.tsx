@@ -1,5 +1,6 @@
 "use client";
 
+import { Boxes } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import * as React from "react";
 
@@ -10,7 +11,7 @@ import { formatCafeDayMedium } from "@/src/lib/formatCafeDay";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { cn } from "@/src/lib/utils";
-import { Button, FormMessage, Input, useToast } from "@/src/presentation/design-system";
+import { Button, EmptyState, FormMessage, Input, useToast } from "@/src/presentation/design-system";
 
 import { inventoryApi } from "./inventory-api";
 
@@ -72,51 +73,63 @@ export function StockCountForm({ items, today, costsVisible }: { items: StockIte
       </div>
 
       <section className="min-w-0 overflow-x-auto rounded-card-lg border border-border bg-background">
-        <table className="w-full min-w-[36rem] text-body-small">
-          <thead className="bg-surface text-body-caption text-muted-foreground">
-            <tr>
-              <th scope="col" className="px-4 py-3 text-start font-medium">{t("col.item")}</th>
-              <th scope="col" className="px-4 py-3 text-end font-medium">{t("count.expected")}</th>
-              <th scope="col" className="px-4 py-3 text-start font-medium">{t("count.counted")}</th>
-              <th scope="col" className="px-4 py-3 text-end font-medium">{t("count.difference")}</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {items.map((item) => {
-              const raw = (counted[item.id] ?? "").trim();
-              const difference = NUMBER.test(raw) ? Number(raw) - item.onHand : null;
-              const unit = t(`unit.${item.unit}`);
-              return (
-                <tr key={item.id}>
-                  <td className="px-4 py-2.5 text-foreground" dir="auto">
-                    {item.name}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-2.5 text-end text-muted-foreground">
-                    {formatNumber(item.onHand, locale, 3)} {unit}
-                  </td>
-                  <td className="px-4 py-2.5">
-                    <Input
-                      value={counted[item.id] ?? ""}
-                      onChange={(event) => setCounted((current) => ({ ...current, [item.id]: event.target.value }))}
-                      inputMode="decimal"
-                      aria-label={t("count.countedFor", { name: item.name })}
-                      className="h-9 w-28"
-                      dir="ltr"
-                    />
-                  </td>
-                  <td
-                    className={cn(
-                      "whitespace-nowrap px-4 py-2.5 text-end",
-                      difference === null || Math.abs(difference) < 0.0005 ? "text-muted-foreground" : difference < 0 ? "text-error-foreground" : "text-success-foreground",
-                    )}
-                  >
-                    {difference === null ? "" : `${difference > 0 ? "+" : ""}${formatNumber(difference, locale, 3)} ${unit}`}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        {items.length === 0 ? (
+          <EmptyState
+            icon={Boxes}
+            title={t("empty")}
+            action={
+              <Button asChild size="sm">
+                <Link href="/dashboard/pricing/ingredients">{t("addItems")}</Link>
+              </Button>
+            }
+          />
+        ) : (
+          <table className="w-full min-w-[36rem] text-body-small">
+            <thead className="bg-surface text-body-caption text-muted-foreground">
+              <tr>
+                <th scope="col" className="px-4 py-3 text-start font-medium">{t("col.item")}</th>
+                <th scope="col" className="px-4 py-3 text-end font-medium">{t("count.expected")}</th>
+                <th scope="col" className="px-4 py-3 text-start font-medium">{t("count.counted")}</th>
+                <th scope="col" className="px-4 py-3 text-end font-medium">{t("count.difference")}</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {items.map((item) => {
+                const raw = (counted[item.id] ?? "").trim();
+                const difference = NUMBER.test(raw) ? Number(raw) - item.onHand : null;
+                const unit = t(`unit.${item.unit}`);
+                return (
+                  <tr key={item.id}>
+                    <td className="px-4 py-2.5 text-foreground" dir="auto">
+                      {item.name}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-2.5 text-end text-muted-foreground">
+                      {formatNumber(item.onHand, locale, 3)} {unit}
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <Input
+                        value={counted[item.id] ?? ""}
+                        onChange={(event) => setCounted((current) => ({ ...current, [item.id]: event.target.value }))}
+                        inputMode="decimal"
+                        aria-label={t("count.countedFor", { name: item.name })}
+                        className="h-9 w-28"
+                        dir="ltr"
+                      />
+                    </td>
+                    <td
+                      className={cn(
+                        "whitespace-nowrap px-4 py-2.5 text-end",
+                        difference === null || Math.abs(difference) < 0.0005 ? "text-muted-foreground" : difference < 0 ? "text-error-foreground" : "text-success-foreground",
+                      )}
+                    >
+                      {difference === null ? "" : `${difference > 0 ? "+" : ""}${formatNumber(difference, locale, 3)} ${unit}`}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
       </section>
 
       {costsVisible && entered.length > 0 ? (

@@ -1,3 +1,4 @@
+import { ClipboardList, SearchX } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
 import {
@@ -19,6 +20,7 @@ import {
   ListSortSelect,
   type ListSortOption,
 } from "@/src/presentation/dashboard/list";
+import { Button, EmptyState } from "@/src/presentation/design-system";
 
 import { OrdersTable } from "./OrdersTable";
 import { OrderStatusTabs } from "./OrderStatusTabs";
@@ -112,18 +114,18 @@ export async function OrdersScreen({ orders, counts, filters, params }: OrdersSc
           </section>
         )}
         emptyState={(
-          <div className="px-6 py-16 text-center">
-            <p className="text-body-strong text-foreground">{isFiltered ? tList("noResultsTitle") : t("emptyTitle")}</p>
-            <p className="mt-1 text-body-small text-muted-foreground">{isFiltered ? tList("noResultsBody") : t("emptyBody")}</p>
-            {isFiltered ? (
-              <Link
-                href="/dashboard/orders"
-                className="mt-4 inline-flex min-h-11 items-center rounded-button px-4 text-body-small-emphasis text-primary underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                {tList("clearFilters")}
-              </Link>
-            ) : null}
-          </div>
+          <EmptyState
+            icon={isFiltered ? SearchX : ClipboardList}
+            title={isFiltered ? tList("noResultsTitle") : t("emptyTitle")}
+            description={isFiltered ? tList("noResultsBody") : t("emptyBody")}
+            action={
+              isFiltered ? (
+                <Button asChild size="sm" variant="outline">
+                  <Link href="/dashboard/orders">{tList("clearFilters")}</Link>
+                </Button>
+              ) : undefined
+            }
+          />
         )}
         footer={<ListPager page={orders} />}
       />

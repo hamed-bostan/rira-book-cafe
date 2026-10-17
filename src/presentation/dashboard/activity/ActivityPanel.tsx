@@ -1,4 +1,7 @@
+import { History } from "lucide-react";
 import { getTranslations } from "next-intl/server";
+
+import { EmptyState } from "@/src/presentation/design-system";
 
 import { ActivityList } from "./ActivityList";
 
@@ -31,9 +34,7 @@ export async function ActivityPanel({ entries }: ActivityPanelProps) {
       </div>
 
       {entries.length === 0 ? (
-        <p className="rounded-card-lg border border-dashed border-border px-6 py-10 text-center text-body-small text-muted-foreground">
-          {t("panelEmpty")}
-        </p>
+        <EmptyState icon={History} title={t("panelEmpty")} className="rounded-card-lg border border-dashed border-border py-10" />
       ) : (
         <ActivityList entries={entries} showEntity={false} />
       )}

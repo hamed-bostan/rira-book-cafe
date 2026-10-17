@@ -5,7 +5,7 @@ import type { Notification, NotificationKind } from "@/src/domain/entities/Notif
 import { Link } from "@/src/i18n/navigation";
 import { formatRelativeTime } from "@/src/lib/formatRelativeTime";
 import { cn } from "@/src/lib/utils";
-import { Icon, focusRing } from "@/src/presentation/design-system";
+import { EmptyState, Icon, focusRing } from "@/src/presentation/design-system";
 
 import { MarkNotificationsRead } from "./MarkNotificationsRead";
 import { notificationValues } from "./notificationValues";
@@ -56,10 +56,7 @@ export async function NotificationsScreen({ notifications, now }: NotificationsS
       </div>
 
       {notifications.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-card-lg border border-dashed border-border px-6 py-12 text-center">
-          <Icon icon={Bell} size="lg" className="text-muted-foreground" />
-          <p className="text-body-small text-muted-foreground">{t("notifications.empty")}</p>
-        </div>
+        <EmptyState icon={Bell} title={t("notifications.empty")} className="rounded-card-lg border border-dashed border-border py-12" />
       ) : (
         <ul className="flex flex-col gap-2">
           {notifications.map((notification) => {

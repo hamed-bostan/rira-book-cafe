@@ -13,7 +13,7 @@ import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
 import { cn } from "@/src/lib/utils";
-import { Button, FormMessage, Icon, Input, Textarea, focusRing, useToast } from "@/src/presentation/design-system";
+import { Button, EmptyState, FormMessage, Icon, Input, Textarea, focusRing, useToast } from "@/src/presentation/design-system";
 
 import { storefrontApi } from "../storefront-api";
 
@@ -74,16 +74,18 @@ export function BasketScreen({ signedIn }: BasketScreenProps) {
 
   if (basket.lines.length === 0) {
     return (
-      <div className="mx-auto flex max-w-md flex-col items-center gap-4 py-16 text-center">
-        <span className="grid size-16 place-items-center rounded-full bg-accent text-primary">
-          <Icon icon={ShoppingBasket} size="lg" />
-        </span>
-        <h1 className="text-heading-subsection text-foreground">{t("basket.emptyTitle")}</h1>
-        <p className="text-body-small text-muted-foreground">{t("basket.emptyBody")}</p>
-        <Button asChild>
-          <Link href="/menu">{t("home.seeMenu")}</Link>
-        </Button>
-      </div>
+      <EmptyState
+        size="page"
+        icon={ShoppingBasket}
+        title={t("basket.emptyTitle")}
+        description={t("basket.emptyBody")}
+        action={
+          <Button asChild>
+            <Link href="/menu">{t("home.seeMenu")}</Link>
+          </Button>
+        }
+        className="mx-auto max-w-md"
+      />
     );
   }
 

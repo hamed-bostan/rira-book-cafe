@@ -1,5 +1,6 @@
 "use client";
 
+import { BarChart3 } from "lucide-react";
 import { useLocale } from "next-intl";
 import * as React from "react";
 import { Bar, BarChart, CartesianGrid, ComposedChart, Line, Tooltip, XAxis, YAxis } from "recharts";
@@ -8,7 +9,7 @@ import { formatCafeDayShort } from "@/src/lib/formatCafeDay";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { ChartSegmentedControl } from "@/src/presentation/dashboard/ChartSegmentedControl";
-import { ChartContainer, ChartTooltip } from "@/src/presentation/design-system";
+import { ChartContainer, ChartTooltip, EmptyState } from "@/src/presentation/design-system";
 
 type Metric = "revenue" | "orders";
 
@@ -93,7 +94,7 @@ export function DailySalesChart({ daily, previousDaily, labels }: DailySalesChar
           </ChartContainer>
         </div>
       ) : (
-        <p className="py-16 text-center text-body-small-emphasis text-muted-foreground">{labels.empty}</p>
+        <EmptyState icon={BarChart3} title={labels.empty} />
       )}
       {/* The chart is decorative for screen readers; this is the data. */}
       <p className="sr-only">

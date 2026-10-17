@@ -1,3 +1,4 @@
+import { Trophy } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import type { TopItemSort } from "@/src/domain/entities/Analytics";
@@ -5,6 +6,7 @@ import { Link } from "@/src/i18n/navigation";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { cn } from "@/src/lib/utils";
+import { EmptyState } from "@/src/presentation/design-system";
 
 import type { TopItemWire } from "./report-response-schema";
 
@@ -49,7 +51,7 @@ export async function TopItemsTable({ items, sort, keep, basePath }: TopItemsTab
         </div>
       </div>
       {items.length === 0 ? (
-        <p className="py-8 text-center text-body-small-emphasis text-muted-foreground">{t("noSales")}</p>
+        <EmptyState icon={Trophy} title={t("noSales")} className="py-8" />
       ) : (
         <ol className="mt-4 flex flex-col divide-y divide-border">
           {items.map((item, index) => (

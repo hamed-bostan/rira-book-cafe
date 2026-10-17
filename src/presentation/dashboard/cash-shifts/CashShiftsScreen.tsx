@@ -1,4 +1,4 @@
-import { Banknote, CreditCard, Globe, Wallet } from "lucide-react";
+import { Banknote, CreditCard, Globe, History, Wallet } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { formatMoney } from "@/src/lib/formatMoney";
@@ -8,6 +8,7 @@ import { cn } from "@/src/lib/utils";
 import { AutoRefresh } from "@/src/presentation/components/AutoRefresh";
 import { DashboardPanel, DashboardPanelHeader } from "@/src/presentation/dashboard/DashboardPanel";
 import { StatCard } from "@/src/presentation/dashboard/StatCard";
+import { EmptyState } from "@/src/presentation/design-system";
 
 import { CloseShiftForm, OpenShiftForm } from "./CashShiftForms";
 
@@ -76,7 +77,7 @@ export async function CashShiftsScreen({ overview }: { overview: CashShiftOvervi
       <DashboardPanel>
         <DashboardPanelHeader title={t("historyHeading")} />
         {closed.length === 0 ? (
-          <p className="mt-4 text-body-small text-muted-foreground">{t("historyEmpty")}</p>
+          <EmptyState icon={History} title={t("historyEmpty")} className="py-8" />
         ) : (
           <ul className="mt-4 flex flex-col divide-y divide-border">
             {closed.map((shift) => {

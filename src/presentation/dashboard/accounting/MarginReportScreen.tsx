@@ -1,9 +1,11 @@
+import { ChartPie } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import type { MarginReport } from "@/src/domain/entities/AccountingReports";
 import { formatPercent } from "@/src/lib/formatCafeDay";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
+import { EmptyState } from "@/src/presentation/design-system";
 
 import { StatementHeader } from "./StatementHeader";
 
@@ -40,7 +42,7 @@ export async function MarginReportScreen({ report }: { report: MarginReport }) {
 
       <section className="min-w-0 overflow-x-auto rounded-card-lg border border-border bg-background">
         {report.rows.length === 0 ? (
-          <p className="px-6 py-16 text-center text-body-small-emphasis text-muted-foreground">{t("margins.empty")}</p>
+          <EmptyState icon={ChartPie} title={t("margins.empty")} />
         ) : (
           <table className="w-full min-w-[40rem] text-body-small">
             <thead className="bg-surface text-body-caption text-muted-foreground">

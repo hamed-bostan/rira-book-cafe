@@ -1,3 +1,4 @@
+import { NotebookText, Search } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { JOURNAL_SOURCES, type JournalEntry } from "@/src/domain/entities/Ledger";
@@ -6,7 +7,7 @@ import { Link } from "@/src/i18n/navigation";
 import { formatCafeDayMedium } from "@/src/lib/formatCafeDay";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { ListFilterSelect, ListPager } from "@/src/presentation/dashboard/list";
-import { Badge, Button } from "@/src/presentation/design-system";
+import { Badge, Button, EmptyState } from "@/src/presentation/design-system";
 
 import { entryTotal } from "./accounting-format";
 import { AccountingTabs } from "./AccountingTabs";
@@ -24,7 +25,10 @@ type JournalScreenProps = {
 /** Every entry in the books for a period, newest first, filterable by what posted it. */
 export async function JournalScreen({ page, fromDay, toDay, keep, canWrite }: JournalScreenProps) {
   const t = await getTranslations("dashAccounting");
+  const tList = await getTranslations("dashList");
   const locale = await getLocale();
+  /** A source filter narrows the period — "no matches" rather than "nothing posted". */
+  const isFiltered = Boolean(keep.source);
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
@@ -52,7 +56,18 @@ export async function JournalScreen({ page, fromDay, toDay, keep, canWrite }: Jo
 
       <section className="min-w-0 overflow-hidden rounded-card-lg border border-border bg-background">
         {page.items.length === 0 ? (
-          <p className="px-6 py-16 text-center text-body-small-emphasis text-muted-foreground">{t("journal.empty")}</p>
+          <EmptyState
+            icon={isFiltered ? Search : NotebookText}
+            title={isFiltered ? tList("noResultsTitle") : t("journal.empty")}
+            description={isFiltered ? tList("noResultsBody") : undefined}
+            action={
+              !isFiltered && canWrite ? (
+                <Button asChild size="sm">
+                  <Link href="/dashboard/accounting/journal/new">{t("journal.newEntry")}</Link>
+                </Button>
+              ) : undefined
+            }
+          />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[40rem] text-body-small">

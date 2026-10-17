@@ -1,10 +1,10 @@
-import { BookOpen, CalendarClock, Coffee } from "lucide-react";
+import { BookOpen, CalendarClock, CalendarDays, Coffee } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
 import type { CafeEvent } from "@/src/domain/entities/CafeEvent";
 import type { Product } from "@/src/domain/entities/Product";
 import { Link } from "@/src/i18n/navigation";
-import { Button, Icon } from "@/src/presentation/design-system";
+import { Button, EmptyState, Icon } from "@/src/presentation/design-system";
 
 import { EventCard } from "../events/EventCard";
 import { MenuItemCard } from "../menu/MenuItemCard";
@@ -69,7 +69,7 @@ export async function HomeScreen({ featured, events }: HomeScreenProps) {
             ))}
           </div>
         ) : (
-          <p className="text-body-small text-muted-foreground">{t("events.none")}</p>
+          <EmptyState icon={CalendarDays} title={t("events.none")} className="rounded-card-lg border border-dashed border-border py-10" />
         )}
       </section>
 

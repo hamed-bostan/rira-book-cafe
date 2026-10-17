@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, X } from "lucide-react";
+import { ListPlus, Plus, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useFieldArray, useForm, useWatch } from "react-hook-form";
 
@@ -11,7 +11,7 @@ import { Link, useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
-import { Button, FormMessage, Icon, Input, Select, useToast } from "@/src/presentation/design-system";
+import { Button, EmptyState, FormMessage, Icon, Input, Select, useToast } from "@/src/presentation/design-system";
 
 import { recipesApi } from "./pricing-api";
 
@@ -73,7 +73,7 @@ export function RecipeForm({ productId, lines, ingredients }: RecipeFormProps) {
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
-      {fields.length === 0 ? <p className="text-body-small text-muted-foreground">{t("recipe.empty")}</p> : null}
+      {fields.length === 0 ? <EmptyState icon={ListPlus} title={t("recipe.empty")} className="py-8" /> : null}
       {fields.map((field, index) => {
         const ingredient = byId.get(watched[index]?.ingredientId ?? "");
         const lineErrors = errors.lines?.[index];

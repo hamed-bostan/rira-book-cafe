@@ -1156,7 +1156,9 @@
       "viewBasket": "دیدن سبد",
       "about": "دربارهٔ آن",
       "origin": "خاستگاه",
-      "nutrition": "ارزش غذایی و آلرژن‌ها"
+      "nutrition": "ارزش غذایی و آلرژن‌ها",
+      "noResults": "چیزی با این فیلتر پیدا نشد.",
+      "clearFilters": "نمایش همه"
     },
     "basket": {
       "heading": "سبد شما",
@@ -2467,7 +2469,8 @@
       "matchedToast": "ردیف‌ها تطبیق داده شدند",
       "unmatchedToast": "تطبیق برداشته شد",
       "lineRemoved": "ردیف حذف شد"
-    }
+    },
+    "emptyTitle": "هنوز صورت‌حسابی ثبت نشده"
   },
   "errors": {
     "title": "مشکلی پیش آمد",

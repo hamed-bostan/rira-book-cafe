@@ -9,7 +9,7 @@ import { MAX_ORDER_NOTE_LENGTH } from "@/src/domain/entities/OrderNote";
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatOrderDate } from "@/src/lib/formatOrderDate";
-import { Avatar, Button, Icon, Textarea } from "@/src/presentation/design-system";
+import { Avatar, Button, EmptyState, Icon, Textarea } from "@/src/presentation/design-system";
 
 import { ordersApi } from "./order-api";
 
@@ -104,7 +104,7 @@ export function OrderNotesPanel({ orderId, notes, canWrite }: OrderNotesPanelPro
           ))}
         </ul>
       ) : (
-        <p className="text-body-small text-muted-foreground">{t("empty")}</p>
+        <EmptyState icon={StickyNote} title={t("empty")} className="py-8" />
       )}
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { Link2, Unlink, Wand2 } from "lucide-react";
+import { CheckCheck, Link2, Unlink, Wand2 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import * as React from "react";
 
@@ -11,7 +11,7 @@ import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatCafeDayShort } from "@/src/lib/formatCafeDay";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { cn } from "@/src/lib/utils";
-import { Button, Checkbox, Icon, useToast } from "@/src/presentation/design-system";
+import { Button, Checkbox, EmptyState, Icon, useToast } from "@/src/presentation/design-system";
 
 import { bankStatementsApi } from "./bank-statement-api";
 import { StatementLineActions } from "./StatementLineActions";
@@ -136,7 +136,7 @@ export function BankMatchWorkspace({ statement, candidates, suggestions, canWrit
         <section className="flex min-w-0 flex-col rounded-card-lg border border-border bg-background">
           <h2 className="border-b border-border px-4 py-3 text-body-strong text-foreground">{t("workspace.bankSide", { count: openLines.length })}</h2>
           {openLines.length === 0 ? (
-            <p className="px-4 py-8 text-center text-body-small text-muted-foreground">{t("workspace.bankDone")}</p>
+            <EmptyState icon={CheckCheck} title={t("workspace.bankDone")} className="py-8" />
           ) : (
             <ul className="divide-y divide-border">
               {openLines.map((line) => (
@@ -183,7 +183,7 @@ export function BankMatchWorkspace({ statement, candidates, suggestions, canWrit
         <section className="flex min-w-0 flex-col rounded-card-lg border border-border bg-background">
           <h2 className="border-b border-border px-4 py-3 text-body-strong text-foreground">{t("workspace.bookSide", { count: openCandidates.length })}</h2>
           {openCandidates.length === 0 ? (
-            <p className="px-4 py-8 text-center text-body-small text-muted-foreground">{t("workspace.bookDone")}</p>
+            <EmptyState icon={CheckCheck} title={t("workspace.bookDone")} className="py-8" />
           ) : (
             <ul className="divide-y divide-border">
               {openCandidates.map((candidate) => (

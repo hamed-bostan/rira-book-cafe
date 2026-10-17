@@ -1,3 +1,4 @@
+import { SearchX, Star } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import type { ProductReview, ReviewStatus } from "@/src/domain/entities/ProductReview";
@@ -6,7 +7,7 @@ import { Link } from "@/src/i18n/navigation";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { formatOrderDateShort } from "@/src/lib/formatOrderDate";
 import { ListFilterSelect, ListSearchInput } from "@/src/presentation/dashboard/list";
-import { Badge, RatingStars } from "@/src/presentation/design-system";
+import { Badge, EmptyState, RatingStars } from "@/src/presentation/design-system";
 
 import { ReviewModerationActions } from "./ReviewModerationActions";
 
@@ -87,9 +88,12 @@ export async function ReviewsScreen({ reviews, counts, isSearching }: ReviewsScr
           ))}
         </ul>
       ) : (
-        <div className="rounded-card-lg border border-dashed border-border px-6 py-16 text-center">
-          <p className="text-body-strong text-foreground">{isSearching ? t("noMatchesTitle") : t("emptyTitle")}</p>
-          <p className="mt-1 text-body-small text-muted-foreground">{isSearching ? t("noMatchesBody") : t("emptyBody")}</p>
+        <div className="rounded-card-lg border border-dashed border-border">
+          <EmptyState
+            icon={isSearching ? SearchX : Star}
+            title={isSearching ? t("noMatchesTitle") : t("emptyTitle")}
+            description={isSearching ? t("noMatchesBody") : t("emptyBody")}
+          />
         </div>
       )}
     </div>

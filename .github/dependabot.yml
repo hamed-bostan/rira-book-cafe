@@ -1,0 +1,27 @@
+# Weekly dependency updates. Minor/patch bumps are grouped into one PR per
+# ecosystem so the queue stays reviewable; majors arrive one PR each. Every PR
+# runs the full CI (lint, typecheck, tests, image build) before it can merge.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 10
+    groups:
+      npm-minor-and-patch:
+        update-types: [minor, patch]
+    commit-message:
+      prefix: deps
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: ci

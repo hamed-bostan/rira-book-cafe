@@ -22,7 +22,10 @@ export async function MenuItemCard({ item }: { item: Product }) {
 
   return (
     <article className="flex flex-col overflow-hidden rounded-card-lg border border-border bg-background">
-      <Link href={`/menu/${item.id}`} className={cn("block", focusRing)}>
+      {/* A pointer-only shortcut: the name link below is the card's one link for keyboard
+          and screen-reader users, so this duplicate (a decorative image, no text) stays out
+          of the tab order and the accessibility tree. */}
+      <Link href={`/menu/${item.id}`} tabIndex={-1} aria-hidden className="block">
         <div className="relative aspect-[4/3] bg-muted">
           <Image src={item.imageUrl} alt="" fill sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw" className="object-cover" />
           {item.badge ? (

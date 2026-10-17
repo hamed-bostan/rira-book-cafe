@@ -46,9 +46,10 @@ export function LocaleToggle() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
+        {/* The accessible name keeps the visible language name in it ("Change language:
+            English"), so a voice-control user can say what they see (WCAG 2.5.3). */}
         <button
           type="button"
-          aria-label={t("languageAria")}
           disabled={pending}
           className={cn(
             "inline-flex h-11 min-w-24 items-center justify-between gap-2 rounded-input border border-border bg-background px-3 text-body-small-bold text-foreground transition-colors hover:bg-muted",
@@ -56,7 +57,10 @@ export function LocaleToggle() {
             "disabled:cursor-not-allowed disabled:opacity-50",
           )}
         >
-          <span>{LOCALE_NAMES[locale]}</span>
+          <span>
+            <span className="sr-only">{t("languageAria")}: </span>
+            {LOCALE_NAMES[locale]}
+          </span>
           <Icon icon={ChevronDown} size="xs" className="text-muted-foreground" />
         </button>
       </DropdownMenuTrigger>

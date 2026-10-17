@@ -57,14 +57,19 @@ export function UserMenu({ viewer }: UserMenuProps) {
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            aria-label={t("account")}
             className={cn("flex size-11 shrink-0 items-center justify-center rounded-full transition-opacity hover:opacity-80", focusRing)}
           >
-            <Avatar name={viewer.name} className="size-12 dashboard-phone:size-10 xl:size-9">
-              {viewer.imageUrl && (
-                <Image src={viewer.imageUrl} alt="" width={36} height={36} className="size-full object-cover" />
-              )}
-            </Avatar>
+            {/* The name ("Account menu") comes from hidden text rather than aria-label: the
+                avatar's initials are decorative, and an aria-label that doesn't contain the
+                visible text fails WCAG 2.5.3 (label in name). */}
+            <span className="sr-only">{t("account")}</span>
+            <span aria-hidden className="contents">
+              <Avatar name={viewer.name} className="size-12 dashboard-phone:size-10 xl:size-9">
+                {viewer.imageUrl && (
+                  <Image src={viewer.imageUrl} alt="" width={36} height={36} className="size-full object-cover" />
+                )}
+              </Avatar>
+            </span>
           </button>
         </DropdownMenuTrigger>
 

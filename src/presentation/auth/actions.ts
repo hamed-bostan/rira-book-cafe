@@ -7,8 +7,7 @@ import { signIn, signOut } from "@/auth";
 import { normalizePhone } from "@/src/domain/entities/Phone";
 import { RequestOtp } from "@/src/domain/use-cases/auth/RequestOtp";
 import { authRepository } from "@/src/infrastructure/container";
-import { checkRateLimit, RATE_LIMITS, type RateLimitPolicy } from "@/src/lib/api/rate-limit";
-import { clientIp } from "@/src/lib/security/client-ip";
+import { checkRateLimit, RATE_LIMITS, requestIp, type RateLimitPolicy } from "@/src/lib/api/rate-limit";
 
 const TOO_MANY_ATTEMPTS = "Too many attempts. Please wait a few minutes and try again.";
 
@@ -19,7 +18,7 @@ const TOO_MANY_ATTEMPTS = "Too many attempts. Please wait a few minutes and try 
  */
 async function isRateLimited(policy: RateLimitPolicy, phone: string): Promise<boolean> {
   const decision = await checkRateLimit(policy, {
-    ip: clientIp(await headers()),
+    ip: requestIp(await headers()),
     subject: normalizePhone(phone) || null,
   });
   return !decision.allowed;

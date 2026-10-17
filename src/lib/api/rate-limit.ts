@@ -1,5 +1,6 @@
 import type { RateLimitDecision, RateLimitRule } from "@/src/domain/repositories/IRateLimiter";
 import { rateLimiter } from "@/src/infrastructure/container";
+import { getEnv } from "@/src/lib/env";
 import { clientIp } from "@/src/lib/security/client-ip";
 
 import { tooManyRequestsResponse } from "./responses";
@@ -76,13 +77,18 @@ export async function checkRateLimit(
   return rateLimiter.consume(`${policy.name}:subject:${identity.subject}`, policy.perSubject);
 }
 
+/** The caller's IP, trusting as many proxy hops as `TRUSTED_PROXY_HOPS` says (the host nginx = 1). */
+export function requestIp(headers: Headers): string {
+  return clientIp(headers, getEnv().TRUSTED_PROXY_HOPS);
+}
+
 /** {@link checkRateLimit} keyed by a request's client IP. */
 export function checkRequestRateLimit(
   request: Request,
   policy: RateLimitPolicy,
   subject?: string | null,
 ): Promise<RateLimitDecision> {
-  return checkRateLimit(policy, { ip: clientIp(request.headers), subject });
+  return checkRateLimit(policy, { ip: requestIp(request.headers), subject });
 }
 
 /** Whole seconds for a `Retry-After` header — never 0, which would invite an instant retry. */

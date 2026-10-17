@@ -3,6 +3,7 @@ import createMiddleware from "next-intl/middleware";
 
 import { routing } from "@/src/i18n/routing";
 import { errorResponse } from "@/src/lib/api/responses";
+import { getEnv } from "@/src/lib/env";
 import { buildContentSecurityPolicy, generateNonce, originOf } from "@/src/lib/security/content-security-policy";
 import { isCrossSiteMutation } from "@/src/lib/security/csrf";
 
@@ -30,7 +31,6 @@ import { isCrossSiteMutation } from "@/src/lib/security/csrf";
 const handleI18nRouting = createMiddleware(routing);
 
 const API_ORIGIN = originOf(process.env.NEXT_PUBLIC_API_BASE_URL);
-const APP_ORIGIN = originOf(process.env.APP_URL);
 
 export function proxy(request: NextRequest) {
   if (request.nextUrl.pathname.startsWith("/api/")) return guardApi(request);
@@ -57,12 +57,13 @@ export function proxy(request: NextRequest) {
 
 /** Refuse a cross-site state-changing API call (403); pass everything else through untouched. */
 function guardApi(request: NextRequest): NextResponse {
+  const appOrigin = originOf(getEnv().APP_URL);
   const crossSite = isCrossSiteMutation({
     method: request.method,
     secFetchSite: request.headers.get("sec-fetch-site"),
     origin: request.headers.get("origin"),
     host: request.headers.get("x-forwarded-host") ?? request.headers.get("host"),
-    trustedOrigins: APP_ORIGIN ? [APP_ORIGIN] : [],
+    trustedOrigins: appOrigin ? [appOrigin] : [],
   });
   if (crossSite) {
     return errorResponse(403, { message: "Cross-site requests are not allowed.", code: "CSRF" });

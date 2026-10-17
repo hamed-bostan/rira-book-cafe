@@ -6,6 +6,7 @@ import type { IBookLoanRepository } from "@/src/domain/repositories/IBookLoanRep
 import type { IBookWaitlistRepository } from "@/src/domain/repositories/IBookWaitlistRepository";
 import type { ICashShiftRepository } from "@/src/domain/repositories/ICashShiftRepository";
 import type { ICategoryRepository } from "@/src/domain/repositories/ICategoryRepository";
+import type { IDatabaseProbe } from "@/src/domain/repositories/IDatabaseProbe";
 import type { IEmailSender } from "@/src/domain/repositories/IEmailSender";
 import type { IEventRepository } from "@/src/domain/repositories/IEventRepository";
 import type { IExpenseRepository } from "@/src/domain/repositories/IExpenseRepository";
@@ -45,6 +46,7 @@ import { PrismaBookLoanRepository } from "./repositories/PrismaBookLoanRepositor
 import { PrismaBookWaitlistRepository } from "./repositories/PrismaBookWaitlistRepository";
 import { PrismaCashShiftRepository } from "./repositories/PrismaCashShiftRepository";
 import { PrismaCategoryRepository } from "./repositories/PrismaCategoryRepository";
+import { PrismaDatabaseProbe } from "./repositories/PrismaDatabaseProbe";
 import { PrismaEventRepository } from "./repositories/PrismaEventRepository";
 import { PrismaExpenseRepository } from "./repositories/PrismaExpenseRepository";
 import { PrismaInventoryRepository } from "./repositories/PrismaInventoryRepository";
@@ -242,3 +244,6 @@ const localImageStorage = new LocalDiskImageStorageRepository(
 export const imageStorageRepository: IImageStorageRepository = localImageStorage;
 /** Absolute file for a stored image path, or null when it escapes the uploads root. */
 export const resolveStoredImageFile = (objectPath: string): string | null => localImageStorage.resolve(objectPath);
+
+// Health check (`GET /api/health`): a `SELECT 1` on the shared Prisma pool.
+export const databaseProbe: IDatabaseProbe = new PrismaDatabaseProbe();

@@ -27,7 +27,9 @@
     "resendCode": "Resend Code",
     "verifying": "Verifying…",
     "verifyCode": "Verify Code",
-    "changePhone": "Change Phone number"
+    "changePhone": "Change Phone number",
+    "codeResent": "We sent you a new code",
+    "resendError": "Couldn't send the code. Please try again."
   },
   "ds": {
     "otpLabel": "One-time password code",
@@ -317,7 +319,9 @@
         "title": "Take ownership?",
         "message": "Someone else owns this cafe. You can take it because your access is set in the server config — this is the recovery path for a lost owner account, not a routine change. The current owner becomes an admin.",
         "confirm": "Take ownership"
-      }
+      },
+      "transferred": "{name} is now the owner.",
+      "claimed": "You're now the owner."
     },
     "activityHeading": "Access history",
     "activityDescription": "Every change to who can reach the dashboard. Kept permanently.",
@@ -348,7 +352,9 @@
       "admin": "Admin",
       "owner": "Owner",
       "customer": "No access"
-    }
+    },
+    "granted": "Access granted to {phone}.",
+    "revoked": "{name} no longer has access."
   },
   "dashProducts": {
     "sortLabel": "Sort items",
@@ -501,7 +507,11 @@
       "sale": "For sale",
       "reading": "Read in cafe only",
       "both": "For sale and reading"
-    }
+    },
+    "created": "“{name}” added to the menu.",
+    "saved": "“{name}” saved.",
+    "deleted": "“{name}” deleted.",
+    "bulkDone": "{count, plural, one {# item updated.} other {# items updated.}}"
   },
   "dashCategories": {
     "selectAllShort": "Select all",
@@ -583,7 +593,12 @@
     "replaceImage": "Replace image",
     "uploadImage": "Upload image",
     "uploadFailed": "Upload failed.",
-    "uploadHint": "PNG, JPG, WebP or AVIF · up to 5 MB"
+    "uploadHint": "PNG, JPG, WebP or AVIF · up to 5 MB",
+    "bulkActivated": "{count, plural, one {# category activated} other {# categories activated}}",
+    "bulkDeactivated": "{count, plural, one {# category deactivated} other {# categories deactivated}}",
+    "savedToast": "Category saved",
+    "createdToast": "Category created",
+    "deleted": "\"{name}\" deleted"
   },
   "dashBulk": {
     "selected": "{count} selected",
@@ -711,7 +726,9 @@
     "subtotal": "Subtotal",
     "promoDiscount": "Promo code {code}",
     "pointsDiscount": "{points} points",
-    "pointsEarned": "Earned {points} loyalty points"
+    "pointsEarned": "Earned {points} loyalty points",
+    "statusChanged": "Updated order #{number}: {status}",
+    "cancelledToast": "Order #{number} cancelled."
   },
   "dashOrderNotes": {
     "label": "Internal note",
@@ -924,7 +941,9 @@
     "emptyTitle": "No bookings this day",
     "emptyBody": "Reservations guests make will show up here.",
     "noMatchesTitle": "No matches",
-    "noMatchesBody": "No bookings this day have that status."
+    "noMatchesBody": "No bookings this day have that status.",
+    "statusChanged": "Updated R-{reference}: {status}",
+    "tableSaved": "R-{reference} moved to table {table}."
   },
   "dashEvents": {
     "heading": "Events",
@@ -991,7 +1010,11 @@
     "cancelRegistration": "Cancel sign-up",
     "cancelRegistrationTitle": "Cancel {name}'s sign-up?",
     "cancelRegistrationMessage": "Their seats become free for other guests.",
-    "cancelRegistrationError": "Couldn't cancel the sign-up. Please try again."
+    "cancelRegistrationError": "Couldn't cancel the sign-up. Please try again.",
+    "savedToast": "Event saved",
+    "createdToast": "Event created",
+    "deleted": "\"{title}\" deleted",
+    "registrationCancelledToast": "{name}'s sign-up cancelled"
   },
   "dashOverview": {
     "heading": "Today",
@@ -1164,7 +1187,8 @@
       "pointsBalance": "You have {points} points",
       "pointsUse": "Use {points} points for {amount} off",
       "pointsMinimum": "You can spend points once you have {points}.",
-      "pointsToEarn": "You'll earn {points} points with this order."
+      "pointsToEarn": "You'll earn {points} points with this order.",
+      "orderPlaced": "Order placed"
     },
     "orders": {
       "heading": "My orders",
@@ -1217,7 +1241,8 @@
       "hint": "For more than {max} guests, please call us.",
       "submit": "Request a table",
       "sending": "Sending…",
-      "error": "Couldn't send your request. Please try again."
+      "error": "Couldn't send your request. Please try again.",
+      "sent": "Request sent — we'll confirm your table soon."
     },
     "reservations": {
       "heading": "My reservations",
@@ -1228,7 +1253,8 @@
       "cancel": "Cancel",
       "cancelTitle": "Cancel this booking?",
       "cancelMessage": "Your table will be released.",
-      "cancelError": "Couldn't cancel the booking. Please try again."
+      "cancelError": "Couldn't cancel the booking. Please try again.",
+      "cancelled": "Booking cancelled"
     },
     "events": {
       "heading": "Events",
@@ -1249,7 +1275,8 @@
       "cancelTitle": "Cancel your sign-up?",
       "cancelMessage": "Your seats will go to someone else.",
       "closed": "Sign-ups are closed for this event.",
-      "error": "Something went wrong. Please try again."
+      "error": "Something went wrong. Please try again.",
+      "signUpCancelled": "Sign-up cancelled"
     },
     "account": {
       "heading": "My account",
@@ -1294,7 +1321,8 @@
       "cancelMessage": "The suite will be released for those nights.",
       "cancelError": "Couldn't cancel the stay. Please try again.",
       "promoTitle": "Staying the night?",
-      "promoBody": "Book our suite."
+      "promoBody": "Book our suite.",
+      "cancelled": "Stay cancelled"
     },
     "loans": {
       "heading": "Books I've borrowed",
@@ -1406,7 +1434,8 @@
       "waiting": "Waiting",
       "heading": "Books I'm waiting for",
       "joinedOn": "Joined {date}",
-      "error": "Couldn't update the waitlist. Please try again."
+      "error": "Couldn't update the waitlist. Please try again.",
+      "left": "You've left the line"
     },
     "rewards": {
       "heading": "Rewards club",
@@ -1533,7 +1562,8 @@
       "reverseDate": "Reversal date",
       "reverseReason": "Reason",
       "reverseConfirm": "Post reversal",
-      "reverseError": "Couldn't reverse the entry. Please try again."
+      "reverseError": "Couldn't reverse the entry. Please try again.",
+      "reversed": "JE-{number} reversed"
     },
     "form": {
       "title": "New manual entry",
@@ -1553,7 +1583,8 @@
       "balanced": "Balanced",
       "difference": "Off by {amount}",
       "post": "Post entry",
-      "error": "Couldn't post the entry. Please try again."
+      "error": "Couldn't post the entry. Please try again.",
+      "posted": "Entry JE-{number} posted"
     },
     "accounts": {
       "heading": "Chart of accounts",
@@ -1568,7 +1599,8 @@
       "nameFaLabel": "Name (Persian)",
       "typeLabel": "Type",
       "create": "Create account",
-      "error": "Couldn't save the account. Please try again."
+      "error": "Couldn't save the account. Please try again.",
+      "created": "Account {code} created"
     },
     "accountType": {
       "asset": "Assets",
@@ -1619,7 +1651,8 @@
       "closedThroughHint": "Nothing dated on or before this day can be posted or reversed — close a month once it's reconciled. Leave blank to keep every period open.",
       "save": "Save settings",
       "saved": "Saved.",
-      "error": "Couldn't save the settings. Please try again."
+      "error": "Couldn't save the settings. Please try again.",
+      "savedToast": "Settings saved"
     },
     "statements": {
       "heading": "Statements",
@@ -1709,7 +1742,8 @@
       "close": "Close year",
       "confirmTitle": "Close fiscal year {year}?",
       "confirmMessage": "The year's revenue and expenses move into retained earnings, and nothing dated in the year can be posted afterwards. This can't be undone from here.",
-      "error": "Couldn't close the year. Please try again."
+      "error": "Couldn't close the year. Please try again.",
+      "closedToast": "Fiscal year {year} closed"
     }
   },
   "dashExpenses": {
@@ -1757,7 +1791,8 @@
         "bank": "Paid from the bank"
       },
       "save": "Record expense",
-      "error": "Couldn't record the expense. Please try again."
+      "error": "Couldn't record the expense. Please try again.",
+      "saved": "Expense EX-{number} recorded"
     },
     "detail": {
       "title": "Expense EX-{number}",
@@ -1783,7 +1818,9 @@
       "voidMessage": "Everything it posted is reversed today. The expense stays on record, marked void. This can't be undone.",
       "voidReason": "Reason (optional)",
       "voidConfirm": "Void expense",
-      "voidError": "Couldn't void the expense. Please try again."
+      "voidError": "Couldn't void the expense. Please try again.",
+      "paid": "Payment recorded for EX-{number}",
+      "voided": "EX-{number} voided"
     },
     "suppliers": {
       "heading": "Suppliers",
@@ -1797,7 +1834,9 @@
       "inactive": "Inactive",
       "save": "Save",
       "empty": "No suppliers yet.",
-      "error": "Couldn't save the supplier. Please try again."
+      "error": "Couldn't save the supplier. Please try again.",
+      "saved": "Supplier saved",
+      "added": "Supplier added"
     }
   },
   "dashPricing": {
@@ -1883,7 +1922,8 @@
       "quantityLabel": "For how much",
       "priceHint": "As on the invoice, e.g. 1,200,000 Toman for 1000 g.",
       "activeLabel": "Active",
-      "error": "Couldn't save the ingredient. Please try again."
+      "error": "Couldn't save the ingredient. Please try again.",
+      "saved": "{name} saved."
     },
     "recipe": {
       "title": "Recipe: {name}",
@@ -1897,7 +1937,8 @@
       "total": "Ingredients cost {cost} per serving",
       "noIngredients": "Add ingredients first:",
       "save": "Save recipe",
-      "error": "Couldn't save the recipe. Please try again."
+      "error": "Couldn't save the recipe. Please try again.",
+      "saved": "Recipe saved."
     },
     "settings": {
       "heading": "Pricing settings",
@@ -1923,7 +1964,9 @@
       "roundingHint": "e.g. 5000 turns 126,698 into 130,000.",
       "saved": "Saved.",
       "error": "Couldn't save the settings. Please try again."
-    }
+    },
+    "applied": "{name} now costs {price}.",
+    "markupSaved": "Profit saved."
   },
   "dashInventory": {
     "heading": "Inventory",
@@ -1993,7 +2036,8 @@
       "descriptionPlaceholder": "e.g. Weekly coffee and milk order",
       "costLabel": "Cost before VAT",
       "save": "Receive delivery",
-      "error": "Couldn't receive the delivery. Please try again."
+      "error": "Couldn't receive the delivery. Please try again.",
+      "saved": "Delivery received."
     },
     "count": {
       "heading": "Count stock",
@@ -2007,14 +2051,16 @@
       "varianceTotal": "Variance to post: {amount}",
       "invalid": "Counts are numbers, e.g. 1250 or 0.5.",
       "save": "{count, plural, one {Save count (# item)} other {Save count (# items)}}",
-      "error": "Couldn't save the count. Please try again."
+      "error": "Couldn't save the count. Please try again.",
+      "saved": "Count saved."
     },
     "opening": {
       "heading": "Opening stock",
       "subtitle": "Stock already on the shelves when you start tracking, at what it's worth. It's brought into the books as the owner's investment.",
       "costLabel": "Worth",
       "save": "Record opening stock",
-      "error": "Couldn't record the opening stock. Please try again."
+      "error": "Couldn't record the opening stock. Please try again.",
+      "saved": "Opening stock recorded."
     },
     "waste": {
       "open": "Record waste of {name}",
@@ -2024,7 +2070,8 @@
       "noteLabel": "Reason",
       "notePlaceholder": "e.g. Milk past its date",
       "confirm": "Record waste",
-      "error": "Couldn't record the waste. Please try again."
+      "error": "Couldn't record the waste. Please try again.",
+      "saved": "Waste recorded."
     },
     "kind": {
       "opening": "Opening stock",
@@ -2042,7 +2089,8 @@
       "quantity": "Quantity",
       "by": "By",
       "empty": "No stock movements yet."
-    }
+    },
+    "reorderSaved": "Reorder level saved."
   },
   "dashBookLoans": {
     "heading": "Book loans",
@@ -2098,7 +2146,14 @@
     "waitlistHeading": "Waitlist",
     "waitlistSubtitle": "Guests waiting for a book that's out. The first in line is told on their account when a copy comes back.",
     "waitlistNotified": "Told it's back",
-    "waitlistRemoveAria": "Take {name} off the waitlist"
+    "waitlistRemoveAria": "Take {name} off the waitlist",
+    "updated": {
+      "out": "L-{reference} is back on loan",
+      "returned": "L-{reference} marked returned",
+      "lost": "L-{reference} marked lost"
+    },
+    "lent": "Loan recorded for {name}",
+    "waitlistRemoved": "{name} taken off the waitlist"
   },
   "dashSuite": {
     "heading": "Suite",
@@ -2134,7 +2189,8 @@
     "emptyTitle": "No stays coming up",
     "emptyBody": "Suite requests guests make will show up here.",
     "noMatchesTitle": "No matches",
-    "noMatchesBody": "No upcoming stays have that status."
+    "noMatchesBody": "No upcoming stays have that status.",
+    "statusChanged": "Updated S-{reference}: {status}"
   },
   "dashReviews": {
     "heading": "Reviews",
@@ -2165,7 +2221,11 @@
     "emptyTitle": "Nothing waiting",
     "emptyBody": "New reviews will show up here.",
     "noMatchesTitle": "No matches",
-    "noMatchesBody": "No reviews match that search."
+    "noMatchesBody": "No reviews match that search.",
+    "moderated": {
+      "approved": "Review approved.",
+      "rejected": "Review rejected."
+    }
   },
   "dashPromotions": {
     "heading": "Promotions",
@@ -2247,7 +2307,9 @@
       "redeem": "Spent",
       "refund": "Returned",
       "adjust": "Adjusted"
-    }
+    },
+    "codeSaved": "{code} saved.",
+    "adjusted": "Points updated."
   },
   "dashCashShifts": {
     "heading": "Cash shifts",
@@ -2278,7 +2340,9 @@
     "historyHeading": "Past shifts",
     "historyEmpty": "No closed shifts yet.",
     "by": "Opened by {opened}, closed by {closed}",
-    "expectedCounted": "Expected {expected} · counted {counted}"
+    "expectedCounted": "Expected {expected} · counted {counted}",
+    "opened": "Shift opened",
+    "closed": "Shift closed"
   },
   "dashKitchen": {
     "heading": "Kitchen display",
@@ -2330,7 +2394,8 @@
       "addsUp": "The lines take the opening balance to the closing balance.",
       "gap": "The lines are {amount} away from the closing balance — a line may be missing.",
       "submit": "Save statement",
-      "error": "Couldn't save the statement. Please try again."
+      "error": "Couldn't save the statement. Please try again.",
+      "saved": "Statement saved"
     },
     "lines": {
       "label": "Lines",
@@ -2352,7 +2417,8 @@
       "open": "Add lines",
       "heading": "Add lines to this statement",
       "submit": "Add lines",
-      "error": "Couldn't add the lines. Please try again."
+      "error": "Couldn't add the lines. Please try again.",
+      "added": "{count, plural, one {# line added} other {# lines added}}"
     },
     "summary": {
       "heading": "Reconciliation",
@@ -2370,7 +2436,8 @@
       "confirmTitle": "Mark this statement reconciled?",
       "confirmMessage": "Its lines and matches will be locked for good.",
       "reconcileError": "Couldn't mark the statement reconciled.",
-      "reconciledBy": "Reconciled by {by} on {date}."
+      "reconciledBy": "Reconciled by {by} on {date}.",
+      "reconciled": "Statement marked reconciled"
     },
     "workspace": {
       "autoMatch": "{count, plural, one {Match # sure pair} other {Match # sure pairs}}",
@@ -2396,7 +2463,10 @@
       "payoutFee": "Gateway fee",
       "payoutConfirm": "Book payout",
       "matched": "{count, plural, one {# match} other {# matches}}",
-      "unmatch": "Unmatch"
+      "unmatch": "Unmatch",
+      "matchedToast": "Lines matched",
+      "unmatchedToast": "Match undone",
+      "lineRemoved": "Line removed"
     }
   },
   "errors": {

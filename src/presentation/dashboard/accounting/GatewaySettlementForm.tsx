@@ -2,7 +2,6 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocale, useTranslations } from "next-intl";
-import * as React from "react";
 import { useForm, useWatch } from "react-hook-form";
 
 import { gatewaySettlementSchema, type GatewaySettlementInput } from "@/src/contracts/payment-schema";
@@ -12,7 +11,7 @@ import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatCafeDayMedium } from "@/src/lib/formatCafeDay";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
-import { Button, FormMessage, Input, TextField } from "@/src/presentation/design-system";
+import { Button, FormMessage, Input, TextField, useToast } from "@/src/presentation/design-system";
 
 import { settlementsApi } from "./accounting-api";
 
@@ -32,7 +31,7 @@ export function GatewaySettlementForm({ today }: { today: string }) {
   const fieldError = (message?: string): string | undefined => formErrorMessage(tFormErrors, message);
   const locale = useLocale();
   const router = useRouter();
-  const [saved, setSaved] = React.useState(false);
+  const { toast } = useToast();
 
   const empty: GatewaySettlementInput = { date: today, deposited: "", fee: "", reference: "" };
   const {
@@ -50,11 +49,10 @@ export function GatewaySettlementForm({ today }: { today: string }) {
   const clears = wholeToman(deposited) + wholeToman(fee);
 
   const onSubmit = handleSubmit(async (values) => {
-    setSaved(false);
     try {
       await settlementsApi.create(values);
       reset(empty);
-      setSaved(true);
+      toast({ tone: "success", title: t("overview.settlement.saved") });
       router.refresh();
     } catch (error) {
       let applied = false;
@@ -95,9 +93,8 @@ export function GatewaySettlementForm({ today }: { today: string }) {
       {clears > 0 ? <p className="-mt-1 text-body-caption text-muted-foreground">{t("overview.settlement.clears", { amount: formatMoney(clears, locale) })}</p> : null}
 
       {errors.root?.message ? <FormMessage size="md">{errors.root.message}</FormMessage> : null}
-      {saved ? <p className="text-body-small text-success-foreground">{t("overview.settlement.saved")}</p> : null}
       <div>
-        <Button type="submit" size="sm" disabled={isSubmitting}>
+        <Button type="submit" size="sm" loading={isSubmitting}>
           {t("overview.settlement.submit")}
         </Button>
       </div>

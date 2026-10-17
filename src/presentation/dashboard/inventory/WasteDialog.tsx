@@ -7,7 +7,7 @@ import * as React from "react";
 import { cafeDayOf } from "@/src/domain/entities/CafeTime";
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
-import { Button, FormMessage, Icon, Input, Modal, ModalContent } from "@/src/presentation/design-system";
+import { Button, FormMessage, Icon, Input, Modal, ModalContent, useToast } from "@/src/presentation/design-system";
 
 import { inventoryApi } from "./inventory-api";
 
@@ -16,6 +16,7 @@ export function WasteDialog({ id, name, unit }: { id: string; name: string; unit
   const t = useTranslations("dashInventory");
   const tApiErrors = useTranslations("apiErrors");
   const router = useRouter();
+  const { toast } = useToast();
   const today = cafeDayOf(new Date());
   const [open, setOpen] = React.useState(false);
   const [quantity, setQuantity] = React.useState("");
@@ -31,6 +32,7 @@ export function WasteDialog({ id, name, unit }: { id: string; name: string; unit
         setOpen(false);
         setQuantity("");
         setNote("");
+        toast({ tone: "success", title: t("waste.saved") });
         router.refresh();
       } catch (err) {
         setError(localizeApiError(err, tApiErrors, t("waste.error")));
@@ -66,7 +68,7 @@ export function WasteDialog({ id, name, unit }: { id: string; name: string; unit
               <Button type="button" variant="outline" size="sm" onClick={() => setOpen(false)}>
                 {t("cancel")}
               </Button>
-              <Button type="submit" size="sm" disabled={pending || !quantity.trim()}>
+              <Button type="submit" size="sm" loading={pending} disabled={!quantity.trim()}>
                 {t("waste.confirm")}
               </Button>
             </div>

@@ -11,7 +11,7 @@ import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatCafeDayShort } from "@/src/lib/formatCafeDay";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { cn } from "@/src/lib/utils";
-import { Button, Checkbox, FormMessage, Icon } from "@/src/presentation/design-system";
+import { Button, Checkbox, Icon, useToast } from "@/src/presentation/design-system";
 
 import { bankStatementsApi } from "./bank-statement-api";
 import { StatementLineActions } from "./StatementLineActions";
@@ -22,6 +22,9 @@ type BankMatchWorkspaceProps = {
   suggestions: MatchPair[];
   canWrite: boolean;
 };
+
+/** Which workspace action is running, so only its button shows the spinner. */
+type WorkspaceAction = "autoMatch" | "match" | `unmatch:${string}` | `line:${string}`;
 
 const sum = (amounts: readonly number[]): number => amounts.reduce((total, amount) => total + amount, 0);
 
@@ -40,8 +43,8 @@ export function BankMatchWorkspace({ statement, candidates, suggestions, canWrit
   const router = useRouter();
   const [bankPicked, setBankPicked] = React.useState<ReadonlySet<string>>(new Set());
   const [bookPicked, setBookPicked] = React.useState<ReadonlySet<string>>(new Set());
-  const [error, setError] = React.useState<string | null>(null);
-  const [notice, setNotice] = React.useState<string | null>(null);
+  const { toast } = useToast();
+  const [active, setActive] = React.useState<WorkspaceAction | null>(null);
   const [pending, startTransition] = React.useTransition();
 
   const editable = canWrite && statement.status === "open";
@@ -58,21 +61,22 @@ export function BankMatchWorkspace({ statement, candidates, suggestions, canWrit
     ledger: candidates.filter((candidate) => candidate.matchId === matchId),
   }));
 
-  function run(action: () => Promise<string | null>, fallback: string): void {
-    setError(null);
-    setNotice(null);
+  function run(which: WorkspaceAction, action: () => Promise<string>, fallback: string): void {
+    setActive(which);
     startTransition(async () => {
       try {
         const message = await action();
         setBankPicked(new Set());
         setBookPicked(new Set());
-        if (message) setNotice(message);
+        toast({ tone: "success", title: message });
         router.refresh();
       } catch (err) {
-        setError(localizeApiError(err, tApiErrors, fallback));
+        toast({ tone: "error", title: localizeApiError(err, tApiErrors, fallback) });
       }
     });
   }
+
+  const isRunning = (which: WorkspaceAction): boolean => pending && active === which;
 
   const toggle = (set: ReadonlySet<string>, id: string, on: boolean): ReadonlySet<string> => {
     const next = new Set(set);
@@ -82,7 +86,7 @@ export function BankMatchWorkspace({ statement, candidates, suggestions, canWrit
   };
 
   const record = (lineId: string, values: RecordStatementLineInput): void =>
-    run(async () => {
+    run(`line:${lineId}`, async () => {
       const entry = await bankStatementsApi.recordLine(statement.id, lineId, values);
       return t("workspace.recorded", { number: entry.number });
     }, t("workspace.recordError"));
@@ -98,8 +102,9 @@ export function BankMatchWorkspace({ statement, candidates, suggestions, canWrit
               type="button"
               size="sm"
               variant="outline"
+              loading={isRunning("autoMatch")}
               disabled={pending}
-              onClick={() => run(async () => t("workspace.autoMatched", { count: await bankStatementsApi.autoMatch(statement.id) }), t("workspace.matchError"))}
+              onClick={() => run("autoMatch", async () => t("workspace.autoMatched", { count: await bankStatementsApi.autoMatch(statement.id) }), t("workspace.matchError"))}
             >
               <Icon icon={Wand2} size="sm" className="me-1.5" />
               {t("workspace.autoMatch", { count: suggestions.length })}
@@ -111,12 +116,13 @@ export function BankMatchWorkspace({ statement, candidates, suggestions, canWrit
           <Button
             type="button"
             size="sm"
+            loading={isRunning("match")}
             disabled={!canMatch || pending}
             className="ms-auto"
             onClick={() =>
-              run(async () => {
+              run("match", async () => {
                 await bankStatementsApi.match(statement.id, { statementLineIds: [...bankPicked], ledgerLineIds: [...bookPicked] });
-                return null;
+                return t("workspace.matchedToast");
               }, t("workspace.matchError"))
             }
           >
@@ -124,12 +130,6 @@ export function BankMatchWorkspace({ statement, candidates, suggestions, canWrit
             {t("workspace.match")}
           </Button>
         </div>
-      ) : null}
-      {error ? <FormMessage size="md">{error}</FormMessage> : null}
-      {notice ? (
-        <p className="text-body-small text-success-foreground" aria-live="polite">
-          {notice}
-        </p>
       ) : null}
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
@@ -164,11 +164,12 @@ export function BankMatchWorkspace({ statement, candidates, suggestions, canWrit
                     <StatementLineActions
                       line={line}
                       disabled={pending}
+                      busy={isRunning(`line:${line.id}`)}
                       onRecord={(values) => record(line.id, values)}
                       onRemove={() =>
-                        run(async () => {
+                        run(`line:${line.id}`, async () => {
                           await bankStatementsApi.removeLine(statement.id, line.id);
-                          return null;
+                          return t("workspace.lineRemoved");
                         }, t("workspace.removeError"))
                       }
                     />
@@ -251,11 +252,12 @@ export function BankMatchWorkspace({ statement, candidates, suggestions, canWrit
                     type="button"
                     size="sm"
                     variant="ghost"
+                    loading={isRunning(`unmatch:${match.matchId}`)}
                     disabled={pending}
                     onClick={() =>
-                      run(async () => {
+                      run(`unmatch:${match.matchId}`, async () => {
                         await bankStatementsApi.unmatch(statement.id, match.matchId);
-                        return null;
+                        return t("workspace.unmatchedToast");
                       }, t("workspace.matchError"))
                     }
                   >

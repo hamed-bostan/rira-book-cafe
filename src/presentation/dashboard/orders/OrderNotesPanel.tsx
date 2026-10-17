@@ -73,7 +73,8 @@ export function OrderNotesPanel({ orderId, notes, canWrite }: OrderNotesPanelPro
           <Button
             size="sm"
             className="self-start"
-            disabled={pending || body.trim() === ""}
+            loading={pending}
+            disabled={body.trim() === ""}
             onClick={submit}
           >
             <Icon icon={StickyNote} size="sm" className="me-1.5" />

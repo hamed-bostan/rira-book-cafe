@@ -11,7 +11,7 @@ import { formatNumber } from "@/src/lib/formatNumber";
 import { formatOrderDateShort } from "@/src/lib/formatOrderDate";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
 import { cn } from "@/src/lib/utils";
-import { Button, FormMessage, Icon, Input } from "@/src/presentation/design-system";
+import { Button, FormMessage, Icon, Input, useToast } from "@/src/presentation/design-system";
 
 import { promotionsApi } from "./promotion-api";
 
@@ -25,6 +25,7 @@ export function GuestPointsPanel() {
   const tApiErrors = useTranslations("apiErrors");
   const tFormErrors = useTranslations("formErrors");
   const locale = useLocale();
+  const { toast } = useToast();
 
   const [phone, setPhone] = React.useState("");
   const [guest, setGuest] = React.useState<GuestLoyaltyLookup | null>(null);
@@ -33,10 +34,13 @@ export function GuestPointsPanel() {
   const [note, setNote] = React.useState("");
   const [adjustError, setAdjustError] = React.useState<string | null>(null);
   const [pending, startTransition] = React.useTransition();
+  /** Which form is in flight — only its button shows the spinner. */
+  const [active, setActive] = React.useState<"lookup" | "adjust" | null>(null);
 
   function lookup(event: React.FormEvent): void {
     event.preventDefault();
     setLookupError(null);
+    setActive("lookup");
     startTransition(async () => {
       try {
         setGuest(await promotionsApi.lookupGuest(phone));
@@ -55,9 +59,11 @@ export function GuestPointsPanel() {
       setAdjustError(formErrorMessage(tFormErrors, "pointsInvalid") ?? null);
       return;
     }
+    setActive("adjust");
     startTransition(async () => {
       try {
         await promotionsApi.adjustPoints({ phone, delta: points, note });
+        toast({ tone: "success", title: t("adjusted") });
         setDelta("");
         setNote("");
         setGuest(await promotionsApi.lookupGuest(phone));
@@ -81,7 +87,7 @@ export function GuestPointsPanel() {
           aria-label={t("guestPhone")}
           required
         />
-        <Button type="submit" variant="outline" disabled={pending || !phone.trim()}>
+        <Button type="submit" variant="outline" loading={pending && active === "lookup"} disabled={pending || !phone.trim()}>
           <Icon icon={Search} size="sm" className="me-1" />
           {t("lookup")}
         </Button>
@@ -104,7 +110,7 @@ export function GuestPointsPanel() {
               {t("adjustNote")}
               <Input value={note} onChange={(event) => setNote(event.target.value)} maxLength={MAX_LOYALTY_NOTE_LENGTH} required />
             </label>
-            <Button type="submit" size="sm" disabled={pending}>
+            <Button type="submit" size="sm" loading={pending && active === "adjust"} disabled={pending}>
               {t("adjust")}
             </Button>
           </form>

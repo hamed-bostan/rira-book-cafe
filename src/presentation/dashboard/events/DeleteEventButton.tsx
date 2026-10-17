@@ -6,7 +6,7 @@ import * as React from "react";
 
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
-import { Button, ConfirmSheet, Icon } from "@/src/presentation/design-system";
+import { Button, ConfirmSheet, Icon, useToast } from "@/src/presentation/design-system";
 
 import { eventsApi } from "./event-api";
 
@@ -19,6 +19,7 @@ export function DeleteEventButton({ id, title }: { id: string; title: string }) 
   const t = useTranslations("dashEvents");
   const tApiErrors = useTranslations("apiErrors");
   const router = useRouter();
+  const { toast } = useToast();
   const [open, setOpen] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [pending, startTransition] = React.useTransition();
@@ -28,6 +29,7 @@ export function DeleteEventButton({ id, title }: { id: string; title: string }) 
     startTransition(async () => {
       try {
         await eventsApi.remove(id);
+        toast({ tone: "success", title: t("deleted", { title }) });
         setOpen(false);
         router.push("/dashboard/events");
         router.refresh();
@@ -40,7 +42,7 @@ export function DeleteEventButton({ id, title }: { id: string; title: string }) 
 
   return (
     <>
-      <Button type="button" variant="outline" size="sm" onClick={() => setOpen(true)} disabled={pending} className="text-destructive">
+      <Button type="button" variant="outline" size="sm" onClick={() => setOpen(true)} loading={pending} className="text-destructive">
         <Icon icon={Trash2} size="sm" className="me-1.5" />
         {t("delete")}
       </Button>

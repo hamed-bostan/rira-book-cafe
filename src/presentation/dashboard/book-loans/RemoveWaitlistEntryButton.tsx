@@ -6,7 +6,7 @@ import * as React from "react";
 
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
-import { Button, FormMessage, Icon } from "@/src/presentation/design-system";
+import { Button, Icon, useToast } from "@/src/presentation/design-system";
 
 import { bookLoansApi } from "./book-loan-api";
 
@@ -16,26 +16,23 @@ export function RemoveWaitlistEntryButton({ entryId, guestName }: { entryId: str
   const tApiErrors = useTranslations("apiErrors");
   const router = useRouter();
   const [pending, startTransition] = React.useTransition();
-  const [error, setError] = React.useState<string | null>(null);
+  const { toast } = useToast();
 
   function remove(): void {
-    setError(null);
     startTransition(async () => {
       try {
         await bookLoansApi.removeFromWaitlist(entryId);
+        toast({ tone: "success", title: t("waitlistRemoved", { name: guestName }) });
       } catch (err) {
-        setError(localizeApiError(err, tApiErrors, t("updateError")));
+        toast({ tone: "error", title: localizeApiError(err, tApiErrors, t("updateError")) });
       }
       router.refresh();
     });
   }
 
   return (
-    <span className="inline-flex items-center gap-1">
-      <Button type="button" size="sm" variant="ghost" iconOnly aria-label={t("waitlistRemoveAria", { name: guestName })} disabled={pending} onClick={remove}>
-        <Icon icon={X} size="xs" />
-      </Button>
-      {error ? <FormMessage>{error}</FormMessage> : null}
-    </span>
+    <Button type="button" size="sm" variant="ghost" iconOnly aria-label={t("waitlistRemoveAria", { name: guestName })} loading={pending} onClick={remove}>
+      <Icon icon={X} size="xs" />
+    </Button>
   );
 }

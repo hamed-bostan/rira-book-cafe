@@ -11,7 +11,7 @@ import type { Supplier } from "@/src/domain/entities/Expense";
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
-import { Button, FormMessage, Icon, Input, Modal, ModalContent, Switch, TextField } from "@/src/presentation/design-system";
+import { Button, FormMessage, Icon, Input, Modal, ModalContent, Switch, TextField, useToast } from "@/src/presentation/design-system";
 
 import { suppliersApi } from "./expense-api";
 
@@ -26,6 +26,7 @@ export function SupplierDialog({ supplier }: { supplier?: Supplier }) {
   const tFormErrors = useTranslations("formErrors");
   const fieldError = (message?: string): string | undefined => formErrorMessage(tFormErrors, message);
   const router = useRouter();
+  const { toast } = useToast();
   const [open, setOpen] = React.useState(false);
 
   const {
@@ -44,6 +45,7 @@ export function SupplierDialog({ supplier }: { supplier?: Supplier }) {
     try {
       if (supplier) await suppliersApi.update(supplier.id, values);
       else await suppliersApi.create(values);
+      toast({ tone: "success", title: supplier ? t("suppliers.saved") : t("suppliers.added") });
       setOpen(false);
       if (!supplier) reset(toDefaults());
       router.refresh();
@@ -93,7 +95,7 @@ export function SupplierDialog({ supplier }: { supplier?: Supplier }) {
               <Button type="button" variant="outline" size="sm" onClick={() => setOpen(false)}>
                 {t("cancel")}
               </Button>
-              <Button type="submit" size="sm" disabled={isSubmitting}>
+              <Button type="submit" size="sm" loading={isSubmitting}>
                 {t("suppliers.save")}
               </Button>
             </div>

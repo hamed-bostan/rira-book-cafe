@@ -18,11 +18,14 @@ import {
   Input,
   Modal,
   ModalContent,
+  Spinner,
 } from "@/src/presentation/design-system";
 
 type StatementLineActionsProps = {
   line: BankStatementLine;
   disabled: boolean;
+  /** This line's own action is running — the trigger shows the spinner in place of its icon. */
+  busy?: boolean;
   onRecord: (values: RecordStatementLineInput) => void;
   onRemove: () => void;
 };
@@ -32,7 +35,7 @@ type StatementLineActionsProps = {
  * a bank fee (money out), as interest or a gateway payout (money in) — each posts
  * the entry and matches the line in one step — or remove a line entered by mistake.
  */
-export function StatementLineActions({ line, disabled, onRecord, onRemove }: StatementLineActionsProps) {
+export function StatementLineActions({ line, disabled, busy = false, onRecord, onRemove }: StatementLineActionsProps) {
   const t = useTranslations("dashBank");
   const locale = useLocale();
   const [payoutOpen, setPayoutOpen] = React.useState(false);
@@ -42,8 +45,8 @@ export function StatementLineActions({ line, disabled, onRecord, onRemove }: Sta
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuIconTrigger disabled={disabled} aria-label={t("workspace.lineActions")}>
-          <EllipsisVertical aria-hidden className="size-4" />
+        <DropdownMenuIconTrigger disabled={disabled || busy} aria-busy={busy || undefined} aria-label={t("workspace.lineActions")}>
+          {busy ? <Spinner size="xs" decorative /> : <EllipsisVertical aria-hidden className="size-4" />}
         </DropdownMenuIconTrigger>
         <DropdownMenuContent>
           {line.amount < 0 ? (

@@ -6,7 +6,7 @@ import * as React from "react";
 import { PAYMENT_METHODS, type PaymentMethod, type PaymentStatus } from "@/src/domain/entities/Order";
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
-import { Button, FormMessage } from "@/src/presentation/design-system";
+import { Button, useToast } from "@/src/presentation/design-system";
 
 import { ordersApi } from "./order-api";
 
@@ -27,19 +27,21 @@ export function OrderPaymentToggle({ orderId, paymentStatus, paymentMethod, canc
   const t = useTranslations("dashOrders");
   const tApiErrors = useTranslations("apiErrors");
   const router = useRouter();
+  const { toast } = useToast();
   const [choosing, setChoosing] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
+  /** The button that was clicked — only it shows the spinner; the rest just disable. */
+  const [active, setActive] = React.useState<PaymentMethod | "unpaid" | null>(null);
   const [pending, startTransition] = React.useTransition();
 
   function save(values: { paymentStatus: "paid"; paymentMethod: PaymentMethod } | { paymentStatus: "unpaid" }): void {
-    setError(null);
+    setActive(values.paymentStatus === "paid" ? values.paymentMethod : "unpaid");
     startTransition(async () => {
       try {
         await ordersApi.setPayment(orderId, values);
         setChoosing(false);
         router.refresh();
       } catch (err) {
-        setError(localizeApiError(err, tApiErrors, t("paymentError")));
+        toast({ tone: "error", title: localizeApiError(err, tApiErrors, t("paymentError")) });
       }
     });
   }
@@ -55,7 +57,7 @@ export function OrderPaymentToggle({ orderId, paymentStatus, paymentMethod, canc
           <span className="text-body-small-emphasis text-foreground">
             {paymentMethod ? t("paidWith", { method: t(`paymentMethod.${paymentMethod}`) }) : t("payment.paid")}
           </span>
-          <Button type="button" size="sm" variant="ghost" disabled={pending} onClick={() => save({ paymentStatus: "unpaid" })}>
+          <Button type="button" size="sm" variant="ghost" loading={pending && active === "unpaid"} disabled={pending} onClick={() => save({ paymentStatus: "unpaid" })}>
             {t("unmarkPaid")}
           </Button>
         </div>
@@ -75,7 +77,15 @@ export function OrderPaymentToggle({ orderId, paymentStatus, paymentMethod, canc
           <p className="text-body-caption text-muted-foreground">{t("paymentMethodLabel")}</p>
           <div className="grid grid-cols-2 gap-2">
             {PAYMENT_METHODS.map((method) => (
-              <Button key={method} type="button" size="sm" variant="outline" disabled={pending} onClick={() => save({ paymentStatus: "paid", paymentMethod: method })}>
+              <Button
+                key={method}
+                type="button"
+                size="sm"
+                variant="outline"
+                loading={pending && active === method}
+                disabled={pending}
+                onClick={() => save({ paymentStatus: "paid", paymentMethod: method })}
+              >
                 {t(`paymentMethod.${method}`)}
               </Button>
             ))}
@@ -85,8 +95,6 @@ export function OrderPaymentToggle({ orderId, paymentStatus, paymentMethod, canc
           </Button>
         </div>
       ) : null}
-
-      {error ? <FormMessage>{error}</FormMessage> : null}
     </div>
   );
 }

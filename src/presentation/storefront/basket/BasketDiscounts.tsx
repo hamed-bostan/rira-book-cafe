@@ -82,7 +82,7 @@ export function BasketDiscounts({
               autoComplete="off"
               aria-invalid={promoError ? true : undefined}
             />
-            <Button type="submit" variant="outline" disabled={!promoInput.trim() || (loading && Boolean(appliedPromo))}>
+            <Button type="submit" variant="outline" disabled={!promoInput.trim()} loading={loading && Boolean(appliedPromo)}>
               {t("basket.promoApply")}
             </Button>
           </div>

@@ -6,7 +6,7 @@ import * as React from "react";
 import { Link } from "@/src/i18n/navigation";
 import { cn } from "@/src/lib/utils";
 import { PageHeader } from "@/src/presentation/components/PageHeader";
-import { Button, OTPInput } from "@/src/presentation/design-system";
+import { Button, OTPInput, useToast } from "@/src/presentation/design-system";
 
 import { peekDevOtp, requestOtp, verifyOtp } from "./actions";
 
@@ -20,9 +20,11 @@ interface OtpScreenProps {
 
 export default function OtpScreen({ phone, callbackUrl = "/" }: OtpScreenProps) {
   const t = useTranslations("auth");
+  const { toast } = useToast();
   const [code, setCode] = React.useState("");
   const [error, setError] = React.useState(false);
   const [pending, setPending] = React.useState(false);
+  const [resending, setResending] = React.useState(false);
   const [secondsLeft, setSecondsLeft] = React.useState(RESEND_SECONDS);
   const [devCode, setDevCode] = React.useState<string | null>(null);
 
@@ -62,12 +64,24 @@ export default function OtpScreen({ phone, callbackUrl = "/" }: OtpScreenProps) 
     }
   };
 
-  const handleResend = async () => {
-    await requestOtp(phone);
-    setCode("");
-    setError(false);
-    setSecondsLeft(RESEND_SECONDS);
-    setDevCode(await peekDevOtp(phone));
+  const handleResend = async (): Promise<void> => {
+    setResending(true);
+    try {
+      const result = await requestOtp(phone);
+      if (result.error) {
+        toast({ tone: "error", title: t("resendError") });
+        return;
+      }
+      setCode("");
+      setError(false);
+      setSecondsLeft(RESEND_SECONDS);
+      toast({ tone: "success", title: t("codeResent") });
+      setDevCode(await peekDevOtp(phone).catch(() => null));
+    } catch {
+      toast({ tone: "error", title: t("resendError") });
+    } finally {
+      setResending(false);
+    }
   };
 
   const mm = String(Math.floor(secondsLeft / 60)).padStart(2, "0");
@@ -111,7 +125,7 @@ export default function OtpScreen({ phone, callbackUrl = "/" }: OtpScreenProps) 
           {secondsLeft > 0 ? (
             t("resendIn", { time: `${mm}:${ss}` })
           ) : (
-            <Button type="button" variant="link" onClick={handleResend} >
+            <Button type="button" variant="link" loading={resending} onClick={handleResend}>
               {t("resendCode")}
             </Button>
           )}
@@ -122,7 +136,8 @@ export default function OtpScreen({ phone, callbackUrl = "/" }: OtpScreenProps) 
         type="button"
         onClick={handleVerify}
         variant={isComplete ? "primary" : "outline"}
-        disabled={!isComplete || pending}
+        disabled={!isComplete}
+        loading={pending}
         size="lg"
         className="mt-4"
       >

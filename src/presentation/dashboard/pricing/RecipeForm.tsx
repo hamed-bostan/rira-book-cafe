@@ -11,7 +11,7 @@ import { Link, useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
-import { Button, FormMessage, Icon, Input, Select } from "@/src/presentation/design-system";
+import { Button, FormMessage, Icon, Input, Select, useToast } from "@/src/presentation/design-system";
 
 import { recipesApi } from "./pricing-api";
 
@@ -33,6 +33,7 @@ export function RecipeForm({ productId, lines, ingredients }: RecipeFormProps) {
   const fieldError = (message?: string): string | undefined => formErrorMessage(tFormErrors, message);
   const locale = useLocale();
   const router = useRouter();
+  const { toast } = useToast();
   const byId = new Map(ingredients.map((ingredient) => [ingredient.id, ingredient]));
   // Inactive ingredients stay pickable only where a recipe already uses them.
   const used = new Set(lines.map((line) => line.ingredientId));
@@ -60,6 +61,7 @@ export function RecipeForm({ productId, lines, ingredients }: RecipeFormProps) {
   const onSubmit = handleSubmit(async (values) => {
     try {
       await recipesApi.save(productId, values);
+      toast({ tone: "success", title: t("recipe.saved") });
       router.push("/dashboard/pricing");
       router.refresh();
     } catch (error) {
@@ -127,7 +129,7 @@ export function RecipeForm({ productId, lines, ingredients }: RecipeFormProps) {
       {errors.root?.message ? <FormMessage size="md">{errors.root.message}</FormMessage> : null}
 
       <div className="flex gap-3 pt-2">
-        <Button type="submit" disabled={isSubmitting}>
+        <Button type="submit" loading={isSubmitting}>
           {t("recipe.save")}
         </Button>
         <Button asChild variant="outline" type="button">

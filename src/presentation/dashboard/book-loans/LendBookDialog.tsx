@@ -12,7 +12,7 @@ import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
-import { Button, FormMessage, Icon, Input, Modal, ModalContent, Select, Textarea } from "@/src/presentation/design-system";
+import { Button, FormMessage, Icon, Input, Modal, ModalContent, Select, Textarea, useToast } from "@/src/presentation/design-system";
 
 import { bookLoansApi } from "./book-loan-api";
 
@@ -35,6 +35,7 @@ export function LendBookDialog({ books, today }: LendBookDialogProps) {
   const tFormErrors = useTranslations("formErrors");
   const locale = useLocale();
   const router = useRouter();
+  const { toast } = useToast();
 
   const [open, setOpen] = React.useState(false);
   const [productId, setProductId] = React.useState("");
@@ -60,6 +61,7 @@ export function LendBookDialog({ books, today }: LendBookDialogProps) {
     startTransition(async () => {
       try {
         await bookLoansApi.create({ productId, borrowerName, borrowerPhone, dueOn, note });
+        toast({ tone: "success", title: t("lent", { name: borrowerName.trim() }) });
         setOpen(false);
         reset();
         router.refresh();
@@ -158,7 +160,7 @@ export function LendBookDialog({ books, today }: LendBookDialogProps) {
               <Button type="button" variant="outline" size="sm" onClick={() => setOpen(false)}>
                 {t("dialogCancel")}
               </Button>
-              <Button type="submit" size="sm" disabled={pending || !productId}>
+              <Button type="submit" size="sm" loading={pending} disabled={!productId}>
                 {pending ? t("lending") : t("lendSubmit")}
               </Button>
             </div>

@@ -10,7 +10,7 @@ import { formatCafeDayMedium } from "@/src/lib/formatCafeDay";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { cn } from "@/src/lib/utils";
-import { Button, FormMessage, Input } from "@/src/presentation/design-system";
+import { Button, FormMessage, Input, useToast } from "@/src/presentation/design-system";
 
 import { inventoryApi } from "./inventory-api";
 
@@ -26,6 +26,7 @@ export function StockCountForm({ items, today, costsVisible }: { items: StockIte
   const tApiErrors = useTranslations("apiErrors");
   const locale = useLocale();
   const router = useRouter();
+  const { toast } = useToast();
   const [date, setDate] = React.useState(today);
   const [note, setNote] = React.useState("");
   const [counted, setCounted] = React.useState<Record<string, string>>({});
@@ -41,6 +42,7 @@ export function StockCountForm({ items, today, costsVisible }: { items: StockIte
     startTransition(async () => {
       try {
         await inventoryApi.count({ date, note, lines: entered.map((item) => ({ ingredientId: item.id, counted: counted[item.id].trim() })) });
+        toast({ tone: "success", title: t("count.saved") });
         router.push("/dashboard/inventory");
         router.refresh();
       } catch (err) {
@@ -126,7 +128,7 @@ export function StockCountForm({ items, today, costsVisible }: { items: StockIte
       {error ? <FormMessage size="md">{error}</FormMessage> : null}
 
       <div className="flex gap-3">
-        <Button type="submit" disabled={pending || entered.length === 0 || invalid}>
+        <Button type="submit" loading={pending} disabled={entered.length === 0 || invalid}>
           {t("count.save", { count: entered.length })}
         </Button>
         <Button asChild variant="outline" type="button">

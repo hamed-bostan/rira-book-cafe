@@ -11,7 +11,7 @@ import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatCafeDayMedium } from "@/src/lib/formatCafeDay";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
-import { Button, FormMessage, Input, TextField } from "@/src/presentation/design-system";
+import { Button, FormMessage, Input, TextField, useToast } from "@/src/presentation/design-system";
 
 import { bankStatementsApi } from "./bank-statement-api";
 import { parseStatementAmount } from "./parseStatementCsv";
@@ -40,6 +40,7 @@ export function NewBankStatementForm({ fromDay, toDay, openingBalance, today }: 
   const fieldError = (message?: string): string | undefined => formErrorMessage(tFormErrors, message);
   const locale = useLocale();
   const router = useRouter();
+  const { toast } = useToast();
 
   const {
     register,
@@ -59,6 +60,7 @@ export function NewBankStatementForm({ fromDay, toDay, openingBalance, today }: 
   const onSubmit = handleSubmit(async (values) => {
     try {
       const statement = await bankStatementsApi.create(values);
+      toast({ tone: "success", title: t("form.saved") });
       router.push(`/dashboard/accounting/bank/${statement.id}`);
       router.refresh();
     } catch (error) {
@@ -113,7 +115,7 @@ export function NewBankStatementForm({ fromDay, toDay, openingBalance, today }: 
 
       {errors.root?.message ? <FormMessage size="md">{errors.root.message}</FormMessage> : null}
       <div className="flex gap-3">
-        <Button type="submit" size="sm" disabled={isSubmitting}>
+        <Button type="submit" size="sm" loading={isSubmitting}>
           {t("form.submit")}
         </Button>
         <Button asChild type="button" size="sm" variant="ghost">

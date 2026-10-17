@@ -13,7 +13,7 @@ import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
 import { cn } from "@/src/lib/utils";
-import { Button, FormMessage, Icon, Input, Textarea, focusRing } from "@/src/presentation/design-system";
+import { Button, FormMessage, Icon, Input, Textarea, focusRing, useToast } from "@/src/presentation/design-system";
 
 import { storefrontApi } from "../storefront-api";
 
@@ -42,6 +42,7 @@ export function BasketScreen({ signedIn }: BasketScreenProps) {
   const tFormErrors = useTranslations("formErrors");
   const locale = useLocale();
   const router = useRouter();
+  const { toast } = useToast();
   const { basket, ready, setQuantity, remove, clear } = useBasket();
 
   const [serviceType, setServiceType] = React.useState<ServiceType>("dineIn");
@@ -104,6 +105,7 @@ export function BasketScreen({ signedIn }: BasketScreenProps) {
           redeemPoints,
         });
         clear();
+        toast({ tone: "success", title: t("basket.orderPlaced") });
         router.push(`/orders/${order.id}`);
       } catch (err) {
         if (err instanceof ApiError && err.status === 401) {
@@ -227,7 +229,7 @@ export function BasketScreen({ signedIn }: BasketScreenProps) {
         {error ? <FormMessage>{error}</FormMessage> : null}
 
         {signedIn ? (
-          <Button type="button" onClick={placeOrder} disabled={pending || quoteState.loading}>
+          <Button type="button" onClick={placeOrder} disabled={quoteState.loading} loading={pending}>
             {pending ? t("basket.placing") : t("basket.placeOrder")}
           </Button>
         ) : (

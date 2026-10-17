@@ -19,7 +19,7 @@ interface ConfirmDialogProps {
   cancelLabel?: string;
   /** Visual weight of the confirm button — matches the DS Button variants. */
   confirmVariant?: "primary" | "outline";
-  /** While true both buttons disable and the confirm shows a working label. */
+  /** While true both buttons disable and the confirm shows a spinner and a working label. */
   pending?: boolean;
   /** Label shown on the confirm button while `pending`. */
   pendingLabel?: string;
@@ -58,7 +58,7 @@ export function ConfirmDialog({
                 {cancelLabel ?? t("confirmKeep")}
               </Button>
             </ModalClose>
-            <Button type="button" variant={confirmVariant} size="sm" disabled={pending} onClick={onConfirm}>
+            <Button type="button" variant={confirmVariant} size="sm" loading={pending} onClick={onConfirm}>
               {pending ? (pendingLabel ?? t("confirmWorking")) : confirmLabel}
             </Button>
           </div>

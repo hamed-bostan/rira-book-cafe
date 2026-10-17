@@ -14,7 +14,7 @@ import { formatCafeDayMedium } from "@/src/lib/formatCafeDay";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
 import { accountLabel } from "@/src/presentation/dashboard/accounting/accounting-format";
-import { Button, FormMessage, Input, Select, TextField } from "@/src/presentation/design-system";
+import { Button, FormMessage, Input, Select, TextField, useToast } from "@/src/presentation/design-system";
 
 import { expensesApi } from "./expense-api";
 
@@ -38,6 +38,7 @@ export function ExpenseForm({ accounts, suppliers, today }: ExpenseFormProps) {
   const fieldError = (message?: string): string | undefined => formErrorMessage(tFormErrors, message);
   const locale = useLocale();
   const router = useRouter();
+  const { toast } = useToast();
 
   const {
     register,
@@ -56,6 +57,7 @@ export function ExpenseForm({ accounts, suppliers, today }: ExpenseFormProps) {
   const onSubmit = handleSubmit(async (values) => {
     try {
       const expense = await expensesApi.create(values);
+      toast({ tone: "success", title: t("form.saved", { number: expense.number }) });
       router.push(`/dashboard/expenses/${expense.id}`);
       router.refresh();
     } catch (error) {
@@ -140,7 +142,7 @@ export function ExpenseForm({ accounts, suppliers, today }: ExpenseFormProps) {
       {errors.root?.message ? <FormMessage size="md">{errors.root.message}</FormMessage> : null}
 
       <div className="flex gap-3 pt-2">
-        <Button type="submit" disabled={isSubmitting}>
+        <Button type="submit" loading={isSubmitting}>
           {t("form.save")}
         </Button>
         <Button asChild variant="outline" type="button">

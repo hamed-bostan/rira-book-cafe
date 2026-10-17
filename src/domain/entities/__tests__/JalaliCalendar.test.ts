@@ -39,7 +39,9 @@ describe("JalaliCalendar", () => {
       next.setUTCDate(next.getUTCDate() + 1);
       day = next.toISOString().slice(0, 10);
     }
-  });
+    // ~7,300 days through Intl: about 3s alone, more under the full suite's parallel
+    // load, so it gets more than the 5s default.
+  }, 20_000);
 
   it("sizes months and leap Esfands", () => {
     expect(jalaliMonthLength(1405, 1)).toBe(31);

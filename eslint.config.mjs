@@ -1,6 +1,7 @@
 import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
+import jsxA11y from "eslint-plugin-jsx-a11y";
 import tseslint from "typescript-eslint";
 
 // Physical-direction Tailwind classes — banned in favor of logical (RTL-aware)
@@ -16,6 +17,16 @@ const RAW_COLOR_MESSAGE =
 const RAW_COLOR_REGEX =
   "#[0-9a-fA-F]{3,8}\\b|rgba?\\(|\\b(?:bg|text|border|ring|from|via|to|fill|stroke|shadow|outline|decoration|caret|divide|accent)-(?:white|black|gray-\\d+|slate-\\d+|zinc-\\d+|neutral-\\d+|stone-\\d+)\\b";
 
+// jsx-a11y's recommended set, downgraded to warnings while the existing
+// violations are worked through (options kept, "off" rules stay off). Promote
+// back to errors once `npm run lint` is warning-free for them.
+const JSX_A11Y_RECOMMENDED_AS_WARNINGS = Object.fromEntries(
+  Object.entries(jsxA11y.flatConfigs.recommended.rules).map(([rule, setting]) => {
+    const [severity, ...options] = Array.isArray(setting) ? setting : [setting];
+    return [rule, severity === "off" || severity === 0 ? setting : ["warn", ...options]];
+  }),
+);
+
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
@@ -30,6 +41,13 @@ const eslintConfig = defineConfig([
     // .next build output), which otherwise floods lint with generated-code errors.
     ".claude/**",
   ]),
+
+  // Accessibility (eslint-config-next already registers the jsx-a11y plugin but
+  // enables only a handful of its rules).
+  {
+    files: ["**/*.tsx", "**/*.jsx"],
+    rules: JSX_A11Y_RECOMMENDED_AS_WARNINGS,
+  },
 
   // Type-aware TypeScript linting (catches floating promises, unsafe `any` flow,
   // unnecessary conditions, etc. — plain `@typescript-eslint/recommended` is

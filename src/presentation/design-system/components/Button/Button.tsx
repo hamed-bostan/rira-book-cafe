@@ -5,6 +5,7 @@ import * as React from "react";
 import { cn } from "@/src/lib/utils";
 
 import { focusRing } from "../shared/focusRing";
+import { pressable } from "../shared/motion";
 import { Spinner } from "../Spinner";
 
 const buttonVariants = cva(
@@ -15,9 +16,11 @@ const buttonVariants = cva(
     "px-4",
     "rounded-button",
     "text-button-default",
-    "transition-colors",
+    // Colours ease; the press scale (pressable) is motion-safe only.
+    "transition-[color,background-color,border-color,scale]",
     "duration-200",
     "ease-out",
+    pressable,
     focusRing,
     // Also suppresses the hover styles below while disabled.
     "disabled:pointer-events-none",

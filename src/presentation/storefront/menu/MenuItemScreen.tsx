@@ -1,5 +1,4 @@
 import { ChevronLeft, ShoppingBag } from "lucide-react";
-import Image from "next/image";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import type { BookWaitlistStatus } from "@/src/domain/entities/BookWaitlist";
@@ -7,6 +6,7 @@ import { isSellable, type Product } from "@/src/domain/entities/Product";
 import type { PublicReview, ReviewEligibility } from "@/src/domain/entities/ProductReview";
 import { Link } from "@/src/i18n/navigation";
 import { formatMoney } from "@/src/lib/formatMoney";
+import { FadeInImage } from "@/src/presentation/components/FadeInImage";
 import { Badge, Icon } from "@/src/presentation/design-system";
 
 import { AddToBasketForm } from "./AddToBasketForm";
@@ -44,7 +44,7 @@ export async function MenuItemScreen({ item, reviews, reviewEligibility, waitlis
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <div className="relative aspect-square overflow-hidden rounded-card-lg bg-muted">
-          <Image src={item.imageUrl} alt={item.name} fill sizes="(min-width: 768px) 50vw, 100vw" className="object-cover" priority />
+          <FadeInImage src={item.imageUrl} alt={item.name} fill sizes="(min-width: 768px) 50vw, 100vw" className="object-cover" priority />
         </div>
 
         <div className="flex flex-col gap-4">

@@ -63,7 +63,9 @@ export const TabsContent = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <TabsPrimitive.Content
     ref={ref}
-    className={cn(focusRing, className)}
+    // The incoming panel fades in rather than snapping, so switching tabs reads
+    // as a change of view. Opacity only, so it stays under reduced motion.
+    className={cn(focusRing, "data-[state=active]:animate-in data-[state=active]:fade-in-0 data-[state=active]:duration-200", className)}
     {...props}
   />
 ));

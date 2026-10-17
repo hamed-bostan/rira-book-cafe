@@ -1,5 +1,5 @@
-import Image from "next/image";
 
+import { FadeInImage } from "@/src/presentation/components/FadeInImage";
 import { Thumbnail } from "@/src/presentation/design-system";
 
 type ProductThumbnailSize = "compact" | "table" | "card" | "responsive";
@@ -20,7 +20,7 @@ type ProductThumbnailProps = {
 export function ProductThumbnail({ src, size = "compact" }: ProductThumbnailProps) {
   return (
     <Thumbnail as="span" className={sizeStyles[size]}>
-      <Image src={src} alt="" width={56} height={56} className="size-full object-contain" />
+      <FadeInImage src={src} alt="" width={56} height={56} className="size-full object-contain" />
     </Thumbnail>
   );
 }

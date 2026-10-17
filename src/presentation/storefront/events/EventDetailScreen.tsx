@@ -1,5 +1,4 @@
 import { CalendarDays, ChevronLeft, Clock } from "lucide-react";
-import Image from "next/image";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { isOpenForRegistration, seatsLeft, type CafeEvent, type EventRegistration } from "@/src/domain/entities/CafeEvent";
@@ -7,6 +6,7 @@ import { Link } from "@/src/i18n/navigation";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { formatOrderDate, formatOrderTime } from "@/src/lib/formatOrderDate";
+import { FadeInImage } from "@/src/presentation/components/FadeInImage";
 import { Badge, Icon } from "@/src/presentation/design-system";
 
 import { eventDescription, eventTitle } from "../eventCopy";
@@ -37,7 +37,7 @@ export async function EventDetailScreen({ event, signedIn, registration, now }: 
 
       {event.imageUrl ? (
         <div className="relative aspect-[16/9] overflow-hidden rounded-card-lg bg-muted">
-          <Image src={event.imageUrl} alt="" fill sizes="(min-width: 768px) 768px, 100vw" className="object-cover" priority />
+          <FadeInImage src={event.imageUrl} alt="" fill sizes="(min-width: 768px) 768px, 100vw" className="object-cover" priority />
         </div>
       ) : null}
 

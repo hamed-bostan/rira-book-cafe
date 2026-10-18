@@ -36,7 +36,9 @@ export async function pageMetadata({ title, description, path, image }: PageMeta
   const snippet = toSnippet(description ?? t("description"));
 
   return {
-    title,
+    // Only when the page has its own: an explicit `title: undefined` overrides the root
+    // layout's default instead of inheriting it, leaving the page with no <title>.
+    ...(title ? { title } : {}),
     description: snippet,
     alternates: { canonical: path },
     openGraph: {

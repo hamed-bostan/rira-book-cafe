@@ -21,6 +21,14 @@ function summarize(violations: Violation[]): string {
  * the test report; serious and critical ones fail the test.
  */
 export async function expectNoSeriousA11yViolations(page: Page, testInfo: TestInfo, label: string): Promise<void> {
+  // Audit the settled page: mid fade-in, text is partly transparent and axe would
+  // measure its contrast against a colour it never ends up with. (Looping animations,
+  // like a spinner, never settle and are left out.)
+  await page.waitForFunction(() =>
+    document
+      .getAnimations()
+      .every((animation) => animation.playState !== "running" || animation.effect?.getTiming().iterations === Infinity),
+  );
   const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
 
   if (results.violations.length > 0) {

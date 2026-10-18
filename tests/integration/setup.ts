@@ -20,10 +20,16 @@ vi.mock("@/auth", async () => {
   };
 });
 
+// Write routes expire cached catalog reads (`invalidatesCatalog`); `revalidateTag`
+// needs the Next request scope a directly called handler doesn't have. Recorded
+// instead, so a test can assert which tags a write expired.
+vi.mock("next/cache", () => ({ revalidateTag: vi.fn() }));
+
 // Every test starts from the same database, signed out.
 beforeEach(async () => {
   await restoreTestDatabase();
   signInAs(null);
+  vi.clearAllMocks();
 });
 
 afterAll(async () => {

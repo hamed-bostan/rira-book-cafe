@@ -4,6 +4,7 @@ import { eventFormSchema } from "@/src/contracts/event-schema";
 import { EventQueries } from "@/src/domain/use-cases/events/EventRegistrations";
 import { DeleteEvent, UpdateEvent } from "@/src/domain/use-cases/events/SaveEvent";
 import { eventRepository } from "@/src/infrastructure/container";
+import { invalidatesCatalog } from "@/src/lib/api/invalidatesCatalog";
 import {
   errorResponse,
   errorResponseFromException,
@@ -11,6 +12,7 @@ import {
   parseJsonBody,
   unauthorizedResponse,
 } from "@/src/lib/api/responses";
+import { CATALOG_TAGS } from "@/src/lib/cache-tags";
 import { getSessionWith } from "@/src/lib/require-permission";
 
 export const dynamic = "force-dynamic";
@@ -30,7 +32,7 @@ export async function GET(_request: NextRequest, { params }: RouteContext): Prom
 }
 
 /** PUT /api/events/:id — update an event. Requires `events.manage`. */
-export async function PUT(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
+async function handlePut(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   const session = await getSessionWith("events.manage");
   if (!session) return unauthorizedResponse();
 
@@ -59,15 +61,21 @@ export async function PUT(request: NextRequest, { params }: RouteContext): Promi
 }
 
 /** DELETE /api/events/:id — delete an event with no active sign-ups (409 otherwise). Requires `events.manage`. */
-export async function DELETE(_request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
+async function handleDelete(_request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   const session = await getSessionWith("events.manage");
   if (!session) return unauthorizedResponse();
 
   const { id } = await params;
   try {
-    await new DeleteEvent(eventRepository).execute(id, { id: session.user.id, name: session.user.name ?? session.user.id });
+    await new DeleteEvent(eventRepository).execute(id, {
+      id: session.user.id,
+      name: session.user.name ?? session.user.id,
+    });
     return new NextResponse(null, { status: 204 });
   } catch (error) {
     return errorResponseFromException(error, `DELETE /api/events/${id} failed`);
   }
 }
+
+export const PUT = invalidatesCatalog([CATALOG_TAGS.events], handlePut);
+export const DELETE = invalidatesCatalog([CATALOG_TAGS.events], handleDelete);

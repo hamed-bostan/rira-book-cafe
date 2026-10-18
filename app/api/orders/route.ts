@@ -5,6 +5,7 @@ import { withoutCosts } from "@/src/domain/entities/Order";
 import { ListOwnOrders } from "@/src/domain/use-cases/orders/OrderQueries";
 import { PlaceOrder } from "@/src/domain/use-cases/orders/PlaceOrder";
 import { checkoutPricing, orderRepository, productRepository, userRepository } from "@/src/infrastructure/container";
+import { invalidatesCatalog } from "@/src/lib/api/invalidatesCatalog";
 import { enforceRateLimit, RATE_LIMITS } from "@/src/lib/api/rate-limit";
 import {
   errorResponse,
@@ -13,6 +14,7 @@ import {
   parseJsonBody,
   unauthorizedResponse,
 } from "@/src/lib/api/responses";
+import { CATALOG_TAGS } from "@/src/lib/cache-tags";
 import { getUserSession } from "@/src/lib/require-auth";
 
 // Per-guest, request-time data — never statically cached.
@@ -39,7 +41,7 @@ export async function GET(): Promise<NextResponse> {
  * and points. 409 when an item sold out, the code can't be used, or the points
  * aren't there.
  */
-export async function POST(request: NextRequest): Promise<NextResponse> {
+async function handlePost(request: NextRequest): Promise<NextResponse> {
   const session = await getUserSession();
   if (!session?.user.id) return unauthorizedResponse();
 
@@ -69,3 +71,5 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return errorResponseFromException(error, "POST /api/orders failed");
   }
 }
+
+export const POST = invalidatesCatalog([CATALOG_TAGS.products], handlePost);

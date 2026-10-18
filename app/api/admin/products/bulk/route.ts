@@ -4,6 +4,7 @@ import { productBulkRequestSchema, type ProductBulkAction } from "@/src/contract
 import type { BulkProductChange } from "@/src/domain/repositories/IProductRepository";
 import { BulkUpdateProducts } from "@/src/domain/use-cases/products/BulkUpdateProducts";
 import { productRepository } from "@/src/infrastructure/container";
+import { invalidatesCatalog } from "@/src/lib/api/invalidatesCatalog";
 import {
   errorResponse,
   errorResponseFromException,
@@ -11,6 +12,7 @@ import {
   parseJsonBody,
   unauthorizedResponse,
 } from "@/src/lib/api/responses";
+import { CATALOG_TAGS } from "@/src/lib/cache-tags";
 import { getSessionWith } from "@/src/lib/require-permission";
 
 export const dynamic = "force-dynamic";
@@ -29,7 +31,7 @@ export const dynamic = "force-dynamic";
  * discriminated action keeps the auth check, the id validation and the cap in one
  * place instead of three near-identical handlers.
  */
-export async function PATCH(request: NextRequest): Promise<NextResponse> {
+async function handlePatch(request: NextRequest): Promise<NextResponse> {
   const session = await getSessionWith("catalog.write");
   if (!session) return unauthorizedResponse();
 
@@ -74,3 +76,5 @@ function toChange(action: ProductBulkAction): BulkProductChange {
       return { field: "categoryId", value: action.categoryId };
   }
 }
+
+export const PATCH = invalidatesCatalog([CATALOG_TAGS.products], handlePatch);

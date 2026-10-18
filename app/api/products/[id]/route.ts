@@ -6,6 +6,7 @@ import { DeleteProduct } from "@/src/domain/use-cases/products/DeleteProduct";
 import { GetPublishedProduct } from "@/src/domain/use-cases/products/GetPublishedProduct";
 import { UpdateProduct } from "@/src/domain/use-cases/products/UpdateProduct";
 import { productRepository } from "@/src/infrastructure/container";
+import { invalidatesCatalog } from "@/src/lib/api/invalidatesCatalog";
 import { getRequestLocale } from "@/src/lib/api/request-locale";
 import {
   errorResponse,
@@ -14,6 +15,7 @@ import {
   parseJsonBody,
   unauthorizedResponse,
 } from "@/src/lib/api/responses";
+import { CATALOG_TAGS } from "@/src/lib/cache-tags";
 import { getSessionWith } from "@/src/lib/require-permission";
 
 export const dynamic = "force-dynamic";
@@ -40,7 +42,7 @@ export async function GET(request: NextRequest, { params }: RouteContext): Promi
 /**
  * PUT /api/products/:id — update a product. Admin only.
  */
-export async function PUT(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
+async function handlePut(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   const session = await getSessionWith("catalog.write");
   if (!session) return unauthorizedResponse();
 
@@ -72,7 +74,7 @@ export async function PUT(request: NextRequest, { params }: RouteContext): Promi
 /**
  * DELETE /api/products/:id — delete a product. Admin only. 204 on success.
  */
-export async function DELETE(_request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
+async function handleDelete(_request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   const session = await getSessionWith("catalog.write");
   if (!session) return unauthorizedResponse();
 
@@ -89,3 +91,6 @@ export async function DELETE(_request: NextRequest, { params }: RouteContext): P
     return errorResponseFromException(error, `DELETE /api/products/${id} failed`);
   }
 }
+
+export const PUT = invalidatesCatalog([CATALOG_TAGS.products], handlePut);
+export const DELETE = invalidatesCatalog([CATALOG_TAGS.products], handleDelete);

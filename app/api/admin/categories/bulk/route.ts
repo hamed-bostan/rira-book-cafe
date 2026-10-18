@@ -4,6 +4,7 @@ import { categoryBulkRequestSchema, type CategoryBulkAction } from "@/src/contra
 import type { BulkCategoryChange } from "@/src/domain/repositories/ICategoryRepository";
 import { BulkUpdateCategories } from "@/src/domain/use-cases/categories/BulkUpdateCategories";
 import { categoryRepository } from "@/src/infrastructure/container";
+import { invalidatesCatalog } from "@/src/lib/api/invalidatesCatalog";
 import {
   errorResponse,
   errorResponseFromException,
@@ -11,6 +12,7 @@ import {
   parseJsonBody,
   unauthorizedResponse,
 } from "@/src/lib/api/responses";
+import { CATALOG_TAGS } from "@/src/lib/cache-tags";
 import { getSessionWith } from "@/src/lib/require-permission";
 
 export const dynamic = "force-dynamic";
@@ -20,7 +22,7 @@ export const dynamic = "force-dynamic";
  * categories (activate, deactivate). Admin only. Mirrors
  * `PATCH /api/admin/products/bulk` — see that route for the shape's rationale.
  */
-export async function PATCH(request: NextRequest): Promise<NextResponse> {
+async function handlePatch(request: NextRequest): Promise<NextResponse> {
   const session = await getSessionWith("catalog.write");
   if (!session) return unauthorizedResponse();
 
@@ -59,3 +61,5 @@ function toChange(action: CategoryBulkAction): BulkCategoryChange {
       return { field: "isActive", value: false };
   }
 }
+
+export const PATCH = invalidatesCatalog([CATALOG_TAGS.categories, CATALOG_TAGS.products], handlePatch);

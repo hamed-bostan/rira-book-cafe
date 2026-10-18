@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { reorderLevelSchema } from "@/src/contracts/inventory-schema";
 import { SetReorderLevel } from "@/src/domain/use-cases/inventory/InventoryCommands";
 import { inventoryRepository } from "@/src/infrastructure/container";
+import { invalidatesCatalog } from "@/src/lib/api/invalidatesCatalog";
 import {
   errorResponse,
   errorResponseFromException,
@@ -10,12 +11,13 @@ import {
   parseJsonBody,
   unauthorizedResponse,
 } from "@/src/lib/api/responses";
+import { CATALOG_TAGS } from "@/src/lib/cache-tags";
 import { getSessionWith } from "@/src/lib/require-permission";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 /** PATCH /api/admin/inventory/items/:id — set (or clear) the low-stock level. Requires `inventory.manage`. */
-export async function PATCH(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
+async function handlePatch(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   if (!(await getSessionWith("inventory.manage"))) return unauthorizedResponse();
 
   const { id } = await params;
@@ -23,7 +25,11 @@ export async function PATCH(request: NextRequest, { params }: RouteContext): Pro
   if (!body.ok) return errorResponse(400, { message: "Expected a JSON body.", code: "BAD_REQUEST" });
   const parsed = reorderLevelSchema.safeParse(body.data);
   if (!parsed.success) {
-    return errorResponse(400, { message: "Please fix the highlighted fields.", code: "VALIDATION", fieldErrors: firstFieldErrors(parsed.error) });
+    return errorResponse(400, {
+      message: "Please fix the highlighted fields.",
+      code: "VALIDATION",
+      fieldErrors: firstFieldErrors(parsed.error),
+    });
   }
 
   try {
@@ -33,3 +39,5 @@ export async function PATCH(request: NextRequest, { params }: RouteContext): Pro
     return errorResponseFromException(error, `PATCH /api/admin/inventory/items/${id} failed`);
   }
 }
+
+export const PATCH = invalidatesCatalog([CATALOG_TAGS.products], handlePatch);

@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { orderItemServedSchema } from "@/src/contracts/order-schema";
 import { SetOrderItemServed } from "@/src/domain/use-cases/orders/SetOrderItemServed";
 import { orderRepository } from "@/src/infrastructure/container";
+import { invalidatesCatalog } from "@/src/lib/api/invalidatesCatalog";
 import {
   errorResponse,
   errorResponseFromException,
@@ -10,6 +11,7 @@ import {
   parseJsonBody,
   unauthorizedResponse,
 } from "@/src/lib/api/responses";
+import { CATALOG_TAGS } from "@/src/lib/cache-tags";
 import { getSessionWith } from "@/src/lib/require-permission";
 
 type RouteContext = { params: Promise<{ id: string; itemId: string }> };
@@ -18,7 +20,7 @@ type RouteContext = { params: Promise<{ id: string; itemId: string }> };
  * PATCH /api/admin/orders/:id/items/:itemId — mark one line served, or take the
  * mark back. Requires `orders.fulfill`. 409 once the order is no longer being worked.
  */
-export async function PATCH(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
+async function handlePatch(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   const session = await getSessionWith("orders.fulfill");
   if (!session) return unauthorizedResponse();
 
@@ -42,3 +44,5 @@ export async function PATCH(request: NextRequest, { params }: RouteContext): Pro
     return errorResponseFromException(error, `PATCH /api/admin/orders/${id}/items/${itemId} failed`);
   }
 }
+
+export const PATCH = invalidatesCatalog([CATALOG_TAGS.products], handlePatch);

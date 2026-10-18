@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { stockReceiptSchema } from "@/src/contracts/inventory-schema";
 import { ReceiveStock } from "@/src/domain/use-cases/inventory/InventoryCommands";
 import { inventoryRepository } from "@/src/infrastructure/container";
+import { invalidatesCatalog } from "@/src/lib/api/invalidatesCatalog";
 import {
   errorResponse,
   errorResponseFromException,
@@ -10,13 +11,14 @@ import {
   parseJsonBody,
   unauthorizedResponse,
 } from "@/src/lib/api/responses";
+import { CATALOG_TAGS } from "@/src/lib/cache-tags";
 import { getSessionWith } from "@/src/lib/require-permission";
 
 /**
  * POST /api/admin/inventory/receipts — receive a delivery: stock comes in at cost,
  * and the supplier bill is booked to Inventory (payable or paid). Requires `inventory.manage`.
  */
-export async function POST(request: NextRequest): Promise<NextResponse> {
+async function handlePost(request: NextRequest): Promise<NextResponse> {
   const session = await getSessionWith("inventory.manage");
   if (!session) return unauthorizedResponse();
 
@@ -24,7 +26,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   if (!body.ok) return errorResponse(400, { message: "Expected a JSON body.", code: "BAD_REQUEST" });
   const parsed = stockReceiptSchema.safeParse(body.data);
   if (!parsed.success) {
-    return errorResponse(400, { message: "Please fix the highlighted fields.", code: "VALIDATION", fieldErrors: firstFieldErrors(parsed.error) });
+    return errorResponse(400, {
+      message: "Please fix the highlighted fields.",
+      code: "VALIDATION",
+      fieldErrors: firstFieldErrors(parsed.error),
+    });
   }
 
   try {
@@ -37,3 +43,5 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return errorResponseFromException(error, "POST /api/admin/inventory/receipts failed");
   }
 }
+
+export const POST = invalidatesCatalog([CATALOG_TAGS.products], handlePost);

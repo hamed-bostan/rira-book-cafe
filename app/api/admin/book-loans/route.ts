@@ -4,7 +4,13 @@ import { lendBookSchema } from "@/src/contracts/book-loan-schema";
 import { BOOK_LOAN_VIEWS, type BookLoanView } from "@/src/domain/repositories/IBookLoanRepository";
 import { ListBookLoans } from "@/src/domain/use-cases/book-loans/BookLoanQueries";
 import { LendBook } from "@/src/domain/use-cases/book-loans/LendBook";
-import { bookLoanRepository, bookWaitlistRepository, customerNotifier, userRepository } from "@/src/infrastructure/container";
+import {
+  bookLoanRepository,
+  bookWaitlistRepository,
+  customerNotifier,
+  userRepository,
+} from "@/src/infrastructure/container";
+import { invalidatesCatalog } from "@/src/lib/api/invalidatesCatalog";
 import {
   errorResponse,
   errorResponseFromException,
@@ -12,6 +18,7 @@ import {
   parseJsonBody,
   unauthorizedResponse,
 } from "@/src/lib/api/responses";
+import { CATALOG_TAGS } from "@/src/lib/cache-tags";
 import { getSessionWith } from "@/src/lib/require-permission";
 
 export const dynamic = "force-dynamic";
@@ -46,7 +53,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
  * `loans.manage`. 201 with the loan; 409 `ALREADY_ON_LOAN` when that borrower
  * already has the book.
  */
-export async function POST(request: NextRequest): Promise<NextResponse> {
+async function handlePost(request: NextRequest): Promise<NextResponse> {
   const session = await getSessionWith("loans.manage");
   if (!session) return unauthorizedResponse();
 
@@ -63,13 +70,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   try {
-    const loan = await new LendBook(bookLoanRepository, userRepository, bookWaitlistRepository, customerNotifier).execute(
-      parsed.data,
-      { id: session.user.id, name: session.user.name ?? session.user.id },
-      new Date(),
-    );
+    const loan = await new LendBook(
+      bookLoanRepository,
+      userRepository,
+      bookWaitlistRepository,
+      customerNotifier,
+    ).execute(parsed.data, { id: session.user.id, name: session.user.name ?? session.user.id }, new Date());
     return NextResponse.json(loan, { status: 201 });
   } catch (error) {
     return errorResponseFromException(error, "POST /api/admin/book-loans failed");
   }
 }
+
+export const POST = invalidatesCatalog([CATALOG_TAGS.products], handlePost);

@@ -5,6 +5,7 @@ import { CreateCategory } from "@/src/domain/use-cases/categories/CreateCategory
 import { GetCategories } from "@/src/domain/use-cases/categories/GetCategories";
 import { GetCategoryBySlug } from "@/src/domain/use-cases/categories/GetCategoryBySlug";
 import { categoryRepository } from "@/src/infrastructure/container";
+import { invalidatesCatalog } from "@/src/lib/api/invalidatesCatalog";
 import { getRequestLocale } from "@/src/lib/api/request-locale";
 import {
   errorResponse,
@@ -13,6 +14,7 @@ import {
   parseJsonBody,
   unauthorizedResponse,
 } from "@/src/lib/api/responses";
+import { CATALOG_TAGS } from "@/src/lib/cache-tags";
 import { getSessionWith } from "@/src/lib/require-permission";
 
 // Categories are read from Postgres per request — never statically cached.
@@ -44,7 +46,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
  * Thin controller: authenticate → validate (same Zod schema the form uses) →
  * delegate to the use-case → map domain errors to HTTP status codes.
  */
-export async function POST(request: NextRequest): Promise<NextResponse> {
+async function handlePost(request: NextRequest): Promise<NextResponse> {
   const session = await getSessionWith("catalog.write");
   if (!session) return unauthorizedResponse();
 
@@ -61,9 +63,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   try {
-    const created = await new CreateCategory(categoryRepository).execute(parsed.data, { id: session.user.id, name: session.user.name ?? session.user.id });
+    const created = await new CreateCategory(categoryRepository).execute(parsed.data, {
+      id: session.user.id,
+      name: session.user.name ?? session.user.id,
+    });
     return NextResponse.json(created, { status: 201 });
   } catch (error) {
     return errorResponseFromException(error, "POST /api/categories failed");
   }
 }
+
+export const POST = invalidatesCatalog([CATALOG_TAGS.categories, CATALOG_TAGS.products], handlePost);

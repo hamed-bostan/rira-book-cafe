@@ -2,13 +2,15 @@ import { NextResponse } from "next/server";
 
 import { CancelOwnRegistration } from "@/src/domain/use-cases/events/EventRegistrations";
 import { eventRepository } from "@/src/infrastructure/container";
+import { invalidatesCatalog } from "@/src/lib/api/invalidatesCatalog";
 import { errorResponseFromException, unauthorizedResponse } from "@/src/lib/api/responses";
+import { CATALOG_TAGS } from "@/src/lib/cache-tags";
 import { getUserSession } from "@/src/lib/require-auth";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 /** DELETE /api/event-registrations/:id — the guest cancels their own sign-up. 404 for anyone else's. */
-export async function DELETE(_request: Request, { params }: RouteContext): Promise<NextResponse> {
+async function handleDelete(_request: Request, { params }: RouteContext): Promise<NextResponse> {
   const session = await getUserSession();
   if (!session?.user.id) return unauthorizedResponse();
 
@@ -19,3 +21,5 @@ export async function DELETE(_request: Request, { params }: RouteContext): Promi
     return errorResponseFromException(error, `DELETE /api/event-registrations/${id} failed`);
   }
 }
+
+export const DELETE = invalidatesCatalog([CATALOG_TAGS.events], handleDelete);

@@ -4,6 +4,7 @@ import { orderStatusChangeSchema } from "@/src/contracts/order-schema";
 import { ChangeOrderStatus } from "@/src/domain/use-cases/orders/ChangeOrderStatus";
 import { ListOrderStatusEvents } from "@/src/domain/use-cases/orders/OrderQueries";
 import { customerNotifier, orderRepository } from "@/src/infrastructure/container";
+import { invalidatesCatalog } from "@/src/lib/api/invalidatesCatalog";
 import {
   errorResponse,
   errorResponseFromException,
@@ -11,6 +12,7 @@ import {
   parseJsonBody,
   unauthorizedResponse,
 } from "@/src/lib/api/responses";
+import { CATALOG_TAGS } from "@/src/lib/cache-tags";
 import { getSessionWith } from "@/src/lib/require-permission";
 
 export const dynamic = "force-dynamic";
@@ -34,7 +36,7 @@ export async function GET(_request: Request, { params }: RouteContext): Promise<
  * cancel it). Requires `orders.fulfill`. 409 for a transition the workflow
  * refuses or one that lost a race with another change.
  */
-export async function PATCH(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
+async function handlePatch(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   const session = await getSessionWith("orders.fulfill");
   if (!session) return unauthorizedResponse();
 
@@ -61,3 +63,5 @@ export async function PATCH(request: NextRequest, { params }: RouteContext): Pro
     return errorResponseFromException(error, `PATCH /api/admin/orders/${id}/status failed`);
   }
 }
+
+export const PATCH = invalidatesCatalog([CATALOG_TAGS.products], handlePatch);

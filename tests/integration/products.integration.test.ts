@@ -1,3 +1,4 @@
+import { revalidateTag } from "next/cache";
 import { describe, expect, it } from "vitest";
 
 import { GET as getAdminProduct } from "@/app/api/admin/products/[id]/route";
@@ -6,6 +7,7 @@ import { DELETE as deleteProduct, GET as getProduct, PUT as updateProduct } from
 import { GET as listProducts, POST as createProduct } from "@/app/api/products/route";
 import type { Product } from "@/src/domain/entities/Product";
 import { prisma } from "@/src/infrastructure/prisma/client";
+import { CATALOG_TAGS } from "@/src/lib/cache-tags";
 
 import { getRequest, jsonRequest, rawRequest, readError, readJson, routeParams } from "./helpers/http";
 import { signInAs } from "./helpers/session";
@@ -54,7 +56,10 @@ describe("public product reads", () => {
   });
 
   it("serves the Persian name when asked for fa", async () => {
-    const response = await getProduct(getRequest("/api/products/seed-espresso", { "accept-language": "fa" }), routeParams({ id: "seed-espresso" }));
+    const response = await getProduct(
+      getRequest("/api/products/seed-espresso", { "accept-language": "fa" }),
+      routeParams({ id: "seed-espresso" }),
+    );
 
     expect(response.status).toBe(200);
     expect((await readJson<Product>(response)).name).toBe("اسپرسو");
@@ -70,11 +75,17 @@ describe("public product reads", () => {
   it("hides an unpublished product from the public read but not from the dashboard", async () => {
     await prisma.product.update({ where: { id: "seed-espresso" }, data: { isPublished: false } });
 
-    const publicRead = await getProduct(getRequest("/api/products/seed-espresso"), routeParams({ id: "seed-espresso" }));
+    const publicRead = await getProduct(
+      getRequest("/api/products/seed-espresso"),
+      routeParams({ id: "seed-espresso" }),
+    );
     expect(publicRead.status).toBe(404);
 
     signInAs("staff");
-    const adminRead = await getAdminProduct(getRequest("/api/admin/products/seed-espresso"), routeParams({ id: "seed-espresso" }));
+    const adminRead = await getAdminProduct(
+      getRequest("/api/admin/products/seed-espresso"),
+      routeParams({ id: "seed-espresso" }),
+    );
     expect(adminRead.status).toBe(200);
   });
 });
@@ -94,6 +105,8 @@ describe("product writes", () => {
       expect(response.status, role).toBe(401);
     }
     expect(await prisma.product.count({ where: { name: "Cortado" } })).toBe(0);
+    // A refused write leaves the storefront's cached catalog alone.
+    expect(revalidateTag).not.toHaveBeenCalled();
   });
 
   it("rejects an invalid form with 400 and per-field errors", async () => {
@@ -105,7 +118,11 @@ describe("product writes", () => {
     expect(response.status).toBe(400);
     const error = await readError(response);
     expect(error.code).toBe("VALIDATION");
-    expect(error.fieldErrors).toMatchObject({ name: "nameRequired", price: "priceInvalid", categoryId: "categoryRequired" });
+    expect(error.fieldErrors).toMatchObject({
+      name: "nameRequired",
+      price: "priceInvalid",
+      categoryId: "categoryRequired",
+    });
   });
 
   it("rejects a body that isn't JSON with 400", async () => {
@@ -121,10 +138,15 @@ describe("product writes", () => {
 
     const created = await createProduct(jsonRequest("POST", "/api/products", await productForm()));
     expect(created.status).toBe(201);
+    // The storefront's cached menu expires at once, so the new item shows on the next render.
+    expect(revalidateTag).toHaveBeenCalledWith(CATALOG_TAGS.products, { expire: 0 });
     const product = await readJson<Product>(created);
     expect(product).toMatchObject({ name: "Cortado", price: 130000, stockQuantity: 40, isPublished: true });
 
-    const translated = await getProduct(getRequest(`/api/products/${product.id}`, { "accept-language": "fa" }), routeParams({ id: product.id }));
+    const translated = await getProduct(
+      getRequest(`/api/products/${product.id}`, { "accept-language": "fa" }),
+      routeParams({ id: product.id }),
+    );
     expect((await readJson<Product>(translated)).name).toBe("کورتادو");
 
     const updated = await updateProduct(
@@ -134,11 +156,17 @@ describe("product writes", () => {
     expect(updated.status).toBe(200);
     expect(await readJson<Product>(updated)).toMatchObject({ name: "Cortado doppio", price: 150000 });
 
-    const deleted = await deleteProduct(jsonRequest("DELETE", `/api/products/${product.id}`), routeParams({ id: product.id }));
+    const deleted = await deleteProduct(
+      jsonRequest("DELETE", `/api/products/${product.id}`),
+      routeParams({ id: product.id }),
+    );
     expect(deleted.status).toBe(204);
     expect(await prisma.product.findUnique({ where: { id: product.id } })).toBeNull();
 
-    const actions = await prisma.activityEntry.findMany({ where: { entityId: product.id }, orderBy: { createdAt: "asc" } });
+    const actions = await prisma.activityEntry.findMany({
+      where: { entityId: product.id },
+      orderBy: { createdAt: "asc" },
+    });
     expect(actions.map((entry) => entry.action)).toEqual(["product.created", "product.updated", "product.deleted"]);
     expect(actions.every((entry) => entry.actorId === "09120000002")).toBe(true);
   });
@@ -146,7 +174,10 @@ describe("product writes", () => {
   it("answers 404 when updating or deleting a product that doesn't exist", async () => {
     signInAs("owner");
 
-    const updated = await updateProduct(jsonRequest("PUT", "/api/products/missing", await productForm()), routeParams({ id: "missing" }));
+    const updated = await updateProduct(
+      jsonRequest("PUT", "/api/products/missing", await productForm()),
+      routeParams({ id: "missing" }),
+    );
     expect(updated.status).toBe(404);
 
     const deleted = await deleteProduct(jsonRequest("DELETE", "/api/products/missing"), routeParams({ id: "missing" }));
@@ -155,7 +186,9 @@ describe("product writes", () => {
 
   it("requires a book's author", async () => {
     signInAs("admin");
-    const response = await createProduct(jsonRequest("POST", "/api/products", await productForm({ kind: "book", bookAuthor: "" })));
+    const response = await createProduct(
+      jsonRequest("POST", "/api/products", await productForm({ kind: "book", bookAuthor: "" })),
+    );
 
     expect(response.status).toBe(400);
     expect((await readError(response)).fieldErrors).toMatchObject({ bookAuthor: "authorRequired" });

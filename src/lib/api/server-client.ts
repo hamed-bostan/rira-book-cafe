@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { getLocale } from "next-intl/server";
 
+import { CATALOG_REVALIDATE_SECONDS, type CatalogTag } from "../cache-tags";
 import { getEnv } from "../env";
 
 import { ApiError } from "./ApiError";
@@ -38,6 +39,14 @@ type ServerGetConfig = {
    * written back over the base row on save — so its reads set this.
    */
   canonical?: boolean;
+  /**
+   * Cache this response in Next's data cache, shared by every visitor, under these
+   * tags (invalidated by the write routes — see `invalidatesCatalog`). Only for
+   * public reads that are the same for everyone: the request is sent **without the
+   * caller's cookies**, so the API answers as an anonymous guest. The locale still
+   * goes along (`Accept-Language` is part of the cache key), one entry per language.
+   */
+  cache?: { tags: readonly CatalogTag[] };
 };
 
 /**
@@ -50,7 +59,8 @@ type ServerGetConfig = {
  */
 export async function serverApiGet<T>(path: string, schema: ZodType<T>, config?: ServerGetConfig): Promise<T> {
   const requestHeaders = await headers();
-  const cookie = requestHeaders.get("cookie") ?? undefined;
+  // A shared cache entry must not depend on who asked — so cached reads go anonymous.
+  const cookie = config?.cache ? undefined : (requestHeaders.get("cookie") ?? undefined);
   // Forward the active locale as the BFF's language negotiation, so the API serves
   // localized catalog content during server render (the route reads `Accept-Language`).
   // Canonical reads (admin/dashboard) opt out so they receive the base-row content.
@@ -61,8 +71,10 @@ export async function serverApiGet<T>(path: string, schema: ZodType<T>, config?:
   let response: Response;
   try {
     response = await fetch(url, {
-      // Per-user, request-time data (cookies are forwarded) — never cache.
-      cache: "no-store",
+      ...(config?.cache
+        ? { next: { tags: [...config.cache.tags], revalidate: CATALOG_REVALIDATE_SECONDS } }
+        : // Per-user, request-time data (cookies are forwarded) — never cache.
+          { cache: "no-store" as const }),
       signal: AbortSignal.timeout(DEFAULT_TIMEOUT_MS),
       headers: {
         Accept: "application/json",

@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { moderateReviewSchema } from "@/src/contracts/review-schema";
 import { ModerateReview } from "@/src/domain/use-cases/reviews/ReviewCommands";
 import { customerNotifier, reviewRepository } from "@/src/infrastructure/container";
+import { invalidatesCatalog } from "@/src/lib/api/invalidatesCatalog";
 import {
   errorResponse,
   errorResponseFromException,
@@ -10,6 +11,7 @@ import {
   parseJsonBody,
   unauthorizedResponse,
 } from "@/src/lib/api/responses";
+import { CATALOG_TAGS } from "@/src/lib/cache-tags";
 import { getSessionWith } from "@/src/lib/require-permission";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -18,7 +20,7 @@ type RouteContext = { params: Promise<{ id: string }> };
  * PATCH /api/admin/reviews/:id — approve or reject a review. Requires
  * `reviews.moderate`. 409 when it changed in the meantime.
  */
-export async function PATCH(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
+async function handlePatch(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   const session = await getSessionWith("reviews.moderate");
   if (!session) return unauthorizedResponse();
 
@@ -47,3 +49,5 @@ export async function PATCH(request: NextRequest, { params }: RouteContext): Pro
     return errorResponseFromException(error, `PATCH /api/admin/reviews/${id} failed`);
   }
 }
+
+export const PATCH = invalidatesCatalog([CATALOG_TAGS.products], handlePatch);

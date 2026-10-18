@@ -22,7 +22,7 @@ export const Skeleton = React.forwardRef<HTMLDivElement, SkeletonProps>(({ class
     aria-hidden
     // The pulse loops for as long as the wait lasts, so it stills under reduced
     // motion; the block itself stays, and still marks the space as pending.
-    className={cn("animate-pulse motion-reduce:animate-none bg-muted-strong", className)}
+    className={cn("animate-pulse bg-muted-strong motion-reduce:animate-none", className)}
     {...props}
   />
 ));

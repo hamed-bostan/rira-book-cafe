@@ -19,7 +19,11 @@ export const requestSuiteBookingSchema = z
   .object({
     checkIn: z.string().refine(isCafeDay, "dateInvalid"),
     checkOut: z.string().refine(isCafeDay, "dateInvalid"),
-    guests: z.number().int("suiteGuestsInvalid").min(MIN_SUITE_GUESTS, "suiteGuestsInvalid").max(MAX_SUITE_GUESTS, "suiteGuestsInvalid"),
+    guests: z
+      .number()
+      .int("suiteGuestsInvalid")
+      .min(MIN_SUITE_GUESTS, "suiteGuestsInvalid")
+      .max(MAX_SUITE_GUESTS, "suiteGuestsInvalid"),
     note: z
       .string()
       .trim()

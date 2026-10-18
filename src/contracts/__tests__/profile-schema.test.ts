@@ -4,7 +4,10 @@ import { profileResponseSchema, profileUpdateSchema } from "../profile-schema";
 
 describe("profileUpdateSchema", () => {
   it("trims the name and email", () => {
-    expect(profileUpdateSchema.parse({ name: " Hamed ", email: " guest@example.com " })).toEqual({ name: "Hamed", email: "guest@example.com" });
+    expect(profileUpdateSchema.parse({ name: " Hamed ", email: " guest@example.com " })).toEqual({
+      name: "Hamed",
+      email: "guest@example.com",
+    });
   });
 
   it("accepts an empty email, which clears it", () => {
@@ -12,13 +15,16 @@ describe("profileUpdateSchema", () => {
   });
 
   it("maps each invalid field to its message key", () => {
-    const fieldErrors = profileUpdateSchema.safeParse({ name: " ", email: "not-an-email" }).error?.flatten().fieldErrors;
+    const fieldErrors = profileUpdateSchema
+      .safeParse({ name: " ", email: "not-an-email" })
+      .error?.flatten().fieldErrors;
     expect(fieldErrors).toEqual({ name: ["nameRequired"], email: ["emailInvalid"] });
   });
 
   it("caps the name and the email", () => {
-    const fieldErrors = profileUpdateSchema.safeParse({ name: "n".repeat(81), email: `${"a".repeat(115)}@example.com` }).error?.flatten()
-      .fieldErrors;
+    const fieldErrors = profileUpdateSchema
+      .safeParse({ name: "n".repeat(81), email: `${"a".repeat(115)}@example.com` })
+      .error?.flatten().fieldErrors;
     expect(fieldErrors).toEqual({ name: ["nameTooLong"], email: ["emailTooLong"] });
   });
 });

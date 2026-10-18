@@ -29,7 +29,11 @@ export type RequestSuiteBookingInput = {
 export class RequestSuiteBooking {
   constructor(private readonly suiteRepo: ISuiteBookingRepository) {}
 
-  async execute(input: RequestSuiteBookingInput, guest: Pick<User, "id" | "name" | "phone">, now: Date): Promise<SuiteBooking> {
+  async execute(
+    input: RequestSuiteBookingInput,
+    guest: Pick<User, "id" | "name" | "phone">,
+    now: Date,
+  ): Promise<SuiteBooking> {
     const { checkIn, checkOut } = input;
     if (!isCafeDay(checkIn)) throw new ValidationError("checkIn", "Choose a check-in day.");
     if (!isCafeDay(checkOut)) throw new ValidationError("checkOut", "Choose a check-out day.");
@@ -41,7 +45,8 @@ export class RequestSuiteBooking {
     }
     const nights = suiteNights(checkIn, checkOut);
     if (nights < 1) throw new ValidationError("checkOut", "Check-out must be after check-in.");
-    if (nights > MAX_SUITE_NIGHTS) throw new ValidationError("checkOut", `A stay can be at most ${MAX_SUITE_NIGHTS} nights.`);
+    if (nights > MAX_SUITE_NIGHTS)
+      throw new ValidationError("checkOut", `A stay can be at most ${MAX_SUITE_NIGHTS} nights.`);
 
     if (!Number.isInteger(input.guests) || input.guests < MIN_SUITE_GUESTS || input.guests > MAX_SUITE_GUESTS) {
       throw new ValidationError("guests", `Guests must be ${MIN_SUITE_GUESTS}–${MAX_SUITE_GUESTS}.`);

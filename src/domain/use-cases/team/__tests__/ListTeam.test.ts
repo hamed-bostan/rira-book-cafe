@@ -11,8 +11,13 @@ function user(id: string, role: UserRole): User {
   return { id, phone: id, name: id, email: null, avatarUrl: null, role };
 }
 
-function repoWith(users: User[]): { repo: IUserRepository; listByRoles: ReturnType<typeof vi.fn<IUserRepository["listByRoles"]>> } {
-  const listByRoles = vi.fn<IUserRepository["listByRoles"]>(async (roles) => users.filter((u) => roles.includes(u.role)));
+function repoWith(users: User[]): {
+  repo: IUserRepository;
+  listByRoles: ReturnType<typeof vi.fn<IUserRepository["listByRoles"]>>;
+} {
+  const listByRoles = vi.fn<IUserRepository["listByRoles"]>(async (roles) =>
+    users.filter((u) => roles.includes(u.role)),
+  );
   const repo = {
     listByRoles,
     getById: vi.fn(async (id: string) => users.find((u) => u.id === id) ?? null),
@@ -37,7 +42,14 @@ describe("ListTeam", () => {
 
 describe("roleChangeEntry", () => {
   it("builds the same user.roleChanged entry for every team change", () => {
-    expect(roleChangeEntry({ user: { id: "u1", name: "Sara" }, actor: { id: "owner", name: "Rira" }, fromRole: "customer", toRole: "staff" })).toEqual({
+    expect(
+      roleChangeEntry({
+        user: { id: "u1", name: "Sara" },
+        actor: { id: "owner", name: "Rira" },
+        fromRole: "customer",
+        toRole: "staff",
+      }),
+    ).toEqual({
       actorId: "owner",
       actorName: "Rira",
       action: "user.roleChanged",
@@ -50,9 +62,10 @@ describe("roleChangeEntry", () => {
 });
 
 describe("reading role changes back", () => {
-  const change = (before: string | null, after: string | null): { field: string; before: string | null; after: string | null }[] => [
-    { field: "role", before, after },
-  ];
+  const change = (
+    before: string | null,
+    after: string | null,
+  ): { field: string; before: string | null; after: string | null }[] => [{ field: "role", before, after }];
 
   it("pulls the move out of a diff, defaulting unreadable roles to customer", () => {
     expect(roleMove([{ field: "name", before: "a", after: "b" }])).toBeNull();

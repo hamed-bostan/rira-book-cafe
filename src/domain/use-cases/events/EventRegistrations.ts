@@ -1,9 +1,5 @@
 import { singleChange, type ActivityActor } from "../../entities/ActivityEntry";
-import {
-  MAX_SEATS_PER_REGISTRATION,
-  type CafeEvent,
-  type EventRegistration,
-} from "../../entities/CafeEvent";
+import { MAX_SEATS_PER_REGISTRATION, type CafeEvent, type EventRegistration } from "../../entities/CafeEvent";
 import { NotFoundError } from "../../errors/NotFoundError";
 import { ValidationError } from "../../errors/ValidationError";
 
@@ -18,7 +14,12 @@ import type { IEventRepository } from "../../repositories/IEventRepository";
 export class RegisterForEvent {
   constructor(private readonly eventRepo: IEventRepository) {}
 
-  async execute(eventId: string, seats: number, guest: Pick<User, "id" | "name" | "phone">, now: Date): Promise<EventRegistration> {
+  async execute(
+    eventId: string,
+    seats: number,
+    guest: Pick<User, "id" | "name" | "phone">,
+    now: Date,
+  ): Promise<EventRegistration> {
     if (!Number.isInteger(seats) || seats < 1 || seats > MAX_SEATS_PER_REGISTRATION) {
       throw new ValidationError("seats", `Choose 1–${MAX_SEATS_PER_REGISTRATION} seats.`);
     }

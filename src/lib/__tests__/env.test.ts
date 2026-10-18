@@ -84,9 +84,7 @@ describe("envWarnings", () => {
   });
 
   it("flags the mock OTP provider, a missing APP_URL and sandbox payments in production", () => {
-    const warnings = envWarnings(
-      parseEnv({ ...PROD, OTP_MOCK: "true", APP_URL: undefined, ZARINPAL_SANDBOX: "true" }),
-    );
+    const warnings = envWarnings(parseEnv({ ...PROD, OTP_MOCK: "true", APP_URL: undefined, ZARINPAL_SANDBOX: "true" }));
     expect(warnings).toHaveLength(3);
     expect(warnings[0]).toMatch(/MOCK OTP/);
   });

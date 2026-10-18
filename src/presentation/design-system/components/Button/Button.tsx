@@ -31,10 +31,10 @@ const buttonVariants = cva(
         primary:
           "bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary-pressed disabled:bg-disabled disabled:text-disabled-foreground",
         outline:
-          "border border-primary text-primary bg-transparent hover:bg-accent active:bg-accent active:text-primary-pressed active:border-primary-pressed disabled:border-disabled-border disabled:text-disabled-foreground",
+          "border border-primary bg-transparent text-primary hover:bg-accent active:border-primary-pressed active:bg-accent active:text-primary-pressed disabled:border-disabled-border disabled:text-disabled-foreground",
         soft: "bg-accent text-accent-foreground hover:bg-primary hover:text-primary-foreground active:bg-primary-pressed disabled:bg-disabled disabled:text-disabled-foreground",
-        ghost: "px-0 bg-transparent text-foreground hover:text-primary disabled:text-disabled-foreground",
-        link: "px-0 bg-transparent text-primary hover:text-primary-hover hover:underline underline-offset-4 disabled:text-disabled-foreground disabled:no-underline",
+        ghost: "bg-transparent px-0 text-foreground hover:text-primary disabled:text-disabled-foreground",
+        link: "bg-transparent px-0 text-primary underline-offset-4 hover:text-primary-hover hover:underline disabled:text-disabled-foreground disabled:no-underline",
       },
 
       size: {
@@ -47,7 +47,7 @@ const buttonVariants = cva(
         // shrink-0 keeps the square from being compressed by greedy flex
         // siblings (e.g. a w-full Input in the same row), which would squash
         // the width on the main axis and break the 1:1 aspect ratio.
-        true: "p-0 shrink-0",
+        true: "shrink-0 p-0",
         false: "",
       },
     },

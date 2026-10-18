@@ -34,10 +34,7 @@ import type { Prisma } from "@prisma/client";
 export class PrismaActivityLog implements IActivityLog {
   constructor(private readonly logger: ILogger) {}
 
-  async list(
-    filters: ActivityFilters,
-    page: PageRequest<ActivitySort>,
-  ): Promise<Page<ActivityEntry>> {
+  async list(filters: ActivityFilters, page: PageRequest<ActivitySort>): Promise<Page<ActivityEntry>> {
     const where = toWhere(filters);
     // `at` is the only sort the log offers, so the direction is the whole choice.
     const orderBy: Prisma.ActivityEntryOrderByWithRelationInput = {
@@ -55,11 +52,7 @@ export class PrismaActivityLog implements IActivityLog {
     return createPage(rows.map(toActivityEntry), total, page);
   }
 
-  async listForEntity(
-    entityType: string,
-    entityId: string,
-    limit: number,
-  ): Promise<ActivityEntry[]> {
+  async listForEntity(entityType: string, entityId: string, limit: number): Promise<ActivityEntry[]> {
     const rows = await prisma.activityEntry.findMany({
       where: { entityType, entityId },
       orderBy: { createdAt: "desc" },
@@ -89,9 +82,7 @@ export class PrismaActivityLog implements IActivityLog {
       if (!seen || seen.at < at) latest.set(group.actorId, { name: group.actorName, at });
     }
 
-    return [...latest.entries()]
-      .map(([id, { name }]) => ({ id, name }))
-      .sort((a, b) => a.name.localeCompare(b.name));
+    return [...latest.entries()].map(([id, { name }]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
   }
 
   async recordEvent(entry: NewActivityEntry): Promise<void> {

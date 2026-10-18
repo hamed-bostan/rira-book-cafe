@@ -37,7 +37,11 @@ export class StartOnlinePayment {
     private readonly gateway: IPaymentGateway,
   ) {}
 
-  async execute(orderId: string, userId: string, callbackUrl: string): Promise<{ redirectUrl: string; attempt: PaymentAttempt }> {
+  async execute(
+    orderId: string,
+    userId: string,
+    callbackUrl: string,
+  ): Promise<{ redirectUrl: string; attempt: PaymentAttempt }> {
     const order = await this.orders.getById(orderId);
     if (order?.userId !== userId) throw new NotFoundError("order", orderId);
     const reason = notPayableReason(order);
@@ -98,7 +102,8 @@ export class VerifyOnlinePayment {
       return current ? outcomeOf(current) : "processing";
     }
 
-    const finish = async (result: PaymentAttemptResult): Promise<PaymentOutcome> => outcomeOf(await this.attempts.finish(attempt.id, result));
+    const finish = async (result: PaymentAttemptResult): Promise<PaymentOutcome> =>
+      outcomeOf(await this.attempts.finish(attempt.id, result));
     const order = await this.orders.getById(attempt.orderId);
 
     // A retry of a callback that captured the money and then failed to book it:
@@ -124,7 +129,8 @@ export class VerifyOnlinePayment {
       await this.attempts.release(attempt.id);
       throw error;
     }
-    if (!verification.ok) return finish({ status: "failed", failureReason: "declined", gatewayCode: verification.code });
+    if (!verification.ok)
+      return finish({ status: "failed", failureReason: "declined", gatewayCode: verification.code });
 
     return this.book(attempt, order, { refId: verification.refId, cardPan: verification.cardPan }, finish);
   }
@@ -141,7 +147,13 @@ export class VerifyOnlinePayment {
     finish: (result: PaymentAttemptResult) => Promise<PaymentOutcome>,
   ): Promise<PaymentOutcome> {
     try {
-      await new SetOrderPayment(this.orders).execute(order.id, "paid", "online", { id: order.userId, name: order.customerName }, { strict: true });
+      await new SetOrderPayment(this.orders).execute(
+        order.id,
+        "paid",
+        "online",
+        { id: order.userId, name: order.customerName },
+        { strict: true },
+      );
     } catch (error) {
       if (error instanceof ConflictError) return finish({ status: "unapplied", ...captured });
       // Keep what the gateway said, so the retry books it without asking again.

@@ -2,7 +2,10 @@ import type { AuditHook } from "./AuditHook";
 import type { ModerationStatus, ProductReview, ReviewStatus } from "../entities/ProductReview";
 
 /** A guest's review as they wrote it. Status, moderation and timestamps are the repository's. */
-export type ReviewDraft = Pick<ProductReview, "productId" | "productName" | "userId" | "authorName" | "rating" | "comment">;
+export type ReviewDraft = Pick<
+  ProductReview,
+  "productId" | "productName" | "userId" | "authorName" | "rating" | "comment"
+>;
 
 /** Which reviews the moderation queue shows. */
 export const REVIEW_VIEWS = ["pending", "approved", "rejected", "all"] as const;

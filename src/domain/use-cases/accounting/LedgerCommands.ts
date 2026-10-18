@@ -1,6 +1,15 @@
 import { diffFields, singleChange, type ActivityActor } from "../../entities/ActivityEntry";
 import { cafeDayOf } from "../../entities/CafeTime";
-import { isReversibleSource, MAX_VAT_RATE_BPS, reversalOf, SYSTEM_ACCOUNTS, typeForCode, type Account, type AccountingSettings, type JournalEntry } from "../../entities/Ledger";
+import {
+  isReversibleSource,
+  MAX_VAT_RATE_BPS,
+  reversalOf,
+  SYSTEM_ACCOUNTS,
+  typeForCode,
+  type Account,
+  type AccountingSettings,
+  type JournalEntry,
+} from "../../entities/Ledger";
 import { gatewaySettlementEntry, settledAmount, type GatewaySettlement } from "../../entities/Postings";
 import { ConflictError } from "../../errors/ConflictError";
 import { NotFoundError } from "../../errors/NotFoundError";
@@ -97,7 +106,13 @@ export class RecordGatewaySettlement {
 export class ReverseJournalEntry {
   constructor(private readonly ledger: ILedgerRepository) {}
 
-  async execute(entryId: string, date: string, reason: string, actor: ActivityActor, now: Date = new Date()): Promise<JournalEntry> {
+  async execute(
+    entryId: string,
+    date: string,
+    reason: string,
+    actor: ActivityActor,
+    now: Date = new Date(),
+  ): Promise<JournalEntry> {
     const entry = await this.ledger.getEntry(entryId);
     if (!entry) throw new NotFoundError("journal entry", entryId);
     if (!isReversibleSource(entry.source)) {
@@ -123,8 +138,7 @@ export class ReverseJournalEntry {
 }
 
 const accountAudit =
-  (actor: ActivityActor, changes: (account: Account) => ReturnType<typeof singleChange>) =>
-  (account: Account) => ({
+  (actor: ActivityActor, changes: (account: Account) => ReturnType<typeof singleChange>) => (account: Account) => ({
     actorId: actor.id,
     actorName: actor.name,
     action: "ledger.accountChanged" as const,
@@ -174,7 +188,11 @@ export class SetLedgerAccountActive {
 export class UpdateAccountingSettings {
   constructor(private readonly ledger: ILedgerRepository) {}
 
-  async execute(settings: AccountingSettings, actor: ActivityActor, now: Date = new Date()): Promise<AccountingSettings> {
+  async execute(
+    settings: AccountingSettings,
+    actor: ActivityActor,
+    now: Date = new Date(),
+  ): Promise<AccountingSettings> {
     if (!Number.isInteger(settings.vatRateBps) || settings.vatRateBps < 0 || settings.vatRateBps > MAX_VAT_RATE_BPS) {
       throw new ValidationError("vatRate", "Enter a VAT rate from 0 to 50%.");
     }

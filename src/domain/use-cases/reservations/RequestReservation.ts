@@ -27,7 +27,11 @@ export type RequestReservationInput = {
 export class RequestReservation {
   constructor(private readonly reservationRepo: IReservationRepository) {}
 
-  async execute(input: RequestReservationInput, guest: Pick<User, "id" | "name" | "phone">, now: Date): Promise<Reservation> {
+  async execute(
+    input: RequestReservationInput,
+    guest: Pick<User, "id" | "name" | "phone">,
+    now: Date,
+  ): Promise<Reservation> {
     const startsAt = input.startsAt;
     if (Number.isNaN(startsAt.getTime())) throw new ValidationError("startsAt", "Choose a date and time.");
     if (startsAt <= now) throw new ValidationError("startsAt", "Choose a time in the future.");

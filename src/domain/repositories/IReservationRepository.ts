@@ -3,7 +3,10 @@ import type { ActivityActor } from "../entities/ActivityEntry";
 import type { Reservation, ReservationStatus } from "../entities/Reservation";
 
 /** A booking about to be made. Id, reference, status and timestamps are the repository's. */
-export type NewReservation = Omit<Reservation, "id" | "reference" | "status" | "tableLabel" | "createdAt" | "updatedAt">;
+export type NewReservation = Omit<
+  Reservation,
+  "id" | "reference" | "status" | "tableLabel" | "createdAt" | "updatedAt"
+>;
 
 /** What a staff change sets: the new status, and optionally the table (`null` clears it). */
 export type ReservationChange = {

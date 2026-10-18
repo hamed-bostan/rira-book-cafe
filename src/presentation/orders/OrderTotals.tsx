@@ -5,7 +5,10 @@ import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
 
 type OrderTotalsProps = {
-  order: Pick<Order, "subtotal" | "promoCode" | "promoDiscount" | "pointsRedeemed" | "pointsDiscount" | "pointsEarned" | "total">;
+  order: Pick<
+    Order,
+    "subtotal" | "promoCode" | "promoDiscount" | "pointsRedeemed" | "pointsDiscount" | "pointsEarned" | "total"
+  >;
 };
 
 /**
@@ -43,7 +46,9 @@ export async function OrderTotals({ order }: OrderTotalsProps) {
         <dd className="text-body-strong text-foreground">{formatMoney(order.total, locale)}</dd>
       </div>
       {order.pointsEarned > 0 ? (
-        <p className="text-body-caption text-primary">{t("pointsEarned", { points: formatNumber(order.pointsEarned, locale) })}</p>
+        <p className="text-body-caption text-primary">
+          {t("pointsEarned", { points: formatNumber(order.pointsEarned, locale) })}
+        </p>
       ) : null}
     </dl>
   );

@@ -71,7 +71,10 @@ export class PrismaEventRepository implements IEventRepository {
       await inTransaction(this.db, async (tx) => {
         const active = await tx.eventRegistration.count({ where: { eventId: id, status: ACTIVE } });
         if (active > 0) {
-          throw new ResourceInUseError("event", `${active} guests are still registered. Cancel them or unpublish the event.`);
+          throw new ResourceInUseError(
+            "event",
+            `${active} guests are still registered. Cancel them or unpublish the event.`,
+          );
         }
         await tx.eventRegistration.deleteMany({ where: { eventId: id } });
         await tx.event.delete({ where: { id } });
@@ -105,7 +108,13 @@ export class PrismaEventRepository implements IEventRepository {
       }
 
       const row = await tx.eventRegistration.create({
-        data: { eventId, userId: input.userId, guestName: input.guestName, guestPhone: input.guestPhone, seats: input.seats },
+        data: {
+          eventId,
+          userId: input.userId,
+          guestName: input.guestName,
+          guestPhone: input.guestPhone,
+          seats: input.seats,
+        },
       });
       return toRegistration(row);
     });

@@ -19,10 +19,7 @@ type FormErrorKey = Parameters<FormErrorsTranslator>[0];
  * server path that doesn't speak keys (e.g. a domain `ValidationError`) — pass through
  * unchanged rather than half-translated.
  */
-export function formErrorMessage(
-  t: FormErrorsTranslator,
-  message: string | undefined,
-): string | undefined {
+export function formErrorMessage(t: FormErrorsTranslator, message: string | undefined): string | undefined {
   if (!message) return undefined;
   const key = message as FormErrorKey;
   return t.has(key) ? t(key) : message;

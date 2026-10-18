@@ -36,21 +36,25 @@ describe("statementLineSchema", () => {
       reference: undefined,
       amount: -25000,
     });
-    expect(statementLineSchema.parse({ ...LINE, reference: " TRX-9 ", amount: "120000" })).toMatchObject({ reference: "TRX-9", amount: 120000 });
+    expect(statementLineSchema.parse({ ...LINE, reference: " TRX-9 ", amount: "120000" })).toMatchObject({
+      reference: "TRX-9",
+      amount: 120000,
+    });
   });
 
   it("refuses a zero movement, a missing description and an oversized reference", () => {
-    const fieldErrors = statementLineSchema.safeParse({ ...LINE, amount: "0", description: " ", reference: "r".repeat(81) }).error?.flatten()
-      .fieldErrors;
+    const fieldErrors = statementLineSchema
+      .safeParse({ ...LINE, amount: "0", description: " ", reference: "r".repeat(81) })
+      .error?.flatten().fieldErrors;
     expect(fieldErrors?.amount).toEqual(["amountInvalid"]);
     expect(fieldErrors?.description).toEqual(["descriptionRequired"]);
     expect(fieldErrors?.reference).toEqual(["textTooLong"]);
   });
 
   it("caps the description at 200 characters", () => {
-    expect(statementLineSchema.safeParse({ ...LINE, description: "d".repeat(201) }).error?.flatten().fieldErrors.description).toEqual([
-      "textTooLong",
-    ]);
+    expect(
+      statementLineSchema.safeParse({ ...LINE, description: "d".repeat(201) }).error?.flatten().fieldErrors.description,
+    ).toEqual(["textTooLong"]);
   });
 });
 
@@ -77,7 +81,12 @@ describe("bankStatementSchema", () => {
   });
 
   it("refuses a period that ends before it starts", () => {
-    const result = bankStatementSchema.safeParse({ ...STATEMENT, fromDay: "2026-10-22", toDay: "2026-09-23", lines: [] });
+    const result = bankStatementSchema.safeParse({
+      ...STATEMENT,
+      fromDay: "2026-10-22",
+      toDay: "2026-09-23",
+      lines: [],
+    });
     expect(messagesAt(result, "toDay")).toEqual(["periodEndsBeforeStart"]);
   });
 
@@ -89,7 +98,9 @@ describe("bankStatementSchema", () => {
   });
 
   it("requires both balances", () => {
-    const fieldErrors = bankStatementSchema.safeParse({ ...STATEMENT, openingBalance: "", closingBalance: "1.5" }).error?.flatten().fieldErrors;
+    const fieldErrors = bankStatementSchema
+      .safeParse({ ...STATEMENT, openingBalance: "", closingBalance: "1.5" })
+      .error?.flatten().fieldErrors;
     expect(fieldErrors?.openingBalance).toContain("amountRequired");
     expect(fieldErrors?.closingBalance).toEqual(["amountInvalid"]);
   });
@@ -123,17 +134,24 @@ describe("bankMatchSchema", () => {
     expect(messagesAt(empty, "ledgerLineIds.0")).toHaveLength(1);
 
     const ids = Array.from({ length: 501 }, (_, index) => `l${index}`);
-    expect(messagesAt(bankMatchSchema.safeParse({ statementLineIds: ["s1"], ledgerLineIds: ids }), "ledgerLineIds")).toEqual(["linesTooMany"]);
+    expect(
+      messagesAt(bankMatchSchema.safeParse({ statementLineIds: ["s1"], ledgerLineIds: ids }), "ledgerLineIds"),
+    ).toEqual(["linesTooMany"]);
   });
 });
 
 describe("recordStatementLineSchema", () => {
   it("parses the posting kind and its fee (blank: none)", () => {
-    expect(recordStatementLineSchema.parse({ kind: "gatewayPayout", fee: "1200" })).toEqual({ kind: "gatewayPayout", fee: 1200 });
+    expect(recordStatementLineSchema.parse({ kind: "gatewayPayout", fee: "1200" })).toEqual({
+      kind: "gatewayPayout",
+      fee: 1200,
+    });
     expect(recordStatementLineSchema.parse({ kind: "fee", fee: "" })).toEqual({ kind: "fee", fee: 0 });
   });
 
   it("refuses an unknown posting kind", () => {
-    expect(recordStatementLineSchema.safeParse({ kind: "refund", fee: "" }).error?.flatten().fieldErrors.kind).toEqual(["postingKindInvalid"]);
+    expect(recordStatementLineSchema.safeParse({ kind: "refund", fee: "" }).error?.flatten().fieldErrors.kind).toEqual([
+      "postingKindInvalid",
+    ]);
   });
 });

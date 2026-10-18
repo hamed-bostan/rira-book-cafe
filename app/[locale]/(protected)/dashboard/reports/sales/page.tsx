@@ -20,5 +20,12 @@ export default async function SalesReportPage({ searchParams }: SalesReportPageP
   const report = await reportsServerApi.sales(forwarded);
   const { sort: _sort, ...range } = forwarded;
 
-  return <SalesReportScreen report={report} selected={selectedRangeOption(params)} sort={parseTopItemSort(params)} keep={range} />;
+  return (
+    <SalesReportScreen
+      report={report}
+      selected={selectedRangeOption(params)}
+      sort={parseTopItemSort(params)}
+      keep={range}
+    />
+  );
 }

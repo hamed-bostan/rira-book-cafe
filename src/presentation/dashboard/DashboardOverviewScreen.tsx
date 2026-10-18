@@ -63,7 +63,10 @@ export async function DashboardOverviewScreen({ overview, week, stockItems }: Da
           hint={
             overview.todayReservations.awaitingConfirmation > 0
               ? t("awaitingConfirmation", { count: overview.todayReservations.awaitingConfirmation })
-              : t("covers", { count: overview.todayReservations.covers, formatted: formatNumber(overview.todayReservations.covers, locale) })
+              : t("covers", {
+                  count: overview.todayReservations.covers,
+                  formatted: formatNumber(overview.todayReservations.covers, locale),
+                })
           }
           icon={CalendarClock}
           tone={overview.todayReservations.awaitingConfirmation > 0 ? "warning" : "info"}
@@ -94,7 +97,10 @@ export async function DashboardOverviewScreen({ overview, week, stockItems }: Da
             <StatCard
               label={t("todayOrders")}
               value={formatNumber(today.orders, locale)}
-              hint={t("weekOrders", { count: week.summary.orders, formatted: formatNumber(week.summary.orders, locale) })}
+              hint={t("weekOrders", {
+                count: week.summary.orders,
+                formatted: formatNumber(week.summary.orders, locale),
+              })}
               icon={Receipt}
               tone="info"
               trendValues={week.daily.map((point) => point.orders)}
@@ -113,9 +119,17 @@ export async function DashboardOverviewScreen({ overview, week, stockItems }: Da
                 empty: tReports("noSales"),
               }}
             />
-            <TopItemsTable items={week.topItems.slice(0, 5)} sort="revenue" keep={{ range: "7d" }} basePath="/dashboard/reports/sales" />
+            <TopItemsTable
+              items={week.topItems.slice(0, 5)}
+              sort="revenue"
+              keep={{ range: "7d" }}
+              basePath="/dashboard/reports/sales"
+            />
           </div>
-          <Link href="/dashboard/reports" className="w-fit text-body-small-emphasis text-primary underline-offset-4 hover:underline">
+          <Link
+            href="/dashboard/reports"
+            className="w-fit text-body-small-emphasis text-primary underline-offset-4 hover:underline"
+          >
             {t("allReports")}
           </Link>
         </>

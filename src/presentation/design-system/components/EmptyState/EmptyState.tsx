@@ -12,7 +12,7 @@ const emptyStateVariants = cva(
     "flex flex-col items-center text-center",
     // Eases in rather than snapping, so an empty result reads as an answer, not
     // a glitch. The rise is motion-safe only; the fade stays (see shared/motion).
-    "animate-in fade-in-0 duration-300 motion-safe:slide-in-from-bottom-2",
+    "duration-300 animate-in fade-in-0 motion-safe:slide-in-from-bottom-2",
   ],
   {
     variants: {
@@ -84,7 +84,9 @@ export function EmptyState({
             <Icon icon={icon} size="lg" />
           </div>
         ) : null)}
-      <Title className={cn("text-foreground", size === "page" ? "text-heading-section" : "text-body-strong")}>{title}</Title>
+      <Title className={cn("text-foreground", size === "page" ? "text-heading-section" : "text-body-strong")}>
+        {title}
+      </Title>
       {description ? (
         <p className={cn("max-w-md text-muted-foreground", size === "page" ? "text-body-default" : "text-body-small")}>
           {description}

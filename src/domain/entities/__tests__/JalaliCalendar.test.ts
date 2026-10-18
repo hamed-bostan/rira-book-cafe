@@ -31,7 +31,7 @@ describe("JalaliCalendar", () => {
   });
 
   it("agrees with Intl's Persian calendar for every day of 1395–1415", () => {
-    for (let day = fromJalali(1395, 1, 1); day < fromJalali(1415, 1, 1); ) {
+    for (let day = fromJalali(1395, 1, 1); day < fromJalali(1415, 1, 1);) {
       const ours = toJalali(day);
       expect(ours).toEqual(intlJalali(day));
       expect(fromJalali(ours.jy, ours.jm, ours.jd)).toBe(day);

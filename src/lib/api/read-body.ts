@@ -1,4 +1,5 @@
-export type LimitedBody = { ok: true; bytes: Uint8Array<ArrayBuffer> } | { ok: false; reason: "too-large" | "unreadable" };
+export type LimitedBody =
+  { ok: true; bytes: Uint8Array<ArrayBuffer> } | { ok: false; reason: "too-large" | "unreadable" };
 
 /**
  * Read a request body into memory, refusing once it passes `maxBytes` — before

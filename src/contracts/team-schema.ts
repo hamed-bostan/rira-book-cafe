@@ -24,13 +24,7 @@ export const grantAdminSchema = z.object({
     // happens in the domain (see `normalizePhone`), so the form stays permissive
     // about how the number is typed (+98…, 98…, 09…).
     .regex(/^[+\d][\d\s()-]{7,19}$/, "phoneInvalid"),
-  email: z
-    .string()
-    .trim()
-    .email("emailInvalid")
-    .max(254, "emailTooLong")
-    .optional()
-    .or(z.literal("")),
+  email: z.string().trim().email("emailInvalid").max(254, "emailTooLong").optional().or(z.literal("")),
   /**
    * Which job they're being given. `owner` isn't offered: there is exactly one,
    * and it moves by transfer rather than by grant — see `TransferOwnership`.

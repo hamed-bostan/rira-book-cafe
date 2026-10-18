@@ -9,7 +9,8 @@
  * remains visible next to solid green buttons as well as light surfaces.
  * `focusRingOffset` is retained as an alias for existing component callers.
  */
-export const focusRing = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
+export const focusRing =
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
 
 export const focusRingOffset = focusRing;
 
@@ -18,4 +19,5 @@ export const focusRingOffset = focusRing;
  * whose real input is visually hidden inside a wrapper (e.g. a chip wrapping an
  * `sr-only` checkbox). Pair with the hidden input, never with a focusable host.
  */
-export const focusRingWithin = "has-focus-visible:ring-2 has-focus-visible:ring-ring has-focus-visible:ring-offset-2 has-focus-visible:ring-offset-background";
+export const focusRingWithin =
+  "has-focus-visible:ring-2 has-focus-visible:ring-ring has-focus-visible:ring-offset-2 has-focus-visible:ring-offset-background";

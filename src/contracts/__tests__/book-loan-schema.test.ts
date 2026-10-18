@@ -28,13 +28,15 @@ describe("lendBookSchema", () => {
   });
 
   it("maps each invalid field to its message key", () => {
-    const fieldErrors = lendBookSchema.safeParse({
-      productId: "",
-      borrowerName: " ",
-      borrowerPhone: "123",
-      dueOn: "next week",
-      note: "n".repeat(MAX_LOAN_NOTE_LENGTH + 1),
-    }).error?.flatten().fieldErrors;
+    const fieldErrors = lendBookSchema
+      .safeParse({
+        productId: "",
+        borrowerName: " ",
+        borrowerPhone: "123",
+        dueOn: "next week",
+        note: "n".repeat(MAX_LOAN_NOTE_LENGTH + 1),
+      })
+      .error?.flatten().fieldErrors;
     expect(fieldErrors).toEqual({
       productId: ["bookRequired"],
       borrowerName: ["nameRequired"],
@@ -53,6 +55,8 @@ describe("lendBookSchema", () => {
 describe("bookLoanUpdateSchema", () => {
   it("accepts a known status and refuses others", () => {
     expect(bookLoanUpdateSchema.parse({ status: "returned" })).toEqual({ status: "returned" });
-    expect(bookLoanUpdateSchema.safeParse({ status: "stolen" }).error?.flatten().fieldErrors.status).toEqual(["statusInvalid"]);
+    expect(bookLoanUpdateSchema.safeParse({ status: "stolen" }).error?.flatten().fieldErrors.status).toEqual([
+      "statusInvalid",
+    ]);
   });
 });

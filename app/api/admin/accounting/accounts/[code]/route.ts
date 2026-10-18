@@ -28,7 +28,11 @@ export async function PATCH(request: NextRequest, { params }: RouteContext): Pro
   if (!body.ok) return errorResponse(400, { message: "Expected a JSON body.", code: "BAD_REQUEST" });
   const parsed = ledgerAccountActiveSchema.safeParse(body.data);
   if (!parsed.success) {
-    return errorResponse(400, { message: "Expected isActive.", code: "VALIDATION", fieldErrors: firstFieldErrors(parsed.error) });
+    return errorResponse(400, {
+      message: "Expected isActive.",
+      code: "VALIDATION",
+      fieldErrors: firstFieldErrors(parsed.error),
+    });
   }
 
   try {

@@ -1,7 +1,10 @@
 import type { ExpenseFormInput, PayExpenseInput, SupplierFormInput } from "@/src/contracts/expense-schema";
 import type { Expense, Supplier } from "@/src/domain/entities/Expense";
 import { apiPost, apiPut } from "@/src/lib/api/client";
-import { expenseResponseSchema, supplierResponseSchema } from "@/src/presentation/dashboard/accounting/accounting-response-schema";
+import {
+  expenseResponseSchema,
+  supplierResponseSchema,
+} from "@/src/presentation/dashboard/accounting/accounting-response-schema";
 
 /** Typed client for expense writes; each books its journal entries server-side. */
 export const expensesApi = {

@@ -1,6 +1,13 @@
 import type { AuditHook } from "./AuditHook";
 import type { AccountMovement } from "../entities/AccountingReports";
-import type { Account, AccountingSettings, AccountType, JournalEntry, JournalSource, NewJournalEntry } from "../entities/Ledger";
+import type {
+  Account,
+  AccountingSettings,
+  AccountType,
+  JournalEntry,
+  JournalSource,
+  NewJournalEntry,
+} from "../entities/Ledger";
 import type { Page, PageRequest } from "../entities/Pagination";
 
 /**

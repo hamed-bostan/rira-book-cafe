@@ -10,7 +10,7 @@ export function OrderServiceLabel({ order }: { order: Pick<Order, "serviceType" 
   const ServiceIcon = dineIn ? UtensilsCrossed : ShoppingBag;
 
   return (
-    <span className="flex items-center gap-2 whitespace-nowrap text-body-small text-foreground">
+    <span className="flex items-center gap-2 text-body-small whitespace-nowrap text-foreground">
       <ServiceIcon aria-hidden className="size-4 shrink-0 text-muted-foreground" />
       {dineIn ? t("table", { table: order.tableLabel ?? "?" }) : t("service.takeaway")}
     </span>

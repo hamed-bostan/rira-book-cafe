@@ -13,7 +13,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   if (!(await getSessionWith("reports.view"))) return unauthorizedResponse();
 
   try {
-    const report = await new GetGuestReport(analyticsRepository).execute(parseAnalyticsRange(request.nextUrl.searchParams));
+    const report = await new GetGuestReport(analyticsRepository).execute(
+      parseAnalyticsRange(request.nextUrl.searchParams),
+    );
     return NextResponse.json(report);
   } catch (error) {
     return errorResponseFromException(error, "GET /api/admin/reports/guests failed");

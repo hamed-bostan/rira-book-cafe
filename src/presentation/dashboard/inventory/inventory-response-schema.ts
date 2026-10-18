@@ -43,7 +43,8 @@ export const stockMovementResponseSchema: z.ZodType<StockMovement> = z.object({
   createdByName: z.string(),
   createdAt: z.string(),
 });
-export const stockMovementPageResponseSchema: z.ZodType<Page<StockMovement>> = pageResponseSchema(stockMovementResponseSchema);
+export const stockMovementPageResponseSchema: z.ZodType<Page<StockMovement>> =
+  pageResponseSchema(stockMovementResponseSchema);
 
 export const fiscalYearListResponseSchema: z.ZodType<FiscalYearStatus[]> = z.array(
   z.object({ year: z.number(), fromDay: z.string(), toDay: z.string(), ended: z.boolean(), closed: z.boolean() }),

@@ -8,7 +8,10 @@ import type {
 import type { Expense } from "@/src/domain/entities/Expense";
 import type { JournalEntry } from "@/src/domain/entities/Ledger";
 import { apiPatch, apiPost } from "@/src/lib/api/client";
-import { expenseResponseSchema, journalEntryResponseSchema } from "@/src/presentation/dashboard/accounting/accounting-response-schema";
+import {
+  expenseResponseSchema,
+  journalEntryResponseSchema,
+} from "@/src/presentation/dashboard/accounting/accounting-response-schema";
 
 import { countResultResponseSchema, openingResultResponseSchema } from "./inventory-response-schema";
 

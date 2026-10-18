@@ -12,9 +12,7 @@ export class UniqueConstraintError extends Error {
     options?: { cause?: unknown },
   ) {
     super(
-      fields.length > 0
-        ? `Unique constraint violated on: ${fields.join(", ")}.`
-        : "Unique constraint violated.",
+      fields.length > 0 ? `Unique constraint violated on: ${fields.join(", ")}.` : "Unique constraint violated.",
       options,
     );
     this.name = "UniqueConstraintError";

@@ -25,11 +25,11 @@ export async function POST(request: Request, { params }: RouteContext): Promise<
   const { id } = await params;
   try {
     const callbackUrl = `${await getAppUrl()}/api/orders/${encodeURIComponent(id)}/pay/callback`;
-    const { redirectUrl } = await new StartOnlinePayment(orderRepository, paymentAttemptRepository, paymentGateway).execute(
-      id,
-      session.user.id,
-      callbackUrl,
-    );
+    const { redirectUrl } = await new StartOnlinePayment(
+      orderRepository,
+      paymentAttemptRepository,
+      paymentGateway,
+    ).execute(id, session.user.id, callbackUrl);
     return NextResponse.json({ redirectUrl }, { status: 201 });
   } catch (error) {
     return errorResponseFromException(error, `POST /api/orders/${id}/pay failed`);

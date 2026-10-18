@@ -29,8 +29,7 @@ const formMessageVariants = cva("", {
 });
 
 export interface FormMessageProps
-  extends React.HTMLAttributes<HTMLParagraphElement>,
-    VariantProps<typeof formMessageVariants> {}
+  extends React.HTMLAttributes<HTMLParagraphElement>, VariantProps<typeof formMessageVariants> {}
 
 /**
  * Validation and status copy under a control or a form.

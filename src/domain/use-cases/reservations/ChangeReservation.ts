@@ -40,12 +40,16 @@ export class ChangeReservation {
 
     const status = update.status ?? current.status;
     if (status !== current.status && !canTransitionReservation(current.status, status)) {
-      throw new ConflictError("INVALID_TRANSITION", `A reservation can't move from "${current.status}" to "${status}".`);
+      throw new ConflictError(
+        "INVALID_TRANSITION",
+        `A reservation can't move from "${current.status}" to "${status}".`,
+      );
     }
 
     // A finished booking keeps its table as history; only bookings that hold a
     // table (`TABLE_HOLDING_STATUSES`) are checked for clashes by the repository.
-    const tableLabel = update.tableLabel === undefined ? (current.tableLabel ?? null) : update.tableLabel?.trim() || null;
+    const tableLabel =
+      update.tableLabel === undefined ? (current.tableLabel ?? null) : update.tableLabel?.trim() || null;
     if (tableLabel && tableLabel.length > MAX_TABLE_LABEL_LENGTH) {
       throw new ValidationError("tableLabel", "That table label is too long.");
     }
@@ -60,7 +64,11 @@ export class ChangeReservation {
         changes.push({ field: "status", before: current.status, after: saved.status });
       }
       if ((saved.tableLabel ?? null) !== (current.tableLabel ?? null)) {
-        changes.push({ field: "tableLabel", before: activityValue(current.tableLabel), after: activityValue(saved.tableLabel) });
+        changes.push({
+          field: "tableLabel",
+          before: activityValue(current.tableLabel),
+          after: activityValue(saved.tableLabel),
+        });
       }
       return {
         actorId: actor.id,

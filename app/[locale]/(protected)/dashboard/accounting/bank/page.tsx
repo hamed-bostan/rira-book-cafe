@@ -8,6 +8,9 @@ export const dynamic = "force-dynamic";
 
 export default async function BankStatementsPage() {
   await requirePermission("accounting.view");
-  const [statements, canWrite] = await Promise.all([bankStatementsServerApi.list(), auth().then((session) => sessionHas(session, "accounting.write"))]);
+  const [statements, canWrite] = await Promise.all([
+    bankStatementsServerApi.list(),
+    auth().then((session) => sessionHas(session, "accounting.write")),
+  ]);
   return <BankStatementsScreen statements={statements} canWrite={canWrite} />;
 }

@@ -63,7 +63,8 @@ export function Toaster({ children }: { children: React.ReactNode }) {
         <Toast.Viewport
           // `{hotkey}` is substituted by Radix (F8 jumps focus to the stack).
           label={t("notifications", { hotkey: "{hotkey}" })}
-          className="pointer-events-none fixed inset-x-0 top-0 z-[100] mx-auto flex w-full max-w-md flex-col gap-2 p-4 outline-none sm:inset-x-auto sm:top-auto sm:bottom-0 sm:end-0 sm:mx-0 sm:max-w-sm" />
+          className="pointer-events-none fixed inset-x-0 top-0 z-[100] mx-auto flex w-full max-w-md flex-col gap-2 p-4 outline-none sm:inset-x-auto sm:end-0 sm:top-auto sm:bottom-0 sm:mx-0 sm:max-w-sm"
+        />
       </Toast.Provider>
     </ToastContext.Provider>
   );

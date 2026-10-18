@@ -33,7 +33,11 @@ export async function generateMetadata({ params }: MenuItemPageProps): Promise<M
 /** One published item; an unpublished or deleted one is the not-found page. */
 export default async function MenuItemPage({ params }: MenuItemPageProps) {
   const { id } = await params;
-  const [item, reviews, session] = await Promise.all([storefrontServerApi.item(id), storefrontServerApi.productReviews(id), auth()]);
+  const [item, reviews, session] = await Promise.all([
+    storefrontServerApi.item(id),
+    storefrontServerApi.productReviews(id),
+    auth(),
+  ]);
   if (!item) notFound();
   const signedIn = Boolean(session?.user);
   const [reviewEligibility, waitlist, siteUrl] = await Promise.all([
@@ -51,7 +55,13 @@ export default async function MenuItemPage({ params }: MenuItemPageProps) {
           image: new URL(item.imageUrl, siteUrl).toString(),
         })}
       />
-      <MenuItemScreen item={item} reviews={reviews} reviewEligibility={reviewEligibility} waitlist={waitlist} signedIn={signedIn} />
+      <MenuItemScreen
+        item={item}
+        reviews={reviews}
+        reviewEligibility={reviewEligibility}
+        waitlist={waitlist}
+        signedIn={signedIn}
+      />
     </>
   );
 }

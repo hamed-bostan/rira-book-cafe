@@ -49,7 +49,9 @@ export function ConfirmSheet({
         {/* Rendering Dialog.Description here makes the visible message double as the
             dialog's a11y description (so it's referenced, not duplicated sr-only). */}
         {message && (
-          <Dialog.Description className="text-body-strong text-muted-foreground text-center">{message}</Dialog.Description>
+          <Dialog.Description className="text-center text-body-strong text-muted-foreground">
+            {message}
+          </Dialog.Description>
         )}
 
         <div className="mt-8 flex gap-3">

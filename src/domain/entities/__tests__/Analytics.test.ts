@@ -23,7 +23,10 @@ describe("ranges", () => {
   });
 
   it("compares with the same number of days right before", () => {
-    expect(previousPeriod(dayRange("2026-10-15", "2026-10-21"))).toMatchObject({ fromDay: "2026-10-08", toDay: "2026-10-14" });
+    expect(previousPeriod(dayRange("2026-10-15", "2026-10-21"))).toMatchObject({
+      fromDay: "2026-10-08",
+      toDay: "2026-10-14",
+    });
   });
 
   it("covers whole cafe days in UTC", () => {

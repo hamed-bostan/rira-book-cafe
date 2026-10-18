@@ -127,16 +127,12 @@ export type ActivityAction = (typeof ACTIVITY_ACTIONS)[number] | "unknown";
 
 /** Narrow an arbitrary stored string to an action, falling back to `unknown`. */
 export function toActivityAction(value: string): ActivityAction {
-  return (ACTIVITY_ACTIONS as readonly string[]).includes(value)
-    ? (value as ActivityAction)
-    : "unknown";
+  return (ACTIVITY_ACTIONS as readonly string[]).includes(value) ? (value as ActivityAction) : "unknown";
 }
 
 /** Narrow an arbitrary stored string to an entity type, falling back to `unknown`. */
 export function toActivityEntityType(value: string): ActivityEntityType {
-  return (ACTIVITY_ENTITY_TYPES as readonly string[]).includes(value)
-    ? (value as ActivityEntityType)
-    : "unknown";
+  return (ACTIVITY_ENTITY_TYPES as readonly string[]).includes(value) ? (value as ActivityEntityType) : "unknown";
 }
 
 /**

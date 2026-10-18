@@ -2,7 +2,12 @@ import { describe, expect, it, vi } from "vitest";
 
 import { NotFoundError } from "../../../errors/NotFoundError";
 import { ValidationError } from "../../../errors/ValidationError";
-import { CancelOwnRegistration, CancelRegistrationAsStaff, EventQueries, RegisterForEvent } from "../EventRegistrations";
+import {
+  CancelOwnRegistration,
+  CancelRegistrationAsStaff,
+  EventQueries,
+  RegisterForEvent,
+} from "../EventRegistrations";
 import { CreateEvent, DeleteEvent, UpdateEvent } from "../SaveEvent";
 
 import type { NewActivityEntry } from "../../../entities/ActivityEntry";
@@ -37,7 +42,17 @@ function event(overrides: Partial<CafeEvent> = {}): CafeEvent {
 }
 
 function registration(overrides: Partial<EventRegistration> = {}): EventRegistration {
-  return { id: "r1", eventId: "e1", userId: "g1", guestName: "Sara", guestPhone: "0912", seats: 2, status: "registered", createdAt: "", ...overrides };
+  return {
+    id: "r1",
+    eventId: "e1",
+    userId: "g1",
+    guestName: "Sara",
+    guestPhone: "0912",
+    seats: 2,
+    status: "registered",
+    createdAt: "",
+    ...overrides,
+  };
 }
 
 type Fake = {
@@ -92,8 +107,17 @@ describe("CreateEvent", () => {
   it("normalizes the times and records each field it starts with", async () => {
     const { repo, create, entries } = repoWith(null);
     await new CreateEvent(repo).execute({ ...INPUT, startsAt: "2026-10-25T19:00:00+03:30" }, ACTOR);
-    expect(create.mock.calls[0][0]).toMatchObject({ title: "Poetry night", startsAt: "2026-10-25T15:30:00.000Z", endsAt: "2026-10-25T17:30:00.000Z" });
-    expect(entries[0]).toMatchObject({ action: "event.created", entityType: "event", entityId: "new", entityLabel: "Poetry night" });
+    expect(create.mock.calls[0][0]).toMatchObject({
+      title: "Poetry night",
+      startsAt: "2026-10-25T15:30:00.000Z",
+      endsAt: "2026-10-25T17:30:00.000Z",
+    });
+    expect(entries[0]).toMatchObject({
+      action: "event.created",
+      entityType: "event",
+      entityId: "new",
+      entityLabel: "Poetry night",
+    });
     const fields = entries[0]?.changes.map((change) => change.field);
     expect(fields).toEqual(["kind", "title", "startsAt", "endsAt", "capacity", "price", "isPublished"]);
     expect(entries[0]?.changes.every((change) => change.before === null)).toBe(true);
@@ -118,7 +142,10 @@ describe("CreateEvent", () => {
     ["a fractional price", { price: 1.5 }, "price"],
   ])("refuses %s", async (_label, overrides, field) => {
     const { repo, create } = repoWith(null);
-    await expect(new CreateEvent(repo).execute({ ...INPUT, ...overrides }, ACTOR)).rejects.toMatchObject({ name: "ValidationError", field });
+    await expect(new CreateEvent(repo).execute({ ...INPUT, ...overrides }, ACTOR)).rejects.toMatchObject({
+      name: "ValidationError",
+      field,
+    });
     expect(create).not.toHaveBeenCalled();
   });
 });
@@ -159,7 +186,13 @@ describe("DeleteEvent", () => {
     const { repo, remove, entries } = repoWith(event());
     await new DeleteEvent(repo).execute("e1", ACTOR);
     expect(remove.mock.calls[0][0]).toBe("e1");
-    expect(entries[0]).toMatchObject({ actorId: "a1", action: "event.deleted", entityType: "event", entityId: "e1", entityLabel: "Poetry night" });
+    expect(entries[0]).toMatchObject({
+      actorId: "a1",
+      action: "event.deleted",
+      entityType: "event",
+      entityId: "e1",
+      entityLabel: "Poetry night",
+    });
   });
 
   // Known bug: `DeleteEvent` builds its diff with `diffFields(snapshot, {})`, and
@@ -190,7 +223,9 @@ describe("registrations", () => {
 
   it.each([0, 1.5])("refuses %s seats", async (seats) => {
     const { repo, register } = repoWith(event());
-    await expect(new RegisterForEvent(repo).execute("e1", seats, { id: "g1", name: "S", phone: "0" }, NOW)).rejects.toThrow(ValidationError);
+    await expect(
+      new RegisterForEvent(repo).execute("e1", seats, { id: "g1", name: "S", phone: "0" }, NOW),
+    ).rejects.toThrow(ValidationError);
     expect(register).not.toHaveBeenCalled();
   });
 
@@ -230,11 +265,19 @@ describe("CancelRegistrationAsStaff", () => {
   });
 
   it("is not found for an unknown event or a registration for another event", async () => {
-    await expect(new CancelRegistrationAsStaff(repoWith(null, registration()).repo).execute("e1", "r1", ACTOR)).rejects.toThrow(NotFoundError);
     await expect(
-      new CancelRegistrationAsStaff(repoWith(event(), registration({ eventId: "other" })).repo).execute("e1", "r1", ACTOR),
+      new CancelRegistrationAsStaff(repoWith(null, registration()).repo).execute("e1", "r1", ACTOR),
     ).rejects.toThrow(NotFoundError);
-    await expect(new CancelRegistrationAsStaff(repoWith(event(), null).repo).execute("e1", "r1", ACTOR)).rejects.toThrow(NotFoundError);
+    await expect(
+      new CancelRegistrationAsStaff(repoWith(event(), registration({ eventId: "other" })).repo).execute(
+        "e1",
+        "r1",
+        ACTOR,
+      ),
+    ).rejects.toThrow(NotFoundError);
+    await expect(
+      new CancelRegistrationAsStaff(repoWith(event(), null).repo).execute("e1", "r1", ACTOR),
+    ).rejects.toThrow(NotFoundError);
   });
 });
 

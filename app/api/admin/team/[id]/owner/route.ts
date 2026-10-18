@@ -34,11 +34,7 @@ export async function PUT(request: Request, { params }: RouteContext): Promise<N
     // Both sides are notified, so the notice links to the page the change is
     // about; the origin comes from the request (only the web layer knows it).
     const dashboardUrl = `${await getAppUrl()}/dashboard/team`;
-    const owner = await new TransferOwnership(userRepository, teamNotifier).execute(
-      id,
-      session.user.id,
-      dashboardUrl,
-    );
+    const owner = await new TransferOwnership(userRepository, teamNotifier).execute(id, session.user.id, dashboardUrl);
     return NextResponse.json({ id: owner.id, role: owner.role });
   } catch (error) {
     return errorResponseFromException(error, `PUT /api/admin/team/${id}/owner failed`);

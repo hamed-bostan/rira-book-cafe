@@ -48,7 +48,12 @@ export type IBankReconciliationRepository = {
    * account, unmatched and within the candidate range, and each group must total
    * the same on both sides (`ConflictError("ALREADY_MATCHED" | "MATCH_UNBALANCED")`).
    */
-  match(statementId: string, groups: MatchGroup[], actor: { id: string; name: string }, audit?: AuditHook<StatementChange>): Promise<number>;
+  match(
+    statementId: string,
+    groups: MatchGroup[],
+    actor: { id: string; name: string },
+    audit?: AuditHook<StatementChange>,
+  ): Promise<number>;
   unmatch(statementId: string, matchId: string, audit?: AuditHook<StatementChange>): Promise<void>;
   /**
    * Post the entry a statement line records (a fee, interest, a gateway payout) and

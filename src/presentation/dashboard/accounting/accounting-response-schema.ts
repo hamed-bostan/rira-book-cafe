@@ -11,7 +11,13 @@ import type {
   VatReport,
 } from "@/src/domain/entities/AccountingReports";
 import { EXPENSE_STATUSES, PAYMENT_SOURCES, type Expense, type Supplier } from "@/src/domain/entities/Expense";
-import { ACCOUNT_TYPES, JOURNAL_SOURCES, type Account, type AccountingSettings, type JournalEntry } from "@/src/domain/entities/Ledger";
+import {
+  ACCOUNT_TYPES,
+  JOURNAL_SOURCES,
+  type Account,
+  type AccountingSettings,
+  type JournalEntry,
+} from "@/src/domain/entities/Ledger";
 import type { Page } from "@/src/domain/entities/Pagination";
 import { pageResponseSchema } from "@/src/lib/api/page-response-schema";
 

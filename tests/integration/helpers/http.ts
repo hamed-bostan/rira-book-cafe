@@ -12,7 +12,12 @@ const ORIGIN = "http://localhost:3000";
 
 type Method = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
-export function jsonRequest(method: Method, path: string, body?: unknown, headers: Record<string, string> = {}): NextRequest {
+export function jsonRequest(
+  method: Method,
+  path: string,
+  body?: unknown,
+  headers: Record<string, string> = {},
+): NextRequest {
   return new NextRequest(new URL(path, ORIGIN), {
     method,
     headers: body === undefined ? headers : { "content-type": "application/json", ...headers },

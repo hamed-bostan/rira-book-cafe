@@ -21,7 +21,7 @@ export type LocalDiskImageStorageConfig = {
   rootDir: string;
   /** Site path the files are served under, e.g. `/uploads` (see `app/uploads/[...path]/route.ts`). */
   publicPathPrefix: string;
-}
+};
 
 /**
  * Image storage on the server's own disk — the self-hosted replacement for a

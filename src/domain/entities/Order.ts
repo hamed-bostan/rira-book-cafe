@@ -29,7 +29,12 @@ export const ORDER_STATUSES = ["pending", "accepted", "preparing", "ready", "com
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
 /** Statuses an order is still being worked in — the queue a barista watches. */
-export const ACTIVE_ORDER_STATUSES = ["pending", "accepted", "preparing", "ready"] as const satisfies readonly OrderStatus[];
+export const ACTIVE_ORDER_STATUSES = [
+  "pending",
+  "accepted",
+  "preparing",
+  "ready",
+] as const satisfies readonly OrderStatus[];
 
 /**
  * Whether the guest has paid. Payment is taken at the counter, so staff mark it.

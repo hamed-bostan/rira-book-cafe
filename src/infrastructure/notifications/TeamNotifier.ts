@@ -83,11 +83,7 @@ export class TeamNotifier implements ITeamNotifier {
     });
   }
 
-  async ownershipLost(
-    recipient: TeamRecipient,
-    newOwnerName: string,
-    dashboardUrl: string,
-  ): Promise<void> {
+  async ownershipLost(recipient: TeamRecipient, newOwnerName: string, dashboardUrl: string): Promise<void> {
     await this.deliver(recipient, {
       subject: "You're no longer the owner of Rira Book Cafe",
       // Names the new owner and says plainly what to do if it's unexpected. This

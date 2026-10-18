@@ -66,13 +66,18 @@ describe("expenseSchema", () => {
   });
 
   it("caps the description", () => {
-    expect(fieldErrorsOf({ ...EXPENSE, description: "d".repeat(MAX_EXPENSE_DESCRIPTION_LENGTH + 1) })?.description).toEqual(["textTooLong"]);
+    expect(
+      fieldErrorsOf({ ...EXPENSE, description: "d".repeat(MAX_EXPENSE_DESCRIPTION_LENGTH + 1) })?.description,
+    ).toEqual(["textTooLong"]);
   });
 });
 
 describe("payExpenseSchema", () => {
   it("pays from cash or bank on a day", () => {
-    expect(payExpenseSchema.parse({ source: "bank", paidOn: " 2026-10-20 " })).toEqual({ source: "bank", paidOn: "2026-10-20" });
+    expect(payExpenseSchema.parse({ source: "bank", paidOn: " 2026-10-20 " })).toEqual({
+      source: "bank",
+      paidOn: "2026-10-20",
+    });
   });
 
   it("refuses paying from 'unpaid' and a missing day", () => {
@@ -86,7 +91,9 @@ describe("voidExpenseSchema", () => {
   it("allows a blank reason and caps a long one", () => {
     expect(voidExpenseSchema.parse({ reason: "  " })).toEqual({ reason: "" });
     expect(voidExpenseSchema.parse({ reason: " Duplicate " })).toEqual({ reason: "Duplicate" });
-    expect(voidExpenseSchema.safeParse({ reason: "r".repeat(201) }).error?.flatten().fieldErrors.reason).toEqual(["textTooLong"]);
+    expect(voidExpenseSchema.safeParse({ reason: "r".repeat(201) }).error?.flatten().fieldErrors.reason).toEqual([
+      "textTooLong",
+    ]);
   });
 });
 
@@ -94,13 +101,21 @@ describe("supplierSchema", () => {
   const SUPPLIER: SupplierFormInput = { name: " Dairy Co ", phone: "", note: " Delivers Mondays ", isActive: true };
 
   it("trims the name and blanks optional text", () => {
-    expect(supplierSchema.parse(SUPPLIER)).toEqual({ name: "Dairy Co", phone: undefined, note: "Delivers Mondays", isActive: true });
+    expect(supplierSchema.parse(SUPPLIER)).toEqual({
+      name: "Dairy Co",
+      phone: undefined,
+      note: "Delivers Mondays",
+      isActive: true,
+    });
   });
 
   it("maps each invalid field to its message key", () => {
-    const fieldErrors = supplierSchema.safeParse({ ...SUPPLIER, name: " ", phone: "1".repeat(31), note: "n".repeat(301) }).error?.flatten()
-      .fieldErrors;
+    const fieldErrors = supplierSchema
+      .safeParse({ ...SUPPLIER, name: " ", phone: "1".repeat(31), note: "n".repeat(301) })
+      .error?.flatten().fieldErrors;
     expect(fieldErrors).toEqual({ name: ["nameRequired"], phone: ["textTooLong"], note: ["textTooLong"] });
-    expect(supplierSchema.safeParse({ ...SUPPLIER, name: "n".repeat(121) }).error?.flatten().fieldErrors.name).toEqual(["textTooLong"]);
+    expect(supplierSchema.safeParse({ ...SUPPLIER, name: "n".repeat(121) }).error?.flatten().fieldErrors.name).toEqual([
+      "textTooLong",
+    ]);
   });
 });

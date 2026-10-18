@@ -1,10 +1,6 @@
 import { z } from "zod";
 
-import {
-  ACTIVITY_ACTIONS,
-  ACTIVITY_ENTITY_TYPES,
-  type ActivityEntry,
-} from "@/src/domain/entities/ActivityEntry";
+import { ACTIVITY_ACTIONS, ACTIVITY_ENTITY_TYPES, type ActivityEntry } from "@/src/domain/entities/ActivityEntry";
 
 /**
  * What the activity endpoints promise, as the client receives it.

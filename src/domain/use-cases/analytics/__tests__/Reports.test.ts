@@ -5,7 +5,14 @@ import { GetDashboardOverview, GetSalesReport } from "../Reports";
 
 import type { IAnalyticsRepository } from "../../../repositories/IAnalyticsRepository";
 
-const EMPTY: SalesSummary = { revenue: 0, orders: 0, itemsSold: 0, averageOrderValue: 0, cancelledOrders: 0, cancelledValue: 0 };
+const EMPTY: SalesSummary = {
+  revenue: 0,
+  orders: 0,
+  itemsSold: 0,
+  averageOrderValue: 0,
+  cancelledOrders: 0,
+  cancelledValue: 0,
+};
 
 function repo(overrides: Partial<IAnalyticsRepository> = {}): IAnalyticsRepository {
   return {
@@ -31,7 +38,10 @@ function repo(overrides: Partial<IAnalyticsRepository> = {}): IAnalyticsReposito
 describe("GetSalesReport", () => {
   it("compares with the previous period and fills both series", async () => {
     const salesSummary = vi.fn(async () => EMPTY);
-    const report = await new GetSalesReport(repo({ salesSummary })).execute(dayRange("2026-10-15", "2026-10-21"), "revenue");
+    const report = await new GetSalesReport(repo({ salesSummary })).execute(
+      dayRange("2026-10-15", "2026-10-21"),
+      "revenue",
+    );
 
     expect(report.previousRange).toMatchObject({ fromDay: "2026-10-08", toDay: "2026-10-14" });
     expect(salesSummary).toHaveBeenCalledTimes(2);

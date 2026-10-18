@@ -23,7 +23,9 @@ export default async function DashboardKitchenPage({ searchParams }: DashboardKi
 
   const [page, canFulfill] = await Promise.all([
     // Every active order, oldest first — a working queue fits one page.
-    ordersServerApi.listPage(new URLSearchParams({ status: "active", sort: "placedAt", dir: "asc", pageSize: String(MAX_PAGE_SIZE) })),
+    ordersServerApi.listPage(
+      new URLSearchParams({ status: "active", sort: "placedAt", dir: "asc", pageSize: String(MAX_PAGE_SIZE) }),
+    ),
     auth().then((session) => sessionHas(session, "orders.fulfill")),
   ]);
 

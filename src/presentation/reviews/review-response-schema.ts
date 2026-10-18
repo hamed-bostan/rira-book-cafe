@@ -1,6 +1,12 @@
 import { z } from "zod";
 
-import { REVIEW_STATUSES, type ProductReview, type PublicReview, type ReviewEligibility, type ReviewStatus } from "@/src/domain/entities/ProductReview";
+import {
+  REVIEW_STATUSES,
+  type ProductReview,
+  type PublicReview,
+  type ReviewEligibility,
+  type ReviewStatus,
+} from "@/src/domain/entities/ProductReview";
 
 /** What the review endpoints return, validated at the typed-service boundary. */
 export const reviewResponseSchema = z.object({

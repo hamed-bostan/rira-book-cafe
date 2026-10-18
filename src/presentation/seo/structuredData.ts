@@ -30,7 +30,13 @@ export type CafeIdentity = {
 };
 
 /** The cafe as a business: name, site, share image and whatever address, map position and hours are configured. */
-export function cafeJsonLd({ name, url, location, description, image }: CafeIdentity & { description: string; image: string }): JsonLdNode {
+export function cafeJsonLd({
+  name,
+  url,
+  location,
+  description,
+  image,
+}: CafeIdentity & { description: string; image: string }): JsonLdNode {
   return {
     "@context": SCHEMA_CONTEXT,
     "@type": "CafeOrCoffeeShop",
@@ -182,7 +188,9 @@ function cafePlaceFields(location: CafeLocation): JsonLdNode {
 
   return {
     ...(Object.keys(address).length > 0 ? { address: { "@type": "PostalAddress", ...address } } : {}),
-    ...(hasGeo ? { geo: { "@type": "GeoCoordinates", latitude: location.latitude ?? 0, longitude: location.longitude ?? 0 } } : {}),
+    ...(hasGeo
+      ? { geo: { "@type": "GeoCoordinates", latitude: location.latitude ?? 0, longitude: location.longitude ?? 0 } }
+      : {}),
   };
 }
 

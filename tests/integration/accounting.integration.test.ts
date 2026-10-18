@@ -37,7 +37,10 @@ const rent = {
 };
 
 async function trialBalance(): Promise<TrialBalance> {
-  const response = await getReport(getRequest(`/api/admin/accounting/reports/trial-balance?asOf=${today}`), routeParams({ report: "trial-balance" }));
+  const response = await getReport(
+    getRequest(`/api/admin/accounting/reports/trial-balance?asOf=${today}`),
+    routeParams({ report: "trial-balance" }),
+  );
   expect(response.status).toBe(200);
   return readJson<TrialBalance>(response);
 }
@@ -66,7 +69,9 @@ describe("manual journal entries", () => {
 
   it("refuses a future-dated entry with 400", async () => {
     signInAs("admin");
-    const response = await postEntry(jsonRequest("POST", "/api/admin/accounting/journal", { ...capitalInjection, date: "2999-01-01" }));
+    const response = await postEntry(
+      jsonRequest("POST", "/api/admin/accounting/journal", { ...capitalInjection, date: "2999-01-01" }),
+    );
 
     expect(response.status).toBe(400);
     expect((await readError(response)).fieldErrors).toHaveProperty("date");
@@ -113,7 +118,10 @@ describe("manual journal entries", () => {
   it("answers 404 for a report that doesn't exist", async () => {
     signInAs("admin");
 
-    const response = await getReport(getRequest("/api/admin/accounting/reports/horoscope"), routeParams({ report: "horoscope" }));
+    const response = await getReport(
+      getRequest("/api/admin/accounting/reports/horoscope"),
+      routeParams({ report: "horoscope" }),
+    );
 
     expect(response.status).toBe(404);
   });
@@ -143,7 +151,10 @@ describe("expenses and suppliers", () => {
     );
 
     expect(response.status).toBe(400);
-    expect((await readError(response)).fieldErrors).toMatchObject({ amount: "amountRequired", payment: "paymentInvalid" });
+    expect((await readError(response)).fieldErrors).toMatchObject({
+      amount: "amountRequired",
+      payment: "paymentInvalid",
+    });
   });
 
   it("refuses an expense for staff without accounting.write", async () => {
@@ -174,6 +185,10 @@ describe("expenses and suppliers", () => {
       }),
     );
     expect(bill.status).toBe(201);
-    expect(await readJson<Expense>(bill)).toMatchObject({ status: "unpaid", supplierName: "Lahijan Tea Co.", vatAmount: 400000 });
+    expect(await readJson<Expense>(bill)).toMatchObject({
+      status: "unpaid",
+      supplierName: "Lahijan Tea Co.",
+      vatAmount: 400000,
+    });
   });
 });

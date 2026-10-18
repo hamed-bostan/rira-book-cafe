@@ -56,6 +56,8 @@ describe("basket", () => {
   it("reads stored baskets defensively", () => {
     expect(parseStoredBasket(null)).toEqual(EMPTY_BASKET);
     expect(parseStoredBasket("not json")).toEqual(EMPTY_BASKET);
-    expect(parseStoredBasket(JSON.stringify({ lines: [{ productId: 1 }, LATTE, { ...LATTE, quantity: 0 }] })).lines).toEqual([LATTE]);
+    expect(
+      parseStoredBasket(JSON.stringify({ lines: [{ productId: 1 }, LATTE, { ...LATTE, quantity: 0 }] })).lines,
+    ).toEqual([LATTE]);
   });
 });

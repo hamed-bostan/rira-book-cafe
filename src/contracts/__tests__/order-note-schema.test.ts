@@ -6,13 +6,17 @@ import { orderNoteListResponseSchema, orderNoteSchema } from "../order-note-sche
 
 describe("orderNoteSchema", () => {
   it("trims the body", () => {
-    expect(orderNoteSchema.parse({ body: " Called the guest about the oat milk " })).toEqual({ body: "Called the guest about the oat milk" });
+    expect(orderNoteSchema.parse({ body: " Called the guest about the oat milk " })).toEqual({
+      body: "Called the guest about the oat milk",
+    });
   });
 
   it("requires a body within the cap", () => {
     expect(orderNoteSchema.safeParse({ body: "   " }).error?.flatten().fieldErrors.body).toEqual(["noteRequired"]);
     expect(orderNoteSchema.safeParse({ body: "n".repeat(MAX_ORDER_NOTE_LENGTH) }).success).toBe(true);
-    expect(orderNoteSchema.safeParse({ body: "n".repeat(MAX_ORDER_NOTE_LENGTH + 1) }).error?.flatten().fieldErrors.body).toEqual(["noteTooLong"]);
+    expect(
+      orderNoteSchema.safeParse({ body: "n".repeat(MAX_ORDER_NOTE_LENGTH + 1) }).error?.flatten().fieldErrors.body,
+    ).toEqual(["noteTooLong"]);
   });
 });
 

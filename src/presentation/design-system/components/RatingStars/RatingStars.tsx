@@ -55,7 +55,11 @@ export function RatingStars({ value, max = 5, onChange, size = "md", label, clas
 
   if (!onChange) {
     return (
-      <div className={cn("flex items-center gap-1", className)} role="img" aria-label={t("ratingValue", { value, max })}>
+      <div
+        className={cn("flex items-center gap-1", className)}
+        role="img"
+        aria-label={t("ratingValue", { value, max })}
+      >
         {stars.map((starValue) => (
           <span key={starValue}>{star(starValue <= value)}</span>
         ))}

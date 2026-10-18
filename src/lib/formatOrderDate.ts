@@ -100,8 +100,18 @@ function getCompactFormatters(locale: Locale): { date: Intl.DateTimeFormat; time
   if (cached) return cached;
 
   const formatters = {
-    date: new Intl.DateTimeFormat(COMPACT_DATE_TAG[locale], { day: "numeric", month: "short", year: "numeric", timeZone: CAFE_TIME_ZONE }),
-    time: new Intl.DateTimeFormat(COMPACT_TIME_TAG[locale], { hour: "2-digit", minute: "2-digit", hour12: locale === "en", timeZone: CAFE_TIME_ZONE }),
+    date: new Intl.DateTimeFormat(COMPACT_DATE_TAG[locale], {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      timeZone: CAFE_TIME_ZONE,
+    }),
+    time: new Intl.DateTimeFormat(COMPACT_TIME_TAG[locale], {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: locale === "en",
+      timeZone: CAFE_TIME_ZONE,
+    }),
   };
   compactCache.set(locale, formatters);
   return formatters;

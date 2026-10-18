@@ -5,7 +5,11 @@ import type { Product } from "@/src/domain/entities/Product";
 
 import { cafeJsonLd, eventJsonLd, productJsonLd, serializeJsonLd, type CafeIdentity } from "../structuredData";
 
-const CAFE: CafeIdentity = { name: "Rira Book Cafe", url: "https://rira.example/", location: { addressCountry: "IR", openingHours: [] } };
+const CAFE: CafeIdentity = {
+  name: "Rira Book Cafe",
+  url: "https://rira.example/",
+  location: { addressCountry: "IR", openingHours: [] },
+};
 
 function product(overrides: Partial<Product> = {}): Product {
   return {
@@ -43,7 +47,11 @@ function event(overrides: Partial<CafeEvent> = {}): CafeEvent {
 
 describe("cafeJsonLd", () => {
   it("states only the location fields that are configured", () => {
-    const data = cafeJsonLd({ ...CAFE, description: "Coffee and books", image: "https://rira.example/en/opengraph-image" });
+    const data = cafeJsonLd({
+      ...CAFE,
+      description: "Coffee and books",
+      image: "https://rira.example/en/opengraph-image",
+    });
 
     expect(data["@type"]).toBe("CafeOrCoffeeShop");
     expect(data.address).toEqual({ "@type": "PostalAddress", addressCountry: "IR" });
@@ -55,7 +63,11 @@ describe("cafeJsonLd", () => {
   it("adds map position and opening hours once they're configured", () => {
     const data = cafeJsonLd({
       ...CAFE,
-      location: { latitude: 35.7, longitude: 51.4, openingHours: [{ days: ["Saturday", "Sunday"], opens: "08:00", closes: "23:00" }] },
+      location: {
+        latitude: 35.7,
+        longitude: 51.4,
+        openingHours: [{ days: ["Saturday", "Sunday"], opens: "08:00", closes: "23:00" }],
+      },
       description: "Coffee and books",
       image: "https://rira.example/en/opengraph-image",
     });
@@ -74,7 +86,11 @@ describe("productJsonLd", () => {
   it("offers a sellable item at its price in Rial, with stock as availability", () => {
     const data = productJsonLd({ product: product({ stockQuantity: 0 }), url, image });
 
-    expect(data.offers).toMatchObject({ price: 1_200_000, priceCurrency: "IRR", availability: "https://schema.org/OutOfStock" });
+    expect(data.offers).toMatchObject({
+      price: 1_200_000,
+      priceCurrency: "IRR",
+      availability: "https://schema.org/OutOfStock",
+    });
     expect(data).not.toHaveProperty("aggregateRating");
   });
 
@@ -98,12 +114,25 @@ describe("productJsonLd", () => {
 
 describe("eventJsonLd", () => {
   it("dates the event on the cafe's clock and hosts it at the cafe", () => {
-    const data = eventJsonLd({ event: event(), title: "Poetry night", url: "https://rira.example/events/e1", cafe: CAFE });
+    const data = eventJsonLd({
+      event: event(),
+      title: "Poetry night",
+      url: "https://rira.example/events/e1",
+      cafe: CAFE,
+    });
 
     expect(data.startDate).toBe("2026-10-20T19:30:00+03:30");
     expect(data.endDate).toBe("2026-10-20T21:30:00+03:30");
-    expect(data.location).toMatchObject({ "@type": "Place", name: "Rira Book Cafe", address: { addressCountry: "IR" } });
-    expect(data.offers).toMatchObject({ price: 500_000, priceCurrency: "IRR", availability: "https://schema.org/InStock" });
+    expect(data.location).toMatchObject({
+      "@type": "Place",
+      name: "Rira Book Cafe",
+      address: { addressCountry: "IR" },
+    });
+    expect(data.offers).toMatchObject({
+      price: 500_000,
+      priceCurrency: "IRR",
+      availability: "https://schema.org/InStock",
+    });
     expect(data.isAccessibleForFree).toBe(false);
   });
 

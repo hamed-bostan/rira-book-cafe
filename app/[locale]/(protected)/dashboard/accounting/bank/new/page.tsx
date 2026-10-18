@@ -22,7 +22,12 @@ export default async function NewBankStatementPage() {
         <h1 className="dashboard-page-title">{t("form.heading")}</h1>
         <p className="mt-1 text-body-small text-muted-foreground">{t("form.subtitle")}</p>
       </div>
-      <NewBankStatementForm fromDay={period.fromDay} toDay={period.toDay} openingBalance={previous?.closingBalance} today={today} />
+      <NewBankStatementForm
+        fromDay={period.fromDay}
+        toDay={period.toDay}
+        openingBalance={previous?.closingBalance}
+        today={today}
+      />
     </div>
   );
 }

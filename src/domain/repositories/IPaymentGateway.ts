@@ -28,8 +28,7 @@ export type GatewayPaymentSession = {
  * retried callback) — still a success; the money was captured once.
  */
 export type GatewayVerification =
-  | { ok: true; refId: string; cardPan?: string; alreadyVerified: boolean }
-  | { ok: false; code: string };
+  { ok: true; refId: string; cardPan?: string; alreadyVerified: boolean } | { ok: false; code: string };
 
 export type IPaymentGateway = {
   /** Stored on each attempt, e.g. "zarinpal". */

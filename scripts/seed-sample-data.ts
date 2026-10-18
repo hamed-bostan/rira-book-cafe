@@ -313,8 +313,10 @@ async function seedEvents(): Promise<void> {
       kind: "bookClub",
       title: "Book club: The Blind Owl",
       titleFa: "باشگاه کتاب: بوف کور",
-      description: "We read Hedayat's The Blind Owl this month. Come with your copy (or borrow ours) and your questions. Tea is on us.",
-      descriptionFa: "این ماه «بوف کور» هدایت را می‌خوانیم. با کتابتان (یا نسخهٔ کافه) و پرسش‌هایتان بیایید. چای مهمان ما.",
+      description:
+        "We read Hedayat's The Blind Owl this month. Come with your copy (or borrow ours) and your questions. Tea is on us.",
+      descriptionFa:
+        "این ماه «بوف کور» هدایت را می‌خوانیم. با کتابتان (یا نسخهٔ کافه) و پرسش‌هایتان بیایید. چای مهمان ما.",
       imageUrl: img("event-book-club"),
       startsAt: wallTimeToDate(`${bookClubDay}T18:30`),
       endsAt: wallTimeToDate(`${bookClubDay}T20:30`),
@@ -364,23 +366,159 @@ async function seedOwner(ownerPhone: string | undefined): Promise<string | null>
  * the low-stock warnings show on a fresh database.
  */
 const STOCK_ITEMS = [
-  { id: "seed-ing-beans", name: "Espresso beans", unit: "g", purchasePrice: 1_800_000, purchaseQuantity: 1000, reorderLevel: 2000, opening: 6000 },
-  { id: "seed-ing-milk", name: "Milk", unit: "ml", purchasePrice: 70_000, purchaseQuantity: 1000, reorderLevel: 10_000, opening: 8000 },
-  { id: "seed-ing-saffron", name: "Saffron", unit: "g", purchasePrice: 1_200_000, purchaseQuantity: 4, reorderLevel: 4, opening: 2 },
-  { id: "seed-ing-tea", name: "Black tea", unit: "g", purchasePrice: 900_000, purchaseQuantity: 500, reorderLevel: 500, opening: 1500 },
-  { id: "seed-ing-sugar", name: "Sugar", unit: "g", purchasePrice: 80_000, purchaseQuantity: 1000, reorderLevel: 2000, opening: 5000 },
-  { id: "seed-ing-condensed", name: "Condensed milk", unit: "g", purchasePrice: 180_000, purchaseQuantity: 400, reorderLevel: 800, opening: 1600 },
-  { id: "seed-ing-lemon", name: "Lemon juice", unit: "ml", purchasePrice: 150_000, purchaseQuantity: 1000, reorderLevel: 1000, opening: 3000 },
-  { id: "seed-ing-mint", name: "Fresh mint", unit: "g", purchasePrice: 60_000, purchaseQuantity: 250, reorderLevel: 100, opening: 0 },
-  { id: "seed-ing-cup", name: "Cold cup and lid", unit: "piece", purchasePrice: 400_000, purchaseQuantity: 50, reorderLevel: 50, opening: 200 },
-  { id: "seed-ing-eggs", name: "Eggs", unit: "piece", purchasePrice: 750_000, purchaseQuantity: 30, reorderLevel: 30, opening: 90 },
-  { id: "seed-ing-bread", name: "Barbari bread", unit: "piece", purchasePrice: 20_000, purchaseQuantity: 1, reorderLevel: 5, opening: 12 },
-  { id: "seed-ing-cheese", name: "Lighvan cheese", unit: "g", purchasePrice: 500_000, purchaseQuantity: 1000, reorderLevel: 500, opening: 2000 },
-  { id: "seed-ing-saffron-cake", name: "Saffron cake (slice)", unit: "piece", purchasePrice: 440_000, purchaseQuantity: 10, reorderLevel: 4, opening: 10 },
-  { id: "seed-ing-carrot-cake", name: "Carrot cake (slice)", unit: "piece", purchasePrice: 480_000, purchaseQuantity: 10, reorderLevel: 4, opening: 3 },
-  { id: "seed-ing-book-blind-owl", name: "The Blind Owl (copy)", unit: "piece", purchasePrice: 182_000, purchaseQuantity: 1, reorderLevel: 2, opening: 6 },
-  { id: "seed-ing-book-savushun", name: "Savushun (copy)", unit: "piece", purchasePrice: 228_000, purchaseQuantity: 1, reorderLevel: 2, opening: 5 },
-  { id: "seed-ing-book-uncle-napoleon", name: "My Uncle Napoleon (copy)", unit: "piece", purchasePrice: 273_000, purchaseQuantity: 1, reorderLevel: 2, opening: 2 },
+  {
+    id: "seed-ing-beans",
+    name: "Espresso beans",
+    unit: "g",
+    purchasePrice: 1_800_000,
+    purchaseQuantity: 1000,
+    reorderLevel: 2000,
+    opening: 6000,
+  },
+  {
+    id: "seed-ing-milk",
+    name: "Milk",
+    unit: "ml",
+    purchasePrice: 70_000,
+    purchaseQuantity: 1000,
+    reorderLevel: 10_000,
+    opening: 8000,
+  },
+  {
+    id: "seed-ing-saffron",
+    name: "Saffron",
+    unit: "g",
+    purchasePrice: 1_200_000,
+    purchaseQuantity: 4,
+    reorderLevel: 4,
+    opening: 2,
+  },
+  {
+    id: "seed-ing-tea",
+    name: "Black tea",
+    unit: "g",
+    purchasePrice: 900_000,
+    purchaseQuantity: 500,
+    reorderLevel: 500,
+    opening: 1500,
+  },
+  {
+    id: "seed-ing-sugar",
+    name: "Sugar",
+    unit: "g",
+    purchasePrice: 80_000,
+    purchaseQuantity: 1000,
+    reorderLevel: 2000,
+    opening: 5000,
+  },
+  {
+    id: "seed-ing-condensed",
+    name: "Condensed milk",
+    unit: "g",
+    purchasePrice: 180_000,
+    purchaseQuantity: 400,
+    reorderLevel: 800,
+    opening: 1600,
+  },
+  {
+    id: "seed-ing-lemon",
+    name: "Lemon juice",
+    unit: "ml",
+    purchasePrice: 150_000,
+    purchaseQuantity: 1000,
+    reorderLevel: 1000,
+    opening: 3000,
+  },
+  {
+    id: "seed-ing-mint",
+    name: "Fresh mint",
+    unit: "g",
+    purchasePrice: 60_000,
+    purchaseQuantity: 250,
+    reorderLevel: 100,
+    opening: 0,
+  },
+  {
+    id: "seed-ing-cup",
+    name: "Cold cup and lid",
+    unit: "piece",
+    purchasePrice: 400_000,
+    purchaseQuantity: 50,
+    reorderLevel: 50,
+    opening: 200,
+  },
+  {
+    id: "seed-ing-eggs",
+    name: "Eggs",
+    unit: "piece",
+    purchasePrice: 750_000,
+    purchaseQuantity: 30,
+    reorderLevel: 30,
+    opening: 90,
+  },
+  {
+    id: "seed-ing-bread",
+    name: "Barbari bread",
+    unit: "piece",
+    purchasePrice: 20_000,
+    purchaseQuantity: 1,
+    reorderLevel: 5,
+    opening: 12,
+  },
+  {
+    id: "seed-ing-cheese",
+    name: "Lighvan cheese",
+    unit: "g",
+    purchasePrice: 500_000,
+    purchaseQuantity: 1000,
+    reorderLevel: 500,
+    opening: 2000,
+  },
+  {
+    id: "seed-ing-saffron-cake",
+    name: "Saffron cake (slice)",
+    unit: "piece",
+    purchasePrice: 440_000,
+    purchaseQuantity: 10,
+    reorderLevel: 4,
+    opening: 10,
+  },
+  {
+    id: "seed-ing-carrot-cake",
+    name: "Carrot cake (slice)",
+    unit: "piece",
+    purchasePrice: 480_000,
+    purchaseQuantity: 10,
+    reorderLevel: 4,
+    opening: 3,
+  },
+  {
+    id: "seed-ing-book-blind-owl",
+    name: "The Blind Owl (copy)",
+    unit: "piece",
+    purchasePrice: 182_000,
+    purchaseQuantity: 1,
+    reorderLevel: 2,
+    opening: 6,
+  },
+  {
+    id: "seed-ing-book-savushun",
+    name: "Savushun (copy)",
+    unit: "piece",
+    purchasePrice: 228_000,
+    purchaseQuantity: 1,
+    reorderLevel: 2,
+    opening: 5,
+  },
+  {
+    id: "seed-ing-book-uncle-napoleon",
+    name: "My Uncle Napoleon (copy)",
+    unit: "piece",
+    purchasePrice: 273_000,
+    purchaseQuantity: 1,
+    reorderLevel: 2,
+    opening: 2,
+  },
 ] as const;
 
 const RECIPES: Record<string, { ingredientId: string; quantity: number }[]> = {
@@ -433,7 +571,9 @@ async function seedRecipes(): Promise<void> {
     const { id, ...data } = item;
     await prisma.ingredient.upsert({ where: { id }, create: item, update: data });
   }
-  const byId = new Map<string, { purchasePrice: number; purchaseQuantity: number }>(STOCK_ITEMS.map((item) => [item.id, item]));
+  const byId = new Map<string, { purchasePrice: number; purchaseQuantity: number }>(
+    STOCK_ITEMS.map((item) => [item.id, item]),
+  );
   for (const [productId, lines] of Object.entries(RECIPES)) {
     await prisma.recipeLine.deleteMany({ where: { productId } });
     await prisma.recipeLine.createMany({ data: lines.map((line, position) => ({ productId, ...line, position })) });
@@ -451,7 +591,11 @@ async function seedRecipes(): Promise<void> {
       cost: Math.round((item.purchasePrice / item.purchaseQuantity) * item.opening),
     }));
     const actor = { id: "seed", name: "Seed" };
-    await new PrismaInventoryRepository().recordOpening({ date: cafeDayOf(new Date()), lines }, (event) => openingStockEntry(event, actor), actor);
+    await new PrismaInventoryRepository().recordOpening(
+      { date: cafeDayOf(new Date()), lines },
+      (event) => openingStockEntry(event, actor),
+      actor,
+    );
   }
 }
 

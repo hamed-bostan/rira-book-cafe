@@ -31,7 +31,9 @@ function reviewRepo(purchased: boolean, current: ProductReview | null = null) {
     hasPurchased: vi.fn(async () => purchased),
     saveOwn: vi.fn(async (draft: Parameters<IReviewRepository["saveOwn"]>[0]) => review({ ...draft })),
     getById: vi.fn(async () => current),
-    moderate: vi.fn(async (_id: string, _expected: string, status: "approved" | "rejected") => review({ ...current, status })),
+    moderate: vi.fn(async (_id: string, _expected: string, status: "approved" | "rejected") =>
+      review({ ...current, status }),
+    ),
   } as unknown as IReviewRepository & { saveOwn: ReturnType<typeof vi.fn>; moderate: ReturnType<typeof vi.fn> };
 }
 
@@ -40,17 +42,28 @@ const products = { getPublishedById: vi.fn(async () => ({ id: "p1", name: "Latte
 describe("SubmitReview", () => {
   it("lets a guest who had the item review it, under their first name", async () => {
     const repo = reviewRepo(true);
-    await new SubmitReview(repo, products).execute("p1", { rating: 5, comment: "  lovely " }, { id: "g1", name: "Sara Ahmadi" });
-    expect(repo.saveOwn).toHaveBeenCalledWith({ productId: "p1", productName: "Latte", userId: "g1", authorName: "Sara", rating: 5, comment: "lovely" });
+    await new SubmitReview(repo, products).execute(
+      "p1",
+      { rating: 5, comment: "  lovely " },
+      { id: "g1", name: "Sara Ahmadi" },
+    );
+    expect(repo.saveOwn).toHaveBeenCalledWith({
+      productId: "p1",
+      productName: "Latte",
+      userId: "g1",
+      authorName: "Sara",
+      rating: 5,
+      comment: "lovely",
+    });
   });
 
   it("refuses a guest who hasn't had it, and a rating outside 1–5", async () => {
-    await expect(new SubmitReview(reviewRepo(false), products).execute("p1", { rating: 5 }, { id: "g1", name: "Sara" })).rejects.toBeInstanceOf(
-      ConflictError,
-    );
-    await expect(new SubmitReview(reviewRepo(true), products).execute("p1", { rating: 6 }, { id: "g1", name: "Sara" })).rejects.toBeInstanceOf(
-      ValidationError,
-    );
+    await expect(
+      new SubmitReview(reviewRepo(false), products).execute("p1", { rating: 5 }, { id: "g1", name: "Sara" }),
+    ).rejects.toBeInstanceOf(ConflictError);
+    await expect(
+      new SubmitReview(reviewRepo(true), products).execute("p1", { rating: 6 }, { id: "g1", name: "Sara" }),
+    ).rejects.toBeInstanceOf(ValidationError);
   });
 });
 

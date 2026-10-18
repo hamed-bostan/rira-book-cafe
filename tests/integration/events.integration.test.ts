@@ -92,7 +92,9 @@ describe("events", () => {
     const id = "00000000-0000-0000-0000-000000000000";
 
     expect((await getEvent(getRequest(`/api/events/${id}`), routeParams({ id }))).status).toBe(404);
-    expect((await updateEvent(jsonRequest("PUT", `/api/events/${id}`, workshop), routeParams({ id }))).status).toBe(404);
+    expect((await updateEvent(jsonRequest("PUT", `/api/events/${id}`, workshop), routeParams({ id }))).status).toBe(
+      404,
+    );
   });
 });
 

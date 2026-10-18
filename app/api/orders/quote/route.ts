@@ -36,7 +36,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   try {
-    const quote = await new QuoteOrder(productRepository, checkoutPricing).execute(parsed.data, session.user.id, new Date());
+    const quote = await new QuoteOrder(productRepository, checkoutPricing).execute(
+      parsed.data,
+      session.user.id,
+      new Date(),
+    );
     return NextResponse.json(quote);
   } catch (error) {
     return errorResponseFromException(error, "POST /api/orders/quote failed");

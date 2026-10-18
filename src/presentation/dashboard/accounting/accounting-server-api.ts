@@ -39,7 +39,11 @@ export const accountsServerApi = {
   /** One account's lines over a span; `null` when the account doesn't exist. */
   async getLedger(code: string, params: Query): Promise<AccountLedger | null> {
     try {
-      return await serverApiGet(`/admin/accounting/accounts/${encodeURIComponent(code)}/ledger`, accountLedgerResponseSchema, { params });
+      return await serverApiGet(
+        `/admin/accounting/accounts/${encodeURIComponent(code)}/ledger`,
+        accountLedgerResponseSchema,
+        { params },
+      );
     } catch (error) {
       if (error instanceof ApiError && error.status === 404) return null;
       throw error;

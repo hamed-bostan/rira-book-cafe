@@ -6,7 +6,14 @@ import { UpdateOwnProfile } from "../UpdateOwnProfile";
 import type { User } from "../../../entities/User";
 import type { IUserRepository, ProfileUpdate } from "../../../repositories/IUserRepository";
 
-const USER: User = { id: "0912", phone: "0912", name: "Rira Guest", email: null, avatarUrl: "https://x/a.png", role: "customer" };
+const USER: User = {
+  id: "0912",
+  phone: "0912",
+  name: "Rira Guest",
+  email: null,
+  avatarUrl: "https://x/a.png",
+  role: "customer",
+};
 
 function repo() {
   const update = vi.fn(async (_id: string, input: ProfileUpdate) => ({ ...USER, ...input }));
@@ -21,6 +28,8 @@ describe("UpdateOwnProfile", () => {
   });
 
   it("requires a name", async () => {
-    await expect(new UpdateOwnProfile(repo().repo).execute("0912", { name: " ", email: null })).rejects.toThrow(ValidationError);
+    await expect(new UpdateOwnProfile(repo().repo).execute("0912", { name: " ", email: null })).rejects.toThrow(
+      ValidationError,
+    );
   });
 });

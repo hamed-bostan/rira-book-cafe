@@ -36,7 +36,9 @@ function page(items: JournalEntry[]): Page<JournalEntry> {
 
 describe("ListFiscalYears", () => {
   function setup(first: JournalEntry[], closes: JournalEntry[]): ILedgerRepository {
-    const listEntries = vi.fn<ILedgerRepository["listEntries"]>(async (filters) => page(filters.source === "yearClose" ? closes : first));
+    const listEntries = vi.fn<ILedgerRepository["listEntries"]>(async (filters) =>
+      page(filters.source === "yearClose" ? closes : first),
+    );
     return { listEntries } as unknown as ILedgerRepository;
   }
 
@@ -100,7 +102,12 @@ describe("CloseFiscalYear", () => {
     expect(movements).toHaveBeenCalledWith(span.fromDay, span.toDay, { excludeClosing: true });
     const [closing, through, audit] = closeYear.mock.calls[0];
     expect(through).toBe(span.toDay);
-    expect(closing).toMatchObject({ date: span.toDay, source: "yearClose", uniqueKey: "yearClose:1404", createdById: "owner" });
+    expect(closing).toMatchObject({
+      date: span.toDay,
+      source: "yearClose",
+      uniqueKey: "yearClose:1404",
+      createdById: "owner",
+    });
     expect(closing.lines).toEqual([
       { accountCode: SYSTEM_ACCOUNTS.salesDrinks, debit: 1_000, credit: 0 },
       { accountCode: "6100", debit: 0, credit: 300 },
@@ -125,7 +132,10 @@ describe("CloseFiscalYear", () => {
 
   it("refuses a year that hasn't ended", async () => {
     const { useCase, movements } = setup([]);
-    await expect(useCase.execute(1405, ACTOR, NOW)).rejects.toMatchObject({ name: "ConflictError", code: "YEAR_NOT_ENDED" });
+    await expect(useCase.execute(1405, ACTOR, NOW)).rejects.toMatchObject({
+      name: "ConflictError",
+      code: "YEAR_NOT_ENDED",
+    });
     await expect(useCase.execute(1405, ACTOR, NOW)).rejects.toThrow(ConflictError);
     expect(movements).not.toHaveBeenCalled();
   });

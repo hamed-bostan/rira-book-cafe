@@ -17,7 +17,11 @@ import { ConflictError } from "@/src/domain/errors/ConflictError";
 import { NotFoundError } from "@/src/domain/errors/NotFoundError";
 import { ValidationError } from "@/src/domain/errors/ValidationError";
 import type { AuditHook } from "@/src/domain/repositories/AuditHook";
-import type { IngredientInput, IPricingRepository, RepricedProduct } from "@/src/domain/repositories/IPricingRepository";
+import type {
+  IngredientInput,
+  IPricingRepository,
+  RepricedProduct,
+} from "@/src/domain/repositories/IPricingRepository";
 import { prisma } from "@/src/infrastructure/prisma/client";
 
 import { recordAudit } from "./writeActivityEntry";
@@ -32,7 +36,10 @@ type IngredientRow = Prisma.IngredientGetPayload<object>;
  */
 export class PrismaPricingRepository implements IPricingRepository {
   async listIngredients(includeInactive: boolean): Promise<Ingredient[]> {
-    const rows = await prisma.ingredient.findMany({ where: includeInactive ? {} : { isActive: true }, orderBy: { name: "asc" } });
+    const rows = await prisma.ingredient.findMany({
+      where: includeInactive ? {} : { isActive: true },
+      orderBy: { name: "asc" },
+    });
     return rows.map(toIngredient);
   }
 
@@ -76,7 +83,12 @@ export class PrismaPricingRepository implements IPricingRepository {
         if (!product) throw new NotFoundError("product", productId);
         await tx.recipeLine.deleteMany({ where: { productId } });
         await tx.recipeLine.createMany({
-          data: lines.map((line, position) => ({ productId, ingredientId: line.ingredientId, quantity: line.quantity, position })),
+          data: lines.map((line, position) => ({
+            productId,
+            ingredientId: line.ingredientId,
+            quantity: line.quantity,
+            position,
+          })),
         });
         await recostProduct(tx, productId);
         return lines;
@@ -107,7 +119,8 @@ export class PrismaPricingRepository implements IPricingRepository {
       defaultMarkupBps: settings.defaultMarkupBps,
       roundingStep: settings.roundingStep,
       overheadSource: settings.overheadSource,
-      manualMonthlyOverhead: settings.manualMonthlyOverhead === undefined ? null : BigInt(settings.manualMonthlyOverhead),
+      manualMonthlyOverhead:
+        settings.manualMonthlyOverhead === undefined ? null : BigInt(settings.manualMonthlyOverhead),
       expectedMonthlyUnits: settings.expectedMonthlyUnits ?? null,
       overheadMonths: settings.overheadMonths,
     };
@@ -118,7 +131,15 @@ export class PrismaPricingRepository implements IPricingRepository {
   async listPricedProducts(): Promise<PricedProduct[]> {
     const rows = await prisma.product.findMany({
       orderBy: [{ kind: "asc" }, { name: "asc" }],
-      select: { id: true, name: true, kind: true, price: true, taxExempt: true, costPrice: true, targetMarkupBps: true },
+      select: {
+        id: true,
+        name: true,
+        kind: true,
+        price: true,
+        taxExempt: true,
+        costPrice: true,
+        targetMarkupBps: true,
+      },
     });
     return rows.map((row) => ({
       id: row.id,
@@ -136,12 +157,24 @@ export class PrismaPricingRepository implements IPricingRepository {
     if (result.count === 0) throw new NotFoundError("product", productId);
   }
 
-  async applyPrice(productId: string, expectedPrice: number, newPrice: number, audit?: AuditHook<RepricedProduct>): Promise<RepricedProduct> {
+  async applyPrice(
+    productId: string,
+    expectedPrice: number,
+    newPrice: number,
+    audit?: AuditHook<RepricedProduct>,
+  ): Promise<RepricedProduct> {
     return prisma.$transaction(async (tx) => {
-      const result = await tx.product.updateMany({ where: { id: productId, price: expectedPrice }, data: { price: newPrice } });
-      const row = await tx.product.findUnique({ where: { id: productId }, select: { id: true, name: true, price: true } });
+      const result = await tx.product.updateMany({
+        where: { id: productId, price: expectedPrice },
+        data: { price: newPrice },
+      });
+      const row = await tx.product.findUnique({
+        where: { id: productId },
+        select: { id: true, name: true, price: true },
+      });
       if (!row) throw new NotFoundError("product", productId);
-      if (result.count === 0) throw new ConflictError("INVALID_TRANSITION", "The price was changed by someone else meanwhile.");
+      if (result.count === 0)
+        throw new ConflictError("INVALID_TRANSITION", "The price was changed by someone else meanwhile.");
       const repriced = { id: row.id, name: row.name, before: expectedPrice, after: row.price };
       await recordAudit(tx, repriced, audit);
       return repriced;
@@ -150,8 +183,14 @@ export class PrismaPricingRepository implements IPricingRepository {
 }
 
 /** Re-cost every item whose recipe uses any of these ingredients (after a price change). */
-export async function recostProductsUsing(tx: Prisma.TransactionClient, ingredientIds: readonly string[]): Promise<void> {
-  const affected = await tx.recipeLine.findMany({ where: { ingredientId: { in: [...ingredientIds] } }, select: { productId: true } });
+export async function recostProductsUsing(
+  tx: Prisma.TransactionClient,
+  ingredientIds: readonly string[],
+): Promise<void> {
+  const affected = await tx.recipeLine.findMany({
+    where: { ingredientId: { in: [...ingredientIds] } },
+    select: { productId: true },
+  });
   for (const productId of new Set(affected.map((line) => line.productId))) await recostProduct(tx, productId);
 }
 

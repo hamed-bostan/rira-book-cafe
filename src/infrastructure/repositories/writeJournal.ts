@@ -63,7 +63,10 @@ export async function postEntry(
   // The year-end close is the one posting dated inside a period that may already be
   // closed month by month — it's what finishes the year.
   if (current.booksClosedThrough && balanced.date <= current.booksClosedThrough && balanced.source !== "yearClose") {
-    throw new ConflictError("PERIOD_CLOSED", `The books are closed through ${current.booksClosedThrough}; post in the open period.`);
+    throw new ConflictError(
+      "PERIOD_CLOSED",
+      `The books are closed through ${current.booksClosedThrough}; post in the open period.`,
+    );
   }
 
   const codes = [...new Set(balanced.lines.map((line) => line.accountCode))];

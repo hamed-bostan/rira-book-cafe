@@ -4,7 +4,10 @@ import type { CategoryTranslationInput } from "@/src/domain/repositories/ICatego
 import { ApiError } from "@/src/lib/api/ApiError";
 import { pageResponseSchema } from "@/src/lib/api/page-response-schema";
 import { serverApiGet } from "@/src/lib/api/server-client";
-import { categoryListResponseSchema, categoryResponseSchema } from "@/src/presentation/category/category-response-schema";
+import {
+  categoryListResponseSchema,
+  categoryResponseSchema,
+} from "@/src/presentation/category/category-response-schema";
 
 import { categoryTranslationListResponseSchema } from "./category-translation-response-schema";
 

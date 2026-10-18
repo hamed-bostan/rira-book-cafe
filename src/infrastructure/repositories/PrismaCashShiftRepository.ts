@@ -1,10 +1,20 @@
 import { Prisma } from "@prisma/client";
 
-import { CASH_SHIFT_STATUSES, expectedDrawer, type CashShift, type CashShiftStatus, type ShiftMovements } from "@/src/domain/entities/CashShift";
+import {
+  CASH_SHIFT_STATUSES,
+  expectedDrawer,
+  type CashShift,
+  type CashShiftStatus,
+  type ShiftMovements,
+} from "@/src/domain/entities/CashShift";
 import { SYSTEM_ACCOUNTS } from "@/src/domain/entities/Ledger";
 import { ConflictError } from "@/src/domain/errors/ConflictError";
 import { NotFoundError } from "@/src/domain/errors/NotFoundError";
-import type { CloseShiftInput, ICashShiftRepository, OpenShiftInput } from "@/src/domain/repositories/ICashShiftRepository";
+import type {
+  CloseShiftInput,
+  ICashShiftRepository,
+  OpenShiftInput,
+} from "@/src/domain/repositories/ICashShiftRepository";
 import type { LedgerHook } from "@/src/domain/repositories/ILedgerRepository";
 import { prisma } from "@/src/infrastructure/prisma/client";
 import { inTransaction, type PrismaDb } from "@/src/infrastructure/prisma/transaction";
@@ -64,7 +74,9 @@ export class PrismaCashShiftRepository implements ICashShiftRepository {
   async close(id: string, input: CloseShiftInput, ledger?: LedgerHook<CashShift>): Promise<CashShift> {
     return inTransaction(this.db, async (tx) => {
       // Lock the row: two people closing the same shift can't both count it.
-      const locked = await tx.$queryRaw<{ status: string }[]>`SELECT "status" FROM "cash_shifts" WHERE "id" = ${id} FOR UPDATE`;
+      const locked = await tx.$queryRaw<
+        { status: string }[]
+      >`SELECT "status" FROM "cash_shifts" WHERE "id" = ${id} FOR UPDATE`;
       if (locked.length === 0) throw new NotFoundError("cash shift", id);
       if (locked[0].status !== "open") throw new ConflictError("NO_OPEN_SHIFT", "This shift is already closed.");
 
@@ -96,7 +108,11 @@ export class PrismaCashShiftRepository implements ICashShiftRepository {
  * shift's own over/short entries are left out — they're the result of a count,
  * not something the drawer took in.
  */
-async function readMovements(db: Pick<Prisma.TransactionClient, "journalLine">, from: Date, to: Date): Promise<ShiftMovements> {
+async function readMovements(
+  db: Pick<Prisma.TransactionClient, "journalLine">,
+  from: Date,
+  to: Date,
+): Promise<ShiftMovements> {
   const window = { createdAt: { gte: from, lt: to } };
   const [cash, bank, online, payments] = await Promise.all([
     db.journalLine.aggregate({
@@ -115,7 +131,8 @@ async function readMovements(db: Pick<Prisma.TransactionClient, "journalLine">, 
       where: { accountCode: SYSTEM_ACCOUNTS.guestReceivables, entry: { ...window, source: "orderPayment" } },
     }),
   ]);
-  const net = (sum: { debit: bigint | null; credit: bigint | null }) => Number(sum.debit ?? 0) - Number(sum.credit ?? 0);
+  const net = (sum: { debit: bigint | null; credit: bigint | null }) =>
+    Number(sum.debit ?? 0) - Number(sum.credit ?? 0);
   return { cash: net(cash._sum), bank: net(bank._sum), online: net(online._sum), payments };
 }
 

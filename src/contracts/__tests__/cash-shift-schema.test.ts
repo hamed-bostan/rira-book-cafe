@@ -11,7 +11,10 @@ describe("openCashShiftSchema", () => {
       note: "Float from the safe",
     });
     expect(openCashShiftSchema.parse({ openingFloat: 0, note: "  " }).note).toBeUndefined();
-    expect(openCashShiftSchema.parse({ openingFloat: MAX_DRAWER_AMOUNT })).toEqual({ openingFloat: MAX_DRAWER_AMOUNT, note: undefined });
+    expect(openCashShiftSchema.parse({ openingFloat: MAX_DRAWER_AMOUNT })).toEqual({
+      openingFloat: MAX_DRAWER_AMOUNT,
+      note: undefined,
+    });
   });
 
   it("maps each bad amount to its message key", () => {
@@ -31,6 +34,8 @@ describe("openCashShiftSchema", () => {
 describe("closeCashShiftSchema", () => {
   it("takes the counted cash", () => {
     expect(closeCashShiftSchema.parse({ countedCash: 0, note: "" })).toEqual({ countedCash: 0, note: undefined });
-    expect(closeCashShiftSchema.safeParse({ countedCash: -5 }).error?.flatten().fieldErrors.countedCash).toEqual(["amountInvalid"]);
+    expect(closeCashShiftSchema.safeParse({ countedCash: -5 }).error?.flatten().fieldErrors.countedCash).toEqual([
+      "amountInvalid",
+    ]);
   });
 });

@@ -57,14 +57,18 @@ describe("cashOverShortEntry", () => {
 
 describe("cash shifts", () => {
   it("opens one shift at a time", async () => {
-    await expect(new OpenCashShift(repo(shift())).execute({ openingFloat: 100 }, STAFF)).rejects.toMatchObject({ code: "SHIFT_ALREADY_OPEN" });
+    await expect(new OpenCashShift(repo(shift())).execute({ openingFloat: 100 }, STAFF)).rejects.toMatchObject({
+      code: "SHIFT_ALREADY_OPEN",
+    });
     const free = repo(null);
     await new OpenCashShift(free).execute({ openingFloat: 250_000, note: "  " }, STAFF);
     expect(free.open).toHaveBeenCalledWith({ openingFloat: 250_000, note: undefined, by: STAFF });
   });
 
   it("refuses a float that isn't whole Toman", async () => {
-    await expect(new OpenCashShift(repo(null)).execute({ openingFloat: -1 }, STAFF)).rejects.toBeInstanceOf(ValidationError);
+    await expect(new OpenCashShift(repo(null)).execute({ openingFloat: -1 }, STAFF)).rejects.toBeInstanceOf(
+      ValidationError,
+    );
   });
 
   it("reports what the drawer should hold: the float plus the cash that moved", async () => {
@@ -76,15 +80,21 @@ describe("cash shifts", () => {
   it("closes with a ledger hook that posts the over/short of the closed shift", async () => {
     const shifts = repo(shift());
     await new CloseCashShift(shifts).execute("z1", { countedCash: 1_690_000 }, STAFF, NOW);
-    const [, input, hook] = shifts.close.mock.calls[0] as unknown as [string, { countedCash: number }, (s: CashShift, settings: { vatRateBps: number }) => unknown[]];
+    const [, input, hook] = shifts.close.mock.calls[0] as unknown as [
+      string,
+      { countedCash: number },
+      (s: CashShift, settings: { vatRateBps: number }) => unknown[],
+    ];
     expect(input.countedCash).toBe(1_690_000);
-    expect(hook(shift({ status: "closed", difference: -10_000 }), { vatRateBps: DEFAULT_VAT_RATE_BPS })).toHaveLength(1);
+    expect(hook(shift({ status: "closed", difference: -10_000 }), { vatRateBps: DEFAULT_VAT_RATE_BPS })).toHaveLength(
+      1,
+    );
     expect(hook(shift({ status: "closed", difference: 0 }), { vatRateBps: DEFAULT_VAT_RATE_BPS })).toHaveLength(0);
   });
 
   it("won't close a shift twice", async () => {
-    await expect(new CloseCashShift(repo(shift({ status: "closed" }))).execute("z1", { countedCash: 0 }, STAFF, NOW)).rejects.toBeInstanceOf(
-      ConflictError,
-    );
+    await expect(
+      new CloseCashShift(repo(shift({ status: "closed" }))).execute("z1", { countedCash: 0 }, STAFF, NOW),
+    ).rejects.toBeInstanceOf(ConflictError);
   });
 });

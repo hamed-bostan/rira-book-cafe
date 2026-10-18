@@ -14,7 +14,14 @@ import { cafeDayRange } from "./CafeTime";
  * - `cancelled` — withdrawn by the guest or declined by staff. Terminal.
  * - `noShow` — the guest never came. Terminal.
  */
-export const SUITE_BOOKING_STATUSES = ["requested", "confirmed", "checkedIn", "checkedOut", "cancelled", "noShow"] as const;
+export const SUITE_BOOKING_STATUSES = [
+  "requested",
+  "confirmed",
+  "checkedIn",
+  "checkedOut",
+  "cancelled",
+  "noShow",
+] as const;
 export type SuiteBookingStatus = (typeof SUITE_BOOKING_STATUSES)[number];
 
 /** Statuses that hold the suite — the ones an overlap is checked against. */
@@ -68,7 +75,9 @@ export function nextSuiteBookingStatuses(status: SuiteBookingStatus): readonly S
 
 /** Nights between two cafe days. */
 export function suiteNights(checkIn: string, checkOut: string): number {
-  return Math.round((cafeDayRange(checkOut).from.getTime() - cafeDayRange(checkIn).from.getTime()) / (24 * 60 * 60 * 1000));
+  return Math.round(
+    (cafeDayRange(checkOut).from.getTime() - cafeDayRange(checkIn).from.getTime()) / (24 * 60 * 60 * 1000),
+  );
 }
 
 /**
@@ -80,6 +89,9 @@ export function staysOverlap(a: SuiteBusyRange, b: SuiteBusyRange): boolean {
 }
 
 /** Whether the guest may still cancel: before check-in, and before the check-in day. */
-export function isGuestCancellableSuiteBooking(booking: Pick<SuiteBooking, "status" | "checkIn">, today: string): boolean {
+export function isGuestCancellableSuiteBooking(
+  booking: Pick<SuiteBooking, "status" | "checkIn">,
+  today: string,
+): boolean {
   return (booking.status === "requested" || booking.status === "confirmed") && booking.checkIn > today;
 }

@@ -93,21 +93,34 @@ describe("inventory", () => {
     );
 
     expect(response.status).toBe(400);
-    expect((await readError(response)).fieldErrors).toMatchObject({ description: "descriptionRequired", lines: "linesTooFew" });
+    expect((await readError(response)).fieldErrors).toMatchObject({
+      description: "descriptionRequired",
+      lines: "linesTooFew",
+    });
   });
 
   it("writes off waste, letting stock run below zero as the ledger allows", async () => {
     signInAs("admin");
 
     const wasted = await recordWaste(
-      jsonRequest("POST", "/api/admin/inventory/waste", { date: today, ingredientId: "seed-ing-milk", quantity: "500", note: "Soured" }),
+      jsonRequest("POST", "/api/admin/inventory/waste", {
+        date: today,
+        ingredientId: "seed-ing-milk",
+        quantity: "500",
+        note: "Soured",
+      }),
     );
     expect(wasted.status).toBe(201);
     expect(onHand(await inventory(), "seed-ing-milk")).toBe(7500);
 
     // Stock may go negative by design (see writeStock.ts): the item then reads as out.
     const overdrawn = await recordWaste(
-      jsonRequest("POST", "/api/admin/inventory/waste", { date: today, ingredientId: "seed-ing-mint", quantity: "10", note: "" }),
+      jsonRequest("POST", "/api/admin/inventory/waste", {
+        date: today,
+        ingredientId: "seed-ing-mint",
+        quantity: "10",
+        note: "",
+      }),
     );
     expect(overdrawn.status).toBe(201);
     const mint = (await inventory()).items.find((item) => item.id === "seed-ing-mint");
@@ -118,7 +131,12 @@ describe("inventory", () => {
     signInAs("admin");
 
     const response = await recordWaste(
-      jsonRequest("POST", "/api/admin/inventory/waste", { date: today, ingredientId: "missing", quantity: "1", note: "" }),
+      jsonRequest("POST", "/api/admin/inventory/waste", {
+        date: today,
+        ingredientId: "missing",
+        quantity: "1",
+        note: "",
+      }),
     );
 
     expect(response.status).toBe(404);

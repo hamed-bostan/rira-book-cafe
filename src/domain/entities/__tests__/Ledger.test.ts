@@ -1,7 +1,22 @@
 import { describe, expect, it } from "vitest";
 
-import { allocate, assertBalanced, reversalOf, signedBalance, UnbalancedEntryError, vatIncluded, type JournalEntry } from "../Ledger";
-import { costOfSalesEntry, expenseEntry, expensePaymentEntry, paymentEntry, paymentReturnEntry, saleEntry } from "../Postings";
+import {
+  allocate,
+  assertBalanced,
+  reversalOf,
+  signedBalance,
+  UnbalancedEntryError,
+  vatIncluded,
+  type JournalEntry,
+} from "../Ledger";
+import {
+  costOfSalesEntry,
+  expenseEntry,
+  expensePaymentEntry,
+  paymentEntry,
+  paymentReturnEntry,
+  saleEntry,
+} from "../Postings";
 
 import type { Expense } from "../Expense";
 import type { Order } from "../Order";
@@ -19,9 +34,29 @@ const ORDER: Order = {
   tableLabel: "4",
   paymentStatus: "unpaid",
   items: [
-    { id: "i1", productId: "p1", kind: "drink", name: "Cappuccino", imageUrl: "", unitPrice: 145000, unitCost: 40000, stockTracked: true, quantity: 2 },
+    {
+      id: "i1",
+      productId: "p1",
+      kind: "drink",
+      name: "Cappuccino",
+      imageUrl: "",
+      unitPrice: 145000,
+      unitCost: 40000,
+      stockTracked: true,
+      quantity: 2,
+    },
     { id: "i2", productId: "p2", kind: "food", name: "Cake", imageUrl: "", unitPrice: 110000, quantity: 1 },
-    { id: "i3", productId: "p3", kind: "book", name: "Book", imageUrl: "", unitPrice: 280000, unitCost: 180000, stockTracked: true, quantity: 1 },
+    {
+      id: "i3",
+      productId: "p3",
+      kind: "book",
+      name: "Book",
+      imageUrl: "",
+      unitPrice: 280000,
+      unitCost: 180000,
+      stockTracked: true,
+      quantity: 1,
+    },
   ],
   subtotal: 680000,
   promoDiscount: 0,
@@ -78,7 +113,10 @@ describe("posting rules", () => {
   });
 
   it("takes VAT only from taxable lines — an exempt book carries none", () => {
-    const withExemptBook: Order = { ...ORDER, items: ORDER.items.map((item) => ({ ...item, taxExempt: item.kind === "book" })) };
+    const withExemptBook: Order = {
+      ...ORDER,
+      items: ORDER.items.map((item) => ({ ...item, taxExempt: item.kind === "book" })),
+    };
     const entry = assertBalanced(saleEntry(withExemptBook, 1000, "2026-10-16", ACTOR));
     const credit = (code: string) => entry.lines.find((l) => l.accountCode === code)?.credit;
     expect(credit("2200")).toBe(36364);

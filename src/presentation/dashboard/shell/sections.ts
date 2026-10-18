@@ -36,7 +36,8 @@ import type { LucideIcon } from "lucide-react";
  */
 
 /** A navigation group's stable id, which is also its label key under `dashboard`. */
-export type DashboardSectionGroup = "groupOverview" | "groupService" | "groupMenu" | "groupInsights" | "groupFinance" | "groupStore";
+export type DashboardSectionGroup =
+  "groupOverview" | "groupService" | "groupMenu" | "groupInsights" | "groupFinance" | "groupStore";
 
 /** A section's label key under the `dashboard` namespace — spelled out so `t()` can check it. */
 export type DashboardSectionLabelKey =
@@ -70,21 +71,51 @@ export type DashboardSection = {
 };
 
 const SECTIONS = [
-  { href: "/dashboard", labelKey: "navDashboard", icon: LayoutDashboard, needs: "dashboard.view", group: "groupOverview" },
+  {
+    href: "/dashboard",
+    labelKey: "navDashboard",
+    icon: LayoutDashboard,
+    needs: "dashboard.view",
+    group: "groupOverview",
+  },
 
   // The live queue. Reading it is for everyone with the dashboard; moving orders is
   // `orders.fulfill`, gated inside the page.
-  { href: "/dashboard/orders", labelKey: "navOrders", icon: ClipboardList, needs: "dashboard.view", group: "groupService" },
+  {
+    href: "/dashboard/orders",
+    labelKey: "navOrders",
+    icon: ClipboardList,
+    needs: "dashboard.view",
+    group: "groupService",
+  },
   // The bar and kitchen's live board of what's being made — the same queue, sized for a wall screen.
   { href: "/dashboard/kitchen", labelKey: "navKitchen", icon: ChefHat, needs: "dashboard.view", group: "groupService" },
   // The day's bookings — readable by everyone on the floor; acting on them is
   // `reservations.manage`, gated inside the page.
-  { href: "/dashboard/reservations", labelKey: "navReservations", icon: CalendarClock, needs: "dashboard.view", group: "groupService" },
+  {
+    href: "/dashboard/reservations",
+    labelKey: "navReservations",
+    icon: CalendarClock,
+    needs: "dashboard.view",
+    group: "groupService",
+  },
   // The suite's stays and the shelf's lending book — readable by everyone on the
   // floor; acting on them is `reservations.manage` / `loans.manage`, gated inside.
   { href: "/dashboard/suite", labelKey: "navSuite", icon: BedDouble, needs: "dashboard.view", group: "groupService" },
-  { href: "/dashboard/book-loans", labelKey: "navBookLoans", icon: BookOpen, needs: "dashboard.view", group: "groupService" },
-  { href: "/dashboard/events", labelKey: "navEvents", icon: PartyPopper, needs: "dashboard.view", group: "groupService" },
+  {
+    href: "/dashboard/book-loans",
+    labelKey: "navBookLoans",
+    icon: BookOpen,
+    needs: "dashboard.view",
+    group: "groupService",
+  },
+  {
+    href: "/dashboard/events",
+    labelKey: "navEvents",
+    icon: PartyPopper,
+    needs: "dashboard.view",
+    group: "groupService",
+  },
 
   // The menu list is a read for everyone with the dashboard — it's how staff answer
   // "do we still have this?". The write controls inside it are gated on `catalog.write`.
@@ -94,17 +125,53 @@ const SECTIONS = [
   { href: "/dashboard/inventory", labelKey: "navInventory", icon: Boxes, needs: "inventory.view", group: "groupMenu" },
   // What guests said about it, and the levers that bring them back — promo codes and the loyalty club.
   { href: "/dashboard/reviews", labelKey: "navReviews", icon: Star, needs: "reviews.moderate", group: "groupMenu" },
-  { href: "/dashboard/promotions", labelKey: "navPromotions", icon: Gift, needs: "promotions.write", group: "groupMenu" },
+  {
+    href: "/dashboard/promotions",
+    labelKey: "navPromotions",
+    icon: Gift,
+    needs: "promotions.write",
+    group: "groupMenu",
+  },
 
   // Revenue and the reports behind it — admin and owner only.
-  { href: "/dashboard/reports", labelKey: "navReports", icon: BarChart3, needs: "reports.view", group: "groupInsights" },
+  {
+    href: "/dashboard/reports",
+    labelKey: "navReports",
+    icon: BarChart3,
+    needs: "reports.view",
+    group: "groupInsights",
+  },
 
   // The books, the bills that feed them, and what each item should cost — admin and owner.
   // The till: open a shift with a float, count the drawer at the end — a floor job, so staff hold it.
-  { href: "/dashboard/cash-shifts", labelKey: "navCashShifts", icon: Wallet, needs: "shifts.manage", group: "groupFinance" },
-  { href: "/dashboard/accounting", labelKey: "navAccounting", icon: Landmark, needs: "accounting.view", group: "groupFinance" },
-  { href: "/dashboard/expenses", labelKey: "navExpenses", icon: Receipt, needs: "accounting.view", group: "groupFinance" },
-  { href: "/dashboard/pricing", labelKey: "navPricing", icon: Calculator, needs: "accounting.view", group: "groupFinance" },
+  {
+    href: "/dashboard/cash-shifts",
+    labelKey: "navCashShifts",
+    icon: Wallet,
+    needs: "shifts.manage",
+    group: "groupFinance",
+  },
+  {
+    href: "/dashboard/accounting",
+    labelKey: "navAccounting",
+    icon: Landmark,
+    needs: "accounting.view",
+    group: "groupFinance",
+  },
+  {
+    href: "/dashboard/expenses",
+    labelKey: "navExpenses",
+    icon: Receipt,
+    needs: "accounting.view",
+    group: "groupFinance",
+  },
+  {
+    href: "/dashboard/pricing",
+    labelKey: "navPricing",
+    icon: Calculator,
+    needs: "accounting.view",
+    group: "groupFinance",
+  },
 
   // The cafe's own record of itself. Activity is visible to everyone holding
   // `activity.view` (team-access entries stay owner-only, see `activity-visibility`);
@@ -114,7 +181,14 @@ const SECTIONS = [
 ] as const satisfies readonly DashboardSection[];
 
 /** The groups in sidebar order. */
-const GROUP_ORDER: readonly DashboardSectionGroup[] = ["groupOverview", "groupService", "groupMenu", "groupInsights", "groupFinance", "groupStore"];
+const GROUP_ORDER: readonly DashboardSectionGroup[] = [
+  "groupOverview",
+  "groupService",
+  "groupMenu",
+  "groupInsights",
+  "groupFinance",
+  "groupStore",
+];
 
 export type DashboardNavGroup = {
   id: DashboardSectionGroup;

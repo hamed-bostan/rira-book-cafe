@@ -18,7 +18,11 @@ import type { IProductRepository } from "../../repositories/IProductRepository";
 export class GetProductsByIds {
   constructor(private readonly productRepo: IProductRepository) {}
 
-  async execute(ids: readonly string[], locale?: string, options: { includeUnpublished?: boolean } = {}): Promise<Product[]> {
+  async execute(
+    ids: readonly string[],
+    locale?: string,
+    options: { includeUnpublished?: boolean } = {},
+  ): Promise<Product[]> {
     const products = await this.productRepo.getByIds([...new Set(ids)], locale);
     return options.includeUnpublished ? products : products.filter((product) => product.isPublished);
   }

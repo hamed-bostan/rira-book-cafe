@@ -19,7 +19,10 @@ export async function StatementHeader({ title, subtitle, span }: StatementHeader
 
   return (
     <div className="flex flex-col gap-4">
-      <nav aria-label={t("breadcrumbLabel")} className="flex items-center gap-2 text-body-caption text-muted-foreground">
+      <nav
+        aria-label={t("breadcrumbLabel")}
+        className="flex items-center gap-2 text-body-caption text-muted-foreground"
+      >
         <Link href="/dashboard/accounting/statements" className="hover:text-foreground">
           {t("statements.heading")}
         </Link>
@@ -31,7 +34,11 @@ export async function StatementHeader({ title, subtitle, span }: StatementHeader
         <p className="mt-1 text-body-small text-muted-foreground">{subtitle}</p>
       </div>
       <div className="rounded-card-lg border border-border bg-background p-4 md:p-6">
-        {"asOfDay" in span ? <AsOfPicker asOfDay={span.asOfDay} /> : <PeriodPicker fromDay={span.fromDay} toDay={span.toDay} />}
+        {"asOfDay" in span ? (
+          <AsOfPicker asOfDay={span.asOfDay} />
+        ) : (
+          <PeriodPicker fromDay={span.fromDay} toDay={span.toDay} />
+        )}
       </div>
     </div>
   );

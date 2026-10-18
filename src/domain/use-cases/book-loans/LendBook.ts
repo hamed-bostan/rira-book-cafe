@@ -42,8 +42,10 @@ export class LendBook {
   async execute(input: LendBookInput, staff: ActivityActor, now: Date): Promise<BookLoan> {
     const borrowerName = input.borrowerName.trim();
     if (!borrowerName) throw new ValidationError("borrowerName", "Enter the borrower's name.");
-    if (borrowerName.length > MAX_BORROWER_NAME_LENGTH) throw new ValidationError("borrowerName", "That name is too long.");
-    if (!isPlausiblePhone(input.borrowerPhone)) throw new ValidationError("borrowerPhone", "Enter a valid phone number.");
+    if (borrowerName.length > MAX_BORROWER_NAME_LENGTH)
+      throw new ValidationError("borrowerName", "That name is too long.");
+    if (!isPlausiblePhone(input.borrowerPhone))
+      throw new ValidationError("borrowerPhone", "Enter a valid phone number.");
     const borrowerPhone = normalizePhone(input.borrowerPhone);
 
     const today = cafeDayOf(now);
@@ -89,7 +91,8 @@ export class LendBook {
       }),
     );
 
-    if (this.waitlistRepo) await this.waitlistRepo.fulfill(loan.productId, { userId: loan.userId, phone: loan.borrowerPhone });
+    if (this.waitlistRepo)
+      await this.waitlistRepo.fulfill(loan.productId, { userId: loan.userId, phone: loan.borrowerPhone });
     const notification = loanStartedNotification(loan);
     if (notification && this.notifier) await this.notifier.notify(notification);
     return loan;

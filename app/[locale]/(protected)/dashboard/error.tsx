@@ -15,7 +15,13 @@ export default function DashboardError(props: RouteErrorProps) {
 
   return (
     <div className="rounded-card-lg border border-dashed border-border">
-      <RouteErrorState {...props} size="section" title={t("errorTitle")} description={t("errorBody")} homeHref="/dashboard" />
+      <RouteErrorState
+        {...props}
+        size="section"
+        title={t("errorTitle")}
+        description={t("errorBody")}
+        homeHref="/dashboard"
+      />
     </div>
   );
 }

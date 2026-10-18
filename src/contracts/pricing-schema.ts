@@ -1,6 +1,12 @@
 import { z } from "zod";
 
-import { INGREDIENT_UNITS, MAX_MARKUP_BPS, MAX_OVERHEAD_MONTHS, MAX_RECIPE_LINES, OVERHEAD_SOURCES } from "@/src/domain/entities/Pricing";
+import {
+  INGREDIENT_UNITS,
+  MAX_MARKUP_BPS,
+  MAX_OVERHEAD_MONTHS,
+  MAX_RECIPE_LINES,
+  OVERHEAD_SOURCES,
+} from "@/src/domain/entities/Pricing";
 
 import { moneyField } from "./money-fields";
 
@@ -87,4 +93,3 @@ export type ItemMarkupInput = z.input<typeof itemMarkupSchema>;
 
 /** Apply the suggestion; `expectedPrice` is the price the owner saw, so a concurrent edit isn't overwritten. */
 export const applyPriceSchema = z.object({ expectedPrice: z.number().int().nonnegative() });
-

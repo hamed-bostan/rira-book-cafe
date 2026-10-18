@@ -117,7 +117,8 @@ async function refuseClash(tx: Prisma.TransactionClient, id: string | null, rang
     },
     select: { reference: true },
   });
-  if (clash) throw new ConflictError("SUITE_TAKEN", `The suite is already booked for those nights (S-${clash.reference}).`);
+  if (clash)
+    throw new ConflictError("SUITE_TAKEN", `The suite is already booked for those nights (S-${clash.reference}).`);
 }
 
 /** `YYYY-MM-DD` → the `DATE` value Prisma writes (midnight UTC of that calendar day). */

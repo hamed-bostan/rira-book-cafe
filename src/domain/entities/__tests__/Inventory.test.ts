@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import { consumptionFor, countEntry, issueStock, openingStockEntry, receiveStock, stockLevel, wasteEntry } from "../Inventory";
+import {
+  consumptionFor,
+  countEntry,
+  issueStock,
+  openingStockEntry,
+  receiveStock,
+  stockLevel,
+  wasteEntry,
+} from "../Inventory";
 import { assertBalanced } from "../Ledger";
 import { yearCloseEntry } from "../Postings";
 
@@ -65,7 +73,9 @@ describe("inventory postings", () => {
     const surplus = countEntry({ id: "c", date: "2026-10-16", variance: 3000, description: "Count" }, ACTOR);
     expect(surplus?.lines[0]).toMatchObject({ accountCode: "1200", debit: 3000 });
     expect(countEntry({ id: "c", date: "2026-10-16", variance: 0, description: "Count" }, ACTOR)).toBeNull();
-    expect(openingStockEntry({ id: "o", date: "2026-10-16", value: 9000, description: "Opening" }, ACTOR).lines[1]).toMatchObject({ accountCode: "3100", credit: 9000 });
+    expect(
+      openingStockEntry({ id: "o", date: "2026-10-16", value: 9000, description: "Opening" }, ACTOR).lines[1],
+    ).toMatchObject({ accountCode: "3100", credit: 9000 });
   });
 
   it("closes a year's revenue and expenses into retained earnings", () => {

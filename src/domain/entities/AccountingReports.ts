@@ -141,7 +141,11 @@ export function isCostOfSales(account: Pick<Account, "code" | "type">): boolean 
   return account.type === "expense" && account.code.startsWith("5");
 }
 
-export function buildTrialBalance(asOfDay: string, accounts: readonly Account[], movements: readonly AccountMovement[]): TrialBalance {
+export function buildTrialBalance(
+  asOfDay: string,
+  accounts: readonly Account[],
+  movements: readonly AccountMovement[],
+): TrialBalance {
   const rows = accountBalances(accounts, movements);
   // Each account nets to one side, as a trial balance is read.
   const totalDebit = rows.reduce((sum, row) => sum + Math.max(row.debit - row.credit, 0), 0);
@@ -163,7 +167,11 @@ export function buildProfitAndLoss(
   return { fromDay, toDay, revenue, costOfSales, grossProfit, expenses, netProfit: grossProfit - expenses.total };
 }
 
-export function buildBalanceSheet(asOfDay: string, accounts: readonly Account[], movements: readonly AccountMovement[]): BalanceSheet {
+export function buildBalanceSheet(
+  asOfDay: string,
+  accounts: readonly Account[],
+  movements: readonly AccountMovement[],
+): BalanceSheet {
   const rows = accountBalances(accounts, movements);
   const of = (type: Account["type"]) => section(rows.filter((row) => row.account.type === type));
   const assets = of("asset");
@@ -206,7 +214,15 @@ export function buildAccountLedger(
 export function buildMarginReport(
   fromDay: string,
   toDay: string,
-  items: readonly { productId: string; name: string; quantity: number; gross: number; taxableGross: number; cost: number; costKnown: boolean }[],
+  items: readonly {
+    productId: string;
+    name: string;
+    quantity: number;
+    gross: number;
+    taxableGross: number;
+    cost: number;
+    costKnown: boolean;
+  }[],
   vatRateBps: number,
 ): MarginReport {
   const rows: ItemMargin[] = items.map((item) => {

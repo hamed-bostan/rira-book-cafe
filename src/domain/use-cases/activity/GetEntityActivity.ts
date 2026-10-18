@@ -14,11 +14,7 @@ import type { IActivityLog } from "../../repositories/IActivityLog";
 export class GetEntityActivity {
   constructor(private readonly log: IActivityLog) {}
 
-  execute(
-    entityType: ActivityEntityType,
-    entityId: string,
-    limit?: number,
-  ): Promise<ActivityEntry[]> {
+  execute(entityType: ActivityEntityType, entityId: string, limit?: number): Promise<ActivityEntry[]> {
     return this.log.listForEntity(entityType, entityId, clampActivityLimit(limit));
   }
 }

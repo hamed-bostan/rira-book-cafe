@@ -3,7 +3,12 @@ import { z } from "zod";
 import { cafeDayRange, isCafeDay } from "@/src/domain/entities/CafeTime";
 import { MAX_LOYALTY_NOTE_LENGTH, MAX_POINTS_ADJUSTMENT } from "@/src/domain/entities/Loyalty";
 import { isPlausiblePhone } from "@/src/domain/entities/Phone";
-import { MAX_PROMO_DESCRIPTION_LENGTH, PROMO_CODE_PATTERN, PROMO_KINDS, normalizePromoCode } from "@/src/domain/entities/Promotion";
+import {
+  MAX_PROMO_DESCRIPTION_LENGTH,
+  PROMO_CODE_PATTERN,
+  PROMO_KINDS,
+  normalizePromoCode,
+} from "@/src/domain/entities/Promotion";
 
 /**
  * Promotion and loyalty contracts shared by the dashboard forms and the route
@@ -53,10 +58,22 @@ export const promoCodeFormSchema = z
     isActive: z.boolean(),
   })
   .refine((data) => data.kind !== "percent" || data.value <= 100, { path: ["value"], message: "percentTooHigh" })
-  .refine((data) => !data.startsOn || !data.endsOn || data.endsOn >= data.startsOn, { path: ["endsOn"], message: "endBeforeStart" })
-  .refine((data) => data.usageLimit === undefined || data.usageLimit > 0, { path: ["usageLimit"], message: "limitInvalid" })
-  .refine((data) => data.perGuestLimit === undefined || data.perGuestLimit > 0, { path: ["perGuestLimit"], message: "limitInvalid" })
-  .refine((data) => data.maxDiscount === undefined || data.maxDiscount > 0, { path: ["maxDiscount"], message: "amountInvalid" })
+  .refine((data) => !data.startsOn || !data.endsOn || data.endsOn >= data.startsOn, {
+    path: ["endsOn"],
+    message: "endBeforeStart",
+  })
+  .refine((data) => data.usageLimit === undefined || data.usageLimit > 0, {
+    path: ["usageLimit"],
+    message: "limitInvalid",
+  })
+  .refine((data) => data.perGuestLimit === undefined || data.perGuestLimit > 0, {
+    path: ["perGuestLimit"],
+    message: "limitInvalid",
+  })
+  .refine((data) => data.maxDiscount === undefined || data.maxDiscount > 0, {
+    path: ["maxDiscount"],
+    message: "amountInvalid",
+  })
   .transform(({ startsOn, endsOn, maxDiscount, ...rest }) => ({
     ...rest,
     // A cap only means something on a percentage.

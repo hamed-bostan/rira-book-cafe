@@ -13,9 +13,21 @@ type ChartSegmentedControlProps<T extends string> = {
 };
 
 /** Shared chart toggle used by report and overview charts. */
-export function ChartSegmentedControl<T extends string>({ className, value, options, label, onChange, getLabel, emphasis = false }: ChartSegmentedControlProps<T>) {
+export function ChartSegmentedControl<T extends string>({
+  className,
+  value,
+  options,
+  label,
+  onChange,
+  getLabel,
+  emphasis = false,
+}: ChartSegmentedControlProps<T>) {
   return (
-    <div className={cn("flex w-full rounded-card-md border border-border p-0.5 sm:w-auto", className)} role="group" aria-label={label}>
+    <div
+      className={cn("flex w-full rounded-card-md border border-border p-0.5 sm:w-auto", className)}
+      role="group"
+      aria-label={label}
+    >
       {options.map((option) => (
         <button
           key={option}

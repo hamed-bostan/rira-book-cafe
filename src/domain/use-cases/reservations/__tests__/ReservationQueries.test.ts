@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { canTransitionReservation, nextReservationStatuses, reservationEndsAt, type Reservation } from "../../../entities/Reservation";
+import {
+  canTransitionReservation,
+  nextReservationStatuses,
+  reservationEndsAt,
+  type Reservation,
+} from "../../../entities/Reservation";
 import { ListOwnReservations, ListReservationsForDay } from "../ReservationQueries";
 
 import type { IReservationRepository } from "../../../repositories/IReservationRepository";

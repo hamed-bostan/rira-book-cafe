@@ -27,7 +27,12 @@ type PricingSetup = {
   settings?: LoyaltySettings;
 };
 
-function pricing({ promo = PROMO, usage = { total: 0, byGuest: 0 }, balance = 0, settings = SETTINGS }: PricingSetup = {}) {
+function pricing({
+  promo = PROMO,
+  usage = { total: 0, byGuest: 0 },
+  balance = 0,
+  settings = SETTINGS,
+}: PricingSetup = {}) {
   const promoRepo = {
     getByCode: vi.fn(async (code: string) => (code === promo?.code ? promo : null)),
     usage: vi.fn(async () => usage),
@@ -39,11 +44,21 @@ function pricing({ promo = PROMO, usage = { total: 0, byGuest: 0 }, balance = 0,
 describe("CheckoutPricing", () => {
   it("costs the subtotal with no discounts, and says what it would earn", async () => {
     const quote = await pricing({ balance: 10 }).execute({ subtotal: 300_000 }, "g1", NOW);
-    expect(quote).toMatchObject({ total: 300_000, promoDiscount: 0, pointsRedeemed: 0, pointsToEarn: 30, pointsBalance: 10 });
+    expect(quote).toMatchObject({
+      total: 300_000,
+      promoDiscount: 0,
+      pointsRedeemed: 0,
+      pointsToEarn: 30,
+      pointsBalance: 10,
+    });
   });
 
   it("applies the code first, then points on what's left", async () => {
-    const quote = await pricing({ balance: 500 }).execute({ subtotal: 300_000, promoCode: " bookclub ", redeemPoints: true }, "g1", NOW);
+    const quote = await pricing({ balance: 500 }).execute(
+      { subtotal: 300_000, promoCode: " bookclub ", redeemPoints: true },
+      "g1",
+      NOW,
+    );
     expect(quote.promoCode).toBe("BOOKCLUB");
     expect(quote.promo).toEqual({ id: "promo1", code: "BOOKCLUB" });
     expect(quote.promoDiscount).toBe(60_000);
@@ -55,16 +70,28 @@ describe("CheckoutPricing", () => {
   });
 
   it("refuses a code that doesn't exist or can't be used, with the reason", async () => {
-    await expect(pricing().execute({ subtotal: 100_000, promoCode: "NOPE" }, "g1", NOW)).rejects.toMatchObject({ code: "PROMO_INVALID" });
+    await expect(pricing().execute({ subtotal: 100_000, promoCode: "NOPE" }, "g1", NOW)).rejects.toMatchObject({
+      code: "PROMO_INVALID",
+    });
     await expect(
-      pricing({ usage: { total: 0, byGuest: 1 }, promo: { ...PROMO, perGuestLimit: 1 } }).execute({ subtotal: 100_000, promoCode: "BOOKCLUB" }, "g1", NOW),
+      pricing({ usage: { total: 0, byGuest: 1 }, promo: { ...PROMO, perGuestLimit: 1 } }).execute(
+        { subtotal: 100_000, promoCode: "BOOKCLUB" },
+        "g1",
+        NOW,
+      ),
     ).rejects.toMatchObject({ code: "PROMO_USED_UP" });
   });
 
   it("refuses to spend points the guest can't use", async () => {
-    await expect(pricing({ balance: 10 }).execute({ subtotal: 100_000, redeemPoints: true }, "g1", NOW)).rejects.toBeInstanceOf(ConflictError);
     await expect(
-      pricing({ balance: 500, settings: { ...SETTINGS, enabled: false } }).execute({ subtotal: 100_000, redeemPoints: true }, "g1", NOW),
+      pricing({ balance: 10 }).execute({ subtotal: 100_000, redeemPoints: true }, "g1", NOW),
+    ).rejects.toBeInstanceOf(ConflictError);
+    await expect(
+      pricing({ balance: 500, settings: { ...SETTINGS, enabled: false } }).execute(
+        { subtotal: 100_000, redeemPoints: true },
+        "g1",
+        NOW,
+      ),
     ).rejects.toMatchObject({ code: "LOYALTY_DISABLED" });
   });
 

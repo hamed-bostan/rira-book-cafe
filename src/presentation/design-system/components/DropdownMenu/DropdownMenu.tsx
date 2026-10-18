@@ -53,9 +53,7 @@ const menuItem = [
   "data-[disabled]:pointer-events-none data-[disabled]:text-disabled-foreground",
 ];
 
-export type DropdownMenuContentProps = React.ComponentPropsWithoutRef<
-  typeof DropdownMenuPrimitive.Content
->;
+export type DropdownMenuContentProps = React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Content>;
 
 export const DropdownMenuContent = React.forwardRef<HTMLDivElement, DropdownMenuContentProps>(
   ({ className, align = "end", sideOffset = 6, ...props }, ref) => (
@@ -74,8 +72,7 @@ export const DropdownMenuContent = React.forwardRef<HTMLDivElement, DropdownMenu
 
 DropdownMenuContent.displayName = "DropdownMenuContent";
 
-export interface DropdownMenuItemProps
-  extends React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Item> {
+export interface DropdownMenuItemProps extends React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Item> {
   /** Draws the item as a destructive action (cancel, refund). */
   destructive?: boolean;
 }
@@ -128,11 +125,7 @@ export const DropdownMenuSeparator = React.forwardRef<
   HTMLDivElement,
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Separator>
 >(({ className, ...props }, ref) => (
-  <DropdownMenuPrimitive.Separator
-    ref={ref}
-    className={cn("-mx-1 my-1 h-px bg-border", className)}
-    {...props}
-  />
+  <DropdownMenuPrimitive.Separator ref={ref} className={cn("-mx-1 my-1 h-px bg-border", className)} {...props} />
 ));
 
 DropdownMenuSeparator.displayName = "DropdownMenuSeparator";
@@ -143,20 +136,19 @@ DropdownMenuSeparator.displayName = "DropdownMenuSeparator";
  * touch-target-sized, label-carrying button, and an icon-only control with no
  * accessible name is the defect that would otherwise be copied along with it.
  */
-export const DropdownMenuIconTrigger = React.forwardRef<
-  HTMLButtonElement,
-  React.ComponentPropsWithoutRef<"button">
->(({ className, ...props }, ref) => (
-  <DropdownMenuPrimitive.Trigger
-    ref={ref}
-    className={cn(
-      "inline-flex size-8 shrink-0 items-center justify-center rounded-button text-icon-muted",
-      "transition-colors hover:bg-accent hover:text-primary",
-      focusRing,
-      className,
-    )}
-    {...props}
-  />
-));
+export const DropdownMenuIconTrigger = React.forwardRef<HTMLButtonElement, React.ComponentPropsWithoutRef<"button">>(
+  ({ className, ...props }, ref) => (
+    <DropdownMenuPrimitive.Trigger
+      ref={ref}
+      className={cn(
+        "inline-flex size-8 shrink-0 items-center justify-center rounded-button text-icon-muted",
+        "transition-colors hover:bg-accent hover:text-primary",
+        focusRing,
+        className,
+      )}
+      {...props}
+    />
+  ),
+);
 
 DropdownMenuIconTrigger.displayName = "DropdownMenuIconTrigger";

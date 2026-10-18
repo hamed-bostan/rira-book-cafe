@@ -3,7 +3,10 @@ import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { cafeDayOf } from "@/src/domain/entities/CafeTime";
 import { requirePermission, sessionHas } from "@/src/lib/require-permission";
-import { accountsServerApi, journalEntriesServerApi } from "@/src/presentation/dashboard/accounting/accounting-server-api";
+import {
+  accountsServerApi,
+  journalEntriesServerApi,
+} from "@/src/presentation/dashboard/accounting/accounting-server-api";
 import { JournalEntryScreen } from "@/src/presentation/dashboard/accounting/JournalEntryScreen";
 
 export const dynamic = "force-dynamic";

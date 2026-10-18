@@ -1,9 +1,22 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { DEFAULT_PRICING_SETTINGS, MAX_RECIPE_LINES, type Ingredient, type PricedProduct, type PricingSettings } from "../../../entities/Pricing";
+import {
+  DEFAULT_PRICING_SETTINGS,
+  MAX_RECIPE_LINES,
+  type Ingredient,
+  type PricedProduct,
+  type PricingSettings,
+} from "../../../entities/Pricing";
 import { NotFoundError } from "../../../errors/NotFoundError";
 import { ValidationError } from "../../../errors/ValidationError";
-import { ApplySuggestedPrice, GetPricingReport, SaveIngredient, SaveRecipe, SetItemMarkup, UpdatePricingSettings } from "../PricingCommands";
+import {
+  ApplySuggestedPrice,
+  GetPricingReport,
+  SaveIngredient,
+  SaveRecipe,
+  SetItemMarkup,
+  UpdatePricingSettings,
+} from "../PricingCommands";
 
 import type { ILedgerRepository } from "../../../repositories/ILedgerRepository";
 import type { IngredientInput, IPricingRepository } from "../../../repositories/IPricingRepository";
@@ -22,13 +35,23 @@ type Fake = {
 };
 
 function pricingWith(products: PricedProduct[], settings: PricingSettings = DEFAULT_PRICING_SETTINGS): Fake {
-  const ingredient = (input: IngredientInput & { isActive?: boolean }): Ingredient => ({ id: "i1", isActive: true, updatedAt: "", ...input });
+  const ingredient = (input: IngredientInput & { isActive?: boolean }): Ingredient => ({
+    id: "i1",
+    isActive: true,
+    updatedAt: "",
+    ...input,
+  });
   const updateSettings = vi.fn<IPricingRepository["updateSettings"]>(async (next) => next);
   const setTargetMarkup = vi.fn<IPricingRepository["setTargetMarkup"]>(async () => {});
   const createIngredient = vi.fn<IPricingRepository["createIngredient"]>(async (input) => ingredient(input));
   const updateIngredient = vi.fn<IPricingRepository["updateIngredient"]>(async (_id, input) => ingredient(input));
   const saveRecipe = vi.fn<IPricingRepository["saveRecipe"]>(async (_id, lines) => lines);
-  const applyPrice = vi.fn<IPricingRepository["applyPrice"]>(async (id, before, after) => ({ id, name: "Latte", before, after }));
+  const applyPrice = vi.fn<IPricingRepository["applyPrice"]>(async (id, before, after) => ({
+    id,
+    name: "Latte",
+    before,
+    after,
+  }));
   const pricing = {
     getSettings: vi.fn(async () => settings),
     listPricedProducts: vi.fn(async () => products),
@@ -54,7 +77,14 @@ function quietLedger(): ILedgerRepository {
   } as unknown as ILedgerRepository;
 }
 
-const LATTE: PricedProduct = { id: "latte", name: "Latte", kind: "drink", price: 120_000, taxExempt: false, costPrice: 40_000 };
+const LATTE: PricedProduct = {
+  id: "latte",
+  name: "Latte",
+  kind: "drink",
+  price: 120_000,
+  taxExempt: false,
+  costPrice: 40_000,
+};
 
 describe("GetPricingReport with no history", () => {
   it("has no overhead or units to spread when the books are empty", async () => {
@@ -68,13 +98,17 @@ describe("GetPricingReport with no history", () => {
 describe("ApplySuggestedPrice", () => {
   it("is not found for an item that isn't on the report", async () => {
     const { pricing, applyPrice } = pricingWith([LATTE]);
-    await expect(new ApplySuggestedPrice(pricing, quietLedger()).execute("cake", 1, ACTOR, NOW)).rejects.toThrow(NotFoundError);
+    await expect(new ApplySuggestedPrice(pricing, quietLedger()).execute("cake", 1, ACTOR, NOW)).rejects.toThrow(
+      NotFoundError,
+    );
     expect(applyPrice).not.toHaveBeenCalled();
   });
 
   it("refuses an item with no cost, which has no suggestion", async () => {
     const { pricing, applyPrice } = pricingWith([{ ...LATTE, costPrice: undefined }]);
-    await expect(new ApplySuggestedPrice(pricing, quietLedger()).execute("latte", 120_000, ACTOR, NOW)).rejects.toMatchObject({ field: "price" });
+    await expect(
+      new ApplySuggestedPrice(pricing, quietLedger()).execute("latte", 120_000, ACTOR, NOW),
+    ).rejects.toMatchObject({ field: "price" });
     expect(applyPrice).not.toHaveBeenCalled();
   });
 
@@ -97,7 +131,13 @@ describe("ApplySuggestedPrice", () => {
 describe("UpdatePricingSettings", () => {
   it("saves valid settings", async () => {
     const { pricing, updateSettings } = pricingWith([]);
-    const next: PricingSettings = { ...DEFAULT_PRICING_SETTINGS, overheadSource: "manual", manualMonthlyOverhead: 0, overheadMonths: 12, defaultMarkupBps: 0 };
+    const next: PricingSettings = {
+      ...DEFAULT_PRICING_SETTINGS,
+      overheadSource: "manual",
+      manualMonthlyOverhead: 0,
+      overheadMonths: 12,
+      defaultMarkupBps: 0,
+    };
     expect(await new UpdatePricingSettings(pricing).execute(next)).toEqual(next);
     expect(updateSettings).toHaveBeenCalledWith(next);
   });
@@ -111,7 +151,9 @@ describe("UpdatePricingSettings", () => {
     [{ overheadSource: "manual", manualMonthlyOverhead: undefined }, "manualMonthlyOverhead"],
   ])("refuses %o", async (overrides, field) => {
     const { pricing, updateSettings } = pricingWith([]);
-    await expect(new UpdatePricingSettings(pricing).execute({ ...DEFAULT_PRICING_SETTINGS, ...overrides })).rejects.toMatchObject({ field });
+    await expect(
+      new UpdatePricingSettings(pricing).execute({ ...DEFAULT_PRICING_SETTINGS, ...overrides }),
+    ).rejects.toMatchObject({ field });
     expect(updateSettings).not.toHaveBeenCalled();
   });
 });
@@ -153,7 +195,9 @@ describe("SaveIngredient", () => {
     [{ purchaseQuantity: 0 }, "purchaseQuantity"],
   ])("refuses %o", async (overrides, field) => {
     const { pricing, createIngredient } = pricingWith([]);
-    await expect(async () => new SaveIngredient(pricing).create({ ...MILK, ...overrides })).rejects.toMatchObject({ field });
+    await expect(async () => new SaveIngredient(pricing).create({ ...MILK, ...overrides })).rejects.toMatchObject({
+      field,
+    });
     expect(createIngredient).not.toHaveBeenCalled();
   });
 });

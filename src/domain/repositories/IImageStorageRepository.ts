@@ -4,7 +4,7 @@ export type StoredImage = {
   path: string;
   /** Public CDN URL the client can render directly. */
   url: string;
-}
+};
 
 /** An object discovered by listing the bucket (used by orphan cleanup). */
 export type StoredObject = {
@@ -14,7 +14,7 @@ export type StoredObject = {
   url: string;
   /** When the object was created, or `null` when the provider didn't report it. */
   createdAt: Date | null;
-}
+};
 
 export type UploadImageInput = {
   /** Raw image bytes. */
@@ -25,7 +25,7 @@ export type UploadImageInput = {
   folder?: string;
   /** Original filename — only the extension is used to name the stored object. */
   fileName?: string;
-}
+};
 
 /**
  * Boundary between the app and whatever object-storage provider holds images.
@@ -49,4 +49,4 @@ export type IImageStorageRepository = {
   getPublicUrl(path: string): string;
   /** Inverse of {@link getPublicUrl}: the in-bucket path for one of our URLs, or null. */
   pathForUrl(url: string): string | null;
-}
+};

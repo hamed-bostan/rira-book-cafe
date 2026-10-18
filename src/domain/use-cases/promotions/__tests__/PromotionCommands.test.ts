@@ -114,10 +114,16 @@ describe("CreatePromoCode", () => {
     ["a percentage over 100", { value: 101 }, "value"],
     ["a description over the limit", { description: "x".repeat(121) }, "description"],
     ["an end before the start", { startsAt: "2026-02-01T00:00:00.000Z", endsAt: "2026-01-01T00:00:00.000Z" }, "endsAt"],
-    ["an end equal to the start", { startsAt: "2026-02-01T00:00:00.000Z", endsAt: "2026-02-01T00:00:00.000Z" }, "endsAt"],
+    [
+      "an end equal to the start",
+      { startsAt: "2026-02-01T00:00:00.000Z", endsAt: "2026-02-01T00:00:00.000Z" },
+      "endsAt",
+    ],
   ])("refuses %s before writing", async (_label, overrides, field) => {
     const { repo, create } = promoRepo(null);
-    await expect(async () => new CreatePromoCode(repo).execute({ ...INPUT, ...overrides }, STAFF)).rejects.toMatchObject({
+    await expect(async () =>
+      new CreatePromoCode(repo).execute({ ...INPUT, ...overrides }, STAFF),
+    ).rejects.toMatchObject({
       name: "ValidationError",
       field,
     });
@@ -165,7 +171,9 @@ describe("UpdatePromoCode", () => {
 
   it("validates the input like a create does", async () => {
     const { repo } = promoRepo(promo());
-    await expect(new UpdatePromoCode(repo).execute("p1", { ...INPUT, value: -1 }, STAFF)).rejects.toThrow(ValidationError);
+    await expect(new UpdatePromoCode(repo).execute("p1", { ...INPUT, value: -1 }, STAFF)).rejects.toThrow(
+      ValidationError,
+    );
   });
 });
 
@@ -228,7 +236,14 @@ function loyaltyRepo(): LoyaltyFake {
   return { repo, saveSettings, history, adjust };
 }
 
-const GUEST: User = { id: "09120000000", phone: "+989120000000", name: "Sara", email: null, avatarUrl: null, role: "customer" };
+const GUEST: User = {
+  id: "09120000000",
+  phone: "+989120000000",
+  name: "Sara",
+  email: null,
+  avatarUrl: null,
+  role: "customer",
+};
 
 function users(...known: User[]): { getById: (id: string) => Promise<User | null> } {
   return { getById: async (id: string): Promise<User | null> => known.find((u) => u.id === id) ?? null };
@@ -254,7 +269,9 @@ describe("loyalty settings", () => {
     [{ minRedeemPoints: 0.5 }, "minRedeemPoints"],
   ])("refuses %o", async (overrides, field) => {
     const { repo, saveSettings } = loyaltyRepo();
-    await expect(async () => new UpdateLoyaltySettings(repo).execute({ ...DEFAULT_LOYALTY_SETTINGS, ...overrides })).rejects.toMatchObject({
+    await expect(async () =>
+      new UpdateLoyaltySettings(repo).execute({ ...DEFAULT_LOYALTY_SETTINGS, ...overrides }),
+    ).rejects.toMatchObject({
       field,
     });
     expect(saveSettings).not.toHaveBeenCalled();
@@ -276,18 +293,25 @@ describe("GetOwnLoyaltyAccount / LookupGuestPoints", () => {
   });
 
   it("refuses an implausible phone", async () => {
-    await expect(new LookupGuestPoints(loyaltyRepo().repo, users(GUEST)).execute("123")).rejects.toThrow(ValidationError);
+    await expect(new LookupGuestPoints(loyaltyRepo().repo, users(GUEST)).execute("123")).rejects.toThrow(
+      ValidationError,
+    );
   });
 
   it("is not found for a phone with no account", async () => {
-    await expect(new LookupGuestPoints(loyaltyRepo().repo, users()).execute("09120000000")).rejects.toThrow(NotFoundError);
+    await expect(new LookupGuestPoints(loyaltyRepo().repo, users()).execute("09120000000")).rejects.toThrow(
+      NotFoundError,
+    );
   });
 });
 
 describe("AdjustGuestPoints", () => {
   it("hands the repository a trimmed note attributed to the staff member", async () => {
     const { repo, adjust } = loyaltyRepo();
-    await new AdjustGuestPoints(repo, users(GUEST)).execute({ phone: "+989120000000", delta: -20, note: "  goodwill  " }, STAFF);
+    await new AdjustGuestPoints(repo, users(GUEST)).execute(
+      { phone: "+989120000000", delta: -20, note: "  goodwill  " },
+      STAFF,
+    );
     expect(adjust).toHaveBeenCalledWith({ userId: "09120000000", delta: -20, note: "goodwill", by: STAFF });
   });
 

@@ -69,4 +69,9 @@ export const recipeResponseSchema: z.ZodType<{ lines: RecipeLine[] }> = z.object
   lines: z.array(z.object({ ingredientId: z.string(), quantity: z.number() })),
 });
 
-export const repricedResponseSchema = z.object({ id: z.string(), name: z.string(), before: z.number(), after: z.number() });
+export const repricedResponseSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  before: z.number(),
+  after: z.number(),
+});

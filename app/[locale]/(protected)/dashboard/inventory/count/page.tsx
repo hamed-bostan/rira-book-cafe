@@ -17,7 +17,11 @@ export default async function StockCountPage() {
         <h1 className="dashboard-page-title">{t("count.heading")}</h1>
         <p className="text-body-small text-muted-foreground">{t("count.subtitle")}</p>
       </div>
-      <StockCountForm items={summary.items.filter((item) => item.isActive)} today={cafeDayOf(new Date())} costsVisible={summary.costsVisible} />
+      <StockCountForm
+        items={summary.items.filter((item) => item.isActive)}
+        today={cafeDayOf(new Date())}
+        costsVisible={summary.costsVisible}
+      />
     </div>
   );
 }

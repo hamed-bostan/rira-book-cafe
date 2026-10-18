@@ -1,4 +1,9 @@
-import type { BankMatchInput, BankStatementFormInput, RecordStatementLineInput, StatementLinesInput } from "@/src/contracts/bank-schema";
+import type {
+  BankMatchInput,
+  BankStatementFormInput,
+  RecordStatementLineInput,
+  StatementLinesInput,
+} from "@/src/contracts/bank-schema";
 import type { BankStatement } from "@/src/domain/entities/BankReconciliation";
 import type { JournalEntry } from "@/src/domain/entities/Ledger";
 import { apiDelete, apiPost } from "@/src/lib/api/client";

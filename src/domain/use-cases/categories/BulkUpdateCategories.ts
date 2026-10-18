@@ -5,7 +5,6 @@ import type { ActivityActor } from "../../entities/ActivityEntry";
 import type { Category } from "../../entities/Category";
 import type { BulkCategoryChange, ICategoryRepository } from "../../repositories/ICategoryRepository";
 
-
 /** How many categories one bulk action may touch. */
 const MAX_BULK_CATEGORIES = 200;
 
@@ -27,11 +26,7 @@ export class BulkUpdateCategories {
    * count can be lower than `ids.length`, and that count is what the screen
    * reports back.
    */
-  async execute(
-    ids: readonly string[],
-    change: BulkCategoryChange,
-    actor: ActivityActor,
-  ): Promise<Category[]> {
+  async execute(ids: readonly string[], change: BulkCategoryChange, actor: ActivityActor): Promise<Category[]> {
     if (ids.length === 0) throw new ValidationError("ids", "Select at least one category.");
     if (ids.length > MAX_BULK_CATEGORIES) {
       throw new ValidationError("ids", `Select at most ${MAX_BULK_CATEGORIES} categories.`);

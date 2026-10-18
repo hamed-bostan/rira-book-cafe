@@ -36,14 +36,22 @@ describe("JoinBookWaitlist", () => {
     const waitlist = { join } as unknown as IBookWaitlistRepository;
     const loans = { getBook: vi.fn(async () => book), countOpenForBook: vi.fn(async () => 1) };
     await new JoinBookWaitlist(waitlist, loans).execute("b1", GUEST);
-    expect(join).toHaveBeenCalledWith({ productId: "b1", bookTitle: "The Blind Owl", userId: GUEST.id, guestName: "Sara", guestPhone: "09121234567" });
+    expect(join).toHaveBeenCalledWith({
+      productId: "b1",
+      bookTitle: "The Blind Owl",
+      userId: GUEST.id,
+      guestName: "Sara",
+      guestPhone: "09121234567",
+    });
   });
 
   it("has no line for a book that's on the shelf", async () => {
     const loans = { getBook: vi.fn(async () => book), countOpenForBook: vi.fn(async () => 0) };
-    await expect(new JoinBookWaitlist({} as IBookWaitlistRepository, loans).execute("b1", GUEST)).rejects.toMatchObject({
-      code: "BOOK_ON_SHELF",
-    });
+    await expect(new JoinBookWaitlist({} as IBookWaitlistRepository, loans).execute("b1", GUEST)).rejects.toMatchObject(
+      {
+        code: "BOOK_ON_SHELF",
+      },
+    );
     expect(ConflictError).toBeDefined();
   });
 });
@@ -60,7 +68,9 @@ describe("ChangeBookLoan and the waitlist", () => {
     const notifier: ICustomerNotifier = { notify: vi.fn(async () => undefined) };
     await new ChangeBookLoan(loans, { notifyNext }, notifier).execute("l1", "returned", { id: "s1", name: "Ali" }, NOW);
     expect(notifyNext).toHaveBeenCalledWith("b1", NOW);
-    expect(notifier.notify).toHaveBeenCalledWith(expect.objectContaining({ userId: "g2", kind: "bookAvailable", params: { title: "The Blind Owl" } }));
+    expect(notifier.notify).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: "g2", kind: "bookAvailable", params: { title: "The Blind Owl" } }),
+    );
   });
 
   it("tells nobody when a book is written off", async () => {

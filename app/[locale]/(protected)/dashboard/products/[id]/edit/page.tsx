@@ -32,11 +32,6 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
   if (!product) notFound();
 
   return (
-    <EditProductScreen
-      product={product}
-      categories={categories}
-      translations={translations}
-      activity={activity}
-    />
+    <EditProductScreen product={product} categories={categories} translations={translations} activity={activity} />
   );
 }

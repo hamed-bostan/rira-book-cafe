@@ -18,6 +18,9 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function SuitePage() {
   await requireAuth();
-  const [busy, bookings] = await Promise.all([storefrontServerApi.suiteAvailability(), storefrontServerApi.mySuiteBookings()]);
+  const [busy, bookings] = await Promise.all([
+    storefrontServerApi.suiteAvailability(),
+    storefrontServerApi.mySuiteBookings(),
+  ]);
   return <SuiteScreen busy={busy} bookings={bookings} today={cafeDayOf(new Date())} />;
 }

@@ -4,10 +4,13 @@ import { colors } from "./colors";
 
 // WCAG relative luminance, calculated from unrounded sRGB channel values.
 function luminance(hex: string) {
-  const [r, g, b] = hex.slice(1).match(/../g)!.map((channel) => {
-    const value = parseInt(channel, 16) / 255;
-    return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
-  });
+  const [r, g, b] = hex
+    .slice(1)
+    .match(/../g)!
+    .map((channel) => {
+      const value = parseInt(channel, 16) / 255;
+      return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+    });
   return r * 0.2126 + g * 0.7152 + b * 0.0722;
 }
 

@@ -10,7 +10,11 @@ export function BalanceCheck({ ok, okLabel, failLabel }: { ok: boolean; okLabel:
           : "flex items-center gap-2 rounded-card-md border border-error-foreground bg-error px-4 py-3 text-body-small text-error-foreground"
       }
     >
-      {ok ? <CircleCheck className="size-4 shrink-0" aria-hidden /> : <CircleAlert className="size-4 shrink-0" aria-hidden />}
+      {ok ? (
+        <CircleCheck className="size-4 shrink-0" aria-hidden />
+      ) : (
+        <CircleAlert className="size-4 shrink-0" aria-hidden />
+      )}
       {ok ? okLabel : failLabel}
     </p>
   );

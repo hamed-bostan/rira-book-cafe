@@ -73,7 +73,10 @@ function waitlist(current: BookWaitlistEntry | null, cancelled: BookWaitlistEntr
   const repo = {
     getById: vi.fn(async () => current),
     cancel,
-    listOpenForBook: vi.fn(async () => [entry({ id: "w0", userId: "g0" }), entry({ id: "w1", userId: "g1", status: "notified" })]),
+    listOpenForBook: vi.fn(async () => [
+      entry({ id: "w0", userId: "g0" }),
+      entry({ id: "w1", userId: "g1", status: "notified" }),
+    ]),
     listForUser: vi.fn(async () => [entry()]),
     listOpen: vi.fn(async () => [entry(), entry({ id: "w2", productId: "b2" })]),
   } as unknown as IBookWaitlistRepository;
@@ -84,9 +87,13 @@ describe("JoinBookWaitlist", () => {
   it("is not found for something that isn't a book", async () => {
     const join = vi.fn();
     const loans = { getBook: vi.fn(async () => null), countOpenForBook: vi.fn(async () => 1) };
-    await expect(new JoinBookWaitlist({ join } as unknown as IBookWaitlistRepository, loans).execute("x", { id: "g1", name: "S", phone: "0912" })).rejects.toThrow(
-      NotFoundError,
-    );
+    await expect(
+      new JoinBookWaitlist({ join } as unknown as IBookWaitlistRepository, loans).execute("x", {
+        id: "g1",
+        name: "S",
+        phone: "0912",
+      }),
+    ).rejects.toThrow(NotFoundError);
     expect(join).not.toHaveBeenCalled();
   });
 });
@@ -112,7 +119,9 @@ describe("LeaveBookWaitlist", () => {
   });
 
   it("treats someone else's entry, or none, as not found", async () => {
-    await expect(new LeaveBookWaitlist(waitlist(entry({ userId: "other" })).repo).execute("w1", "g1")).rejects.toThrow(NotFoundError);
+    await expect(new LeaveBookWaitlist(waitlist(entry({ userId: "other" })).repo).execute("w1", "g1")).rejects.toThrow(
+      NotFoundError,
+    );
     await expect(new LeaveBookWaitlist(waitlist(null).repo).execute("w1", "g1")).rejects.toThrow(NotFoundError);
   });
 });
@@ -132,10 +141,14 @@ describe("RemoveFromBookWaitlist", () => {
 
   it("refuses an unknown entry and one that's already closed", async () => {
     await expect(new RemoveFromBookWaitlist(waitlist(null).repo).execute("w1")).rejects.toThrow(NotFoundError);
-    await expect(new RemoveFromBookWaitlist(waitlist(entry({ status: "cancelled" })).repo).execute("w1")).rejects.toMatchObject({
+    await expect(
+      new RemoveFromBookWaitlist(waitlist(entry({ status: "cancelled" })).repo).execute("w1"),
+    ).rejects.toMatchObject({
       code: "INVALID_TRANSITION",
     });
-    await expect(new RemoveFromBookWaitlist(waitlist(entry({ status: "fulfilled" })).repo).execute("w1")).rejects.toThrow(ConflictError);
+    await expect(
+      new RemoveFromBookWaitlist(waitlist(entry({ status: "fulfilled" })).repo).execute("w1"),
+    ).rejects.toThrow(ConflictError);
   });
 });
 
@@ -150,7 +163,11 @@ describe("GetBookWaitlistStatus", () => {
 
   it("has no place for a guest who isn't in line, or nobody signed in", async () => {
     const { repo } = waitlist(null);
-    expect(await new GetBookWaitlistStatus(repo, loans).execute("b1", "stranger")).toMatchObject({ entry: null, position: null, queueLength: 2 });
+    expect(await new GetBookWaitlistStatus(repo, loans).execute("b1", "stranger")).toMatchObject({
+      entry: null,
+      position: null,
+      queueLength: 2,
+    });
     expect(await new GetBookWaitlistStatus(repo, loans).execute("b1")).toMatchObject({ entry: null, position: null });
   });
 });

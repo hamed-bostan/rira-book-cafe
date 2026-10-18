@@ -51,7 +51,9 @@ describe("typography accessibility contracts", () => {
         if (entry.isDirectory()) {
           scan(path);
         } else if (/\.tsx?$/.test(entry.name) && !entry.name.endsWith(".test.ts")) {
-          for (const match of readFileSync(path, "utf8").matchAll(/\btext-(?:heading|body|button|label)-[a-zA-Z0-9-]+/g)) {
+          for (const match of readFileSync(path, "utf8").matchAll(
+            /\btext-(?:heading|body|button|label)-[a-zA-Z0-9-]+/g,
+          )) {
             if (!known.has(match[0])) missing.push(`${path}: ${match[0]}`);
           }
         }

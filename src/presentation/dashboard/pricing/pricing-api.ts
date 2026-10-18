@@ -1,8 +1,18 @@
-import type { IngredientFormInput, ItemMarkupInput, PricingSettingsInput, RecipeFormInput } from "@/src/contracts/pricing-schema";
+import type {
+  IngredientFormInput,
+  ItemMarkupInput,
+  PricingSettingsInput,
+  RecipeFormInput,
+} from "@/src/contracts/pricing-schema";
 import type { Ingredient, PricingSettings } from "@/src/domain/entities/Pricing";
 import { apiPatch, apiPost, apiPut } from "@/src/lib/api/client";
 
-import { ingredientResponseSchema, pricingSettingsResponseSchema, recipeResponseSchema, repricedResponseSchema } from "./pricing-response-schema";
+import {
+  ingredientResponseSchema,
+  pricingSettingsResponseSchema,
+  recipeResponseSchema,
+  repricedResponseSchema,
+} from "./pricing-response-schema";
 
 /** Typed client for pricing writes. Callers `router.refresh()` or navigate after. */
 export const pricingApi = {

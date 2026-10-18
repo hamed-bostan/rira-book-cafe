@@ -17,7 +17,10 @@ export async function GET(_request: Request, { params }: RouteContext): Promise<
   const { id } = await params;
   try {
     const session = await getUserSession();
-    const status = await new GetBookWaitlistStatus(bookWaitlistRepository, bookLoanRepository).execute(id, session?.user.id);
+    const status = await new GetBookWaitlistStatus(bookWaitlistRepository, bookLoanRepository).execute(
+      id,
+      session?.user.id,
+    );
     return NextResponse.json(status);
   } catch (error) {
     return errorResponseFromException(error, `GET /api/products/${id}/waitlist failed`);

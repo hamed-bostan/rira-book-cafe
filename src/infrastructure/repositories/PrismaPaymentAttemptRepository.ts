@@ -29,13 +29,18 @@ export class PrismaPaymentAttemptRepository implements IPaymentAttemptRepository
   async open(input: NewPaymentAttempt): Promise<PaymentAttempt> {
     try {
       return await inTransaction(this.db, async (tx) => {
-        const verifying = await tx.paymentAttempt.findFirst({ where: { orderId: input.orderId, status: "verifying" }, select: { id: true } });
+        const verifying = await tx.paymentAttempt.findFirst({
+          where: { orderId: input.orderId, status: "verifying" },
+          select: { id: true },
+        });
         if (verifying) throw inProgress();
         await tx.paymentAttempt.updateMany({
           where: { orderId: input.orderId, status: "pending" },
           data: { status: "failed", failureReason: "superseded", liveOrderId: null },
         });
-        return toPaymentAttempt(await tx.paymentAttempt.create({ data: { ...input, status: "pending", liveOrderId: input.orderId } }));
+        return toPaymentAttempt(
+          await tx.paymentAttempt.create({ data: { ...input, status: "pending", liveOrderId: input.orderId } }),
+        );
       });
     } catch (error) {
       // A concurrent open — or a claim between the check and the insert — holds the live slot.
@@ -69,7 +74,12 @@ export class PrismaPaymentAttemptRepository implements IPaymentAttemptRepository
   async finish(id: string, result: PaymentAttemptResult): Promise<PaymentAttempt> {
     const data: Prisma.PaymentAttemptUpdateManyMutationInput =
       result.status === "failed"
-        ? { status: "failed", failureReason: result.failureReason, gatewayCode: result.gatewayCode ?? null, liveOrderId: null }
+        ? {
+            status: "failed",
+            failureReason: result.failureReason,
+            gatewayCode: result.gatewayCode ?? null,
+            liveOrderId: null,
+          }
         : { status: result.status, refId: result.refId, cardPan: result.cardPan ?? null, liveOrderId: null };
     // Guarded on the claim; if a stale take-over finished it first, its result stands.
     await this.db.paymentAttempt.updateMany({ where: { id, status: "verifying" }, data });
@@ -86,7 +96,9 @@ function toStatus(value: string): PaymentAttemptStatus {
 }
 
 function toFailureReason(value: string | null): PaymentFailureReason | undefined {
-  return value && (PAYMENT_FAILURE_REASONS as readonly string[]).includes(value) ? (value as PaymentFailureReason) : undefined;
+  return value && (PAYMENT_FAILURE_REASONS as readonly string[]).includes(value)
+    ? (value as PaymentFailureReason)
+    : undefined;
 }
 
 function toPaymentAttempt(row: PaymentAttemptRow): PaymentAttempt {

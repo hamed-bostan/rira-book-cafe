@@ -23,45 +23,52 @@ export function generateStaticParams(): { locale: string }[] {
 
 export default function OpengraphImage(): ImageResponse {
   return new ImageResponse(
-    (
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 40,
+        background: `linear-gradient(135deg, ${primary[600]} 0%, ${primary[800]} 100%)`,
+        color: neutral[0],
+      }}
+    >
       <div
         style={{
-          width: "100%",
-          height: "100%",
+          width: 168,
+          height: 168,
           display: "flex",
-          flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          gap: 40,
-          background: `linear-gradient(135deg, ${primary[600]} 0%, ${primary[800]} 100%)`,
-          color: neutral[0],
+          borderRadius: 9999,
+          background: neutral[0],
         }}
       >
-        <div
-          style={{
-            width: 168,
-            height: 168,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            borderRadius: 9999,
-            background: neutral[0],
-          }}
+        {/* lucide "coffee" — the same mark as the site header's BrandMark. */}
+        <svg
+          width="96"
+          height="96"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke={primary[600]}
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
         >
-          {/* lucide "coffee" — the same mark as the site header's BrandMark. */}
-          <svg width="96" height="96" viewBox="0 0 24 24" fill="none" stroke={primary[600]} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M10 2v2" />
-            <path d="M14 2v2" />
-            <path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1" />
-            <path d="M6 2v2" />
-          </svg>
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
-          <div style={{ fontSize: 88, fontWeight: 700, letterSpacing: -2 }}>Rira Book Cafe</div>
-          <div style={{ fontSize: 40, color: primary[100] }}>Coffee · Food · Books</div>
-        </div>
+          <path d="M10 2v2" />
+          <path d="M14 2v2" />
+          <path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1" />
+          <path d="M6 2v2" />
+        </svg>
       </div>
-    ),
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
+        <div style={{ fontSize: 88, fontWeight: 700, letterSpacing: -2 }}>Rira Book Cafe</div>
+        <div style={{ fontSize: 40, color: primary[100] }}>Coffee · Food · Books</div>
+      </div>
+    </div>,
     size,
   );
 }

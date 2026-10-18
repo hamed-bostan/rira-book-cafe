@@ -71,7 +71,7 @@ export const AccordionContent = React.forwardRef<
       "overflow-hidden",
       // Grows to / shrinks from the height Radix measures. A size change, so
       // motion-safe only — under reduced motion the panel simply opens.
-      "motion-safe:data-[state=open]:animate-accordion-down motion-safe:data-[state=closed]:animate-accordion-up",
+      "motion-safe:data-[state=closed]:animate-accordion-up motion-safe:data-[state=open]:animate-accordion-down",
     )}
     {...props}
   >

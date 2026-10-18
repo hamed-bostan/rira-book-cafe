@@ -16,7 +16,10 @@ import {
 } from "../BankReconciliation";
 
 import type { BankStatement, BookFigures, LedgerCandidate } from "../../../entities/BankReconciliation";
-import type { IBankReconciliationRepository, StatementChange } from "../../../repositories/IBankReconciliationRepository";
+import type {
+  IBankReconciliationRepository,
+  StatementChange,
+} from "../../../repositories/IBankReconciliationRepository";
 import type { ILedgerRepository } from "../../../repositories/ILedgerRepository";
 
 const ACTOR = { id: "owner", name: "Rira" };
@@ -61,7 +64,9 @@ type Fake = {
 };
 
 function bankWith(current: BankStatement | null, candidates: LedgerCandidate[] = [CANDIDATE]): Fake {
-  const createStatement = vi.fn<IBankReconciliationRepository["createStatement"]>(async (input) => statement({ ...input, lines: [] }));
+  const createStatement = vi.fn<IBankReconciliationRepository["createStatement"]>(async (input) =>
+    statement({ ...input, lines: [] }),
+  );
   const addLines = vi.fn<IBankReconciliationRepository["addLines"]>(async () => statement());
   const removeLine = vi.fn<IBankReconciliationRepository["removeLine"]>(async () => statement());
   const match = vi.fn<IBankReconciliationRepository["match"]>(async (_id, groups) => groups.length);
@@ -108,7 +113,13 @@ describe("reading statements", () => {
 describe("CreateBankStatement", () => {
   it("records the statement under the actor and audits its closing balance", async () => {
     const { bank, createStatement } = bankWith(null);
-    const input = { fromDay: "2026-09-23", toDay: "2026-10-15", openingBalance: 1_000_000, closingBalance: 1_500_000, lines: [] };
+    const input = {
+      fromDay: "2026-09-23",
+      toDay: "2026-10-15",
+      openingBalance: 1_000_000,
+      closingBalance: 1_500_000,
+      lines: [],
+    };
     await new CreateBankStatement(bank).execute(input, ACTOR, NOW);
     const [sent, audit] = createStatement.mock.calls[0];
     expect(sent).toEqual({ ...input, createdById: "owner", createdByName: "Rira" });
@@ -126,12 +137,17 @@ describe("CreateBankStatement", () => {
   it("refuses a period that ends before it starts, and a zero line", async () => {
     const { bank, createStatement } = bankWith(null);
     const base = { openingBalance: 0, closingBalance: 0, lines: [] };
-    await expect(new CreateBankStatement(bank).execute({ ...base, fromDay: "2026-10-10", toDay: "2026-10-01" }, ACTOR, NOW)).rejects.toThrow(
-      "periodEndsBeforeStart",
-    );
+    await expect(
+      new CreateBankStatement(bank).execute({ ...base, fromDay: "2026-10-10", toDay: "2026-10-01" }, ACTOR, NOW),
+    ).rejects.toThrow("periodEndsBeforeStart");
     await expect(
       new CreateBankStatement(bank).execute(
-        { ...base, fromDay: "2026-10-01", toDay: "2026-10-10", lines: [{ date: "2026-10-05", description: "x", amount: 0 }] },
+        {
+          ...base,
+          fromDay: "2026-10-01",
+          toDay: "2026-10-10",
+          lines: [{ date: "2026-10-05", description: "x", amount: 0 }],
+        },
         ACTOR,
         NOW,
       ),
@@ -147,14 +163,17 @@ describe("statement lines and matches", () => {
     await new AddStatementLines(bank).execute("s1", lines, ACTOR);
     const [id, sent, audit] = addLines.mock.calls[0];
     expect([id, sent]).toEqual(["s1", lines]);
-    expect(audit?.(CHANGE)).toMatchObject({ action: "ledger.bankStatementChanged", changes: [{ field: "linesAdded", before: null, after: "2" }] });
+    expect(audit?.(CHANGE)).toMatchObject({
+      action: "ledger.bankStatementChanged",
+      changes: [{ field: "linesAdded", before: null, after: "2" }],
+    });
   });
 
   it("refuses adding lines outside the period or to a missing statement", async () => {
     const { bank, addLines } = bankWith(statement());
-    await expect(new AddStatementLines(bank).execute("s1", [{ date: "2026-11-01", description: "x", amount: 5 }], ACTOR)).rejects.toThrow(
-      "lineOutsidePeriod",
-    );
+    await expect(
+      new AddStatementLines(bank).execute("s1", [{ date: "2026-11-01", description: "x", amount: 5 }], ACTOR),
+    ).rejects.toThrow("lineOutsidePeriod");
     await expect(new AddStatementLines(bankWith(null).bank).execute("s1", [], ACTOR)).rejects.toThrow(NotFoundError);
     expect(addLines).not.toHaveBeenCalled();
   });
@@ -167,10 +186,16 @@ describe("statement lines and matches", () => {
     const group = { statementLineIds: ["in"], ledgerLineIds: ["jl1"] };
     expect(await new MatchBankLines(bank).execute("s1", group, ACTOR)).toBe(1);
     expect(match.mock.calls[0].slice(0, 3)).toEqual(["s1", [group], ACTOR]);
-    expect(match.mock.calls[0][3]?.(CHANGE)).toMatchObject({ action: "ledger.bankMatched", changes: [{ field: "matched" }] });
+    expect(match.mock.calls[0][3]?.(CHANGE)).toMatchObject({
+      action: "ledger.bankMatched",
+      changes: [{ field: "matched" }],
+    });
 
     await new UnmatchBankLines(bank).execute("s1", "m1", ACTOR);
-    expect(unmatch.mock.calls[0][2]?.(CHANGE)).toMatchObject({ action: "ledger.bankUnmatched", changes: [{ field: "unmatched" }] });
+    expect(unmatch.mock.calls[0][2]?.(CHANGE)).toMatchObject({
+      action: "ledger.bankUnmatched",
+      changes: [{ field: "unmatched" }],
+    });
   });
 });
 
@@ -182,7 +207,9 @@ describe("AutoMatchBankLines", () => {
   });
 
   it("refuses a reconciled statement and a missing one", async () => {
-    await expect(new AutoMatchBankLines(bankWith(statement({ status: "reconciled" })).bank).execute("s1", ACTOR)).rejects.toMatchObject({
+    await expect(
+      new AutoMatchBankLines(bankWith(statement({ status: "reconciled" })).bank).execute("s1", ACTOR),
+    ).rejects.toMatchObject({
       code: "STATEMENT_RECONCILED",
     });
     await expect(new AutoMatchBankLines(bankWith(null).bank).execute("s1", ACTOR)).rejects.toThrow(NotFoundError);
@@ -194,18 +221,22 @@ describe("RecordStatementLine", () => {
 
   it("refuses an unknown line and a fee on anything but a payout", async () => {
     const { bank } = bankWith(statement());
-    await expect(new RecordStatementLine(bank, ledger).execute("s1", "nope", { kind: "interest", fee: 0 }, ACTOR)).rejects.toThrow(NotFoundError);
-    await expect(new RecordStatementLine(bank, ledger).execute("s1", "in", { kind: "interest", fee: 10 }, ACTOR)).rejects.toThrow(ValidationError);
-    await expect(new RecordStatementLine(bank, ledger).execute("s1", "in", { kind: "gatewayPayout", fee: -1 }, ACTOR)).rejects.toThrow(
-      "amountInvalid",
-    );
+    await expect(
+      new RecordStatementLine(bank, ledger).execute("s1", "nope", { kind: "interest", fee: 0 }, ACTOR),
+    ).rejects.toThrow(NotFoundError);
+    await expect(
+      new RecordStatementLine(bank, ledger).execute("s1", "in", { kind: "interest", fee: 10 }, ACTOR),
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      new RecordStatementLine(bank, ledger).execute("s1", "in", { kind: "gatewayPayout", fee: -1 }, ACTOR),
+    ).rejects.toThrow("amountInvalid");
   });
 
   it("refuses a payout when the gateway holds nothing", async () => {
     const { bank } = bankWith(statement());
-    await expect(new RecordStatementLine(bank, ledger).execute("s1", "in", { kind: "gatewayPayout", fee: 0 }, ACTOR)).rejects.toThrow(
-      "exceedsGatewayBalance",
-    );
+    await expect(
+      new RecordStatementLine(bank, ledger).execute("s1", "in", { kind: "gatewayPayout", fee: 0 }, ACTOR),
+    ).rejects.toThrow("exceedsGatewayBalance");
   });
 });
 

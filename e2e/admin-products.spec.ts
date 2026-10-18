@@ -44,7 +44,10 @@ test("an admin creates, edits and deletes a menu item, image included", async ({
   await expect(listed(page, name)).toBeVisible();
 
   // Edit it.
-  await page.getByRole("button", { name: `Actions for ${name}`, exact: true }).filter({ visible: true }).click();
+  await page
+    .getByRole("button", { name: `Actions for ${name}`, exact: true })
+    .filter({ visible: true })
+    .click();
   await page.getByRole("menuitem", { name: "Edit" }).click();
   await expect(page).toHaveURL(/\/dashboard\/products\/[^/]+\/edit$/);
   await nameField(page).fill(`${name} doppio`);
@@ -54,7 +57,10 @@ test("an admin creates, edits and deletes a menu item, image included", async ({
   await expect(listed(page, `${name} doppio`)).toBeVisible();
 
   // Delete it.
-  await page.getByRole("button", { name: `Actions for ${name} doppio`, exact: true }).filter({ visible: true }).click();
+  await page
+    .getByRole("button", { name: `Actions for ${name} doppio`, exact: true })
+    .filter({ visible: true })
+    .click();
   await page.getByRole("menuitem", { name: "Delete" }).click();
   const confirm = page.getByRole("dialog");
   await expect(confirm.getByText("Delete item?")).toBeVisible();

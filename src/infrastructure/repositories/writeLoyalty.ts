@@ -26,7 +26,10 @@ export async function lockGuestPoints(tx: Prisma.TransactionClient, userId: stri
 }
 
 /** The guest's balance: the sum of their ledger. Works on the root client or inside a transaction. */
-export async function pointsBalance(db: Pick<Prisma.TransactionClient, "loyaltyTransaction">, userId: string): Promise<number> {
+export async function pointsBalance(
+  db: Pick<Prisma.TransactionClient, "loyaltyTransaction">,
+  userId: string,
+): Promise<number> {
   const result = await db.loyaltyTransaction.aggregate({ where: { userId }, _sum: { delta: true } });
   return result._sum.delta ?? 0;
 }

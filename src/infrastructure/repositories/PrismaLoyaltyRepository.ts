@@ -1,4 +1,9 @@
-import { LOYALTY_REASONS, type LoyaltyReason, type LoyaltySettings, type LoyaltyTransaction } from "@/src/domain/entities/Loyalty";
+import {
+  LOYALTY_REASONS,
+  type LoyaltyReason,
+  type LoyaltySettings,
+  type LoyaltyTransaction,
+} from "@/src/domain/entities/Loyalty";
 import { ConflictError } from "@/src/domain/errors/ConflictError";
 import type { ILoyaltyRepository, PointsAdjustment } from "@/src/domain/repositories/ILoyaltyRepository";
 import { prisma } from "@/src/infrastructure/prisma/client";
@@ -30,7 +35,11 @@ export class PrismaLoyaltyRepository implements ILoyaltyRepository {
   }
 
   async history(userId: string, limit: number): Promise<LoyaltyTransaction[]> {
-    const rows = await this.db.loyaltyTransaction.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: limit });
+    const rows = await this.db.loyaltyTransaction.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      take: limit,
+    });
     return rows.map(toTransaction);
   }
 

@@ -1,7 +1,10 @@
 import type { ProductReview, ReviewStatus } from "@/src/domain/entities/ProductReview";
 import type { ReviewView } from "@/src/domain/repositories/IReviewRepository";
 import { serverApiGet } from "@/src/lib/api/server-client";
-import { reviewCountsResponseSchema, reviewListResponseSchema } from "@/src/presentation/reviews/review-response-schema";
+import {
+  reviewCountsResponseSchema,
+  reviewListResponseSchema,
+} from "@/src/presentation/reviews/review-response-schema";
 
 /** Server-side review reads for the dashboard (BFF), fetched during server render. */
 export const reviewsServerApi = {

@@ -14,10 +14,7 @@ export default async function CreateProductPage() {
   // page whose every read would 401.
   await requirePermission("catalog.write");
 
-  const [categories, t] = await Promise.all([
-    categoriesServerApi.list(),
-    getTranslations("dashProducts"),
-  ]);
+  const [categories, t] = await Promise.all([categoriesServerApi.list(), getTranslations("dashProducts")]);
 
   return (
     <div className="flex max-w-xl flex-col gap-6">

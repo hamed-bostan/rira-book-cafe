@@ -8,7 +8,11 @@ import type { GatewaySettlementInput } from "@/src/contracts/payment-schema";
 import type { Account, AccountingSettings, JournalEntry } from "@/src/domain/entities/Ledger";
 import { apiPatch, apiPost, apiPut } from "@/src/lib/api/client";
 
-import { accountResponseSchema, accountingSettingsResponseSchema, journalEntryResponseSchema } from "./accounting-response-schema";
+import {
+  accountResponseSchema,
+  accountingSettingsResponseSchema,
+  journalEntryResponseSchema,
+} from "./accounting-response-schema";
 
 /**
  * Typed client for writes to the books. Payloads are the forms' input shapes; the

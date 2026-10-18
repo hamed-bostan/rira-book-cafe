@@ -45,12 +45,7 @@ const optionalPriceField = z
   .transform((value) => (value === undefined ? undefined : Number(value)));
 
 /** Required stock: a string the form emits, validated as a non-negative whole number. */
-const stockField = z
-  .string()
-  .trim()
-  .min(1, "stockRequired")
-  .regex(/^\d+$/, "stockWhole")
-  .transform(Number);
+const stockField = z.string().trim().min(1, "stockRequired").regex(/^\d+$/, "stockWhole").transform(Number);
 
 /** Optional free text: trimmed, blank → `undefined` so it isn't stored as "". */
 const optionalText = z

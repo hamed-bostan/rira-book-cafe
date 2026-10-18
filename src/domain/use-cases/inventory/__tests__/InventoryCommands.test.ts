@@ -24,7 +24,17 @@ const NOW = new Date("2026-10-20T10:00:00Z");
 const SETTINGS = { vatRateBps: 1000 };
 
 function item(overrides: Partial<StockItem> = {}): StockItem {
-  return { id: "milk", name: "Milk", unit: "ml", onHand: 1000, averageCost: 50, value: 50_000, isActive: true, level: "ok", ...overrides };
+  return {
+    id: "milk",
+    name: "Milk",
+    unit: "ml",
+    onHand: 1000,
+    averageCost: 50,
+    value: 50_000,
+    isActive: true,
+    level: "ok",
+    ...overrides,
+  };
 }
 
 function expense(overrides: Partial<Expense> = {}): Expense {
@@ -86,7 +96,14 @@ describe("GetInventory", () => {
       10_000,
     ).execute();
 
-    expect(summary).toMatchObject({ lowCount: 1, outCount: 1, stockValue: 55_000, booksValue: 50_000, difference: 5_000, costsVisible: true });
+    expect(summary).toMatchObject({
+      lowCount: 1,
+      outCount: 1,
+      stockValue: 55_000,
+      booksValue: 50_000,
+      difference: 5_000,
+      costsVisible: true,
+    });
     expect(summary.items).toHaveLength(4);
   });
 
@@ -121,7 +138,12 @@ describe("ReceiveStock", () => {
     await useCase.execute(INPUT, ACTOR, NOW);
 
     const [sent, ledgerHook, audit] = receive.mock.calls[0];
-    expect(sent).toMatchObject({ description: "Milk delivery", createdById: "a1", createdByName: "Barista", vatAmount: 10_000 });
+    expect(sent).toMatchObject({
+      description: "Milk delivery",
+      createdById: "a1",
+      createdByName: "Barista",
+      vatAmount: 10_000,
+    });
 
     const [journal] = ledgerHook(expense(), SETTINGS);
     expect(journal).toMatchObject({ source: "expense", sourceId: "x1", uniqueKey: "expense:x1", createdById: "a1" });
@@ -145,7 +167,11 @@ describe("ReceiveStock", () => {
   it.each<[string, Partial<typeof INPUT>, string]>([
     ["a future date", { date: "2026-10-21" }, "date"],
     ["no lines", { lines: [] }, "lines"],
-    ["too many lines", { lines: Array.from({ length: MAX_STOCK_LINES + 1 }, () => ({ ingredientId: "milk", quantity: 1, cost: 1 })) }, "lines"],
+    [
+      "too many lines",
+      { lines: Array.from({ length: MAX_STOCK_LINES + 1 }, () => ({ ingredientId: "milk", quantity: 1, cost: 1 })) },
+      "lines",
+    ],
     ["a zero quantity", { lines: [{ ingredientId: "milk", quantity: 0, cost: 1 }] }, "lines"],
     ["a NaN quantity", { lines: [{ ingredientId: "milk", quantity: Number.NaN, cost: 1 }] }, "lines"],
     ["a fractional cost", { lines: [{ ingredientId: "milk", quantity: 1, cost: 1.5 }] }, "lines"],
@@ -157,7 +183,10 @@ describe("ReceiveStock", () => {
     ["an overlong description", { description: "x".repeat(301) }, "description"],
   ])("refuses %s before writing", async (_label, overrides, field) => {
     const { useCase, receive } = setup();
-    await expect(useCase.execute({ ...INPUT, ...overrides }, ACTOR, NOW)).rejects.toMatchObject({ name: "ValidationError", field });
+    await expect(useCase.execute({ ...INPUT, ...overrides }, ACTOR, NOW)).rejects.toMatchObject({
+      name: "ValidationError",
+      field,
+    });
     expect(receive).not.toHaveBeenCalled();
   });
 });
@@ -194,21 +223,36 @@ describe("RecordWaste", () => {
   it("refuses no quantity and a future date", async () => {
     const recordWaste = vi.fn();
     const useCase = new RecordWaste({ recordWaste } as unknown as IInventoryRepository);
-    await expect(useCase.execute({ date: "2026-10-20", ingredientId: "milk", quantity: 0 }, ACTOR, NOW)).rejects.toMatchObject({ field: "quantity" });
-    await expect(useCase.execute({ date: "2026-11-01", ingredientId: "milk", quantity: 1 }, ACTOR, NOW)).rejects.toMatchObject({ field: "date" });
+    await expect(
+      useCase.execute({ date: "2026-10-20", ingredientId: "milk", quantity: 0 }, ACTOR, NOW),
+    ).rejects.toMatchObject({ field: "quantity" });
+    await expect(
+      useCase.execute({ date: "2026-11-01", ingredientId: "milk", quantity: 1 }, ACTOR, NOW),
+    ).rejects.toMatchObject({ field: "date" });
     expect(recordWaste).not.toHaveBeenCalled();
   });
 });
 
 describe("CountStock", () => {
-  function setup(): { useCase: CountStock; recordCount: ReturnType<typeof vi.fn<IInventoryRepository["recordCount"]>> } {
-    const recordCount = vi.fn<IInventoryRepository["recordCount"]>(async () => ({ id: "c1", variance: -500, adjusted: 1 }));
+  function setup(): {
+    useCase: CountStock;
+    recordCount: ReturnType<typeof vi.fn<IInventoryRepository["recordCount"]>>;
+  } {
+    const recordCount = vi.fn<IInventoryRepository["recordCount"]>(async () => ({
+      id: "c1",
+      variance: -500,
+      adjusted: 1,
+    }));
     return { useCase: new CountStock({ recordCount } as unknown as IInventoryRepository), recordCount };
   }
 
   it("passes the count on and books a shortage as variance", async () => {
     const { useCase, recordCount } = setup();
-    const result = await useCase.execute({ date: "2026-10-20", lines: [{ ingredientId: "milk", counted: 0 }], note: " weekly " }, ACTOR, NOW);
+    const result = await useCase.execute(
+      { date: "2026-10-20", lines: [{ ingredientId: "milk", counted: 0 }], note: " weekly " },
+      ACTOR,
+      NOW,
+    );
     expect(result).toEqual({ id: "c1", variance: -500, adjusted: 1 });
 
     const [sent, ledgerHook] = recordCount.mock.calls[0];
@@ -246,7 +290,10 @@ describe("CountStock", () => {
 });
 
 describe("RecordOpeningStock", () => {
-  function setup(): { useCase: RecordOpeningStock; recordOpening: ReturnType<typeof vi.fn<IInventoryRepository["recordOpening"]>> } {
+  function setup(): {
+    useCase: RecordOpeningStock;
+    recordOpening: ReturnType<typeof vi.fn<IInventoryRepository["recordOpening"]>>;
+  } {
     const recordOpening = vi.fn<IInventoryRepository["recordOpening"]>(async () => ({ id: "o1", value: 10_000 }));
     return { useCase: new RecordOpeningStock({ recordOpening } as unknown as IInventoryRepository), recordOpening };
   }
@@ -293,9 +340,9 @@ describe("SetReorderLevel", () => {
 
   it("refuses a negative level", async () => {
     const setReorderLevel = vi.fn();
-    await expect(new SetReorderLevel({ setReorderLevel } as unknown as IInventoryRepository).execute("milk", -1)).rejects.toThrow(
-      ValidationError,
-    );
+    await expect(
+      new SetReorderLevel({ setReorderLevel } as unknown as IInventoryRepository).execute("milk", -1),
+    ).rejects.toThrow(ValidationError);
     expect(setReorderLevel).not.toHaveBeenCalled();
   });
 });

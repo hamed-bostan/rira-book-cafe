@@ -34,7 +34,14 @@ function expense(overrides: Partial<Expense> = {}): Expense {
   };
 }
 
-const UTILITIES: Account = { code: "6300", name: "Utilities", nameFa: "", type: "expense", isSystem: false, isActive: true };
+const UTILITIES: Account = {
+  code: "6300",
+  name: "Utilities",
+  nameFa: "",
+  type: "expense",
+  isSystem: false,
+  isActive: true,
+};
 
 type ExpensesFake = {
   repo: IExpenseRepository;
@@ -46,9 +53,19 @@ type ExpensesFake = {
 };
 
 function expensesWith(current: Expense | null): ExpensesFake {
-  const supplier = (input: Partial<Supplier>): Supplier => ({ id: "sup1", name: "", isActive: true, createdAt: "", ...input });
-  const create = vi.fn<IExpenseRepository["create"]>(async (input) => expense({ ...input, status: input.paidFrom ? "paid" : "unpaid" }));
-  const pay = vi.fn<IExpenseRepository["pay"]>(async (_id, source, paidOn) => expense({ status: "paid", paidFrom: source, paidOn }));
+  const supplier = (input: Partial<Supplier>): Supplier => ({
+    id: "sup1",
+    name: "",
+    isActive: true,
+    createdAt: "",
+    ...input,
+  });
+  const create = vi.fn<IExpenseRepository["create"]>(async (input) =>
+    expense({ ...input, status: input.paidFrom ? "paid" : "unpaid" }),
+  );
+  const pay = vi.fn<IExpenseRepository["pay"]>(async (_id, source, paidOn) =>
+    expense({ status: "paid", paidFrom: source, paidOn }),
+  );
   const voidExpense = vi.fn<IExpenseRepository["void"]>(async () => expense({ status: "void" }));
   const createSupplier = vi.fn<IExpenseRepository["createSupplier"]>(async (input) => supplier(input));
   const updateSupplier = vi.fn<IExpenseRepository["updateSupplier"]>(async (id, input) => supplier({ ...input, id }));
@@ -101,7 +118,9 @@ describe("RecordExpense", () => {
       { accountCode: SYSTEM_ACCOUNTS.accountsPayable, debit: 0, credit: 1_100_000 },
     ]);
     // Paid on the spot, the money comes out of the till instead.
-    expect(ledgerHook(expense({ status: "paid", paidFrom: "cash" }), SETTINGS)[0].lines[2].accountCode).toBe(SYSTEM_ACCOUNTS.cash);
+    expect(ledgerHook(expense({ status: "paid", paidFrom: "cash" }), SETTINGS)[0].lines[2].accountCode).toBe(
+      SYSTEM_ACCOUNTS.cash,
+    );
 
     expect(audit?.(expense())).toEqual({
       actorId: "owner",
@@ -117,7 +136,11 @@ describe("RecordExpense", () => {
   it("allows equipment, which is an asset but not a money account", async () => {
     const { repo, create } = expensesWith(null);
     const equipment: Account = { ...UTILITIES, code: "1500", type: "asset" };
-    await new RecordExpense(repo, ledgerWith(equipment)).execute({ ...INPUT, accountCode: "1500", paidFrom: "bank" }, ACTOR, NOW);
+    await new RecordExpense(repo, ledgerWith(equipment)).execute(
+      { ...INPUT, accountCode: "1500", paidFrom: "bank" },
+      ACTOR,
+      NOW,
+    );
     expect(create.mock.calls[0][0].paidFrom).toBe("bank");
   });
 
@@ -133,7 +156,9 @@ describe("RecordExpense", () => {
   ])("refuses %s before touching the ledger", async (_label, overrides, field) => {
     const { repo, create } = expensesWith(null);
     const ledger = ledgerWith(UTILITIES);
-    await expect(new RecordExpense(repo, ledger).execute({ ...INPUT, ...overrides }, ACTOR, NOW)).rejects.toMatchObject({ field });
+    await expect(new RecordExpense(repo, ledger).execute({ ...INPUT, ...overrides }, ACTOR, NOW)).rejects.toMatchObject(
+      { field },
+    );
     expect(ledger.getAccount).not.toHaveBeenCalled();
     expect(create).not.toHaveBeenCalled();
   });
@@ -144,7 +169,9 @@ describe("RecordExpense", () => {
     ["a revenue account", { ...UTILITIES, code: "4100", type: "revenue" }],
   ])("refuses %s", async (_label, account) => {
     const { repo, create } = expensesWith(null);
-    await expect(new RecordExpense(repo, ledgerWith(account)).execute(INPUT, ACTOR, NOW)).rejects.toMatchObject({ field: "accountCode" });
+    await expect(new RecordExpense(repo, ledgerWith(account)).execute(INPUT, ACTOR, NOW)).rejects.toMatchObject({
+      field: "accountCode",
+    });
     expect(create).not.toHaveBeenCalled();
   });
 });
@@ -163,11 +190,16 @@ describe("PayExpense", () => {
       { accountCode: SYSTEM_ACCOUNTS.accountsPayable, debit: 1_100_000, credit: 0, memo: "Power Co" },
       { accountCode: SYSTEM_ACCOUNTS.bank, debit: 0, credit: 1_100_000 },
     ]);
-    expect(audit?.(expense())).toMatchObject({ action: "expense.paid", changes: [{ field: "status", before: "unpaid", after: "paid" }] });
+    expect(audit?.(expense())).toMatchObject({
+      action: "expense.paid",
+      changes: [{ field: "status", before: "unpaid", after: "paid" }],
+    });
   });
 
   it("refuses an unknown expense", async () => {
-    await expect(new PayExpense(expensesWith(null).repo).execute("x1", "cash", "2026-10-15", ACTOR, NOW)).rejects.toThrow(NotFoundError);
+    await expect(
+      new PayExpense(expensesWith(null).repo).execute("x1", "cash", "2026-10-15", ACTOR, NOW),
+    ).rejects.toThrow(NotFoundError);
   });
 
   it.each(["paid", "void"] as const)("refuses an expense that's already %s", async (status) => {
@@ -179,7 +211,9 @@ describe("PayExpense", () => {
   it("refuses paying in the future or before the bill was incurred", async () => {
     const { repo, pay } = expensesWith(expense({ date: "2026-10-10" }));
     await expect(new PayExpense(repo).execute("x1", "cash", "2026-10-21", ACTOR, NOW)).rejects.toThrow(ValidationError);
-    await expect(new PayExpense(repo).execute("x1", "cash", "2026-10-09", ACTOR, NOW)).rejects.toThrow("before it was incurred");
+    await expect(new PayExpense(repo).execute("x1", "cash", "2026-10-09", ACTOR, NOW)).rejects.toThrow(
+      "before it was incurred",
+    );
     expect(pay).not.toHaveBeenCalled();
   });
 });
@@ -231,9 +265,13 @@ describe("VoidExpense", () => {
   });
 
   it("refuses an unknown expense and one already void", async () => {
-    await expect(new VoidExpense(expensesWith(null).repo).execute("x1", "x", ACTOR, NOW)).rejects.toThrow(NotFoundError);
+    await expect(new VoidExpense(expensesWith(null).repo).execute("x1", "x", ACTOR, NOW)).rejects.toThrow(
+      NotFoundError,
+    );
     const { repo, voidExpense } = expensesWith(expense({ status: "void" }));
-    await expect(new VoidExpense(repo).execute("x1", "x", ACTOR, NOW)).rejects.toMatchObject({ code: "INVALID_TRANSITION" });
+    await expect(new VoidExpense(repo).execute("x1", "x", ACTOR, NOW)).rejects.toMatchObject({
+      code: "INVALID_TRANSITION",
+    });
     expect(voidExpense).not.toHaveBeenCalled();
   });
 });
@@ -245,7 +283,12 @@ describe("SaveSupplier", () => {
     expect(createSupplier).toHaveBeenCalledWith({ name: "Power Co", phone: undefined, note: "monthly" });
 
     await new SaveSupplier(repo).update("sup1", { name: "Power Co", phone: " 021 ", isActive: false });
-    expect(updateSupplier).toHaveBeenCalledWith("sup1", { name: "Power Co", phone: "021", note: undefined, isActive: false });
+    expect(updateSupplier).toHaveBeenCalledWith("sup1", {
+      name: "Power Co",
+      phone: "021",
+      note: undefined,
+      isActive: false,
+    });
   });
 
   it("refuses a supplier without a name", async () => {

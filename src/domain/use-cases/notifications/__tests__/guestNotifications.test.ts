@@ -66,7 +66,10 @@ describe("orderStatusNotification", () => {
   });
 
   it("says what a completed order earned instead of a plain 'done'", () => {
-    expect(orderStatusNotification(order("completed", { pointsEarned: 10 }))).toMatchObject({ kind: "pointsEarned", params: { points: 10 } });
+    expect(orderStatusNotification(order("completed", { pointsEarned: 10 }))).toMatchObject({
+      kind: "pointsEarned",
+      params: { points: 10 },
+    });
     expect(orderStatusNotification(order("completed"))?.kind).toBe("orderCompleted");
   });
 });
@@ -79,7 +82,9 @@ describe("loanReminder", () => {
 
   it("says nothing about a loan far from due, one that's back, or one with no account", () => {
     expect(loanReminder(loan("2026-11-01T20:29:59Z"), NOW)).toBeNull();
-    expect(loanReminder(loan("2026-10-19T20:29:59Z", { status: "returned", returnedAt: NOW.toISOString() }), NOW)).toBeNull();
+    expect(
+      loanReminder(loan("2026-10-19T20:29:59Z", { status: "returned", returnedAt: NOW.toISOString() }), NOW),
+    ).toBeNull();
     expect(loanReminder(loan("2026-10-19T20:29:59Z", { userId: undefined }), NOW)).toBeNull();
   });
 });

@@ -1,6 +1,11 @@
 import { z } from "zod";
 
-import { MAX_REVIEW_COMMENT_LENGTH, MAX_REVIEW_RATING, MIN_REVIEW_RATING, MODERATION_STATUSES } from "@/src/domain/entities/ProductReview";
+import {
+  MAX_REVIEW_COMMENT_LENGTH,
+  MAX_REVIEW_RATING,
+  MIN_REVIEW_RATING,
+  MODERATION_STATUSES,
+} from "@/src/domain/entities/ProductReview";
 
 /**
  * Review contracts shared by the route handlers and the forms that call them.
@@ -9,7 +14,11 @@ import { MAX_REVIEW_COMMENT_LENGTH, MAX_REVIEW_RATING, MIN_REVIEW_RATING, MODERA
 
 /** A guest reviewing an item they had. */
 export const submitReviewSchema = z.object({
-  rating: z.number().int("ratingInvalid").min(MIN_REVIEW_RATING, "ratingInvalid").max(MAX_REVIEW_RATING, "ratingInvalid"),
+  rating: z
+    .number()
+    .int("ratingInvalid")
+    .min(MIN_REVIEW_RATING, "ratingInvalid")
+    .max(MAX_REVIEW_RATING, "ratingInvalid"),
   comment: z
     .string()
     .trim()

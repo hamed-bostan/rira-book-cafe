@@ -16,6 +16,9 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function MyBookLoansPage() {
   await requireAuth();
-  const [loans, waitlist] = await Promise.all([storefrontServerApi.myBookLoans(), storefrontServerApi.myBookWaitlist()]);
+  const [loans, waitlist] = await Promise.all([
+    storefrontServerApi.myBookLoans(),
+    storefrontServerApi.myBookWaitlist(),
+  ]);
   return <MyBookLoansScreen loans={loans} waitlist={waitlist} now={new Date().toISOString()} />;
 }

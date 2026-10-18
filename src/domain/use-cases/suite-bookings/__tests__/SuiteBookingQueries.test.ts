@@ -29,8 +29,15 @@ type Fake = {
 function suites(): Fake {
   const listFrom = vi.fn<ISuiteBookingRepository["listFrom"]>(async () => [BOOKING]);
   const listForUser = vi.fn<ISuiteBookingRepository["listForUser"]>(async () => [BOOKING]);
-  const listBusyFrom = vi.fn<ISuiteBookingRepository["listBusyFrom"]>(async () => [{ checkIn: BOOKING.checkIn, checkOut: BOOKING.checkOut }]);
-  return { repo: { listFrom, listForUser, listBusyFrom } as unknown as ISuiteBookingRepository, listFrom, listForUser, listBusyFrom };
+  const listBusyFrom = vi.fn<ISuiteBookingRepository["listBusyFrom"]>(async () => [
+    { checkIn: BOOKING.checkIn, checkOut: BOOKING.checkOut },
+  ]);
+  return {
+    repo: { listFrom, listForUser, listBusyFrom } as unknown as ISuiteBookingRepository,
+    listFrom,
+    listForUser,
+    listBusyFrom,
+  };
 }
 
 describe("suite booking queries", () => {

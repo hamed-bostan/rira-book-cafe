@@ -3,11 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { GetProductById } from "@/src/domain/use-cases/products/GetProductById";
 import { productRepository } from "@/src/infrastructure/container";
 import { getRequestLocale } from "@/src/lib/api/request-locale";
-import {
-  errorResponse,
-  errorResponseFromException,
-  unauthorizedResponse,
-} from "@/src/lib/api/responses";
+import { errorResponse, errorResponseFromException, unauthorizedResponse } from "@/src/lib/api/responses";
 import { getSessionWith } from "@/src/lib/require-permission";
 
 // Reads one product per request — never statically cached.

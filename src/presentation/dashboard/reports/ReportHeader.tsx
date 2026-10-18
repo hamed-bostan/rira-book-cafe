@@ -24,7 +24,10 @@ export async function ReportHeader({ title, subtitle, range, previousRange, sele
 
   return (
     <div className="flex flex-col gap-4">
-      <nav aria-label={t("breadcrumbLabel")} className="flex items-center gap-2 text-body-caption text-muted-foreground">
+      <nav
+        aria-label={t("breadcrumbLabel")}
+        className="flex items-center gap-2 text-body-caption text-muted-foreground"
+      >
         <Link href="/dashboard/reports" className="hover:text-foreground">
           {t("heading")}
         </Link>
@@ -37,7 +40,10 @@ export async function ReportHeader({ title, subtitle, range, previousRange, sele
       </div>
       <ReportRangePicker selected={selected} fromDay={range.fromDay} toDay={range.toDay} keep={keep} />
       <p className="text-body-caption text-muted-foreground">
-        {t("rangeCaption", { from: formatCafeDayMedium(range.fromDay, locale), to: formatCafeDayMedium(range.toDay, locale) })}
+        {t("rangeCaption", {
+          from: formatCafeDayMedium(range.fromDay, locale),
+          to: formatCafeDayMedium(range.toDay, locale),
+        })}
         {previousRange
           ? ` · ${t("comparedWith", {
               from: formatCafeDayMedium(previousRange.fromDay, locale),

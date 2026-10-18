@@ -42,7 +42,15 @@ export type IInventoryRepository = {
   /** Take spoiled stock out at average cost, with its entry. */
   recordWaste(input: WasteInput, ledger: StockLedgerHook, actor: { id: string; name: string }): Promise<StockMovement>;
   /** Set stock to what was counted; the total difference is posted once. Returns the signed variance. */
-  recordCount(input: StockCountInput, ledger: StockLedgerHook, actor: { id: string; name: string }): Promise<{ id: string; variance: number; adjusted: number }>;
+  recordCount(
+    input: StockCountInput,
+    ledger: StockLedgerHook,
+    actor: { id: string; name: string },
+  ): Promise<{ id: string; variance: number; adjusted: number }>;
   /** Bring stock already on the shelves into the books. */
-  recordOpening(input: OpeningStockInput, ledger: StockLedgerHook, actor: { id: string; name: string }): Promise<{ id: string; value: number }>;
+  recordOpening(
+    input: OpeningStockInput,
+    ledger: StockLedgerHook,
+    actor: { id: string; name: string },
+  ): Promise<{ id: string; value: number }>;
 };

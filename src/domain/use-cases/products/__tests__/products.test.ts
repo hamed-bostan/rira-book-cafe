@@ -18,7 +18,12 @@ import { SearchProducts } from "../SearchProducts";
 import { UpdateProduct } from "../UpdateProduct";
 
 import type { NewActivityEntry } from "../../../entities/ActivityEntry";
-import type { BulkProductChange, BulkProductUpdate, IProductRepository, NewProduct } from "../../../repositories/IProductRepository";
+import type {
+  BulkProductChange,
+  BulkProductUpdate,
+  IProductRepository,
+  NewProduct,
+} from "../../../repositories/IProductRepository";
 
 const ACTOR = { id: "a1", name: "Admin" };
 
@@ -87,16 +92,23 @@ function repoWith(rows: Product[]): Fake {
     if (audit) entries.push(audit());
   });
   const search = vi.fn<IProductRepository["search"]>(async () => rows);
-  const listPage = vi.fn<IProductRepository["listPage"]>(async (_filters, page) => ({ items: rows, total: rows.length, page: page.page, pageSize: page.pageSize }));
+  const listPage = vi.fn<IProductRepository["listPage"]>(async (_filters, page) => ({
+    items: rows,
+    total: rows.length,
+    page: page.page,
+    pageSize: page.pageSize,
+  }));
   const getByIds = vi.fn<IProductRepository["getByIds"]>(async (ids) => rows.filter((row) => ids.includes(row.id)));
-  const applyBulkChange = vi.fn<IProductRepository["applyBulkChange"]>(async (ids, change: BulkProductChange, audit) => {
-    const updates: BulkProductUpdate[] = ids
-      .map((id) => byId.get(id))
-      .filter((row): row is Product => row !== undefined && row[change.field] !== change.value)
-      .map((previous) => ({ previous, product: { ...previous, [change.field]: change.value } }));
-    if (audit) updates.forEach((u) => entries.push(audit(u)));
-    return updates;
-  });
+  const applyBulkChange = vi.fn<IProductRepository["applyBulkChange"]>(
+    async (ids, change: BulkProductChange, audit) => {
+      const updates: BulkProductUpdate[] = ids
+        .map((id) => byId.get(id))
+        .filter((row): row is Product => row !== undefined && row[change.field] !== change.value)
+        .map((previous) => ({ previous, product: { ...previous, [change.field]: change.value } }));
+      if (audit) updates.forEach((u) => entries.push(audit(u)));
+      return updates;
+    },
+  );
 
   const repo: IProductRepository = {
     getAll: vi.fn(async () => rows),
@@ -121,9 +133,18 @@ function repoWith(rows: Product[]): Fake {
 describe("productSnapshot", () => {
   it("flattens book details and dietary tags for diffing", () => {
     const snapshot = productSnapshot(
-      product({ kind: "book", book: { author: "Hedayat", isbn: "123", availability: "both" }, dietary: ["Vegan", "Gluten-Free"] }),
+      product({
+        kind: "book",
+        book: { author: "Hedayat", isbn: "123", availability: "both" },
+        dietary: ["Vegan", "Gluten-Free"],
+      }),
     );
-    expect(snapshot).toMatchObject({ bookAuthor: "Hedayat", bookIsbn: "123", bookAvailability: "both", dietary: "Vegan, Gluten-Free" });
+    expect(snapshot).toMatchObject({
+      bookAuthor: "Hedayat",
+      bookIsbn: "123",
+      bookAvailability: "both",
+      dietary: "Vegan, Gluten-Free",
+    });
     // Ratings move on their own and are never part of an admin diff.
     expect(snapshot).not.toHaveProperty("rating");
     expect(productSnapshot(product()).bookAuthor).toBeUndefined();
@@ -168,7 +189,11 @@ describe("CreateProduct", () => {
 describe("UpdateProduct", () => {
   it("diffs the tracked fields against the stored row", async () => {
     const { repo, entries } = repoWith([product()]);
-    await new UpdateProduct(repo).execute("p1", { ...INPUT, name: "Latte", price: 160_000, stockQuantity: 10, imageUrl: product().imageUrl }, ACTOR);
+    await new UpdateProduct(repo).execute(
+      "p1",
+      { ...INPUT, name: "Latte", price: 160_000, stockQuantity: 10, imageUrl: product().imageUrl },
+      ACTOR,
+    );
     expect(entries[0]).toMatchObject({ action: "product.updated", entityId: "p1", entityLabel: "Latte" });
     expect(entries[0]?.changes).toEqual([{ field: "price", before: "150000", after: "160000" }]);
   });
@@ -185,7 +210,9 @@ describe("UpdateProduct", () => {
     const { repo, update } = repoWith([product()]);
     await expect(new UpdateProduct(repo).execute("", INPUT, ACTOR)).rejects.toMatchObject({ field: "id" });
     await expect(new UpdateProduct(repo).execute("missing", INPUT, ACTOR)).rejects.toThrow(NotFoundError);
-    await expect(new UpdateProduct(repo).execute("p1", { ...INPUT, name: " " }, ACTOR)).rejects.toMatchObject({ field: "name" });
+    await expect(new UpdateProduct(repo).execute("p1", { ...INPUT, name: " " }, ACTOR)).rejects.toMatchObject({
+      field: "name",
+    });
     expect(update).not.toHaveBeenCalled();
   });
 });
@@ -195,7 +222,12 @@ describe("DeleteProduct", () => {
     const { repo, remove, entries } = repoWith([product({ badge: "New" })]);
     await new DeleteProduct(repo).execute("p1", ACTOR);
     expect(remove.mock.calls[0][0]).toBe("p1");
-    expect(entries[0]).toMatchObject({ action: "product.deleted", entityType: "product", entityId: "p1", entityLabel: "Latte" });
+    expect(entries[0]).toMatchObject({
+      action: "product.deleted",
+      entityType: "product",
+      entityId: "p1",
+      entityLabel: "Latte",
+    });
     const changes = entries[0]?.changes ?? [];
     expect(changes.every((change) => change.after === null && change.before !== null)).toBe(true);
     expect(changes).toEqual(
@@ -220,8 +252,15 @@ describe("DeleteProduct", () => {
 
 describe("BulkUpdateProducts", () => {
   it("returns the products that changed, each with a one-field entry", async () => {
-    const { repo, entries } = repoWith([product({ id: "p1", categoryId: "c1" }), product({ id: "p2", name: "Tea", categoryId: "c2" })]);
-    const changed = await new BulkUpdateProducts(repo).execute(["p1", "p2"], { field: "categoryId", value: "c2" }, ACTOR);
+    const { repo, entries } = repoWith([
+      product({ id: "p1", categoryId: "c1" }),
+      product({ id: "p2", name: "Tea", categoryId: "c2" }),
+    ]);
+    const changed = await new BulkUpdateProducts(repo).execute(
+      ["p1", "p2"],
+      { field: "categoryId", value: "c2" },
+      ACTOR,
+    );
     expect(changed.map((p) => p.id)).toEqual(["p1"]);
     expect(entries).toEqual([
       {
@@ -239,11 +278,21 @@ describe("BulkUpdateProducts", () => {
   it("refuses an empty or oversized selection and a blank category", async () => {
     const { repo, applyBulkChange } = repoWith([]);
     const useCase = new BulkUpdateProducts(repo);
-    await expect(useCase.execute([], { field: "isPublished", value: false }, ACTOR)).rejects.toMatchObject({ field: "ids" });
-    await expect(useCase.execute(Array.from({ length: 201 }, (_, i) => `p${i}`), { field: "isPublished", value: false }, ACTOR)).rejects.toMatchObject({
+    await expect(useCase.execute([], { field: "isPublished", value: false }, ACTOR)).rejects.toMatchObject({
       field: "ids",
     });
-    await expect(useCase.execute(["p1"], { field: "categoryId", value: "" }, ACTOR)).rejects.toMatchObject({ field: "categoryId" });
+    await expect(
+      useCase.execute(
+        Array.from({ length: 201 }, (_, i) => `p${i}`),
+        { field: "isPublished", value: false },
+        ACTOR,
+      ),
+    ).rejects.toMatchObject({
+      field: "ids",
+    });
+    await expect(useCase.execute(["p1"], { field: "categoryId", value: "" }, ACTOR)).rejects.toMatchObject({
+      field: "categoryId",
+    });
     expect(applyBulkChange).not.toHaveBeenCalled();
   });
 });

@@ -19,7 +19,11 @@ import { ConflictError } from "../../errors/ConflictError";
 import { NotFoundError } from "../../errors/NotFoundError";
 import { ValidationError } from "../../errors/ValidationError";
 
-import type { IBankReconciliationRepository, MatchGroup, StatementChange } from "../../repositories/IBankReconciliationRepository";
+import type {
+  IBankReconciliationRepository,
+  MatchGroup,
+  StatementChange,
+} from "../../repositories/IBankReconciliationRepository";
 import type { ILedgerRepository } from "../../repositories/ILedgerRepository";
 
 /** A statement with everything the reconciliation screen shows. */
@@ -39,7 +43,8 @@ export type StatementInput = {
   lines: NewStatementLine[];
 };
 
-const statementLabel = (statement: Pick<BankStatement, "fromDay" | "toDay">) => `Bank statement ${statement.fromDay} – ${statement.toDay}`;
+const statementLabel = (statement: Pick<BankStatement, "fromDay" | "toDay">) =>
+  `Bank statement ${statement.fromDay} – ${statement.toDay}`;
 
 const statementAudit =
   (actor: ActivityActor, action: NewActivityEntry["action"], field: string) =>
@@ -104,18 +109,15 @@ export class CreateBankStatement {
     if (input.toDay > cafeDayOf(now)) throw new ValidationError("toDay", "That date is in the future.");
     if (input.fromDay > input.toDay) throw new ValidationError("toDay", "periodEndsBeforeStart");
     assertLines(input.lines, input);
-    return this.bank.createStatement(
-      { ...input, createdById: actor.id, createdByName: actor.name },
-      (statement) => ({
-        actorId: actor.id,
-        actorName: actor.name,
-        action: "ledger.bankStatementChanged",
-        entityType: "ledger",
-        entityId: statement.id,
-        entityLabel: statementLabel(statement),
-        changes: singleChange("closingBalance", null, statement.closingBalance),
-      }),
-    );
+    return this.bank.createStatement({ ...input, createdById: actor.id, createdByName: actor.name }, (statement) => ({
+      actorId: actor.id,
+      actorName: actor.name,
+      action: "ledger.bankStatementChanged",
+      entityType: "ledger",
+      entityId: statement.id,
+      entityLabel: statementLabel(statement),
+      changes: singleChange("closingBalance", null, statement.closingBalance),
+    }));
   }
 }
 
@@ -133,7 +135,11 @@ export class RemoveStatementLine {
   constructor(private readonly bank: IBankReconciliationRepository) {}
 
   execute(statementId: string, lineId: string, actor: ActivityActor): Promise<BankStatement> {
-    return this.bank.removeLine(statementId, lineId, statementAudit(actor, "ledger.bankStatementChanged", "linesRemoved"));
+    return this.bank.removeLine(
+      statementId,
+      lineId,
+      statementAudit(actor, "ledger.bankStatementChanged", "linesRemoved"),
+    );
   }
 }
 
@@ -152,7 +158,8 @@ export class AutoMatchBankLines {
 
   async execute(statementId: string, actor: ActivityActor): Promise<number> {
     const statement = await requireStatement(this.bank, statementId);
-    if (statement.status !== "open") throw new ConflictError("STATEMENT_RECONCILED", "This statement is already reconciled.");
+    if (statement.status !== "open")
+      throw new ConflictError("STATEMENT_RECONCILED", "This statement is already reconciled.");
     const pairs = suggestMatches(statement.lines, await this.bank.candidates(statementId));
     if (pairs.length === 0) return 0;
     return this.bank.match(
@@ -172,7 +179,10 @@ export class UnmatchBankLines {
   }
 }
 
-export type RecordLineInput = { kind: BankLinePosting; /** Gateway payouts only: the fee the gateway kept. */ fee: number };
+export type RecordLineInput = {
+  kind: BankLinePosting;
+  /** Gateway payouts only: the fee the gateway kept. */ fee: number;
+};
 
 /**
  * Book what a statement line shows the bank did on its own, and match it:
@@ -187,7 +197,12 @@ export class RecordStatementLine {
     private readonly ledger: ILedgerRepository,
   ) {}
 
-  async execute(statementId: string, lineId: string, input: RecordLineInput, actor: ActivityActor): Promise<JournalEntry> {
+  async execute(
+    statementId: string,
+    lineId: string,
+    input: RecordLineInput,
+    actor: ActivityActor,
+  ): Promise<JournalEntry> {
     const statement = await requireStatement(this.bank, statementId);
     const line = statement.lines.find((candidate) => candidate.id === lineId);
     if (!line) throw new NotFoundError("statement line", lineId);
@@ -197,7 +212,9 @@ export class RecordStatementLine {
     }
 
     if (input.kind === "gatewayPayout") {
-      const clearing = (await this.ledger.movements(undefined, line.date)).find((movement) => movement.accountCode === SYSTEM_ACCOUNTS.gatewayClearing);
+      const clearing = (await this.ledger.movements(undefined, line.date)).find(
+        (movement) => movement.accountCode === SYSTEM_ACCOUNTS.gatewayClearing,
+      );
       const held = clearing ? clearing.debit - clearing.credit : 0;
       if (line.amount + input.fee > held) throw new ValidationError("fee", "exceedsGatewayBalance");
     }
@@ -212,7 +229,15 @@ export class RecordStatementLine {
           case "interest":
             return bankInterestEntry(current, actor);
           case "gatewayPayout":
-            return gatewaySettlementEntry({ date: current.date, deposited: current.amount, fee: input.fee, reference: current.reference ?? current.description }, actor);
+            return gatewaySettlementEntry(
+              {
+                date: current.date,
+                deposited: current.amount,
+                fee: input.fee,
+                reference: current.reference ?? current.description,
+              },
+              actor,
+            );
         }
       },
       (posted) => ({
@@ -222,7 +247,11 @@ export class RecordStatementLine {
         entityType: "ledger",
         entityId: posted.id,
         entityLabel: `JE-${posted.number}`,
-        changes: singleChange("amount", null, posted.lines.reduce((sum, row) => sum + row.debit, 0)),
+        changes: singleChange(
+          "amount",
+          null,
+          posted.lines.reduce((sum, row) => sum + row.debit, 0),
+        ),
       }),
     );
   }
@@ -241,7 +270,8 @@ export class ReconcileBankStatement {
       statementId,
       actor,
       (statement, book) => {
-        if (statement.status !== "open") throw new ConflictError("STATEMENT_RECONCILED", "This statement is already reconciled.");
+        if (statement.status !== "open")
+          throw new ConflictError("STATEMENT_RECONCILED", "This statement is already reconciled.");
         const summary = reconciliationSummary(statement, book);
         if (!summary.canReconcile) {
           throw new ConflictError(

@@ -17,7 +17,10 @@ export async function POST(_request: Request, { params }: RouteContext): Promise
   if (!session) return unauthorizedResponse();
   const { id } = await params;
   try {
-    const statement = await new ReconcileBankStatement(bankReconciliationRepository).execute(id, { id: session.user.id, name: session.user.name ?? session.user.id });
+    const statement = await new ReconcileBankStatement(bankReconciliationRepository).execute(id, {
+      id: session.user.id,
+      name: session.user.name ?? session.user.id,
+    });
     return NextResponse.json(statement);
   } catch (error) {
     return errorResponseFromException(error, `POST /api/admin/accounting/bank-statements/${id}/reconcile failed`);

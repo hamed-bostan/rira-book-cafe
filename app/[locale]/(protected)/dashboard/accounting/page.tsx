@@ -22,5 +22,13 @@ export default async function AccountingPage({ searchParams }: AccountingPagePro
     auth().then((session) => sessionHas(session, "accounting.write")),
   ]);
 
-  return <AccountingOverviewScreen trialBalance={trialBalance} profitAndLoss={profitAndLoss} settings={settings} canWrite={canWrite} today={cafeDayOf(new Date())} />;
+  return (
+    <AccountingOverviewScreen
+      trialBalance={trialBalance}
+      profitAndLoss={profitAndLoss}
+      settings={settings}
+      canWrite={canWrite}
+      today={cafeDayOf(new Date())}
+    />
+  );
 }

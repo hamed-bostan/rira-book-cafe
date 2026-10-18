@@ -8,7 +8,6 @@ import { cn } from "@/src/lib/utils";
 import { focusRing } from "../../shared/focusRing";
 import { baseFieldStyles } from "../shared/baseFieldStyles";
 
-
 export type SelectProps = Omit<React.SelectHTMLAttributes<HTMLSelectElement>, "size"> &
   VariantProps<typeof baseFieldStyles>;
 
@@ -29,7 +28,12 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
   ({ className, size, variant, children, ...props }, ref) => (
     <select
       ref={ref}
-      className={cn(baseFieldStyles({ size, variant }), "appearance-none bg-[url(data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%2716%27%20height=%2716%27%20viewBox=%270%200%2024%2024%27%20fill=%27none%27%20stroke=%27%23737373%27%20stroke-width=%272%27%20stroke-linecap=%27round%27%20stroke-linejoin=%27round%27%3E%3Cpath%20d=%27m6%209%206%206%206-6%27/%3E%3C/svg%3E)] bg-no-repeat bg-[position:right_0.75rem_center] bg-size-[1rem] rtl:bg-[position:left_0.75rem_center] cursor-pointer ps-3 pe-10", focusRing, className)}
+      className={cn(
+        baseFieldStyles({ size, variant }),
+        "cursor-pointer appearance-none bg-[url(data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%2716%27%20height=%2716%27%20viewBox=%270%200%2024%2024%27%20fill=%27none%27%20stroke=%27%23737373%27%20stroke-width=%272%27%20stroke-linecap=%27round%27%20stroke-linejoin=%27round%27%3E%3Cpath%20d=%27m6%209%206%206%206-6%27/%3E%3C/svg%3E)] bg-size-[1rem] bg-[position:right_0.75rem_center] bg-no-repeat ps-3 pe-10 rtl:bg-[position:left_0.75rem_center]",
+        focusRing,
+        className,
+      )}
       {...props}
     >
       {children}

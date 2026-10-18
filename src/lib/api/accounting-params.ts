@@ -35,7 +35,8 @@ export function parseDaySpan(params: URLSearchParams, now: Date = new Date()): D
   const query = spanSchema.parse({ from: params.get("from") ?? undefined, to: params.get("to") ?? undefined });
   const month = currentJalaliMonth(now);
   const span = { fromDay: query.from ?? month.fromDay, toDay: query.to ?? month.toDay };
-  if (span.fromDay > span.toDay) throw new z.ZodError([{ code: "custom", path: ["to"], message: "`to` must be on or after `from`." }]);
+  if (span.fromDay > span.toDay)
+    throw new z.ZodError([{ code: "custom", path: ["to"], message: "`to` must be on or after `from`." }]);
   return span;
 }
 

@@ -49,8 +49,16 @@ type Fake = {
 function ledgerWith(found: JournalEntry | null = entry(), settings: AccountingSettings = { vatRateBps: 1000 }): Fake {
   const post = vi.fn<ILedgerRepository["post"]>(async (input) => ({ ...input, id: "e9", number: 9, createdAt: "" }));
   const reverse = vi.fn<ILedgerRepository["reverse"]>(async () => entry({ id: "e2", number: 6, reversesId: "e1" }));
-  const createAccount = vi.fn<ILedgerRepository["createAccount"]>(async (input) => ({ ...input, isSystem: false, isActive: true }));
-  const setAccountActive = vi.fn<ILedgerRepository["setAccountActive"]>(async (code, active) => ({ ...RENT, code, isActive: active }));
+  const createAccount = vi.fn<ILedgerRepository["createAccount"]>(async (input) => ({
+    ...input,
+    isSystem: false,
+    isActive: true,
+  }));
+  const setAccountActive = vi.fn<ILedgerRepository["setAccountActive"]>(async (code, active) => ({
+    ...RENT,
+    code,
+    isActive: active,
+  }));
   const updateSettings = vi.fn<ILedgerRepository["updateSettings"]>(async (next) => next);
   const ledger = {
     getEntry: vi.fn(async () => found),
@@ -100,7 +108,11 @@ describe("ReverseJournalEntry", () => {
     await new ReverseJournalEntry(ledger).execute("e1", "2026-10-16", "wrong amount", ACTOR, NOW);
     const [id, build, audit] = reverse.mock.calls[0];
     expect(id).toBe("e1");
-    expect(build(entry())).toMatchObject({ date: "2026-10-16", description: "Reversal of JE-5: wrong amount", reversesId: "e1" });
+    expect(build(entry())).toMatchObject({
+      date: "2026-10-16",
+      description: "Reversal of JE-5: wrong amount",
+      reversesId: "e1",
+    });
     expect(audit?.(entry({ id: "e2", number: 6 }))).toMatchObject({
       action: "ledger.entryReversed",
       entityId: "e1",
@@ -110,12 +122,22 @@ describe("ReverseJournalEntry", () => {
   });
 
   it("is not found for an unknown entry, and refuses dating it in the future", async () => {
-    await expect(new ReverseJournalEntry(ledgerWith(null).ledger).execute("e1", "2026-10-16", "x", ACTOR, NOW)).rejects.toThrow(NotFoundError);
+    await expect(
+      new ReverseJournalEntry(ledgerWith(null).ledger).execute("e1", "2026-10-16", "x", ACTOR, NOW),
+    ).rejects.toThrow(NotFoundError);
     const { ledger, reverse } = ledgerWith();
-    await expect(new ReverseJournalEntry(ledger).execute("e1", "2026-10-17", "x", ACTOR, NOW)).rejects.toMatchObject({ field: "date" });
-    await expect(new ReverseJournalEntry(ledgerWith(entry({ source: "expense" })).ledger).execute("e1", "2026-10-16", "x", ACTOR, NOW)).rejects.toThrow(
-      ConflictError,
-    );
+    await expect(new ReverseJournalEntry(ledger).execute("e1", "2026-10-17", "x", ACTOR, NOW)).rejects.toMatchObject({
+      field: "date",
+    });
+    await expect(
+      new ReverseJournalEntry(ledgerWith(entry({ source: "expense" })).ledger).execute(
+        "e1",
+        "2026-10-16",
+        "x",
+        ACTOR,
+        NOW,
+      ),
+    ).rejects.toThrow(ConflictError);
     expect(reverse).not.toHaveBeenCalled();
   });
 });
@@ -123,7 +145,10 @@ describe("ReverseJournalEntry", () => {
 describe("chart of accounts", () => {
   it("creates an account with trimmed names and audits it", async () => {
     const { ledger, createAccount } = ledgerWith();
-    await new CreateLedgerAccount(ledger).execute({ code: "6100", name: " Rent ", nameFa: " اجاره ", type: "expense" }, ACTOR);
+    await new CreateLedgerAccount(ledger).execute(
+      { code: "6100", name: " Rent ", nameFa: " اجاره ", type: "expense" },
+      ACTOR,
+    );
     const [sent, audit] = createAccount.mock.calls[0];
     expect(sent).toEqual({ code: "6100", name: "Rent", nameFa: "اجاره", type: "expense" });
     expect(audit?.(RENT)).toEqual({
@@ -139,7 +164,9 @@ describe("chart of accounts", () => {
 
   it.each(["610", "61000", "61a0"])("refuses the code %s", async (code) => {
     const { ledger, createAccount } = ledgerWith();
-    await expect(new CreateLedgerAccount(ledger).execute({ code, name: "x", nameFa: "x", type: "expense" }, ACTOR)).rejects.toMatchObject({
+    await expect(
+      new CreateLedgerAccount(ledger).execute({ code, name: "x", nameFa: "x", type: "expense" }, ACTOR),
+    ).rejects.toMatchObject({
       field: "code",
     });
     expect(createAccount).not.toHaveBeenCalled();
@@ -150,14 +177,20 @@ describe("chart of accounts", () => {
     await new SetLedgerAccountActive(ledger).execute("6100", false, ACTOR);
     const [code, active, audit] = setAccountActive.mock.calls[0];
     expect([code, active]).toEqual(["6100", false]);
-    expect(audit?.({ ...RENT, isActive: false })?.changes).toEqual([{ field: "isActive", before: "true", after: "false" }]);
+    expect(audit?.({ ...RENT, isActive: false })?.changes).toEqual([
+      { field: "isActive", before: "true", after: "false" },
+    ]);
   });
 });
 
 describe("UpdateAccountingSettings", () => {
   it("audits the settings that moved", async () => {
     const { ledger, updateSettings } = ledgerWith(entry(), { vatRateBps: 1000 });
-    await new UpdateAccountingSettings(ledger).execute({ vatRateBps: 900, booksClosedThrough: "2026-09-30" }, ACTOR, NOW);
+    await new UpdateAccountingSettings(ledger).execute(
+      { vatRateBps: 900, booksClosedThrough: "2026-09-30" },
+      ACTOR,
+      NOW,
+    );
     const [sent, audit] = updateSettings.mock.calls[0];
     expect(audit?.(sent)).toEqual({
       actorId: "owner",
@@ -182,7 +215,9 @@ describe("UpdateAccountingSettings", () => {
 
   it.each([-1, 5001, 9.5])("refuses a VAT rate of %s bps", async (vatRateBps) => {
     const { ledger, updateSettings } = ledgerWith();
-    await expect(new UpdateAccountingSettings(ledger).execute({ vatRateBps }, ACTOR, NOW)).rejects.toThrow(ValidationError);
+    await expect(new UpdateAccountingSettings(ledger).execute({ vatRateBps }, ACTOR, NOW)).rejects.toThrow(
+      ValidationError,
+    );
     expect(updateSettings).not.toHaveBeenCalled();
   });
 });

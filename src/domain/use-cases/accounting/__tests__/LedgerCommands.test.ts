@@ -46,12 +46,15 @@ describe("manual entries", () => {
 
   it("only reverses manual entries, and not into the past", async () => {
     const reverse = vi.fn(async () => entry({ id: "e2", number: 6, reversesId: "e1" }));
-    const ledgerWith = (found: JournalEntry) => ({ getEntry: vi.fn(async () => found), reverse }) as unknown as ILedgerRepository;
+    const ledgerWith = (found: JournalEntry) =>
+      ({ getEntry: vi.fn(async () => found), reverse }) as unknown as ILedgerRepository;
 
-    await expect(new ReverseJournalEntry(ledgerWith(entry({ source: "orderSale" }))).execute("e1", "2026-10-16", "x", ACTOR, NOW)).rejects.toThrow(
-      ConflictError,
-    );
-    await expect(new ReverseJournalEntry(ledgerWith(entry())).execute("e1", "2026-10-09", "x", ACTOR, NOW)).rejects.toThrow(ValidationError);
+    await expect(
+      new ReverseJournalEntry(ledgerWith(entry({ source: "orderSale" }))).execute("e1", "2026-10-16", "x", ACTOR, NOW),
+    ).rejects.toThrow(ConflictError);
+    await expect(
+      new ReverseJournalEntry(ledgerWith(entry())).execute("e1", "2026-10-09", "x", ACTOR, NOW),
+    ).rejects.toThrow(ValidationError);
     await new ReverseJournalEntry(ledgerWith(entry())).execute("e1", "2026-10-16", "typo", ACTOR, NOW);
     expect(reverse).toHaveBeenCalledOnce();
   });
@@ -76,13 +79,19 @@ describe("chart of accounts and settings", () => {
     expect(typeForCode("1300")).toBe("asset");
     expect(typeForCode("6800")).toBe("expense");
     const ledger = { createAccount: vi.fn() } as unknown as ILedgerRepository;
-    await expect(new CreateLedgerAccount(ledger).execute({ code: "6800", name: "Laundry", nameFa: "لباسشویی", type: "revenue" }, ACTOR)).rejects.toThrow(
-      ValidationError,
-    );
+    await expect(
+      new CreateLedgerAccount(ledger).execute(
+        { code: "6800", name: "Laundry", nameFa: "لباسشویی", type: "revenue" },
+        ACTOR,
+      ),
+    ).rejects.toThrow(ValidationError);
   });
 
   it("parses a VAT percentage to basis points and refuses closing the future", async () => {
-    expect(accountingSettingsSchema.parse({ vatRate: "9.5", booksClosedThrough: "" })).toEqual({ vatRate: 950, booksClosedThrough: undefined });
+    expect(accountingSettingsSchema.parse({ vatRate: "9.5", booksClosedThrough: "" })).toEqual({
+      vatRate: 950,
+      booksClosedThrough: undefined,
+    });
     const ledger = { getSettings: vi.fn(), updateSettings: vi.fn() } as unknown as ILedgerRepository;
     await expect(
       new UpdateAccountingSettings(ledger).execute({ vatRateBps: 1000, booksClosedThrough: "2026-10-20" }, ACTOR, NOW),
@@ -100,8 +109,19 @@ describe("expenses", () => {
   });
 
   it("the contract turns the payment choice into a source and caps VAT below the total", () => {
-    const base = { date: "2026-10-16", supplierId: "", accountCode: "6300", description: "Electricity", amount: "1100000", vatAmount: "100000" };
-    expect(expenseSchema.parse({ ...base, payment: "bank" })).toMatchObject({ paidFrom: "bank", supplierId: undefined, amount: 1_100_000 });
+    const base = {
+      date: "2026-10-16",
+      supplierId: "",
+      accountCode: "6300",
+      description: "Electricity",
+      amount: "1100000",
+      vatAmount: "100000",
+    };
+    expect(expenseSchema.parse({ ...base, payment: "bank" })).toMatchObject({
+      paidFrom: "bank",
+      supplierId: undefined,
+      amount: 1_100_000,
+    });
     expect(expenseSchema.parse({ ...base, payment: "unpaid" }).paidFrom).toBeUndefined();
     expect(expenseSchema.safeParse({ ...base, vatAmount: "1100000", payment: "cash" }).success).toBe(false);
   });
@@ -109,7 +129,14 @@ describe("expenses", () => {
   it("refuses an inactive or non-expense account", async () => {
     const expenses = { create: vi.fn() } as unknown as IExpenseRepository;
     const ledger = {
-      getAccount: vi.fn(async () => ({ code: "1110", name: "Cash", nameFa: "صندوق", type: "asset", isSystem: true, isActive: true })),
+      getAccount: vi.fn(async () => ({
+        code: "1110",
+        name: "Cash",
+        nameFa: "صندوق",
+        type: "asset",
+        isSystem: true,
+        isActive: true,
+      })),
     } as unknown as ILedgerRepository;
     await expect(
       new RecordExpense(expenses, ledger).execute(

@@ -39,9 +39,19 @@ type Answer = { key: string; quote: OrderQuote | null; error: ApiError | null };
  * the lines, the code or the points toggle change; a stale answer that arrives
  * after a newer question is dropped.
  */
-export function useOrderQuote({ basket, promoCode, redeemPoints, enabled, onRejected }: UseOrderQuoteOptions): OrderQuoteState {
+export function useOrderQuote({
+  basket,
+  promoCode,
+  redeemPoints,
+  enabled,
+  onRejected,
+}: UseOrderQuoteOptions): OrderQuoteState {
   const [answer, setAnswer] = React.useState<Answer | null>(null);
-  const requestKey = JSON.stringify({ items: basketToOrderItems(basket), promoCode, redeemPoints } satisfies QuoteOrderInput);
+  const requestKey = JSON.stringify({
+    items: basketToOrderItems(basket),
+    promoCode,
+    redeemPoints,
+  } satisfies QuoteOrderInput);
   const active = enabled && basket.lines.length > 0;
 
   React.useEffect(() => {

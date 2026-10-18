@@ -71,7 +71,10 @@ describe("categories", () => {
     expect(updated.status).toBe(200);
     expect((await readJson<Category>(updated)).name).toBe("Viennoiserie");
 
-    const deleted = await deleteCategory(jsonRequest("DELETE", `/api/categories/${category.id}`), routeParams({ id: category.id }));
+    const deleted = await deleteCategory(
+      jsonRequest("DELETE", `/api/categories/${category.id}`),
+      routeParams({ id: category.id }),
+    );
     expect(deleted.status).toBe(204);
     expect(await prisma.category.findUnique({ where: { id: category.id } })).toBeNull();
   });
@@ -90,7 +93,10 @@ describe("categories", () => {
     signInAs("admin");
     const books = await prisma.category.findUniqueOrThrow({ where: { slug: "books" } });
 
-    const response = await deleteCategory(jsonRequest("DELETE", `/api/categories/${books.id}`), routeParams({ id: books.id }));
+    const response = await deleteCategory(
+      jsonRequest("DELETE", `/api/categories/${books.id}`),
+      routeParams({ id: books.id }),
+    );
 
     expect(response.status).toBe(409);
     expect((await readError(response)).code).toBe("IN_USE");
@@ -101,7 +107,11 @@ describe("categories", () => {
     signInAs("owner");
     const id = "00000000-0000-0000-0000-000000000000";
 
-    expect((await updateCategory(jsonRequest("PUT", `/api/categories/${id}`, pastries), routeParams({ id }))).status).toBe(404);
-    expect((await deleteCategory(jsonRequest("DELETE", `/api/categories/${id}`), routeParams({ id }))).status).toBe(404);
+    expect(
+      (await updateCategory(jsonRequest("PUT", `/api/categories/${id}`, pastries), routeParams({ id }))).status,
+    ).toBe(404);
+    expect((await deleteCategory(jsonRequest("DELETE", `/api/categories/${id}`), routeParams({ id }))).status).toBe(
+      404,
+    );
   });
 });

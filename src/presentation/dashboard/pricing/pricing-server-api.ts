@@ -1,7 +1,11 @@
 import type { Ingredient, PricingReport, RecipeLine } from "@/src/domain/entities/Pricing";
 import { serverApiGet } from "@/src/lib/api/server-client";
 
-import { ingredientListResponseSchema, pricingReportResponseSchema, recipeResponseSchema } from "./pricing-response-schema";
+import {
+  ingredientListResponseSchema,
+  pricingReportResponseSchema,
+  recipeResponseSchema,
+} from "./pricing-response-schema";
 
 /** Server-side pricing reads for the dashboard (BFF), fetched during server render. */
 export const pricingServerApi = {
@@ -12,7 +16,11 @@ export const pricingServerApi = {
 
 export const ingredientsServerApi = {
   list(includeInactive: boolean): Promise<Ingredient[]> {
-    return serverApiGet("/admin/ingredients", ingredientListResponseSchema, includeInactive ? { params: { all: "true" } } : undefined);
+    return serverApiGet(
+      "/admin/ingredients",
+      ingredientListResponseSchema,
+      includeInactive ? { params: { all: "true" } } : undefined,
+    );
   },
 };
 

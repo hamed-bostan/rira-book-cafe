@@ -14,7 +14,12 @@ function formatters(locale: Locale) {
   if (cached) return cached;
   const created = {
     short: new Intl.DateTimeFormat(TAG[locale], { day: "numeric", month: "short", timeZone: CAFE_TIME_ZONE }),
-    medium: new Intl.DateTimeFormat(TAG[locale], { day: "numeric", month: "short", year: "numeric", timeZone: CAFE_TIME_ZONE }),
+    medium: new Intl.DateTimeFormat(TAG[locale], {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      timeZone: CAFE_TIME_ZONE,
+    }),
   };
   cache.set(locale, created);
   return created;
@@ -37,5 +42,8 @@ export function formatCafeDayMedium(day: string, locale: Locale): string {
 
 /** A share 0–1 as a whole percentage, in the locale's digits. */
 export function formatPercent(share: number, locale: Locale): string {
-  return new Intl.NumberFormat(locale === "fa" ? "fa-IR" : "en-US", { style: "percent", maximumFractionDigits: 0 }).format(share);
+  return new Intl.NumberFormat(locale === "fa" ? "fa-IR" : "en-US", {
+    style: "percent",
+    maximumFractionDigits: 0,
+  }).format(share);
 }

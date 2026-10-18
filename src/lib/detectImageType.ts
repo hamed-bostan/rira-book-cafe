@@ -64,7 +64,5 @@ function ascii(bytes: Uint8Array, offset: number, length: number): string {
 /** Big-endian uint32, or 0 if it runs past the buffer. */
 function readUint32BE(bytes: Uint8Array, offset: number): number {
   if (offset + 4 > bytes.length) return 0;
-  return (
-    ((bytes[offset] << 24) | (bytes[offset + 1] << 16) | (bytes[offset + 2] << 8) | bytes[offset + 3]) >>> 0
-  );
+  return ((bytes[offset] << 24) | (bytes[offset + 1] << 16) | (bytes[offset + 2] << 8) | bytes[offset + 3]) >>> 0;
 }

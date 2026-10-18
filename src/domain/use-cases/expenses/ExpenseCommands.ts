@@ -1,6 +1,12 @@
 import { singleChange, type ActivityActor } from "../../entities/ActivityEntry";
 import { cafeDayOf } from "../../entities/CafeTime";
-import { isExpenseTarget, MAX_EXPENSE_DESCRIPTION_LENGTH, type Expense, type PaymentSource, type Supplier } from "../../entities/Expense";
+import {
+  isExpenseTarget,
+  MAX_EXPENSE_DESCRIPTION_LENGTH,
+  type Expense,
+  type PaymentSource,
+  type Supplier,
+} from "../../entities/Expense";
 import { reversalOf } from "../../entities/Ledger";
 import { expenseEntry, expensePaymentEntry } from "../../entities/Postings";
 import { ConflictError } from "../../errors/ConflictError";
@@ -21,9 +27,14 @@ export type RecordExpenseInput = {
   paidFrom?: PaymentSource;
 };
 
-const expenseLabel = (expense: Pick<Expense, "number" | "description">) => `EX-${expense.number} ${expense.description}`;
+const expenseLabel = (expense: Pick<Expense, "number" | "description">) =>
+  `EX-${expense.number} ${expense.description}`;
 
-function audit(actor: ActivityActor, action: "expense.recorded" | "expense.paid" | "expense.voided", changes: (e: Expense) => ReturnType<typeof singleChange>) {
+function audit(
+  actor: ActivityActor,
+  action: "expense.recorded" | "expense.paid" | "expense.voided",
+  changes: (e: Expense) => ReturnType<typeof singleChange>,
+) {
   return (expense: Expense) => ({
     actorId: actor.id,
     actorName: actor.name,
@@ -52,7 +63,8 @@ export class RecordExpense {
     if (!description || description.length > MAX_EXPENSE_DESCRIPTION_LENGTH) {
       throw new ValidationError("description", "Describe the expense (up to 300 characters).");
     }
-    if (!Number.isSafeInteger(input.amount) || input.amount <= 0) throw new ValidationError("amount", "Enter the amount.");
+    if (!Number.isSafeInteger(input.amount) || input.amount <= 0)
+      throw new ValidationError("amount", "Enter the amount.");
     if (!Number.isSafeInteger(input.vatAmount) || input.vatAmount < 0 || input.vatAmount >= input.amount) {
       throw new ValidationError("vatAmount", "VAT must be less than the total.");
     }
@@ -83,10 +95,17 @@ export class RecordExpense {
 export class PayExpense {
   constructor(private readonly expenses: IExpenseRepository) {}
 
-  async execute(id: string, source: PaymentSource, paidOn: string, actor: ActivityActor, now: Date = new Date()): Promise<Expense> {
+  async execute(
+    id: string,
+    source: PaymentSource,
+    paidOn: string,
+    actor: ActivityActor,
+    now: Date = new Date(),
+  ): Promise<Expense> {
     const expense = await this.expenses.getExpense(id);
     if (!expense) throw new NotFoundError("expense", id);
-    if (expense.status !== "unpaid") throw new ConflictError("INVALID_TRANSITION", `This expense is already ${expense.status}.`);
+    if (expense.status !== "unpaid")
+      throw new ConflictError("INVALID_TRANSITION", `This expense is already ${expense.status}.`);
     if (paidOn > cafeDayOf(now)) throw new ValidationError("paidOn", "That date is in the future.");
     if (paidOn < expense.date) throw new ValidationError("paidOn", "An expense can't be paid before it was incurred.");
 

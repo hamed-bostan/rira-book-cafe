@@ -64,11 +64,7 @@ DataTableToolbar.displayName = "DataTableToolbar";
 /** Controls and summary attached to a table's lower edge. */
 export const DataTableFooter = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
-    <div
-      ref={ref}
-      className={cn("border-t border-border bg-background px-4 py-3", className)}
-      {...props}
-    />
+    <div ref={ref} className={cn("border-t border-border bg-background px-4 py-3", className)} {...props} />
   ),
 );
 
@@ -84,12 +80,15 @@ export const Table = React.forwardRef<HTMLTableElement, React.TableHTMLAttribute
 
 Table.displayName = "Table";
 
-export const TableHeader = React.forwardRef<
-  HTMLTableSectionElement,
-  React.HTMLAttributes<HTMLTableSectionElement>
->(({ className, ...props }, ref) => (
-  <thead ref={ref} className={cn("bg-surface-sunken text-body-small-strong text-muted-foreground", className)} {...props} />
-));
+export const TableHeader = React.forwardRef<HTMLTableSectionElement, React.HTMLAttributes<HTMLTableSectionElement>>(
+  ({ className, ...props }, ref) => (
+    <thead
+      ref={ref}
+      className={cn("bg-surface-sunken text-body-small-strong text-muted-foreground", className)}
+      {...props}
+    />
+  ),
+);
 
 TableHeader.displayName = "TableHeader";
 
@@ -110,11 +109,7 @@ TableBody.displayName = "TableBody";
 
 export const TableRow = React.forwardRef<HTMLTableRowElement, React.HTMLAttributes<HTMLTableRowElement>>(
   ({ className, ...props }, ref) => (
-    <tr
-      ref={ref}
-      className={cn("bg-background transition-colors hover:bg-surface-sunken/50", className)}
-      {...props}
-    />
+    <tr ref={ref} className={cn("bg-background transition-colors hover:bg-surface-sunken/50", className)} {...props} />
   ),
 );
 

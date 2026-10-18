@@ -54,7 +54,11 @@ export async function PATCH(request: NextRequest, { params }: RouteContext): Pro
 
   const parsed = promoCodeActiveSchema.safeParse(body.data);
   if (!parsed.success) {
-    return errorResponse(400, { message: "That value isn't valid.", code: "VALIDATION", fieldErrors: firstFieldErrors(parsed.error) });
+    return errorResponse(400, {
+      message: "That value isn't valid.",
+      code: "VALIDATION",
+      fieldErrors: firstFieldErrors(parsed.error),
+    });
   }
 
   try {

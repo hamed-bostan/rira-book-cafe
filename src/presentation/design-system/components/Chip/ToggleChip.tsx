@@ -24,7 +24,11 @@ export type ToggleChipProps = React.ComponentPropsWithoutRef<typeof TogglePrimit
  * carrying an accessible name.
  */
 export const ToggleChip = React.forwardRef<HTMLButtonElement, ToggleChipProps>(({ className, size, ...props }, ref) => (
-  <TogglePrimitive.Root ref={ref} className={cn(chipShapeStyles({ size }), chipToggleStateStyles, className)} {...props} />
+  <TogglePrimitive.Root
+    ref={ref}
+    className={cn(chipShapeStyles({ size }), chipToggleStateStyles, className)}
+    {...props}
+  />
 ));
 
 ToggleChip.displayName = "ToggleChip";

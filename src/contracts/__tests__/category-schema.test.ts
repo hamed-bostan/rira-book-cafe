@@ -24,7 +24,10 @@ describe("categoryFormSchema", () => {
   });
 
   it("drops translations for a blank fa name and keeps an explicit inactive flag", () => {
-    expect(categoryFormSchema.parse({ ...FORM, faName: "  ", isActive: false })).toMatchObject({ isActive: false, translations: [] });
+    expect(categoryFormSchema.parse({ ...FORM, faName: "  ", isActive: false })).toMatchObject({
+      isActive: false,
+      translations: [],
+    });
   });
 
   it("requires a name within 50 characters", () => {

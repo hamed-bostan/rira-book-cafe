@@ -47,8 +47,9 @@ describe("ingredientSchema", () => {
   });
 
   it("maps each invalid field to its message key", () => {
-    const fieldErrors = ingredientSchema.safeParse({ ...INGREDIENT, name: "", unit: "kg", purchasePrice: "", purchaseQuantity: "0" }).error?.flatten()
-      .fieldErrors;
+    const fieldErrors = ingredientSchema
+      .safeParse({ ...INGREDIENT, name: "", unit: "kg", purchasePrice: "", purchaseQuantity: "0" })
+      .error?.flatten().fieldErrors;
     expect(fieldErrors?.name).toEqual(["nameRequired"]);
     expect(fieldErrors?.unit).toEqual(["unitInvalid"]);
     expect(fieldErrors?.purchasePrice).toContain("amountRequired");
@@ -56,11 +57,13 @@ describe("ingredientSchema", () => {
   });
 
   it("caps the name and the purchase quantity", () => {
-    expect(ingredientSchema.safeParse({ ...INGREDIENT, name: "n".repeat(81) }).error?.flatten().fieldErrors.name).toEqual(["textTooLong"]);
+    expect(
+      ingredientSchema.safeParse({ ...INGREDIENT, name: "n".repeat(81) }).error?.flatten().fieldErrors.name,
+    ).toEqual(["textTooLong"]);
     for (const purchaseQuantity of ["1000001", "0.0005"]) {
-      expect(ingredientSchema.safeParse({ ...INGREDIENT, purchaseQuantity }).error?.flatten().fieldErrors.purchaseQuantity).toEqual([
-        "quantityInvalid",
-      ]);
+      expect(
+        ingredientSchema.safeParse({ ...INGREDIENT, purchaseQuantity }).error?.flatten().fieldErrors.purchaseQuantity,
+      ).toEqual(["quantityInvalid"]);
     }
   });
 });
@@ -94,11 +97,14 @@ describe("recipeSchema", () => {
   });
 
   it("caps the lines and requires an ingredient on each", () => {
-    const tooMany = Array.from({ length: MAX_RECIPE_LINES + 1 }, (_, index) => ({ ingredientId: `i${index}`, quantity: "1" }));
+    const tooMany = Array.from({ length: MAX_RECIPE_LINES + 1 }, (_, index) => ({
+      ingredientId: `i${index}`,
+      quantity: "1",
+    }));
     expect(messagesAt(recipeSchema.safeParse({ lines: tooMany }), "lines")).toContain("linesTooMany");
-    expect(messagesAt(recipeSchema.safeParse({ lines: [{ ingredientId: " ", quantity: "1" }] }), "lines.0.ingredientId")).toEqual([
-      "ingredientRequired",
-    ]);
+    expect(
+      messagesAt(recipeSchema.safeParse({ lines: [{ ingredientId: " ", quantity: "1" }] }), "lines.0.ingredientId"),
+    ).toEqual(["ingredientRequired"]);
   });
 });
 
@@ -112,7 +118,9 @@ describe("pricingSettingsSchema", () => {
       expectedMonthlyUnits: undefined,
       overheadMonths: 3,
     });
-    expect(pricingSettingsSchema.parse({ ...SETTINGS, defaultMarkup: "12.5", expectedMonthlyUnits: "1200" })).toMatchObject({
+    expect(
+      pricingSettingsSchema.parse({ ...SETTINGS, defaultMarkup: "12.5", expectedMonthlyUnits: "1200" }),
+    ).toMatchObject({
       defaultMarkup: 1250,
       expectedMonthlyUnits: 1200,
     });
@@ -136,17 +144,20 @@ describe("pricingSettingsSchema", () => {
   });
 
   it("refuses an unknown overhead source", () => {
-    expect(settingsErrors({ ...SETTINGS, overheadSource: "guess" })?.overheadSource).toEqual([
-      "overheadSourceInvalid",
-    ]);
+    expect(settingsErrors({ ...SETTINGS, overheadSource: "guess" })?.overheadSource).toEqual(["overheadSourceInvalid"]);
   });
 
   it("needs a monthly figure when the overhead is entered by hand", () => {
-    expect(settingsErrors({ ...SETTINGS, overheadSource: "manual" })?.manualMonthlyOverhead).toEqual(["overheadRequired"]);
-    expect(pricingSettingsSchema.parse({ ...SETTINGS, overheadSource: "manual", manualMonthlyOverhead: "40000000" }).manualMonthlyOverhead).toBe(
-      40_000_000,
-    );
-    expect(settingsErrors({ ...SETTINGS, manualMonthlyOverhead: "1e6" })?.manualMonthlyOverhead).toEqual(["numberInvalid"]);
+    expect(settingsErrors({ ...SETTINGS, overheadSource: "manual" })?.manualMonthlyOverhead).toEqual([
+      "overheadRequired",
+    ]);
+    expect(
+      pricingSettingsSchema.parse({ ...SETTINGS, overheadSource: "manual", manualMonthlyOverhead: "40000000" })
+        .manualMonthlyOverhead,
+    ).toBe(40_000_000);
+    expect(settingsErrors({ ...SETTINGS, manualMonthlyOverhead: "1e6" })?.manualMonthlyOverhead).toEqual([
+      "numberInvalid",
+    ]);
   });
 
   it("refuses zero expected units", () => {

@@ -1,7 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { NOTIFICATION_LIST_LIMIT, type Notification } from "../../../entities/Notification";
-import { CountUnreadNotifications, ListNotifications, MarkNotificationsRead, SyncLoanReminders } from "../NotificationQueries";
+import {
+  CountUnreadNotifications,
+  ListNotifications,
+  MarkNotificationsRead,
+  SyncLoanReminders,
+} from "../NotificationQueries";
 
 import type { BookLoan } from "../../../entities/BookLoan";
 import type { ICustomerNotifier, INotificationRepository } from "../../../repositories/INotificationRepository";
@@ -28,7 +33,13 @@ function loan(id: string, dueAt: string, overrides: Partial<BookLoan> = {}): Boo
   };
 }
 
-const NOTIFICATION: Notification = { id: "n1", userId: "g1", kind: "orderReady", params: { orderNumber: 4 }, createdAt: "" };
+const NOTIFICATION: Notification = {
+  id: "n1",
+  userId: "g1",
+  kind: "orderReady",
+  params: { orderNumber: 4 },
+  createdAt: "",
+};
 
 type Setup = {
   reminders: SyncLoanReminders;

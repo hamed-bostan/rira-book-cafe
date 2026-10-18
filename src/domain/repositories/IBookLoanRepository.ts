@@ -46,5 +46,11 @@ export type IBookLoanRepository = {
    * can't be overwritten (`ConflictError("INVALID_TRANSITION")`). `returnedAt` is
    * set when it becomes `returned`.
    */
-  applyStatus(id: string, expectedStatus: BookLoanStatus, status: BookLoanStatus, at: Date, audit?: AuditHook<BookLoan>): Promise<BookLoan>;
+  applyStatus(
+    id: string,
+    expectedStatus: BookLoanStatus,
+    status: BookLoanStatus,
+    at: Date,
+    audit?: AuditHook<BookLoan>,
+  ): Promise<BookLoan>;
 };

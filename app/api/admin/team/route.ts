@@ -110,11 +110,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // The invitation links back to this deployment's sign-in page, so the origin
     // is resolved from the request (only the web layer knows the public host).
     const signInUrl = `${await getAppUrl()}/login`;
-    const granted = await new GrantAdmin(userRepository, teamNotifier).execute(
-      parsed.data,
-      session.user.id,
-      signInUrl,
-    );
+    const granted = await new GrantAdmin(userRepository, teamNotifier).execute(parsed.data, session.user.id, signInUrl);
     const [member] = toTeamMembers([granted], session.user.id);
     return NextResponse.json(member, { status: 201 });
   } catch (error) {

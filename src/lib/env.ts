@@ -21,7 +21,9 @@ const optionalPositiveInt = z.preprocess(emptyToUndefined, z.coerce.number().int
 const positiveIntOr = (fallback: number) =>
   z.preprocess(emptyToUndefined, z.coerce.number().int().positive().default(fallback));
 /** `"true"` → true; unset or `"false"` → false; anything else is a typo worth failing on. */
-const flag = z.preprocess(emptyToUndefined, z.enum(["true", "false"]).optional()).transform((value) => value === "true");
+const flag = z
+  .preprocess(emptyToUndefined, z.enum(["true", "false"]).optional())
+  .transform((value) => value === "true");
 
 const MIN_AUTH_SECRET_LENGTH = 32;
 
@@ -40,14 +42,12 @@ const baseSchema = z.object({
 
   AUTH_SECRET: optionalString,
   /** Break-glass owner ids, comma-separated normalized phones. */
-  ADMIN_USER_IDS: z
-    .preprocess(emptyToUndefined, z.string().optional())
-    .transform((value) =>
-      (value ?? "")
-        .split(",")
-        .map((id) => id.trim())
-        .filter(Boolean),
-    ),
+  ADMIN_USER_IDS: z.preprocess(emptyToUndefined, z.string().optional()).transform((value) =>
+    (value ?? "")
+      .split(",")
+      .map((id) => id.trim())
+      .filter(Boolean),
+  ),
 
   SMS_IR_API_KEY: optionalString,
   SMS_IR_TEMPLATE_ID: optionalPositiveInt,

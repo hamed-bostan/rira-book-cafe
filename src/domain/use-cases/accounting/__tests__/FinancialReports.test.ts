@@ -7,7 +7,12 @@ import { FinancialReports } from "../FinancialReports";
 
 import type { AccountMovement } from "../../../entities/AccountingReports";
 import type { Account } from "../../../entities/Ledger";
-import type { ILedgerRepository, ItemSalesCost, RawLedgerLine, VatMovement } from "../../../repositories/ILedgerRepository";
+import type {
+  ILedgerRepository,
+  ItemSalesCost,
+  RawLedgerLine,
+  VatMovement,
+} from "../../../repositories/ILedgerRepository";
 
 function account(code: string, type: Account["type"], name = code): Account {
   return { code, name, nameFa: name, type, isSystem: false, isActive: true };
@@ -37,7 +42,9 @@ type LedgerFake = {
   accountLines: ReturnType<typeof vi.fn<ILedgerRepository["accountLines"]>>;
 };
 
-function ledgerWith(options: { vat?: VatMovement; lines?: RawLedgerLine[]; sales?: ItemSalesCost[]; movements?: AccountMovement[] } = {}): LedgerFake {
+function ledgerWith(
+  options: { vat?: VatMovement; lines?: RawLedgerLine[]; sales?: ItemSalesCost[]; movements?: AccountMovement[] } = {},
+): LedgerFake {
   const movements = vi.fn<ILedgerRepository["movements"]>(async () => options.movements ?? MOVEMENTS);
   const accountLines = vi.fn<ILedgerRepository["accountLines"]>(async () => options.lines ?? []);
   const ledger = {
@@ -110,7 +117,9 @@ describe("FinancialReports", () => {
 
   it("is not found for an unknown account", async () => {
     const { ledger } = ledgerWith();
-    await expect(new FinancialReports(ledger).accountLedger("9999", "2026-10-01", "2026-10-31")).rejects.toThrow(NotFoundError);
+    await expect(new FinancialReports(ledger).accountLedger("9999", "2026-10-01", "2026-10-31")).rejects.toThrow(
+      NotFoundError,
+    );
   });
 
   it("nets VAT out of item revenue in the margin report", async () => {

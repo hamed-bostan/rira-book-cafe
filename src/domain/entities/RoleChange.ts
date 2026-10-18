@@ -28,12 +28,7 @@ export const ROLE_CHANGE_FIELD = "role";
  * UI still shows rather than hides.
  */
 export type RoleChangeKind =
-  | "granted"
-  | "revoked"
-  | "ownershipTransferred"
-  | "ownershipClaimed"
-  | "steppedDown"
-  | "unknown";
+  "granted" | "revoked" | "ownershipTransferred" | "ownershipClaimed" | "steppedDown" | "unknown";
 
 /** The two sides of a role move, pulled out of an entry's diff. */
 export type RoleMove = {

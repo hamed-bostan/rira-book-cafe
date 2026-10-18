@@ -36,7 +36,12 @@ function category(overrides: Partial<Category> = {}): Category {
   };
 }
 
-const INPUT: NewCategory = { name: "  Tea  ", slug: "  tea ", iconUrl: "https://cdn/categories/tea.png", isActive: true };
+const INPUT: NewCategory = {
+  name: "  Tea  ",
+  slug: "  tea ",
+  iconUrl: "https://cdn/categories/tea.png",
+  isActive: true,
+};
 
 type Fake = {
   repo: ICategoryRepository;
@@ -60,14 +65,25 @@ function repoWith(rows: Category[]): Fake {
   });
   const update = vi.fn<ICategoryRepository["update"]>(async (id, input, audit) => {
     const current = byId.get(id) ?? category({ id });
-    const saved = { ...current, name: input.name, slug: input.slug, iconUrl: input.iconUrl, isActive: input.isActive ?? current.isActive };
+    const saved = {
+      ...current,
+      name: input.name,
+      slug: input.slug,
+      iconUrl: input.iconUrl,
+      isActive: input.isActive ?? current.isActive,
+    };
     if (audit) entries.push(audit(saved));
     return saved;
   });
   const remove = vi.fn<ICategoryRepository["delete"]>(async (_id, audit) => {
     if (audit) entries.push(audit());
   });
-  const listPage = vi.fn<ICategoryRepository["listPage"]>(async (_filters, page) => ({ items: rows, total: rows.length, page: page.page, pageSize: page.pageSize }));
+  const listPage = vi.fn<ICategoryRepository["listPage"]>(async (_filters, page) => ({
+    items: rows,
+    total: rows.length,
+    page: page.page,
+    pageSize: page.pageSize,
+  }));
   const applyBulkChange = vi.fn<ICategoryRepository["applyBulkChange"]>(async (ids, change, audit) => {
     const updates: BulkCategoryUpdate[] = ids
       .map((id) => byId.get(id))
@@ -91,7 +107,10 @@ function repoWith(rows: Category[]): Fake {
   return { repo, create, update, remove, listPage, applyBulkChange, entries };
 }
 
-function storage(): { storage: IImageStorageRepository; removeByUrl: ReturnType<typeof vi.fn<IImageStorageRepository["removeByUrl"]>> } {
+function storage(): {
+  storage: IImageStorageRepository;
+  removeByUrl: ReturnType<typeof vi.fn<IImageStorageRepository["removeByUrl"]>>;
+} {
   const removeByUrl = vi.fn<IImageStorageRepository["removeByUrl"]>(async () => {});
   return { storage: { removeByUrl } as unknown as IImageStorageRepository, removeByUrl };
 }
@@ -99,7 +118,12 @@ function storage(): { storage: IImageStorageRepository; removeByUrl: ReturnType<
 describe("categorySnapshot", () => {
   it("tracks name, slug, icon and active state, treating an unset isActive as active", () => {
     const { isActive: _isActive, ...withoutActive } = INPUT;
-    expect(categorySnapshot(withoutActive)).toEqual({ name: INPUT.name, slug: INPUT.slug, iconUrl: INPUT.iconUrl, isActive: true });
+    expect(categorySnapshot(withoutActive)).toEqual({
+      name: INPUT.name,
+      slug: INPUT.slug,
+      iconUrl: INPUT.iconUrl,
+      isActive: true,
+    });
     expect(categorySnapshot(category({ isActive: false })).isActive).toBe(false);
   });
 });
@@ -110,7 +134,13 @@ describe("CreateCategory", () => {
     const translations = [{ locale: "fa", name: "چای" }];
     await new CreateCategory(repo).execute({ ...INPUT, translations }, ACTOR);
 
-    expect(create.mock.calls[0][0]).toEqual({ name: "Tea", slug: "tea", iconUrl: INPUT.iconUrl, isActive: true, translations });
+    expect(create.mock.calls[0][0]).toEqual({
+      name: "Tea",
+      slug: "tea",
+      iconUrl: INPUT.iconUrl,
+      isActive: true,
+      translations,
+    });
     expect(entries[0]).toEqual({
       actorId: "a1",
       actorName: "Admin",
@@ -133,7 +163,10 @@ describe("CreateCategory", () => {
     [{ iconUrl: "" }, "iconUrl"],
   ])("refuses %o", async (overrides, field) => {
     const { repo, create } = repoWith([]);
-    await expect(new CreateCategory(repo).execute({ ...INPUT, ...overrides }, ACTOR)).rejects.toMatchObject({ name: "ValidationError", field });
+    await expect(new CreateCategory(repo).execute({ ...INPUT, ...overrides }, ACTOR)).rejects.toMatchObject({
+      name: "ValidationError",
+      field,
+    });
     expect(create).not.toHaveBeenCalled();
   });
 
@@ -163,7 +196,11 @@ describe("UpdateCategory", () => {
     const previous = category();
     const { repo, entries } = repoWith([previous]);
     const { storage: images, removeByUrl } = storage();
-    await new UpdateCategory(repo, images).execute("c1", { name: previous.name, slug: previous.slug, iconUrl: previous.iconUrl }, ACTOR);
+    await new UpdateCategory(repo, images).execute(
+      "c1",
+      { name: previous.name, slug: previous.slug, iconUrl: previous.iconUrl },
+      ACTOR,
+    );
     expect(entries).toEqual([null]);
     expect(removeByUrl).not.toHaveBeenCalled();
   });
@@ -178,7 +215,9 @@ describe("UpdateCategory", () => {
 
   it("is not found for an unknown id", async () => {
     const { repo, update } = repoWith([]);
-    await expect(new UpdateCategory(repo, storage().storage).execute("missing", INPUT, ACTOR)).rejects.toThrow(NotFoundError);
+    await expect(new UpdateCategory(repo, storage().storage).execute("missing", INPUT, ACTOR)).rejects.toThrow(
+      NotFoundError,
+    );
     expect(update).not.toHaveBeenCalled();
   });
 
@@ -189,7 +228,9 @@ describe("UpdateCategory", () => {
     ["c1", { iconUrl: "" }, "iconUrl"],
   ])("refuses id %j with %o", async (id, overrides, field) => {
     const { repo } = repoWith([category()]);
-    await expect(new UpdateCategory(repo, storage().storage).execute(id, { ...INPUT, ...overrides }, ACTOR)).rejects.toMatchObject({ field });
+    await expect(
+      new UpdateCategory(repo, storage().storage).execute(id, { ...INPUT, ...overrides }, ACTOR),
+    ).rejects.toMatchObject({ field });
   });
 });
 
@@ -219,7 +260,10 @@ describe("DeleteCategory", () => {
   });
 
   it("refuses a category that still has products, naming how many", async () => {
-    const { repo, remove } = repoWith([category({ productCount: 1 }), category({ id: "c2", name: "Tea", productCount: 3 })]);
+    const { repo, remove } = repoWith([
+      category({ productCount: 1 }),
+      category({ id: "c2", name: "Tea", productCount: 3 }),
+    ]);
     const images = storage().storage;
     await expect(new DeleteCategory(repo, images).execute("c1", ACTOR)).rejects.toThrow(/1 product assigned/);
     await expect(new DeleteCategory(repo, images).execute("c2", ACTOR)).rejects.toThrow(/3 products assigned/);
@@ -237,8 +281,15 @@ describe("DeleteCategory", () => {
 
 describe("BulkUpdateCategories", () => {
   it("returns only the categories that changed, each with its own entry", async () => {
-    const { repo, entries } = repoWith([category({ id: "c1", isActive: true }), category({ id: "c2", name: "Tea", isActive: false })]);
-    const changed = await new BulkUpdateCategories(repo).execute(["c1", "c2", "missing"], { field: "isActive", value: false }, ACTOR);
+    const { repo, entries } = repoWith([
+      category({ id: "c1", isActive: true }),
+      category({ id: "c2", name: "Tea", isActive: false }),
+    ]);
+    const changed = await new BulkUpdateCategories(repo).execute(
+      ["c1", "c2", "missing"],
+      { field: "isActive", value: false },
+      ACTOR,
+    );
 
     expect(changed.map((c) => c.id)).toEqual(["c1"]);
     expect(entries).toEqual([
@@ -258,9 +309,13 @@ describe("BulkUpdateCategories", () => {
     const { repo, applyBulkChange } = repoWith([]);
     const useCase = new BulkUpdateCategories(repo);
     await expect(useCase.execute([], { field: "isActive", value: true }, ACTOR)).rejects.toThrow(ValidationError);
-    await expect(useCase.execute(Array.from({ length: 201 }, (_, i) => `c${i}`), { field: "isActive", value: true }, ACTOR)).rejects.toThrow(
-      "at most 200",
-    );
+    await expect(
+      useCase.execute(
+        Array.from({ length: 201 }, (_, i) => `c${i}`),
+        { field: "isActive", value: true },
+        ACTOR,
+      ),
+    ).rejects.toThrow("at most 200");
     expect(applyBulkChange).not.toHaveBeenCalled();
   });
 });

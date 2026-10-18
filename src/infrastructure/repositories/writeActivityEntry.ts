@@ -43,11 +43,7 @@ export function toActivityRow(entry: NewActivityEntry) {
  * how an entry is *built* is a bug, and the alternative — swallowing it — would
  * quietly reintroduce exactly the silent-gap problem this arrangement removes.
  */
-export async function recordAudit<T>(
-  tx: Prisma.TransactionClient,
-  result: T,
-  audit?: AuditHook<T>,
-): Promise<void> {
+export async function recordAudit<T>(tx: Prisma.TransactionClient, result: T, audit?: AuditHook<T>): Promise<void> {
   if (!audit) return;
   const entry = audit(result);
   if (!entry) return;

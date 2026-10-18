@@ -15,7 +15,12 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   if (!(await getSessionWith("promotions.write"))) return unauthorizedResponse();
 
   const phone = request.nextUrl.searchParams.get("phone")?.trim();
-  if (!phone) return errorResponse(400, { message: "Enter a phone number.", code: "VALIDATION", fieldErrors: { phone: "phoneRequired" } });
+  if (!phone)
+    return errorResponse(400, {
+      message: "Enter a phone number.",
+      code: "VALIDATION",
+      fieldErrors: { phone: "phoneRequired" },
+    });
 
   try {
     return NextResponse.json(await new LookupGuestPoints(loyaltyRepository, userRepository).execute(phone));

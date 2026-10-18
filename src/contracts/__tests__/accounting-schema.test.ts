@@ -58,9 +58,13 @@ describe("manualEntrySchema", () => {
   });
 
   it("needs at least two lines and at most the cap", () => {
-    expect(messagesAt(manualEntrySchema.safeParse({ ...ENTRY, lines: [debitLine("1")] }), "lines")).toContain("linesTooFew");
+    expect(messagesAt(manualEntrySchema.safeParse({ ...ENTRY, lines: [debitLine("1")] }), "lines")).toContain(
+      "linesTooFew",
+    );
 
-    const tooMany = Array.from({ length: MAX_ENTRY_LINES + 1 }, (_, index) => (index % 2 === 0 ? debitLine("10") : creditLine("10")));
+    const tooMany = Array.from({ length: MAX_ENTRY_LINES + 1 }, (_, index) =>
+      index % 2 === 0 ? debitLine("10") : creditLine("10"),
+    );
     expect(messagesAt(manualEntrySchema.safeParse({ ...ENTRY, lines: tooMany }), "lines")).toContain("linesTooMany");
   });
 
@@ -85,7 +89,9 @@ describe("manualEntrySchema", () => {
   });
 
   it("refuses a malformed date", () => {
-    expect(manualEntrySchema.safeParse({ ...ENTRY, date: "yesterday" }).error?.flatten().fieldErrors.date).toEqual(["dateInvalid"]);
+    expect(manualEntrySchema.safeParse({ ...ENTRY, date: "yesterday" }).error?.flatten().fieldErrors.date).toEqual([
+      "dateInvalid",
+    ]);
   });
 });
 
@@ -98,10 +104,12 @@ describe("reverseEntrySchema", () => {
   });
 
   it("requires a reason, within 200 characters", () => {
-    expect(reverseEntrySchema.safeParse({ date: "2026-10-18", reason: " " }).error?.flatten().fieldErrors.reason).toEqual(["reasonRequired"]);
-    expect(reverseEntrySchema.safeParse({ date: "2026-10-18", reason: "r".repeat(201) }).error?.flatten().fieldErrors.reason).toEqual([
-      "textTooLong",
-    ]);
+    expect(
+      reverseEntrySchema.safeParse({ date: "2026-10-18", reason: " " }).error?.flatten().fieldErrors.reason,
+    ).toEqual(["reasonRequired"]);
+    expect(
+      reverseEntrySchema.safeParse({ date: "2026-10-18", reason: "r".repeat(201) }).error?.flatten().fieldErrors.reason,
+    ).toEqual(["textTooLong"]);
   });
 });
 
@@ -109,21 +117,32 @@ describe("ledgerAccountSchema", () => {
   const ACCOUNT = { code: " 6150 ", name: " Cleaning ", nameFa: " نظافت ", type: "expense" } as const;
 
   it("trims a four-digit code and both names", () => {
-    expect(ledgerAccountSchema.parse(ACCOUNT)).toEqual({ code: "6150", name: "Cleaning", nameFa: "نظافت", type: "expense" });
+    expect(ledgerAccountSchema.parse(ACCOUNT)).toEqual({
+      code: "6150",
+      name: "Cleaning",
+      nameFa: "نظافت",
+      type: "expense",
+    });
   });
 
   it("refuses a code that isn't four digits", () => {
     for (const code of ["615", "61500", "61a0"]) {
-      expect(ledgerAccountSchema.safeParse({ ...ACCOUNT, code }).error?.flatten().fieldErrors.code).toEqual(["accountCodeInvalid"]);
+      expect(ledgerAccountSchema.safeParse({ ...ACCOUNT, code }).error?.flatten().fieldErrors.code).toEqual([
+        "accountCodeInvalid",
+      ]);
     }
   });
 
   it("refuses an unknown account type", () => {
-    expect(ledgerAccountSchema.safeParse({ ...ACCOUNT, type: "income" }).error?.flatten().fieldErrors.type).toEqual(["accountTypeInvalid"]);
+    expect(ledgerAccountSchema.safeParse({ ...ACCOUNT, type: "income" }).error?.flatten().fieldErrors.type).toEqual([
+      "accountTypeInvalid",
+    ]);
   });
 
   it("requires both names, each within 80 characters", () => {
-    const fieldErrors = ledgerAccountSchema.safeParse({ ...ACCOUNT, name: "", nameFa: "n".repeat(81) }).error?.flatten().fieldErrors;
+    const fieldErrors = ledgerAccountSchema
+      .safeParse({ ...ACCOUNT, name: "", nameFa: "n".repeat(81) })
+      .error?.flatten().fieldErrors;
     expect(fieldErrors?.name).toEqual(["nameRequired"]);
     expect(fieldErrors?.nameFa).toEqual(["textTooLong"]);
   });
@@ -151,15 +170,16 @@ describe("accountingSettingsSchema", () => {
   it("accepts the cap and refuses anything above or malformed", () => {
     expect(accountingSettingsSchema.parse({ vatRate: "50", booksClosedThrough: "" }).vatRate).toBe(5000);
     for (const vatRate of ["50.01", "100", "9.555", "-1", ""]) {
-      expect(accountingSettingsSchema.safeParse({ vatRate, booksClosedThrough: "" }).error?.flatten().fieldErrors.vatRate).toEqual([
-        "vatRateInvalid",
-      ]);
+      expect(
+        accountingSettingsSchema.safeParse({ vatRate, booksClosedThrough: "" }).error?.flatten().fieldErrors.vatRate,
+      ).toEqual(["vatRateInvalid"]);
     }
   });
 
   it("refuses a malformed close date", () => {
-    expect(accountingSettingsSchema.safeParse({ vatRate: "9", booksClosedThrough: "March" }).error?.flatten().fieldErrors.booksClosedThrough).toEqual([
-      "dateInvalid",
-    ]);
+    expect(
+      accountingSettingsSchema.safeParse({ vatRate: "9", booksClosedThrough: "March" }).error?.flatten().fieldErrors
+        .booksClosedThrough,
+    ).toEqual(["dateInvalid"]);
   });
 });

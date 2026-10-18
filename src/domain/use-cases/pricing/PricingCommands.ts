@@ -45,10 +45,19 @@ export class GetPricingReport {
     ]);
 
     const span = completeMonthsBefore(jalaliToday(now), settings.overheadMonths);
-    const [movements, sales] = await Promise.all([this.ledger.movements(span.fromDay, span.toDay, { excludeClosing: true }), this.ledger.itemSalesCost(span.fromDay, span.toDay)]);
+    const [movements, sales] = await Promise.all([
+      this.ledger.movements(span.fromDay, span.toDay, { excludeClosing: true }),
+      this.ledger.itemSalesCost(span.fromDay, span.toDay),
+    ]);
 
-    const operating = new Set(accounts.filter((account) => account.type === "expense" && !isCostOfSales(account)).map((account) => account.code));
-    const recordedOverhead = movements.filter((row) => operating.has(row.accountCode)).reduce((sum, row) => sum + row.debit - row.credit, 0);
+    const operating = new Set(
+      accounts
+        .filter((account) => account.type === "expense" && !isCostOfSales(account))
+        .map((account) => account.code),
+    );
+    const recordedOverhead = movements
+      .filter((row) => operating.has(row.accountCode))
+      .reduce((sum, row) => sum + row.debit - row.credit, 0);
     const unitsSold = new Map(sales.map((row) => [row.productId, row.quantity]));
     const totalUnits = sales.reduce((sum, row) => sum + row.quantity, 0);
 
@@ -56,13 +65,22 @@ export class GetPricingReport {
     const basis: OverheadBasis = {
       source: settings.overheadSource,
       monthlyOverhead: settings.overheadSource === "manual" ? (settings.manualMonthlyOverhead ?? null) : fromLedger,
-      monthlyUnits: settings.expectedMonthlyUnits ?? (totalUnits > 0 ? Math.round(totalUnits / settings.overheadMonths) : null),
+      monthlyUnits:
+        settings.expectedMonthlyUnits ?? (totalUnits > 0 ? Math.round(totalUnits / settings.overheadMonths) : null),
       fromDay: span.fromDay,
       toDay: span.toDay,
       months: settings.overheadMonths,
     };
 
-    return buildPricingReport({ products, recipes, ingredients, basis, settings, vatRateBps: ledgerSettings.vatRateBps, unitsSold });
+    return buildPricingReport({
+      products,
+      recipes,
+      ingredients,
+      basis,
+      settings,
+      vatRateBps: ledgerSettings.vatRateBps,
+      unitsSold,
+    });
   }
 }
 
@@ -70,10 +88,18 @@ export class UpdatePricingSettings {
   constructor(private readonly pricing: IPricingRepository) {}
 
   async execute(settings: PricingSettings): Promise<PricingSettings> {
-    if (!Number.isInteger(settings.defaultMarkupBps) || settings.defaultMarkupBps < 0 || settings.defaultMarkupBps > MAX_MARKUP_BPS) {
+    if (
+      !Number.isInteger(settings.defaultMarkupBps) ||
+      settings.defaultMarkupBps < 0 ||
+      settings.defaultMarkupBps > MAX_MARKUP_BPS
+    ) {
       throw new ValidationError("defaultMarkup", "Enter a profit from 0 to 1000%.");
     }
-    if (!Number.isInteger(settings.overheadMonths) || settings.overheadMonths < 1 || settings.overheadMonths > MAX_OVERHEAD_MONTHS) {
+    if (
+      !Number.isInteger(settings.overheadMonths) ||
+      settings.overheadMonths < 1 ||
+      settings.overheadMonths > MAX_OVERHEAD_MONTHS
+    ) {
       throw new ValidationError("overheadMonths", "Average over 1 to 12 months.");
     }
     if (settings.overheadSource === "manual" && settings.manualMonthlyOverhead === undefined) {
@@ -106,11 +132,17 @@ export class ApplySuggestedPrice {
     private readonly ledger: ILedgerRepository,
   ) {}
 
-  async execute(productId: string, expectedPrice: number, actor: ActivityActor, now: Date = new Date()): Promise<RepricedProduct> {
+  async execute(
+    productId: string,
+    expectedPrice: number,
+    actor: ActivityActor,
+    now: Date = new Date(),
+  ): Promise<RepricedProduct> {
     const report = await new GetPricingReport(this.pricing, this.ledger).execute(now);
     const row = report.rows.find((candidate) => candidate.productId === productId);
     if (!row) throw new NotFoundError("product", productId);
-    if (row.suggestedPrice === null) throw new ValidationError("price", "This item has no cost yet, so there's no suggestion to apply.");
+    if (row.suggestedPrice === null)
+      throw new ValidationError("price", "This item has no cost yet, so there's no suggestion to apply.");
 
     return this.pricing.applyPrice(productId, expectedPrice, row.suggestedPrice, (repriced) => ({
       actorId: actor.id,
@@ -127,8 +159,10 @@ export class ApplySuggestedPrice {
 function validIngredient(input: IngredientInput): IngredientInput {
   const name = input.name.trim();
   if (!name) throw new ValidationError("name", "Enter the ingredient's name.");
-  if (!(INGREDIENT_UNITS as readonly string[]).includes(input.unit)) throw new ValidationError("unit", "Choose a unit.");
-  if (!Number.isSafeInteger(input.purchasePrice) || input.purchasePrice < 0) throw new ValidationError("purchasePrice", "Enter the price paid.");
+  if (!(INGREDIENT_UNITS as readonly string[]).includes(input.unit))
+    throw new ValidationError("unit", "Choose a unit.");
+  if (!Number.isSafeInteger(input.purchasePrice) || input.purchasePrice < 0)
+    throw new ValidationError("purchasePrice", "Enter the price paid.");
   if (!(input.purchaseQuantity > 0)) throw new ValidationError("purchaseQuantity", "Enter how much that price buys.");
   return { ...input, name };
 }
@@ -161,4 +195,3 @@ export class SaveRecipe {
     return this.pricing.saveRecipe(productId, lines);
   }
 }
-

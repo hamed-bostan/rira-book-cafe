@@ -6,6 +6,9 @@ export function eventTitle(event: Pick<CafeEvent, "title" | "titleFa">, locale: 
 }
 
 /** An event's description in the guest's language, falling back to the base copy. */
-export function eventDescription(event: Pick<CafeEvent, "description" | "descriptionFa">, locale: string): string | undefined {
+export function eventDescription(
+  event: Pick<CafeEvent, "description" | "descriptionFa">,
+  locale: string,
+): string | undefined {
   return locale === "fa" && event.descriptionFa ? event.descriptionFa : event.description;
 }

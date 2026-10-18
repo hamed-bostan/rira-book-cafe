@@ -37,10 +37,20 @@ type Fake = {
 };
 
 function activityLog(): Fake {
-  const list = vi.fn<IActivityLog["list"]>(async (_filters, page) => ({ items: [ENTRY], total: 1, page: page.page, pageSize: page.pageSize }));
+  const list = vi.fn<IActivityLog["list"]>(async (_filters, page) => ({
+    items: [ENTRY],
+    total: 1,
+    page: page.page,
+    pageSize: page.pageSize,
+  }));
   const listForEntity = vi.fn<IActivityLog["listForEntity"]>(async () => [ENTRY]);
   const listActors = vi.fn<IActivityLog["listActors"]>(async () => [{ id: "a1", name: "Admin" }]);
-  return { log: { list, listForEntity, listActors, recordEvent: vi.fn(async () => {}) }, list, listForEntity, listActors };
+  return {
+    log: { list, listForEntity, listActors, recordEvent: vi.fn(async () => {}) },
+    list,
+    listForEntity,
+    listActors,
+  };
 }
 
 const PAGE = { page: 1, pageSize: 25 };
@@ -104,6 +114,9 @@ describe("ActivityEntry helpers", () => {
     const changes = diffFields({ name: "A", price: 1, note: "" }, { name: "B", price: 1, note: undefined });
     expect(changes).toEqual([{ field: "name", before: "A", after: "B" }]);
     expect(singleChange("role", "staff", "admin")).toEqual([{ field: "role", before: "staff", after: "admin" }]);
-    expect(changedFields([...changes, ...changes, { field: "price", before: "1", after: "2" }])).toEqual(["name", "price"]);
+    expect(changedFields([...changes, ...changes, { field: "price", before: "1", after: "2" }])).toEqual([
+      "name",
+      "price",
+    ]);
   });
 });

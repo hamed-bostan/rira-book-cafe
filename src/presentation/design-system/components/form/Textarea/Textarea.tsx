@@ -23,12 +23,7 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
   ({ className, variant, ...props }, ref) => (
     <textarea
       ref={ref}
-      className={cn(
-        baseFieldStyles({ variant }),
-        "min-h-32 resize-y p-3 text-body-default",
-        focusRing,
-        className,
-      )}
+      className={cn(baseFieldStyles({ variant }), "min-h-32 resize-y p-3 text-body-default", focusRing, className)}
       {...props}
     />
   ),

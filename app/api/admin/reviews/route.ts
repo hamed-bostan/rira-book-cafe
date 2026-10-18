@@ -23,7 +23,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   if (!VIEW_SET.has(view)) return errorResponse(400, { message: "Unknown view.", code: "VALIDATION" });
 
   try {
-    const reviews = await new ListReviews(reviewRepository).execute({ view: view as ReviewView, q: params.get("q") ?? undefined });
+    const reviews = await new ListReviews(reviewRepository).execute({
+      view: view as ReviewView,
+      q: params.get("q") ?? undefined,
+    });
     return NextResponse.json(reviews);
   } catch (error) {
     return errorResponseFromException(error, "GET /api/admin/reviews failed");

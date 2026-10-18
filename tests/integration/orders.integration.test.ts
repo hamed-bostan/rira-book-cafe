@@ -29,7 +29,10 @@ async function placeAs(user: "customer" | "staff", body: unknown = takeaway): Pr
 }
 
 async function moveTo(orderId: string, status: string): Promise<Response> {
-  return changeStatus(jsonRequest("PATCH", `/api/admin/orders/${orderId}/status`, { status }), routeParams({ id: orderId }));
+  return changeStatus(
+    jsonRequest("PATCH", `/api/admin/orders/${orderId}/status`, { status }),
+    routeParams({ id: orderId }),
+  );
 }
 
 describe("placing an order", () => {
@@ -44,7 +47,10 @@ describe("placing an order", () => {
     const response = await placeOrder(jsonRequest("POST", "/api/orders", { items: [], serviceType: "dineIn" }));
 
     expect(response.status).toBe(400);
-    expect((await readError(response)).fieldErrors).toMatchObject({ items: "itemsRequired", tableLabel: "tableRequired" });
+    expect((await readError(response)).fieldErrors).toMatchObject({
+      items: "itemsRequired",
+      tableLabel: "tableRequired",
+    });
   });
 
   it("prices every line from the menu, not the request, and takes the stock", async () => {
@@ -70,7 +76,10 @@ describe("placing an order", () => {
   it("caps a line's quantity with 400", async () => {
     signInAs("customer");
     const response = await placeOrder(
-      jsonRequest("POST", "/api/orders", { items: [{ productId: "seed-espresso", quantity: 51 }], serviceType: "takeaway" }),
+      jsonRequest("POST", "/api/orders", {
+        items: [{ productId: "seed-espresso", quantity: 51 }],
+        serviceType: "takeaway",
+      }),
     );
 
     expect(response.status).toBe(400);
@@ -82,7 +91,10 @@ describe("placing an order", () => {
     await prisma.product.update({ where: { id: "seed-espresso" }, data: { stockQuantity: 1 } });
     signInAs("customer");
     const response = await placeOrder(
-      jsonRequest("POST", "/api/orders", { items: [{ productId: "seed-espresso", quantity: 2 }], serviceType: "takeaway" }),
+      jsonRequest("POST", "/api/orders", {
+        items: [{ productId: "seed-espresso", quantity: 2 }],
+        serviceType: "takeaway",
+      }),
     );
 
     expect(response.status).toBe(409);
@@ -117,7 +129,10 @@ describe("a guest's own orders", () => {
   it("lets the guest cancel a pending order and puts the stock back", async () => {
     const order = await placeAs("customer");
 
-    const response = await cancelOrder(jsonRequest("POST", `/api/orders/${order.id}/cancel`), routeParams({ id: order.id }));
+    const response = await cancelOrder(
+      jsonRequest("POST", `/api/orders/${order.id}/cancel`),
+      routeParams({ id: order.id }),
+    );
 
     expect(response.status).toBe(200);
     expect((await readJson<Order>(response)).status).toBe("cancelled");
@@ -131,7 +146,10 @@ describe("a guest's own orders", () => {
     expect((await moveTo(order.id, "accepted")).status).toBe(200);
 
     signInAs("customer");
-    const response = await cancelOrder(jsonRequest("POST", `/api/orders/${order.id}/cancel`), routeParams({ id: order.id }));
+    const response = await cancelOrder(
+      jsonRequest("POST", `/api/orders/${order.id}/cancel`),
+      routeParams({ id: order.id }),
+    );
 
     expect(response.status).toBe(409);
     expect((await readError(response)).code).toBe("INVALID_TRANSITION");
@@ -149,7 +167,10 @@ describe("staff working an order", () => {
       expect((await readJson<Order>(response)).status).toBe(status);
     }
 
-    const events = await prisma.orderStatusEvent.findMany({ where: { orderId: order.id }, orderBy: { createdAt: "asc" } });
+    const events = await prisma.orderStatusEvent.findMany({
+      where: { orderId: order.id },
+      orderBy: { createdAt: "asc" },
+    });
     expect(events.map((event) => event.toStatus)).toEqual(["pending", "accepted", "preparing", "ready"]);
   });
 

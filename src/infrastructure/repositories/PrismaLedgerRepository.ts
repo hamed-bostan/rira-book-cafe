@@ -1,7 +1,14 @@
 import { Prisma } from "@prisma/client";
 
 import type { AccountMovement } from "@/src/domain/entities/AccountingReports";
-import { ACCOUNT_TYPES, type Account, type AccountingSettings, type AccountType, type JournalEntry, type NewJournalEntry } from "@/src/domain/entities/Ledger";
+import {
+  ACCOUNT_TYPES,
+  type Account,
+  type AccountingSettings,
+  type AccountType,
+  type JournalEntry,
+  type NewJournalEntry,
+} from "@/src/domain/entities/Ledger";
 import { createPage, toSkipTake, type Page, type PageRequest } from "@/src/domain/entities/Pagination";
 import { ConflictError } from "@/src/domain/errors/ConflictError";
 import { NotFoundError } from "@/src/domain/errors/NotFoundError";
@@ -19,7 +26,15 @@ import type {
 import { prisma } from "@/src/infrastructure/prisma/client";
 
 import { recordAudit } from "./writeActivityEntry";
-import { dateToDay, dayToDate, ENTRY_WITH_LINES, postEntry, readSettings, reverseEntry, toJournalEntry } from "./writeJournal";
+import {
+  dateToDay,
+  dayToDate,
+  ENTRY_WITH_LINES,
+  postEntry,
+  readSettings,
+  reverseEntry,
+  toJournalEntry,
+} from "./writeJournal";
 
 /**
  * The general ledger, backed by PostgreSQL. Writes go through `writeJournal`'s
@@ -40,7 +55,9 @@ export class PrismaLedgerRepository implements ILedgerRepository {
   async createAccount(input: NewAccount, audit?: AuditHook<Account>): Promise<Account> {
     try {
       return await prisma.$transaction(async (tx) => {
-        const account = toAccount(await tx.ledgerAccount.create({ data: { ...input, isSystem: false, isActive: true } }));
+        const account = toAccount(
+          await tx.ledgerAccount.create({ data: { ...input, isSystem: false, isActive: true } }),
+        );
         await recordAudit(tx, account, audit);
         return account;
       });
@@ -67,7 +84,10 @@ export class PrismaLedgerRepository implements ILedgerRepository {
     return readSettings(prisma);
   }
 
-  async updateSettings(settings: AccountingSettings, audit?: AuditHook<AccountingSettings>): Promise<AccountingSettings> {
+  async updateSettings(
+    settings: AccountingSettings,
+    audit?: AuditHook<AccountingSettings>,
+  ): Promise<AccountingSettings> {
     const data = {
       vatRateBps: settings.vatRateBps,
       booksClosedThrough: settings.booksClosedThrough ? dayToDate(settings.booksClosedThrough) : null,
@@ -80,7 +100,11 @@ export class PrismaLedgerRepository implements ILedgerRepository {
     });
   }
 
-  async closeYear(entry: NewJournalEntry, closeThrough: string, audit?: AuditHook<JournalEntry>): Promise<JournalEntry> {
+  async closeYear(
+    entry: NewJournalEntry,
+    closeThrough: string,
+    audit?: AuditHook<JournalEntry>,
+  ): Promise<JournalEntry> {
     return prisma.$transaction(async (tx) => {
       const posted = await postEntry(tx, entry);
       const settings = await readSettings(tx);
@@ -167,7 +191,11 @@ export class PrismaLedgerRepository implements ILedgerRepository {
         AND (${toDay ?? null}::date IS NULL OR e.date <= ${toDay ?? null}::date)
         AND (${options.excludeClosing === true} = false OR e.source <> 'yearClose')
       GROUP BY l.account_code`;
-    return rows.map((row) => ({ accountCode: row.account_code, debit: Number(row.debit ?? 0), credit: Number(row.credit ?? 0) }));
+    return rows.map((row) => ({
+      accountCode: row.account_code,
+      debit: Number(row.debit ?? 0),
+      credit: Number(row.credit ?? 0),
+    }));
   }
 
   async accountLines(code: string, fromDay: string, toDay: string): Promise<RawLedgerLine[]> {

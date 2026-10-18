@@ -58,10 +58,7 @@ export class GrantAdmin {
     // they already hold is a harmless no-op on the row, but mailing them "you've
     // been given access" a second time is not — and the log tracks changes, not
     // clicks.
-    const [existing, actor] = await Promise.all([
-      this.userRepo.getById(id),
-      this.userRepo.getById(actorId),
-    ]);
+    const [existing, actor] = await Promise.all([this.userRepo.getById(id), this.userRepo.getById(actorId)]);
     // Compared against the *requested* role rather than against "admin": moving
     // someone from support to staff is a real change and must be recorded, while
     // re-granting the role they already hold still isn't.
@@ -87,10 +84,7 @@ export class GrantAdmin {
     // SMS failure must not fail the grant or leave the caller thinking it didn't
     // happen (see `ITeamNotifier`).
     if (this.notifier && signInUrl && !unchanged) {
-      await this.notifier.adminGranted(
-        { name: user.name, phone: user.phone, email: user.email },
-        signInUrl,
-      );
+      await this.notifier.adminGranted({ name: user.name, phone: user.phone, email: user.email }, signInUrl);
     }
 
     return user;

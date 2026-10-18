@@ -16,7 +16,14 @@ import { NotFoundError } from "../../../errors/NotFoundError";
 import { ValidationError } from "../../../errors/ValidationError";
 import { AddOrderNote } from "../AddOrderNote";
 import { ListOrderNotes } from "../ListOrderNotes";
-import { GetOrderById, GetOrderStatusCounts, GetOwnOrder, ListOrders, ListOrderStatusEvents, ListOwnOrders } from "../OrderQueries";
+import {
+  GetOrderById,
+  GetOrderStatusCounts,
+  GetOwnOrder,
+  ListOrders,
+  ListOrderStatusEvents,
+  ListOwnOrders,
+} from "../OrderQueries";
 
 import type { OrderStatusEvent } from "../../../entities/OrderStatusEvent";
 import type { IOrderNoteRepository } from "../../../repositories/IOrderNoteRepository";
@@ -25,7 +32,16 @@ import type { IOrderRepository } from "../../../repositories/IOrderRepository";
 const AUTHOR = { id: "s1", name: "Support" };
 
 function item(overrides: Partial<OrderItem> = {}): OrderItem {
-  return { id: "i1", productId: "p1", kind: "drink", name: "Latte", imageUrl: "", unitPrice: 100, quantity: 2, ...overrides };
+  return {
+    id: "i1",
+    productId: "p1",
+    kind: "drink",
+    name: "Latte",
+    imageUrl: "",
+    unitPrice: 100,
+    quantity: 2,
+    ...overrides,
+  };
 }
 
 function order(overrides: Partial<Order> = {}): Order {
@@ -57,11 +73,32 @@ type OrdersFake = {
   listStatusEvents: ReturnType<typeof vi.fn<IOrderRepository["listStatusEvents"]>>;
 };
 
-const COUNTS: OrderStatusCounts = { pending: 1, accepted: 0, preparing: 2, ready: 0, completed: 5, cancelled: 1, active: 3 };
-const EVENT: OrderStatusEvent = { id: "ev1", orderId: "o1", from: null, to: "pending", actorId: "g1", actorName: "Sara", at: "" };
+const COUNTS: OrderStatusCounts = {
+  pending: 1,
+  accepted: 0,
+  preparing: 2,
+  ready: 0,
+  completed: 5,
+  cancelled: 1,
+  active: 3,
+};
+const EVENT: OrderStatusEvent = {
+  id: "ev1",
+  orderId: "o1",
+  from: null,
+  to: "pending",
+  actorId: "g1",
+  actorName: "Sara",
+  at: "",
+};
 
 function orders(rows: Order[]): OrdersFake {
-  const listPage = vi.fn<IOrderRepository["listPage"]>(async (_filters, page) => ({ items: rows, total: rows.length, page: page.page, pageSize: page.pageSize }));
+  const listPage = vi.fn<IOrderRepository["listPage"]>(async (_filters, page) => ({
+    items: rows,
+    total: rows.length,
+    page: page.page,
+    pageSize: page.pageSize,
+  }));
   const listStatusEvents = vi.fn<IOrderRepository["listStatusEvents"]>(async () => [EVENT]);
   const repo = {
     getById: vi.fn(async (id: string) => rows.find((row) => row.id === id) ?? null),
@@ -74,9 +111,15 @@ function orders(rows: Order[]): OrdersFake {
 }
 
 function notes(): { repo: IOrderNoteRepository; create: ReturnType<typeof vi.fn<IOrderNoteRepository["create"]>> } {
-  const create = vi.fn<IOrderNoteRepository["create"]>(async (input): Promise<OrderNote> => ({ ...input, id: "n1", createdAt: "" }));
+  const create = vi.fn<IOrderNoteRepository["create"]>(async (input): Promise<OrderNote> => ({
+    ...input,
+    id: "n1",
+    createdAt: "",
+  }));
   const repo: IOrderNoteRepository = {
-    listForOrder: vi.fn(async (orderId: string): Promise<OrderNote[]> => [{ id: "n1", orderId, authorId: "s1", authorName: "Support", body: "hi", createdAt: "" }]),
+    listForOrder: vi.fn(async (orderId: string): Promise<OrderNote[]> => [
+      { id: "n1", orderId, authorId: "s1", authorName: "Support", body: "hi", createdAt: "" },
+    ]),
     listForOrders: vi.fn(async () => []),
     create,
   };
@@ -87,7 +130,12 @@ describe("AddOrderNote", () => {
   it("trims the note and snapshots the author", async () => {
     const { repo, create } = notes();
     const note = await new AddOrderNote(repo, orders([order()]).repo).execute("o1", "  oat milk instead  ", AUTHOR);
-    expect(create).toHaveBeenCalledWith({ orderId: "o1", authorId: "s1", authorName: "Support", body: "oat milk instead" });
+    expect(create).toHaveBeenCalledWith({
+      orderId: "o1",
+      authorId: "s1",
+      authorName: "Support",
+      body: "oat milk instead",
+    });
     expect(note.id).toBe("n1");
   });
 
@@ -96,7 +144,9 @@ describe("AddOrderNote", () => {
     ["too long", "x".repeat(MAX_ORDER_NOTE_LENGTH + 1)],
   ])("refuses a %s note", async (_label, body) => {
     const { repo, create } = notes();
-    await expect(new AddOrderNote(repo, orders([order()]).repo).execute("o1", body, AUTHOR)).rejects.toThrow(ValidationError);
+    await expect(new AddOrderNote(repo, orders([order()]).repo).execute("o1", body, AUTHOR)).rejects.toThrow(
+      ValidationError,
+    );
     expect(create).not.toHaveBeenCalled();
   });
 
@@ -108,7 +158,9 @@ describe("AddOrderNote", () => {
 
   it("won't attach a note to an order that doesn't exist", async () => {
     const { repo, create } = notes();
-    await expect(new AddOrderNote(repo, orders([]).repo).execute("missing", "hi", AUTHOR)).rejects.toThrow(NotFoundError);
+    await expect(new AddOrderNote(repo, orders([]).repo).execute("missing", "hi", AUTHOR)).rejects.toThrow(
+      NotFoundError,
+    );
     expect(create).not.toHaveBeenCalled();
   });
 

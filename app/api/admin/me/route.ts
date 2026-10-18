@@ -25,10 +25,7 @@ export async function GET(): Promise<NextResponse> {
   const session = await getSessionWith("dashboard.view");
   if (!session) return unauthorizedResponse();
 
-  const [user, role] = await Promise.all([
-    userRepository.getById(session.user.id),
-    sessionRole(session),
-  ]);
+  const [user, role] = await Promise.all([userRepository.getById(session.user.id), sessionRole(session)]);
 
   // The account backing an active session vanished mid-request (deleted
   // between the permission check and this read). Nothing sensible to draw

@@ -47,15 +47,23 @@ describe("ListProductReviews", () => {
     const { repo, listApproved } = reviews();
     const shown = await new ListProductReviews(repo).execute("p1");
     expect(listApproved).toHaveBeenCalledWith("p1", PUBLIC_REVIEW_LIMIT);
-    expect(shown).toEqual([{ id: "r1", authorName: "Sara", rating: 5, comment: "Lovely", createdAt: "2026-10-19T10:00:00Z" }]);
+    expect(shown).toEqual([
+      { id: "r1", authorName: "Sara", rating: 5, comment: "Lovely", createdAt: "2026-10-19T10:00:00Z" },
+    ]);
   });
 });
 
 describe("GetReviewEligibility", () => {
   it("combines whether they had it with the review they already wrote", async () => {
     const own = review({ status: "pending" });
-    expect(await new GetReviewEligibility(reviews({ purchased: true, own }).repo).execute("p1", "g1")).toEqual({ canReview: true, review: own });
-    expect(await new GetReviewEligibility(reviews().repo).execute("p1", "g1")).toEqual({ canReview: false, review: null });
+    expect(await new GetReviewEligibility(reviews({ purchased: true, own }).repo).execute("p1", "g1")).toEqual({
+      canReview: true,
+      review: own,
+    });
+    expect(await new GetReviewEligibility(reviews().repo).execute("p1", "g1")).toEqual({
+      canReview: false,
+      review: null,
+    });
   });
 });
 

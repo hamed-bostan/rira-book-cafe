@@ -26,7 +26,8 @@ const RECEIPT: StockReceiptFormInput = {
   payment: "bank",
 };
 
-const lines = (count: number): PricedLine[] => Array.from({ length: count }, (_, index) => ({ ...BEANS, ingredientId: `ing-${index}` }));
+const lines = (count: number): PricedLine[] =>
+  Array.from({ length: count }, (_, index) => ({ ...BEANS, ingredientId: `ing-${index}` }));
 
 describe("stockReceiptSchema", () => {
   it("parses lines and turns the payment choice into a paying source", () => {
@@ -46,7 +47,9 @@ describe("stockReceiptSchema", () => {
   });
 
   it("keeps a supplier and an unpaid delivery on account", () => {
-    expect(stockReceiptSchema.parse({ ...RECEIPT, supplierId: " sup-1 ", vatAmount: "216000", payment: "unpaid" })).toMatchObject({
+    expect(
+      stockReceiptSchema.parse({ ...RECEIPT, supplierId: " sup-1 ", vatAmount: "216000", payment: "unpaid" }),
+    ).toMatchObject({
       supplierId: "sup-1",
       vatAmount: 216000,
       paidFrom: undefined,
@@ -61,7 +64,9 @@ describe("stockReceiptSchema", () => {
   it("bounds the number of lines", () => {
     expect(messagesAt(stockReceiptSchema.safeParse({ ...RECEIPT, lines: [] }), "lines")).toContain("linesTooFew");
     expect(stockReceiptSchema.safeParse({ ...RECEIPT, lines: lines(200) }).success).toBe(true);
-    expect(messagesAt(stockReceiptSchema.safeParse({ ...RECEIPT, lines: lines(201) }), "lines")).toEqual(["linesTooMany"]);
+    expect(messagesAt(stockReceiptSchema.safeParse({ ...RECEIPT, lines: lines(201) }), "lines")).toEqual([
+      "linesTooMany",
+    ]);
   });
 
   it("maps each invalid field to its message key", () => {
@@ -90,7 +95,9 @@ describe("wasteSchema", () => {
   });
 
   it("maps each invalid field to its message key", () => {
-    const fieldErrors = wasteSchema.safeParse({ date: "", ingredientId: " ", quantity: "-1", note: "n".repeat(201) }).error?.flatten().fieldErrors;
+    const fieldErrors = wasteSchema
+      .safeParse({ date: "", ingredientId: " ", quantity: "-1", note: "n".repeat(201) })
+      .error?.flatten().fieldErrors;
     expect(fieldErrors?.date).toContain("dateRequired");
     expect(fieldErrors?.ingredientId).toEqual(["ingredientRequired"]);
     expect(fieldErrors?.quantity).toEqual(["quantityInvalid"]);
@@ -125,19 +132,29 @@ describe("stockCountSchema", () => {
   });
 
   it("needs a line, each with a numeric count", () => {
-    expect(messagesAt(stockCountSchema.safeParse({ date: "2026-10-17", lines: [], note: "" }), "lines")).toEqual(["linesTooFew"]);
-    const result = stockCountSchema.safeParse({ date: "2026-10-17", lines: [{ ingredientId: "ing-beans", counted: "lots" }], note: "" });
+    expect(messagesAt(stockCountSchema.safeParse({ date: "2026-10-17", lines: [], note: "" }), "lines")).toEqual([
+      "linesTooFew",
+    ]);
+    const result = stockCountSchema.safeParse({
+      date: "2026-10-17",
+      lines: [{ ingredientId: "ing-beans", counted: "lots" }],
+      note: "",
+    });
     expect(messagesAt(result, "lines.0.counted")).toEqual(["quantityInvalid"]);
   });
 });
 
 describe("openingStockSchema", () => {
   it("allows lines with no cost", () => {
-    expect(openingStockSchema.parse({ date: "2026-03-21", lines: [SYRUP] }).lines).toEqual([{ ingredientId: "ing-syrup", quantity: 0.5, cost: 0 }]);
+    expect(openingStockSchema.parse({ date: "2026-03-21", lines: [SYRUP] }).lines).toEqual([
+      { ingredientId: "ing-syrup", quantity: 0.5, cost: 0 },
+    ]);
   });
 
   it("needs at least one line", () => {
-    expect(openingStockSchema.safeParse({ date: "2026-03-21", lines: [] }).error?.flatten().fieldErrors.lines).toEqual(["linesTooFew"]);
+    expect(openingStockSchema.safeParse({ date: "2026-03-21", lines: [] }).error?.flatten().fieldErrors.lines).toEqual([
+      "linesTooFew",
+    ]);
   });
 });
 
@@ -149,7 +166,9 @@ describe("reorderLevelSchema", () => {
   });
 
   it("refuses a negative level", () => {
-    expect(reorderLevelSchema.safeParse({ reorderLevel: "-1" }).error?.flatten().fieldErrors.reorderLevel).toEqual(["quantityInvalid"]);
+    expect(reorderLevelSchema.safeParse({ reorderLevel: "-1" }).error?.flatten().fieldErrors.reorderLevel).toEqual([
+      "quantityInvalid",
+    ]);
   });
 });
 

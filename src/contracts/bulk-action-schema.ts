@@ -14,10 +14,7 @@ import { z } from "zod";
  */
 
 /** Ids a bulk action applies to. Bounded here too — the use-cases enforce the same cap. */
-const idsField = z
-  .array(z.string().min(1))
-  .min(1, "selectionRequired")
-  .max(200, "selectionTooLarge");
+const idsField = z.array(z.string().min(1)).min(1, "selectionRequired").max(200, "selectionTooLarge");
 
 /**
  * What to do to the selected products.

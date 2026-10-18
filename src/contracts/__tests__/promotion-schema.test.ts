@@ -49,14 +49,29 @@ describe("promoCodeFormSchema", () => {
   });
 
   it("leaves an open-ended window and an absent cap undefined", () => {
-    const parsed = promoCodeFormSchema.parse({ ...PROMO, startsOn: " ", endsOn: "", maxDiscount: "", minSubtotal: " 300000 ", usageLimit: "100" });
-    expect(parsed).toMatchObject({ startsAt: undefined, endsAt: undefined, maxDiscount: undefined, minSubtotal: 300000, usageLimit: 100 });
+    const parsed = promoCodeFormSchema.parse({
+      ...PROMO,
+      startsOn: " ",
+      endsOn: "",
+      maxDiscount: "",
+      minSubtotal: " 300000 ",
+      usageLimit: "100",
+    });
+    expect(parsed).toMatchObject({
+      startsAt: undefined,
+      endsAt: undefined,
+      maxDiscount: undefined,
+      minSubtotal: 300000,
+      usageLimit: 100,
+    });
     expect(parsed).not.toHaveProperty("startsOn");
     expect(parsed).not.toHaveProperty("endsOn");
   });
 
   it("drops the cap on a fixed-amount code and allows values above 100", () => {
-    expect(promoCodeFormSchema.parse({ ...PROMO, kind: "fixed", value: "250000", description: " Autumn " })).toMatchObject({
+    expect(
+      promoCodeFormSchema.parse({ ...PROMO, kind: "fixed", value: "250000", description: " Autumn " }),
+    ).toMatchObject({
       kind: "fixed",
       value: 250000,
       maxDiscount: undefined,
@@ -103,7 +118,9 @@ describe("promoCodeFormSchema", () => {
 
   it("refuses a window that ends before it starts, but allows a single day", () => {
     expect(promoErrors({ ...PROMO, startsOn: "2026-10-31", endsOn: "2026-10-20" })?.endsOn).toEqual(["endBeforeStart"]);
-    expect(promoCodeFormSchema.safeParse({ ...PROMO, startsOn: "2026-10-20", endsOn: "2026-10-20" }).success).toBe(true);
+    expect(promoCodeFormSchema.safeParse({ ...PROMO, startsOn: "2026-10-20", endsOn: "2026-10-20" }).success).toBe(
+      true,
+    );
   });
 
   it("refuses zero limits and a zero cap", () => {
@@ -130,14 +147,19 @@ describe("loyaltySettingsSchema", () => {
   });
 
   it("maps each invalid field to its message key", () => {
-    expect(loyaltySettingsSchema.safeParse({ ...SETTINGS, tomanPerPoint: 0, pointValue: 1.5, minRedeemPoints: -1 }).error?.flatten().fieldErrors).toEqual({
+    expect(
+      loyaltySettingsSchema
+        .safeParse({ ...SETTINGS, tomanPerPoint: 0, pointValue: 1.5, minRedeemPoints: -1 })
+        .error?.flatten().fieldErrors,
+    ).toEqual({
       tomanPerPoint: ["amountInvalid"],
       pointValue: ["amountInvalid"],
       minRedeemPoints: ["limitInvalid"],
     });
-    expect(loyaltySettingsSchema.safeParse({ ...SETTINGS, minRedeemPoints: 2.5 }).error?.flatten().fieldErrors.minRedeemPoints).toEqual([
-      "limitInvalid",
-    ]);
+    expect(
+      loyaltySettingsSchema.safeParse({ ...SETTINGS, minRedeemPoints: 2.5 }).error?.flatten().fieldErrors
+        .minRedeemPoints,
+    ).toEqual(["limitInvalid"]);
   });
 });
 
@@ -145,7 +167,11 @@ describe("pointsAdjustmentSchema", () => {
   const ADJUSTMENT: PointsAdjustmentInput = { phone: " 0912 345 6789 ", delta: -50, note: " Birthday gift " };
 
   it("trims the phone and the note", () => {
-    expect(pointsAdjustmentSchema.parse(ADJUSTMENT)).toEqual({ phone: "0912 345 6789", delta: -50, note: "Birthday gift" });
+    expect(pointsAdjustmentSchema.parse(ADJUSTMENT)).toEqual({
+      phone: "0912 345 6789",
+      delta: -50,
+      note: "Birthday gift",
+    });
   });
 
   it("accepts adjustments up to the cap either way", () => {
@@ -155,17 +181,23 @@ describe("pointsAdjustmentSchema", () => {
 
   it("refuses a zero, fractional or oversized delta", () => {
     for (const delta of [0, 1.5, MAX_POINTS_ADJUSTMENT + 1, -MAX_POINTS_ADJUSTMENT - 1]) {
-      expect(pointsAdjustmentSchema.safeParse({ ...ADJUSTMENT, delta }).error?.flatten().fieldErrors.delta).toContain("pointsInvalid");
+      expect(pointsAdjustmentSchema.safeParse({ ...ADJUSTMENT, delta }).error?.flatten().fieldErrors.delta).toContain(
+        "pointsInvalid",
+      );
     }
   });
 
   it("maps a bad phone and note to their message keys", () => {
-    expect(pointsAdjustmentSchema.safeParse({ ...ADJUSTMENT, phone: "12", note: " " }).error?.flatten().fieldErrors).toEqual({
+    expect(
+      pointsAdjustmentSchema.safeParse({ ...ADJUSTMENT, phone: "12", note: " " }).error?.flatten().fieldErrors,
+    ).toEqual({
       phone: ["phoneInvalid"],
       note: ["noteRequired"],
     });
-    expect(pointsAdjustmentSchema.safeParse({ ...ADJUSTMENT, note: "n".repeat(MAX_LOYALTY_NOTE_LENGTH + 1) }).error?.flatten().fieldErrors.note).toEqual([
-      "noteTooLong",
-    ]);
+    expect(
+      pointsAdjustmentSchema
+        .safeParse({ ...ADJUSTMENT, note: "n".repeat(MAX_LOYALTY_NOTE_LENGTH + 1) })
+        .error?.flatten().fieldErrors.note,
+    ).toEqual(["noteTooLong"]);
   });
 });

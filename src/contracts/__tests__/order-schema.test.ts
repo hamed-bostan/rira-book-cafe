@@ -20,6 +20,8 @@ describe("placeOrderSchema", () => {
 
   it("rejects empty orders and fractional quantities", () => {
     expect(placeOrderSchema.safeParse({ serviceType: "takeaway", items: [] }).success).toBe(false);
-    expect(placeOrderSchema.safeParse({ serviceType: "takeaway", items: [{ productId: "p1", quantity: 1.5 }] }).success).toBe(false);
+    expect(
+      placeOrderSchema.safeParse({ serviceType: "takeaway", items: [{ productId: "p1", quantity: 1.5 }] }).success,
+    ).toBe(false);
   });
 });

@@ -14,16 +14,23 @@ const ids = (count: number): string[] => Array.from({ length: count }, (_, index
 
 describe("productBulkRequestSchema", () => {
   it("accepts publish, unpublish and assignCategory", () => {
-    expect(productBulkRequestSchema.parse({ ids: ["a", "b"], action: { type: "publish" } })).toEqual({ ids: ["a", "b"], action: { type: "publish" } });
+    expect(productBulkRequestSchema.parse({ ids: ["a", "b"], action: { type: "publish" } })).toEqual({
+      ids: ["a", "b"],
+      action: { type: "publish" },
+    });
     expect(productBulkRequestSchema.safeParse({ ids: ["a"], action: { type: "unpublish" } }).success).toBe(true);
-    expect(productBulkRequestSchema.parse({ ids: ["a"], action: { type: "assignCategory", categoryId: "cat-1" } }).action).toEqual({
+    expect(
+      productBulkRequestSchema.parse({ ids: ["a"], action: { type: "assignCategory", categoryId: "cat-1" } }).action,
+    ).toEqual({
       type: "assignCategory",
       categoryId: "cat-1",
     });
   });
 
   it("strips fields a variant doesn't carry", () => {
-    expect(productBulkRequestSchema.parse({ ids: ["a"], action: { type: "publish", price: 0 } }).action).toEqual({ type: "publish" });
+    expect(productBulkRequestSchema.parse({ ids: ["a"], action: { type: "publish", price: 0 } }).action).toEqual({
+      type: "publish",
+    });
   });
 
   it("refuses an action the union has no variant for", () => {
@@ -33,15 +40,24 @@ describe("productBulkRequestSchema", () => {
   });
 
   it("requires a category to move products into", () => {
-    const result = productBulkRequestSchema.safeParse({ ids: ["a"], action: { type: "assignCategory", categoryId: "" } });
+    const result = productBulkRequestSchema.safeParse({
+      ids: ["a"],
+      action: { type: "assignCategory", categoryId: "" },
+    });
     expect(messagesAt(result, "action.categoryId")).toEqual(["categoryRequired"]);
   });
 
   it("bounds the selection", () => {
-    expect(messagesAt(productBulkRequestSchema.safeParse({ ids: [], action: { type: "publish" } }), "ids")).toEqual(["selectionRequired"]);
+    expect(messagesAt(productBulkRequestSchema.safeParse({ ids: [], action: { type: "publish" } }), "ids")).toEqual([
+      "selectionRequired",
+    ]);
     expect(productBulkRequestSchema.safeParse({ ids: ids(200), action: { type: "publish" } }).success).toBe(true);
-    expect(messagesAt(productBulkRequestSchema.safeParse({ ids: ids(201), action: { type: "publish" } }), "ids")).toEqual(["selectionTooLarge"]);
-    expect(messagesAt(productBulkRequestSchema.safeParse({ ids: [""], action: { type: "publish" } }), "ids.0")).toHaveLength(1);
+    expect(
+      messagesAt(productBulkRequestSchema.safeParse({ ids: ids(201), action: { type: "publish" } }), "ids"),
+    ).toEqual(["selectionTooLarge"]);
+    expect(
+      messagesAt(productBulkRequestSchema.safeParse({ ids: [""], action: { type: "publish" } }), "ids.0"),
+    ).toHaveLength(1);
   });
 });
 
@@ -53,13 +69,18 @@ describe("categoryBulkRequestSchema", () => {
   });
 
   it("bounds the selection", () => {
-    expect(messagesAt(categoryBulkRequestSchema.safeParse({ ids: [], action: { type: "activate" } }), "ids")).toEqual(["selectionRequired"]);
+    expect(messagesAt(categoryBulkRequestSchema.safeParse({ ids: [], action: { type: "activate" } }), "ids")).toEqual([
+      "selectionRequired",
+    ]);
   });
 });
 
 describe("reviewBulkRequestSchema", () => {
   it("approves or rejects, never sets pending", () => {
-    expect(reviewBulkRequestSchema.parse({ ids: ["r1"], status: "approved" })).toEqual({ ids: ["r1"], status: "approved" });
+    expect(reviewBulkRequestSchema.parse({ ids: ["r1"], status: "approved" })).toEqual({
+      ids: ["r1"],
+      status: "approved",
+    });
     expect(reviewBulkRequestSchema.safeParse({ ids: ["r1"], status: "rejected" }).success).toBe(true);
     expect(messagesAt(reviewBulkRequestSchema.safeParse({ ids: ["r1"], status: "pending" }), "status")).toHaveLength(1);
   });
@@ -67,7 +88,9 @@ describe("reviewBulkRequestSchema", () => {
 
 describe("orderBulkRequestSchema", () => {
   it("moves a delivery stage or cancels", () => {
-    expect(orderBulkRequestSchema.parse({ ids: ["o1"], action: { type: "setStage", stage: "shipped" } }).action).toEqual({
+    expect(
+      orderBulkRequestSchema.parse({ ids: ["o1"], action: { type: "setStage", stage: "shipped" } }).action,
+    ).toEqual({
       type: "setStage",
       stage: "shipped",
     });
@@ -81,8 +104,12 @@ describe("orderBulkRequestSchema", () => {
 
   it("caps the selection tighter than products", () => {
     expect(orderBulkRequestSchema.safeParse({ ids: ids(100), action: { type: "cancel" } }).success).toBe(true);
-    expect(messagesAt(orderBulkRequestSchema.safeParse({ ids: ids(101), action: { type: "cancel" } }), "ids")).toEqual(["selectionTooLarge"]);
-    expect(messagesAt(orderBulkRequestSchema.safeParse({ ids: [], action: { type: "cancel" } }), "ids")).toEqual(["selectionRequired"]);
+    expect(messagesAt(orderBulkRequestSchema.safeParse({ ids: ids(101), action: { type: "cancel" } }), "ids")).toEqual([
+      "selectionTooLarge",
+    ]);
+    expect(messagesAt(orderBulkRequestSchema.safeParse({ ids: [], action: { type: "cancel" } }), "ids")).toEqual([
+      "selectionRequired",
+    ]);
   });
 });
 

@@ -16,6 +16,8 @@ export const TEST_DATABASE_URL: string =
 export function assertTestDatabase(url: string): void {
   const name = new URL(url).pathname.replace(/^\//, "");
   if (!/test/i.test(name)) {
-    throw new Error(`Refusing to reset database "${name}": its name must contain "test" (see tests/fixtures/test-env.ts).`);
+    throw new Error(
+      `Refusing to reset database "${name}": its name must contain "test" (see tests/fixtures/test-env.ts).`,
+    );
   }
 }

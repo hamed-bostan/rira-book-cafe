@@ -5,6 +5,7 @@ import { MAX_IMAGE_BYTES, UploadImage } from "@/src/domain/use-cases/images/Uplo
 import { imageStorageRepository } from "@/src/infrastructure/container";
 import { enforceRateLimit, RATE_LIMITS } from "@/src/lib/api/rate-limit";
 import { readBodyWithLimit } from "@/src/lib/api/read-body";
+import { requestLogger } from "@/src/lib/api/requestLogger";
 import { errorResponse, errorResponseFromException, unauthorizedResponse } from "@/src/lib/api/responses";
 import { AVATAR_IMAGE_FOLDER, MANAGED_IMAGE_FOLDERS } from "@/src/lib/imageFolders";
 import { getUserSession } from "@/src/lib/require-auth";
@@ -85,7 +86,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   } catch (error) {
     // Empty, oversized or not an image — the client's fault, answered 400.
     if (error instanceof ValidationError) return errorResponseFromException(error, "Image upload rejected");
-    console.error("Image upload failed:", error);
+    requestLogger(request).error("Image upload failed", { error, folder });
     return errorResponse(502, { message: "Image upload failed. Please try again.", code: "UPLOAD_FAILED" });
   }
 }

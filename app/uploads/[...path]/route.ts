@@ -3,6 +3,7 @@ import path from "node:path";
 
 import { resolveStoredImageFile } from "@/src/infrastructure/container";
 import { IMAGE_EXTENSION_BY_MIME } from "@/src/infrastructure/repositories/LocalDiskImageStorageRepository";
+import { requestLogger } from "@/src/lib/api/requestLogger";
 import { detectImageType } from "@/src/lib/detectImageType";
 
 const MIME_BY_EXTENSION: Record<string, string> = Object.fromEntries(
@@ -23,7 +24,7 @@ type RouteContext = { params: Promise<{ path: string[] }> };
  * browser to guess (`nosniff`), and a lock-down CSP + `sandbox` neuters it should
  * it ever be opened as a document.
  */
-export async function GET(_request: Request, { params }: RouteContext): Promise<Response> {
+export async function GET(request: Request, { params }: RouteContext): Promise<Response> {
   const segments = (await params).path;
   const contentType = MIME_BY_EXTENSION[path.extname(segments.at(-1) ?? "").toLowerCase()];
   const file = contentType ? resolveStoredImageFile(segments.join("/")) : null;
@@ -45,7 +46,7 @@ export async function GET(_request: Request, { params }: RouteContext): Promise<
     const code = (error as NodeJS.ErrnoException).code;
     // Missing, or a directory named like an image.
     if (code === "ENOENT" || code === "EISDIR") return new Response("Not found", { status: 404 });
-    console.error("Serving upload failed:", error);
+    requestLogger(request).error("Serving upload failed", { error, path: segments.join("/") });
     return new Response("Server error", { status: 500 });
   }
 }

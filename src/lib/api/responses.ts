@@ -10,6 +10,8 @@ import { PaymentGatewayError } from "@/src/domain/errors/PaymentGatewayError";
 import { ResourceInUseError } from "@/src/domain/errors/ResourceInUseError";
 import { UniqueConstraintError } from "@/src/domain/errors/UniqueConstraintError";
 import { ValidationError } from "@/src/domain/errors/ValidationError";
+import type { ILogger } from "@/src/domain/repositories/ILogger";
+import { logger } from "@/src/infrastructure/container";
 
 /**
  * Server-side helpers for REST route handlers (Next.js `app/api/**` only — never
@@ -55,7 +57,7 @@ export function tooManyRequestsResponse(retryAfterSeconds: number): NextResponse
  * map to 4xx with a user-presentable message; anything else is an unexpected 500
  * and is logged server-side (its detail is never leaked to the client).
  */
-export function errorResponseFromException(error: unknown, context: string): NextResponse {
+export function errorResponseFromException(error: unknown, context: string, log: ILogger = logger): NextResponse {
   // A query-param or body schema rejected the request — the client's fault, not
   // an unexpected failure, so it's a 400 with per-field detail rather than a
   // logged 500.
@@ -130,12 +132,15 @@ export function errorResponseFromException(error: unknown, context: string): Nex
   // The payment gateway was unreachable or refused. Logged (it's an upstream
   // problem worth seeing), answered 502 so the client says "try again".
   if (error instanceof PaymentGatewayError) {
-    console.error(`${context}:`, error);
-    return errorResponse(502, { message: "The payment gateway isn't available right now.", code: "GATEWAY_UNAVAILABLE" });
+    log.error("Payment gateway unavailable", { error, context });
+    return errorResponse(502, {
+      message: "The payment gateway isn't available right now.",
+      code: "GATEWAY_UNAVAILABLE",
+    });
   }
 
-  console.error(`${context}:`, error);
-  return errorResponse(500,{ message: "Something went wrong. Please try again.", code: "INTERNAL" });
+  log.error("Unhandled error in route handler", { error, context });
+  return errorResponse(500, { message: "Something went wrong. Please try again.", code: "INTERNAL" });
 }
 
 /** Read and JSON-parse a request body, distinguishing "absent/invalid" from valid. */

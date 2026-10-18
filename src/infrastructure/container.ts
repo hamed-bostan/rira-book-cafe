@@ -6,12 +6,14 @@ import type { IBookLoanRepository } from "@/src/domain/repositories/IBookLoanRep
 import type { IBookWaitlistRepository } from "@/src/domain/repositories/IBookWaitlistRepository";
 import type { ICashShiftRepository } from "@/src/domain/repositories/ICashShiftRepository";
 import type { ICategoryRepository } from "@/src/domain/repositories/ICategoryRepository";
+import type { IDatabaseProbe } from "@/src/domain/repositories/IDatabaseProbe";
 import type { IEmailSender } from "@/src/domain/repositories/IEmailSender";
 import type { IEventRepository } from "@/src/domain/repositories/IEventRepository";
 import type { IExpenseRepository } from "@/src/domain/repositories/IExpenseRepository";
 import type { IImageStorageRepository } from "@/src/domain/repositories/IImageStorageRepository";
 import type { IInventoryRepository } from "@/src/domain/repositories/IInventoryRepository";
 import type { ILedgerRepository } from "@/src/domain/repositories/ILedgerRepository";
+import type { ILogger } from "@/src/domain/repositories/ILogger";
 import type { ILoyaltyRepository } from "@/src/domain/repositories/ILoyaltyRepository";
 import type { ICustomerNotifier, INotificationRepository } from "@/src/domain/repositories/INotificationRepository";
 import type { IOrderNoteRepository } from "@/src/domain/repositories/IOrderNoteRepository";
@@ -32,6 +34,8 @@ import { getEnv } from "@/src/lib/env";
 
 import { LoggingEmailSender } from "./email/LoggingEmailSender";
 import { SmtpEmailSender } from "./email/SmtpEmailSender";
+import { createPinoLogger } from "./logging/PinoLogger";
+import { reportErrorToSentry } from "./logging/reportErrorToSentry";
 import { CustomerNotifier } from "./notifications/CustomerNotifier";
 import { TeamNotifier } from "./notifications/TeamNotifier";
 import { ZarinpalPaymentGateway } from "./payments/ZarinpalPaymentGateway";
@@ -45,6 +49,7 @@ import { PrismaBookLoanRepository } from "./repositories/PrismaBookLoanRepositor
 import { PrismaBookWaitlistRepository } from "./repositories/PrismaBookWaitlistRepository";
 import { PrismaCashShiftRepository } from "./repositories/PrismaCashShiftRepository";
 import { PrismaCategoryRepository } from "./repositories/PrismaCategoryRepository";
+import { PrismaDatabaseProbe } from "./repositories/PrismaDatabaseProbe";
 import { PrismaEventRepository } from "./repositories/PrismaEventRepository";
 import { PrismaExpenseRepository } from "./repositories/PrismaExpenseRepository";
 import { PrismaInventoryRepository } from "./repositories/PrismaInventoryRepository";
@@ -75,6 +80,20 @@ import { SmsIrAuthRepository } from "./repositories/SmsIrAuthRepository";
  * from raw `process.env` reads.
  */
 const env = getEnv();
+
+// Structured logging — one JSON object per line on stdout in production (what
+// `docker logs` and any log shipper want), colored pretty lines in dev, silent
+// under tests. `LOG_LEVEL` overrides the level. Error-level lines are also
+// reported to the error tracker (a no-op without a Sentry/GlitchTip DSN).
+// Bound first: the adapters below log through it.
+export const logger: ILogger = createPinoLogger({
+  level:
+    process.env.LOG_LEVEL ||
+    (process.env.NODE_ENV === "test" ? "silent" : process.env.NODE_ENV === "production" ? "info" : "debug"),
+  pretty: process.env.NODE_ENV !== "production",
+  base: { service: "rira-book-cafe" },
+  reportError: reportErrorToSentry,
+});
 
 // Users — PostgreSQL via Prisma. Rows are created on first sign-in
 // (auth `authorize` → GetOrCreateUser).
@@ -124,7 +143,7 @@ export const reviewRepository: IReviewRepository = new PrismaReviewRepository();
 // Guest notifications — an inbox on the account page, no SMS. Written after the
 // change they announce has committed, best-effort (see `ICustomerNotifier`).
 export const notificationRepository: INotificationRepository = new PrismaNotificationRepository();
-export const customerNotifier: ICustomerNotifier = new CustomerNotifier(notificationRepository);
+export const customerNotifier: ICustomerNotifier = new CustomerNotifier(notificationRepository, logger);
 
 // Cafe aggregates — revenue, busy hours, best sellers, guests — computed in
 // PostgreSQL from the same rows the repositories above write, so there is no
@@ -158,7 +177,7 @@ export const bankReconciliationRepository: IBankReconciliationRepository = new P
 // Append-only audit trail of admin changes. Read-only here: entries are written by
 // the repositories that make the changes they describe, inside the same
 // transaction, from a `NewActivityEntry` the use-case built (see `AuditHook`).
-export const activityLog: IActivityLog = new PrismaActivityLog();
+export const activityLog: IActivityLog = new PrismaActivityLog(logger);
 
 // Real SMS OTP when an SMS.ir key is configured; the in-memory mock otherwise so
 // local dev works without credentials (the mock surfaces the code in the UI).
@@ -169,8 +188,9 @@ export const authRepository: IAuthRepository =
         apiKey: env.SMS_IR_API_KEY,
         templateId: env.SMS_IR_TEMPLATE_ID,
         baseUrl: env.SMS_IR_BASE_URL,
+        logger,
       })
-    : new MockAuthRepository();
+    : new MockAuthRepository(logger);
 
 // Rate limiting for sign-in, orders, uploads and team notices — counted in this
 // process's memory, which is exact while the app runs as one container. Anchored
@@ -183,16 +203,19 @@ export const rateLimiter: IRateLimiter = (rateLimiterRegistry.__rateLimiter ??= 
 // otherwise, so local dev and a fresh deployment work without mail credentials.
 // SMTP rather than a provider HTTP API: hosted mail APIs geo-block Iranian servers.
 export const emailSender: IEmailSender = env.SMTP_HOST
-  ? new SmtpEmailSender({
-      host: env.SMTP_HOST,
-      port: env.SMTP_PORT,
-      // Implicit TLS on 465; STARTTLS on 587 and everything else.
-      secure: env.SMTP_PORT === 465,
-      user: env.SMTP_USER,
-      password: env.SMTP_PASSWORD,
-      from: env.SMTP_FROM ?? "Rira Book Cafe <no-reply@localhost>",
-    })
-  : new LoggingEmailSender();
+  ? new SmtpEmailSender(
+      {
+        host: env.SMTP_HOST,
+        port: env.SMTP_PORT,
+        // Implicit TLS on 465; STARTTLS on 587 and everything else.
+        secure: env.SMTP_PORT === 465,
+        user: env.SMTP_USER,
+        password: env.SMTP_PASSWORD,
+        from: env.SMTP_FROM ?? "Rira Book Cafe <no-reply@localhost>",
+      },
+      logger,
+    )
+  : new LoggingEmailSender(logger);
 
 // Announces team changes — an admin grant, and both sides of an ownership move —
 // over email (when an address is on file) and SMS (when an approved pattern
@@ -203,6 +226,7 @@ export const teamNotifier: ITeamNotifier = new TeamNotifier(
     ? {
         apiKey: env.SMS_IR_API_KEY,
         baseUrl: env.SMS_IR_BASE_URL,
+        logger,
         templates: {
           adminGranted: env.SMS_IR_ADMIN_INVITE_TEMPLATE_ID,
           ownershipReceived: env.SMS_IR_OWNERSHIP_RECEIVED_TEMPLATE_ID,
@@ -215,10 +239,16 @@ export const teamNotifier: ITeamNotifier = new TeamNotifier(
 // Images on the server's own disk (a Docker volume in production), served back by
 // `app/uploads/[...path]/route.ts`. Server-side only. `UPLOADS_DIR` defaults to
 // `./storage/uploads` (gitignored) for local dev.
-const localImageStorage = new LocalDiskImageStorageRepository({
-  rootDir: env.UPLOADS_DIR ?? `${process.cwd()}/storage/uploads`,
-  publicPathPrefix: "/uploads",
-});
+const localImageStorage = new LocalDiskImageStorageRepository(
+  {
+    rootDir: env.UPLOADS_DIR ?? `${process.cwd()}/storage/uploads`,
+    publicPathPrefix: "/uploads",
+  },
+  logger,
+);
 export const imageStorageRepository: IImageStorageRepository = localImageStorage;
 /** Absolute file for a stored image path, or null when it escapes the uploads root. */
 export const resolveStoredImageFile = (objectPath: string): string | null => localImageStorage.resolve(objectPath);
+
+// Health check (`GET /api/health`): a `SELECT 1` on the shared Prisma pool.
+export const databaseProbe: IDatabaseProbe = new PrismaDatabaseProbe();

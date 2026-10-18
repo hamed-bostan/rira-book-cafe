@@ -7,6 +7,13 @@ import type { ILogger } from "@/src/domain/repositories/ILogger";
 
 import { errorResponseFromException, tooManyRequestsResponse } from "../responses";
 
+// `responses.ts` takes its default logger from the container, and loading the real
+// container wires up the whole app (env validation, Prisma). Each test passes its own
+// logger, so a stub keeps this a unit test that runs without a database or `.env`.
+vi.mock("@/src/infrastructure/container", () => ({
+  logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn(), child: vi.fn() },
+}));
+
 afterEach(() => {
   vi.restoreAllMocks();
 });

@@ -84,7 +84,10 @@ export class PrismaReservationRepository implements IReservationRepository {
         await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`table:${tableLabel}`}))`;
 
         const startsAt = current.startsAt;
-        const endsAt = reservationEndsAt({ startsAt: startsAt.toISOString(), durationMinutes: current.durationMinutes });
+        const endsAt = reservationEndsAt({
+          startsAt: startsAt.toISOString(),
+          durationMinutes: current.durationMinutes,
+        });
         const candidates = await tx.reservation.findMany({
           where: {
             id: { not: id },
@@ -95,7 +98,10 @@ export class PrismaReservationRepository implements IReservationRepository {
         });
         const clash = candidates.find((other) => reservationEndsAt(toReservation(other)) > startsAt);
         if (clash) {
-          throw new ConflictError("TABLE_TAKEN", `Table ${tableLabel} is already booked (R-${clash.reference}) at that time.`);
+          throw new ConflictError(
+            "TABLE_TAKEN",
+            `Table ${tableLabel} is already booked (R-${clash.reference}) at that time.`,
+          );
         }
       }
 

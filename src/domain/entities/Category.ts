@@ -8,4 +8,4 @@ export type Category = {
   productCount: number;
   createdAt: Date;
   updatedAt: Date;
-}
+};

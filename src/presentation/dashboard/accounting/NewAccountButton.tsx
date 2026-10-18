@@ -12,7 +12,14 @@ import { useRouter } from "@/src/i18n/navigation";
 import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
-import { Button, FormMessage, Icon, Input, Modal, ModalContent, Select, TextField } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
+import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
+import { Select } from "@/src/presentation/design-system/components/form/Select/Select";
+import { TextField } from "@/src/presentation/design-system/components/form/TextField/TextField";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { Modal, ModalContent } from "@/src/presentation/design-system/components/Modal/Modal";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { accountsApi } from "./accounting-api";
 
@@ -28,6 +35,7 @@ export function NewAccountButton() {
   const tFormErrors = useTranslations("formErrors");
   const fieldError = (message?: string): string | undefined => formErrorMessage(tFormErrors, message);
   const router = useRouter();
+  const { toast } = useToast();
   const [open, setOpen] = React.useState(false);
 
   const {
@@ -45,6 +53,7 @@ export function NewAccountButton() {
   const onSubmit = handleSubmit(async (values) => {
     try {
       await accountsApi.create(values);
+      toast({ tone: "success", title: t("accounts.created", { code: values.code }) });
       setOpen(false);
       reset();
       router.refresh();
@@ -74,7 +83,12 @@ export function NewAccountButton() {
       <Modal open={open} onOpenChange={setOpen}>
         <ModalContent title={t("accounts.new")} className="max-w-md">
           <form onSubmit={onSubmit} className="mt-4 flex flex-col gap-4" noValidate>
-            <TextField label={t("accounts.codeLabel")} required description={t("accounts.codeHint")} error={fieldError(errors.code?.message)}>
+            <TextField
+              label={t("accounts.codeLabel")}
+              required
+              description={t("accounts.codeHint")}
+              error={fieldError(errors.code?.message)}
+            >
               {(control) => (
                 <Input
                   {...control}
@@ -112,7 +126,7 @@ export function NewAccountButton() {
               <Button type="button" variant="outline" size="sm" onClick={() => setOpen(false)}>
                 {t("cancel")}
               </Button>
-              <Button type="submit" size="sm" disabled={isSubmitting}>
+              <Button type="submit" size="sm" loading={isSubmitting}>
                 {t("accounts.create")}
               </Button>
             </div>

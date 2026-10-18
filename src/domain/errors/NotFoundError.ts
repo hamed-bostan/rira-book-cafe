@@ -13,10 +13,7 @@ export class NotFoundError extends Error {
     public readonly identifier?: string,
     options?: { cause?: unknown },
   ) {
-    super(
-      identifier ? `${entity} "${identifier}" was not found.` : `${entity} was not found.`,
-      options,
-    );
+    super(identifier ? `${entity} "${identifier}" was not found.` : `${entity} was not found.`, options);
     this.name = "NotFoundError";
   }
 }

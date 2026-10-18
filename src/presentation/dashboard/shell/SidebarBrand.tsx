@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 
 import { Link } from "@/src/i18n/navigation";
 import { cn } from "@/src/lib/utils";
-import { focusRing } from "@/src/presentation/design-system";
+import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 
 import { BrandMark } from "./BrandMark";
 

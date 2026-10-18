@@ -6,7 +6,10 @@ import * as React from "react";
 
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
-import { Button, ConfirmSheet, Icon } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { ConfirmSheet } from "@/src/presentation/design-system/components/Sheet/ConfirmSheet";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { teamApi } from "./team-api";
 
@@ -26,6 +29,7 @@ export function RevokeAdminButton({ id, name }: RevokeAdminButtonProps) {
   const t = useTranslations("dashTeam");
   const tApiErrors = useTranslations("apiErrors");
   const router = useRouter();
+  const { toast } = useToast();
   const [open, setOpen] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [pending, startTransition] = React.useTransition();
@@ -36,6 +40,7 @@ export function RevokeAdminButton({ id, name }: RevokeAdminButtonProps) {
       try {
         await teamApi.revoke(id);
         setOpen(false);
+        toast({ tone: "success", title: t("revoked", { name }) });
         // Re-run the server render so the table reflects the change — the server
         // stays the source of truth instead of patching local state.
         router.refresh();
@@ -62,7 +67,7 @@ export function RevokeAdminButton({ id, name }: RevokeAdminButtonProps) {
         iconOnly
         aria-label={t("revokeAria", { name })}
         onClick={() => setOpen(true)}
-        disabled={pending}
+        loading={pending}
         className="size-11 text-destructive sm:size-10"
       >
         <Icon icon={Trash2} size="sm" />

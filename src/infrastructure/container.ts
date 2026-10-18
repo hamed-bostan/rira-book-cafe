@@ -6,12 +6,14 @@ import type { IBookLoanRepository } from "@/src/domain/repositories/IBookLoanRep
 import type { IBookWaitlistRepository } from "@/src/domain/repositories/IBookWaitlistRepository";
 import type { ICashShiftRepository } from "@/src/domain/repositories/ICashShiftRepository";
 import type { ICategoryRepository } from "@/src/domain/repositories/ICategoryRepository";
+import type { IDatabaseProbe } from "@/src/domain/repositories/IDatabaseProbe";
 import type { IEmailSender } from "@/src/domain/repositories/IEmailSender";
 import type { IEventRepository } from "@/src/domain/repositories/IEventRepository";
 import type { IExpenseRepository } from "@/src/domain/repositories/IExpenseRepository";
 import type { IImageStorageRepository } from "@/src/domain/repositories/IImageStorageRepository";
 import type { IInventoryRepository } from "@/src/domain/repositories/IInventoryRepository";
 import type { ILedgerRepository } from "@/src/domain/repositories/ILedgerRepository";
+import type { ILogger } from "@/src/domain/repositories/ILogger";
 import type { ILoyaltyRepository } from "@/src/domain/repositories/ILoyaltyRepository";
 import type { ICustomerNotifier, INotificationRepository } from "@/src/domain/repositories/INotificationRepository";
 import type { IOrderNoteRepository } from "@/src/domain/repositories/IOrderNoteRepository";
@@ -21,18 +23,23 @@ import type { IPaymentGateway } from "@/src/domain/repositories/IPaymentGateway"
 import type { IPricingRepository } from "@/src/domain/repositories/IPricingRepository";
 import type { IProductRepository } from "@/src/domain/repositories/IProductRepository";
 import type { IPromotionRepository } from "@/src/domain/repositories/IPromotionRepository";
+import type { IRateLimiter } from "@/src/domain/repositories/IRateLimiter";
 import type { IReservationRepository } from "@/src/domain/repositories/IReservationRepository";
 import type { IReviewRepository } from "@/src/domain/repositories/IReviewRepository";
 import type { ISuiteBookingRepository } from "@/src/domain/repositories/ISuiteBookingRepository";
 import type { ITeamNotifier } from "@/src/domain/repositories/ITeamNotifier";
 import type { IUserRepository } from "@/src/domain/repositories/IUserRepository";
 import { CheckoutPricing } from "@/src/domain/use-cases/orders/CheckoutPricing";
+import { getEnv } from "@/src/lib/env";
 
 import { LoggingEmailSender } from "./email/LoggingEmailSender";
 import { SmtpEmailSender } from "./email/SmtpEmailSender";
+import { createPinoLogger } from "./logging/PinoLogger";
+import { reportErrorToSentry } from "./logging/reportErrorToSentry";
 import { CustomerNotifier } from "./notifications/CustomerNotifier";
 import { TeamNotifier } from "./notifications/TeamNotifier";
 import { ZarinpalPaymentGateway } from "./payments/ZarinpalPaymentGateway";
+import { InMemoryRateLimiter } from "./rate-limit/InMemoryRateLimiter";
 import { LocalDiskImageStorageRepository } from "./repositories/LocalDiskImageStorageRepository";
 import { MockAuthRepository } from "./repositories/mock/MockAuthRepository";
 import { PrismaActivityLog } from "./repositories/PrismaActivityLog";
@@ -42,6 +49,7 @@ import { PrismaBookLoanRepository } from "./repositories/PrismaBookLoanRepositor
 import { PrismaBookWaitlistRepository } from "./repositories/PrismaBookWaitlistRepository";
 import { PrismaCashShiftRepository } from "./repositories/PrismaCashShiftRepository";
 import { PrismaCategoryRepository } from "./repositories/PrismaCategoryRepository";
+import { PrismaDatabaseProbe } from "./repositories/PrismaDatabaseProbe";
 import { PrismaEventRepository } from "./repositories/PrismaEventRepository";
 import { PrismaExpenseRepository } from "./repositories/PrismaExpenseRepository";
 import { PrismaInventoryRepository } from "./repositories/PrismaInventoryRepository";
@@ -67,7 +75,25 @@ import { SmsIrAuthRepository } from "./repositories/SmsIrAuthRepository";
  * *implementations*. This is the only module that imports concrete repositories;
  * everything else (use-cases, route handlers) depends on the interfaces —
  * Dependency Inversion in practice. New features add their bindings here.
+ *
+ * Configuration comes from the validated environment (`src/lib/env.ts`), never
+ * from raw `process.env` reads.
  */
+const env = getEnv();
+
+// Structured logging — one JSON object per line on stdout in production (what
+// `docker logs` and any log shipper want), colored pretty lines in dev, silent
+// under tests. `LOG_LEVEL` overrides the level. Error-level lines are also
+// reported to the error tracker (a no-op without a Sentry/GlitchTip DSN).
+// Bound first: the adapters below log through it.
+export const logger: ILogger = createPinoLogger({
+  level:
+    process.env.LOG_LEVEL ||
+    (process.env.NODE_ENV === "test" ? "silent" : process.env.NODE_ENV === "production" ? "info" : "debug"),
+  pretty: process.env.NODE_ENV !== "production",
+  base: { service: "rira-book-cafe" },
+  reportError: reportErrorToSentry,
+});
 
 // Users — PostgreSQL via Prisma. Rows are created on first sign-in
 // (auth `authorize` → GetOrCreateUser).
@@ -93,8 +119,8 @@ export const checkoutPricing: CheckoutPricing = new CheckoutPricing(promotionRep
 // `ZARINPAL_SANDBOX=true`) payments go to Zarinpal's sandbox, so local dev and
 // staging work end to end without moving money. Attempts live in PostgreSQL.
 export const paymentGateway: IPaymentGateway = new ZarinpalPaymentGateway({
-  merchantId: process.env.ZARINPAL_MERCHANT_ID,
-  sandbox: process.env.ZARINPAL_SANDBOX === "true",
+  merchantId: env.ZARINPAL_MERCHANT_ID,
+  sandbox: env.ZARINPAL_SANDBOX,
 });
 export const paymentAttemptRepository: IPaymentAttemptRepository = new PrismaPaymentAttemptRepository();
 
@@ -117,7 +143,7 @@ export const reviewRepository: IReviewRepository = new PrismaReviewRepository();
 // Guest notifications — an inbox on the account page, no SMS. Written after the
 // change they announce has committed, best-effort (see `ICustomerNotifier`).
 export const notificationRepository: INotificationRepository = new PrismaNotificationRepository();
-export const customerNotifier: ICustomerNotifier = new CustomerNotifier(notificationRepository);
+export const customerNotifier: ICustomerNotifier = new CustomerNotifier(notificationRepository, logger);
 
 // Cafe aggregates — revenue, busy hours, best sellers, guests — computed in
 // PostgreSQL from the same rows the repositories above write, so there is no
@@ -151,57 +177,60 @@ export const bankReconciliationRepository: IBankReconciliationRepository = new P
 // Append-only audit trail of admin changes. Read-only here: entries are written by
 // the repositories that make the changes they describe, inside the same
 // transaction, from a `NewActivityEntry` the use-case built (see `AuditHook`).
-export const activityLog: IActivityLog = new PrismaActivityLog();
+export const activityLog: IActivityLog = new PrismaActivityLog(logger);
 
 // Real SMS OTP when an SMS.ir key is configured; the in-memory mock otherwise so
 // local dev works without credentials (the mock surfaces the code in the UI).
 // `OTP_MOCK=true` forces the mock even when a key is present.
-const forceMockAuth = process.env.OTP_MOCK === "true";
 export const authRepository: IAuthRepository =
-  process.env.SMS_IR_API_KEY && process.env.SMS_IR_TEMPLATE_ID && !forceMockAuth
+  env.SMS_IR_API_KEY && env.SMS_IR_TEMPLATE_ID && !env.OTP_MOCK
     ? new SmsIrAuthRepository({
-        apiKey: process.env.SMS_IR_API_KEY,
-        templateId: Number(process.env.SMS_IR_TEMPLATE_ID),
-        baseUrl: process.env.SMS_IR_BASE_URL,
+        apiKey: env.SMS_IR_API_KEY,
+        templateId: env.SMS_IR_TEMPLATE_ID,
+        baseUrl: env.SMS_IR_BASE_URL,
+        logger,
       })
-    : new MockAuthRepository();
+    : new MockAuthRepository(logger);
 
-/** Read a numeric env var, returning `undefined` when unset or not a number. */
-function numericEnv(name: string): number | undefined {
-  const raw = process.env[name];
-  if (!raw) return undefined;
-  const value = Number(raw);
-  return Number.isFinite(value) ? value : undefined;
-}
+// Rate limiting for sign-in, orders, uploads and team notices — counted in this
+// process's memory, which is exact while the app runs as one container. Anchored
+// to `globalThis` (like the OTP store) so dev re-evaluation doesn't reset counts.
+// Scaling out means binding a shared-store (Redis) `IRateLimiter` here instead.
+const rateLimiterRegistry = globalThis as typeof globalThis & { __rateLimiter?: IRateLimiter };
+export const rateLimiter: IRateLimiter = (rateLimiterRegistry.__rateLimiter ??= new InMemoryRateLimiter());
 
 // Transactional email. Real SMTP when a host is configured, a logging stub
 // otherwise, so local dev and a fresh deployment work without mail credentials.
 // SMTP rather than a provider HTTP API: hosted mail APIs geo-block Iranian servers.
-export const emailSender: IEmailSender = process.env.SMTP_HOST
-  ? new SmtpEmailSender({
-      host: process.env.SMTP_HOST,
-      port: numericEnv("SMTP_PORT") ?? 587,
-      // Implicit TLS on 465; STARTTLS on 587 and everything else.
-      secure: (numericEnv("SMTP_PORT") ?? 587) === 465,
-      user: process.env.SMTP_USER,
-      password: process.env.SMTP_PASSWORD,
-      from: process.env.SMTP_FROM ?? "Rira Book Cafe <no-reply@localhost>",
-    })
-  : new LoggingEmailSender();
+export const emailSender: IEmailSender = env.SMTP_HOST
+  ? new SmtpEmailSender(
+      {
+        host: env.SMTP_HOST,
+        port: env.SMTP_PORT,
+        // Implicit TLS on 465; STARTTLS on 587 and everything else.
+        secure: env.SMTP_PORT === 465,
+        user: env.SMTP_USER,
+        password: env.SMTP_PASSWORD,
+        from: env.SMTP_FROM ?? "Rira Book Cafe <no-reply@localhost>",
+      },
+      logger,
+    )
+  : new LoggingEmailSender(logger);
 
 // Announces team changes — an admin grant, and both sides of an ownership move —
 // over email (when an address is on file) and SMS (when an approved pattern
 // template is configured for that event). Best-effort: the change is real either way.
 export const teamNotifier: ITeamNotifier = new TeamNotifier(
   emailSender,
-  process.env.SMS_IR_API_KEY
+  env.SMS_IR_API_KEY
     ? {
-        apiKey: process.env.SMS_IR_API_KEY,
-        baseUrl: process.env.SMS_IR_BASE_URL,
+        apiKey: env.SMS_IR_API_KEY,
+        baseUrl: env.SMS_IR_BASE_URL,
+        logger,
         templates: {
-          adminGranted: numericEnv("SMS_IR_ADMIN_INVITE_TEMPLATE_ID"),
-          ownershipReceived: numericEnv("SMS_IR_OWNERSHIP_RECEIVED_TEMPLATE_ID"),
-          ownershipLost: numericEnv("SMS_IR_OWNERSHIP_LOST_TEMPLATE_ID"),
+          adminGranted: env.SMS_IR_ADMIN_INVITE_TEMPLATE_ID,
+          ownershipReceived: env.SMS_IR_OWNERSHIP_RECEIVED_TEMPLATE_ID,
+          ownershipLost: env.SMS_IR_OWNERSHIP_LOST_TEMPLATE_ID,
         },
       }
     : undefined,
@@ -210,10 +239,16 @@ export const teamNotifier: ITeamNotifier = new TeamNotifier(
 // Images on the server's own disk (a Docker volume in production), served back by
 // `app/uploads/[...path]/route.ts`. Server-side only. `UPLOADS_DIR` defaults to
 // `./storage/uploads` (gitignored) for local dev.
-const localImageStorage = new LocalDiskImageStorageRepository({
-  rootDir: process.env.UPLOADS_DIR || `${process.cwd()}/storage/uploads`,
-  publicPathPrefix: "/uploads",
-});
+const localImageStorage = new LocalDiskImageStorageRepository(
+  {
+    rootDir: env.UPLOADS_DIR ?? `${process.cwd()}/storage/uploads`,
+    publicPathPrefix: "/uploads",
+  },
+  logger,
+);
 export const imageStorageRepository: IImageStorageRepository = localImageStorage;
 /** Absolute file for a stored image path, or null when it escapes the uploads root. */
 export const resolveStoredImageFile = (objectPath: string): string | null => localImageStorage.resolve(objectPath);
+
+// Health check (`GET /api/health`): a `SELECT 1` on the shared Prisma pool.
+export const databaseProbe: IDatabaseProbe = new PrismaDatabaseProbe();

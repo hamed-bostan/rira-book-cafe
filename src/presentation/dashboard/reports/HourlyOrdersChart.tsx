@@ -1,10 +1,12 @@
 "use client";
 
+import { BarChart3 } from "lucide-react";
 import { useLocale } from "next-intl";
 import { Bar, BarChart, CartesianGrid, Tooltip, XAxis, YAxis } from "recharts";
 
 import { formatNumber } from "@/src/lib/formatNumber";
-import { ChartContainer, ChartTooltip } from "@/src/presentation/design-system";
+import { ChartContainer, ChartTooltip } from "@/src/presentation/design-system/chart";
+import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
 
 type HourlyOrdersChartProps = {
   hourly: { hour: number; orders: number }[];
@@ -36,8 +38,19 @@ export function HourlyOrdersChart({ hourly, labels }: HourlyOrdersChartProps) {
           <ChartContainer height={180} dir="ltr">
             <BarChart data={rows} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
               <CartesianGrid vertical={false} stroke="var(--color-border)" />
-              <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: "var(--color-muted-foreground)", fontSize: 11 }} />
-              <YAxis axisLine={false} tickLine={false} width={32} allowDecimals={false} tick={{ fill: "var(--color-muted-foreground)", fontSize: 11 }} />
+              <XAxis
+                dataKey="label"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: "var(--color-muted-foreground)", fontSize: 11 }}
+              />
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                width={32}
+                allowDecimals={false}
+                tick={{ fill: "var(--color-muted-foreground)", fontSize: 11 }}
+              />
               <Tooltip
                 cursor={{ fill: "var(--color-muted)" }}
                 content={(props) => (
@@ -45,7 +58,11 @@ export function HourlyOrdersChart({ hourly, labels }: HourlyOrdersChartProps) {
                     {...props}
                     renderContent={() => {
                       const row = props.payload?.[0]?.payload as { label: string; orders: number } | undefined;
-                      return row ? <p className="text-foreground">{row.label}:00 · {labels.orders}: {formatNumber(row.orders, locale)}</p> : null;
+                      return row ? (
+                        <p className="text-foreground">
+                          {row.label}:00 · {labels.orders}: {formatNumber(row.orders, locale)}
+                        </p>
+                      ) : null;
                     }}
                   />
                 )}
@@ -55,7 +72,7 @@ export function HourlyOrdersChart({ hourly, labels }: HourlyOrdersChartProps) {
           </ChartContainer>
         </div>
       ) : (
-        <p className="py-12 text-center text-body-small-emphasis text-muted-foreground">{labels.empty}</p>
+        <EmptyState icon={BarChart3} title={labels.empty} className="py-12" />
       )}
       <p className="sr-only">
         {labels.heading}: {rows.map((row) => `${row.label}:00, ${row.orders}`).join("; ")}

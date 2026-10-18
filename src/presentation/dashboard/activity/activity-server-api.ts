@@ -31,11 +31,7 @@ export const activityServerApi = {
   },
 
   /** One entity's own history, newest first — the detail screens' panels. */
-  listForEntity(
-    entityType: ActivityEntityType,
-    entityId: string,
-    limit: number,
-  ): Promise<ActivityEntryWire[]> {
+  listForEntity(entityType: ActivityEntityType, entityId: string, limit: number): Promise<ActivityEntryWire[]> {
     return serverApiGet("/admin/activity", activityEntryListResponseSchema, {
       params: { entityType, entityId, limit: String(limit) },
     });

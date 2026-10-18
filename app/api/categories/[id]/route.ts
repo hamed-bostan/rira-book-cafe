@@ -4,10 +4,8 @@ import { categoryFormSchema } from "@/src/contracts/category-schema";
 import { DeleteCategory } from "@/src/domain/use-cases/categories/DeleteCategory";
 import { GetCategoryById } from "@/src/domain/use-cases/categories/GetCategoryById";
 import { UpdateCategory } from "@/src/domain/use-cases/categories/UpdateCategory";
-import {
-  categoryRepository,
-  imageStorageRepository,
-} from "@/src/infrastructure/container";
+import { categoryRepository, imageStorageRepository } from "@/src/infrastructure/container";
+import { invalidatesCatalog } from "@/src/lib/api/invalidatesCatalog";
 import { getRequestLocale } from "@/src/lib/api/request-locale";
 import {
   errorResponse,
@@ -16,6 +14,7 @@ import {
   parseJsonBody,
   unauthorizedResponse,
 } from "@/src/lib/api/responses";
+import { CATALOG_TAGS } from "@/src/lib/cache-tags";
 import { getSessionWith } from "@/src/lib/require-permission";
 
 // Looked up in Postgres per request — never statically cached.
@@ -41,7 +40,7 @@ export async function GET(request: NextRequest, { params }: RouteContext): Promi
 /**
  * PUT /api/categories/:id — update a category. Admin only.
  */
-export async function PUT(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
+async function handlePut(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   const session = await getSessionWith("catalog.write");
   if (!session) return unauthorizedResponse();
 
@@ -59,11 +58,10 @@ export async function PUT(request: NextRequest, { params }: RouteContext): Promi
   }
 
   try {
-    const updated = await new UpdateCategory(categoryRepository, imageStorageRepository).execute(
-      id,
-      parsed.data,
-      { id: session.user.id, name: session.user.name ?? session.user.id },
-    );
+    const updated = await new UpdateCategory(categoryRepository, imageStorageRepository).execute(id, parsed.data, {
+      id: session.user.id,
+      name: session.user.name ?? session.user.id,
+    });
     return NextResponse.json(updated);
   } catch (error) {
     return errorResponseFromException(error, `PUT /api/categories/${id} failed`);
@@ -73,18 +71,21 @@ export async function PUT(request: NextRequest, { params }: RouteContext): Promi
 /**
  * DELETE /api/categories/:id — delete a category. Admin only. 204 on success.
  */
-export async function DELETE(_request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
+async function handleDelete(_request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   const session = await getSessionWith("catalog.write");
   if (!session) return unauthorizedResponse();
 
   const { id } = await params;
   try {
-    await new DeleteCategory(categoryRepository, imageStorageRepository).execute(
-      id,
-      { id: session.user.id, name: session.user.name ?? session.user.id },
-    );
+    await new DeleteCategory(categoryRepository, imageStorageRepository).execute(id, {
+      id: session.user.id,
+      name: session.user.name ?? session.user.id,
+    });
     return new NextResponse(null, { status: 204 });
   } catch (error) {
     return errorResponseFromException(error, `DELETE /api/categories/${id} failed`);
   }
 }
+
+export const PUT = invalidatesCatalog([CATALOG_TAGS.categories, CATALOG_TAGS.products], handlePut);
+export const DELETE = invalidatesCatalog([CATALOG_TAGS.categories, CATALOG_TAGS.products], handleDelete);

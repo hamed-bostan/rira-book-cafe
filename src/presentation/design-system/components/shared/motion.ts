@@ -30,3 +30,28 @@
  * transform utility itself when the transform shouldn't apply at all.
  */
 export const stillWhenReduced = "motion-reduce:transition-none";
+
+/**
+ * Press feedback for a small control (a button, an icon button): it gives
+ * slightly under the finger. Motion-safe only; the colour change on press
+ * still carries the feedback when motion is reduced.
+ */
+export const pressable = "motion-safe:active:scale-[0.97]";
+
+/**
+ * Hover/press feedback for a whole clickable card (a menu item, an event, a
+ * linked KPI tile): it lifts a little and gains a shadow on hover, and settles
+ * on press. The lift and press are motion-safe; the shadow is not motion and
+ * stays, so a reduced-motion pointer still sees the card respond.
+ */
+export const interactiveCard = [
+  "transition-[translate,scale,box-shadow,background-color] duration-200 ease-out",
+  "hover:shadow-md",
+  "motion-safe:hover:-translate-y-0.5 motion-safe:active:translate-y-0 motion-safe:active:scale-[0.99]",
+].join(" ");
+
+/**
+ * For an image inside an `interactiveCard` (the card carries `group`): a slow,
+ * slight zoom on hover. Motion-safe only.
+ */
+export const zoomOnGroupHover = "transition-transform duration-500 ease-out motion-safe:group-hover:scale-105";

@@ -1,6 +1,8 @@
 import { Link } from "@/src/i18n/navigation";
 import { cn } from "@/src/lib/utils";
-import { focusRing, Icon } from "@/src/presentation/design-system";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
+import { interactiveCard } from "@/src/presentation/design-system/components/shared/motion";
 
 import { StatSparkline } from "./StatSparkline";
 
@@ -101,14 +103,11 @@ export function StatCard({
     <>
       <div className="flex items-start justify-between gap-3">
         <p className="text-body-small-emphasis font-normal text-foreground">{label}</p>
-        {!trendValues ? <div
-          className={cn(
-            "flex size-10 shrink-0 items-center justify-center rounded-full",
-            TONE_STYLES[tone],
-          )}
-        >
-          <Icon icon={icon} size="sm" />
-        </div> : null}
+        {!trendValues ? (
+          <div className={cn("flex size-10 shrink-0 items-center justify-center rounded-full", TONE_STYLES[tone])}>
+            <Icon icon={icon} size="sm" />
+          </div>
+        ) : null}
       </div>
       <div>
         <p className="text-heading-section text-foreground xl:text-heading-page">{value}</p>
@@ -118,7 +117,12 @@ export function StatCard({
           // text — a "+12%" with no stated baseline is the most common way a
           // dashboard misleads, because every reader supplies a different one.
           <p className="mt-2 flex flex-wrap items-center gap-1.5">
-            <span className={cn("inline-flex items-center gap-1 text-body-caption-bold", neutralTrend ? "text-muted-foreground" : trend.className)}>
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 text-body-caption-bold",
+                neutralTrend ? "text-muted-foreground" : trend.className,
+              )}
+            >
               <span aria-hidden>{neutralTrend && deltaTone === "down" ? "↓" : trend.mark}</span>
               {delta}
             </span>
@@ -129,16 +133,26 @@ export function StatCard({
         ) : hint ? (
           <p className="mt-2 text-body-small-strong text-muted-foreground">{hint}</p>
         ) : null}
-        {trendValues ? <div className="mt-2"><StatSparkline values={trendValues} positive color={neutralTrend ? "var(--color-muted-foreground)" : "var(--color-primary)"} heightClassName="h-12" /></div> : null}
+        {trendValues ? (
+          <div className="mt-2">
+            <StatSparkline
+              values={trendValues}
+              positive
+              color={neutralTrend ? "var(--color-muted-foreground)" : "var(--color-primary)"}
+              heightClassName="h-12"
+            />
+          </div>
+        ) : null}
       </div>
     </>
   );
 
-  const frame = "flex h-full min-h-40 flex-col justify-between gap-1 overflow-hidden rounded-card-lg border border-border bg-background p-5";
+  const frame =
+    "flex h-full min-h-40 flex-col justify-between gap-1 overflow-hidden rounded-card-lg border border-border bg-background p-5";
 
   if (href) {
     return (
-      <Link href={href} className={cn(frame, focusRing, "transition-colors hover:bg-muted")}>
+      <Link href={href} className={cn(frame, focusRing, interactiveCard, "hover:bg-muted")}>
         {content}
       </Link>
     );

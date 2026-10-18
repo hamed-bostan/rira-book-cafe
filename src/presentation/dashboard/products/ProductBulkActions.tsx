@@ -9,7 +9,10 @@ import type { Category } from "@/src/domain/entities/Category";
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { useBulkSelection } from "@/src/presentation/dashboard/bulk";
-import { Button, Icon, Select } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { Select } from "@/src/presentation/design-system/components/form/Select/Select";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { productsApi } from "./product-api";
 
@@ -38,32 +41,48 @@ export function ProductBulkActions({ categories }: ProductBulkActionsProps) {
   const t = useTranslations("dashProducts");
   const tApiErrors = useTranslations("apiErrors");
   const router = useRouter();
+  const { toast } = useToast();
   const { selected, clear } = useBulkSelection();
-  const [error, setError] = React.useState<string | null>(null);
   const [pending, startTransition] = React.useTransition();
+  /** The action in flight — only its button shows the spinner; the rest just disable. */
+  const [active, setActive] = React.useState<ProductBulkAction["type"] | null>(null);
 
   function apply(action: ProductBulkAction): void {
-    setError(null);
+    setActive(action.type);
+    const count = selected.length;
     startTransition(async () => {
       try {
         await productsApi.bulkUpdate(selected, action);
+        toast({ tone: "success", title: t("bulkDone", { count }) });
         // Re-run the server render so the list reflects the change, then drop the
         // selection — the rows it referred to have just been replaced.
         router.refresh();
         clear();
       } catch (err) {
-        setError(localizeApiError(err, tApiErrors, t("bulkError")));
+        toast({ tone: "error", title: localizeApiError(err, tApiErrors, t("bulkError")) });
       }
     });
   }
 
   return (
     <>
-      <Button variant="outline" size="sm" disabled={pending} onClick={() => apply({ type: "publish" })}>
+      <Button
+        variant="outline"
+        size="sm"
+        loading={pending && active === "publish"}
+        disabled={pending}
+        onClick={() => apply({ type: "publish" })}
+      >
         <Icon icon={Eye} size="sm" className="me-1.5" />
         {t("bulkPublish")}
       </Button>
-      <Button variant="outline" size="sm" disabled={pending} onClick={() => apply({ type: "unpublish" })}>
+      <Button
+        variant="outline"
+        size="sm"
+        loading={pending && active === "unpublish"}
+        disabled={pending}
+        onClick={() => apply({ type: "unpublish" })}
+      >
         <Icon icon={EyeOff} size="sm" className="me-1.5" />
         {t("bulkUnpublish")}
       </Button>
@@ -87,8 +106,6 @@ export function ProductBulkActions({ categories }: ProductBulkActionsProps) {
           </option>
         ))}
       </Select>
-
-      {error ? <span className="text-body-small text-destructive">{error}</span> : null}
     </>
   );
 }

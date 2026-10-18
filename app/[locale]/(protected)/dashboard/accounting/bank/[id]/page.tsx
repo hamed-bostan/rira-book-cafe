@@ -12,7 +12,10 @@ type BankStatementPageProps = { params: Promise<{ id: string }> };
 export default async function BankStatementPage({ params }: BankStatementPageProps) {
   await requirePermission("accounting.view");
   const { id } = await params;
-  const [view, canWrite] = await Promise.all([bankStatementsServerApi.getById(id), auth().then((session) => sessionHas(session, "accounting.write"))]);
+  const [view, canWrite] = await Promise.all([
+    bankStatementsServerApi.getById(id),
+    auth().then((session) => sessionHas(session, "accounting.write")),
+  ]);
   if (!view) notFound();
   return <BankReconciliationScreen view={view} canWrite={canWrite} />;
 }

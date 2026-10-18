@@ -4,7 +4,8 @@ import { useLocale, useTranslations } from "next-intl";
 import { roleChangeKind } from "@/src/domain/entities/RoleChange";
 import { formatRelativeTime } from "@/src/lib/formatRelativeTime";
 import type { ActivityEntryWire } from "@/src/presentation/dashboard/activity/activity-response-schema";
-import { DataTable } from "@/src/presentation/design-system";
+import { DataTable } from "@/src/presentation/design-system/components/DataTable/DataTable";
+import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
 
 type TeamActivityProps = {
   /** Recent `user.roleChanged` entries from the activity log, newest first. */
@@ -37,10 +38,7 @@ export function TeamActivity({ changes }: TeamActivityProps) {
       </div>
 
       {changes.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-card-lg bg-surface-sunken/50 px-5 py-8 text-center">
-          <span className="flex size-10 items-center justify-center rounded-full border border-border bg-background text-muted-foreground"><History size={18} aria-hidden="true" /></span>
-          <p className="text-body-small text-muted-foreground">{t("activityEmpty")}</p>
-        </div>
+        <EmptyState icon={History} title={t("activityEmpty")} className="py-8" />
       ) : (
         // The frame is the same card the admin tables sit in; the rows inside are
         // an ordered list, not a table — a log entry is one sentence, not columns.

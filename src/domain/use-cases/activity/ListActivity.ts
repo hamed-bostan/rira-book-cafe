@@ -1,8 +1,4 @@
-import type {
-  ActivityEntry,
-  ActivityFilters,
-  ActivitySort,
-} from "../../entities/ActivityEntry";
+import type { ActivityEntry, ActivityFilters, ActivitySort } from "../../entities/ActivityEntry";
 import type { Page, PageRequest } from "../../entities/Pagination";
 import type { IActivityLog } from "../../repositories/IActivityLog";
 
@@ -20,9 +16,6 @@ export class ListActivity {
 
   execute(filters: ActivityFilters, page: PageRequest<ActivitySort>): Promise<Page<ActivityEntry>> {
     const entityId = filters.entityId?.trim() || undefined;
-    return this.log.list(
-      { ...filters, entityId: filters.entityType ? entityId : undefined },
-      page,
-    );
+    return this.log.list({ ...filters, entityId: filters.entityType ? entityId : undefined }, page);
   }
 }

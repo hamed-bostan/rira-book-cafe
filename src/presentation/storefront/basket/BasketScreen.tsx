@@ -5,7 +5,12 @@ import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
 import * as React from "react";
 
-import { MAX_LINE_QUANTITY, MAX_ORDER_NOTE_TEXT_LENGTH, MAX_TABLE_LABEL_LENGTH, type ServiceType } from "@/src/domain/entities/Order";
+import {
+  MAX_LINE_QUANTITY,
+  MAX_ORDER_NOTE_TEXT_LENGTH,
+  MAX_TABLE_LABEL_LENGTH,
+  type ServiceType,
+} from "@/src/domain/entities/Order";
 import { Link, useRouter } from "@/src/i18n/navigation";
 import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
@@ -13,7 +18,14 @@ import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
 import { cn } from "@/src/lib/utils";
-import { Button, FormMessage, Icon, Input, Textarea, focusRing } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
+import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
+import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
+import { Textarea } from "@/src/presentation/design-system/components/form/Textarea/Textarea";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { storefrontApi } from "../storefront-api";
 
@@ -23,7 +35,12 @@ import { useBasket } from "./BasketProvider";
 import { useOrderQuote } from "./useOrderQuote";
 
 /** Refusals that are about the promo code: shown under its field, and the code is dropped. */
-const PROMO_ERRORS: ReadonlySet<string> = new Set(["PROMO_INVALID", "PROMO_EXPIRED", "PROMO_USED_UP", "PROMO_MIN_SUBTOTAL"]);
+const PROMO_ERRORS: ReadonlySet<string> = new Set([
+  "PROMO_INVALID",
+  "PROMO_EXPIRED",
+  "PROMO_USED_UP",
+  "PROMO_MIN_SUBTOTAL",
+]);
 
 type BasketScreenProps = {
   /** Whether a guest is signed in — ordering needs an account. */
@@ -42,6 +59,7 @@ export function BasketScreen({ signedIn }: BasketScreenProps) {
   const tFormErrors = useTranslations("formErrors");
   const locale = useLocale();
   const router = useRouter();
+  const { toast } = useToast();
   const { basket, ready, setQuantity, remove, clear } = useBasket();
 
   const [serviceType, setServiceType] = React.useState<ServiceType>("dineIn");
@@ -67,22 +85,30 @@ export function BasketScreen({ signedIn }: BasketScreenProps) {
     },
     [tApiErrors, t],
   );
-  const quoteState = useOrderQuote({ basket, promoCode: appliedPromo, redeemPoints, enabled: signedIn && ready, onRejected: onQuoteRejected });
+  const quoteState = useOrderQuote({
+    basket,
+    promoCode: appliedPromo,
+    redeemPoints,
+    enabled: signedIn && ready,
+    onRejected: onQuoteRejected,
+  });
 
   if (!ready) return null;
 
   if (basket.lines.length === 0) {
     return (
-      <div className="mx-auto flex max-w-md flex-col items-center gap-4 py-16 text-center">
-        <span className="grid size-16 place-items-center rounded-full bg-accent text-primary">
-          <Icon icon={ShoppingBasket} size="lg" />
-        </span>
-        <h1 className="text-heading-subsection text-foreground">{t("basket.emptyTitle")}</h1>
-        <p className="text-body-small text-muted-foreground">{t("basket.emptyBody")}</p>
-        <Button asChild>
-          <Link href="/menu">{t("home.seeMenu")}</Link>
-        </Button>
-      </div>
+      <EmptyState
+        size="page"
+        icon={ShoppingBasket}
+        title={t("basket.emptyTitle")}
+        description={t("basket.emptyBody")}
+        action={
+          <Button asChild>
+            <Link href="/menu">{t("home.seeMenu")}</Link>
+          </Button>
+        }
+        className="mx-auto max-w-md"
+      />
     );
   }
 
@@ -104,6 +130,7 @@ export function BasketScreen({ signedIn }: BasketScreenProps) {
           redeemPoints,
         });
         clear();
+        toast({ tone: "success", title: t("basket.orderPlaced") });
         router.push(`/orders/${order.id}`);
       } catch (err) {
         if (err instanceof ApiError && err.status === 401) {
@@ -127,7 +154,14 @@ export function BasketScreen({ signedIn }: BasketScreenProps) {
         serviceType === value ? "border-primary bg-accent text-primary" : "border-border text-foreground",
       )}
     >
-      <input type="radio" name="serviceType" value={value} checked={serviceType === value} onChange={() => setServiceType(value)} className="sr-only" />
+      <input
+        type="radio"
+        name="serviceType"
+        value={value}
+        checked={serviceType === value}
+        onChange={() => setServiceType(value)}
+        className="sr-only"
+      />
       <Icon icon={icon} size="sm" />
       {label}
     </label>
@@ -148,10 +182,19 @@ export function BasketScreen({ signedIn }: BasketScreenProps) {
                 {line.note ? <p className="text-body-caption text-warning-foreground">{line.note}</p> : null}
                 <p className="text-body-small text-muted-foreground">{formatMoney(line.unitPrice, locale)}</p>
                 <div className="mt-2 flex items-center gap-2">
-                  <Button type="button" variant="outline" size="sm" iconOnly aria-label={t("menu.decrease")} onClick={() => setQuantity(index, line.quantity - 1)}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    iconOnly
+                    aria-label={t("menu.decrease")}
+                    onClick={() => setQuantity(index, line.quantity - 1)}
+                  >
                     <Icon icon={Minus} size="xs" />
                   </Button>
-                  <span className="w-6 text-center text-body-small-strong tabular-nums">{formatNumber(line.quantity, locale)}</span>
+                  <span className="w-6 text-center text-body-small-strong tabular-nums">
+                    {formatNumber(line.quantity, locale)}
+                  </span>
                   <Button
                     type="button"
                     variant="outline"
@@ -163,12 +206,22 @@ export function BasketScreen({ signedIn }: BasketScreenProps) {
                   >
                     <Icon icon={Plus} size="xs" />
                   </Button>
-                  <Button type="button" variant="ghost" size="sm" iconOnly aria-label={t("basket.removeAria", { name: line.name })} className="ms-auto text-destructive" onClick={() => remove(index)}>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    iconOnly
+                    aria-label={t("basket.removeAria", { name: line.name })}
+                    className="ms-auto text-destructive"
+                    onClick={() => remove(index)}
+                  >
                     <Icon icon={Trash2} size="sm" />
                   </Button>
                 </div>
               </div>
-              <span className="shrink-0 text-body-small-emphasis text-foreground">{formatMoney(line.unitPrice * line.quantity, locale)}</span>
+              <span className="shrink-0 text-body-small-emphasis text-foreground">
+                {formatMoney(line.unitPrice * line.quantity, locale)}
+              </span>
             </li>
           ))}
         </ul>
@@ -200,7 +253,12 @@ export function BasketScreen({ signedIn }: BasketScreenProps) {
 
         <label className="flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
           {t("basket.noteLabel")}
-          <Textarea value={note} onChange={(event) => setNote(event.target.value)} maxLength={MAX_ORDER_NOTE_TEXT_LENGTH} rows={2} />
+          <Textarea
+            value={note}
+            onChange={(event) => setNote(event.target.value)}
+            maxLength={MAX_ORDER_NOTE_TEXT_LENGTH}
+            rows={2}
+          />
         </label>
 
         {signedIn ? (
@@ -227,7 +285,7 @@ export function BasketScreen({ signedIn }: BasketScreenProps) {
         {error ? <FormMessage>{error}</FormMessage> : null}
 
         {signedIn ? (
-          <Button type="button" onClick={placeOrder} disabled={pending || quoteState.loading}>
+          <Button type="button" onClick={placeOrder} disabled={quoteState.loading} loading={pending}>
             {pending ? t("basket.placing") : t("basket.placeOrder")}
           </Button>
         ) : (

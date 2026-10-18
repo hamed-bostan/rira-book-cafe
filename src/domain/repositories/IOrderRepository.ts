@@ -2,7 +2,14 @@ import type { AuditHook } from "./AuditHook";
 import type { LedgerHook } from "./ILedgerRepository";
 import type { ActivityActor } from "../entities/ActivityEntry";
 import type { AdminOrderFilters, AdminOrderSort, OrderStatusCounts } from "../entities/AdminOrderFilters";
-import type { Order, OrderItem, OrderStatus, PaymentMethod, PaymentStatus, SettablePaymentStatus } from "../entities/Order";
+import type {
+  Order,
+  OrderItem,
+  OrderStatus,
+  PaymentMethod,
+  PaymentStatus,
+  SettablePaymentStatus,
+} from "../entities/Order";
 import type { OrderStatusEvent } from "../entities/OrderStatusEvent";
 import type { Page, PageRequest } from "../entities/Pagination";
 
@@ -12,7 +19,15 @@ export type PaymentChange = { from: PaymentStatus; to: SettablePaymentStatus; me
 /** An order about to be placed. Id, number, status and timestamps are the repository's to assign. */
 export type NewOrder = Omit<
   Order,
-  "id" | "orderNumber" | "status" | "paymentStatus" | "paymentMethod" | "placedAt" | "updatedAt" | "items" | "pointsEarned"
+  | "id"
+  | "orderNumber"
+  | "status"
+  | "paymentStatus"
+  | "paymentMethod"
+  | "placedAt"
+  | "updatedAt"
+  | "items"
+  | "pointsEarned"
 > & {
   items: Omit<OrderItem, "id">[];
 };
@@ -58,7 +73,12 @@ export type IOrderRepository = {
    * staff can't both book the same payment. The audit entry and the ledger postings
    * commit with it; the loser of a race gets `InvalidPaymentChangeError`.
    */
-  setPaymentStatus(id: string, change: PaymentChange, audit?: AuditHook<Order>, ledger?: LedgerHook<Order>): Promise<Order>;
+  setPaymentStatus(
+    id: string,
+    change: PaymentChange,
+    audit?: AuditHook<Order>,
+    ledger?: LedgerHook<Order>,
+  ): Promise<Order>;
   /**
    * Mark one line served (stamped now) or take the mark back, guarded so it only
    * lands while the order is in a serving status. Setting the state a line already

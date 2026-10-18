@@ -1,7 +1,7 @@
 import { useTranslations } from "next-intl";
 
 import type { ExpenseStatus } from "@/src/domain/entities/Expense";
-import { Badge } from "@/src/presentation/design-system";
+import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
 
 const VARIANT = { unpaid: "warning", paid: "success", void: "neutral" } as const;
 

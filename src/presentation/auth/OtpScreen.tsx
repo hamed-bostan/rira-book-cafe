@@ -6,7 +6,9 @@ import * as React from "react";
 import { Link } from "@/src/i18n/navigation";
 import { cn } from "@/src/lib/utils";
 import { PageHeader } from "@/src/presentation/components/PageHeader";
-import { Button, OTPInput } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { OTPInput } from "@/src/presentation/design-system/components/form/OTPInput/OTPInput";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { peekDevOtp, requestOtp, verifyOtp } from "./actions";
 
@@ -20,9 +22,12 @@ interface OtpScreenProps {
 
 export default function OtpScreen({ phone, callbackUrl = "/" }: OtpScreenProps) {
   const t = useTranslations("auth");
+  const { toast } = useToast();
   const [code, setCode] = React.useState("");
-  const [error, setError] = React.useState(false);
+  // Which message to show under the title, if any (a key in the `auth` namespace).
+  const [error, setError] = React.useState<"incorrectCode" | "tooManyAttempts" | false>(false);
   const [pending, setPending] = React.useState(false);
+  const [resending, setResending] = React.useState(false);
   const [secondsLeft, setSecondsLeft] = React.useState(RESEND_SECONDS);
   const [devCode, setDevCode] = React.useState<string | null>(null);
 
@@ -57,24 +62,36 @@ export default function OtpScreen({ phone, callbackUrl = "/" }: OtpScreenProps) 
     // Success redirects away; only a wrong code returns here.
     const result = await verifyOtp({ phone, code, callbackUrl });
     if (result?.error) {
-      setError(true);
+      setError(result.rateLimited ? "tooManyAttempts" : "incorrectCode");
       setPending(false);
     }
   };
 
-  const handleResend = async () => {
-    await requestOtp(phone);
-    setCode("");
-    setError(false);
-    setSecondsLeft(RESEND_SECONDS);
-    setDevCode(await peekDevOtp(phone));
+  const handleResend = async (): Promise<void> => {
+    setResending(true);
+    try {
+      const result = await requestOtp(phone);
+      if (result.error) {
+        toast({ tone: "error", title: t("resendError") });
+        return;
+      }
+      setCode("");
+      setError(false);
+      setSecondsLeft(RESEND_SECONDS);
+      toast({ tone: "success", title: t("codeResent") });
+      setDevCode(await peekDevOtp(phone).catch(() => null));
+    } catch {
+      toast({ tone: "error", title: t("resendError") });
+    } finally {
+      setResending(false);
+    }
   };
 
   const mm = String(Math.floor(secondsLeft / 60)).padStart(2, "0");
   const ss = String(secondsLeft % 60).padStart(2, "0");
 
   const subtitle = error
-    ? t("incorrectCode")
+    ? t(error)
     : code.length === 0
       ? t("enterCode", { phone: maskPhone(phone) })
       : t("waitingCode");
@@ -94,7 +111,7 @@ export default function OtpScreen({ phone, callbackUrl = "/" }: OtpScreenProps) 
           length={CODE_LENGTH}
           autoFocus
           aria-label={t("codeAria")}
-          aria-invalid={error || undefined}
+          aria-invalid={Boolean(error) || undefined}
         />
 
         {devCode && (
@@ -111,7 +128,7 @@ export default function OtpScreen({ phone, callbackUrl = "/" }: OtpScreenProps) 
           {secondsLeft > 0 ? (
             t("resendIn", { time: `${mm}:${ss}` })
           ) : (
-            <Button type="button" variant="link" onClick={handleResend} >
+            <Button type="button" variant="link" loading={resending} onClick={handleResend}>
               {t("resendCode")}
             </Button>
           )}
@@ -122,7 +139,8 @@ export default function OtpScreen({ phone, callbackUrl = "/" }: OtpScreenProps) 
         type="button"
         onClick={handleVerify}
         variant={isComplete ? "primary" : "outline"}
-        disabled={!isComplete || pending}
+        disabled={!isComplete}
+        loading={pending}
         size="lg"
         className="mt-4"
       >

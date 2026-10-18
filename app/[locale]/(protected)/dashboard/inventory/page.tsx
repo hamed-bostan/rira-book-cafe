@@ -17,5 +17,11 @@ export default async function InventoryPage({ searchParams }: InventoryPageProps
     auth().then((session) => sessionHas(session, "inventory.manage")),
   ]);
 
-  return <InventoryScreen summary={summary} filter={level === "low" || level === "out" ? level : "all"} canManage={canManage} />;
+  return (
+    <InventoryScreen
+      summary={summary}
+      filter={level === "low" || level === "out" ? level : "all"}
+      canManage={canManage}
+    />
+  );
 }

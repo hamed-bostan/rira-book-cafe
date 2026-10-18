@@ -27,16 +27,8 @@ services:
       - uploads:/app/storage/uploads
     networks:
       - web
-    healthcheck:
-      test:
-        - CMD
-        - node
-        - -e
-        - "require('http').get('http://127.0.0.1:3000/',r=>process.exit(r.statusCode<500?0:1)).on('error',()=>process.exit(1))"
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 60s
+    # The image's own HEALTHCHECK (GET /api/health: server up + database reachable)
+    # applies; see deploy/README.md for pointing an uptime monitor at the same URL.
 
   db:
     image: postgres:17-alpine

@@ -34,7 +34,20 @@ export interface SheetContentProps extends React.ComponentPropsWithoutRef<typeof
 }
 
 export const SheetContent = React.forwardRef<HTMLDivElement, SheetContentProps>(
-  ({ className, children, title, hideTitle, description, titleClassName, descriptionClassName, handleClassName, ...props }, ref) => (
+  (
+    {
+      className,
+      children,
+      title,
+      hideTitle,
+      description,
+      titleClassName,
+      descriptionClassName,
+      handleClassName,
+      ...props
+    },
+    ref,
+  ) => (
     <Dialog.Portal>
       <Dialog.Overlay
         className={cn(
@@ -48,8 +61,8 @@ export const SheetContent = React.forwardRef<HTMLDivElement, SheetContentProps>(
         ref={ref}
         className={cn(
           "fixed inset-x-0 bottom-0 z-50 mx-auto w-full max-w-md",
-          "rounded-t-sheet bg-popover px-6 pb-10 pt-3 shadow-lg focus:outline-none",
-          "data-[state=open]:animate-in data-[state=closed]:animate-out",
+          "rounded-t-sheet bg-popover px-6 pt-3 pb-10 shadow-lg focus:outline-none",
+          "data-[state=closed]:animate-out data-[state=open]:animate-in",
           // Travelling the full height of the viewport is the largest movement in
           // the app, so it's the first thing to go under reduced motion — the
           // sheet fades instead, which still reads as arriving and leaving.
@@ -70,12 +83,16 @@ export const SheetContent = React.forwardRef<HTMLDivElement, SheetContentProps>(
             <Dialog.Title>{title}</Dialog.Title>
           </VisuallyHidden.Root>
         ) : (
-          <Dialog.Title className={cn("mb-6 text-center text-heading-subsection-medium text-foreground", titleClassName)}>
+          <Dialog.Title
+            className={cn("mb-6 text-center text-heading-subsection-medium text-foreground", titleClassName)}
+          >
             {title}
           </Dialog.Title>
         )}
 
-        {description && <Dialog.Description className={descriptionClassName ?? "sr-only"}>{description}</Dialog.Description>}
+        {description && (
+          <Dialog.Description className={descriptionClassName ?? "sr-only"}>{description}</Dialog.Description>
+        )}
 
         {children}
       </Dialog.Content>

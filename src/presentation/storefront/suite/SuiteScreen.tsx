@@ -1,3 +1,4 @@
+import { BedDouble, CalendarCheck } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import {
@@ -9,6 +10,7 @@ import {
 import { formatCafeDayMedium } from "@/src/lib/formatCafeDay";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { SuiteBookingStatusBadge } from "@/src/presentation/dashboard/suite-bookings/SuiteBookingStatusBadge";
+import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
 
 import { BookSuiteForm } from "./BookSuiteForm";
 import { CancelMySuiteBookingButton } from "./CancelMySuiteBookingButton";
@@ -63,11 +65,18 @@ export async function SuiteScreen({ busy, bookings, today }: SuiteScreenProps) {
       <section className="flex flex-col gap-3">
         <h2 className="text-body-lead text-foreground">{t("suite.takenHeading")}</h2>
         {busy.length === 0 ? (
-          <p className="text-body-small text-muted-foreground">{t("suite.allFree")}</p>
+          <EmptyState
+            icon={CalendarCheck}
+            title={t("suite.allFree")}
+            className="rounded-card-lg border border-dashed border-border py-8"
+          />
         ) : (
           <ul className="flex flex-wrap gap-2">
             {busy.map((stay) => (
-              <li key={`${stay.checkIn}-${stay.checkOut}`} className="rounded-full bg-muted px-3 py-1 text-body-caption text-foreground">
+              <li
+                key={`${stay.checkIn}-${stay.checkOut}`}
+                className="rounded-full bg-muted px-3 py-1 text-body-caption text-foreground"
+              >
                 {range(stay)}
               </li>
             ))}
@@ -78,7 +87,11 @@ export async function SuiteScreen({ busy, bookings, today }: SuiteScreenProps) {
       <section className="flex flex-col gap-3">
         <h2 className="text-body-lead text-foreground">{t("suite.myHeading")}</h2>
         {upcoming.length === 0 ? (
-          <p className="text-body-small text-muted-foreground">{t("suite.empty")}</p>
+          <EmptyState
+            icon={BedDouble}
+            title={t("suite.empty")}
+            className="rounded-card-lg border border-dashed border-border py-10"
+          />
         ) : (
           <ul className="flex flex-col gap-3">{upcoming.map(row)}</ul>
         )}

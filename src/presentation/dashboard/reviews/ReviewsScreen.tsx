@@ -1,3 +1,4 @@
+import { SearchX, Star } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import type { ProductReview, ReviewStatus } from "@/src/domain/entities/ProductReview";
@@ -6,7 +7,9 @@ import { Link } from "@/src/i18n/navigation";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { formatOrderDateShort } from "@/src/lib/formatOrderDate";
 import { ListFilterSelect, ListSearchInput } from "@/src/presentation/dashboard/list";
-import { Badge, RatingStars } from "@/src/presentation/design-system";
+import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
+import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
+import { RatingStars } from "@/src/presentation/design-system/components/RatingStars/RatingStars";
 
 import { ReviewModerationActions } from "./ReviewModerationActions";
 
@@ -63,7 +66,10 @@ export async function ReviewsScreen({ reviews, counts, isSearching }: ReviewsScr
             >
               <div className="min-w-0 flex-1 space-y-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <Link href={`/menu/${review.productId}`} className="text-body-small-strong text-foreground hover:underline">
+                  <Link
+                    href={`/menu/${review.productId}`}
+                    className="text-body-small-strong text-foreground hover:underline"
+                  >
                     {review.productName}
                   </Link>
                   <Badge variant={STATUS_VARIANT[review.status]}>{t(`status.${review.status}`)}</Badge>
@@ -72,7 +78,9 @@ export async function ReviewsScreen({ reviews, counts, isSearching }: ReviewsScr
                   <RatingStars value={review.rating} size="sm" />
                   <span className="text-body-small text-foreground">{review.authorName || t("anonymous")}</span>
                 </div>
-                {review.comment ? <p className="whitespace-pre-wrap text-body-small text-foreground">{review.comment}</p> : null}
+                {review.comment ? (
+                  <p className="text-body-small whitespace-pre-wrap text-foreground">{review.comment}</p>
+                ) : null}
                 <p className="text-body-caption text-muted-foreground">
                   {formatOrderDateShort(review.createdAt, locale)}
                   {review.moderatedByName && review.moderatedAt
@@ -87,9 +95,12 @@ export async function ReviewsScreen({ reviews, counts, isSearching }: ReviewsScr
           ))}
         </ul>
       ) : (
-        <div className="rounded-card-lg border border-dashed border-border px-6 py-16 text-center">
-          <p className="text-body-strong text-foreground">{isSearching ? t("noMatchesTitle") : t("emptyTitle")}</p>
-          <p className="mt-1 text-body-small text-muted-foreground">{isSearching ? t("noMatchesBody") : t("emptyBody")}</p>
+        <div className="rounded-card-lg border border-dashed border-border">
+          <EmptyState
+            icon={isSearching ? SearchX : Star}
+            title={isSearching ? t("noMatchesTitle") : t("emptyTitle")}
+            description={isSearching ? t("noMatchesBody") : t("emptyBody")}
+          />
         </div>
       )}
     </div>

@@ -8,7 +8,9 @@ import type { CategoryBulkAction } from "@/src/contracts/bulk-action-schema";
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { useBulkSelection } from "@/src/presentation/dashboard/bulk";
-import { Button, Icon } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { categoriesApi } from "./category-api";
 
@@ -30,34 +32,51 @@ export function CategoryBulkActions() {
   const tApiErrors = useTranslations("apiErrors");
   const router = useRouter();
   const { selected, clear } = useBulkSelection();
-  const [error, setError] = React.useState<string | null>(null);
+  const { toast } = useToast();
+  /** The action being applied — only its button shows the spinner. */
+  const [active, setActive] = React.useState<CategoryBulkAction["type"] | null>(null);
   const [pending, startTransition] = React.useTransition();
 
   function apply(action: CategoryBulkAction): void {
-    setError(null);
+    setActive(action.type);
+    const count = selected.length;
     startTransition(async () => {
       try {
         await categoriesApi.bulkUpdate(selected, action);
+        toast({
+          tone: "success",
+          title: action.type === "activate" ? t("bulkActivated", { count }) : t("bulkDeactivated", { count }),
+        });
         router.refresh();
         clear();
       } catch (err) {
-        setError(localizeApiError(err, tApiErrors, t("bulkError")));
+        toast({ tone: "error", title: localizeApiError(err, tApiErrors, t("bulkError")) });
       }
     });
   }
 
   return (
     <>
-      <Button variant="outline" size="sm" disabled={pending} onClick={() => apply({ type: "activate" })}>
+      <Button
+        variant="outline"
+        size="sm"
+        loading={pending && active === "activate"}
+        disabled={pending}
+        onClick={() => apply({ type: "activate" })}
+      >
         <Icon icon={Check} size="sm" className="me-1.5" />
         {t("bulkActivate")}
       </Button>
-      <Button variant="outline" size="sm" disabled={pending} onClick={() => apply({ type: "deactivate" })}>
+      <Button
+        variant="outline"
+        size="sm"
+        loading={pending && active === "deactivate"}
+        disabled={pending}
+        onClick={() => apply({ type: "deactivate" })}
+      >
         <Icon icon={X} size="sm" className="me-1.5" />
         {t("bulkDeactivate")}
       </Button>
-
-      {error ? <span className="text-body-small text-destructive">{error}</span> : null}
     </>
   );
 }

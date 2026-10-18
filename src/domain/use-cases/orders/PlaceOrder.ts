@@ -115,8 +115,11 @@ export class PlaceOrder {
     private readonly pricing: CheckoutPricing = new CheckoutPricing(),
   ) {}
 
-  async execute(input: PlaceOrderInput, guest: Pick<User, "id" | "name" | "phone">, now: Date = new Date()): Promise<Order> {
-
+  async execute(
+    input: PlaceOrderInput,
+    guest: Pick<User, "id" | "name" | "phone">,
+    now: Date = new Date(),
+  ): Promise<Order> {
     const tableLabel = input.tableLabel?.trim() || undefined;
     if (input.serviceType === "dineIn" && !tableLabel) {
       throw new ValidationError("tableLabel", "Choose a table for a dine-in order.");
@@ -129,7 +132,11 @@ export class PlaceOrder {
 
     const items = await buildOrderLines(this.productRepo, input.items);
     const subtotal = orderSubtotal(items);
-    const priced = await this.pricing.execute({ subtotal, promoCode: input.promoCode, redeemPoints: input.redeemPoints }, guest.id, now);
+    const priced = await this.pricing.execute(
+      { subtotal, promoCode: input.promoCode, redeemPoints: input.redeemPoints },
+      guest.id,
+      now,
+    );
     const actor: ActivityActor = { id: guest.id, name: guest.name };
 
     return this.orderRepo.place(

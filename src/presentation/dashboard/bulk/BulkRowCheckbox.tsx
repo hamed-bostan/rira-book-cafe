@@ -1,6 +1,6 @@
 "use client";
 
-import { Checkbox } from "@/src/presentation/design-system";
+import { Checkbox } from "@/src/presentation/design-system/components/Checkbox/Checkbox";
 
 import { useBulkSelection } from "./BulkSelectionProvider";
 

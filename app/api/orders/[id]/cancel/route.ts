@@ -3,7 +3,9 @@ import { NextResponse } from "next/server";
 import { withoutCosts } from "@/src/domain/entities/Order";
 import { CancelOwnOrder } from "@/src/domain/use-cases/orders/ChangeOrderStatus";
 import { orderRepository } from "@/src/infrastructure/container";
+import { invalidatesCatalog } from "@/src/lib/api/invalidatesCatalog";
 import { errorResponseFromException, unauthorizedResponse } from "@/src/lib/api/responses";
+import { CATALOG_TAGS } from "@/src/lib/cache-tags";
 import { getUserSession } from "@/src/lib/require-auth";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -12,7 +14,7 @@ type RouteContext = { params: Promise<{ id: string }> };
  * POST /api/orders/:id/cancel — the guest withdraws their own order while it's
  * still pending. 409 once staff have accepted it; 404 for anyone else's order.
  */
-export async function POST(_request: Request, { params }: RouteContext): Promise<NextResponse> {
+async function handlePost(_request: Request, { params }: RouteContext): Promise<NextResponse> {
   const session = await getUserSession();
   if (!session?.user.id) return unauthorizedResponse();
 
@@ -27,3 +29,5 @@ export async function POST(_request: Request, { params }: RouteContext): Promise
     return errorResponseFromException(error, `POST /api/orders/${id}/cancel failed`);
   }
 }
+
+export const POST = invalidatesCatalog([CATALOG_TAGS.products], handlePost);

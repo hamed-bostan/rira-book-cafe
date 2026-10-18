@@ -18,7 +18,11 @@ import {
 /** A guest asking for a table. */
 export const requestReservationSchema = z.object({
   startsAt: z.string().refine(isWallTime, "dateTimeInvalid"),
-  partySize: z.number().int("partySizeInvalid").min(MIN_PARTY_SIZE, "partySizeInvalid").max(MAX_PARTY_SIZE, "partySizeInvalid"),
+  partySize: z
+    .number()
+    .int("partySizeInvalid")
+    .min(MIN_PARTY_SIZE, "partySizeInvalid")
+    .max(MAX_PARTY_SIZE, "partySizeInvalid"),
   note: z
     .string()
     .trim()

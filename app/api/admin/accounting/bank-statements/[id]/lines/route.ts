@@ -24,7 +24,11 @@ export async function POST(request: NextRequest, { params }: RouteContext): Prom
   if (!body.ok) return errorResponse(400, { message: "Expected a JSON body.", code: "BAD_REQUEST" });
   const parsed = statementLinesSchema.safeParse(body.data);
   if (!parsed.success) {
-    return errorResponse(400, { message: "Please fix the highlighted fields.", code: "VALIDATION", fieldErrors: firstFieldErrors(parsed.error) });
+    return errorResponse(400, {
+      message: "Please fix the highlighted fields.",
+      code: "VALIDATION",
+      fieldErrors: firstFieldErrors(parsed.error),
+    });
   }
 
   try {

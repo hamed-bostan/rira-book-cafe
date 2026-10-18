@@ -6,7 +6,9 @@ import { Link } from "@/src/i18n/navigation";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { cn } from "@/src/lib/utils";
-import { Button, focusRing } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
+import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 
 import { StatCard } from "../StatCard";
 
@@ -93,7 +95,13 @@ export async function InventoryScreen({ summary, filter, canManage }: InventoryS
           href="/dashboard/inventory?level=out"
         />
         {summary.costsVisible ? (
-          <StatCard label={t("summary.value")} value={formatMoney(summary.stockValue, locale)} hint={t("summary.valueHint")} icon={Boxes} tone="info" />
+          <StatCard
+            label={t("summary.value")}
+            value={formatMoney(summary.stockValue, locale)}
+            hint={t("summary.valueHint")}
+            icon={Boxes}
+            tone="info"
+          />
         ) : null}
       </div>
 
@@ -105,16 +113,28 @@ export async function InventoryScreen({ summary, filter, canManage }: InventoryS
               : "flex items-start gap-2 rounded-card-md border border-warning-foreground bg-warning px-4 py-3 text-body-small text-warning-foreground"
           }
         >
-          {reconciled ? <CircleCheck className="size-4 shrink-0" aria-hidden /> : <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden />}
+          {reconciled ? (
+            <CircleCheck className="size-4 shrink-0" aria-hidden />
+          ) : (
+            <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
+          )}
           {reconciled
             ? t("summary.reconciled")
-            : t("summary.notReconciled", { stock: formatMoney(summary.stockValue, locale), books: formatMoney(summary.booksValue, locale) })}
+            : t("summary.notReconciled", {
+                stock: formatMoney(summary.stockValue, locale),
+                books: formatMoney(summary.booksValue, locale),
+              })}
         </p>
       ) : null}
 
       <nav aria-label={t("filterLabel")} className="flex flex-wrap gap-2">
         {(["all", "low", "out"] as const).map((option) => (
-          <Link key={option} href={option === "all" ? "/dashboard/inventory" : `/dashboard/inventory?level=${option}`} className={chip(filter === option)} aria-current={filter === option ? "page" : undefined}>
+          <Link
+            key={option}
+            href={option === "all" ? "/dashboard/inventory" : `/dashboard/inventory?level=${option}`}
+            className={chip(filter === option)}
+            aria-current={filter === option ? "page" : undefined}
+          >
             {t(`filter.${option}`)}
           </Link>
         ))}
@@ -122,26 +142,41 @@ export async function InventoryScreen({ summary, filter, canManage }: InventoryS
 
       <section className="min-w-0 overflow-x-auto rounded-card-lg border border-border bg-background">
         {items.length === 0 ? (
-          <p className="px-6 py-16 text-center text-body-small-emphasis text-muted-foreground">
-            {filter === "all" ? t("empty") : t("emptyFiltered")}{" "}
-            {filter === "all" ? (
-              <Link href="/dashboard/pricing/ingredients" className="text-primary underline underline-offset-4">
-                {t("addItems")}
-              </Link>
-            ) : null}
-          </p>
+          <EmptyState
+            icon={filter === "all" ? Boxes : CircleCheck}
+            title={filter === "all" ? t("empty") : t("emptyFiltered")}
+            action={
+              filter === "all" ? (
+                <Button asChild size="sm">
+                  <Link href="/dashboard/pricing/ingredients">{t("addItems")}</Link>
+                </Button>
+              ) : undefined
+            }
+          />
         ) : (
           <table className="w-full min-w-[44rem] text-body-small">
             <thead className="bg-surface text-body-caption text-muted-foreground">
               <tr>
-                <th scope="col" className="px-4 py-3 text-start font-medium">{t("col.item")}</th>
-                <th scope="col" className="px-4 py-3 text-end font-medium">{t("col.onHand")}</th>
-                <th scope="col" className="px-4 py-3 text-start font-medium">{t("col.reorder")}</th>
-                <th scope="col" className="px-4 py-3 text-start font-medium">{t("col.status")}</th>
+                <th scope="col" className="px-4 py-3 text-start font-medium">
+                  {t("col.item")}
+                </th>
+                <th scope="col" className="px-4 py-3 text-end font-medium">
+                  {t("col.onHand")}
+                </th>
+                <th scope="col" className="px-4 py-3 text-start font-medium">
+                  {t("col.reorder")}
+                </th>
+                <th scope="col" className="px-4 py-3 text-start font-medium">
+                  {t("col.status")}
+                </th>
                 {summary.costsVisible ? (
                   <>
-                    <th scope="col" className="px-4 py-3 text-end font-medium">{t("col.averageCost")}</th>
-                    <th scope="col" className="px-4 py-3 text-end font-medium">{t("col.value")}</th>
+                    <th scope="col" className="px-4 py-3 text-end font-medium">
+                      {t("col.averageCost")}
+                    </th>
+                    <th scope="col" className="px-4 py-3 text-end font-medium">
+                      {t("col.value")}
+                    </th>
                   </>
                 ) : null}
                 <th scope="col" className="px-4 py-3" />
@@ -153,11 +188,20 @@ export async function InventoryScreen({ summary, filter, canManage }: InventoryS
                 return (
                   <tr key={item.id} className={ROW_TONE[item.level]}>
                     <td className="px-4 py-3">
-                      <Link href={`/dashboard/inventory/movements?item=${item.id}`} className="text-body-small-emphasis text-foreground underline-offset-4 hover:underline" dir="auto">
+                      <Link
+                        href={`/dashboard/inventory/movements?item=${item.id}`}
+                        className="text-body-small-emphasis text-foreground underline-offset-4 hover:underline"
+                        dir="auto"
+                      >
                         {item.name}
                       </Link>
                     </td>
-                    <td className={cn("whitespace-nowrap px-4 py-3 text-end text-body-small-emphasis", QUANTITY_TONE[item.level])}>
+                    <td
+                      className={cn(
+                        "px-4 py-3 text-end text-body-small-emphasis whitespace-nowrap",
+                        QUANTITY_TONE[item.level],
+                      )}
+                    >
                       {formatNumber(item.onHand, locale, 3)} {unit}
                     </td>
                     <td className="px-4 py-3">
@@ -174,10 +218,10 @@ export async function InventoryScreen({ summary, filter, canManage }: InventoryS
                     </td>
                     {summary.costsVisible ? (
                       <>
-                        <td className="whitespace-nowrap px-4 py-3 text-end text-muted-foreground">
+                        <td className="px-4 py-3 text-end whitespace-nowrap text-muted-foreground">
                           {t("perUnit", { cost: formatNumber(item.averageCost, locale, 2), unit })}
                         </td>
-                        <td className="whitespace-nowrap px-4 py-3 text-end">{formatMoney(item.value, locale)}</td>
+                        <td className="px-4 py-3 text-end whitespace-nowrap">{formatMoney(item.value, locale)}</td>
                       </>
                     ) : null}
                     <td className="px-4 py-3 text-end">

@@ -5,7 +5,8 @@ import { useTranslations } from "next-intl";
 import type { Permission } from "@/src/domain/entities/Permission";
 import { Link, usePathname } from "@/src/i18n/navigation";
 import { cn } from "@/src/lib/utils";
-import { Icon, focusRing } from "@/src/presentation/design-system";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 
 import { isSectionActive, navGroupsFor } from "./sections";
 
@@ -46,7 +47,7 @@ export function DashboardNav({ permissions, collapsed = false, onNavigate }: Das
             (collapsed ? (
               <hr className="my-2 border-border" />
             ) : (
-              <p className="mt-3 px-3 pb-1 text-body-small-bold uppercase tracking-wide text-muted-foreground">
+              <p className="mt-3 px-3 pb-1 text-body-small-bold tracking-wide text-muted-foreground uppercase">
                 {t(group.id)}
               </p>
             ))}
@@ -65,9 +66,7 @@ export function DashboardNav({ permissions, collapsed = false, onNavigate }: Das
                 className={cn(
                   "flex items-center gap-3 text-body-small-emphasis transition-colors",
                   focusRing,
-                  collapsed
-                    ? "size-11 shrink-0 self-center justify-center rounded-xl p-0"
-                    : "rounded-xl px-3 py-2",
+                  collapsed ? "size-11 shrink-0 justify-center self-center rounded-xl p-0" : "rounded-xl px-3 py-2",
                   active
                     ? "bg-primary/10 text-primary"
                     : "text-muted-foreground hover:bg-surface-sunken hover:text-foreground",

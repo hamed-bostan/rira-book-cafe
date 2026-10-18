@@ -12,13 +12,7 @@ type DashboardPanelHeaderProps = HTMLAttributes<HTMLDivElement> & {
 /** Shared overview-card surface and responsive inset. */
 export function DashboardPanel({ className, ...props }: DashboardPanelProps) {
   return (
-    <section
-      className={cn(
-        "rounded-card-lg border border-border bg-background p-4 sm:p-5",
-        className,
-      )}
-      {...props}
-    />
+    <section className={cn("rounded-card-lg border border-border bg-background p-4 sm:p-5", className)} {...props} />
   );
 }
 

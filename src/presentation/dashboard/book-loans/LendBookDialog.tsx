@@ -4,7 +4,12 @@ import { Plus } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import * as React from "react";
 
-import { DEFAULT_LOAN_DAYS, MAX_BORROWER_NAME_LENGTH, MAX_LOAN_DAYS, MAX_LOAN_NOTE_LENGTH } from "@/src/domain/entities/BookLoan";
+import {
+  DEFAULT_LOAN_DAYS,
+  MAX_BORROWER_NAME_LENGTH,
+  MAX_LOAN_DAYS,
+  MAX_LOAN_NOTE_LENGTH,
+} from "@/src/domain/entities/BookLoan";
 import { shiftCafeDay } from "@/src/domain/entities/CafeTime";
 import type { LendableBook } from "@/src/domain/repositories/IBookLoanRepository";
 import { useRouter } from "@/src/i18n/navigation";
@@ -12,7 +17,14 @@ import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
-import { Button, FormMessage, Icon, Input, Modal, ModalContent, Select, Textarea } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
+import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
+import { Select } from "@/src/presentation/design-system/components/form/Select/Select";
+import { Textarea } from "@/src/presentation/design-system/components/form/Textarea/Textarea";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { Modal, ModalContent } from "@/src/presentation/design-system/components/Modal/Modal";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { bookLoansApi } from "./book-loan-api";
 
@@ -35,6 +47,7 @@ export function LendBookDialog({ books, today }: LendBookDialogProps) {
   const tFormErrors = useTranslations("formErrors");
   const locale = useLocale();
   const router = useRouter();
+  const { toast } = useToast();
 
   const [open, setOpen] = React.useState(false);
   const [productId, setProductId] = React.useState("");
@@ -60,6 +73,7 @@ export function LendBookDialog({ books, today }: LendBookDialogProps) {
     startTransition(async () => {
       try {
         await bookLoansApi.create({ productId, borrowerName, borrowerPhone, dueOn, note });
+        toast({ tone: "success", title: t("lent", { name: borrowerName.trim() }) });
         setOpen(false);
         reset();
         router.refresh();
@@ -100,7 +114,9 @@ export function LendBookDialog({ books, today }: LendBookDialogProps) {
                 {books.map((book) => (
                   <option key={book.id} value={book.id}>
                     {book.author ? `${book.title} — ${book.author}` : book.title}
-                    {book.onLoan > 0 ? ` (${t("copiesOut", { count: book.onLoan, formatted: formatNumber(book.onLoan, locale) })})` : ""}
+                    {book.onLoan > 0
+                      ? ` (${t("copiesOut", { count: book.onLoan, formatted: formatNumber(book.onLoan, locale) })})`
+                      : ""}
                   </option>
                 ))}
               </Select>
@@ -158,7 +174,7 @@ export function LendBookDialog({ books, today }: LendBookDialogProps) {
               <Button type="button" variant="outline" size="sm" onClick={() => setOpen(false)}>
                 {t("dialogCancel")}
               </Button>
-              <Button type="submit" size="sm" disabled={pending || !productId}>
+              <Button type="submit" size="sm" loading={pending} disabled={!productId}>
                 {pending ? t("lending") : t("lendSubmit")}
               </Button>
             </div>

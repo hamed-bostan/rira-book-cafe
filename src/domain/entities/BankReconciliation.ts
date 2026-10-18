@@ -116,7 +116,10 @@ export type ReconciliationSummary = BookFigures & {
   canReconcile: boolean;
 };
 
-export function reconciliationSummary(statement: Pick<BankStatement, "openingBalance" | "closingBalance" | "lines">, book: BookFigures): ReconciliationSummary {
+export function reconciliationSummary(
+  statement: Pick<BankStatement, "openingBalance" | "closingBalance" | "lines">,
+  book: BookFigures,
+): ReconciliationSummary {
   const statementTotal = statement.openingBalance + statement.lines.reduce((sum, line) => sum + line.amount, 0);
   const adjustedBook = book.bookBalance - book.outstanding + book.clearedAfter;
   const unmatchedLines = statement.lines.filter((line) => !line.matchId).length;
@@ -159,7 +162,11 @@ export function assertMatchBalances(statementAmounts: readonly number[], ledgerA
   }
   const bank = statementAmounts.reduce((sum, amount) => sum + amount, 0);
   const books = ledgerAmounts.reduce((sum, amount) => sum + amount, 0);
-  if (bank !== books) throw new ConflictError("MATCH_UNBALANCED", `The statement lines (${bank}) and ledger lines (${books}) don't add up to the same amount.`);
+  if (bank !== books)
+    throw new ConflictError(
+      "MATCH_UNBALANCED",
+      `The statement lines (${bank}) and ledger lines (${books}) don't add up to the same amount.`,
+    );
 }
 
 /** How many days apart a statement line and a ledger line may be and still be suggested as a match. */
@@ -206,7 +213,10 @@ const lineLabel = (line: Pick<BankStatementLine, "description" | "reference">): 
   line.reference ? `${line.description} (${line.reference})` : line.description;
 
 /** A bank charge from the statement: Dr Bank and gateway fees / Cr Bank. */
-export function bankFeeEntry(line: Pick<BankStatementLine, "date" | "amount" | "description" | "reference">, actor: Actor): NewJournalEntry {
+export function bankFeeEntry(
+  line: Pick<BankStatementLine, "date" | "amount" | "description" | "reference">,
+  actor: Actor,
+): NewJournalEntry {
   const amount = -line.amount;
   return {
     date: line.date,
@@ -222,7 +232,10 @@ export function bankFeeEntry(line: Pick<BankStatementLine, "date" | "amount" | "
 }
 
 /** Interest the bank paid: Dr Bank / Cr Bank interest income. */
-export function bankInterestEntry(line: Pick<BankStatementLine, "date" | "amount" | "description" | "reference">, actor: Actor): NewJournalEntry {
+export function bankInterestEntry(
+  line: Pick<BankStatementLine, "date" | "amount" | "description" | "reference">,
+  actor: Actor,
+): NewJournalEntry {
   return {
     date: line.date,
     description: `Bank interest — ${lineLabel(line)}`,
@@ -241,7 +254,10 @@ export function bankInterestEntry(line: Pick<BankStatementLine, "date" | "amount
  * after the previous statement ends, or the last full Persian month when this is
  * the first statement. Never past today.
  */
-export function suggestedStatementPeriod(previousToDay: string | undefined, today: string): { fromDay: string; toDay: string } {
+export function suggestedStatementPeriod(
+  previousToDay: string | undefined,
+  today: string,
+): { fromDay: string; toDay: string } {
   if (!previousToDay) return completeMonthsBefore(toJalali(today), 1);
   const fromDay = shiftCafeDay(previousToDay, 1);
   const month = toJalali(fromDay);

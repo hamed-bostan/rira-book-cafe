@@ -30,7 +30,10 @@ export class ChangeSuiteBooking {
     if (!current) throw new NotFoundError("suite booking", id);
     if (status === current.status) return current;
     if (!canTransitionSuiteBooking(current.status, status)) {
-      throw new ConflictError("INVALID_TRANSITION", `A suite booking can't move from "${current.status}" to "${status}".`);
+      throw new ConflictError(
+        "INVALID_TRANSITION",
+        `A suite booking can't move from "${current.status}" to "${status}".`,
+      );
     }
 
     const saved = await this.suiteRepo.applyStatus(id, current.status, status, (saved) => ({

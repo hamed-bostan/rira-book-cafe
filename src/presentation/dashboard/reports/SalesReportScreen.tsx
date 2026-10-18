@@ -7,9 +7,9 @@ import { formatNumber } from "@/src/lib/formatNumber";
 
 import { StatCard } from "../StatCard";
 
-import { DailySalesChart } from "./DailySalesChart";
 import { deltaProps } from "./delta";
-import { HourlyOrdersChart } from "./HourlyOrdersChart";
+import { LazyDailySalesChart } from "./LazyDailySalesChart";
+import { LazyHourlyOrdersChart } from "./LazyHourlyOrdersChart";
 import { ReportHeader } from "./ReportHeader";
 import { ShareBars } from "./ShareBars";
 import { TopItemsTable } from "./TopItemsTable";
@@ -75,7 +75,7 @@ export async function SalesReportScreen({ report, selected, sort, keep }: SalesR
         />
       </div>
 
-      <DailySalesChart
+      <LazyDailySalesChart
         daily={report.daily}
         previousDaily={report.previousDaily}
         labels={{
@@ -89,7 +89,7 @@ export async function SalesReportScreen({ report, selected, sort, keep }: SalesR
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <HourlyOrdersChart
+        <LazyHourlyOrdersChart
           hourly={report.hourly}
           labels={{
             heading: t("sales.hourlyHeading"),

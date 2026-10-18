@@ -1,4 +1,4 @@
-import { Plus } from "lucide-react";
+import { CalendarClock, Plus } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { isGuestCancellableReservation, type Reservation } from "@/src/domain/entities/Reservation";
@@ -6,7 +6,9 @@ import { Link } from "@/src/i18n/navigation";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { formatOrderDate, formatOrderTime } from "@/src/lib/formatOrderDate";
 import { ReservationStatusBadge } from "@/src/presentation/dashboard/reservations/ReservationStatusBadge";
-import { Button, Icon } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 
 import { CancelMyReservationButton } from "./CancelMyReservationButton";
 
@@ -38,7 +40,9 @@ export async function MyReservationsScreen({ reservations, now }: MyReservations
           </p>
         </div>
         <ReservationStatusBadge status={reservation.status} />
-        {isGuestCancellableReservation(reservation, nowDate) ? <CancelMyReservationButton reservationId={reservation.id} /> : null}
+        {isGuestCancellableReservation(reservation, nowDate) ? (
+          <CancelMyReservationButton reservationId={reservation.id} />
+        ) : null}
       </li>
     );
   }
@@ -55,9 +59,11 @@ export async function MyReservationsScreen({ reservations, now }: MyReservations
         </Button>
       </div>
       {upcoming.length === 0 ? (
-        <p className="rounded-card-lg border border-dashed border-border px-6 py-10 text-center text-body-small text-muted-foreground">
-          {t("reservations.empty")}
-        </p>
+        <EmptyState
+          icon={CalendarClock}
+          title={t("reservations.empty")}
+          className="rounded-card-lg border border-dashed border-border py-10"
+        />
       ) : (
         <ul className="flex flex-col gap-3">{upcoming.map(row)}</ul>
       )}

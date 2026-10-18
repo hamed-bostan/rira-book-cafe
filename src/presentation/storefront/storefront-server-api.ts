@@ -1,3 +1,5 @@
+import { cache } from "react";
+
 import { profileResponseSchema, type ProfileWire } from "@/src/contracts/profile-schema";
 import type { BookLoan } from "@/src/domain/entities/BookLoan";
 import type { BookWaitlistEntry, BookWaitlistStatus } from "@/src/domain/entities/BookWaitlist";
@@ -12,6 +14,7 @@ import type { Reservation } from "@/src/domain/entities/Reservation";
 import type { SuiteBooking, SuiteBusyRange } from "@/src/domain/entities/SuiteBooking";
 import { ApiError } from "@/src/lib/api/ApiError";
 import { serverApiGet } from "@/src/lib/api/server-client";
+import { CATALOG_TAGS } from "@/src/lib/cache-tags";
 import { bookLoanListResponseSchema } from "@/src/presentation/book-loans/book-loan-response-schema";
 import {
   bookWaitlistEntryListResponseSchema,
@@ -50,6 +53,27 @@ async function orNull<T>(read: Promise<T>): Promise<T | null> {
   }
 }
 
+// The public catalog is the same for every guest, so it's served from Next's data
+// cache (tagged, and expired by the write routes the moment it changes) rather than
+// re-queried on every render. Guest-owned reads below stay uncached.
+const PRODUCTS = { cache: { tags: [CATALOG_TAGS.products] } } as const;
+const CATEGORIES = { cache: { tags: [CATALOG_TAGS.categories] } } as const;
+const EVENTS = { cache: { tags: [CATALOG_TAGS.events] } } as const;
+
+// Reads that both a page's `generateMetadata` and its body make. `serverApiGet` passes
+// a timeout `signal`, which opts its fetch out of Next's request memoization, so these
+// are memoized per request with React `cache` instead of hitting the API twice.
+const readCategories = cache(async (): Promise<Category[]> => {
+  const all = await serverApiGet("/categories", categoryListResponseSchema, CATEGORIES);
+  return all.filter((category) => category.isActive);
+});
+const readItem = cache((id: string): Promise<Product | null> =>
+  orNull(serverApiGet(`/products/${id}`, productResponseSchema, PRODUCTS)),
+);
+const readEvent = cache((id: string): Promise<CafeEvent | null> =>
+  orNull(serverApiGet(`/events/${id}`, eventResponseSchema, EVENTS)),
+);
+
 /**
  * Server-side reads for the public site (BFF), fetched during server render in the
  * guest's language. Guest-owned reads forward the session cookie, so each
@@ -57,22 +81,21 @@ async function orNull<T>(read: Promise<T>): Promise<T | null> {
  */
 export const storefrontServerApi = {
   /** Active categories only — an inactive one is hidden from guests with its items. */
-  async categories(): Promise<Category[]> {
-    const all = await serverApiGet("/categories", categoryListResponseSchema);
-    return all.filter((category) => category.isActive);
+  categories(): Promise<Category[]> {
+    return readCategories();
   },
 
   /** The published menu. */
   menu(): Promise<Product[]> {
-    return serverApiGet("/products", productListResponseSchema);
+    return serverApiGet("/products", productListResponseSchema, PRODUCTS);
   },
 
   featured(): Promise<Product[]> {
-    return serverApiGet("/products", productListResponseSchema, { params: { featured: "true" } });
+    return serverApiGet("/products", productListResponseSchema, { ...PRODUCTS, params: { featured: "true" } });
   },
 
   item(id: string): Promise<Product | null> {
-    return orNull(serverApiGet(`/products/${id}`, productResponseSchema));
+    return readItem(id);
   },
 
   /** An item's approved reviews, newest first. */
@@ -86,11 +109,11 @@ export const storefrontServerApi = {
   },
 
   upcomingEvents(): Promise<CafeEvent[]> {
-    return serverApiGet("/events", eventListResponseSchema);
+    return serverApiGet("/events", eventListResponseSchema, EVENTS);
   },
 
   event(id: string): Promise<CafeEvent | null> {
-    return orNull(serverApiGet(`/events/${id}`, eventResponseSchema));
+    return readEvent(id);
   },
 
   myOrders(): Promise<Order[]> {

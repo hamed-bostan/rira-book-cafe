@@ -2,7 +2,6 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocale, useTranslations } from "next-intl";
-import * as React from "react";
 import { useForm, useWatch } from "react-hook-form";
 
 import { accountingSettingsSchema, type AccountingSettingsInput } from "@/src/contracts/accounting-schema";
@@ -12,7 +11,11 @@ import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatCafeDayMedium } from "@/src/lib/formatCafeDay";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
-import { Button, FormMessage, Input, TextField } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
+import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
+import { TextField } from "@/src/presentation/design-system/components/form/TextField/TextField";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { accountsApi } from "./accounting-api";
 
@@ -26,14 +29,22 @@ function percentOf(bps: number): string {
  * day freezes every entry dated on or before it — moving it later closes more;
  * clearing it reopens everything (and is audited like any other change).
  */
-export function AccountingSettingsForm({ settings, today, canWrite }: { settings: AccountingSettings; today: string; canWrite: boolean }) {
+export function AccountingSettingsForm({
+  settings,
+  today,
+  canWrite,
+}: {
+  settings: AccountingSettings;
+  today: string;
+  canWrite: boolean;
+}) {
   const t = useTranslations("dashAccounting");
   const tApiErrors = useTranslations("apiErrors");
   const tFormErrors = useTranslations("formErrors");
   const fieldError = (message?: string): string | undefined => formErrorMessage(tFormErrors, message);
   const locale = useLocale();
   const router = useRouter();
-  const [saved, setSaved] = React.useState(false);
+  const { toast } = useToast();
 
   const {
     register,
@@ -49,11 +60,10 @@ export function AccountingSettingsForm({ settings, today, canWrite }: { settings
   const closedThrough = useWatch({ control, name: "booksClosedThrough" });
 
   const onSubmit = handleSubmit(async (values) => {
-    setSaved(false);
     try {
       const next = await accountsApi.updateSettings(values);
       reset({ vatRate: percentOf(next.vatRateBps), booksClosedThrough: next.booksClosedThrough ?? "" });
-      setSaved(true);
+      toast({ tone: "success", title: t("settings.savedToast") });
       router.refresh();
     } catch (error) {
       const fields = error instanceof ApiError ? error.fieldErrors : undefined;
@@ -64,27 +74,56 @@ export function AccountingSettingsForm({ settings, today, canWrite }: { settings
   });
 
   return (
-    <form onSubmit={onSubmit} className="flex max-w-xl flex-col gap-5 rounded-card-lg border border-border bg-background p-4 md:p-6" noValidate>
-      <TextField label={t("settings.vatRateLabel")} required description={t("settings.vatRateHint")} error={fieldError(errors.vatRate?.message)}>
-        {(control) => <Input {...control} {...register("vatRate")} inputMode="decimal" dir="ltr" className="max-w-32" disabled={!canWrite} />}
+    <form
+      onSubmit={onSubmit}
+      className="flex max-w-xl flex-col gap-5 rounded-card-lg border border-border bg-background p-4 md:p-6"
+      noValidate
+    >
+      <TextField
+        label={t("settings.vatRateLabel")}
+        required
+        description={t("settings.vatRateHint")}
+        error={fieldError(errors.vatRate?.message)}
+      >
+        {(control) => (
+          <Input
+            {...control}
+            {...register("vatRate")}
+            inputMode="decimal"
+            dir="ltr"
+            className="max-w-32"
+            disabled={!canWrite}
+          />
+        )}
       </TextField>
       <TextField
         label={t("settings.closedThroughLabel")}
         description={
           <>
             {t("settings.closedThroughHint")}
-            {closedThrough ? <span className="mt-1 block text-foreground">{formatCafeDayMedium(closedThrough, locale)}</span> : null}
+            {closedThrough ? (
+              <span className="mt-1 block text-foreground">{formatCafeDayMedium(closedThrough, locale)}</span>
+            ) : null}
           </>
         }
         error={fieldError(errors.booksClosedThrough?.message)}
       >
-        {(control) => <Input {...control} {...register("booksClosedThrough")} type="date" max={today} dir="ltr" className="max-w-48" disabled={!canWrite} />}
+        {(control) => (
+          <Input
+            {...control}
+            {...register("booksClosedThrough")}
+            type="date"
+            max={today}
+            dir="ltr"
+            className="max-w-48"
+            disabled={!canWrite}
+          />
+        )}
       </TextField>
       {errors.root?.message ? <FormMessage size="md">{errors.root.message}</FormMessage> : null}
-      {saved && !isDirty ? <p className="text-body-small text-success-foreground">{t("settings.saved")}</p> : null}
       {canWrite ? (
         <div>
-          <Button type="submit" disabled={isSubmitting || !isDirty}>
+          <Button type="submit" loading={isSubmitting} disabled={!isDirty}>
             {t("settings.save")}
           </Button>
         </div>

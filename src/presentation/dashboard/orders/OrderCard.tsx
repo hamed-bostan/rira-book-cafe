@@ -5,7 +5,8 @@ import { Link } from "@/src/i18n/navigation";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formatOrderTime } from "@/src/lib/formatOrderDate";
 import { cn } from "@/src/lib/utils";
-import { Badge, focusRing } from "@/src/presentation/design-system";
+import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
+import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 
 import { OrderServiceLabel } from "./OrderServiceLabel";
 import { OrderStatusBadge } from "./OrderStatusBadge";

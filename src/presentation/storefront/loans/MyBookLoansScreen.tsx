@@ -1,3 +1,4 @@
+import { BookOpen } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { isBookLoanOverdue, type BookLoan } from "@/src/domain/entities/BookLoan";
@@ -5,7 +6,9 @@ import { isOpenWaitlistEntry, type BookWaitlistEntry } from "@/src/domain/entiti
 import { Link } from "@/src/i18n/navigation";
 import { formatOrderDate } from "@/src/lib/formatOrderDate";
 import { BookLoanStatusBadge } from "@/src/presentation/dashboard/book-loans/BookLoanStatusBadge";
-import { Badge } from "@/src/presentation/design-system";
+import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
 
 import { LeaveWaitlistButton } from "./LeaveWaitlistButton";
 
@@ -54,9 +57,16 @@ export async function MyBookLoansScreen({ loans, waitlist, now }: MyBookLoansScr
         <p className="mt-1 text-body-small text-muted-foreground">{t("loans.subtitle")}</p>
       </div>
       {out.length === 0 ? (
-        <p className="rounded-card-lg border border-dashed border-border px-6 py-10 text-center text-body-small text-muted-foreground">
-          {t("loans.empty")}
-        </p>
+        <EmptyState
+          icon={BookOpen}
+          title={t("loans.empty")}
+          action={
+            <Button asChild size="sm" variant="outline">
+              <Link href="/menu?kind=book">{t("home.browseBooks")}</Link>
+            </Button>
+          }
+          className="rounded-card-lg border border-dashed border-border py-10"
+        />
       ) : (
         <ul className="flex flex-col gap-3">{out.map(row)}</ul>
       )}
@@ -67,10 +77,15 @@ export async function MyBookLoansScreen({ loans, waitlist, now }: MyBookLoansScr
             {waiting.map((entry) => (
               <li key={entry.id} className="flex flex-wrap items-center gap-3 rounded-card-md border border-border p-4">
                 <div className="min-w-0 flex-1">
-                  <Link href={`/menu/${entry.productId}`} className="text-body-small-strong text-foreground hover:underline">
+                  <Link
+                    href={`/menu/${entry.productId}`}
+                    className="text-body-small-strong text-foreground hover:underline"
+                  >
                     {entry.bookTitle}
                   </Link>
-                  <p className="text-body-caption text-muted-foreground">{t("waitlist.joinedOn", { date: formatOrderDate(entry.createdAt, locale) })}</p>
+                  <p className="text-body-caption text-muted-foreground">
+                    {t("waitlist.joinedOn", { date: formatOrderDate(entry.createdAt, locale) })}
+                  </p>
                 </div>
                 <Badge variant={entry.status === "notified" ? "success" : "info"}>
                   {entry.status === "notified" ? t("waitlist.yourTurn") : t("waitlist.waiting")}

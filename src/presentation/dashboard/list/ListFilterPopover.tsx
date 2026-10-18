@@ -4,7 +4,7 @@ import { ChevronDown } from "lucide-react";
 import * as React from "react";
 
 import { cn } from "@/src/lib/utils";
-import { Popover, PopoverContent, PopoverTrigger } from "@/src/presentation/design-system";
+import { Popover, PopoverContent, PopoverTrigger } from "@/src/presentation/design-system/components/Popover/Popover";
 
 type ListFilterPopoverProps = {
   /** The filter's name, shown on the trigger ("Status", "Date"). */
@@ -62,7 +62,7 @@ export function ListFilterPopover({
   triggerAriaDescribedBy,
   triggerAriaInvalid,
 }: ListFilterPopoverProps) {
-  const active = isActive ?? (value != null);
+  const active = isActive ?? value != null;
 
   return (
     <Popover>
@@ -74,7 +74,7 @@ export function ListFilterPopover({
         className={cn(
           "group flex h-10 cursor-pointer items-center gap-2 rounded-button border px-3 text-body-small-emphasis transition-colors",
           "disabled:cursor-not-allowed disabled:opacity-50",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
           // An active filter is carried by border and text colour, never by
           // colour alone — the value beside the label is the primary signal, so
           // this still reads for anyone who can't tell the two borders apart.
@@ -85,7 +85,9 @@ export function ListFilterPopover({
         )}
       >
         {icon}
-        <span dir="auto" className="min-w-0 truncate">{label}</span>
+        <span dir="auto" className="min-w-0 truncate">
+          {label}
+        </span>
         {value != null ? (
           <>
             <span aria-hidden className="text-border">

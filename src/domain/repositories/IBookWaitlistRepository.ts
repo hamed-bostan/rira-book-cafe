@@ -1,7 +1,10 @@
 import type { BookWaitlistEntry } from "../entities/BookWaitlist";
 
 /** A guest joining the line. Status and timestamps are the repository's. */
-export type NewWaitlistEntry = Pick<BookWaitlistEntry, "productId" | "bookTitle" | "userId" | "guestName" | "guestPhone">;
+export type NewWaitlistEntry = Pick<
+  BookWaitlistEntry,
+  "productId" | "bookTitle" | "userId" | "guestName" | "guestPhone"
+>;
 
 export type IBookWaitlistRepository = {
   /**

@@ -1,7 +1,4 @@
-import {
-  ACTIVITY_ENTITY_TYPES,
-  type ActivityEntityType,
-} from "@/src/domain/entities/ActivityEntry";
+import { ACTIVITY_ENTITY_TYPES, type ActivityEntityType } from "@/src/domain/entities/ActivityEntry";
 
 /**
  * Which slices of the activity log a viewer may read.
@@ -22,17 +19,12 @@ const OWNER_ONLY_ENTITY_TYPES: readonly ActivityEntityType[] = ["user"];
  * shape `ActivityFilters.visibleEntityTypes` expects, where absent means
  * unrestricted.
  */
-export function visibleActivityEntityTypes(
-  isOwner: boolean,
-): readonly ActivityEntityType[] | undefined {
+export function visibleActivityEntityTypes(isOwner: boolean): readonly ActivityEntityType[] | undefined {
   if (isOwner) return undefined;
   return ACTIVITY_ENTITY_TYPES.filter((type) => !OWNER_ONLY_ENTITY_TYPES.includes(type));
 }
 
 /** Whether this viewer may read entries about `entityType` at all. */
-export function canReadActivityEntityType(
-  entityType: ActivityEntityType,
-  isOwner: boolean,
-): boolean {
+export function canReadActivityEntityType(entityType: ActivityEntityType, isOwner: boolean): boolean {
   return isOwner || !OWNER_ONLY_ENTITY_TYPES.includes(entityType);
 }

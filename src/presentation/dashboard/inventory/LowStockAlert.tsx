@@ -27,13 +27,18 @@ export async function LowStockAlert({ items }: { items: StockItem[] }) {
     <section
       className={cn(
         "flex flex-col gap-3 rounded-card-lg border px-4 py-4 md:px-6",
-        anyOut ? "border-error-foreground bg-error text-error-foreground" : "border-warning-foreground bg-warning text-warning-foreground",
+        anyOut
+          ? "border-error-foreground bg-error text-error-foreground"
+          : "border-warning-foreground bg-warning text-warning-foreground",
       )}
     >
       <div className="flex flex-wrap items-center gap-2">
         <AlertTriangle className="size-5 shrink-0" aria-hidden />
         <h2 className="text-body-strong">{t("alert.title", { count: alerts.length })}</h2>
-        <Link href="/dashboard/inventory?level=low" className="ms-auto text-body-small-emphasis underline underline-offset-4">
+        <Link
+          href="/dashboard/inventory?level=low"
+          className="ms-auto text-body-small-emphasis underline underline-offset-4"
+        >
           {t("alert.open")}
         </Link>
       </div>
@@ -43,13 +48,20 @@ export async function LowStockAlert({ items }: { items: StockItem[] }) {
             key={item.id}
             className={cn(
               "rounded-full border px-3 py-1 text-body-caption",
-              item.level === "out" ? "border-error-foreground bg-background text-error-foreground" : "border-warning-foreground bg-background text-warning-foreground",
+              item.level === "out"
+                ? "border-error-foreground bg-background text-error-foreground"
+                : "border-warning-foreground bg-background text-warning-foreground",
             )}
           >
-            <span dir="auto">{item.name}</span> · {item.level === "out" ? t("level.out") : `${formatNumber(item.onHand, locale, 3)} ${t(`unit.${item.unit}`)}`}
+            <span dir="auto">{item.name}</span> ·{" "}
+            {item.level === "out"
+              ? t("level.out")
+              : `${formatNumber(item.onHand, locale, 3)} ${t(`unit.${item.unit}`)}`}
           </li>
         ))}
-        {alerts.length > SHOWN ? <li className="px-1 py-1 text-body-caption">{t("alert.more", { count: alerts.length - SHOWN })}</li> : null}
+        {alerts.length > SHOWN ? (
+          <li className="px-1 py-1 text-body-caption">{t("alert.more", { count: alerts.length - SHOWN })}</li>
+        ) : null}
       </ul>
     </section>
   );

@@ -24,7 +24,19 @@ ENV DATABASE_URL="postgresql://build:build@localhost:5432/build?schema=public"
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npx prisma generate
-RUN npm run build
+# Error tracking (optional). The browser DSN is inlined into the client bundle at
+# build time, so it is a build arg; the server reads SENTRY_DSN at runtime from
+# .env.production. Source maps are uploaded only when the `sentry_auth_token`
+# build secret is provided (`--secret id=sentry_auth_token,env=SENTRY_AUTH_TOKEN`),
+# which keeps the token out of the image layers and history.
+ARG NEXT_PUBLIC_SENTRY_DSN
+ARG NEXT_PUBLIC_SENTRY_ENVIRONMENT
+ARG NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE
+ARG SENTRY_URL
+ARG SENTRY_ORG
+ARG SENTRY_PROJECT
+ARG SENTRY_RELEASE
+RUN --mount=type=secret,id=sentry_auth_token,env=SENTRY_AUTH_TOKEN npm run build
 
 # ---- runner: production server. Full node_modules so Prisma's client, engine, and
 #      migrate CLI are all present — no standalone file-tracing to fight. ----
@@ -44,5 +56,17 @@ COPY --from=builder /app/next.config.ts ./next.config.ts
 COPY --from=builder /app/prisma ./prisma
 
 EXPOSE 3000
+
+# Reported by GET /api/health (and the error tracker's release); e.g. the git SHA:
+# `docker build --build-arg APP_VERSION=$(git rev-parse --short HEAD)`. Defaults
+# to the package.json version.
+ARG APP_VERSION
+ENV APP_VERSION=${APP_VERSION}
+
+# 200 only when the server is up AND the database answers (see app/api/health).
+# The start period covers `prisma migrate deploy` + server boot.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
+  CMD ["node", "-e", "fetch('http://127.0.0.1:'+(process.env.PORT||3000)+'/api/health').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"]
+
 # Apply pending migrations (a no-op when already up to date), then start the server.
 CMD ["sh", "-c", "npx prisma migrate deploy && npm run start"]

@@ -49,7 +49,12 @@ export class OpenCashShift {
 export class CloseCashShift {
   constructor(private readonly shiftRepo: ICashShiftRepository) {}
 
-  async execute(id: string, input: { countedCash: number; note?: string }, staff: ActivityActor, now: Date): Promise<CashShift> {
+  async execute(
+    id: string,
+    input: { countedCash: number; note?: string },
+    staff: ActivityActor,
+    now: Date,
+  ): Promise<CashShift> {
     const countedCash = validAmount("countedCash", input.countedCash);
     const note = validNote(input.note);
     const shift = await this.shiftRepo.getById(id);

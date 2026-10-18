@@ -15,7 +15,12 @@ import { createPage, toSkipTake, type Page, type PageRequest } from "@/src/domai
 import { ConflictError } from "@/src/domain/errors/ConflictError";
 import { NotFoundError } from "@/src/domain/errors/NotFoundError";
 import type { AuditHook } from "@/src/domain/repositories/AuditHook";
-import type { ExpenseFilters, IExpenseRepository, NewExpense, NewSupplier } from "@/src/domain/repositories/IExpenseRepository";
+import type {
+  ExpenseFilters,
+  IExpenseRepository,
+  NewExpense,
+  NewSupplier,
+} from "@/src/domain/repositories/IExpenseRepository";
 import type { LedgerHook } from "@/src/domain/repositories/ILedgerRepository";
 import { prisma } from "@/src/infrastructure/prisma/client";
 import { inTransaction, type PrismaDb } from "@/src/infrastructure/prisma/transaction";
@@ -49,7 +54,11 @@ export class PrismaExpenseRepository implements IExpenseRepository {
   }
 
   async createSupplier(input: NewSupplier): Promise<Supplier> {
-    return toSupplier(await prisma.supplier.create({ data: { name: input.name, phone: input.phone ?? null, note: input.note ?? null } }));
+    return toSupplier(
+      await prisma.supplier.create({
+        data: { name: input.name, phone: input.phone ?? null, note: input.note ?? null },
+      }),
+    );
   }
 
   async updateSupplier(id: string, input: NewSupplier & { isActive: boolean }): Promise<Supplier> {
@@ -154,7 +163,11 @@ export class PrismaExpenseRepository implements IExpenseRepository {
     });
   }
 
-  async void(id: string, reverse: (entry: JournalEntry) => NewJournalEntry, audit?: AuditHook<Expense>): Promise<Expense> {
+  async void(
+    id: string,
+    reverse: (entry: JournalEntry) => NewJournalEntry,
+    audit?: AuditHook<Expense>,
+  ): Promise<Expense> {
     return inTransaction(this.db, async (tx) => {
       const result = await tx.expense.updateMany({ where: { id, status: { not: "void" } }, data: { status: "void" } });
       if (result.count === 0) {
@@ -198,7 +211,10 @@ async function returnReceivedStock(tx: Prisma.TransactionClient, expenseId: stri
     const current = stock.get(ingredientId);
     if (!current || quantity <= 0) continue;
     if (current.onHand + 1e-9 < quantity) {
-      throw new ConflictError("STOCK_USED", `Some of the ${current.name} from this delivery has already been used, so it can't be voided.`);
+      throw new ConflictError(
+        "STOCK_USED",
+        `Some of the ${current.name} from this delivery has already been used, so it can't be voided.`,
+      );
     }
     const onHand = roundQuantity(current.onHand - quantity);
     const remaining = current.value - value;
@@ -206,7 +222,14 @@ async function returnReceivedStock(tx: Prisma.TransactionClient, expenseId: stri
       tx,
       current,
       { onHand, value: remaining, averageCost: onHand > 0 ? remaining / onHand : current.averageCost },
-      { kind: "receipt", quantity: -quantity, value: -value, date: today, referenceId: expenseId, note: "Delivery voided" },
+      {
+        kind: "receipt",
+        quantity: -quantity,
+        value: -value,
+        date: today,
+        referenceId: expenseId,
+        note: "Delivery voided",
+      },
       { id: "system", name: "Void" },
     );
   }

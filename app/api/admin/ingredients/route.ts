@@ -18,7 +18,9 @@ export const dynamic = "force-dynamic";
 export async function GET(request: NextRequest): Promise<NextResponse> {
   if (!(await getSessionWith("accounting.view"))) return unauthorizedResponse();
   try {
-    return NextResponse.json(await pricingRepository.listIngredients(request.nextUrl.searchParams.get("all") === "true"));
+    return NextResponse.json(
+      await pricingRepository.listIngredients(request.nextUrl.searchParams.get("all") === "true"),
+    );
   } catch (error) {
     return errorResponseFromException(error, "GET /api/admin/ingredients failed");
   }
@@ -32,7 +34,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   if (!body.ok) return errorResponse(400, { message: "Expected a JSON body.", code: "BAD_REQUEST" });
   const parsed = ingredientSchema.safeParse(body.data);
   if (!parsed.success) {
-    return errorResponse(400, { message: "Please fix the highlighted fields.", code: "VALIDATION", fieldErrors: firstFieldErrors(parsed.error) });
+    return errorResponse(400, {
+      message: "Please fix the highlighted fields.",
+      code: "VALIDATION",
+      fieldErrors: firstFieldErrors(parsed.error),
+    });
   }
 
   try {

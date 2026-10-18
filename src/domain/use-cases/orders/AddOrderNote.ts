@@ -6,7 +6,6 @@ import type { ActivityActor } from "../../entities/ActivityEntry";
 import type { IOrderNoteRepository } from "../../repositories/IOrderNoteRepository";
 import type { IOrderRepository } from "../../repositories/IOrderRepository";
 
-
 /**
  * Leave an internal note on an order. Requires `orders.note`, which every dashboard
  * role holds — it's the one write `support` has, and the reason that role is more

@@ -8,9 +8,7 @@ import type { ActivityActor } from "../../entities/ActivityEntry";
 import type { IProductRepository } from "../../repositories/IProductRepository";
 
 export class DeleteProduct {
-  constructor(
-    private readonly productRepo: IProductRepository,
-  ) {}
+  constructor(private readonly productRepo: IProductRepository) {}
 
   async execute(id: string, actor: ActivityActor): Promise<void> {
     if (!id) throw new ValidationError("id", "Missing product id.");

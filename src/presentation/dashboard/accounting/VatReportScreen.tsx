@@ -28,7 +28,14 @@ export async function VatReportScreen({ report, canWrite }: { report: VatReport;
       <StatementHeader title={t("statements.vat.title")} subtitle={t("statements.vat.subtitle")} span={report} />
       <dl className="divide-y divide-border overflow-hidden rounded-card-lg border border-border bg-background text-body-small">
         {rows.map((row) => (
-          <div key={row.key} className={"strong" in row ? "flex items-center justify-between gap-3 bg-surface px-4 py-3 text-body-small-emphasis" : "flex items-center justify-between gap-3 px-4 py-3"}>
+          <div
+            key={row.key}
+            className={
+              "strong" in row
+                ? "flex items-center justify-between gap-3 bg-surface px-4 py-3 text-body-small-emphasis"
+                : "flex items-center justify-between gap-3 px-4 py-3"
+            }
+          >
             <dt className="flex flex-col">
               <span className="text-foreground">{t(`vat.${row.key}`)}</span>
               <span className="text-body-caption text-muted-foreground">{t(`vat.${row.key}Hint`)}</span>
@@ -40,7 +47,10 @@ export async function VatReportScreen({ report, canWrite }: { report: VatReport;
       {canWrite && report.closingBalance > 0 ? (
         <p className="text-body-small text-muted-foreground">
           {t("vat.settleHint")}{" "}
-          <Link href="/dashboard/accounting/journal/new" className="font-medium text-primary underline underline-offset-4">
+          <Link
+            href="/dashboard/accounting/journal/new"
+            className="font-medium text-primary underline underline-offset-4"
+          >
             {t("journal.newEntry")}
           </Link>
         </p>

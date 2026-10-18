@@ -70,7 +70,16 @@ export type Permission = (typeof PERMISSIONS)[number];
 export const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
   customer: [],
   support: ["dashboard.view", "orders.note", "activity.view"],
-  staff: ["dashboard.view", "orders.fulfill", "orders.note", "reservations.manage", "loans.manage", "activity.view", "inventory.view", "shifts.manage"],
+  staff: [
+    "dashboard.view",
+    "orders.fulfill",
+    "orders.note",
+    "reservations.manage",
+    "loans.manage",
+    "activity.view",
+    "inventory.view",
+    "shifts.manage",
+  ],
   admin: [
     "dashboard.view",
     "orders.fulfill",

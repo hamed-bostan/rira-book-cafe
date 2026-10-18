@@ -1,7 +1,13 @@
 import { getTranslations } from "next-intl/server";
 
 import type { Order } from "@/src/domain/entities/Order";
-import { DataTable, Table, TableBody, TableHead, TableHeader } from "@/src/presentation/design-system";
+import {
+  DataTable,
+  Table,
+  TableBody,
+  TableHead,
+  TableHeader,
+} from "@/src/presentation/design-system/components/DataTable/DataTable";
 
 import { OrderCard } from "./OrderCard";
 import { OrderRow } from "./OrderRow";

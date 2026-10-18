@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { recipeSchema } from "@/src/contracts/pricing-schema";
 import { SaveRecipe } from "@/src/domain/use-cases/pricing/PricingCommands";
 import { pricingRepository } from "@/src/infrastructure/container";
+import { invalidatesCatalog } from "@/src/lib/api/invalidatesCatalog";
 import {
   errorResponse,
   errorResponseFromException,
@@ -10,6 +11,7 @@ import {
   parseJsonBody,
   unauthorizedResponse,
 } from "@/src/lib/api/responses";
+import { CATALOG_TAGS } from "@/src/lib/cache-tags";
 import { getSessionWith } from "@/src/lib/require-permission";
 
 export const dynamic = "force-dynamic";
@@ -28,7 +30,7 @@ export async function GET(_request: Request, { params }: RouteContext): Promise<
 }
 
 /** PUT /api/admin/recipes/:productId — replace the recipe; the item's cost price follows. Requires `accounting.write`. */
-export async function PUT(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
+async function handlePut(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   if (!(await getSessionWith("accounting.write"))) return unauthorizedResponse();
 
   const { productId } = await params;
@@ -36,7 +38,11 @@ export async function PUT(request: NextRequest, { params }: RouteContext): Promi
   if (!body.ok) return errorResponse(400, { message: "Expected a JSON body.", code: "BAD_REQUEST" });
   const parsed = recipeSchema.safeParse(body.data);
   if (!parsed.success) {
-    return errorResponse(400, { message: "Please fix the highlighted fields.", code: "VALIDATION", fieldErrors: firstFieldErrors(parsed.error) });
+    return errorResponse(400, {
+      message: "Please fix the highlighted fields.",
+      code: "VALIDATION",
+      fieldErrors: firstFieldErrors(parsed.error),
+    });
   }
 
   try {
@@ -45,3 +51,5 @@ export async function PUT(request: NextRequest, { params }: RouteContext): Promi
     return errorResponseFromException(error, `PUT /api/admin/recipes/${productId} failed`);
   }
 }
+
+export const PUT = invalidatesCatalog([CATALOG_TAGS.products], handlePut);

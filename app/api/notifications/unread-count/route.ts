@@ -14,7 +14,10 @@ export async function GET(): Promise<NextResponse> {
 
   try {
     const reminders = new SyncLoanReminders(bookLoanRepository, customerNotifier);
-    const count = await new CountUnreadNotifications(notificationRepository, reminders).execute(session.user.id, new Date());
+    const count = await new CountUnreadNotifications(notificationRepository, reminders).execute(
+      session.user.id,
+      new Date(),
+    );
     return NextResponse.json({ count });
   } catch (error) {
     return errorResponseFromException(error, "GET /api/notifications/unread-count failed");

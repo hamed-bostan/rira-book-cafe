@@ -4,19 +4,15 @@ import { Check } from "lucide-react";
 import * as React from "react";
 
 import { cn } from "@/src/lib/utils";
-import { Button, Input, PopoverClose } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
+import { PopoverClose } from "@/src/presentation/design-system/components/Popover/Popover";
 
 import { ListFilterPopover } from "./ListFilterPopover";
 import { useListParams } from "./useListParams";
 
 /** The presets on offer, in the order they're listed. */
-export const DATE_RANGE_PRESETS = [
-  "today",
-  "yesterday",
-  "last7",
-  "last30",
-  "thisMonth",
-] as const;
+export const DATE_RANGE_PRESETS = ["today", "yesterday", "last7", "last30", "thisMonth"] as const;
 
 export type DateRangePreset = (typeof DATE_RANGE_PRESETS)[number];
 
@@ -152,7 +148,7 @@ export function ListDateRangeFilter({
             }}
             className={cn(
               "flex items-center gap-2 rounded-button px-2 py-2 text-start text-body-bold text-foreground transition-colors hover:bg-muted",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
             )}
           >
             {labels[preset]}

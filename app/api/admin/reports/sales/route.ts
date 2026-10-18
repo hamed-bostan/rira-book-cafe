@@ -19,7 +19,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
   try {
     const params = request.nextUrl.searchParams;
-    const report = await new GetSalesReport(analyticsRepository).execute(parseAnalyticsRange(params), parseTopItemSort(params));
+    const report = await new GetSalesReport(analyticsRepository).execute(
+      parseAnalyticsRange(params),
+      parseTopItemSort(params),
+    );
     return NextResponse.json(report);
   } catch (error) {
     return errorResponseFromException(error, "GET /api/admin/reports/sales failed");

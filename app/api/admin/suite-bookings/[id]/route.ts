@@ -37,10 +37,14 @@ export async function PATCH(request: NextRequest, { params }: RouteContext): Pro
   }
 
   try {
-    const booking = await new ChangeSuiteBooking(suiteBookingRepository, customerNotifier).execute(id, parsed.data.status, {
-      id: session.user.id,
-      name: session.user.name ?? session.user.id,
-    });
+    const booking = await new ChangeSuiteBooking(suiteBookingRepository, customerNotifier).execute(
+      id,
+      parsed.data.status,
+      {
+        id: session.user.id,
+        name: session.user.name ?? session.user.id,
+      },
+    );
     return NextResponse.json(booking);
   } catch (error) {
     return errorResponseFromException(error, `PATCH /api/admin/suite-bookings/${id} failed`);

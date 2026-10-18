@@ -13,9 +13,15 @@ export async function DELETE(_request: Request, { params }: RouteContext): Promi
   if (!session) return unauthorizedResponse();
   const { id, lineId } = await params;
   try {
-    await new RemoveStatementLine(bankReconciliationRepository).execute(id, lineId, { id: session.user.id, name: session.user.name ?? session.user.id });
+    await new RemoveStatementLine(bankReconciliationRepository).execute(id, lineId, {
+      id: session.user.id,
+      name: session.user.name ?? session.user.id,
+    });
     return new NextResponse(null, { status: 204 });
   } catch (error) {
-    return errorResponseFromException(error, `DELETE /api/admin/accounting/bank-statements/${id}/lines/${lineId} failed`);
+    return errorResponseFromException(
+      error,
+      `DELETE /api/admin/accounting/bank-statements/${id}/lines/${lineId} failed`,
+    );
   }
 }

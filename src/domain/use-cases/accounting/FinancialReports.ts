@@ -31,27 +31,39 @@ export class FinancialReports {
 
   /** Every account's balance as of a day (all entries on or before it). */
   async trialBalance(asOfDay: string): Promise<TrialBalance> {
-    const [accounts, movements] = await Promise.all([this.ledger.listAccounts(), this.ledger.movements(undefined, asOfDay)]);
+    const [accounts, movements] = await Promise.all([
+      this.ledger.listAccounts(),
+      this.ledger.movements(undefined, asOfDay),
+    ]);
     return buildTrialBalance(asOfDay, accounts, movements);
   }
 
   /** Revenue, cost of sales and expenses for entries dated within the span. */
   async profitAndLoss(fromDay: string, toDay: string): Promise<ProfitAndLoss> {
     assertSpan(fromDay, toDay);
-    const [accounts, movements] = await Promise.all([this.ledger.listAccounts(), this.ledger.movements(fromDay, toDay, { excludeClosing: true })]);
+    const [accounts, movements] = await Promise.all([
+      this.ledger.listAccounts(),
+      this.ledger.movements(fromDay, toDay, { excludeClosing: true }),
+    ]);
     return buildProfitAndLoss(fromDay, toDay, accounts, movements);
   }
 
   /** Assets, liabilities and equity as of a day. */
   async balanceSheet(asOfDay: string): Promise<BalanceSheet> {
-    const [accounts, movements] = await Promise.all([this.ledger.listAccounts(), this.ledger.movements(undefined, asOfDay)]);
+    const [accounts, movements] = await Promise.all([
+      this.ledger.listAccounts(),
+      this.ledger.movements(undefined, asOfDay),
+    ]);
     return buildBalanceSheet(asOfDay, accounts, movements);
   }
 
   /** VAT collected, VAT paid on expenses, and what was settled — the period's VAT return. */
   async vat(fromDay: string, toDay: string): Promise<VatReport> {
     assertSpan(fromDay, toDay);
-    const [movement, closing] = await Promise.all([this.ledger.vatMovement(fromDay, toDay), this.ledger.movements(undefined, toDay)]);
+    const [movement, closing] = await Promise.all([
+      this.ledger.vatMovement(fromDay, toDay),
+      this.ledger.movements(undefined, toDay),
+    ]);
     const vat = closing.find((row) => row.accountCode === SYSTEM_ACCOUNTS.vatPayable);
     return {
       fromDay,
@@ -73,7 +85,13 @@ export class FinancialReports {
       this.ledger.movements(undefined, shiftCafeDay(fromDay, -1)),
       this.ledger.accountLines(code, fromDay, toDay),
     ]);
-    return buildAccountLedger(account, fromDay, toDay, before.find((row) => row.accountCode === code), lines);
+    return buildAccountLedger(
+      account,
+      fromDay,
+      toDay,
+      before.find((row) => row.accountCode === code),
+      lines,
+    );
   }
 
   /** What each menu item earned net of VAT against what it cost, for sales booked in the span. */

@@ -49,7 +49,11 @@ export type ICategoryRepository = {
   // translation, falling back to the base row when none exists.
   getAll(locale?: string): Promise<Category[]>;
   /** One page of the category-management list — filtered, sorted, and counted. */
-  listPage(filters: AdminCategoryFilters, page: PageRequest<AdminCategorySort>, locale?: string): Promise<Page<Category>>;
+  listPage(
+    filters: AdminCategoryFilters,
+    page: PageRequest<AdminCategorySort>,
+    locale?: string,
+  ): Promise<Page<Category>>;
   getById(id: string, locale?: string): Promise<Category | null>;
   getBySlug(slug: string, locale?: string): Promise<Category | null>;
   create(input: NewCategory, audit?: AuditHook<Category>): Promise<Category>;
@@ -73,4 +77,4 @@ export type ICategoryRepository = {
     change: BulkCategoryChange,
     audit?: AuditHook<BulkCategoryUpdate>,
   ): Promise<BulkCategoryUpdate[]>;
-}
+};

@@ -8,9 +8,30 @@ export async function ReportsScreen() {
   const t = await getTranslations("dashReports");
 
   const items: ReportDirectoryItem[] = [
-    { id: "sales", title: t("sales.title"), description: t("sales.subtitle"), href: "/dashboard/reports/sales", icon: TrendingUp, tone: "green" },
-    { id: "payments", title: t("payments.title"), description: t("payments.subtitle"), href: "/dashboard/reports/payments", icon: CreditCard, tone: "blue" },
-    { id: "guests", title: t("guests.title"), description: t("guests.subtitle"), href: "/dashboard/reports/guests", icon: Users, tone: "violet" },
+    {
+      id: "sales",
+      title: t("sales.title"),
+      description: t("sales.subtitle"),
+      href: "/dashboard/reports/sales",
+      icon: TrendingUp,
+      tone: "green",
+    },
+    {
+      id: "payments",
+      title: t("payments.title"),
+      description: t("payments.subtitle"),
+      href: "/dashboard/reports/payments",
+      icon: CreditCard,
+      tone: "blue",
+    },
+    {
+      id: "guests",
+      title: t("guests.title"),
+      description: t("guests.subtitle"),
+      href: "/dashboard/reports/guests",
+      icon: Users,
+      tone: "violet",
+    },
   ];
 
   return (

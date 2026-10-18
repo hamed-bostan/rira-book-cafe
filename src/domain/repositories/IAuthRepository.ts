@@ -12,7 +12,7 @@ export type AuthIdentity = {
   phone: string;
   /** A display name to seed a brand-new user with (a placeholder for OTP sign-in). */
   name: string;
-}
+};
 
 export type IAuthRepository = {
   /** Generate and deliver a one-time code for the phone. Returns false if the phone is invalid. */
@@ -26,4 +26,4 @@ export type IAuthRepository = {
    * security, so only implement this where that trade-off is acceptable.
    */
   peekDevOtp?(phone: string): string | undefined;
-}
+};

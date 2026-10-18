@@ -22,8 +22,8 @@ export const radius = {
 
   // Single-radius elements.
   badge: {
-    md:primitiveRadius.md,
-    lg:primitiveRadius["2xl"],
+    md: primitiveRadius.md,
+    lg: primitiveRadius["2xl"],
   },
   modal: primitiveRadius.lg,
   sheet: primitiveRadius["2xl"],

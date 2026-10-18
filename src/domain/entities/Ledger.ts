@@ -164,7 +164,12 @@ export function assertBalanced<T extends Pick<NewJournalEntry, "lines">>(entry: 
 }
 
 /** The entry that undoes another: same accounts, sides swapped. */
-export function reversalOf(entry: JournalEntry, date: string, reason: string, actor: { id: string; name: string }): NewJournalEntry {
+export function reversalOf(
+  entry: JournalEntry,
+  date: string,
+  reason: string,
+  actor: { id: string; name: string },
+): NewJournalEntry {
   return {
     date,
     description: reason.trim() ? `Reversal of JE-${entry.number}: ${reason.trim()}` : `Reversal of JE-${entry.number}`,
@@ -173,7 +178,12 @@ export function reversalOf(entry: JournalEntry, date: string, reason: string, ac
     sourceId: entry.sourceId,
     reversesId: entry.id,
     uniqueKey: `reversal:${entry.id}`,
-    lines: entry.lines.map((line) => ({ accountCode: line.accountCode, debit: line.credit, credit: line.debit, memo: line.memo })),
+    lines: entry.lines.map((line) => ({
+      accountCode: line.accountCode,
+      debit: line.credit,
+      credit: line.debit,
+      memo: line.memo,
+    })),
     createdById: actor.id,
     createdByName: actor.name,
   };

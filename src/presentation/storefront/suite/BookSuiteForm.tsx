@@ -16,7 +16,12 @@ import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
-import { Button, FormMessage, Input, Select, Textarea } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
+import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
+import { Select } from "@/src/presentation/design-system/components/form/Select/Select";
+import { Textarea } from "@/src/presentation/design-system/components/form/Textarea/Textarea";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { storefrontApi } from "../storefront-api";
 
@@ -38,13 +43,13 @@ export function BookSuiteForm({ today }: BookSuiteFormProps) {
   const tFormErrors = useTranslations("formErrors");
   const locale = useLocale();
   const router = useRouter();
+  const { toast } = useToast();
 
   const [checkIn, setCheckIn] = React.useState(shiftCafeDay(today, 1));
   const [checkOut, setCheckOut] = React.useState(shiftCafeDay(today, 2));
   const [guests, setGuests] = React.useState(2);
   const [note, setNote] = React.useState("");
   const [error, setError] = React.useState<string | null>(null);
-  const [sent, setSent] = React.useState(false);
   const [pending, startTransition] = React.useTransition();
 
   function changeCheckIn(value: string): void {
@@ -56,12 +61,11 @@ export function BookSuiteForm({ today }: BookSuiteFormProps) {
   function submit(event: React.FormEvent): void {
     event.preventDefault();
     setError(null);
-    setSent(false);
     startTransition(async () => {
       try {
         await storefrontApi.requestSuiteBooking({ checkIn, checkOut, guests, note });
         setNote("");
-        setSent(true);
+        toast({ tone: "success", title: t("suite.sent") });
         router.refresh();
       } catch (err) {
         if (err instanceof ApiError) {
@@ -111,11 +115,13 @@ export function BookSuiteForm({ today }: BookSuiteFormProps) {
         <label className="flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
           {t("suite.guests")}
           <Select value={guests} onChange={(event) => setGuests(Number(event.target.value))}>
-            {Array.from({ length: MAX_SUITE_GUESTS - MIN_SUITE_GUESTS + 1 }, (_, i) => i + MIN_SUITE_GUESTS).map((size) => (
-              <option key={size} value={size}>
-                {t("book.guests", { count: size, formatted: formatNumber(size, locale) })}
-              </option>
-            ))}
+            {Array.from({ length: MAX_SUITE_GUESTS - MIN_SUITE_GUESTS + 1 }, (_, i) => i + MIN_SUITE_GUESTS).map(
+              (size) => (
+                <option key={size} value={size}>
+                  {t("book.guests", { count: size, formatted: formatNumber(size, locale) })}
+                </option>
+              ),
+            )}
           </Select>
         </label>
       </div>
@@ -133,8 +139,7 @@ export function BookSuiteForm({ today }: BookSuiteFormProps) {
         {t("suite.hint", { nights: formatNumber(MAX_SUITE_NIGHTS, locale) })}
       </p>
       {error ? <FormMessage>{error}</FormMessage> : null}
-      {sent ? <p className="text-body-small text-success-foreground">{t("suite.sent")}</p> : null}
-      <Button type="submit" disabled={pending} className="self-start">
+      <Button type="submit" loading={pending} className="self-start">
         {pending ? t("book.sending") : t("suite.submit")}
       </Button>
     </form>

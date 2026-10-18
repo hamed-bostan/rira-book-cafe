@@ -47,9 +47,7 @@ export function parsePageRequest<TSort extends string>(
 
   const directionParam = params.get("dir");
   const direction =
-    directionParam && DIRECTION_SET.has(directionParam)
-      ? (directionParam as SortDirection)
-      : defaults.direction;
+    directionParam && DIRECTION_SET.has(directionParam) ? (directionParam as SortDirection) : defaults.direction;
 
   // clamp handles the NaN from a non-numeric param, so parsing stays a plain
   // Number() here rather than re-implementing the bounds.

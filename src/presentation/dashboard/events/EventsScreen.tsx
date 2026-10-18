@@ -7,7 +7,11 @@ import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { formatOrderDate, formatOrderTime } from "@/src/lib/formatOrderDate";
 import { cn } from "@/src/lib/utils";
-import { Badge, Button, Icon, focusRing } from "@/src/presentation/design-system";
+import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 
 type EventsScreenProps = {
   events: CafeEvent[];
@@ -48,7 +52,10 @@ export async function EventsScreen({ events, canManage, now }: EventsScreenProps
         <p className="text-body-small text-foreground">
           {left === undefined
             ? t("seatsTakenUnlimited", { taken: formatNumber(event.seatsTaken, locale) })
-            : t("seatsTaken", { taken: formatNumber(event.seatsTaken, locale), capacity: formatNumber(event.capacity ?? 0, locale) })}
+            : t("seatsTaken", {
+                taken: formatNumber(event.seatsTaken, locale),
+                capacity: formatNumber(event.capacity ?? 0, locale),
+              })}
           {" · "}
           {event.price === 0 ? t("free") : formatMoney(event.price, locale)}
         </p>
@@ -59,13 +66,25 @@ export async function EventsScreen({ events, canManage, now }: EventsScreenProps
       <li key={event.id}>
         <Link
           href={`/dashboard/events/${event.id}/edit`}
-          className={cn("flex flex-col gap-2 rounded-card-md border border-border bg-background p-4 transition-colors hover:bg-muted", focusRing)}
+          className={cn(
+            "flex flex-col gap-2 rounded-card-md border border-border bg-background p-4 transition-colors hover:bg-muted",
+            focusRing,
+          )}
         >
           {content}
         </Link>
       </li>
     );
   }
+
+  const createAction = canManage ? (
+    <Button asChild size="sm">
+      <Link href="/dashboard/events/create">
+        <Icon icon={Plus} size="sm" className="me-1.5" />
+        {t("newEvent")}
+      </Link>
+    </Button>
+  ) : undefined;
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
@@ -85,10 +104,13 @@ export async function EventsScreen({ events, canManage, now }: EventsScreenProps
       </div>
 
       {events.length === 0 ? (
-        <div className="rounded-card-lg border border-dashed border-border px-6 py-16 text-center">
-          <p className="text-body-strong text-foreground">{t("emptyTitle")}</p>
-          <p className="mt-1 text-body-small text-muted-foreground">{t("emptyBody")}</p>
-        </div>
+        <EmptyState
+          icon={CalendarDays}
+          title={t("emptyTitle")}
+          description={t("emptyBody")}
+          action={createAction}
+          className="rounded-card-lg border border-dashed border-border"
+        />
       ) : (
         <>
           <section className="flex flex-col gap-3">
@@ -96,7 +118,12 @@ export async function EventsScreen({ events, canManage, now }: EventsScreenProps
             {upcoming.length > 0 ? (
               <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">{upcoming.map(card)}</ul>
             ) : (
-              <p className="text-body-small text-muted-foreground">{t("noUpcoming")}</p>
+              <EmptyState
+                icon={CalendarDays}
+                title={t("noUpcoming")}
+                action={createAction}
+                className="rounded-card-lg border border-dashed border-border py-10"
+              />
             )}
           </section>
           {past.length > 0 ? (

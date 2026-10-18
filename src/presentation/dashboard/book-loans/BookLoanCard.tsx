@@ -3,7 +3,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 
 import { isBookLoanOverdue, type BookLoan } from "@/src/domain/entities/BookLoan";
 import { formatOrderDate } from "@/src/lib/formatOrderDate";
-import { Icon } from "@/src/presentation/design-system";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 
 import { BookLoanActions } from "./BookLoanActions";
 import { BookLoanStatusBadge } from "./BookLoanStatusBadge";
@@ -39,7 +39,9 @@ export async function BookLoanCard({ loan, now, canManage }: BookLoanCardProps) 
         </p>
         <p className="text-body-caption text-muted-foreground">
           L-{loan.reference} · {t("lentOn", { date: formatOrderDate(loan.lentAt, locale), by: loan.lentByName })} ·{" "}
-          <span className={overdue ? "text-warning-foreground" : undefined}>{t("dueOnDate", { date: formatOrderDate(loan.dueAt, locale) })}</span>
+          <span className={overdue ? "text-warning-foreground" : undefined}>
+            {t("dueOnDate", { date: formatOrderDate(loan.dueAt, locale) })}
+          </span>
           {loan.returnedAt ? ` · ${t("returnedOn", { date: formatOrderDate(loan.returnedAt, locale) })}` : null}
         </p>
         {loan.note ? (

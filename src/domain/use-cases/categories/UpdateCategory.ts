@@ -10,8 +10,6 @@ import type { Category } from "../../entities/Category";
 import type { ICategoryRepository, NewCategory } from "../../repositories/ICategoryRepository";
 import type { IImageStorageRepository } from "../../repositories/IImageStorageRepository";
 
-
-
 export class UpdateCategory {
   constructor(
     private readonly categoryRepo: ICategoryRepository,

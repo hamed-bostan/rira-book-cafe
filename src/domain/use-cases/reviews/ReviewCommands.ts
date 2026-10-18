@@ -37,7 +37,8 @@ export class SubmitReview {
       throw new ValidationError("rating", `Choose ${MIN_REVIEW_RATING} to ${MAX_REVIEW_RATING} stars.`);
     }
     const comment = input.comment?.trim() || undefined;
-    if (comment && comment.length > MAX_REVIEW_COMMENT_LENGTH) throw new ValidationError("comment", "That review is too long.");
+    if (comment && comment.length > MAX_REVIEW_COMMENT_LENGTH)
+      throw new ValidationError("comment", "That review is too long.");
 
     const product = await this.productRepo.getPublishedById(productId);
     if (!product) throw new NotFoundError("product", productId);

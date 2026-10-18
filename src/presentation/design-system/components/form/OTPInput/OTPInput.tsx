@@ -26,8 +26,7 @@ type OTPInputProps = {
 };
 
 /** Pads/truncates a value into fixed-length cells, preserving empty positions. */
-const toCells = (value: string | undefined, length: number) =>
-  Array.from({ length }, (_, i) => value?.[i] ?? "");
+const toCells = (value: string | undefined, length: number) => Array.from({ length }, (_, i) => value?.[i] ?? "");
 
 export function OTPInput({
   length = 4,

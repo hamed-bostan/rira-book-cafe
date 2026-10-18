@@ -3,7 +3,8 @@
 import { X } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
 
-import { Button, Icon } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 
 import { useBulkSelection } from "./BulkSelectionProvider";
 

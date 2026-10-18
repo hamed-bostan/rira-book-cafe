@@ -44,8 +44,10 @@ const PROMO_FIELDS = [
 function validatePromo(input: PromoCodeInput): PromoCodeInput {
   const code = normalizePromoCode(input.code);
   if (!PROMO_CODE_PATTERN.test(code)) throw new ValidationError("code", "Use 3–20 letters, digits, - or _.");
-  if (!Number.isInteger(input.value) || input.value <= 0) throw new ValidationError("value", "Enter how much it takes off.");
-  if (input.kind === "percent" && input.value > 100) throw new ValidationError("value", "A percentage can't be over 100.");
+  if (!Number.isInteger(input.value) || input.value <= 0)
+    throw new ValidationError("value", "Enter how much it takes off.");
+  if (input.kind === "percent" && input.value > 100)
+    throw new ValidationError("value", "A percentage can't be over 100.");
   if (input.description && input.description.length > MAX_PROMO_DESCRIPTION_LENGTH) {
     throw new ValidationError("description", "That description is too long.");
   }
@@ -139,7 +141,8 @@ export class UpdateLoyaltySettings {
 
   execute(settings: LoyaltySettings): Promise<LoyaltySettings> {
     for (const field of ["tomanPerPoint", "pointValue"] as const) {
-      if (!Number.isInteger(settings[field]) || settings[field] < 1) throw new ValidationError(field, "Enter a whole number above zero.");
+      if (!Number.isInteger(settings[field]) || settings[field] < 1)
+        throw new ValidationError(field, "Enter a whole number above zero.");
     }
     if (!Number.isInteger(settings.minRedeemPoints) || settings.minRedeemPoints < 0) {
       throw new ValidationError("minRedeemPoints", "Enter a whole number.");
@@ -185,7 +188,10 @@ export class AdjustGuestPoints {
     private readonly userRepo: Pick<IUserRepository, "getById">,
   ) {}
 
-  async execute(input: { phone: string; delta: number; note: string }, staff: ActivityActor): Promise<LoyaltyTransaction> {
+  async execute(
+    input: { phone: string; delta: number; note: string },
+    staff: ActivityActor,
+  ): Promise<LoyaltyTransaction> {
     if (!isPlausiblePhone(input.phone)) throw new ValidationError("phone", "Enter a valid phone number.");
     if (!Number.isInteger(input.delta) || input.delta === 0 || Math.abs(input.delta) > MAX_POINTS_ADJUSTMENT) {
       throw new ValidationError("delta", "Enter a whole number of points.");

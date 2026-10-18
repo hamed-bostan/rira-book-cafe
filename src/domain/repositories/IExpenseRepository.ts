@@ -6,7 +6,10 @@ import type { Page, PageRequest } from "../entities/Pagination";
 
 export type NewSupplier = Pick<Supplier, "name" | "phone" | "note">;
 
-export type NewExpense = Omit<Expense, "id" | "number" | "createdAt" | "supplierName" | "status" | "paidFrom" | "paidOn"> & {
+export type NewExpense = Omit<
+  Expense,
+  "id" | "number" | "createdAt" | "supplierName" | "status" | "paidFrom" | "paidOn"
+> & {
   /** Paid on the spot from cash or the bank; omitted means owed to the supplier. */
   paidFrom?: PaymentSource;
 };
@@ -33,7 +36,13 @@ export type IExpenseRepository = {
   /** Record an expense and post its entry, in one transaction. */
   create(input: NewExpense, ledger: LedgerHook<Expense>, audit?: AuditHook<Expense>): Promise<Expense>;
   /** Mark an owed expense paid and post the payment, guarded on it still being unpaid. */
-  pay(id: string, source: PaymentSource, paidOn: string, ledger: LedgerHook<Expense>, audit?: AuditHook<Expense>): Promise<Expense>;
+  pay(
+    id: string,
+    source: PaymentSource,
+    paidOn: string,
+    ledger: LedgerHook<Expense>,
+    audit?: AuditHook<Expense>,
+  ): Promise<Expense>;
   /**
    * Void an expense: reverse every entry posted for it and mark it void, in one
    * transaction. `reverse` builds each reversal from the original entry.

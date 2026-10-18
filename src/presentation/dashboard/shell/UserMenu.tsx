@@ -8,18 +8,18 @@ import * as React from "react";
 import type { UserRole } from "@/src/domain/entities/User";
 import { cn } from "@/src/lib/utils";
 import { logout } from "@/src/presentation/auth/actions";
+import { Avatar } from "@/src/presentation/design-system/components/Avatar/Avatar";
+import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
 import {
-  Avatar,
-  Badge,
-  ConfirmSheet,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  Icon,
-  focusRing,
-} from "@/src/presentation/design-system";
+} from "@/src/presentation/design-system/components/DropdownMenu/DropdownMenu";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
+import { ConfirmSheet } from "@/src/presentation/design-system/components/Sheet/ConfirmSheet";
 
 import type { DashboardViewer } from "./viewer";
 
@@ -46,10 +46,13 @@ export function UserMenu({ viewer }: UserMenuProps) {
   const t = useTranslations("dashboard");
   const tTeam = useTranslations("dashTeam");
   const [confirmOpen, setConfirmOpen] = React.useState(false);
+  const [pending, startTransition] = React.useTransition();
 
-  const handleLogout = async () => {
-    await logout();
-  };
+  // The server action redirects away; the transition stays pending until it has,
+  // so the sheet stays up with a spinner instead of closing on a page that lingers.
+  function handleLogout(): void {
+    startTransition(() => logout());
+  }
 
   return (
     <>
@@ -57,14 +60,22 @@ export function UserMenu({ viewer }: UserMenuProps) {
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            aria-label={t("account")}
-            className={cn("flex size-11 shrink-0 items-center justify-center rounded-full transition-opacity hover:opacity-80", focusRing)}
+            className={cn(
+              "flex size-11 shrink-0 items-center justify-center rounded-full transition-opacity hover:opacity-80",
+              focusRing,
+            )}
           >
-            <Avatar name={viewer.name} className="size-12 dashboard-phone:size-10 xl:size-9">
-              {viewer.imageUrl && (
-                <Image src={viewer.imageUrl} alt="" width={36} height={36} className="size-full object-cover" />
-              )}
-            </Avatar>
+            {/* The name ("Account menu") comes from hidden text rather than aria-label: the
+                avatar's initials are decorative, and an aria-label that doesn't contain the
+                visible text fails WCAG 2.5.3 (label in name). */}
+            <span className="sr-only">{t("account")}</span>
+            <span aria-hidden className="contents">
+              <Avatar name={viewer.name} className="size-12 xl:size-9 dashboard-phone:size-10">
+                {viewer.imageUrl && (
+                  <Image src={viewer.imageUrl} alt="" width={36} height={36} className="size-full object-cover" />
+                )}
+              </Avatar>
+            </span>
           </button>
         </DropdownMenuTrigger>
 
@@ -94,6 +105,7 @@ export function UserMenu({ viewer }: UserMenuProps) {
         title={t("signOutTitle")}
         message={t("signOutMessage")}
         confirmLabel={t("signOut")}
+        pending={pending}
         onConfirm={handleLogout}
       />
     </>

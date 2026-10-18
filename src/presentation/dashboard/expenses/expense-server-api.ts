@@ -28,6 +28,10 @@ export const expensesServerApi = {
 
 export const suppliersServerApi = {
   list(includeInactive: boolean): Promise<Supplier[]> {
-    return serverApiGet("/admin/suppliers", supplierListResponseSchema, includeInactive ? { params: { all: "true" } } : undefined);
+    return serverApiGet(
+      "/admin/suppliers",
+      supplierListResponseSchema,
+      includeInactive ? { params: { all: "true" } } : undefined,
+    );
   },
 };

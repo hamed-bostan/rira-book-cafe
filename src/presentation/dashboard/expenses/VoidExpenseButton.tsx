@@ -5,7 +5,11 @@ import * as React from "react";
 
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
-import { Button, FormMessage, Modal, ModalContent, Textarea } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
+import { Textarea } from "@/src/presentation/design-system/components/form/Textarea/Textarea";
+import { Modal, ModalContent } from "@/src/presentation/design-system/components/Modal/Modal";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { expensesApi } from "./expense-api";
 
@@ -14,6 +18,7 @@ export function VoidExpenseButton({ id, number }: { id: string; number: number }
   const t = useTranslations("dashExpenses");
   const tApiErrors = useTranslations("apiErrors");
   const router = useRouter();
+  const { toast } = useToast();
   const [open, setOpen] = React.useState(false);
   const [reason, setReason] = React.useState("");
   const [error, setError] = React.useState<string | null>(null);
@@ -24,6 +29,7 @@ export function VoidExpenseButton({ id, number }: { id: string; number: number }
     startTransition(async () => {
       try {
         await expensesApi.void(id, reason);
+        toast({ tone: "success", title: t("detail.voided", { number }) });
         setOpen(false);
         router.refresh();
       } catch (err) {
@@ -49,14 +55,20 @@ export function VoidExpenseButton({ id, number }: { id: string; number: number }
             <p className="text-body-small text-muted-foreground">{t("detail.voidMessage")}</p>
             <label className="flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
               {t("detail.voidReason")}
-              <Textarea value={reason} onChange={(event) => setReason(event.target.value)} rows={3} maxLength={200} dir="auto" />
+              <Textarea
+                value={reason}
+                onChange={(event) => setReason(event.target.value)}
+                rows={3}
+                maxLength={200}
+                dir="auto"
+              />
             </label>
             {error ? <FormMessage>{error}</FormMessage> : null}
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" size="sm" onClick={() => setOpen(false)}>
                 {t("cancel")}
               </Button>
-              <Button type="submit" size="sm" disabled={pending}>
+              <Button type="submit" size="sm" loading={pending}>
                 {t("detail.voidConfirm")}
               </Button>
             </div>

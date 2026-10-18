@@ -48,12 +48,16 @@ export class CheckoutPricing {
       promoOff = promoDiscount(promo, subtotal);
     }
 
-    const settings = this.loyaltyRepo ? await this.loyaltyRepo.getSettings() : { ...DEFAULT_LOYALTY_SETTINGS, enabled: false };
+    const settings = this.loyaltyRepo
+      ? await this.loyaltyRepo.getSettings()
+      : { ...DEFAULT_LOYALTY_SETTINGS, enabled: false };
     const balance = this.loyaltyRepo ? await this.loyaltyRepo.balance(guestId) : 0;
     const afterPromo = subtotal - promoOff;
     const available = redeemablePoints(balance, afterPromo, settings);
-    if (request.redeemPoints && !settings.enabled) throw new ConflictError("LOYALTY_DISABLED", "The loyalty club is off.");
-    if (request.redeemPoints && available === 0) throw new ConflictError("NOT_ENOUGH_POINTS", "Not enough points to spend on this order.");
+    if (request.redeemPoints && !settings.enabled)
+      throw new ConflictError("LOYALTY_DISABLED", "The loyalty club is off.");
+    if (request.redeemPoints && available === 0)
+      throw new ConflictError("NOT_ENOUGH_POINTS", "Not enough points to spend on this order.");
     const pointsRedeemed = request.redeemPoints ? available : 0;
     const pointsDiscount = pointsValue(pointsRedeemed, settings);
     const total = afterPromo - pointsDiscount;

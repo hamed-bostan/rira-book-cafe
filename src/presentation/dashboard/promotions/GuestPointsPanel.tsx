@@ -11,7 +11,11 @@ import { formatNumber } from "@/src/lib/formatNumber";
 import { formatOrderDateShort } from "@/src/lib/formatOrderDate";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
 import { cn } from "@/src/lib/utils";
-import { Button, FormMessage, Icon, Input } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
+import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { promotionsApi } from "./promotion-api";
 
@@ -25,6 +29,7 @@ export function GuestPointsPanel() {
   const tApiErrors = useTranslations("apiErrors");
   const tFormErrors = useTranslations("formErrors");
   const locale = useLocale();
+  const { toast } = useToast();
 
   const [phone, setPhone] = React.useState("");
   const [guest, setGuest] = React.useState<GuestLoyaltyLookup | null>(null);
@@ -33,16 +38,23 @@ export function GuestPointsPanel() {
   const [note, setNote] = React.useState("");
   const [adjustError, setAdjustError] = React.useState<string | null>(null);
   const [pending, startTransition] = React.useTransition();
+  /** Which form is in flight — only its button shows the spinner. */
+  const [active, setActive] = React.useState<"lookup" | "adjust" | null>(null);
 
   function lookup(event: React.FormEvent): void {
     event.preventDefault();
     setLookupError(null);
+    setActive("lookup");
     startTransition(async () => {
       try {
         setGuest(await promotionsApi.lookupGuest(phone));
       } catch (err) {
         setGuest(null);
-        setLookupError(err instanceof ApiError && err.status === 404 ? t("guestNotFound") : localizeApiError(err, tApiErrors, t("lookupError")));
+        setLookupError(
+          err instanceof ApiError && err.status === 404
+            ? t("guestNotFound")
+            : localizeApiError(err, tApiErrors, t("lookupError")),
+        );
       }
     });
   }
@@ -55,15 +67,19 @@ export function GuestPointsPanel() {
       setAdjustError(formErrorMessage(tFormErrors, "pointsInvalid") ?? null);
       return;
     }
+    setActive("adjust");
     startTransition(async () => {
       try {
         await promotionsApi.adjustPoints({ phone, delta: points, note });
+        toast({ tone: "success", title: t("adjusted") });
         setDelta("");
         setNote("");
         setGuest(await promotionsApi.lookupGuest(phone));
       } catch (err) {
         const field = err instanceof ApiError ? (err.fieldErrors?.delta ?? err.fieldErrors?.note) : undefined;
-        setAdjustError(field ? (formErrorMessage(tFormErrors, field) ?? field) : localizeApiError(err, tApiErrors, t("saveError")));
+        setAdjustError(
+          field ? (formErrorMessage(tFormErrors, field) ?? field) : localizeApiError(err, tApiErrors, t("saveError")),
+        );
       }
     });
   }
@@ -81,7 +97,12 @@ export function GuestPointsPanel() {
           aria-label={t("guestPhone")}
           required
         />
-        <Button type="submit" variant="outline" disabled={pending || !phone.trim()}>
+        <Button
+          type="submit"
+          variant="outline"
+          loading={pending && active === "lookup"}
+          disabled={pending || !phone.trim()}
+        >
           <Icon icon={Search} size="sm" className="me-1" />
           {t("lookup")}
         </Button>
@@ -92,19 +113,36 @@ export function GuestPointsPanel() {
         <div className="flex flex-col gap-4 rounded-card-md border border-border p-4">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <span className="text-body-strong text-foreground">{guest.name}</span>
-            <span className="text-heading-subsection text-primary">{t("balance", { points: formatNumber(guest.balance, locale) })}</span>
+            <span className="text-heading-subsection text-primary">
+              {t("balance", { points: formatNumber(guest.balance, locale) })}
+            </span>
           </div>
 
-          <form onSubmit={adjust} className="grid grid-cols-1 gap-3 sm:grid-cols-[8rem_minmax(0,1fr)_auto] sm:items-end">
+          <form
+            onSubmit={adjust}
+            className="grid grid-cols-1 gap-3 sm:grid-cols-[8rem_minmax(0,1fr)_auto] sm:items-end"
+          >
             <label className="flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
               {t("adjustPoints")}
-              <Input value={delta} onChange={(event) => setDelta(event.target.value)} placeholder="+50 / -20" dir="ltr" inputMode="numeric" required />
+              <Input
+                value={delta}
+                onChange={(event) => setDelta(event.target.value)}
+                placeholder="+50 / -20"
+                dir="ltr"
+                inputMode="numeric"
+                required
+              />
             </label>
             <label className="flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
               {t("adjustNote")}
-              <Input value={note} onChange={(event) => setNote(event.target.value)} maxLength={MAX_LOYALTY_NOTE_LENGTH} required />
+              <Input
+                value={note}
+                onChange={(event) => setNote(event.target.value)}
+                maxLength={MAX_LOYALTY_NOTE_LENGTH}
+                required
+              />
             </label>
-            <Button type="submit" size="sm" disabled={pending}>
+            <Button type="submit" size="sm" loading={pending && active === "adjust"} disabled={pending}>
               {t("adjust")}
             </Button>
           </form>
@@ -118,10 +156,17 @@ export function GuestPointsPanel() {
                     {t(`reason.${entry.reason}`)}
                     {entry.orderNumber !== undefined ? ` #${formatNumber(entry.orderNumber, locale)}` : null}
                     {entry.note ? <span className="text-muted-foreground"> · {entry.note}</span> : null}
-                    {entry.createdByName ? <span className="text-muted-foreground"> · {entry.createdByName}</span> : null}
+                    {entry.createdByName ? (
+                      <span className="text-muted-foreground"> · {entry.createdByName}</span>
+                    ) : null}
                   </span>
-                  <span className="text-body-caption text-muted-foreground">{formatOrderDateShort(entry.createdAt, locale)}</span>
-                  <span className={cn("tabular-nums", entry.delta > 0 ? "text-success-foreground" : "text-foreground")} dir="ltr">
+                  <span className="text-body-caption text-muted-foreground">
+                    {formatOrderDateShort(entry.createdAt, locale)}
+                  </span>
+                  <span
+                    className={cn("tabular-nums", entry.delta > 0 ? "text-success-foreground" : "text-foreground")}
+                    dir="ltr"
+                  >
                     {entry.delta > 0 ? "+" : "−"}
                     {formatNumber(Math.abs(entry.delta), locale)}
                   </span>

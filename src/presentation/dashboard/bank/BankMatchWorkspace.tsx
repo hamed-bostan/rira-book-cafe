@@ -1,6 +1,6 @@
 "use client";
 
-import { Link2, Unlink, Wand2 } from "lucide-react";
+import { CheckCheck, Link2, Unlink, Wand2 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import * as React from "react";
 
@@ -11,7 +11,11 @@ import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatCafeDayShort } from "@/src/lib/formatCafeDay";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { cn } from "@/src/lib/utils";
-import { Button, Checkbox, FormMessage, Icon } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { Checkbox } from "@/src/presentation/design-system/components/Checkbox/Checkbox";
+import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { bankStatementsApi } from "./bank-statement-api";
 import { StatementLineActions } from "./StatementLineActions";
@@ -22,6 +26,9 @@ type BankMatchWorkspaceProps = {
   suggestions: MatchPair[];
   canWrite: boolean;
 };
+
+/** Which workspace action is running, so only its button shows the spinner. */
+type WorkspaceAction = "autoMatch" | "match" | `unmatch:${string}` | `line:${string}`;
 
 const sum = (amounts: readonly number[]): number => amounts.reduce((total, amount) => total + amount, 0);
 
@@ -40,15 +47,17 @@ export function BankMatchWorkspace({ statement, candidates, suggestions, canWrit
   const router = useRouter();
   const [bankPicked, setBankPicked] = React.useState<ReadonlySet<string>>(new Set());
   const [bookPicked, setBookPicked] = React.useState<ReadonlySet<string>>(new Set());
-  const [error, setError] = React.useState<string | null>(null);
-  const [notice, setNotice] = React.useState<string | null>(null);
+  const { toast } = useToast();
+  const [active, setActive] = React.useState<WorkspaceAction | null>(null);
   const [pending, startTransition] = React.useTransition();
 
   const editable = canWrite && statement.status === "open";
   const openLines = statement.lines.filter((line) => !line.matchId);
   const openCandidates = candidates.filter((candidate) => !candidate.matchId);
   const bankTotal = sum(openLines.filter((line) => bankPicked.has(line.id)).map((line) => line.amount));
-  const bookTotal = sum(openCandidates.filter((candidate) => bookPicked.has(candidate.lineId)).map((candidate) => candidate.amount));
+  const bookTotal = sum(
+    openCandidates.filter((candidate) => bookPicked.has(candidate.lineId)).map((candidate) => candidate.amount),
+  );
   const canMatch = editable && bankPicked.size > 0 && bookPicked.size > 0 && bankTotal === bookTotal;
 
   const matchIds = [...new Set(statement.lines.flatMap((line) => (line.matchId ? [line.matchId] : [])))];
@@ -58,21 +67,22 @@ export function BankMatchWorkspace({ statement, candidates, suggestions, canWrit
     ledger: candidates.filter((candidate) => candidate.matchId === matchId),
   }));
 
-  function run(action: () => Promise<string | null>, fallback: string): void {
-    setError(null);
-    setNotice(null);
+  function run(which: WorkspaceAction, action: () => Promise<string>, fallback: string): void {
+    setActive(which);
     startTransition(async () => {
       try {
         const message = await action();
         setBankPicked(new Set());
         setBookPicked(new Set());
-        if (message) setNotice(message);
+        toast({ tone: "success", title: message });
         router.refresh();
       } catch (err) {
-        setError(localizeApiError(err, tApiErrors, fallback));
+        toast({ tone: "error", title: localizeApiError(err, tApiErrors, fallback) });
       }
     });
   }
+
+  const isRunning = (which: WorkspaceAction): boolean => pending && active === which;
 
   const toggle = (set: ReadonlySet<string>, id: string, on: boolean): ReadonlySet<string> => {
     const next = new Set(set);
@@ -82,10 +92,14 @@ export function BankMatchWorkspace({ statement, candidates, suggestions, canWrit
   };
 
   const record = (lineId: string, values: RecordStatementLineInput): void =>
-    run(async () => {
-      const entry = await bankStatementsApi.recordLine(statement.id, lineId, values);
-      return t("workspace.recorded", { number: entry.number });
-    }, t("workspace.recordError"));
+    run(
+      `line:${lineId}`,
+      async () => {
+        const entry = await bankStatementsApi.recordLine(statement.id, lineId, values);
+        return t("workspace.recorded", { number: entry.number });
+      },
+      t("workspace.recordError"),
+    );
 
   const amountClass = (amount: number): string => (amount < 0 ? "text-error-foreground" : "text-success-foreground");
 
@@ -98,8 +112,15 @@ export function BankMatchWorkspace({ statement, candidates, suggestions, canWrit
               type="button"
               size="sm"
               variant="outline"
+              loading={isRunning("autoMatch")}
               disabled={pending}
-              onClick={() => run(async () => t("workspace.autoMatched", { count: await bankStatementsApi.autoMatch(statement.id) }), t("workspace.matchError"))}
+              onClick={() =>
+                run(
+                  "autoMatch",
+                  async () => t("workspace.autoMatched", { count: await bankStatementsApi.autoMatch(statement.id) }),
+                  t("workspace.matchError"),
+                )
+              }
             >
               <Icon icon={Wand2} size="sm" className="me-1.5" />
               {t("workspace.autoMatch", { count: suggestions.length })}
@@ -111,13 +132,21 @@ export function BankMatchWorkspace({ statement, candidates, suggestions, canWrit
           <Button
             type="button"
             size="sm"
+            loading={isRunning("match")}
             disabled={!canMatch || pending}
             className="ms-auto"
             onClick={() =>
-              run(async () => {
-                await bankStatementsApi.match(statement.id, { statementLineIds: [...bankPicked], ledgerLineIds: [...bookPicked] });
-                return null;
-              }, t("workspace.matchError"))
+              run(
+                "match",
+                async () => {
+                  await bankStatementsApi.match(statement.id, {
+                    statementLineIds: [...bankPicked],
+                    ledgerLineIds: [...bookPicked],
+                  });
+                  return t("workspace.matchedToast");
+                },
+                t("workspace.matchError"),
+              )
             }
           >
             <Icon icon={Link2} size="sm" className="me-1.5" />
@@ -125,18 +154,14 @@ export function BankMatchWorkspace({ statement, candidates, suggestions, canWrit
           </Button>
         </div>
       ) : null}
-      {error ? <FormMessage size="md">{error}</FormMessage> : null}
-      {notice ? (
-        <p className="text-body-small text-success-foreground" aria-live="polite">
-          {notice}
-        </p>
-      ) : null}
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <section className="flex min-w-0 flex-col rounded-card-lg border border-border bg-background">
-          <h2 className="border-b border-border px-4 py-3 text-body-strong text-foreground">{t("workspace.bankSide", { count: openLines.length })}</h2>
+          <h2 className="border-b border-border px-4 py-3 text-body-strong text-foreground">
+            {t("workspace.bankSide", { count: openLines.length })}
+          </h2>
           {openLines.length === 0 ? (
-            <p className="px-4 py-8 text-center text-body-small text-muted-foreground">{t("workspace.bankDone")}</p>
+            <EmptyState icon={CheckCheck} title={t("workspace.bankDone")} className="py-8" />
           ) : (
             <ul className="divide-y divide-border">
               {openLines.map((line) => (
@@ -164,12 +189,17 @@ export function BankMatchWorkspace({ statement, candidates, suggestions, canWrit
                     <StatementLineActions
                       line={line}
                       disabled={pending}
+                      busy={isRunning(`line:${line.id}`)}
                       onRecord={(values) => record(line.id, values)}
                       onRemove={() =>
-                        run(async () => {
-                          await bankStatementsApi.removeLine(statement.id, line.id);
-                          return null;
-                        }, t("workspace.removeError"))
+                        run(
+                          `line:${line.id}`,
+                          async () => {
+                            await bankStatementsApi.removeLine(statement.id, line.id);
+                            return t("workspace.lineRemoved");
+                          },
+                          t("workspace.removeError"),
+                        )
                       }
                     />
                   ) : null}
@@ -180,9 +210,11 @@ export function BankMatchWorkspace({ statement, candidates, suggestions, canWrit
         </section>
 
         <section className="flex min-w-0 flex-col rounded-card-lg border border-border bg-background">
-          <h2 className="border-b border-border px-4 py-3 text-body-strong text-foreground">{t("workspace.bookSide", { count: openCandidates.length })}</h2>
+          <h2 className="border-b border-border px-4 py-3 text-body-strong text-foreground">
+            {t("workspace.bookSide", { count: openCandidates.length })}
+          </h2>
           {openCandidates.length === 0 ? (
-            <p className="px-4 py-8 text-center text-body-small text-muted-foreground">{t("workspace.bookDone")}</p>
+            <EmptyState icon={CheckCheck} title={t("workspace.bookDone")} className="py-8" />
           ) : (
             <ul className="divide-y divide-border">
               {openCandidates.map((candidate) => (
@@ -190,11 +222,18 @@ export function BankMatchWorkspace({ statement, candidates, suggestions, canWrit
                   {editable ? (
                     <Checkbox
                       checked={bookPicked.has(candidate.lineId)}
-                      onCheckedChange={(checked) => setBookPicked((set) => toggle(set, candidate.lineId, checked === true))}
+                      onCheckedChange={(checked) =>
+                        setBookPicked((set) => toggle(set, candidate.lineId, checked === true))
+                      }
                       aria-label={t("workspace.pick", { description: candidate.description })}
                     />
                   ) : null}
-                  <span className={cn("w-20 shrink-0", candidate.date > statement.toDay ? "text-warning-foreground" : "text-muted-foreground")}>
+                  <span
+                    className={cn(
+                      "w-20 shrink-0",
+                      candidate.date > statement.toDay ? "text-warning-foreground" : "text-muted-foreground",
+                    )}
+                  >
                     {formatCafeDayShort(candidate.date, locale)}
                   </span>
                   <span className="min-w-0 flex-1">
@@ -202,13 +241,18 @@ export function BankMatchWorkspace({ statement, candidates, suggestions, canWrit
                       {candidate.description}
                     </span>
                     <span className="block truncate text-body-caption text-muted-foreground">
-                      <Link href={`/dashboard/accounting/journal/${candidate.entryId}`} className="text-primary underline-offset-4 hover:underline">
+                      <Link
+                        href={`/dashboard/accounting/journal/${candidate.entryId}`}
+                        className="text-primary underline-offset-4 hover:underline"
+                      >
                         JE-{candidate.entryNumber}
                       </Link>{" "}
                       · {tAccounting(`source.${candidate.source}`)}
                     </span>
                   </span>
-                  <span className={cn("shrink-0", amountClass(candidate.amount))}>{formatMoney(candidate.amount, locale)}</span>
+                  <span className={cn("shrink-0", amountClass(candidate.amount))}>
+                    {formatMoney(candidate.amount, locale)}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -218,7 +262,9 @@ export function BankMatchWorkspace({ statement, candidates, suggestions, canWrit
 
       {matches.length > 0 ? (
         <section className="flex flex-col rounded-card-lg border border-border bg-background">
-          <h2 className="border-b border-border px-4 py-3 text-body-strong text-foreground">{t("workspace.matched", { count: matches.length })}</h2>
+          <h2 className="border-b border-border px-4 py-3 text-body-strong text-foreground">
+            {t("workspace.matched", { count: matches.length })}
+          </h2>
           <ul className="divide-y divide-border">
             {matches.map((match) => (
               <li key={match.matchId} className="flex flex-wrap items-start gap-3 px-4 py-2.5 text-body-small">
@@ -236,7 +282,10 @@ export function BankMatchWorkspace({ statement, candidates, suggestions, canWrit
                 <div className="min-w-0 flex-1 basis-60 text-muted-foreground">
                   {match.ledger.map((candidate) => (
                     <p key={candidate.lineId} className="flex gap-2">
-                      <Link href={`/dashboard/accounting/journal/${candidate.entryId}`} className="text-primary underline-offset-4 hover:underline">
+                      <Link
+                        href={`/dashboard/accounting/journal/${candidate.entryId}`}
+                        className="text-primary underline-offset-4 hover:underline"
+                      >
                         JE-{candidate.entryNumber}
                       </Link>
                       <span className="min-w-0 flex-1 truncate" dir="auto">
@@ -251,12 +300,17 @@ export function BankMatchWorkspace({ statement, candidates, suggestions, canWrit
                     type="button"
                     size="sm"
                     variant="ghost"
+                    loading={isRunning(`unmatch:${match.matchId}`)}
                     disabled={pending}
                     onClick={() =>
-                      run(async () => {
-                        await bankStatementsApi.unmatch(statement.id, match.matchId);
-                        return null;
-                      }, t("workspace.matchError"))
+                      run(
+                        `unmatch:${match.matchId}`,
+                        async () => {
+                          await bankStatementsApi.unmatch(statement.id, match.matchId);
+                          return t("workspace.unmatchedToast");
+                        },
+                        t("workspace.matchError"),
+                      )
                     }
                   >
                     <Icon icon={Unlink} size="sm" className="me-1.5" />

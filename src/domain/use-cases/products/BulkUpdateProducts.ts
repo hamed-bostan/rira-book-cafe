@@ -5,7 +5,6 @@ import type { ActivityActor } from "../../entities/ActivityEntry";
 import type { Product } from "../../entities/Product";
 import type { BulkProductChange, IProductRepository } from "../../repositories/IProductRepository";
 
-
 /** How many products one bulk action may touch. */
 const MAX_BULK_PRODUCTS = 200;
 
@@ -33,11 +32,7 @@ export class BulkUpdateProducts {
    * products already holding the target value, are skipped — so the count can be
    * lower than `ids.length`, and that count is what the screen reports back.
    */
-  async execute(
-    ids: readonly string[],
-    change: BulkProductChange,
-    actor: ActivityActor,
-  ): Promise<Product[]> {
+  async execute(ids: readonly string[], change: BulkProductChange, actor: ActivityActor): Promise<Product[]> {
     if (ids.length === 0) throw new ValidationError("ids", "Select at least one product.");
     // A bound rather than a paging scheme: the selection comes from a page of the
     // catalog list, so it's bounded by the page size in practice. The limit is here

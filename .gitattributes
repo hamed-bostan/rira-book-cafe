@@ -6,3 +6,6 @@
 # Shell scripts, systemd units and the nginx site run on the Linux VPS.
 *.sh text eol=lf
 deploy/* text eol=lf
+
+# Git hooks run under sh; a CR breaks them.
+.husky/* text eol=lf

@@ -31,13 +31,7 @@ export type UserRole = "customer" | "support" | "staff" | "admin" | "owner";
  * handed straight to `z.enum` at the API boundary — a widened array only types as
  * `string[]` there, which would parse any string as a role.
  */
-export const USER_ROLES = [
-  "customer",
-  "support",
-  "staff",
-  "admin",
-  "owner",
-] as const satisfies readonly UserRole[];
+export const USER_ROLES = ["customer", "support", "staff", "admin", "owner"] as const satisfies readonly UserRole[];
 
 /**
  * The roles that can reach the dashboard.

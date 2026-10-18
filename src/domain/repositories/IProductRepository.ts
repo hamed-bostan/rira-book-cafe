@@ -37,9 +37,7 @@ export type NewProduct = Omit<Product, "id" | "discountPercent" | "rating" | "ra
  * fields where "the same value for all of them" is a sensible thing to want. Price,
  * stock and name are emphatically not that, so they aren't expressible here.
  */
-export type BulkProductChange =
-  | { field: "isPublished"; value: boolean }
-  | { field: "categoryId"; value: string };
+export type BulkProductChange = { field: "isPublished"; value: boolean } | { field: "categoryId"; value: string };
 
 /**
  * One item a bulk change actually altered, paired with how it looked first — the
@@ -75,11 +73,7 @@ export type IProductRepository = {
   /** Menu search. At least one criterion is always set. Published only. */
   search(filters: ProductFilters, locale?: string): Promise<Product[]>;
   /** One page of the management list, plus the total matching the filters. An empty filter means the whole menu, paged. */
-  listPage(
-    filters: AdminProductFilters,
-    page: PageRequest<AdminProductSort>,
-    locale?: string,
-  ): Promise<Page<Product>>;
+  listPage(filters: AdminProductFilters, page: PageRequest<AdminProductSort>, locale?: string): Promise<Page<Product>>;
   create(input: NewProduct, audit?: AuditHook<Product>): Promise<Product>;
   update(id: string, input: NewProduct, audit?: AuditHook<Product>): Promise<Product>;
   /** `audit` records the deletion inside the same transaction — the entry is the only record the item ever existed. */

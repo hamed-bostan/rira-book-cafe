@@ -11,12 +11,24 @@ import type { Supplier } from "@/src/domain/entities/Expense";
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
-import { Button, FormMessage, Icon, Input, Modal, ModalContent, Switch, TextField } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
+import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
+import { TextField } from "@/src/presentation/design-system/components/form/TextField/TextField";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { Modal, ModalContent } from "@/src/presentation/design-system/components/Modal/Modal";
+import { Switch } from "@/src/presentation/design-system/components/Switch/Switch";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { suppliersApi } from "./expense-api";
 
 function toDefaults(supplier?: Supplier): SupplierFormInput {
-  return { name: supplier?.name ?? "", phone: supplier?.phone ?? "", note: supplier?.note ?? "", isActive: supplier?.isActive ?? true };
+  return {
+    name: supplier?.name ?? "",
+    phone: supplier?.phone ?? "",
+    note: supplier?.note ?? "",
+    isActive: supplier?.isActive ?? true,
+  };
 }
 
 /** Add a supplier, or edit one (including switching it off). */
@@ -26,6 +38,7 @@ export function SupplierDialog({ supplier }: { supplier?: Supplier }) {
   const tFormErrors = useTranslations("formErrors");
   const fieldError = (message?: string): string | undefined => formErrorMessage(tFormErrors, message);
   const router = useRouter();
+  const { toast } = useToast();
   const [open, setOpen] = React.useState(false);
 
   const {
@@ -44,6 +57,7 @@ export function SupplierDialog({ supplier }: { supplier?: Supplier }) {
     try {
       if (supplier) await suppliersApi.update(supplier.id, values);
       else await suppliersApi.create(values);
+      toast({ tone: "success", title: supplier ? t("suppliers.saved") : t("suppliers.added") });
       setOpen(false);
       if (!supplier) reset(toDefaults());
       router.refresh();
@@ -55,7 +69,13 @@ export function SupplierDialog({ supplier }: { supplier?: Supplier }) {
   return (
     <>
       {supplier ? (
-        <Button type="button" size="sm" variant="ghost" onClick={() => setOpen(true)} aria-label={t("suppliers.edit", { name: supplier.name })}>
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          onClick={() => setOpen(true)}
+          aria-label={t("suppliers.edit", { name: supplier.name })}
+        >
           <Icon icon={Pencil} size="sm" />
         </Button>
       ) : (
@@ -93,7 +113,7 @@ export function SupplierDialog({ supplier }: { supplier?: Supplier }) {
               <Button type="button" variant="outline" size="sm" onClick={() => setOpen(false)}>
                 {t("cancel")}
               </Button>
-              <Button type="submit" size="sm" disabled={isSubmitting}>
+              <Button type="submit" size="sm" loading={isSubmitting}>
                 {t("suppliers.save")}
               </Button>
             </div>

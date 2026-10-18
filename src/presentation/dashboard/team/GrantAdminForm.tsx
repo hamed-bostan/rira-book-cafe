@@ -13,19 +13,22 @@ import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
 import { cn } from "@/src/lib/utils";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
+import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
 import {
-  Button,
-  FormMessage,
-  Icon,
-  Input,
+  TextField,
+  type FieldControlProps,
+} from "@/src/presentation/design-system/components/form/TextField/TextField";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import {
   Popover,
   PopoverClose,
   PopoverContent,
   PopoverTrigger,
-  TextField,
-  focusRing,
-  type FieldControlProps,
-} from "@/src/presentation/design-system";
+} from "@/src/presentation/design-system/components/Popover/Popover";
+import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { teamApi } from "./team-api";
 
@@ -43,6 +46,7 @@ export function GrantAdminForm() {
   const tApiErrors = useTranslations("apiErrors");
   const tFormErrors = useTranslations("formErrors");
   const router = useRouter();
+  const { toast } = useToast();
   const {
     register,
     control: formControl,
@@ -61,6 +65,7 @@ export function GrantAdminForm() {
     try {
       await teamApi.grant(values);
       reset();
+      toast({ tone: "success", title: t("granted", { phone: values.phone.trim() }) });
       // The server stays the source of truth — re-render rather than splicing a
       // row into a local copy of the list.
       router.refresh();
@@ -100,11 +105,7 @@ export function GrantAdminForm() {
         {/* TextField drops extra props when a render-prop control is used, so the
             row's sizing lives on a wrapper rather than on the field itself. */}
         <div className="min-w-0">
-          <TextField
-            label={t("phoneLabel")}
-            required
-            error={formErrorMessage(tFormErrors, errors.phone?.message)}
-          >
+          <TextField label={t("phoneLabel")} required error={formErrorMessage(tFormErrors, errors.phone?.message)}>
             {(control) => (
               <Input
                 {...control}
@@ -155,7 +156,12 @@ export function GrantAdminForm() {
                     ref={field.ref}
                     value={field.value}
                     onChange={field.onChange}
-                    labels={Object.fromEntries(GRANTABLE_ROLES.map((role) => [role, t(`role.${role}`)])) as Record<GrantAdminInput["role"], string>}
+                    labels={
+                      Object.fromEntries(GRANTABLE_ROLES.map((role) => [role, t(`role.${role}`)])) as Record<
+                        GrantAdminInput["role"],
+                        string
+                      >
+                    }
                   />
                 )}
               />
@@ -163,14 +169,16 @@ export function GrantAdminForm() {
           </TextField>
         </div>
 
-        <Button type="submit" disabled={isSubmitting} className="h-11 w-full self-start text-body-small-emphasis sm:mt-7 sm:h-10 xl:w-auto">
+        <Button
+          type="submit"
+          loading={isSubmitting}
+          className="h-11 w-full self-start text-body-small-emphasis sm:mt-7 sm:h-10 xl:w-auto"
+        >
           {isSubmitting ? t("granting") : t("grantSubmit")}
         </Button>
       </div>
 
-      {errors.root?.message && (
-        <FormMessage size="md">{errors.root.message}</FormMessage>
-      )}
+      {errors.root?.message && <FormMessage size="md">{errors.root.message}</FormMessage>}
     </form>
   );
 }
@@ -195,7 +203,11 @@ const RolePicker = React.forwardRef<HTMLButtonElement, RolePickerProps>(
           )}
         >
           <span className="truncate">{labels[value]}</span>
-          <Icon icon={ChevronDown} size="xs" className="shrink-0 transition-transform group-data-[state=open]:rotate-180" />
+          <Icon
+            icon={ChevronDown}
+            size="xs"
+            className="shrink-0 transition-transform group-data-[state=open]:rotate-180"
+          />
         </button>
       </PopoverTrigger>
 

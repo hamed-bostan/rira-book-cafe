@@ -8,7 +8,8 @@ import { formatNumber } from "@/src/lib/formatNumber";
 import { cn } from "@/src/lib/utils";
 import { LocaleToggle } from "@/src/presentation/components/LocaleToggle";
 import { BrandMark } from "@/src/presentation/dashboard/shell/BrandMark";
-import { Icon, focusRing } from "@/src/presentation/design-system";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 
 import { BasketButton } from "./BasketButton";
 import { PUBLIC_NAV, isPublicNavActive } from "./publicNavigation";
@@ -32,7 +33,10 @@ export function PublicHeader({ signedIn, unreadNotifications }: PublicHeaderProp
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center gap-4 px-4">
-        <Link href="/" className={cn("flex shrink-0 items-center gap-2 text-heading-subsection text-foreground", focusRing)}>
+        <Link
+          href="/"
+          className={cn("flex shrink-0 items-center gap-2 text-heading-subsection text-foreground", focusRing)}
+        >
           <BrandMark />
           <span>{t("brand")}</span>
         </Link>
@@ -65,7 +69,10 @@ export function PublicHeader({ signedIn, unreadNotifications }: PublicHeaderProp
             <Link
               href="/notifications"
               aria-label={t("notifications.bellAria", { count: unreadNotifications })}
-              className={cn("relative grid size-10 place-items-center rounded-full text-foreground hover:bg-muted", focusRing)}
+              className={cn(
+                "relative grid size-10 place-items-center rounded-full text-foreground hover:bg-muted",
+                focusRing,
+              )}
             >
               <Icon icon={Bell} size="sm" />
               {unreadNotifications > 0 ? (

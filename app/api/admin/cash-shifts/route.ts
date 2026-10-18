@@ -1,7 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { openCashShiftSchema } from "@/src/contracts/cash-shift-schema";
-import { GetCurrentCashShift, ListCashShifts, OpenCashShift } from "@/src/domain/use-cases/cash-shifts/CashShiftCommands";
+import {
+  GetCurrentCashShift,
+  ListCashShifts,
+  OpenCashShift,
+} from "@/src/domain/use-cases/cash-shifts/CashShiftCommands";
 import { cashShiftRepository } from "@/src/infrastructure/container";
 import {
   errorResponse,

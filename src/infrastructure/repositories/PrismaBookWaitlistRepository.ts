@@ -1,6 +1,11 @@
 import { Prisma } from "@prisma/client";
 
-import { OPEN_WAITLIST_STATUSES, WAITLIST_STATUSES, type BookWaitlistEntry, type WaitlistStatus } from "@/src/domain/entities/BookWaitlist";
+import {
+  OPEN_WAITLIST_STATUSES,
+  WAITLIST_STATUSES,
+  type BookWaitlistEntry,
+  type WaitlistStatus,
+} from "@/src/domain/entities/BookWaitlist";
 import { ConflictError } from "@/src/domain/errors/ConflictError";
 import type { IBookWaitlistRepository, NewWaitlistEntry } from "@/src/domain/repositories/IBookWaitlistRepository";
 import { prisma } from "@/src/infrastructure/prisma/client";
@@ -34,12 +39,19 @@ export class PrismaBookWaitlistRepository implements IBookWaitlistRepository {
   }
 
   async listForUser(userId: string): Promise<BookWaitlistEntry[]> {
-    const rows = await this.db.bookWaitlistEntry.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 50 });
+    const rows = await this.db.bookWaitlistEntry.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    });
     return rows.map(toEntry);
   }
 
   async listOpenForBook(productId: string): Promise<BookWaitlistEntry[]> {
-    const rows = await this.db.bookWaitlistEntry.findMany({ where: { productId, status: OPEN }, orderBy: { createdAt: "asc" } });
+    const rows = await this.db.bookWaitlistEntry.findMany({
+      where: { productId, status: OPEN },
+      orderBy: { createdAt: "asc" },
+    });
     return rows.map(toEntry);
   }
 
@@ -53,7 +65,10 @@ export class PrismaBookWaitlistRepository implements IBookWaitlistRepository {
   }
 
   async cancel(id: string): Promise<BookWaitlistEntry | null> {
-    const result = await this.db.bookWaitlistEntry.updateMany({ where: { id, status: OPEN }, data: { status: "cancelled" } });
+    const result = await this.db.bookWaitlistEntry.updateMany({
+      where: { id, status: OPEN },
+      data: { status: "cancelled" },
+    });
     if (result.count === 0) return null;
     return toEntry(await this.db.bookWaitlistEntry.findUniqueOrThrow({ where: { id } }));
   }
@@ -61,9 +76,15 @@ export class PrismaBookWaitlistRepository implements IBookWaitlistRepository {
   async notifyNext(productId: string, at: Date): Promise<BookWaitlistEntry | null> {
     return inTransaction(this.db, async (tx) => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`book-waitlist:${productId}`}))`;
-      const next = await tx.bookWaitlistEntry.findFirst({ where: { productId, status: "waiting" }, orderBy: { createdAt: "asc" } });
+      const next = await tx.bookWaitlistEntry.findFirst({
+        where: { productId, status: "waiting" },
+        orderBy: { createdAt: "asc" },
+      });
       if (!next) return null;
-      const row = await tx.bookWaitlistEntry.update({ where: { id: next.id }, data: { status: "notified", notifiedAt: at } });
+      const row = await tx.bookWaitlistEntry.update({
+        where: { id: next.id },
+        data: { status: "notified", notifiedAt: at },
+      });
       return toEntry(row);
     });
   }

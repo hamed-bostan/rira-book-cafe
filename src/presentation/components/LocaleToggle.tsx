@@ -11,9 +11,10 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  Icon,
-  focusRing,
-} from "@/src/presentation/design-system";
+} from "@/src/presentation/design-system/components/DropdownMenu/DropdownMenu";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
+import { Spinner } from "@/src/presentation/design-system/components/Spinner/Spinner";
 
 // Each language is labelled with its own endonym — see `LocaleSwitcher` (the
 // settings-page counterpart this mirrors) for why it isn't routed through the
@@ -46,27 +47,33 @@ export function LocaleToggle() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
+        {/* The accessible name keeps the visible language name in it ("Change language:
+            English"), so a voice-control user can say what they see (WCAG 2.5.3). */}
         <button
           type="button"
-          aria-label={t("languageAria")}
           disabled={pending}
+          aria-busy={pending || undefined}
           className={cn(
             "inline-flex h-11 min-w-24 items-center justify-between gap-2 rounded-input border border-border bg-background px-3 text-body-small-bold text-foreground transition-colors hover:bg-muted",
             focusRing,
             "disabled:cursor-not-allowed disabled:opacity-50",
           )}
         >
-          <span>{LOCALE_NAMES[locale]}</span>
-          <Icon icon={ChevronDown} size="xs" className="text-muted-foreground" />
+          <span>
+            <span className="sr-only">{t("languageAria")}: </span>
+            {LOCALE_NAMES[locale]}
+          </span>
+          {/* Busy while the page reloads into the new language. */}
+          {pending ? (
+            <Spinner decorative size="xs" className="text-muted-foreground" />
+          ) : (
+            <Icon icon={ChevronDown} size="xs" className="text-muted-foreground" />
+          )}
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-32">
         {routing.locales.map((option) => (
-          <DropdownMenuItem
-            key={option}
-            onSelect={() => handleChange(option)}
-            className="justify-between gap-4"
-          >
+          <DropdownMenuItem key={option} onSelect={() => handleChange(option)} className="justify-between gap-4">
             <span>{LOCALE_NAMES[option]}</span>
             {locale === option ? <Icon icon={Check} size="xs" className="text-primary" /> : null}
           </DropdownMenuItem>

@@ -17,7 +17,15 @@ export const DEFAULT_ADMIN_ORDER_DIRECTION = "desc";
  * The status filter's values: each real status, plus `active` — everything still
  * in the queue — which is what the counter screen shows by default.
  */
-export const ADMIN_ORDER_STATUS_FILTERS = ["active", "pending", "accepted", "preparing", "ready", "completed", "cancelled"] as const;
+export const ADMIN_ORDER_STATUS_FILTERS = [
+  "active",
+  "pending",
+  "accepted",
+  "preparing",
+  "ready",
+  "completed",
+  "cancelled",
+] as const;
 export type AdminOrderStatusFilter = (typeof ADMIN_ORDER_STATUS_FILTERS)[number];
 
 export type AdminOrderFilters = {

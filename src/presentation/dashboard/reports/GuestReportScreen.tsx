@@ -6,6 +6,7 @@ import { formatPercent } from "@/src/lib/formatCafeDay";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { maskPhoneNumber } from "@/src/lib/maskPhoneNumber";
+import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
 
 import { StatCard } from "../StatCard";
 
@@ -26,14 +27,22 @@ export async function GuestReportScreen({ report, selected }: GuestReportScreenP
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
-      <ReportHeader title={t("guests.title")} subtitle={t("guests.subtitle")} range={report.range} selected={selected} />
+      <ReportHeader
+        title={t("guests.title")}
+        subtitle={t("guests.subtitle")}
+        range={report.range}
+        selected={selected}
+      />
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label={t("guests.guests")} value={formatNumber(report.guests, locale)} icon={Users} tone="brand" />
         <StatCard
           label={t("guests.newGuests")}
           value={formatNumber(report.newGuests, locale)}
-          hint={t("guests.returning", { count: report.returningGuests, formatted: formatNumber(report.returningGuests, locale) })}
+          hint={t("guests.returning", {
+            count: report.returningGuests,
+            formatted: formatNumber(report.returningGuests, locale),
+          })}
           icon={UserPlus}
           tone="info"
         />
@@ -60,18 +69,24 @@ export async function GuestReportScreen({ report, selected }: GuestReportScreenP
         <section className="min-w-0 rounded-card-lg border border-border bg-background p-4 md:p-6">
           <h2 className="text-body-lead text-foreground">{t("guests.topGuestsHeading")}</h2>
           {report.topGuests.length === 0 ? (
-            <p className="py-8 text-center text-body-small-emphasis text-muted-foreground">{t("noSales")}</p>
+            <EmptyState icon={Users} title={t("noSales")} className="py-8" />
           ) : (
             <ol className="mt-4 flex flex-col divide-y divide-border">
               {report.topGuests.map((guest, index) => (
                 <li key={guest.userId} className="flex items-center gap-3 py-2.5">
-                  <span className="w-6 shrink-0 text-body-small tabular-nums text-muted-foreground">{formatNumber(index + 1, locale)}</span>
+                  <span className="w-6 shrink-0 text-body-small text-muted-foreground tabular-nums">
+                    {formatNumber(index + 1, locale)}
+                  </span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-body-small-strong text-foreground">{guest.name}</span>
-                    <span dir="ltr" className="text-body-caption text-muted-foreground">{maskPhoneNumber(guest.phone)}</span>
+                    <span dir="ltr" className="text-body-caption text-muted-foreground">
+                      {maskPhoneNumber(guest.phone)}
+                    </span>
                   </span>
                   <span className="text-end">
-                    <span className="block text-body-small-emphasis text-foreground">{formatMoney(guest.revenue, locale)}</span>
+                    <span className="block text-body-small-emphasis text-foreground">
+                      {formatMoney(guest.revenue, locale)}
+                    </span>
                     <span className="text-body-caption text-muted-foreground">
                       {t("orderCount", { count: guest.orders, formatted: formatNumber(guest.orders, locale) })}
                     </span>

@@ -5,7 +5,8 @@ import * as React from "react";
 
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
-import { FormMessage, Switch } from "@/src/presentation/design-system";
+import { Switch } from "@/src/presentation/design-system/components/Switch/Switch";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { accountsApi } from "./accounting-api";
 
@@ -14,7 +15,7 @@ export function AccountActiveSwitch({ code, isActive }: { code: string; isActive
   const t = useTranslations("dashAccounting");
   const tApiErrors = useTranslations("apiErrors");
   const router = useRouter();
-  const [error, setError] = React.useState<string | null>(null);
+  const { toast } = useToast();
   const [pending, startTransition] = React.useTransition();
 
   return (
@@ -24,18 +25,16 @@ export function AccountActiveSwitch({ code, isActive }: { code: string; isActive
         disabled={pending}
         aria-label={t("accounts.activeLabel", { code })}
         onCheckedChange={(next) => {
-          setError(null);
           startTransition(async () => {
             try {
               await accountsApi.setActive(code, next);
               router.refresh();
             } catch (err) {
-              setError(localizeApiError(err, tApiErrors, t("accounts.error")));
+              toast({ tone: "error", title: localizeApiError(err, tApiErrors, t("accounts.error")) });
             }
           });
         }}
       />
-      {error ? <FormMessage>{error}</FormMessage> : null}
     </span>
   );
 }

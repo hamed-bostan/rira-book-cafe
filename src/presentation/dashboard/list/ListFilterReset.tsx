@@ -2,7 +2,7 @@
 
 import { RotateCcw } from "lucide-react";
 
-import { Button } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
 
 import { useListParams } from "./useListParams";
 
@@ -43,7 +43,7 @@ export function ListFilterReset({ label, paramNames, alwaysVisible = false, clas
 
   return (
     <Button variant="link" size="sm" onClick={reset} className={className}>
-      <RotateCcw aria-hidden className="me-1 hidden size-4 dashboard-landscape:block xl:block" />
+      <RotateCcw aria-hidden className="me-1 hidden size-4 xl:block dashboard-landscape:block" />
       {label}
     </Button>
   );

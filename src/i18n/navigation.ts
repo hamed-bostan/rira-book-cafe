@@ -8,5 +8,4 @@ import { routing } from "./routing";
 // next-intl's helpers (consistent pathname handling, and a single switch point if the
 // locale strategy ever changes). Components import `Link`/`useRouter`/`usePathname` from
 // here, never from `next/link` or `next/navigation`.
-export const { Link, redirect, permanentRedirect, usePathname, useRouter, getPathname } =
-  createNavigation(routing);
+export const { Link, redirect, permanentRedirect, usePathname, useRouter, getPathname } = createNavigation(routing);

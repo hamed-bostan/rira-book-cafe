@@ -16,7 +16,10 @@ import { bookWaitlistEntryResponseSchema } from "@/src/presentation/book-loans/b
 import { eventRegistrationResponseSchema } from "@/src/presentation/events/event-response-schema";
 import { orderQuoteResponseSchema } from "@/src/presentation/loyalty/loyalty-response-schema";
 import { orderResponseSchema } from "@/src/presentation/orders/order-response-schema";
-import { paymentSessionResponseSchema, type PaymentSessionResponse } from "@/src/presentation/orders/payment-response-schema";
+import {
+  paymentSessionResponseSchema,
+  type PaymentSessionResponse,
+} from "@/src/presentation/orders/payment-response-schema";
 import { reservationResponseSchema } from "@/src/presentation/reservations/reservation-response-schema";
 import { reviewResponseSchema } from "@/src/presentation/reviews/review-response-schema";
 import { suiteBookingResponseSchema } from "@/src/presentation/suite-bookings/suite-booking-response-schema";

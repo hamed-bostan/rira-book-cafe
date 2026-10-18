@@ -10,7 +10,6 @@ import {
 } from "@/src/domain/entities/Loyalty";
 import { PROMO_KINDS, type PromoCode, type PromoCodeWithUses } from "@/src/domain/entities/Promotion";
 
-
 /** What the promotion and loyalty endpoints return, validated at the typed-service boundary. */
 
 export const loyaltySettingsResponseSchema = z.object({

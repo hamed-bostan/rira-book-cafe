@@ -31,7 +31,9 @@ describe("parseStatementAmount", () => {
 
 describe("parseStatementCsv", () => {
   it("reads signed-amount rows and skips a header", () => {
-    const parsed = parseStatementCsv("Date,Description,Amount,Ref\n1405/07/01,POS batch,2500000,111\n1405/07/02,\"Rent, Mehr\",-30000000,222\n");
+    const parsed = parseStatementCsv(
+      'Date,Description,Amount,Ref\n1405/07/01,POS batch,2500000,111\n1405/07/02,"Rent, Mehr",-30000000,222\n',
+    );
     expect(parsed.skippedRows).toEqual([]);
     expect(parsed.lines).toEqual([
       { date: "2026-09-23", description: "POS batch", reference: "111", amount: "2500000" },

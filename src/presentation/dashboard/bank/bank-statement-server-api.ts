@@ -14,7 +14,10 @@ export const bankStatementsServerApi = {
   /** A statement with its candidates and reconciliation proof; `null` when it doesn't exist. */
   async getById(id: string): Promise<BankReconciliationView | null> {
     try {
-      return await serverApiGet(`/admin/accounting/bank-statements/${encodeURIComponent(id)}`, bankReconciliationResponseSchema);
+      return await serverApiGet(
+        `/admin/accounting/bank-statements/${encodeURIComponent(id)}`,
+        bankReconciliationResponseSchema,
+      );
     } catch (error) {
       if (error instanceof ApiError && error.status === 404) return null;
       throw error;

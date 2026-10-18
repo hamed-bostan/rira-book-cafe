@@ -19,7 +19,11 @@ import { ConflictError } from "@/src/domain/errors/ConflictError";
 import { NotFoundError } from "@/src/domain/errors/NotFoundError";
 import { ValidationError } from "@/src/domain/errors/ValidationError";
 import type { AuditHook } from "@/src/domain/repositories/AuditHook";
-import type { IBankReconciliationRepository, MatchGroup, StatementChange } from "@/src/domain/repositories/IBankReconciliationRepository";
+import type {
+  IBankReconciliationRepository,
+  MatchGroup,
+  StatementChange,
+} from "@/src/domain/repositories/IBankReconciliationRepository";
 import { prisma } from "@/src/infrastructure/prisma/client";
 
 import { recordAudit } from "./writeActivityEntry";
@@ -65,8 +69,14 @@ export class PrismaBankReconciliationRepository implements IBankReconciliationRe
   async createStatement(input: NewBankStatement, audit?: AuditHook<BankStatement>): Promise<BankStatement> {
     return prisma.$transaction(async (tx) => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${STATEMENT_LOCK}))`;
-      const previous = await tx.bankStatement.findFirst({ where: { accountCode: SYSTEM_ACCOUNTS.bank }, orderBy: { toDay: "desc" } });
-      assertStatementFollows(previous ? { toDay: dateToDay(previous.toDay), closingBalance: Number(previous.closingBalance) } : null, input);
+      const previous = await tx.bankStatement.findFirst({
+        where: { accountCode: SYSTEM_ACCOUNTS.bank },
+        orderBy: { toDay: "desc" },
+      });
+      assertStatementFollows(
+        previous ? { toDay: dateToDay(previous.toDay), closingBalance: Number(previous.closingBalance) } : null,
+        input,
+      );
 
       const row = await tx.bankStatement.create({
         data: {
@@ -87,12 +97,18 @@ export class PrismaBankReconciliationRepository implements IBankReconciliationRe
     });
   }
 
-  async addLines(statementId: string, lines: NewStatementLine[], audit?: AuditHook<StatementChange>): Promise<BankStatement> {
+  async addLines(
+    statementId: string,
+    lines: NewStatementLine[],
+    audit?: AuditHook<StatementChange>,
+  ): Promise<BankStatement> {
     return prisma.$transaction(async (tx) => {
       await lockOpenStatement(tx, statementId);
       const last = await tx.bankStatementLine.findFirst({ where: { statementId }, orderBy: { position: "desc" } });
       const start = (last?.position ?? -1) + 1;
-      await tx.bankStatementLine.createMany({ data: lines.map((line, index) => ({ statementId, ...lineData(line, start + index) })) });
+      await tx.bankStatementLine.createMany({
+        data: lines.map((line, index) => ({ statementId, ...lineData(line, start + index) })),
+      });
       const statement = await readStatement(tx, statementId);
       await recordAudit(tx, { statement, count: lines.length }, audit);
       return statement;
@@ -119,7 +135,12 @@ export class PrismaBankReconciliationRepository implements IBankReconciliationRe
     const rows = await prisma.journalLine.findMany({
       where: {
         accountCode: statement.accountCode,
-        entry: { date: { gte: dayToDate(start), lte: dayToDate(shiftCafeDay(dateToDay(statement.toDay), CANDIDATE_DAYS_AFTER)) } },
+        entry: {
+          date: {
+            gte: dayToDate(start),
+            lte: dayToDate(shiftCafeDay(dateToDay(statement.toDay), CANDIDATE_DAYS_AFTER)),
+          },
+        },
         OR: [{ bankMatch: null }, { bankMatch: { match: { statementId } } }],
       },
       include: { entry: true, bankMatch: true },
@@ -144,7 +165,12 @@ export class PrismaBankReconciliationRepository implements IBankReconciliationRe
     return readBookFigures(prisma, statement.accountCode, dateToDay(statement.toDay));
   }
 
-  async match(statementId: string, groups: MatchGroup[], actor: Actor, audit?: AuditHook<StatementChange>): Promise<number> {
+  async match(
+    statementId: string,
+    groups: MatchGroup[],
+    actor: Actor,
+    audit?: AuditHook<StatementChange>,
+  ): Promise<number> {
     try {
       return await prisma.$transaction(async (tx) => {
         const statement = await lockOpenStatement(tx, statementId);
@@ -186,8 +212,15 @@ export class PrismaBankReconciliationRepository implements IBankReconciliationRe
 
         const entry = build(toLine(row));
         const posted = await postEntry(tx, entry);
-        const bankLines = await tx.journalLine.findMany({ where: { entryId: posted.id, accountCode: statement.accountCode } });
-        await createMatch(tx, statement, { statementLineIds: [lineId], ledgerLineIds: bankLines.map((line) => line.id) }, { id: entry.createdById, name: entry.createdByName });
+        const bankLines = await tx.journalLine.findMany({
+          where: { entryId: posted.id, accountCode: statement.accountCode },
+        });
+        await createMatch(
+          tx,
+          statement,
+          { statementLineIds: [lineId], ledgerLineIds: bankLines.map((line) => line.id) },
+          { id: entry.createdById, name: entry.createdByName },
+        );
         await recordAudit(tx, posted, audit);
         return posted;
       });
@@ -207,14 +240,20 @@ export class PrismaBankReconciliationRepository implements IBankReconciliationRe
       const earlierOpen = await tx.bankStatement.count({
         where: { accountCode: locked.accountCode, toDay: { lt: locked.fromDay }, status: "open" },
       });
-      if (earlierOpen > 0) throw new ConflictError("PREVIOUS_NOT_RECONCILED", "Reconcile the earlier statements first.");
+      if (earlierOpen > 0)
+        throw new ConflictError("PREVIOUS_NOT_RECONCILED", "Reconcile the earlier statements first.");
 
       const statement = await readStatement(tx, statementId);
       check(statement, await readBookFigures(tx, locked.accountCode, statement.toDay));
 
       await tx.bankStatement.update({
         where: { id: statementId },
-        data: { status: "reconciled", reconciledAt: new Date(), reconciledById: actor.id, reconciledByName: actor.name },
+        data: {
+          status: "reconciled",
+          reconciledAt: new Date(),
+          reconciledById: actor.id,
+          reconciledByName: actor.name,
+        },
       });
       const saved = await readStatement(tx, statementId);
       await recordAudit(tx, saved, audit);
@@ -241,22 +280,34 @@ async function lockStatement(tx: Prisma.TransactionClient, id: string): Promise<
 
 async function lockOpenStatement(tx: Prisma.TransactionClient, id: string): Promise<LockedStatement> {
   const statement = await lockStatement(tx, id);
-  if (statement.status !== "open") throw new ConflictError("STATEMENT_RECONCILED", "This statement is reconciled and can no longer change.");
+  if (statement.status !== "open")
+    throw new ConflictError("STATEMENT_RECONCILED", "This statement is reconciled and can no longer change.");
   return statement;
 }
 
 /** Match one group of lines inside the caller's transaction, after checking every rule. */
-async function createMatch(tx: Prisma.TransactionClient, statement: LockedStatement, group: MatchGroup, actor: Actor): Promise<void> {
+async function createMatch(
+  tx: Prisma.TransactionClient,
+  statement: LockedStatement,
+  group: MatchGroup,
+  actor: Actor,
+): Promise<void> {
   const statementLineIds = [...new Set(group.statementLineIds)];
   const ledgerLineIds = [...new Set(group.ledgerLineIds)];
 
-  const lines = await tx.bankStatementLine.findMany({ where: { id: { in: statementLineIds }, statementId: statement.id } });
+  const lines = await tx.bankStatementLine.findMany({
+    where: { id: { in: statementLineIds }, statementId: statement.id },
+  });
   if (lines.length !== statementLineIds.length) throw new NotFoundError("statement line", statementLineIds.join(", "));
-  if (lines.some((line) => line.matchId)) throw new ConflictError("ALREADY_MATCHED", "A statement line is already matched.");
+  if (lines.some((line) => line.matchId))
+    throw new ConflictError("ALREADY_MATCHED", "A statement line is already matched.");
 
   const start = await reconciliationStart(tx, statement.accountCode);
   const until = shiftCafeDay(dateToDay(statement.toDay), CANDIDATE_DAYS_AFTER);
-  const ledger = await tx.journalLine.findMany({ where: { id: { in: ledgerLineIds } }, include: { entry: true, bankMatch: true } });
+  const ledger = await tx.journalLine.findMany({
+    where: { id: { in: ledgerLineIds } },
+    include: { entry: true, bankMatch: true },
+  });
   if (ledger.length !== ledgerLineIds.length) throw new NotFoundError("ledger line", ledgerLineIds.join(", "));
   for (const line of ledger) {
     if (line.accountCode !== statement.accountCode) throw new ValidationError("ledgerLineIds", "wrongAccount");
@@ -270,9 +321,13 @@ async function createMatch(tx: Prisma.TransactionClient, statement: LockedStatem
     ledger.map((line) => Number(line.debit) - Number(line.credit)),
   );
 
-  const match = await tx.bankMatch.create({ data: { statementId: statement.id, createdById: actor.id, createdByName: actor.name } });
+  const match = await tx.bankMatch.create({
+    data: { statementId: statement.id, createdById: actor.id, createdByName: actor.name },
+  });
   await tx.bankStatementLine.updateMany({ where: { id: { in: statementLineIds } }, data: { matchId: match.id } });
-  await tx.bankMatchLedgerLine.createMany({ data: ledgerLineIds.map((journalLineId) => ({ matchId: match.id, journalLineId })) });
+  await tx.bankMatchLedgerLine.createMany({
+    data: ledgerLineIds.map((journalLineId) => ({ matchId: match.id, journalLineId })),
+  });
 }
 
 /** A ledger line matched twice by racing requests trips the unique index. */
@@ -293,7 +348,12 @@ async function readBookFigures(db: Db, accountCode: string, toDay: string): Prom
   const start = await reconciliationStart(db, accountCode);
   // `cleared`: the ledger line is matched on this statement or an earlier one.
   const [row] = await db.$queryRaw<
-    { book: bigint | null; outstanding: bigint | null; outstanding_count: bigint | null; cleared_after: bigint | null }[]
+    {
+      book: bigint | null;
+      outstanding: bigint | null;
+      outstanding_count: bigint | null;
+      cleared_after: bigint | null;
+    }[]
   >`
     SELECT
       SUM(CASE WHEN day <= ${toDay}::date THEN amount ELSE 0 END) AS book,

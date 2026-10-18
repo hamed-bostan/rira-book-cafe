@@ -45,20 +45,28 @@ export class CloseFiscalYear {
   constructor(private readonly ledger: ILedgerRepository) {}
 
   async execute(year: number, actor: ActivityActor, now: Date = new Date()): Promise<JournalEntry> {
-    if (!Number.isInteger(year) || year < 1300 || year > 1600) throw new ValidationError("year", "That isn't a fiscal year.");
+    if (!Number.isInteger(year) || year < 1300 || year > 1600)
+      throw new ValidationError("year", "That isn't a fiscal year.");
     const span = fiscalYearDays(year);
-    if (span.toDay >= cafeDayOf(now)) throw new ConflictError("YEAR_NOT_ENDED", `Fiscal year ${year} hasn't ended yet.`);
+    if (span.toDay >= cafeDayOf(now))
+      throw new ConflictError("YEAR_NOT_ENDED", `Fiscal year ${year} hasn't ended yet.`);
 
     const [accounts, movements] = await Promise.all([
       this.ledger.listAccounts(),
       this.ledger.movements(span.fromDay, span.toDay, { excludeClosing: true }),
     ]);
-    const closing = new Set(accounts.filter((account) => account.type === "revenue" || account.type === "expense").map((account) => account.code));
+    const closing = new Set(
+      accounts
+        .filter((account) => account.type === "revenue" || account.type === "expense")
+        .map((account) => account.code),
+    );
     const entry = yearCloseEntry(
       {
         fiscalYear: year,
         toDay: span.toDay,
-        movements: movements.filter((row) => closing.has(row.accountCode)).map((row) => ({ accountCode: row.accountCode, net: row.debit - row.credit })),
+        movements: movements
+          .filter((row) => closing.has(row.accountCode))
+          .map((row) => ({ accountCode: row.accountCode, net: row.debit - row.credit })),
       },
       actor,
     );

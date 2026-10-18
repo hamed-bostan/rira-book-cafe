@@ -1,9 +1,19 @@
+import { getTranslations } from "next-intl/server";
+
 import { requireAuth } from "@/src/lib/require-auth";
 import { sessionHas } from "@/src/lib/require-permission";
+import { noIndexMetadata } from "@/src/presentation/seo/noIndexMetadata";
 import { AccountScreen } from "@/src/presentation/storefront/account/AccountScreen";
 import { storefrontServerApi } from "@/src/presentation/storefront/storefront-server-api";
 
+import type { Metadata } from "next";
+
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("site");
+  return noIndexMetadata(t("account.heading"));
+}
 
 export default async function AccountPage() {
   const session = await requireAuth();

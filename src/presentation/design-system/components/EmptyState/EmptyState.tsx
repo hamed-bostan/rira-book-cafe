@@ -1,68 +1,98 @@
+import { cva } from "class-variance-authority";
 import * as React from "react";
 
 import { cn } from "@/src/lib/utils";
 
-export interface EmptyStateProps {
+import { Icon } from "../Icon";
+
+import type { LucideIcon } from "lucide-react";
+
+const emptyStateVariants = cva(
+  [
+    "flex flex-col items-center text-center",
+    // Eases in rather than snapping, so an empty result reads as an answer, not
+    // a glitch. The rise is motion-safe only; the fade stays (see shared/motion).
+    "duration-300 animate-in fade-in-0 motion-safe:slide-in-from-bottom-2",
+  ],
+  {
+    variants: {
+      /**
+       * `section` sits inside a list, table card or panel. `page` is the whole
+       * screen's answer — a 404, a failed load — and carries a page-level heading.
+       */
+      size: {
+        section: "gap-1 px-6 py-16",
+        page: "gap-2 px-6 py-20",
+      },
+    },
+    defaultVariants: { size: "section" },
+  },
+);
+
+const ICON_TONE = {
+  neutral: "bg-surface-sunken text-muted-foreground",
+  error: "bg-error text-error-foreground",
+} as const;
+
+export type EmptyStateProps = {
+  /** A lucide glyph, drawn in a tinted circle. Decorative — the title carries the meaning. */
+  icon?: LucideIcon;
   /**
-   * The illustration. Must be decorative (`alt=""` on an `<Image>`) — the title
-   * below already carries the meaning, so a described image would only make a
+   * Artwork in place of the icon. Must be decorative (`alt=""` on an
+   * `<Image>`): the title already says it, and a described image would make a
    * screen reader announce the same thing twice.
-   *
-   * Passed as a node rather than a `src`, so each screen keeps its own artwork
-   * dimensions and the design system stays clear of `next/image`.
    */
-  illustration: React.ReactNode;
+  illustration?: React.ReactNode;
   title: string;
-  description?: string;
-  /**
-   * The way out — usually a `<Button asChild>` wrapping a link. Rendered as the
-   * last child of the column, so the caller can pin it to the bottom with
-   * `mt-auto` (pair with `flex-1` on `className`) or push it down by a fixed step.
-   */
+  description?: React.ReactNode;
+  /** The way out — usually a `<Button asChild>` wrapping a link, or a retry button. */
   action?: React.ReactNode;
+  /** `error` tints the icon for a failure (a load that broke) rather than an absence. */
+  tone?: keyof typeof ICON_TONE;
+  size?: "section" | "page";
   /**
-   * Lead with the message instead of the artwork. Off by default: the
-   * illustration is what makes an empty screen read as intentional rather than
-   * broken, so it normally comes first.
+   * The title's element. Defaults to `h1` for a `page` (it *is* the page) and
+   * `p` for a `section`, where the surrounding screen already has its heading.
    */
-  titleFirst?: boolean;
-  /**
-   * Vertical placement within the page — `flex-1`, `justify-center`, `pt-10`.
-   * That belongs to the screen, not to this component.
-   */
+  titleAs?: "h1" | "h2" | "h3" | "p";
   className?: string;
-}
+};
 
 /**
- * The "there's nothing here yet" screen: an illustration, a heading explaining
- * why, and optionally a way out.
- *
- * It exists to hold the *heading* still. Written by hand three times, the same
- * message had drifted into three different treatments — two sizes and two
- * colours — which is the kind of difference nobody notices while writing the
- * fourth one.
+ * The "nothing here" block: an icon (or illustration), a message saying why, and
+ * optionally a way out. One component for every empty list, 404 and failed load,
+ * so they read as the same family instead of drifting apart one screen at a time.
  */
 export function EmptyState({
+  icon,
   illustration,
   title,
   description,
   action,
-  titleFirst = false,
+  tone = "neutral",
+  size = "section",
+  titleAs,
   className,
 }: EmptyStateProps) {
-  const heading = (
-    <div className="flex flex-col items-center gap-2">
-      <h2 className="text-heading-subsection text-foreground">{title}</h2>
-      {description && <p className="text-body-strong text-muted-foreground">{description}</p>}
-    </div>
-  );
+  const Title = titleAs ?? (size === "page" ? "h1" : "p");
 
   return (
-    <div className={cn("flex flex-col items-center gap-8 text-center", className)}>
-      {titleFirst && heading}
-      {illustration}
-      {!titleFirst && heading}
-      {action}
+    <div className={cn(emptyStateVariants({ size }), className)}>
+      {illustration ??
+        (icon ? (
+          <div className={cn("mb-4 flex size-14 items-center justify-center rounded-full", ICON_TONE[tone])}>
+            <Icon icon={icon} size="lg" />
+          </div>
+        ) : null)}
+      <Title className={cn("text-foreground", size === "page" ? "text-heading-section" : "text-body-strong")}>
+        {title}
+      </Title>
+      {description ? (
+        <p className={cn("max-w-md text-muted-foreground", size === "page" ? "text-body-default" : "text-body-small")}>
+          {description}
+        </p>
+      ) : null}
+      {action ? <div className="mt-4 flex flex-wrap items-center justify-center gap-2">{action}</div> : null}
     </div>
   );
 }

@@ -5,7 +5,9 @@ import * as React from "react";
 
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
-import { Button, ConfirmSheet, FormMessage } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { ConfirmSheet } from "@/src/presentation/design-system/components/Sheet/ConfirmSheet";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { bankStatementsApi } from "./bank-statement-api";
 
@@ -15,27 +17,26 @@ export function ReconcileButton({ statementId, ready }: { statementId: string; r
   const tApiErrors = useTranslations("apiErrors");
   const router = useRouter();
   const [open, setOpen] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
+  const { toast } = useToast();
   const [pending, startTransition] = React.useTransition();
 
   function reconcile(): void {
-    setError(null);
     startTransition(async () => {
       try {
         await bankStatementsApi.reconcile(statementId);
+        toast({ tone: "success", title: t("summary.reconciled") });
         router.refresh();
       } catch (err) {
-        setError(localizeApiError(err, tApiErrors, t("summary.reconcileError")));
+        toast({ tone: "error", title: localizeApiError(err, tApiErrors, t("summary.reconcileError")) });
       }
     });
   }
 
   return (
     <div className="flex flex-col gap-2">
-      <Button type="button" size="sm" disabled={!ready || pending} onClick={() => setOpen(true)}>
+      <Button type="button" size="sm" loading={pending} disabled={!ready} onClick={() => setOpen(true)}>
         {t("summary.reconcile")}
       </Button>
-      {error ? <FormMessage>{error}</FormMessage> : null}
       <ConfirmSheet
         open={open}
         onOpenChange={setOpen}

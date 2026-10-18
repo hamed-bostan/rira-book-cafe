@@ -24,7 +24,7 @@ export function TeamScreen({ members, changes }: TeamScreenProps) {
   const t = useTranslations("dashTeam");
 
   return (
-    <div className="mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-4 sm:gap-6">
+    <div className="mx-auto flex w-full max-w-6xl min-w-0 flex-col gap-4 sm:gap-6">
       <div>
         <h1 className="dashboard-page-title">{t("heading")}</h1>
         <p className="mt-1 text-body-small leading-relaxed text-muted-foreground">

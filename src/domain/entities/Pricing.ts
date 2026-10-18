@@ -80,7 +80,10 @@ export function ingredientUnitCost(ingredient: Pick<Ingredient, "purchasePrice" 
  * What a recipe's ingredients cost, rounded to the Toman — or `null` when it uses
  * an ingredient that no longer exists (the cost would be silently understated).
  */
-export function recipeCost(lines: readonly RecipeLine[], ingredients: ReadonlyMap<string, Pick<Ingredient, "purchasePrice" | "purchaseQuantity">>): number | null {
+export function recipeCost(
+  lines: readonly RecipeLine[],
+  ingredients: ReadonlyMap<string, Pick<Ingredient, "purchasePrice" | "purchaseQuantity">>,
+): number | null {
   let total = 0;
   for (const line of lines) {
     const ingredient = ingredients.get(line.ingredientId);
@@ -224,7 +227,12 @@ export function buildPricingReport(input: {
             roundingStep: input.settings.roundingStep,
           });
     const position = suggestion
-      ? currentPosition({ price: product.price, fullCost: suggestion.fullCost, vatRateBps: input.vatRateBps, taxExempt: product.taxExempt })
+      ? currentPosition({
+          price: product.price,
+          fullCost: suggestion.fullCost,
+          vatRateBps: input.vatRateBps,
+          taxExempt: product.taxExempt,
+        })
       : null;
 
     return {

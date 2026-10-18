@@ -10,10 +10,7 @@ import {
 import { GetEntityActivity } from "@/src/domain/use-cases/activity/GetEntityActivity";
 import { ListActivity } from "@/src/domain/use-cases/activity/ListActivity";
 import { activityLog } from "@/src/infrastructure/container";
-import {
-  canReadActivityEntityType,
-  visibleActivityEntityTypes,
-} from "@/src/lib/api/activity-visibility";
+import { canReadActivityEntityType, visibleActivityEntityTypes } from "@/src/lib/api/activity-visibility";
 import { parseAdminActivityFilters } from "@/src/lib/api/admin-activity-params";
 import { parsePageRequest } from "@/src/lib/api/pagination-params";
 import { errorResponseFromException, unauthorizedResponse } from "@/src/lib/api/responses";

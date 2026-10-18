@@ -15,11 +15,7 @@ import type { IProductRepository } from "../../repositories/IProductRepository";
 export class ListProducts {
   constructor(private readonly productRepo: IProductRepository) {}
 
-  execute(
-    filters: AdminProductFilters,
-    page: PageRequest<AdminProductSort>,
-    locale?: string,
-  ): Promise<Page<Product>> {
+  execute(filters: AdminProductFilters, page: PageRequest<AdminProductSort>, locale?: string): Promise<Page<Product>> {
     const query = filters.query?.trim() ?? "";
     return this.productRepo.listPage({ ...filters, query: query || undefined }, page, locale);
   }

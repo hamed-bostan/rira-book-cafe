@@ -7,7 +7,10 @@ import * as React from "react";
 import { useRouter } from "@/src/i18n/navigation";
 import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
-import { Button, ConfirmSheet, Icon } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { ConfirmSheet } from "@/src/presentation/design-system/components/Sheet/ConfirmSheet";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { categoriesApi } from "./category-api";
 
@@ -39,6 +42,7 @@ export function DeleteCategoryButton({
   const t = useTranslations("dashCategories");
   const tApiErrors = useTranslations("apiErrors");
   const router = useRouter();
+  const { toast } = useToast();
   const [internalOpen, setInternalOpen] = React.useState(false);
   const open = controlledOpen ?? internalOpen;
   const [error, setError] = React.useState<string | null>(null);
@@ -49,6 +53,7 @@ export function DeleteCategoryButton({
     startTransition(async () => {
       try {
         await categoriesApi.remove(id);
+        toast({ tone: "success", title: t("deleted", { name }) });
         setOpen(false);
         // Re-run the server render so the list reflects the delete — the server
         // stays the source of truth instead of patching local state.
@@ -61,7 +66,9 @@ export function DeleteCategoryButton({
         // error reads in context and the user can retry — instead of a
         // disruptive window.alert.
         const message =
-          err instanceof ApiError && err.code === "IN_USE" ? err.message : localizeApiError(err, tApiErrors, t("deleteError"));
+          err instanceof ApiError && err.code === "IN_USE"
+            ? err.message
+            : localizeApiError(err, tApiErrors, t("deleteError"));
         setError(message);
         setOpen(true);
       }
@@ -88,7 +95,7 @@ export function DeleteCategoryButton({
           iconOnly
           aria-label={t("deleteAria", { name })}
           onClick={() => setOpen(true)}
-          disabled={pending}
+          loading={pending}
           className="text-destructive"
         >
           <Icon icon={Trash2} size="sm" />

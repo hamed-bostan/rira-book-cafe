@@ -28,11 +28,18 @@ export async function POST(request: NextRequest, { params }: RouteContext): Prom
   if (!body.ok) return errorResponse(400, { message: "Expected a JSON body.", code: "BAD_REQUEST" });
   const parsed = bankMatchSchema.safeParse(body.data);
   if (!parsed.success) {
-    return errorResponse(400, { message: "Pick lines on both sides.", code: "VALIDATION", fieldErrors: firstFieldErrors(parsed.error) });
+    return errorResponse(400, {
+      message: "Pick lines on both sides.",
+      code: "VALIDATION",
+      fieldErrors: firstFieldErrors(parsed.error),
+    });
   }
 
   try {
-    await new MatchBankLines(bankReconciliationRepository).execute(id, parsed.data, { id: session.user.id, name: session.user.name ?? session.user.id });
+    await new MatchBankLines(bankReconciliationRepository).execute(id, parsed.data, {
+      id: session.user.id,
+      name: session.user.name ?? session.user.id,
+    });
     return new NextResponse(null, { status: 204 });
   } catch (error) {
     return errorResponseFromException(error, `POST /api/admin/accounting/bank-statements/${id}/matches failed`);

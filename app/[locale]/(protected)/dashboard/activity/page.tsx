@@ -22,20 +22,13 @@ export default async function DashboardActivityPage({ searchParams }: DashboardA
   //
   // In parallel: the actor options describe the whole log and don't depend on the
   // page being read, so there's nothing for the second call to wait on.
-  const [entries, actors] = await Promise.all([
-    activityServerApi.listPage(params),
-    activityServerApi.listActors(),
-  ]);
+  const [entries, actors] = await Promise.all([activityServerApi.listPage(params), activityServerApi.listActors()]);
 
   return (
     <ActivityScreen
       entries={entries}
       actors={actors}
-      isFiltered={
-        params.get("actorId") != null ||
-        params.get("entityType") != null ||
-        params.get("field") != null
-      }
+      isFiltered={params.get("actorId") != null || params.get("entityType") != null || params.get("field") != null}
     />
   );
 }

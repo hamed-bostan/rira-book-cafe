@@ -6,7 +6,8 @@ import { Dialog, VisuallyHidden } from "radix-ui";
 
 import type { Permission } from "@/src/domain/entities/Permission";
 import { cn } from "@/src/lib/utils";
-import { Button, Icon } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 
 import { DashboardNav } from "./DashboardNav";
 import { SidebarBrand } from "./SidebarBrand";
@@ -48,10 +49,10 @@ export function NavDrawer({ open, onOpenChange, permissions }: NavDrawerProps) {
           className={cn(
             "fixed inset-y-0 start-0 z-50 flex w-72 max-w-[80vw] flex-col border-e border-border bg-background shadow-lg",
             "focus:outline-none",
-            "data-[state=open]:animate-in data-[state=closed]:animate-out",
-            "motion-safe:data-[state=open]:slide-in-from-left motion-safe:data-[state=closed]:slide-out-to-left",
-            "rtl:motion-safe:data-[state=open]:slide-in-from-right rtl:motion-safe:data-[state=closed]:slide-out-to-right",
-            "motion-reduce:data-[state=open]:fade-in-0 motion-reduce:data-[state=closed]:fade-out-0",
+            "data-[state=closed]:animate-out data-[state=open]:animate-in",
+            "motion-safe:data-[state=closed]:slide-out-to-left motion-safe:data-[state=open]:slide-in-from-left",
+            "rtl:motion-safe:data-[state=closed]:slide-out-to-right rtl:motion-safe:data-[state=open]:slide-in-from-right",
+            "motion-reduce:data-[state=closed]:fade-out-0 motion-reduce:data-[state=open]:fade-in-0",
             "duration-200",
           )}
         >

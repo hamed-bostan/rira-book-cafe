@@ -7,6 +7,7 @@ import type {
   StoredObject,
   UploadImageInput,
 } from "@/src/domain/repositories/IImageStorageRepository";
+import type { ILogger } from "@/src/domain/repositories/ILogger";
 
 export const IMAGE_EXTENSION_BY_MIME: Record<string, string> = {
   "image/jpeg": "jpg",
@@ -20,7 +21,7 @@ export type LocalDiskImageStorageConfig = {
   rootDir: string;
   /** Site path the files are served under, e.g. `/uploads` (see `app/uploads/[...path]/route.ts`). */
   publicPathPrefix: string;
-}
+};
 
 /**
  * Image storage on the server's own disk — the self-hosted replacement for a
@@ -32,7 +33,10 @@ export class LocalDiskImageStorageRepository implements IImageStorageRepository 
   private readonly root: string;
   private readonly prefix: string;
 
-  constructor(config: LocalDiskImageStorageConfig) {
+  constructor(
+    config: LocalDiskImageStorageConfig,
+    private readonly logger: ILogger,
+  ) {
     this.root = path.resolve(config.rootDir);
     this.prefix = `/${config.publicPathPrefix.replace(/^\/+|\/+$/g, "")}/`;
   }
@@ -69,7 +73,7 @@ export class LocalDiskImageStorageRepository implements IImageStorageRepository 
       await this.remove(objectPath);
     } catch (error) {
       // Cleanup must never break the caller.
-      console.error(`LocalDiskImageStorage: best-effort remove failed for "${objectPath}":`, error);
+      this.logger.error("Best-effort image removal failed", { error, objectPath });
     }
   }
 

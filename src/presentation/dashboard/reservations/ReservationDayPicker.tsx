@@ -5,7 +5,9 @@ import { useTranslations } from "next-intl";
 
 import { shiftCafeDay } from "@/src/domain/entities/CafeTime";
 import { useRouter } from "@/src/i18n/navigation";
-import { Button, Icon, Input } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 
 type ReservationDayPickerProps = {
   /** The day on screen, `YYYY-MM-DD` on the cafe calendar. */
@@ -31,13 +33,27 @@ export function ReservationDayPicker({ day, today, query }: ReservationDayPicker
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <Button type="button" variant="outline" size="sm" iconOnly aria-label={t("previousDay")} onClick={() => go(shiftCafeDay(day, -1))}>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        iconOnly
+        aria-label={t("previousDay")}
+        onClick={() => go(shiftCafeDay(day, -1))}
+      >
         <Icon icon={ChevronLeft} size="sm" className="rtl:-scale-x-100" />
       </Button>
       <Button type="button" variant={day === today ? "primary" : "outline"} size="sm" onClick={() => go(today)}>
         {t("today")}
       </Button>
-      <Button type="button" variant="outline" size="sm" iconOnly aria-label={t("nextDay")} onClick={() => go(shiftCafeDay(day, 1))}>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        iconOnly
+        aria-label={t("nextDay")}
+        onClick={() => go(shiftCafeDay(day, 1))}
+      >
         <Icon icon={ChevronRight} size="sm" className="rtl:-scale-x-100" />
       </Button>
       <Input

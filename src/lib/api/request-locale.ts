@@ -14,11 +14,7 @@ import type { NextRequest } from "next/server";
 export function getRequestLocale(request: NextRequest): string | undefined {
   // First entry only (the app's own clients send a single bare tag); strip any
   // `;q=` weight so a header like `fa;q=0.9,en;q=0.8` still negotiates `fa`.
-  const tag = (request.headers.get("accept-language") ?? "")
-    .split(",")[0]
-    ?.split(";")[0]
-    ?.trim()
-    .toLowerCase();
+  const tag = (request.headers.get("accept-language") ?? "").split(",")[0]?.split(";")[0]?.trim().toLowerCase();
   const base = tag?.split("-")[0] ?? "";
   if (!base || base === routing.defaultLocale) return undefined;
   return (routing.locales as readonly string[]).includes(base) ? base : undefined;

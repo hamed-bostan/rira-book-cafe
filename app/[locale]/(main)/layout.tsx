@@ -20,7 +20,7 @@ export default async function PublicLayout({ children }: { children: ReactNode }
   return (
     <BasketProvider>
       <PublicHeader signedIn={signedIn} unreadNotifications={unreadNotifications} />
-      <main className="mx-auto w-full max-w-6xl px-4 pb-28 pt-6 md:pb-12">{children}</main>
+      <main className="mx-auto w-full max-w-6xl px-4 pt-6 pb-28 md:pb-12">{children}</main>
       <PublicBottomNav unreadNotifications={unreadNotifications} />
     </BasketProvider>
   );

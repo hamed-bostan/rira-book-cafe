@@ -8,7 +8,14 @@ import type { ProductKind } from "./Product";
  */
 
 /** Dietary tags an item can carry; an item may hold several. */
-export const DIETARY_TAGS = ["Vegan", "Vegetarian", "Gluten-Free", "Dairy-Free", "Sugar-Free", "Caffeine-Free"] as const;
+export const DIETARY_TAGS = [
+  "Vegan",
+  "Vegetarian",
+  "Gluten-Free",
+  "Dairy-Free",
+  "Sugar-Free",
+  "Caffeine-Free",
+] as const;
 export type DietaryTag = (typeof DIETARY_TAGS)[number];
 
 /**

@@ -1,6 +1,9 @@
 import { headers } from "next/headers";
 import { getLocale } from "next-intl/server";
 
+import { CATALOG_REVALIDATE_SECONDS, type CatalogTag } from "../cache-tags";
+import { getEnv } from "../env";
+
 import { ApiError } from "./ApiError";
 import { defaultMessageForStatus, type ErrorEnvelope } from "./normalizeAxiosError";
 import { badResponseError, parseApiResponse } from "./parseApiResponse";
@@ -36,6 +39,14 @@ type ServerGetConfig = {
    * written back over the base row on save — so its reads set this.
    */
   canonical?: boolean;
+  /**
+   * Cache this response in Next's data cache, shared by every visitor, under these
+   * tags (invalidated by the write routes — see `invalidatesCatalog`). Only for
+   * public reads that are the same for everyone: the request is sent **without the
+   * caller's cookies**, so the API answers as an anonymous guest. The locale still
+   * goes along (`Accept-Language` is part of the cache key), one entry per language.
+   */
+  cache?: { tags: readonly CatalogTag[] };
 };
 
 /**
@@ -48,7 +59,8 @@ type ServerGetConfig = {
  */
 export async function serverApiGet<T>(path: string, schema: ZodType<T>, config?: ServerGetConfig): Promise<T> {
   const requestHeaders = await headers();
-  const cookie = requestHeaders.get("cookie") ?? undefined;
+  // A shared cache entry must not depend on who asked — so cached reads go anonymous.
+  const cookie = config?.cache ? undefined : (requestHeaders.get("cookie") ?? undefined);
   // Forward the active locale as the BFF's language negotiation, so the API serves
   // localized catalog content during server render (the route reads `Accept-Language`).
   // Canonical reads (admin/dashboard) opt out so they receive the base-row content.
@@ -59,8 +71,10 @@ export async function serverApiGet<T>(path: string, schema: ZodType<T>, config?:
   let response: Response;
   try {
     response = await fetch(url, {
-      // Per-user, request-time data (cookies are forwarded) — never cache.
-      cache: "no-store",
+      ...(config?.cache
+        ? { next: { tags: [...config.cache.tags], revalidate: CATALOG_REVALIDATE_SECONDS } }
+        : // Per-user, request-time data (cookies are forwarded) — never cache.
+          { cache: "no-store" as const }),
       signal: AbortSignal.timeout(DEFAULT_TIMEOUT_MS),
       headers: {
         Accept: "application/json",
@@ -134,11 +148,12 @@ async function safeJson(response: Response): Promise<ErrorEnvelope | undefined> 
  * origin from the incoming request so self-calls work in any environment.
  */
 function resolveBaseUrl(requestHeaders: Awaited<ReturnType<typeof headers>>): string {
-  if (process.env.API_BASE_URL) return process.env.API_BASE_URL;
+  const { API_BASE_URL, NODE_ENV } = getEnv();
+  if (API_BASE_URL) return API_BASE_URL;
 
   const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
   if (!host) throw new Error("Cannot resolve the API base URL: the request has no host header.");
 
-  const proto = requestHeaders.get("x-forwarded-proto") ?? (process.env.NODE_ENV === "development" ? "http" : "https");
+  const proto = requestHeaders.get("x-forwarded-proto") ?? (NODE_ENV === "development" ? "http" : "https");
   return `${proto}://${host}/api`;
 }

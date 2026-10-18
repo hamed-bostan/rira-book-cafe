@@ -87,7 +87,11 @@ export function consumptionFor(
   const lines = recipe.map((line) => {
     const perServing = Math.round((stock.get(line.ingredientId)?.averageCost ?? 0) * line.quantity);
     unitCost += perServing;
-    return { ingredientId: line.ingredientId, quantity: roundQuantity(line.quantity * quantity), value: perServing * quantity };
+    return {
+      ingredientId: line.ingredientId,
+      quantity: roundQuantity(line.quantity * quantity),
+      value: perServing * quantity,
+    };
   });
   return { unitCost, lines };
 }
@@ -113,7 +117,10 @@ export type StockMovement = {
 type Actor = { id: string; name: string };
 
 /** Spoiled or spilled stock leaves inventory as an expense. */
-export function wasteEntry(input: { id: string; date: string; value: number; description: string }, actor: Actor): NewJournalEntry {
+export function wasteEntry(
+  input: { id: string; date: string; value: number; description: string },
+  actor: Actor,
+): NewJournalEntry {
   return {
     date: input.date,
     description: input.description,
@@ -133,7 +140,10 @@ export function wasteEntry(input: { id: string; date: string; value: number; des
  * A physical count's difference: a shortage (negative) is a loss, a surplus a gain,
  * both through the inventory variance account so they show on the P&L.
  */
-export function countEntry(input: { id: string; date: string; variance: number; description: string }, actor: Actor): NewJournalEntry | null {
+export function countEntry(
+  input: { id: string; date: string; variance: number; description: string },
+  actor: Actor,
+): NewJournalEntry | null {
   if (input.variance === 0) return null;
   const amount = Math.abs(input.variance);
   const shortage = input.variance < 0;
@@ -158,7 +168,10 @@ export function countEntry(input: { id: string; date: string; variance: number; 
 }
 
 /** Stock already on the shelves when tracking starts: the owner's contribution in kind. */
-export function openingStockEntry(input: { id: string; date: string; value: number; description: string }, actor: Actor): NewJournalEntry {
+export function openingStockEntry(
+  input: { id: string; date: string; value: number; description: string },
+  actor: Actor,
+): NewJournalEntry {
   return {
     date: input.date,
     description: input.description,

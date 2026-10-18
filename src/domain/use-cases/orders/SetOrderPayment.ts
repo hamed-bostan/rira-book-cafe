@@ -31,7 +31,8 @@ export class SetOrderPayment {
     const order = await this.orderRepo.getById(orderId);
     if (!order) throw new NotFoundError("order", orderId);
     if (order.paymentStatus === paymentStatus) {
-      if (options.strict) throw new ConflictError("INVALID_TRANSITION", `The payment is already ${order.paymentStatus}.`);
+      if (options.strict)
+        throw new ConflictError("INVALID_TRANSITION", `The payment is already ${order.paymentStatus}.`);
       return order;
     }
     if (order.paymentStatus === "refunded") {

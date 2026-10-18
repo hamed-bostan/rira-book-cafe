@@ -5,7 +5,9 @@ import type { Notification, NotificationKind } from "@/src/domain/entities/Notif
 import { Link } from "@/src/i18n/navigation";
 import { formatRelativeTime } from "@/src/lib/formatRelativeTime";
 import { cn } from "@/src/lib/utils";
-import { Icon, focusRing } from "@/src/presentation/design-system";
+import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 
 import { MarkNotificationsRead } from "./MarkNotificationsRead";
 import { notificationValues } from "./notificationValues";
@@ -56,10 +58,11 @@ export async function NotificationsScreen({ notifications, now }: NotificationsS
       </div>
 
       {notifications.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-card-lg border border-dashed border-border px-6 py-12 text-center">
-          <Icon icon={Bell} size="lg" className="text-muted-foreground" />
-          <p className="text-body-small text-muted-foreground">{t("notifications.empty")}</p>
-        </div>
+        <EmptyState
+          icon={Bell}
+          title={t("notifications.empty")}
+          className="rounded-card-lg border border-dashed border-border py-12"
+        />
       ) : (
         <ul className="flex flex-col gap-2">
           {notifications.map((notification) => {
@@ -79,12 +82,22 @@ export async function NotificationsScreen({ notifications, now }: NotificationsS
                   <Icon icon={ICONS[notification.kind]} size="sm" />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-body-small-strong text-foreground">{t(`notifications.kinds.${notification.kind}.title`, values)}</span>
-                  <span className="block text-body-small text-muted-foreground">{t(`notifications.kinds.${notification.kind}.body`, values)}</span>
-                  <span className="mt-1 block text-body-caption text-muted-foreground">{formatRelativeTime(notification.createdAt, locale, nowDate)}</span>
+                  <span className="block text-body-small-strong text-foreground">
+                    {t(`notifications.kinds.${notification.kind}.title`, values)}
+                  </span>
+                  <span className="block text-body-small text-muted-foreground">
+                    {t(`notifications.kinds.${notification.kind}.body`, values)}
+                  </span>
+                  <span className="mt-1 block text-body-caption text-muted-foreground">
+                    {formatRelativeTime(notification.createdAt, locale, nowDate)}
+                  </span>
                 </span>
                 {notification.readAt ? null : (
-                  <span role="img" aria-label={t("notifications.unread")} className="mt-1 size-2 shrink-0 rounded-full bg-primary" />
+                  <span
+                    role="img"
+                    aria-label={t("notifications.unread")}
+                    className="mt-1 size-2 shrink-0 rounded-full bg-primary"
+                  />
                 )}
               </>
             );

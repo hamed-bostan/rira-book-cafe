@@ -6,6 +6,7 @@ import type { User } from "@/src/domain/entities/User";
 import { GrantAdmin } from "@/src/domain/use-cases/team/GrantAdmin";
 import { ListTeam } from "@/src/domain/use-cases/team/ListTeam";
 import { teamNotifier, userRepository } from "@/src/infrastructure/container";
+import { enforceRateLimit, RATE_LIMITS } from "@/src/lib/api/rate-limit";
 import {
   errorResponse,
   errorResponseFromException,
@@ -90,6 +91,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const session = await getOwnerSession();
   if (!session) return unauthorizedResponse();
 
+  const limited = await enforceRateLimit(request, RATE_LIMITS.teamNotice, session.user.id);
+  if (limited) return limited;
+
   const body = await parseJsonBody(request);
   if (!body.ok) return errorResponse(400, { message: "Expected a JSON body.", code: "BAD_REQUEST" });
 
@@ -106,11 +110,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // The invitation links back to this deployment's sign-in page, so the origin
     // is resolved from the request (only the web layer knows the public host).
     const signInUrl = `${await getAppUrl()}/login`;
-    const granted = await new GrantAdmin(userRepository, teamNotifier).execute(
-      parsed.data,
-      session.user.id,
-      signInUrl,
-    );
+    const granted = await new GrantAdmin(userRepository, teamNotifier).execute(parsed.data, session.user.id, signInUrl);
     const [member] = toTeamMembers([granted], session.user.id);
     return NextResponse.json(member, { status: 201 });
   } catch (error) {

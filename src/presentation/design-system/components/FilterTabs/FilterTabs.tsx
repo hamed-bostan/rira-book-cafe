@@ -17,7 +17,7 @@ const filterTabsVariants = cva("", {
      * many tabs there are, so the count never has to be declared.
      */
     layout: {
-      scroll: "flex gap-2 overflow-x-auto scrollbar-hide",
+      scroll: "scrollbar-hide flex gap-2 overflow-x-auto",
       grid: "grid auto-cols-fr grid-flow-col gap-3",
     },
   },
@@ -27,7 +27,7 @@ const filterTabsVariants = cva("", {
 
 const filterTabVariants = cva(
   [
-    "flex items-center justify-center whitespace-nowrap rounded-full px-4",
+    "flex items-center justify-center rounded-full px-4 whitespace-nowrap",
     "text-button-default-medium transition-colors",
     "border text-foreground",
     focusRing,
@@ -68,7 +68,8 @@ const FilterTabsContext = React.createContext<FilterTabStyleProps>({
 });
 
 export interface FilterTabsProps
-  extends React.ComponentPropsWithoutRef<typeof RadioGroupPrimitive.Root>,
+  extends
+    React.ComponentPropsWithoutRef<typeof RadioGroupPrimitive.Root>,
     VariantProps<typeof filterTabsVariants>,
     VariantProps<typeof filterTabVariants> {}
 
@@ -113,8 +114,7 @@ export const FilterTabs = React.forwardRef<HTMLDivElement, FilterTabsProps>(
 FilterTabs.displayName = "FilterTabs";
 
 export interface FilterTabProps
-  extends React.ComponentPropsWithoutRef<typeof RadioGroupPrimitive.Item>,
-    VariantProps<typeof filterTabVariants> {}
+  extends React.ComponentPropsWithoutRef<typeof RadioGroupPrimitive.Item>, VariantProps<typeof filterTabVariants> {}
 
 /** A single tab; must live inside a `<FilterTabs>`. */
 export const FilterTab = React.forwardRef<HTMLButtonElement, FilterTabProps>(

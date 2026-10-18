@@ -1,4 +1,7 @@
+import { randomInt } from "node:crypto";
+
 import type { AuthIdentity, IAuthRepository } from "@/src/domain/repositories/IAuthRepository";
+import type { ILogger } from "@/src/domain/repositories/ILogger";
 
 import { normalizePhone, sendPatternSms } from "../sms/smsIrClient";
 
@@ -15,7 +18,9 @@ export type SmsIrConfig = {
   templateId: number;
   /** Override the API host (defaults to the public SMS.ir endpoint). */
   baseUrl?: string;
-}
+  /** Where send failures are logged. */
+  logger: ILogger;
+};
 
 type StoredCode = {
   code: string;
@@ -51,11 +56,10 @@ export class SmsIrAuthRepository implements IAuthRepository {
       return false;
     }
 
-    const code = String(Math.floor(1000 + Math.random() * 9000));
+    // CSPRNG: `Math.random()` output is predictable from earlier values.
+    const code = String(randomInt(1000, 10_000));
 
-    const sent = await sendPatternSms(this.config, mobile, this.config.templateId, [
-      { name: "CODE", value: code },
-    ]);
+    const sent = await sendPatternSms(this.config, mobile, this.config.templateId, [{ name: "CODE", value: code }]);
     if (!sent) {
       return false;
     }

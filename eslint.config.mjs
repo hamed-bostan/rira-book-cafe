@@ -1,6 +1,7 @@
 import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
+import jsxA11y from "eslint-plugin-jsx-a11y";
 import tseslint from "typescript-eslint";
 
 // Physical-direction Tailwind classes — banned in favor of logical (RTL-aware)
@@ -16,6 +17,16 @@ const RAW_COLOR_MESSAGE =
 const RAW_COLOR_REGEX =
   "#[0-9a-fA-F]{3,8}\\b|rgba?\\(|\\b(?:bg|text|border|ring|from|via|to|fill|stroke|shadow|outline|decoration|caret|divide|accent)-(?:white|black|gray-\\d+|slate-\\d+|zinc-\\d+|neutral-\\d+|stone-\\d+)\\b";
 
+// jsx-a11y's recommended set, downgraded to warnings while the existing
+// violations are worked through (options kept, "off" rules stay off). Promote
+// back to errors once `npm run lint` is warning-free for them.
+const JSX_A11Y_RECOMMENDED_AS_WARNINGS = Object.fromEntries(
+  Object.entries(jsxA11y.flatConfigs.recommended.rules).map(([rule, setting]) => {
+    const [severity, ...options] = Array.isArray(setting) ? setting : [setting];
+    return [rule, severity === "off" || severity === 0 ? setting : ["warn", ...options]];
+  }),
+);
+
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
@@ -29,7 +40,19 @@ const eslintConfig = defineConfig([
     // Claude Code session state — worktrees carry a full repo copy (incl. its own
     // .next build output), which otherwise floods lint with generated-code errors.
     ".claude/**",
+    // Test reports (Playwright's HTML report bundles megabytes of minified JS).
+    "coverage/**",
+    "playwright-report/**",
+    "test-results/**",
+    "blob-report/**",
   ]),
+
+  // Accessibility (eslint-config-next already registers the jsx-a11y plugin but
+  // enables only a handful of its rules).
+  {
+    files: ["**/*.tsx", "**/*.jsx"],
+    rules: JSX_A11Y_RECOMMENDED_AS_WARNINGS,
+  },
 
   // Type-aware TypeScript linting (catches floating promises, unsafe `any` flow,
   // unnecessary conditions, etc. — plain `@typescript-eslint/recommended` is
@@ -124,6 +147,39 @@ const eslintConfig = defineConfig([
       "no-var": "error",
       "prefer-const": "error",
       "object-shorthand": "error",
+    },
+  },
+
+  // Server code logs through the `ILogger` port (container `logger`) — structured
+  // JSON in production, request-id correlated, errors forwarded to the tracker.
+  {
+    files: ["app/api/**/*.ts", "app/uploads/**/*.ts", "src/domain/**/*.ts", "src/infrastructure/**/*.ts"],
+    ignores: ["**/__tests__/**", "**/*.test.ts"],
+    rules: {
+      "no-console": "error",
+    },
+  },
+
+  // Design-system components are imported from their own module, never through a
+  // barrel: a Server Component importing a barrel registers every "use client"
+  // component it re-exports, so the whole design system shipped on every page.
+  // (Later blocks that restrict imports for `src/domain` and `app/api` replace this
+  // rule for their files — both already forbid `presentation` outright.)
+  {
+    files: ["app/**/*.{ts,tsx}", "src/**/*.{ts,tsx}", "e2e/**/*.ts", "tests/**/*.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "@/src/presentation/design-system",
+              message:
+                "Import the component from its own module (e.g. @/src/presentation/design-system/components/Button/Button) — the barrel ships every client component to the browser.",
+            },
+          ],
+        },
+      ],
     },
   },
 

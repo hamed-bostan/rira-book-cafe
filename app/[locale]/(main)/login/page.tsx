@@ -1,4 +1,14 @@
+import { getTranslations } from "next-intl/server";
+
 import LoginScreen from "@/src/presentation/auth/LoginScreen";
+import { noIndexMetadata } from "@/src/presentation/seo/noIndexMetadata";
+
+import type { Metadata } from "next";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("site");
+  return noIndexMetadata(t("signIn"));
+}
 
 interface LoginPageProps {
   searchParams: Promise<{ callbackUrl?: string }>;

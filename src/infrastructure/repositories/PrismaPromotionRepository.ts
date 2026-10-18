@@ -1,6 +1,12 @@
 import { Prisma } from "@prisma/client";
 
-import { PROMO_KINDS, type PromoCode, type PromoCodeWithUses, type PromoKind, type PromoUsage } from "@/src/domain/entities/Promotion";
+import {
+  PROMO_KINDS,
+  type PromoCode,
+  type PromoCodeWithUses,
+  type PromoKind,
+  type PromoUsage,
+} from "@/src/domain/entities/Promotion";
 import { NotFoundError } from "@/src/domain/errors/NotFoundError";
 import { UniqueConstraintError } from "@/src/domain/errors/UniqueConstraintError";
 import type { AuditHook } from "@/src/domain/repositories/AuditHook";
@@ -24,7 +30,11 @@ export class PrismaPromotionRepository implements IPromotionRepository {
   async list(): Promise<PromoCodeWithUses[]> {
     const [rows, uses] = await Promise.all([
       this.db.promoCode.findMany({ orderBy: { createdAt: "desc" } }),
-      this.db.order.groupBy({ by: ["promoCodeId"], where: { ...LIVE_ORDER, promoCodeId: { not: null } }, _count: { _all: true } }),
+      this.db.order.groupBy({
+        by: ["promoCodeId"],
+        where: { ...LIVE_ORDER, promoCodeId: { not: null } },
+        _count: { _all: true },
+      }),
     ]);
     const usesById = new Map(uses.map((group) => [group.promoCodeId, group._count._all]));
     return rows.map((row) => ({ ...toPromo(row), uses: usesById.get(row.id) ?? 0 }));

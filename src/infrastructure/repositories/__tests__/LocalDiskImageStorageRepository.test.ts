@@ -4,6 +4,7 @@ import path from "node:path";
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
+import { createPinoLogger } from "../../logging/PinoLogger";
 import { LocalDiskImageStorageRepository } from "../LocalDiskImageStorageRepository";
 
 describe("LocalDiskImageStorageRepository", () => {
@@ -12,7 +13,10 @@ describe("LocalDiskImageStorageRepository", () => {
 
   beforeEach(async () => {
     root = await mkdtemp(path.join(os.tmpdir(), "rira-uploads-"));
-    storage = new LocalDiskImageStorageRepository({ rootDir: root, publicPathPrefix: "/uploads" });
+    storage = new LocalDiskImageStorageRepository(
+      { rootDir: root, publicPathPrefix: "/uploads" },
+      createPinoLogger({ level: "silent", pretty: false }),
+    );
   });
 
   afterEach(async () => {
@@ -20,7 +24,11 @@ describe("LocalDiskImageStorageRepository", () => {
   });
 
   it("writes the bytes under the folder and returns a site-relative URL", async () => {
-    const image = await storage.upload({ data: new Uint8Array([1, 2, 3]), contentType: "image/png", folder: "products" });
+    const image = await storage.upload({
+      data: new Uint8Array([1, 2, 3]),
+      contentType: "image/png",
+      folder: "products",
+    });
 
     expect(image.path).toMatch(/^products\/[0-9a-f-]{36}\.png$/);
     expect(image.url).toBe(`/uploads/${image.path}`);

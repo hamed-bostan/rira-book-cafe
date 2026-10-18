@@ -43,7 +43,7 @@ export function DashboardShell({ permissions, viewer, initialSidebarCollapsed, c
   }
 
   return (
-    <div className="flex min-h-dvh bg-surface dashboard-short:bg-background dashboard-landscape:bg-background xl:bg-background">
+    <div className="flex min-h-dvh bg-surface xl:bg-background dashboard-landscape:bg-background dashboard-short:bg-background">
       <DashboardSidebar
         permissions={permissions}
         collapsed={sidebarCollapsed}
@@ -54,7 +54,9 @@ export function DashboardShell({ permissions, viewer, initialSidebarCollapsed, c
         <DashboardTopBar viewer={viewer} onOpenNav={() => setNavOpen(true)} />
         {/* Extra bottom padding below `md` clears the fixed BottomNav — without
             it the tab bar covers whatever the page renders last. */}
-        <main className="mx-auto min-w-0 w-full max-w-[40.75rem] flex-1 border-x border-border bg-background px-6 pb-28 pt-7 dashboard-phone:px-4 dashboard-phone:pb-20 dashboard-phone:pt-5 sm:pt-8 dashboard-short:max-w-none dashboard-short:border-x-0 dashboard-short:px-5 dashboard-short:pb-6 dashboard-short:pt-5 dashboard-landscape:max-w-none dashboard-landscape:border-x-0 dashboard-landscape:px-6 dashboard-landscape:pb-6 dashboard-landscape:pt-6 xl:max-w-none xl:border-x-0 xl:px-6 xl:pb-6 xl:pt-6">{children}</main>
+        <main className="mx-auto w-full max-w-[40.75rem] min-w-0 flex-1 border-x border-border bg-background px-6 pt-7 pb-28 sm:pt-8 xl:max-w-none xl:border-x-0 xl:px-6 xl:pt-6 xl:pb-6 dashboard-landscape:max-w-none dashboard-landscape:border-x-0 dashboard-landscape:px-6 dashboard-landscape:pt-6 dashboard-landscape:pb-6 dashboard-short:max-w-none dashboard-short:border-x-0 dashboard-short:px-5 dashboard-short:pt-5 dashboard-short:pb-6 dashboard-phone:px-4 dashboard-phone:pt-5 dashboard-phone:pb-20">
+          {children}
+        </main>
       </div>
 
       <NavDrawer open={navOpen} onOpenChange={setNavOpen} permissions={permissions} />

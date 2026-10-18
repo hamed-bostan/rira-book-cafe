@@ -7,7 +7,10 @@ const NOW = new Date("2026-10-20T10:00:00Z");
 
 describe("analytics params", () => {
   it("defaults to the last 30 days", () => {
-    expect(parseAnalyticsRange(new URLSearchParams(), NOW)).toMatchObject({ fromDay: "2026-09-21", toDay: "2026-10-20" });
+    expect(parseAnalyticsRange(new URLSearchParams(), NOW)).toMatchObject({
+      fromDay: "2026-09-21",
+      toDay: "2026-10-20",
+    });
     expect(selectedRangeOption(new URLSearchParams())).toBe("30d");
   });
 
@@ -18,7 +21,12 @@ describe("analytics params", () => {
   });
 
   it("rejects half spans, reversed spans, bad presets and over-long spans", () => {
-    const queries: Record<string, string>[] = [{ from: "2026-10-01" }, { from: "2026-10-05", to: "2026-10-01" }, { range: "1y" }, { from: "2024-01-01", to: "2026-01-01" }];
+    const queries: Record<string, string>[] = [
+      { from: "2026-10-01" },
+      { from: "2026-10-05", to: "2026-10-01" },
+      { range: "1y" },
+      { from: "2024-01-01", to: "2026-01-01" },
+    ];
     for (const query of queries) {
       expect(() => parseAnalyticsRange(new URLSearchParams(query), NOW)).toThrow(ZodError);
     }

@@ -5,7 +5,9 @@ import * as React from "react";
 
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
-import { FormMessage, Input } from "@/src/presentation/design-system";
+import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
+import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { pricingApi } from "./pricing-api";
 
@@ -24,6 +26,7 @@ export function ItemMarkupField({ productId, markupBps, defaultBps }: ItemMarkup
   const t = useTranslations("dashPricing");
   const tApiErrors = useTranslations("apiErrors");
   const router = useRouter();
+  const { toast } = useToast();
   const initial = markupBps === null ? "" : String(markupBps / 100);
   const [value, setValue] = React.useState(initial);
   const [error, setError] = React.useState<string | null>(null);
@@ -36,6 +39,7 @@ export function ItemMarkupField({ productId, markupBps, defaultBps }: ItemMarkup
     startTransition(async () => {
       try {
         await pricingApi.setItemMarkup(productId, { markup: next });
+        toast({ tone: "success", title: t("markupSaved") });
         router.refresh();
       } catch (err) {
         setError(localizeApiError(err, tApiErrors, t("markupError")));

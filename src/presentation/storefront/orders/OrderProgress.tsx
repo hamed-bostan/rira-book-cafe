@@ -3,7 +3,7 @@ import { getTranslations } from "next-intl/server";
 
 import type { OrderStatus } from "@/src/domain/entities/Order";
 import { cn } from "@/src/lib/utils";
-import { Icon } from "@/src/presentation/design-system";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 
 const STEPS = ["pending", "accepted", "preparing", "ready", "completed"] as const satisfies readonly OrderStatus[];
 

@@ -1,12 +1,24 @@
 import { singleChange, type ActivityActor } from "../../entities/ActivityEntry";
 import { cafeDayOf } from "../../entities/CafeTime";
 import { MAX_EXPENSE_DESCRIPTION_LENGTH, type Expense } from "../../entities/Expense";
-import { countEntry, openingStockEntry, wasteEntry, type InventorySummary, type StockMovement } from "../../entities/Inventory";
+import {
+  countEntry,
+  openingStockEntry,
+  wasteEntry,
+  type InventorySummary,
+  type StockMovement,
+} from "../../entities/Inventory";
 import { SYSTEM_ACCOUNTS } from "../../entities/Ledger";
 import { expenseEntry } from "../../entities/Postings";
 import { ValidationError } from "../../errors/ValidationError";
 
-import type { IInventoryRepository, OpeningStockInput, StockCountInput, StockReceiptInput, WasteInput } from "../../repositories/IInventoryRepository";
+import type {
+  IInventoryRepository,
+  OpeningStockInput,
+  StockCountInput,
+  StockReceiptInput,
+  WasteInput,
+} from "../../repositories/IInventoryRepository";
 import type { ILedgerRepository } from "../../repositories/ILedgerRepository";
 
 /** The most lines one delivery or count may carry. */
@@ -58,18 +70,25 @@ export class GetInventory {
 export class ReceiveStock {
   constructor(private readonly inventory: IInventoryRepository) {}
 
-  async execute(input: Omit<StockReceiptInput, "createdById" | "createdByName">, actor: ActivityActor, now: Date = new Date()): Promise<Expense> {
+  async execute(
+    input: Omit<StockReceiptInput, "createdById" | "createdByName">,
+    actor: ActivityActor,
+    now: Date = new Date(),
+  ): Promise<Expense> {
     assertDate(input.date, now);
     assertLines(input.lines);
     for (const line of input.lines) {
       if (!(line.quantity > 0)) throw new ValidationError("lines", "Each quantity must be more than zero.");
-      if (!Number.isSafeInteger(line.cost) || line.cost < 0) throw new ValidationError("lines", "Enter what each line cost.");
+      if (!Number.isSafeInteger(line.cost) || line.cost < 0)
+        throw new ValidationError("lines", "Enter what each line cost.");
     }
     const net = input.lines.reduce((sum, line) => sum + line.cost, 0);
     if (net <= 0) throw new ValidationError("lines", "The delivery's total must be more than zero.");
-    if (!Number.isSafeInteger(input.vatAmount) || input.vatAmount < 0) throw new ValidationError("vatAmount", "Enter the VAT on the invoice.");
+    if (!Number.isSafeInteger(input.vatAmount) || input.vatAmount < 0)
+      throw new ValidationError("vatAmount", "Enter the VAT on the invoice.");
     const description = input.description.trim();
-    if (!description || description.length > MAX_EXPENSE_DESCRIPTION_LENGTH) throw new ValidationError("description", "Describe the delivery.");
+    if (!description || description.length > MAX_EXPENSE_DESCRIPTION_LENGTH)
+      throw new ValidationError("description", "Describe the delivery.");
 
     return this.inventory.receive(
       { ...input, description, createdById: actor.id, createdByName: actor.name },
@@ -93,7 +112,11 @@ export class RecordWaste {
   async execute(input: WasteInput, actor: ActivityActor, now: Date = new Date()): Promise<StockMovement> {
     assertDate(input.date, now);
     if (!(input.quantity > 0)) throw new ValidationError("quantity", "Enter how much was wasted.");
-    return this.inventory.recordWaste({ ...input, note: input.note?.trim() || undefined }, (event) => wasteEntry(event, actor), actor);
+    return this.inventory.recordWaste(
+      { ...input, note: input.note?.trim() || undefined },
+      (event) => wasteEntry(event, actor),
+      actor,
+    );
   }
 }
 
@@ -101,14 +124,21 @@ export class RecordWaste {
 export class CountStock {
   constructor(private readonly inventory: IInventoryRepository) {}
 
-  async execute(input: StockCountInput, actor: ActivityActor, now: Date = new Date()): Promise<{ id: string; variance: number; adjusted: number }> {
+  async execute(
+    input: StockCountInput,
+    actor: ActivityActor,
+    now: Date = new Date(),
+  ): Promise<{ id: string; variance: number; adjusted: number }> {
     assertDate(input.date, now);
     assertLines(input.lines);
-    if (input.lines.some((line) => !(line.counted >= 0))) throw new ValidationError("lines", "Counts can't be negative.");
-    if (new Set(input.lines.map((line) => line.ingredientId)).size !== input.lines.length) throw new ValidationError("lines", "Each item is counted once.");
+    if (input.lines.some((line) => !(line.counted >= 0)))
+      throw new ValidationError("lines", "Counts can't be negative.");
+    if (new Set(input.lines.map((line) => line.ingredientId)).size !== input.lines.length)
+      throw new ValidationError("lines", "Each item is counted once.");
     return this.inventory.recordCount(
       { ...input, note: input.note?.trim() || undefined },
-      (event) => countEntry({ id: event.id, date: event.date, variance: event.value, description: event.description }, actor),
+      (event) =>
+        countEntry({ id: event.id, date: event.date, variance: event.value, description: event.description }, actor),
       actor,
     );
   }
@@ -118,12 +148,17 @@ export class CountStock {
 export class RecordOpeningStock {
   constructor(private readonly inventory: IInventoryRepository) {}
 
-  async execute(input: OpeningStockInput, actor: ActivityActor, now: Date = new Date()): Promise<{ id: string; value: number }> {
+  async execute(
+    input: OpeningStockInput,
+    actor: ActivityActor,
+    now: Date = new Date(),
+  ): Promise<{ id: string; value: number }> {
     assertDate(input.date, now);
     assertLines(input.lines);
     for (const line of input.lines) {
       if (!(line.quantity > 0)) throw new ValidationError("lines", "Each quantity must be more than zero.");
-      if (!Number.isSafeInteger(line.cost) || line.cost < 0) throw new ValidationError("lines", "Enter what each line is worth.");
+      if (!Number.isSafeInteger(line.cost) || line.cost < 0)
+        throw new ValidationError("lines", "Enter what each line is worth.");
     }
     return this.inventory.recordOpening(input, (event) => openingStockEntry(event, actor), actor);
   }
@@ -133,7 +168,8 @@ export class SetReorderLevel {
   constructor(private readonly inventory: IInventoryRepository) {}
 
   async execute(ingredientId: string, reorderLevel: number | null): Promise<void> {
-    if (reorderLevel !== null && !(reorderLevel >= 0)) throw new ValidationError("reorderLevel", "Enter a level of zero or more.");
+    if (reorderLevel !== null && !(reorderLevel >= 0))
+      throw new ValidationError("reorderLevel", "Enter a level of zero or more.");
     await this.inventory.setReorderLevel(ingredientId, reorderLevel);
   }
 }

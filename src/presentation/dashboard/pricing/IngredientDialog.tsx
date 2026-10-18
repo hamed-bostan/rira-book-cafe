@@ -12,7 +12,15 @@ import { useRouter } from "@/src/i18n/navigation";
 import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
-import { Button, FormMessage, Icon, Input, Modal, ModalContent, Select, Switch, TextField } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
+import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
+import { Select } from "@/src/presentation/design-system/components/form/Select/Select";
+import { TextField } from "@/src/presentation/design-system/components/form/TextField/TextField";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { Modal, ModalContent } from "@/src/presentation/design-system/components/Modal/Modal";
+import { Switch } from "@/src/presentation/design-system/components/Switch/Switch";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { ingredientsApi } from "./pricing-api";
 
@@ -35,6 +43,7 @@ export function IngredientDialog({ ingredient }: { ingredient?: Ingredient }) {
   const tFormErrors = useTranslations("formErrors");
   const fieldError = (message?: string): string | undefined => formErrorMessage(tFormErrors, message);
   const router = useRouter();
+  const { toast } = useToast();
   const [open, setOpen] = React.useState(false);
 
   const {
@@ -55,6 +64,7 @@ export function IngredientDialog({ ingredient }: { ingredient?: Ingredient }) {
       else await ingredientsApi.create(values);
       setOpen(false);
       if (!ingredient) reset(toDefaults());
+      toast({ tone: "success", title: t("ingredients.saved", { name: values.name.trim() }) });
       router.refresh();
     } catch (error) {
       let applied = false;
@@ -74,7 +84,13 @@ export function IngredientDialog({ ingredient }: { ingredient?: Ingredient }) {
   return (
     <>
       {ingredient ? (
-        <Button type="button" size="sm" variant="ghost" onClick={() => setOpen(true)} aria-label={t("ingredients.edit", { name: ingredient.name })}>
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          onClick={() => setOpen(true)}
+          aria-label={t("ingredients.edit", { name: ingredient.name })}
+        >
           <Icon icon={Pencil} size="sm" />
         </Button>
       ) : (
@@ -87,7 +103,9 @@ export function IngredientDialog({ ingredient }: { ingredient?: Ingredient }) {
         <ModalContent title={ingredient ? ingredient.name : t("ingredients.new")} className="max-w-md">
           <form onSubmit={onSubmit} className="mt-4 flex flex-col gap-4" noValidate>
             <TextField label={t("ingredients.nameLabel")} required error={fieldError(errors.name?.message)}>
-              {(control) => <Input {...control} {...register("name")} dir="auto" placeholder={t("ingredients.namePlaceholder")} />}
+              {(control) => (
+                <Input {...control} {...register("name")} dir="auto" placeholder={t("ingredients.namePlaceholder")} />
+              )}
             </TextField>
             <TextField label={t("ingredients.unitLabel")} error={fieldError(errors.unit?.message)}>
               {(control) => (
@@ -102,10 +120,30 @@ export function IngredientDialog({ ingredient }: { ingredient?: Ingredient }) {
             </TextField>
             <div className="grid grid-cols-2 gap-3">
               <TextField label={t("ingredients.priceLabel")} required error={fieldError(errors.purchasePrice?.message)}>
-                {(control) => <Input {...control} {...register("purchasePrice")} inputMode="numeric" dir="ltr" placeholder="1200000" />}
+                {(control) => (
+                  <Input
+                    {...control}
+                    {...register("purchasePrice")}
+                    inputMode="numeric"
+                    dir="ltr"
+                    placeholder="1200000"
+                  />
+                )}
               </TextField>
-              <TextField label={t("ingredients.quantityLabel")} required error={fieldError(errors.purchaseQuantity?.message)}>
-                {(control) => <Input {...control} {...register("purchaseQuantity")} inputMode="decimal" dir="ltr" placeholder="1000" />}
+              <TextField
+                label={t("ingredients.quantityLabel")}
+                required
+                error={fieldError(errors.purchaseQuantity?.message)}
+              >
+                {(control) => (
+                  <Input
+                    {...control}
+                    {...register("purchaseQuantity")}
+                    inputMode="decimal"
+                    dir="ltr"
+                    placeholder="1000"
+                  />
+                )}
               </TextField>
             </div>
             <p className="-mt-2 text-body-caption text-muted-foreground">{t("ingredients.priceHint")}</p>
@@ -126,7 +164,7 @@ export function IngredientDialog({ ingredient }: { ingredient?: Ingredient }) {
               <Button type="button" variant="outline" size="sm" onClick={() => setOpen(false)}>
                 {t("cancel")}
               </Button>
-              <Button type="submit" size="sm" disabled={isSubmitting}>
+              <Button type="submit" size="sm" loading={isSubmitting}>
                 {t("save")}
               </Button>
             </div>

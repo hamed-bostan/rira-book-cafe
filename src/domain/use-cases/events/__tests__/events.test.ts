@@ -38,12 +38,19 @@ describe("CreateEvent / UpdateEvent", () => {
 
   it("refuses an event that ends before it starts", async () => {
     const repo = { create: vi.fn() } as unknown as IEventRepository;
-    await expect(new CreateEvent(repo).execute({ ...INPUT, endsAt: INPUT.startsAt }, ACTOR)).rejects.toThrow(ValidationError);
+    await expect(new CreateEvent(repo).execute({ ...INPUT, endsAt: INPUT.startsAt }, ACTOR)).rejects.toThrow(
+      ValidationError,
+    );
   });
 
   it("won't lower capacity below the seats already taken", async () => {
-    const repo = { getById: vi.fn(async () => event({ seatsTaken: 12 })), update: vi.fn() } as unknown as IEventRepository;
-    await expect(new UpdateEvent(repo).execute("e1", { ...INPUT, capacity: 10 }, ACTOR)).rejects.toThrow(ValidationError);
+    const repo = {
+      getById: vi.fn(async () => event({ seatsTaken: 12 })),
+      update: vi.fn(),
+    } as unknown as IEventRepository;
+    await expect(new UpdateEvent(repo).execute("e1", { ...INPUT, capacity: 10 }, ACTOR)).rejects.toThrow(
+      ValidationError,
+    );
   });
 });
 
@@ -51,13 +58,24 @@ describe("registrations", () => {
   it("refuses more than six seats before touching the repository", async () => {
     const register = vi.fn();
     const repo = { register } as unknown as IEventRepository;
-    await expect(new RegisterForEvent(repo).execute("e1", 7, { id: "g", name: "G", phone: "0" }, NOW)).rejects.toThrow(ValidationError);
+    await expect(new RegisterForEvent(repo).execute("e1", 7, { id: "g", name: "G", phone: "0" }, NOW)).rejects.toThrow(
+      ValidationError,
+    );
     expect(register).not.toHaveBeenCalled();
   });
 
   it("hides other guests' registrations", async () => {
     const repo = {
-      getRegistration: vi.fn(async () => ({ id: "x", eventId: "e1", userId: "other", guestName: "", guestPhone: "", seats: 1, status: "registered", createdAt: "" })),
+      getRegistration: vi.fn(async () => ({
+        id: "x",
+        eventId: "e1",
+        userId: "other",
+        guestName: "",
+        guestPhone: "",
+        seats: 1,
+        status: "registered",
+        createdAt: "",
+      })),
       cancelRegistration: vi.fn(),
     } as unknown as IEventRepository;
     await expect(new CancelOwnRegistration(repo).execute("x", "me")).rejects.toThrow("not found");

@@ -38,7 +38,11 @@ export class PrismaNotificationRepository implements INotificationRepository {
   }
 
   async listForUser(userId: string, limit: number): Promise<Notification[]> {
-    const rows = await this.db.notification.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: limit });
+    const rows = await this.db.notification.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      take: limit,
+    });
     return rows.map(toNotification);
   }
 

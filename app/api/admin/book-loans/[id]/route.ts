@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { bookLoanUpdateSchema } from "@/src/contracts/book-loan-schema";
 import { ChangeBookLoan } from "@/src/domain/use-cases/book-loans/ChangeBookLoan";
 import { bookLoanRepository, bookWaitlistRepository, customerNotifier } from "@/src/infrastructure/container";
+import { invalidatesCatalog } from "@/src/lib/api/invalidatesCatalog";
 import {
   errorResponse,
   errorResponseFromException,
@@ -10,6 +11,7 @@ import {
   parseJsonBody,
   unauthorizedResponse,
 } from "@/src/lib/api/responses";
+import { CATALOG_TAGS } from "@/src/lib/cache-tags";
 import { getSessionWith } from "@/src/lib/require-permission";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -18,7 +20,7 @@ type RouteContext = { params: Promise<{ id: string }> };
  * PATCH /api/admin/book-loans/:id — mark a loan returned or lost. Requires
  * `loans.manage`. 409 for a transition the workflow refuses.
  */
-export async function PATCH(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
+async function handlePatch(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   const session = await getSessionWith("loans.manage");
   if (!session) return unauthorizedResponse();
 
@@ -47,3 +49,5 @@ export async function PATCH(request: NextRequest, { params }: RouteContext): Pro
     return errorResponseFromException(error, `PATCH /api/admin/book-loans/${id} failed`);
   }
 }
+
+export const PATCH = invalidatesCatalog([CATALOG_TAGS.products], handlePatch);

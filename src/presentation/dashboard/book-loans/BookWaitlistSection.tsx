@@ -3,7 +3,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import type { BookWaitlistEntry } from "@/src/domain/entities/BookWaitlist";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { formatOrderDateShort } from "@/src/lib/formatOrderDate";
-import { Badge } from "@/src/presentation/design-system";
+import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
 
 import { RemoveWaitlistEntryButton } from "./RemoveWaitlistEntryButton";
 
@@ -43,7 +43,9 @@ export async function BookWaitlistSection({ entries, canManage }: BookWaitlistSe
                   <span dir="ltr" className="text-muted-foreground">
                     {entry.guestPhone}
                   </span>
-                  <span className="text-body-caption text-muted-foreground">{formatOrderDateShort(entry.createdAt, locale)}</span>
+                  <span className="text-body-caption text-muted-foreground">
+                    {formatOrderDateShort(entry.createdAt, locale)}
+                  </span>
                   {entry.status === "notified" ? <Badge variant="success">{t("waitlistNotified")}</Badge> : null}
                   {canManage ? <RemoveWaitlistEntryButton entryId={entry.id} guestName={entry.guestName} /> : null}
                 </li>

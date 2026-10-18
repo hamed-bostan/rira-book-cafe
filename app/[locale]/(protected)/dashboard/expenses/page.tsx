@@ -31,6 +31,14 @@ export default async function ExpensesPage({ searchParams }: ExpensesPageProps) 
   ]);
 
   return (
-    <ExpensesScreen page={page} accounts={accounts} suppliers={suppliers} fromDay={fromDay} toDay={toDay} keep={keep} canWrite={canWrite} />
+    <ExpensesScreen
+      page={page}
+      accounts={accounts}
+      suppliers={suppliers}
+      fromDay={fromDay}
+      toDay={toDay}
+      keep={keep}
+      canWrite={canWrite}
+    />
   );
 }

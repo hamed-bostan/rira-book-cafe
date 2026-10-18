@@ -25,8 +25,28 @@ function order(overrides: Partial<Order> = {}): Order {
     serviceType: "dineIn",
     paymentStatus: "unpaid",
     items: [
-      { id: "i1", productId: "p1", kind: "drink", name: "Latte", imageUrl: "", unitPrice: 110_000, unitCost: 40_000, stockTracked: true, quantity: 2 },
-      { id: "i2", productId: "p2", kind: "book", name: "Novel", imageUrl: "", unitPrice: 330_000, unitCost: 220_000, stockTracked: true, quantity: 1 },
+      {
+        id: "i1",
+        productId: "p1",
+        kind: "drink",
+        name: "Latte",
+        imageUrl: "",
+        unitPrice: 110_000,
+        unitCost: 40_000,
+        stockTracked: true,
+        quantity: 2,
+      },
+      {
+        id: "i2",
+        productId: "p2",
+        kind: "book",
+        name: "Novel",
+        imageUrl: "",
+        unitPrice: 330_000,
+        unitCost: 220_000,
+        stockTracked: true,
+        quantity: 1,
+      },
     ],
     subtotal: 550_000,
     promoDiscount: 0,
@@ -49,7 +69,10 @@ describe("statusPostings", () => {
   });
 
   it("books only the sale when no item has a cost", () => {
-    const noCost = order({ status: "completed", items: order().items.map((item) => ({ ...item, unitCost: undefined })) });
+    const noCost = order({
+      status: "completed",
+      items: order().items.map((item) => ({ ...item, unitCost: undefined })),
+    });
     expect(statusPostings(STAFF, NOW)(noCost, SETTINGS).map((entry) => entry.source)).toEqual(["orderSale"]);
   });
 
@@ -73,7 +96,11 @@ describe("statusPostings", () => {
 
 describe("paymentPostings", () => {
   it("puts the money in the method's account", () => {
-    const [entry] = paymentPostings(order(), STAFF, NOW)(order({ paymentStatus: "paid", paymentMethod: "online" }), SETTINGS);
+    const [entry] = paymentPostings(
+      order(),
+      STAFF,
+      NOW,
+    )(order({ paymentStatus: "paid", paymentMethod: "online" }), SETTINGS);
     expect(entry.lines[0]).toMatchObject({ accountCode: "1130", debit: 550_000 });
   });
 
@@ -110,7 +137,12 @@ describe("SetOrderPayment", () => {
 
   it("won't touch a refunded order or take payment for a cancelled one", async () => {
     await expect(
-      new SetOrderPayment(repoWith(order({ status: "cancelled", paymentStatus: "refunded" })).repo).execute("o1", "unpaid", undefined, STAFF),
+      new SetOrderPayment(repoWith(order({ status: "cancelled", paymentStatus: "refunded" })).repo).execute(
+        "o1",
+        "unpaid",
+        undefined,
+        STAFF,
+      ),
     ).rejects.toThrow(ConflictError);
     await expect(
       new SetOrderPayment(repoWith(order({ status: "cancelled" })).repo).execute("o1", "paid", "cash", STAFF),

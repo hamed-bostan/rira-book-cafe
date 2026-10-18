@@ -17,7 +17,9 @@ export async function GET(): Promise<NextResponse> {
 
   try {
     const reminders = new SyncLoanReminders(bookLoanRepository, customerNotifier);
-    return NextResponse.json(await new ListNotifications(notificationRepository, reminders).execute(session.user.id, new Date()));
+    return NextResponse.json(
+      await new ListNotifications(notificationRepository, reminders).execute(session.user.id, new Date()),
+    );
   } catch (error) {
     return errorResponseFromException(error, "GET /api/notifications failed");
   }

@@ -33,7 +33,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     const page = await inventoryRepository.listMovements(filters, parsePageRequest(params, []));
     const costs = await sessionHas(session, "accounting.view");
-    return NextResponse.json(costs ? page : { ...page, items: page.items.map((movement) => ({ ...movement, value: 0 })) });
+    return NextResponse.json(
+      costs ? page : { ...page, items: page.items.map((movement) => ({ ...movement, value: 0 })) },
+    );
   } catch (error) {
     return errorResponseFromException(error, "GET /api/admin/inventory/movements failed");
   }

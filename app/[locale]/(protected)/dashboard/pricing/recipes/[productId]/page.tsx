@@ -4,7 +4,11 @@ import { getTranslations } from "next-intl/server";
 
 import { Link } from "@/src/i18n/navigation";
 import { requirePermission } from "@/src/lib/require-permission";
-import { ingredientsServerApi, pricingServerApi, recipesServerApi } from "@/src/presentation/dashboard/pricing/pricing-server-api";
+import {
+  ingredientsServerApi,
+  pricingServerApi,
+  recipesServerApi,
+} from "@/src/presentation/dashboard/pricing/pricing-server-api";
 import { RecipeForm } from "@/src/presentation/dashboard/pricing/RecipeForm";
 
 export const dynamic = "force-dynamic";
@@ -25,7 +29,10 @@ export default async function RecipePage({ params }: RecipePageProps) {
 
   return (
     <div className="flex max-w-2xl flex-col gap-6">
-      <nav aria-label={t("breadcrumbLabel")} className="flex items-center gap-2 text-body-caption text-muted-foreground">
+      <nav
+        aria-label={t("breadcrumbLabel")}
+        className="flex items-center gap-2 text-body-caption text-muted-foreground"
+      >
         <Link href="/dashboard/pricing" className="hover:text-foreground">
           {t("heading")}
         </Link>

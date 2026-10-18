@@ -8,7 +8,11 @@ import { StartOnlinePayment, VerifyOnlinePayment } from "../OnlinePayment";
 import type { Order } from "../../../entities/Order";
 import type { PaymentAttempt } from "../../../entities/PaymentAttempt";
 import type { IOrderRepository, PaymentChange } from "../../../repositories/IOrderRepository";
-import type { IPaymentAttemptRepository, NewPaymentAttempt, PaymentAttemptResult } from "../../../repositories/IPaymentAttemptRepository";
+import type {
+  IPaymentAttemptRepository,
+  NewPaymentAttempt,
+  PaymentAttemptResult,
+} from "../../../repositories/IPaymentAttemptRepository";
 import type { GatewayVerification, IPaymentGateway } from "../../../repositories/IPaymentGateway";
 
 const NOW = new Date("2026-10-16T10:00:00Z");
@@ -42,7 +46,13 @@ function attemptStore(initial: PaymentAttempt[] = []) {
   let next = rows.size + 1;
   const repo: IPaymentAttemptRepository = {
     async open(input: NewPaymentAttempt) {
-      const attempt: PaymentAttempt = { ...input, id: `a${next++}`, status: "pending", createdAt: NOW.toISOString(), updatedAt: NOW.toISOString() };
+      const attempt: PaymentAttempt = {
+        ...input,
+        id: `a${next++}`,
+        status: "pending",
+        createdAt: NOW.toISOString(),
+        updatedAt: NOW.toISOString(),
+      };
       rows.set(attempt.id, attempt);
       return attempt;
     },
@@ -103,12 +113,22 @@ function orderStore(initial: Order) {
   };
 }
 
-function gatewayWith(verification: GatewayVerification | Error = { ok: true, refId: "201", cardPan: "6037****1234", alreadyVerified: false }) {
+function gatewayWith(
+  verification: GatewayVerification | Error = {
+    ok: true,
+    refId: "201",
+    cardPan: "6037****1234",
+    alreadyVerified: false,
+  },
+) {
   const verify = vi.fn(async () => {
     if (verification instanceof Error) throw verification;
     return verification;
   });
-  const request = vi.fn(async () => ({ authority: "A000000000000000000000000000AUTH1", redirectUrl: "https://sandbox.zarinpal.com/pg/StartPay/A1" }));
+  const request = vi.fn(async () => ({
+    authority: "A000000000000000000000000000AUTH1",
+    redirectUrl: "https://sandbox.zarinpal.com/pg/StartPay/A1",
+  }));
   const gateway: IPaymentGateway = { provider: "zarinpal", request, verify };
   return { gateway, request, verify };
 }
@@ -121,16 +141,26 @@ describe("StartOnlinePayment", () => {
     const { repo, rows } = attemptStore();
     const { gateway, request } = gatewayWith();
 
-    const result = await new StartOnlinePayment(orders.repo, repo, gateway).execute("o1", "guest", "https://cafe.test/api/orders/o1/pay/callback");
+    const result = await new StartOnlinePayment(orders.repo, repo, gateway).execute(
+      "o1",
+      "guest",
+      "https://cafe.test/api/orders/o1/pay/callback",
+    );
 
-    expect(request).toHaveBeenCalledWith(expect.objectContaining({ amount: 300_000, description: "Order #42", mobile: "09120000000" }));
+    expect(request).toHaveBeenCalledWith(
+      expect.objectContaining({ amount: 300_000, description: "Order #42", mobile: "09120000000" }),
+    );
     expect(result.redirectUrl).toContain("StartPay");
-    expect([...rows.values()]).toEqual([expect.objectContaining({ orderId: "o1", amount: 300_000, status: "pending", provider: "zarinpal" })]);
+    expect([...rows.values()]).toEqual([
+      expect.objectContaining({ orderId: "o1", amount: 300_000, status: "pending", provider: "zarinpal" }),
+    ]);
   });
 
   it("reads someone else's order as not found", async () => {
     const { gateway, request } = gatewayWith();
-    await expect(new StartOnlinePayment(orderStore(order()).repo, attemptStore().repo, gateway).execute("o1", "intruder", "cb")).rejects.toThrow(NotFoundError);
+    await expect(
+      new StartOnlinePayment(orderStore(order()).repo, attemptStore().repo, gateway).execute("o1", "intruder", "cb"),
+    ).rejects.toThrow(NotFoundError);
     expect(request).not.toHaveBeenCalled();
   });
 
@@ -140,7 +170,9 @@ describe("StartOnlinePayment", () => {
     ["free", order({ total: 0 })],
   ])("refuses a %s order before contacting the gateway", async (_label, target) => {
     const { gateway, request } = gatewayWith();
-    await expect(new StartOnlinePayment(orderStore(target).repo, attemptStore().repo, gateway).execute("o1", "guest", "cb")).rejects.toMatchObject({
+    await expect(
+      new StartOnlinePayment(orderStore(target).repo, attemptStore().repo, gateway).execute("o1", "guest", "cb"),
+    ).rejects.toMatchObject({
       code: "NOT_PAYABLE",
     });
     expect(request).not.toHaveBeenCalled();
@@ -164,7 +196,9 @@ describe("VerifyOnlinePayment", () => {
       expect.any(Function),
     );
     // The ledger hook is SetOrderPayment's: Dr 1130 Gateway clearing / Cr 1150 Guest receivables.
-    const ledger = orders.setPaymentStatus.mock.calls[0][3] as (saved: Order) => { lines: { accountCode: string; debit: number; credit: number }[] }[];
+    const ledger = orders.setPaymentStatus.mock.calls[0][3] as (
+      saved: Order,
+    ) => { lines: { accountCode: string; debit: number; credit: number }[] }[];
     const [entry] = ledger({ ...orders.current });
     expect(entry.lines).toEqual([
       { accountCode: "1130", debit: 300_000, credit: 0 },
@@ -216,7 +250,9 @@ describe("VerifyOnlinePayment", () => {
       const { repo, rows } = attemptStore([pendingAttempt()]);
       const down = gatewayWith(new PaymentGatewayError("timeout"));
 
-      await expect(new VerifyOnlinePayment(orders.repo, repo, down.gateway).execute(CALLBACK, NOW)).rejects.toThrow(PaymentGatewayError);
+      await expect(new VerifyOnlinePayment(orders.repo, repo, down.gateway).execute(CALLBACK, NOW)).rejects.toThrow(
+        PaymentGatewayError,
+      );
       expect(rows.get("a1")?.status).toBe("pending");
       expect(orders.setPaymentStatus).not.toHaveBeenCalled();
 
@@ -230,7 +266,9 @@ describe("VerifyOnlinePayment", () => {
       const { repo, rows } = attemptStore([pendingAttempt({ refId: "201" })]);
       const { gateway, verify } = gatewayWith();
 
-      expect(await new VerifyOnlinePayment(orders.repo, repo, gateway).execute({ ...CALLBACK, completed: false }, NOW)).toBe("paid");
+      expect(
+        await new VerifyOnlinePayment(orders.repo, repo, gateway).execute({ ...CALLBACK, completed: false }, NOW),
+      ).toBe("paid");
       expect(verify).not.toHaveBeenCalled();
       expect(orders.setPaymentStatus).toHaveBeenCalledTimes(1);
       expect(rows.get("a1")).toMatchObject({ status: "paid", refId: "201" });
@@ -277,7 +315,9 @@ describe("VerifyOnlinePayment", () => {
     const { repo, rows } = attemptStore([pendingAttempt()]);
     const { gateway, verify } = gatewayWith();
 
-    expect(await new VerifyOnlinePayment(orders.repo, repo, gateway).execute({ ...CALLBACK, completed: false }, NOW)).toBe("failed");
+    expect(
+      await new VerifyOnlinePayment(orders.repo, repo, gateway).execute({ ...CALLBACK, completed: false }, NOW),
+    ).toBe("failed");
     expect(verify).not.toHaveBeenCalled();
     expect(rows.get("a1")).toMatchObject({ status: "failed", failureReason: "cancelled" });
   });
@@ -311,7 +351,11 @@ describe("VerifyOnlinePayment", () => {
   it("refuses an authority issued for another order", async () => {
     const { gateway } = gatewayWith();
     await expect(
-      new VerifyOnlinePayment(orderStore(order()).repo, attemptStore([pendingAttempt({ orderId: "o2" })]).repo, gateway).execute(CALLBACK, NOW),
+      new VerifyOnlinePayment(
+        orderStore(order()).repo,
+        attemptStore([pendingAttempt({ orderId: "o2" })]).repo,
+        gateway,
+      ).execute(CALLBACK, NOW),
     ).rejects.toThrow(NotFoundError);
   });
 });

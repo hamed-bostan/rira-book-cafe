@@ -49,10 +49,19 @@ const GUEST = { id: "09120000000", name: "Sara", phone: "09120000000" };
 
 describe("PlaceOrder", () => {
   it("prices lines from the menu, not the request", async () => {
-    const { useCase, place } = setup([product({ id: "p1", price: 150000 }), product({ id: "p2", name: "Cake", kind: "food", price: 90000 })]);
+    const { useCase, place } = setup([
+      product({ id: "p1", price: 150000 }),
+      product({ id: "p2", name: "Cake", kind: "food", price: 90000 }),
+    ]);
 
     const order = await useCase.execute(
-      { serviceType: "takeaway", items: [{ productId: "p1", quantity: 2 }, { productId: "p2", quantity: 1, note: " warm " }] },
+      {
+        serviceType: "takeaway",
+        items: [
+          { productId: "p1", quantity: 2 },
+          { productId: "p2", quantity: 1, note: " warm " },
+        ],
+      },
       GUEST,
     );
 
@@ -63,9 +72,9 @@ describe("PlaceOrder", () => {
 
   it("requires a table for dine-in and drops it for takeaway", async () => {
     const { useCase } = setup([product({})]);
-    await expect(useCase.execute({ serviceType: "dineIn", items: [{ productId: "p1", quantity: 1 }] }, GUEST)).rejects.toThrow(
-      ValidationError,
-    );
+    await expect(
+      useCase.execute({ serviceType: "dineIn", items: [{ productId: "p1", quantity: 1 }] }, GUEST),
+    ).rejects.toThrow(ValidationError);
     const takeaway = await useCase.execute(
       { serviceType: "takeaway", tableLabel: "4", items: [{ productId: "p1", quantity: 1 }] },
       GUEST,
@@ -78,21 +87,21 @@ describe("PlaceOrder", () => {
       product({ id: "hidden", isPublished: false }),
       product({ id: "book", kind: "book", book: { author: "Hedayat", availability: "reading" } }),
     ]);
-    await expect(useCase.execute({ serviceType: "takeaway", items: [{ productId: "hidden", quantity: 1 }] }, GUEST)).rejects.toThrow(
-      ValidationError,
-    );
-    await expect(useCase.execute({ serviceType: "takeaway", items: [{ productId: "book", quantity: 1 }] }, GUEST)).rejects.toThrow(
-      ValidationError,
-    );
+    await expect(
+      useCase.execute({ serviceType: "takeaway", items: [{ productId: "hidden", quantity: 1 }] }, GUEST),
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      useCase.execute({ serviceType: "takeaway", items: [{ productId: "book", quantity: 1 }] }, GUEST),
+    ).rejects.toThrow(ValidationError);
   });
 
   it("refuses unknown items and bad quantities", async () => {
     const { useCase } = setup([product({})]);
-    await expect(useCase.execute({ serviceType: "takeaway", items: [{ productId: "nope", quantity: 1 }] }, GUEST)).rejects.toThrow(
-      ValidationError,
-    );
-    await expect(useCase.execute({ serviceType: "takeaway", items: [{ productId: "p1", quantity: 0 }] }, GUEST)).rejects.toThrow(
-      ValidationError,
-    );
+    await expect(
+      useCase.execute({ serviceType: "takeaway", items: [{ productId: "nope", quantity: 1 }] }, GUEST),
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      useCase.execute({ serviceType: "takeaway", items: [{ productId: "p1", quantity: 0 }] }, GUEST),
+    ).rejects.toThrow(ValidationError);
   });
 });

@@ -8,7 +8,11 @@ import { useFieldArray, useWatch, type Control, type FieldErrors, type UseFormRe
 import type { StatementLineFormInput } from "@/src/contracts/bank-schema";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
-import { Button, FormMessage, Icon, Input, Textarea } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
+import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
+import { Textarea } from "@/src/presentation/design-system/components/form/Textarea/Textarea";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 
 import { parseStatementAmount, parseStatementCsv } from "./parseStatementCsv";
 
@@ -62,14 +66,24 @@ export function StatementLinesFields({ control, register, errors, defaultDay }: 
       <div className="flex flex-col gap-2 rounded-card-md border border-dashed border-border p-3">
         <label className="flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
           {t("lines.pasteLabel")}
-          <Textarea value={pasted} onChange={(event) => setPasted(event.target.value)} rows={4} dir="ltr" placeholder={t("lines.pastePlaceholder")} />
+          <Textarea
+            value={pasted}
+            onChange={(event) => setPasted(event.target.value)}
+            rows={4}
+            dir="ltr"
+            placeholder={t("lines.pastePlaceholder")}
+          />
         </label>
         <p className="text-body-caption text-muted-foreground">{t("lines.pasteHint")}</p>
         <div className="flex flex-wrap items-center gap-3">
           <Button type="button" size="sm" variant="outline" disabled={!pasted.trim()} onClick={importPasted}>
             {t("lines.import")}
           </Button>
-          {readout ? <span className="text-body-caption text-muted-foreground" aria-live="polite">{readout}</span> : null}
+          {readout ? (
+            <span className="text-body-caption text-muted-foreground" aria-live="polite">
+              {readout}
+            </span>
+          ) : null}
         </div>
       </div>
 
@@ -82,14 +96,34 @@ export function StatementLinesFields({ control, register, errors, defaultDay }: 
             className="grid grid-cols-2 gap-2 rounded-card-md border border-border p-3 md:grid-cols-[9.5rem_minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_auto] md:items-start md:border-0 md:p-0"
           >
             <div className="flex flex-col gap-1">
-              <Input {...register(`lines.${index}.date`)} type="date" aria-label={t("lines.date")} className="h-10" dir="ltr" />
+              <Input
+                {...register(`lines.${index}.date`)}
+                type="date"
+                aria-label={t("lines.date")}
+                className="h-10"
+                dir="ltr"
+              />
               {lineErrors?.date?.message ? <FormMessage>{fieldError(lineErrors.date.message)}</FormMessage> : null}
             </div>
             <div className="col-span-2 flex flex-col gap-1 md:col-span-1">
-              <Input {...register(`lines.${index}.description`)} placeholder={t("lines.description")} aria-label={t("lines.description")} className="h-10" dir="auto" />
-              {lineErrors?.description?.message ? <FormMessage>{fieldError(lineErrors.description.message)}</FormMessage> : null}
+              <Input
+                {...register(`lines.${index}.description`)}
+                placeholder={t("lines.description")}
+                aria-label={t("lines.description")}
+                className="h-10"
+                dir="auto"
+              />
+              {lineErrors?.description?.message ? (
+                <FormMessage>{fieldError(lineErrors.description.message)}</FormMessage>
+              ) : null}
             </div>
-            <Input {...register(`lines.${index}.reference`)} placeholder={t("lines.reference")} aria-label={t("lines.reference")} className="h-10" dir="ltr" />
+            <Input
+              {...register(`lines.${index}.reference`)}
+              placeholder={t("lines.reference")}
+              aria-label={t("lines.reference")}
+              className="h-10"
+              dir="ltr"
+            />
             <div className="flex flex-col gap-1">
               <Input
                 {...register(`lines.${index}.amount`)}
@@ -101,7 +135,14 @@ export function StatementLinesFields({ control, register, errors, defaultDay }: 
               />
               {lineErrors?.amount?.message ? <FormMessage>{fieldError(lineErrors.amount.message)}</FormMessage> : null}
             </div>
-            <Button type="button" variant="ghost" size="sm" className="h-10 justify-self-end" onClick={() => remove(index)} aria-label={t("lines.remove")}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-10 justify-self-end"
+              onClick={() => remove(index)}
+              aria-label={t("lines.remove")}
+            >
               <Icon icon={X} size="sm" />
             </Button>
           </div>
@@ -110,7 +151,12 @@ export function StatementLinesFields({ control, register, errors, defaultDay }: 
 
       {linesError ? <FormMessage>{fieldError(linesError)}</FormMessage> : null}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Button type="button" variant="outline" size="sm" onClick={() => append({ date: defaultDay, description: "", reference: "", amount: "" })}>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => append({ date: defaultDay, description: "", reference: "", amount: "" })}
+        >
           <Icon icon={Plus} size="sm" className="me-1.5" />
           {t("lines.add")}
         </Button>

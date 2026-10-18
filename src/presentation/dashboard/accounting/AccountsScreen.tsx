@@ -4,7 +4,7 @@ import type { TrialBalance } from "@/src/domain/entities/AccountingReports";
 import { ACCOUNT_TYPES, type Account } from "@/src/domain/entities/Ledger";
 import { Link } from "@/src/i18n/navigation";
 import { formatMoney } from "@/src/lib/formatMoney";
-import { Badge } from "@/src/presentation/design-system";
+import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
 
 import { AccountActiveSwitch } from "./AccountActiveSwitch";
 import { accountName } from "./accounting-format";
@@ -38,14 +38,19 @@ export async function AccountsScreen({ accounts, trialBalance, canWrite }: Accou
         if (rows.length === 0) return null;
         return (
           <section key={type} className="min-w-0 overflow-hidden rounded-card-lg border border-border bg-background">
-            <h2 className="border-b border-border bg-surface px-4 py-3 text-body-small-emphasis text-foreground">{t(`accountType.${type}`)}</h2>
+            <h2 className="border-b border-border bg-surface px-4 py-3 text-body-small-emphasis text-foreground">
+              {t(`accountType.${type}`)}
+            </h2>
             <ul className="divide-y divide-border">
               {rows.map((account) => (
                 <li key={account.code} className="flex flex-wrap items-center gap-3 px-4 py-3">
                   <span className="w-12 shrink-0 font-mono text-body-small text-muted-foreground" dir="ltr">
                     {account.code}
                   </span>
-                  <Link href={`/dashboard/accounting/accounts/${account.code}`} className="min-w-0 flex-1 truncate text-body-small-emphasis text-foreground underline-offset-4 hover:underline">
+                  <Link
+                    href={`/dashboard/accounting/accounts/${account.code}`}
+                    className="min-w-0 flex-1 truncate text-body-small-emphasis text-foreground underline-offset-4 hover:underline"
+                  >
                     {accountName(account, locale)}
                   </Link>
                   {account.isSystem ? (
@@ -58,8 +63,12 @@ export async function AccountsScreen({ accounts, trialBalance, canWrite }: Accou
                       {t("accounts.inactive")}
                     </Badge>
                   ) : null}
-                  <span className="whitespace-nowrap text-body-small-emphasis text-foreground">{formatMoney(balances.get(account.code) ?? 0, locale)}</span>
-                  {canWrite && !account.isSystem ? <AccountActiveSwitch code={account.code} isActive={account.isActive} /> : null}
+                  <span className="text-body-small-emphasis whitespace-nowrap text-foreground">
+                    {formatMoney(balances.get(account.code) ?? 0, locale)}
+                  </span>
+                  {canWrite && !account.isSystem ? (
+                    <AccountActiveSwitch code={account.code} isActive={account.isActive} />
+                  ) : null}
                 </li>
               ))}
             </ul>

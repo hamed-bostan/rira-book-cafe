@@ -1,10 +1,12 @@
+import { Star } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import type { PublicReview, ReviewEligibility } from "@/src/domain/entities/ProductReview";
 import { Link } from "@/src/i18n/navigation";
 import { formatNumber, formatRating } from "@/src/lib/formatNumber";
 import { formatOrderDateShort } from "@/src/lib/formatOrderDate";
-import { RatingStars } from "@/src/presentation/design-system";
+import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
+import { RatingStars } from "@/src/presentation/design-system/components/RatingStars/RatingStars";
 
 import { ReviewForm } from "./ReviewForm";
 
@@ -34,14 +36,21 @@ export async function ProductReviews({ productId, rating, ratingCount, reviews, 
         {ratingCount > 0 ? (
           <span className="flex items-center gap-2 text-body-small text-muted-foreground">
             <RatingStars value={Math.round(rating)} size="sm" />
-            {t("reviews.summary", { rating: formatRating(rating, locale), count: ratingCount, formatted: formatNumber(ratingCount, locale) })}
+            {t("reviews.summary", {
+              rating: formatRating(rating, locale),
+              count: ratingCount,
+              formatted: formatNumber(ratingCount, locale),
+            })}
           </span>
         ) : null}
       </div>
 
       {eligibility === null ? (
         <p className="text-body-small text-muted-foreground">
-          <Link href={`/login?callbackUrl=${encodeURIComponent(`/menu/${productId}`)}`} className="text-primary underline-offset-4 hover:underline">
+          <Link
+            href={`/login?callbackUrl=${encodeURIComponent(`/menu/${productId}`)}`}
+            className="text-primary underline-offset-4 hover:underline"
+          >
             {t("reviews.signInToReview")}
           </Link>
         </p>
@@ -52,17 +61,27 @@ export async function ProductReviews({ productId, rating, ratingCount, reviews, 
       )}
 
       {reviews.length === 0 ? (
-        <p className="text-body-small text-muted-foreground">{t("reviews.empty")}</p>
+        <EmptyState
+          icon={Star}
+          title={t("reviews.empty")}
+          className="rounded-card-lg border border-dashed border-border py-10"
+        />
       ) : (
         <ul className="flex flex-col gap-3">
           {reviews.map((review) => (
             <li key={review.id} className="flex flex-col gap-1 rounded-card-md border border-border p-4">
               <div className="flex flex-wrap items-center gap-2">
                 <RatingStars value={review.rating} size="sm" />
-                <span className="text-body-small-strong text-foreground">{review.authorName || t("reviews.anonymous")}</span>
-                <span className="text-body-caption text-muted-foreground">{formatOrderDateShort(review.createdAt, locale)}</span>
+                <span className="text-body-small-strong text-foreground">
+                  {review.authorName || t("reviews.anonymous")}
+                </span>
+                <span className="text-body-caption text-muted-foreground">
+                  {formatOrderDateShort(review.createdAt, locale)}
+                </span>
               </div>
-              {review.comment ? <p className="whitespace-pre-wrap text-body-small text-foreground">{review.comment}</p> : null}
+              {review.comment ? (
+                <p className="text-body-small whitespace-pre-wrap text-foreground">{review.comment}</p>
+              ) : null}
               <span className="text-body-caption text-muted-foreground">{t("reviews.verified")}</span>
             </li>
           ))}

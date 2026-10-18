@@ -150,7 +150,8 @@ export class PrismaBookLoanRepository implements IBookLoanRepository {
         data: { status, returnedAt: status === "returned" ? at : null },
       });
       if (result.count === 0) {
-        if (!(await tx.bookLoan.findUnique({ where: { id }, select: { id: true } }))) throw new NotFoundError("book loan", id);
+        if (!(await tx.bookLoan.findUnique({ where: { id }, select: { id: true } })))
+          throw new NotFoundError("book loan", id);
         throw new ConflictError("INVALID_TRANSITION", "This loan was just changed by someone else.");
       }
 

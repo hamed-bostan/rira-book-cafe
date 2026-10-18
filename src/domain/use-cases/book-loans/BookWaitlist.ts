@@ -68,7 +68,10 @@ export class GetBookWaitlistStatus {
   ) {}
 
   async execute(productId: string, guestId?: string): Promise<BookWaitlistStatus> {
-    const [onLoan, line] = await Promise.all([this.loanRepo.countOpenForBook(productId), this.waitlistRepo.listOpenForBook(productId)]);
+    const [onLoan, line] = await Promise.all([
+      this.loanRepo.countOpenForBook(productId),
+      this.waitlistRepo.listOpenForBook(productId),
+    ]);
     const index = guestId ? line.findIndex((entry) => entry.userId === guestId) : -1;
     return {
       onLoan,

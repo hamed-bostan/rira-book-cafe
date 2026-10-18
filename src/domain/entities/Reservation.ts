@@ -70,8 +70,13 @@ export function nextReservationStatuses(status: ReservationStatus): readonly Res
 }
 
 /** Whether the guest may still cancel: before staff seat them, and before it starts. */
-export function isGuestCancellableReservation(reservation: Pick<Reservation, "status" | "startsAt">, now: Date): boolean {
-  return (reservation.status === "requested" || reservation.status === "confirmed") && new Date(reservation.startsAt) > now;
+export function isGuestCancellableReservation(
+  reservation: Pick<Reservation, "status" | "startsAt">,
+  now: Date,
+): boolean {
+  return (
+    (reservation.status === "requested" || reservation.status === "confirmed") && new Date(reservation.startsAt) > now
+  );
 }
 
 /** The instant the table is free again. */

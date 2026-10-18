@@ -66,7 +66,10 @@ export class PrismaOrderRepository implements IOrderRepository {
           data: { stockQuantity: { decrement: line.quantity } },
         });
         if (result.count === 0) {
-          const current = await tx.product.findUnique({ where: { id: line.productId }, select: { stockQuantity: true } });
+          const current = await tx.product.findUnique({
+            where: { id: line.productId },
+            select: { stockQuantity: true },
+          });
           shortfalls.push({
             productId: line.productId,
             name: line.name,
@@ -155,10 +158,7 @@ export class PrismaOrderRepository implements IOrderRepository {
 
     // One transaction so the rows and the count come from the same snapshot.
     const [rows, total] = await inTransaction(this.db, (tx) =>
-      Promise.all([
-        tx.order.findMany({ where, orderBy, skip, take, include: WITH_ITEMS }),
-        tx.order.count({ where }),
-      ]),
+      Promise.all([tx.order.findMany({ where, orderBy, skip, take, include: WITH_ITEMS }), tx.order.count({ where })]),
     );
     return createPage(rows.map(toOrder), total, page);
   }
@@ -315,7 +315,10 @@ function mergeLines<T extends { productId: string; name: string; quantity: numbe
  */
 async function claimPromoUse(tx: Prisma.TransactionClient, promoCodeId: string, userId: string): Promise<void> {
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`promo:${promoCodeId}`}))`;
-  const promo = await tx.promoCode.findUnique({ where: { id: promoCodeId }, select: { isActive: true, usageLimit: true, perGuestLimit: true } });
+  const promo = await tx.promoCode.findUnique({
+    where: { id: promoCodeId },
+    select: { isActive: true, usageLimit: true, perGuestLimit: true },
+  });
   if (!promo?.isActive) throw new ConflictError("PROMO_INVALID", "That promo code is no longer active.");
   const live = { promoCodeId, status: { not: "cancelled" } } satisfies Prisma.OrderWhereInput;
   if (promo.usageLimit !== null && (await tx.order.count({ where: live })) >= promo.usageLimit) {
@@ -385,22 +388,20 @@ function toOrder(row: OrderRow): Order {
     note: row.note ?? undefined,
     paymentStatus: toPaymentStatus(row.paymentStatus),
     paymentMethod: toPaymentMethod(row.paymentMethod),
-    items: row.items.map(
-      (item): OrderItem => ({
-        id: item.id,
-        productId: item.productId,
-        kind: toKind(item.kind),
-        name: item.name,
-        imageUrl: item.imageUrl,
-        unitPrice: item.unitPrice,
-        unitCost: item.unitCost ?? undefined,
-        taxExempt: item.taxExempt,
-        stockTracked: item.stockTracked,
-        quantity: item.quantity,
-        note: item.note ?? undefined,
-        servedAt: item.servedAt?.toISOString(),
-      }),
-    ),
+    items: row.items.map((item): OrderItem => ({
+      id: item.id,
+      productId: item.productId,
+      kind: toKind(item.kind),
+      name: item.name,
+      imageUrl: item.imageUrl,
+      unitPrice: item.unitPrice,
+      unitCost: item.unitCost ?? undefined,
+      taxExempt: item.taxExempt,
+      stockTracked: item.stockTracked,
+      quantity: item.quantity,
+      note: item.note ?? undefined,
+      servedAt: item.servedAt?.toISOString(),
+    })),
     subtotal: row.subtotal,
     promoCode: row.promoCode ?? undefined,
     promoCodeId: row.promoCodeId ?? undefined,

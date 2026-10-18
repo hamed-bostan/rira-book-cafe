@@ -34,10 +34,22 @@ function loan(status: BookLoanStatus, overrides: Partial<BookLoan> = {}): BookLo
   };
 }
 
-function repoWith(current: BookLoan | null, book: { title: string; author?: string } | null = { title: "The Blind Owl", author: "Hedayat" }) {
-  const create = vi.fn(async (input: NewBookLoan, _audit?: (saved: BookLoan) => unknown) => ({ ...loan("out"), ...input }));
+function repoWith(
+  current: BookLoan | null,
+  book: { title: string; author?: string } | null = { title: "The Blind Owl", author: "Hedayat" },
+) {
+  const create = vi.fn(async (input: NewBookLoan, _audit?: (saved: BookLoan) => unknown) => ({
+    ...loan("out"),
+    ...input,
+  }));
   const applyStatus = vi.fn(
-    async (_id: string, _expected: BookLoanStatus, status: BookLoanStatus, _at: Date, _audit?: (saved: BookLoan) => unknown) => ({
+    async (
+      _id: string,
+      _expected: BookLoanStatus,
+      status: BookLoanStatus,
+      _at: Date,
+      _audit?: (saved: BookLoan) => unknown,
+    ) => ({
       ...(current as BookLoan),
       status,
     }),
@@ -81,7 +93,11 @@ describe("LendBook", () => {
 
   it("defaults the due date to two weeks and leaves walk-ins unlinked", async () => {
     const { repo, create } = repoWith(null);
-    await new LendBook(repo, usersWith([])).execute({ productId: "b1", borrowerName: "Reza", borrowerPhone: "09350000000" }, STAFF, NOW);
+    await new LendBook(repo, usersWith([])).execute(
+      { productId: "b1", borrowerName: "Reza", borrowerPhone: "09350000000" },
+      STAFF,
+      NOW,
+    );
     expect(create.mock.calls[0][0]).toMatchObject({ userId: undefined, dueAt: "2026-11-03T20:29:59.999Z" });
   });
 
@@ -93,9 +109,13 @@ describe("LendBook", () => {
       { ...base, dueOn: "2026-10-19" },
       { ...base, dueOn: "2027-01-30" },
     ]) {
-      await expect(new LendBook(repoWith(null).repo, usersWith([])).execute(input, STAFF, NOW)).rejects.toThrow(ValidationError);
+      await expect(new LendBook(repoWith(null).repo, usersWith([])).execute(input, STAFF, NOW)).rejects.toThrow(
+        ValidationError,
+      );
     }
-    await expect(new LendBook(repoWith(null, null).repo, usersWith([])).execute(base, STAFF, NOW)).rejects.toThrow(ValidationError);
+    await expect(new LendBook(repoWith(null, null).repo, usersWith([])).execute(base, STAFF, NOW)).rejects.toThrow(
+      ValidationError,
+    );
   });
 });
 
@@ -111,14 +131,20 @@ describe("ChangeBookLoan", () => {
   });
 
   it("lets a lost book come back, but never reopens a returned one", async () => {
-    await expect(new ChangeBookLoan(repoWith(loan("lost")).repo).execute("l1", "returned", STAFF, NOW)).resolves.toMatchObject({
+    await expect(
+      new ChangeBookLoan(repoWith(loan("lost")).repo).execute("l1", "returned", STAFF, NOW),
+    ).resolves.toMatchObject({
       status: "returned",
     });
-    await expect(new ChangeBookLoan(repoWith(loan("returned")).repo).execute("l1", "out", STAFF, NOW)).rejects.toThrow(ConflictError);
+    await expect(new ChangeBookLoan(repoWith(loan("returned")).repo).execute("l1", "out", STAFF, NOW)).rejects.toThrow(
+      ConflictError,
+    );
   });
 
   it("reads a missing loan as not found", async () => {
-    await expect(new ChangeBookLoan(repoWith(null).repo).execute("nope", "returned", STAFF, NOW)).rejects.toThrow(NotFoundError);
+    await expect(new ChangeBookLoan(repoWith(null).repo).execute("nope", "returned", STAFF, NOW)).rejects.toThrow(
+      NotFoundError,
+    );
   });
 });
 

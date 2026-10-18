@@ -1,6 +1,6 @@
 "use client";
 
-import { Checkbox } from "@/src/presentation/design-system";
+import { Checkbox } from "@/src/presentation/design-system/components/Checkbox/Checkbox";
 
 import { useBulkSelection } from "./BulkSelectionProvider";
 
@@ -20,11 +20,5 @@ type BulkSelectAllCheckboxProps = {
 export function BulkSelectAllCheckbox({ label }: BulkSelectAllCheckboxProps) {
   const { allState, toggleAll } = useBulkSelection();
 
-  return (
-    <Checkbox
-      checked={allState}
-      onCheckedChange={(checked) => toggleAll(checked === true)}
-      aria-label={label}
-    />
-  );
+  return <Checkbox checked={allState} onCheckedChange={(checked) => toggleAll(checked === true)} aria-label={label} />;
 }

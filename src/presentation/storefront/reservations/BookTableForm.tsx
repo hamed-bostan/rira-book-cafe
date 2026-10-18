@@ -16,7 +16,12 @@ import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
-import { Button, FormMessage, Input, Select, Textarea } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
+import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
+import { Select } from "@/src/presentation/design-system/components/form/Select/Select";
+import { Textarea } from "@/src/presentation/design-system/components/form/Textarea/Textarea";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { storefrontApi } from "../storefront-api";
 
@@ -54,6 +59,7 @@ export function BookTableForm({ today }: BookTableFormProps) {
   const tFormErrors = useTranslations("formErrors");
   const locale = useLocale();
   const router = useRouter();
+  const { toast } = useToast();
 
   const [day, setDay] = React.useState(today);
   const [time, setTime] = React.useState("19:00");
@@ -68,6 +74,7 @@ export function BookTableForm({ today }: BookTableFormProps) {
     startTransition(async () => {
       try {
         await storefrontApi.requestReservation({ startsAt: `${day}T${time}`, partySize, note });
+        toast({ tone: "success", title: t("book.sent") });
         router.push("/reservations");
       } catch (err) {
         if (err instanceof ApiError) {
@@ -125,11 +132,19 @@ export function BookTableForm({ today }: BookTableFormProps) {
       </div>
       <label className="flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
         {t("book.note")}
-        <Textarea value={note} onChange={(event) => setNote(event.target.value)} maxLength={MAX_RESERVATION_NOTE_LENGTH} rows={2} placeholder={t("book.notePlaceholder")} />
+        <Textarea
+          value={note}
+          onChange={(event) => setNote(event.target.value)}
+          maxLength={MAX_RESERVATION_NOTE_LENGTH}
+          rows={2}
+          placeholder={t("book.notePlaceholder")}
+        />
       </label>
-      <p className="text-body-caption text-muted-foreground">{t("book.hint", { max: formatNumber(MAX_PARTY_SIZE, locale) })}</p>
+      <p className="text-body-caption text-muted-foreground">
+        {t("book.hint", { max: formatNumber(MAX_PARTY_SIZE, locale) })}
+      </p>
       {error ? <FormMessage>{error}</FormMessage> : null}
-      <Button type="submit" disabled={pending} className="self-start">
+      <Button type="submit" loading={pending} className="self-start">
         {pending ? t("book.sending") : t("book.submit")}
       </Button>
     </form>

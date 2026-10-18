@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 
 import { Link, usePathname } from "@/src/i18n/navigation";
 import { cn } from "@/src/lib/utils";
-import { Icon } from "@/src/presentation/design-system";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 
 import { PUBLIC_NAV, isPublicNavActive } from "./publicNavigation";
 
@@ -43,7 +43,11 @@ export function PublicBottomNav({ unreadNotifications }: PublicBottomNavProps) {
             <span className={cn("relative grid size-9 place-items-center rounded-full", active ? "bg-accent" : "")}>
               <Icon icon={item.icon} size="sm" />
               {item.key === "account" && unreadNotifications > 0 ? (
-                <span aria-label={t("notifications.unread")} role="img" className="absolute end-1 top-1 size-2 rounded-full bg-primary" />
+                <span
+                  aria-label={t("notifications.unread")}
+                  role="img"
+                  className="absolute end-1 top-1 size-2 rounded-full bg-primary"
+                />
               ) : null}
             </span>
             <span className="truncate text-body-caption">{t(`nav.${item.key}`)}</span>

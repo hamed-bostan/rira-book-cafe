@@ -10,7 +10,8 @@ import { formatOrderDate } from "@/src/lib/formatOrderDate";
 import { AutoRefresh } from "@/src/presentation/components/AutoRefresh";
 import { OrderItemStateBadge } from "@/src/presentation/dashboard/orders/OrderItemStateBadge";
 import { OrderServiceLabel } from "@/src/presentation/dashboard/orders/OrderServiceLabel";
-import { Badge, Icon } from "@/src/presentation/design-system";
+import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 import { OrderTotals } from "@/src/presentation/orders/OrderTotals";
 
 import { CancelMyOrderButton } from "./CancelMyOrderButton";
@@ -48,7 +49,10 @@ export async function MyOrderScreen({ order, paymentOutcome }: MyOrderScreenProp
       {active || confirming ? <AutoRefresh intervalSeconds={confirming ? 5 : 15} /> : null}
       {outcome ? <PaymentOutcomeNotice outcome={outcome} /> : null}
 
-      <Link href="/orders" className="inline-flex w-fit items-center gap-1 text-body-small-strong text-muted-foreground hover:text-foreground">
+      <Link
+        href="/orders"
+        className="inline-flex w-fit items-center gap-1 text-body-small-strong text-muted-foreground hover:text-foreground"
+      >
         <Icon icon={ChevronLeft} size="xs" className="rtl:-scale-x-100" />
         {t("orders.back")}
       </Link>
@@ -60,7 +64,9 @@ export async function MyOrderScreen({ order, paymentOutcome }: MyOrderScreenProp
       </div>
 
       {order.status === "cancelled" ? (
-        <p className="rounded-card-md border border-border px-4 py-3 text-center text-body-small text-muted-foreground">{t("orders.cancelled")}</p>
+        <p className="rounded-card-md border border-border px-4 py-3 text-center text-body-small text-muted-foreground">
+          {t("orders.cancelled")}
+        </p>
       ) : (
         <>
           <OrderProgress status={order.status} />
@@ -71,7 +77,9 @@ export async function MyOrderScreen({ order, paymentOutcome }: MyOrderScreenProp
       <section className="rounded-card-lg border border-border p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <OrderServiceLabel order={order} />
-          <Badge variant={order.paymentStatus === "paid" ? "success" : "neutral"}>{tOrders(`payment.${order.paymentStatus}`)}</Badge>
+          <Badge variant={order.paymentStatus === "paid" ? "success" : "neutral"}>
+            {tOrders(`payment.${order.paymentStatus}`)}
+          </Badge>
         </div>
         <ul className="mt-4 flex flex-col divide-y divide-border">
           {order.items.map((item) => (
@@ -87,7 +95,9 @@ export async function MyOrderScreen({ order, paymentOutcome }: MyOrderScreenProp
                   </div>
                 ) : null}
               </div>
-              <span className="text-body-small text-foreground">{formatMoney(item.unitPrice * item.quantity, locale)}</span>
+              <span className="text-body-small text-foreground">
+                {formatMoney(item.unitPrice * item.quantity, locale)}
+              </span>
             </li>
           ))}
         </ul>

@@ -12,7 +12,12 @@ import { Link, useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatCafeDayMedium } from "@/src/lib/formatCafeDay";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
-import { Button, FormMessage, Input, Select, TextField } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
+import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
+import { Select } from "@/src/presentation/design-system/components/form/Select/Select";
+import { TextField } from "@/src/presentation/design-system/components/form/TextField/TextField";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { inventoryApi } from "./inventory-api";
 import { StockLinesFields, type StockLinesForm } from "./StockLinesFields";
@@ -22,7 +27,15 @@ import { StockLinesFields, type StockLinesForm } from "./StockLinesFields";
  * entered once. Saving brings the stock in, books the bill (owed or paid), and
  * updates the latest purchase prices the pricing advisor uses.
  */
-export function ReceiveStockForm({ items, suppliers, today }: { items: StockItem[]; suppliers: Supplier[]; today: string }) {
+export function ReceiveStockForm({
+  items,
+  suppliers,
+  today,
+}: {
+  items: StockItem[];
+  suppliers: Supplier[];
+  today: string;
+}) {
   const t = useTranslations("dashInventory");
   const tExpenses = useTranslations("dashExpenses");
   const tApiErrors = useTranslations("apiErrors");
@@ -30,6 +43,7 @@ export function ReceiveStockForm({ items, suppliers, today }: { items: StockItem
   const fieldError = (message?: string): string | undefined => formErrorMessage(tFormErrors, message);
   const locale = useLocale();
   const router = useRouter();
+  const { toast } = useToast();
 
   const {
     register,
@@ -53,6 +67,7 @@ export function ReceiveStockForm({ items, suppliers, today }: { items: StockItem
   const onSubmit = handleSubmit(async (values) => {
     try {
       await inventoryApi.receive(values);
+      toast({ tone: "success", title: t("receive.saved") });
       router.push("/dashboard/inventory");
       router.refresh();
     } catch (error) {
@@ -63,7 +78,12 @@ export function ReceiveStockForm({ items, suppliers, today }: { items: StockItem
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-5" noValidate>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <TextField label={t("dateLabel")} required description={date ? formatCafeDayMedium(date, locale) : undefined} error={fieldError(errors.date?.message)}>
+        <TextField
+          label={t("dateLabel")}
+          required
+          description={date ? formatCafeDayMedium(date, locale) : undefined}
+          error={fieldError(errors.date?.message)}
+        >
           {(controlProps) => <Input {...controlProps} {...register("date")} type="date" max={today} dir="ltr" />}
         </TextField>
         <TextField label={tExpenses("form.supplierLabel")} error={fieldError(errors.supplierId?.message)}>
@@ -80,7 +100,14 @@ export function ReceiveStockForm({ items, suppliers, today }: { items: StockItem
         </TextField>
       </div>
       <TextField label={t("receive.descriptionLabel")} required error={fieldError(errors.description?.message)}>
-        {(controlProps) => <Input {...controlProps} {...register("description")} dir="auto" placeholder={t("receive.descriptionPlaceholder")} />}
+        {(controlProps) => (
+          <Input
+            {...controlProps}
+            {...register("description")}
+            dir="auto"
+            placeholder={t("receive.descriptionPlaceholder")}
+          />
+        )}
       </TextField>
 
       <StockLinesFields
@@ -91,15 +118,26 @@ export function ReceiveStockForm({ items, suppliers, today }: { items: StockItem
         costLabel={t("receive.costLabel")}
       />
 
-      <TextField label={tExpenses("form.vatLabel")} description={tExpenses("form.vatHint")} error={fieldError(errors.vatAmount?.message)}>
-        {(controlProps) => <Input {...controlProps} {...register("vatAmount")} inputMode="numeric" dir="ltr" className="max-w-48" />}
+      <TextField
+        label={tExpenses("form.vatLabel")}
+        description={tExpenses("form.vatHint")}
+        error={fieldError(errors.vatAmount?.message)}
+      >
+        {(controlProps) => (
+          <Input {...controlProps} {...register("vatAmount")} inputMode="numeric" dir="ltr" className="max-w-48" />
+        )}
       </TextField>
 
       <fieldset className="flex flex-col gap-2">
-        <legend className="mb-1 text-body-small-emphasis text-input-foreground">{tExpenses("form.paymentLabel")}</legend>
+        <legend className="mb-1 text-body-small-emphasis text-input-foreground">
+          {tExpenses("form.paymentLabel")}
+        </legend>
         <div className="flex flex-wrap gap-2">
           {EXPENSE_PAYMENT_CHOICES.map((choice) => (
-            <label key={choice} className="flex cursor-pointer items-center gap-2 rounded-card-md border border-border px-3 py-2 text-body-small has-[:checked]:border-primary has-[:checked]:bg-accent">
+            <label
+              key={choice}
+              className="flex cursor-pointer items-center gap-2 rounded-card-md border border-border px-3 py-2 text-body-small has-[:checked]:border-primary has-[:checked]:bg-accent"
+            >
               <input type="radio" value={choice} {...register("payment")} className="accent-primary" />
               {tExpenses(`form.payment.${choice}`)}
             </label>
@@ -109,7 +147,7 @@ export function ReceiveStockForm({ items, suppliers, today }: { items: StockItem
 
       {errors.root?.message ? <FormMessage size="md">{errors.root.message}</FormMessage> : null}
       <div className="flex gap-3 pt-2">
-        <Button type="submit" disabled={isSubmitting}>
+        <Button type="submit" loading={isSubmitting}>
           {t("receive.save")}
         </Button>
         <Button asChild variant="outline" type="button">

@@ -5,7 +5,8 @@ import { useTranslations } from "next-intl";
 
 import { Link, useRouter } from "@/src/i18n/navigation";
 import { cn } from "@/src/lib/utils";
-import { Button, Icon } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 
 interface PageHeaderProps {
   /** Centred title. Omit for a back-only header. */
@@ -52,7 +53,17 @@ export function PageHeader({ title, backHref, className, responsiveTitle = false
           {backIcon}
         </Button>
       )}
-      {title ? <h1 className={cn("min-w-0 break-words text-center text-heading-subsection text-foreground", responsiveTitle && "sm:text-heading-page", titleClassName)}>{title}</h1> : null}
+      {title ? (
+        <h1
+          className={cn(
+            "min-w-0 text-center text-heading-subsection break-words text-foreground",
+            responsiveTitle && "sm:text-heading-page",
+            titleClassName,
+          )}
+        >
+          {title}
+        </h1>
+      ) : null}
     </header>
   );
 }

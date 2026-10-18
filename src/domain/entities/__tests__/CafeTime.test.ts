@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import { cafeDayOf, cafeDayRange, dateToWallTime, isCafeDay, isWallTime, shiftCafeDay, wallTimeToDate } from "../CafeTime";
+import {
+  cafeDayOf,
+  cafeDayRange,
+  dateToWallTime,
+  isCafeDay,
+  isWallTime,
+  shiftCafeDay,
+  wallTimeToDate,
+} from "../CafeTime";
 
 describe("CafeTime", () => {
   it("reads wall time on Tehran's fixed +03:30 clock", () => {

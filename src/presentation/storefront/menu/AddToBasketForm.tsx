@@ -8,12 +8,18 @@ import { MAX_LINE_QUANTITY, MAX_ORDER_NOTE_TEXT_LENGTH } from "@/src/domain/enti
 import type { Product } from "@/src/domain/entities/Product";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
-import { Button, Icon, Textarea } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { Textarea } from "@/src/presentation/design-system/components/form/Textarea/Textarea";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 
 import { AddToBasketButton } from "./AddToBasketButton";
 
 /** Quantity, an optional request ("oat milk"), and add — on the item's own page. */
-export function AddToBasketForm({ item }: { item: Pick<Product, "id" | "name" | "imageUrl" | "kind" | "price" | "stockQuantity"> }) {
+export function AddToBasketForm({
+  item,
+}: {
+  item: Pick<Product, "id" | "name" | "imageUrl" | "kind" | "price" | "stockQuantity">;
+}) {
   const t = useTranslations("site");
   const locale = useLocale();
   const [quantity, setQuantity] = React.useState(1);
@@ -34,13 +40,29 @@ export function AddToBasketForm({ item }: { item: Pick<Product, "id" | "name" | 
       </label>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2" role="group" aria-label={t("menu.quantity")}>
-          <Button type="button" variant="outline" size="sm" iconOnly aria-label={t("menu.decrease")} disabled={quantity <= 1} onClick={() => setQuantity((q) => q - 1)}>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            iconOnly
+            aria-label={t("menu.decrease")}
+            disabled={quantity <= 1}
+            onClick={() => setQuantity((q) => q - 1)}
+          >
             <Icon icon={Minus} size="sm" />
           </Button>
           <span className="w-8 text-center text-body-strong tabular-nums" aria-live="polite">
             {formatNumber(quantity, locale)}
           </span>
-          <Button type="button" variant="outline" size="sm" iconOnly aria-label={t("menu.increase")} disabled={quantity >= max} onClick={() => setQuantity((q) => q + 1)}>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            iconOnly
+            aria-label={t("menu.increase")}
+            disabled={quantity >= max}
+            onClick={() => setQuantity((q) => q + 1)}
+          >
             <Icon icon={Plus} size="sm" />
           </Button>
         </div>

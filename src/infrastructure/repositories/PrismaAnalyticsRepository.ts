@@ -15,7 +15,13 @@ import {
   type UnpaidOrder,
 } from "@/src/domain/entities/Analytics";
 import { CAFE_TIME_ZONE } from "@/src/domain/entities/CafeTime";
-import { ACTIVE_ORDER_STATUSES, ORDER_STATUSES, SERVICE_TYPES, type OrderStatus, type ServiceType } from "@/src/domain/entities/Order";
+import {
+  ACTIVE_ORDER_STATUSES,
+  ORDER_STATUSES,
+  SERVICE_TYPES,
+  type OrderStatus,
+  type ServiceType,
+} from "@/src/domain/entities/Order";
 import { PRODUCT_KINDS, type ProductKind } from "@/src/domain/entities/Product";
 import type { IAnalyticsRepository } from "@/src/domain/repositories/IAnalyticsRepository";
 import { prisma } from "@/src/infrastructure/prisma/client";
@@ -111,7 +117,8 @@ export class PrismaAnalyticsRepository implements IAnalyticsRepository {
   async topItems(range: DateRange, sort: TopItemSort, limit: number): Promise<TopItem[]> {
     // Grouped by product, labelled with the most recent name it sold under — a
     // renamed item stays one row.
-    const orderBy = sort === "quantity" ? Prisma.sql`quantity DESC, revenue DESC` : Prisma.sql`revenue DESC, quantity DESC`;
+    const orderBy =
+      sort === "quantity" ? Prisma.sql`quantity DESC, revenue DESC` : Prisma.sql`revenue DESC, quantity DESC`;
     const rows = await prisma.$queryRaw<
       { product_id: string; name: string; kind: string; quantity: bigint | null; revenue: bigint | null }[]
     >`
@@ -175,7 +182,9 @@ export class PrismaAnalyticsRepository implements IAnalyticsRepository {
     }));
   }
 
-  async guestCounts(range: DateRange): Promise<Pick<GuestReport, "guests" | "newGuests" | "returningGuests" | "repeatRate">> {
+  async guestCounts(
+    range: DateRange,
+  ): Promise<Pick<GuestReport, "guests" | "newGuests" | "returningGuests" | "repeatRate">> {
     // A guest is "new" when their first completed order ever falls inside the range.
     const [row] = await prisma.$queryRaw<{ guests: bigint; new_guests: bigint; repeaters: bigint }[]>`
       WITH in_range AS (
@@ -264,7 +273,10 @@ export class PrismaAnalyticsRepository implements IAnalyticsRepository {
   async reservationsOn(range: DateRange): Promise<{ bookings: number; covers: number; awaitingConfirmation: number }> {
     const groups = await prisma.reservation.groupBy({
       by: ["status"],
-      where: { startsAt: { gte: range.from, lt: range.to }, status: { in: ["requested", "confirmed", "seated", "completed"] } },
+      where: {
+        startsAt: { gte: range.from, lt: range.to },
+        status: { in: ["requested", "confirmed", "seated", "completed"] },
+      },
       _count: { _all: true },
       _sum: { partySize: true },
     });

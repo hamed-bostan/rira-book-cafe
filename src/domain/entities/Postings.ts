@@ -51,9 +51,15 @@ const label = (order: Pick<Order, "orderNumber">) => `Order #${order.orderNumber
  * the lines, then the VAT over the taxable ones), so the lines add up exactly.
  */
 export function saleEntry(order: Order, vatRateBps: number, date: string, actor: Actor): NewJournalEntry {
-  const lineTotals = allocate(order.total, order.items.map((item) => item.unitPrice * item.quantity));
+  const lineTotals = allocate(
+    order.total,
+    order.items.map((item) => item.unitPrice * item.quantity),
+  );
   const taxable = order.items.map((item, index) => (item.taxExempt ? 0 : lineTotals[index]));
-  const vat = vatIncluded(taxable.reduce((sum, amount) => sum + amount, 0), vatRateBps);
+  const vat = vatIncluded(
+    taxable.reduce((sum, amount) => sum + amount, 0),
+    vatRateBps,
+  );
   const lineVat = allocate(vat, taxable);
 
   const netByKind = new Map<ProductKind, number>();
@@ -152,7 +158,8 @@ export function paymentReturnEntry(
  * to the supplier (accounts payable).
  */
 export function expenseEntry(expense: Expense, actor: Actor): NewJournalEntry {
-  const credit = expense.status === "paid" && expense.paidFrom ? SOURCE_ACCOUNT[expense.paidFrom] : SYSTEM_ACCOUNTS.accountsPayable;
+  const credit =
+    expense.status === "paid" && expense.paidFrom ? SOURCE_ACCOUNT[expense.paidFrom] : SYSTEM_ACCOUNTS.accountsPayable;
   return {
     date: expense.date,
     description: `EX-${expense.number} — ${expense.description}`,
@@ -160,7 +167,12 @@ export function expenseEntry(expense: Expense, actor: Actor): NewJournalEntry {
     sourceId: expense.id,
     uniqueKey: `expense:${expense.id}`,
     lines: [
-      { accountCode: expense.accountCode, debit: expense.amount - expense.vatAmount, credit: 0, memo: expense.supplierName },
+      {
+        accountCode: expense.accountCode,
+        debit: expense.amount - expense.vatAmount,
+        credit: 0,
+        memo: expense.supplierName,
+      },
       { accountCode: SYSTEM_ACCOUNTS.vatPayable, debit: expense.vatAmount, credit: 0 },
       { accountCode: credit, debit: 0, credit: expense.amount },
     ],
@@ -170,7 +182,12 @@ export function expenseEntry(expense: Expense, actor: Actor): NewJournalEntry {
 }
 
 /** Paying a supplier for an expense that was owed. */
-export function expensePaymentEntry(expense: Expense, source: PaymentSource, date: string, actor: Actor): NewJournalEntry {
+export function expensePaymentEntry(
+  expense: Expense,
+  source: PaymentSource,
+  date: string,
+  actor: Actor,
+): NewJournalEntry {
   return {
     date,
     description: `EX-${expense.number} — paid from ${source}`,
@@ -253,10 +270,17 @@ export function gatewaySettlementEntry(settlement: GatewaySettlement, actor: Act
  * and loss starts from nothing and the year's result sits in equity.
  * `movements` are the year's net debits − credits per revenue/expense account.
  */
-export function yearCloseEntry(input: { fiscalYear: number; toDay: string; movements: readonly { accountCode: string; net: number }[] }, actor: Actor): NewJournalEntry | null {
+export function yearCloseEntry(
+  input: { fiscalYear: number; toDay: string; movements: readonly { accountCode: string; net: number }[] },
+  actor: Actor,
+): NewJournalEntry | null {
   const lines = input.movements
     .filter((row) => row.net !== 0)
-    .map((row) => (row.net > 0 ? { accountCode: row.accountCode, debit: 0, credit: row.net } : { accountCode: row.accountCode, debit: -row.net, credit: 0 }));
+    .map((row) =>
+      row.net > 0
+        ? { accountCode: row.accountCode, debit: 0, credit: row.net }
+        : { accountCode: row.accountCode, debit: -row.net, credit: 0 },
+    );
   if (lines.length === 0) return null;
   // Credits beat debits for a profit: the plug credits retained earnings.
   const result = input.movements.reduce((sum, row) => sum + row.net, 0);

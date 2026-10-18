@@ -42,7 +42,10 @@ export function seatsLeft(event: Pick<CafeEvent, "capacity" | "seatsTaken">): nu
 }
 
 /** Whether guests may still sign up: published, not started, and not full. */
-export function isOpenForRegistration(event: Pick<CafeEvent, "isPublished" | "startsAt" | "capacity" | "seatsTaken">, now: Date): boolean {
+export function isOpenForRegistration(
+  event: Pick<CafeEvent, "isPublished" | "startsAt" | "capacity" | "seatsTaken">,
+  now: Date,
+): boolean {
   const left = seatsLeft(event);
   return event.isPublished && new Date(event.startsAt) > now && (left === undefined || left > 0);
 }

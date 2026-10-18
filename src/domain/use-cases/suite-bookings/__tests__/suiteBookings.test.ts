@@ -39,7 +39,12 @@ function booking(status: SuiteBookingStatus, overrides: Partial<SuiteBooking> = 
 function repoWith(current: SuiteBooking | null) {
   const create = vi.fn(async (input: NewSuiteBooking) => ({ ...booking("requested"), ...input }));
   const applyStatus = vi.fn(
-    async (_id: string, _expected: SuiteBookingStatus, status: SuiteBookingStatus, _audit?: (saved: SuiteBooking) => unknown) => ({
+    async (
+      _id: string,
+      _expected: SuiteBookingStatus,
+      status: SuiteBookingStatus,
+      _audit?: (saved: SuiteBooking) => unknown,
+    ) => ({
       ...(current as SuiteBooking),
       status,
     }),
@@ -51,7 +56,11 @@ function repoWith(current: SuiteBooking | null) {
 describe("RequestSuiteBooking", () => {
   it("requests a stay with the guest's account details", async () => {
     const { repo, create } = repoWith(null);
-    await new RequestSuiteBooking(repo).execute({ checkIn: "2026-10-20", checkOut: "2026-10-22", guests: 2, note: "  " }, GUEST, NOW);
+    await new RequestSuiteBooking(repo).execute(
+      { checkIn: "2026-10-20", checkOut: "2026-10-22", guests: 2, note: "  " },
+      GUEST,
+      NOW,
+    );
     expect(create.mock.calls[0][0]).toEqual({
       userId: "g1",
       guestName: "Sara",
@@ -89,9 +98,12 @@ describe("ChangeSuiteBooking", () => {
   });
 
   it("refuses a step the workflow doesn't allow", async () => {
-    await expect(new ChangeSuiteBooking(repoWith(booking("requested")).repo).execute("s1", "checkedOut", { id: "st", name: "Ali" })).rejects.toThrow(
-      ConflictError,
-    );
+    await expect(
+      new ChangeSuiteBooking(repoWith(booking("requested")).repo).execute("s1", "checkedOut", {
+        id: "st",
+        name: "Ali",
+      }),
+    ).rejects.toThrow(ConflictError);
   });
 });
 
@@ -103,9 +115,15 @@ describe("CancelOwnSuiteBooking", () => {
   });
 
   it("hides other guests' stays and refuses on the check-in day", async () => {
-    await expect(new CancelOwnSuiteBooking(repoWith(booking("confirmed")).repo).execute("s1", "other", NOW)).rejects.toThrow(NotFoundError);
     await expect(
-      new CancelOwnSuiteBooking(repoWith(booking("confirmed", { checkIn: "2026-10-20" })).repo).execute("s1", "g1", NOW),
+      new CancelOwnSuiteBooking(repoWith(booking("confirmed")).repo).execute("s1", "other", NOW),
+    ).rejects.toThrow(NotFoundError);
+    await expect(
+      new CancelOwnSuiteBooking(repoWith(booking("confirmed", { checkIn: "2026-10-20" })).repo).execute(
+        "s1",
+        "g1",
+        NOW,
+      ),
     ).rejects.toThrow(ConflictError);
   });
 });
@@ -113,8 +131,18 @@ describe("CancelOwnSuiteBooking", () => {
 describe("suite rules", () => {
   it("counts nights and treats back-to-back stays as free", () => {
     expect(suiteNights("2026-10-20", "2026-10-23")).toBe(3);
-    expect(staysOverlap({ checkIn: "2026-10-20", checkOut: "2026-10-22" }, { checkIn: "2026-10-22", checkOut: "2026-10-24" })).toBe(false);
-    expect(staysOverlap({ checkIn: "2026-10-20", checkOut: "2026-10-23" }, { checkIn: "2026-10-22", checkOut: "2026-10-24" })).toBe(true);
+    expect(
+      staysOverlap(
+        { checkIn: "2026-10-20", checkOut: "2026-10-22" },
+        { checkIn: "2026-10-22", checkOut: "2026-10-24" },
+      ),
+    ).toBe(false);
+    expect(
+      staysOverlap(
+        { checkIn: "2026-10-20", checkOut: "2026-10-23" },
+        { checkIn: "2026-10-22", checkOut: "2026-10-24" },
+      ),
+    ).toBe(true);
   });
 
   it("lets the guest cancel only before the check-in day", () => {

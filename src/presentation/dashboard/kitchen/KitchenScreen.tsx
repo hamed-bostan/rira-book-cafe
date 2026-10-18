@@ -1,4 +1,4 @@
-import { Clock, StickyNote } from "lucide-react";
+import { Clock, Inbox, StickyNote } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import {
@@ -14,7 +14,9 @@ import { Link } from "@/src/i18n/navigation";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { cn } from "@/src/lib/utils";
 import { AutoRefresh } from "@/src/presentation/components/AutoRefresh";
-import { Icon, focusRing } from "@/src/presentation/design-system";
+import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 
 import { OrderItemServeToggle } from "../orders/OrderItemServeToggle";
 import { OrderServiceLabel } from "../orders/OrderServiceLabel";
@@ -62,7 +64,9 @@ export async function KitchenScreen({ orders, station, now, canFulfill }: Kitche
               className={cn(
                 "rounded-full px-4 py-1.5 text-body-small-emphasis",
                 focusRing,
-                option === station ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+                option === station
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground",
               )}
             >
               {t(`station.${option}`)}
@@ -73,7 +77,11 @@ export async function KitchenScreen({ orders, station, now, canFulfill }: Kitche
 
       <div className="grid grid-cols-1 gap-4 @min-[56rem]:grid-cols-3">
         {KITCHEN_LANES.map((lane) => (
-          <section key={lane} aria-labelledby={`lane-${lane}`} className="flex min-w-0 flex-col gap-3 rounded-card-lg bg-muted p-3">
+          <section
+            key={lane}
+            aria-labelledby={`lane-${lane}`}
+            className="flex min-w-0 flex-col gap-3 rounded-card-lg bg-muted p-3"
+          >
             <h2 id={`lane-${lane}`} className="flex items-center justify-between px-1 text-body-strong text-foreground">
               {t(`lane.${lane}`)}
               <span className="rounded-full bg-background px-2.5 py-0.5 text-body-small-strong tabular-nums">
@@ -81,7 +89,7 @@ export async function KitchenScreen({ orders, station, now, canFulfill }: Kitche
               </span>
             </h2>
             {lanes[lane].length === 0 ? (
-              <p className="px-1 py-6 text-center text-body-small text-muted-foreground">{t("laneEmpty")}</p>
+              <EmptyState icon={Inbox} title={t("laneEmpty")} className="px-1 py-6" />
             ) : (
               <ul className="flex flex-col gap-3">
                 {lanes[lane].map((order) => {
@@ -90,11 +98,17 @@ export async function KitchenScreen({ orders, station, now, canFulfill }: Kitche
                   return (
                     <li
                       key={order.id}
-                      className={cn("flex flex-col gap-3 rounded-card-md border bg-background p-3", late ? "border-warning-foreground" : "border-border")}
+                      className={cn(
+                        "flex flex-col gap-3 rounded-card-md border bg-background p-3",
+                        late ? "border-warning-foreground" : "border-border",
+                      )}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div>
-                          <Link href={`/dashboard/orders/${order.id}`} className="text-heading-subsection text-foreground hover:underline">
+                          <Link
+                            href={`/dashboard/orders/${order.id}`}
+                            className="text-heading-subsection text-foreground hover:underline"
+                          >
                             #{formatNumber(order.orderNumber, locale)}
                           </Link>
                           <OrderServiceLabel order={order} />
@@ -113,14 +127,26 @@ export async function KitchenScreen({ orders, station, now, canFulfill }: Kitche
                       <ul className="flex flex-col gap-2">
                         {order.items.map((item) => (
                           <li key={item.id} className="flex items-start justify-between gap-2">
-                            <div className={cn("min-w-0", item.servedAt ? "text-muted-foreground line-through" : "text-foreground")}>
+                            <div
+                              className={cn(
+                                "min-w-0",
+                                item.servedAt ? "text-muted-foreground line-through" : "text-foreground",
+                              )}
+                            >
                               <p className="text-body-strong">
                                 <span className="tabular-nums">{formatNumber(item.quantity, locale)}×</span> {item.name}
                               </p>
-                              {item.note ? <p className="text-body-small text-warning-foreground">{item.note}</p> : null}
+                              {item.note ? (
+                                <p className="text-body-small text-warning-foreground">{item.note}</p>
+                              ) : null}
                             </div>
                             {canFulfill && canServeItems(order.status) ? (
-                              <OrderItemServeToggle orderId={order.id} itemId={item.id} itemName={item.name} served={Boolean(item.servedAt)} />
+                              <OrderItemServeToggle
+                                orderId={order.id}
+                                itemId={item.id}
+                                itemName={item.name}
+                                served={Boolean(item.servedAt)}
+                              />
                             ) : null}
                           </li>
                         ))}

@@ -9,6 +9,7 @@ import { GetProducts } from "@/src/domain/use-cases/products/GetProducts";
 import { GetProductsByIds } from "@/src/domain/use-cases/products/GetProductsByIds";
 import { SearchProducts } from "@/src/domain/use-cases/products/SearchProducts";
 import { productRepository } from "@/src/infrastructure/container";
+import { invalidatesCatalog } from "@/src/lib/api/invalidatesCatalog";
 import { parseProductFilters } from "@/src/lib/api/product-search-params";
 import { getRequestLocale } from "@/src/lib/api/request-locale";
 import {
@@ -18,6 +19,7 @@ import {
   parseJsonBody,
   unauthorizedResponse,
 } from "@/src/lib/api/responses";
+import { CATALOG_TAGS } from "@/src/lib/cache-tags";
 import { getSessionWith } from "@/src/lib/require-permission";
 
 // Products are read per request — never statically cached.
@@ -27,7 +29,8 @@ export const dynamic = "force-dynamic";
  * GET /api/products — list products. Public.
  *
  * Filtered via query params:
- *   ?ids=a,b,c      → resolve these exact products (a lookup, not a search)
+ *   ?ids=a,b,c      → resolve these exact products (a lookup, not a search);
+ *                      unpublished ones only for dashboard users
  *   ?q / ?categoryId / ?kind / ?minPrice / ?maxPrice / ?dietary (repeatable) /
  *   ?sort
  *                    → catalog search (any filter, incl. a lone category, routes here)
@@ -50,8 +53,12 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     // branches and never combines with them.
     const ids = params.get("ids");
     if (ids != null) {
-      const wanted = ids.split(",").map((id) => id.trim()).filter(Boolean);
-      products = await new GetProductsByIds(productRepository).execute(wanted, locale);
+      const wanted = ids
+        .split(",")
+        .map((id) => id.trim())
+        .filter(Boolean);
+      const includeUnpublished = (await getSessionWith("dashboard.view")) != null;
+      products = await new GetProductsByIds(productRepository).execute(wanted, locale, { includeUnpublished });
     } else if (hasProductSearchCriteria(filters)) {
       products = await new SearchProducts(productRepository).execute(filters, locale);
     } else if (params.get("featured") === "true") {
@@ -71,7 +78,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
  * Thin controller: authenticate → validate (same Zod schema the form uses) →
  * delegate to the use-case → map domain errors to HTTP status codes.
  */
-export async function POST(request: NextRequest): Promise<NextResponse> {
+async function handlePost(request: NextRequest): Promise<NextResponse> {
   const session = await getSessionWith("catalog.write");
   if (!session) return unauthorizedResponse();
 
@@ -98,3 +105,5 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return errorResponseFromException(error, "POST /api/products failed");
   }
 }
+
+export const POST = invalidatesCatalog([CATALOG_TAGS.products], handlePost);

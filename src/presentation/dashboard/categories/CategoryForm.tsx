@@ -13,7 +13,15 @@ import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
 import { slugify } from "@/src/lib/slugify";
-import { Button, Field, FormMessage, Input, RequiredMark, Switch, Tabs, TabsContent, TabsList, TabsTrigger, TextField } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { Field } from "@/src/presentation/design-system/components/form/Field/Field";
+import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
+import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
+import { RequiredMark } from "@/src/presentation/design-system/components/form/shared/RequiredMark";
+import { TextField } from "@/src/presentation/design-system/components/form/TextField/TextField";
+import { Switch } from "@/src/presentation/design-system/components/Switch/Switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/presentation/design-system/components/Tabs/Tabs";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { categoriesApi } from "./category-api";
 import { IconUpload } from "./IconUpload";
@@ -22,8 +30,7 @@ import { IconUpload } from "./IconUpload";
 const FORM_FIELDS = ["name", "slug", "iconUrl"] as const;
 
 type CategoryFormProps =
-  | { mode: "create" }
-  | { mode: "edit"; category: Category; translations: CategoryTranslationInput[] };
+  { mode: "create" } | { mode: "edit"; category: Category; translations: CategoryTranslationInput[] };
 
 /**
  * Create/edit category form. React Hook Form + Zod (shared `categoryFormSchema`).
@@ -41,6 +48,7 @@ export function CategoryForm(props: CategoryFormProps) {
   const fieldError = (message?: string): string | undefined => formErrorMessage(tFormErrors, message);
   const editing = props.mode === "edit";
   const router = useRouter();
+  const { toast } = useToast();
   const {
     register,
     handleSubmit,
@@ -71,6 +79,7 @@ export function CategoryForm(props: CategoryFormProps) {
     try {
       if (editing) await categoriesApi.update(props.category.id, values);
       else await categoriesApi.create(values);
+      toast({ tone: "success", title: editing ? t("savedToast") : t("createdToast") });
       router.push("/dashboard/categories");
     } catch (error) {
       if (!(error instanceof ApiError)) {
@@ -177,22 +186,15 @@ export function CategoryForm(props: CategoryFormProps) {
               </label>
               <p className="text-body-caption text-muted-foreground">{t("activeDescription")}</p>
             </div>
-            <Switch
-              id="isActive"
-              checked={field.value}
-              onCheckedChange={field.onChange}
-              aria-label={t("activeAria")}
-            />
+            <Switch id="isActive" checked={field.value} onCheckedChange={field.onChange} aria-label={t("activeAria")} />
           </div>
         )}
       />
 
-      {errors.root?.message && (
-        <FormMessage size="md">{errors.root.message}</FormMessage>
-      )}
+      {errors.root?.message && <FormMessage size="md">{errors.root.message}</FormMessage>}
 
       <div className="flex gap-3 pt-2">
-        <Button type="submit" disabled={isSubmitting}>
+        <Button type="submit" loading={isSubmitting}>
           {editing ? t("saveChanges") : t("createCategory")}
         </Button>
         <Button asChild variant="outline" type="button">

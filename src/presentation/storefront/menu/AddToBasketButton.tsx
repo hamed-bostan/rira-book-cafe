@@ -5,7 +5,8 @@ import { useTranslations } from "next-intl";
 import * as React from "react";
 
 import type { Product } from "@/src/domain/entities/Product";
-import { Button, Icon } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 
 import { useBasket } from "../basket/BasketProvider";
 

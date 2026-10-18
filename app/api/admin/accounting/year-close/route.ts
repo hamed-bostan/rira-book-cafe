@@ -37,7 +37,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   if (!body.ok) return errorResponse(400, { message: "Expected a JSON body.", code: "BAD_REQUEST" });
   const parsed = yearCloseSchema.safeParse(body.data);
   if (!parsed.success) {
-    return errorResponse(400, { message: "That isn't a fiscal year.", code: "VALIDATION", fieldErrors: firstFieldErrors(parsed.error) });
+    return errorResponse(400, {
+      message: "That isn't a fiscal year.",
+      code: "VALIDATION",
+      fieldErrors: firstFieldErrors(parsed.error),
+    });
   }
 
   try {

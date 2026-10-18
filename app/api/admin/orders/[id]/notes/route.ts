@@ -65,11 +65,10 @@ export async function POST(request: NextRequest, { params }: RouteContext): Prom
   try {
     // The author comes from the session, never from the body — a note whose author
     // the client could choose would be worthless as a record of who knew what.
-    const note = await new AddOrderNote(orderNoteRepository, orderRepository).execute(
-      id,
-      parsed.data.body,
-      { id: session.user.id, name: session.user.name ?? session.user.id },
-    );
+    const note = await new AddOrderNote(orderNoteRepository, orderRepository).execute(id, parsed.data.body, {
+      id: session.user.id,
+      name: session.user.name ?? session.user.id,
+    });
     return NextResponse.json(note, { status: 201 });
   } catch (error) {
     return errorResponseFromException(error, `POST /api/admin/orders/${id}/notes failed`);

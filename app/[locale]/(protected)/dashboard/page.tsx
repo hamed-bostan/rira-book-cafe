@@ -12,7 +12,10 @@ export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
   const session = await auth();
-  const [canViewReports, canViewStock] = await Promise.all([sessionHas(session, "reports.view"), sessionHas(session, "inventory.view")]);
+  const [canViewReports, canViewStock] = await Promise.all([
+    sessionHas(session, "reports.view"),
+    sessionHas(session, "inventory.view"),
+  ]);
 
   const [overview, week, stock] = await Promise.all([
     reportsServerApi.overview(),

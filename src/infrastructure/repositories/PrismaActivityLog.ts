@@ -14,6 +14,7 @@ import {
 import type { Page, PageRequest } from "@/src/domain/entities/Pagination";
 import { createPage, toSkipTake } from "@/src/domain/entities/Pagination";
 import type { IActivityLog } from "@/src/domain/repositories/IActivityLog";
+import type { ILogger } from "@/src/domain/repositories/ILogger";
 import { prisma } from "@/src/infrastructure/prisma/client";
 
 import { toActivityRow } from "./writeActivityEntry";
@@ -31,10 +32,9 @@ import type { Prisma } from "@prisma/client";
  * update and no delete anywhere, here or in the migration.
  */
 export class PrismaActivityLog implements IActivityLog {
-  async list(
-    filters: ActivityFilters,
-    page: PageRequest<ActivitySort>,
-  ): Promise<Page<ActivityEntry>> {
+  constructor(private readonly logger: ILogger) {}
+
+  async list(filters: ActivityFilters, page: PageRequest<ActivitySort>): Promise<Page<ActivityEntry>> {
     const where = toWhere(filters);
     // `at` is the only sort the log offers, so the direction is the whole choice.
     const orderBy: Prisma.ActivityEntryOrderByWithRelationInput = {
@@ -52,11 +52,7 @@ export class PrismaActivityLog implements IActivityLog {
     return createPage(rows.map(toActivityEntry), total, page);
   }
 
-  async listForEntity(
-    entityType: string,
-    entityId: string,
-    limit: number,
-  ): Promise<ActivityEntry[]> {
+  async listForEntity(entityType: string, entityId: string, limit: number): Promise<ActivityEntry[]> {
     const rows = await prisma.activityEntry.findMany({
       where: { entityType, entityId },
       orderBy: { createdAt: "desc" },
@@ -86,9 +82,7 @@ export class PrismaActivityLog implements IActivityLog {
       if (!seen || seen.at < at) latest.set(group.actorId, { name: group.actorName, at });
     }
 
-    return [...latest.entries()]
-      .map(([id, { name }]) => ({ id, name }))
-      .sort((a, b) => a.name.localeCompare(b.name));
+    return [...latest.entries()].map(([id, { name }]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
   }
 
   async recordEvent(entry: NewActivityEntry): Promise<void> {
@@ -100,7 +94,7 @@ export class PrismaActivityLog implements IActivityLog {
     try {
       await prisma.activityEntry.create({ data: toActivityRow(entry) });
     } catch (error) {
-      console.error("[ACTIVITY_LOG_WRITE_FAILED]", JSON.stringify(entry), error);
+      this.logger.error("ACTIVITY_LOG_WRITE_FAILED", { error, entry });
     }
   }
 }

@@ -18,7 +18,10 @@ export async function PaymentOutcomeNotice({ outcome }: { outcome: PaymentOutcom
   const { icon: IconComponent, className } = TONE[outcome];
 
   return (
-    <p role="status" className={cn("flex items-start gap-2 rounded-card-md border px-4 py-3 text-body-small", className)}>
+    <p
+      role="status"
+      className={cn("flex items-start gap-2 rounded-card-md border px-4 py-3 text-body-small", className)}
+    >
       <IconComponent className="mt-0.5 size-4 shrink-0" aria-hidden />
       <span>{t(`orders.payOutcome.${outcome}`)}</span>
     </p>

@@ -4,7 +4,8 @@ import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { cn } from "@/src/lib/utils";
-import { Button, Icon } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 
 type SidebarCollapseToggleProps = {
   collapsed: boolean;

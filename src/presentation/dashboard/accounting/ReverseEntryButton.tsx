@@ -6,7 +6,13 @@ import * as React from "react";
 
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
-import { Button, FormMessage, Icon, Input, Modal, ModalContent, Textarea } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
+import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
+import { Textarea } from "@/src/presentation/design-system/components/form/Textarea/Textarea";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { Modal, ModalContent } from "@/src/presentation/design-system/components/Modal/Modal";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { journalEntriesApi } from "./accounting-api";
 
@@ -21,6 +27,7 @@ export function ReverseEntryButton({ entryId, number, entryDate, today }: Revers
   const t = useTranslations("dashAccounting");
   const tApiErrors = useTranslations("apiErrors");
   const router = useRouter();
+  const { toast } = useToast();
   const [open, setOpen] = React.useState(false);
   const [date, setDate] = React.useState(today);
   const [reason, setReason] = React.useState("");
@@ -32,6 +39,7 @@ export function ReverseEntryButton({ entryId, number, entryDate, today }: Revers
     startTransition(async () => {
       try {
         const reversal = await journalEntriesApi.reverse(entryId, { date, reason });
+        toast({ tone: "success", title: t("entry.reversed", { number }) });
         setOpen(false);
         router.push(`/dashboard/accounting/journal/${reversal.id}`);
         router.refresh();
@@ -59,18 +67,31 @@ export function ReverseEntryButton({ entryId, number, entryDate, today }: Revers
             <p className="text-body-small text-muted-foreground">{t("entry.reverseDescription")}</p>
             <label className="flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
               {t("entry.reverseDate")}
-              <Input type="date" value={date} min={entryDate} max={today} onChange={(event) => setDate(event.target.value)} dir="ltr" />
+              <Input
+                type="date"
+                value={date}
+                min={entryDate}
+                max={today}
+                onChange={(event) => setDate(event.target.value)}
+                dir="ltr"
+              />
             </label>
             <label className="flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
               {t("entry.reverseReason")}
-              <Textarea value={reason} onChange={(event) => setReason(event.target.value)} rows={3} maxLength={200} dir="auto" />
+              <Textarea
+                value={reason}
+                onChange={(event) => setReason(event.target.value)}
+                rows={3}
+                maxLength={200}
+                dir="auto"
+              />
             </label>
             {error ? <FormMessage>{error}</FormMessage> : null}
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" size="sm" onClick={() => setOpen(false)}>
                 {t("cancel")}
               </Button>
-              <Button type="submit" size="sm" disabled={pending || !date || !reason.trim()}>
+              <Button type="submit" size="sm" loading={pending} disabled={!date || !reason.trim()}>
                 {t("entry.reverseConfirm")}
               </Button>
             </div>

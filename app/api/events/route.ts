@@ -4,6 +4,7 @@ import { eventFormSchema } from "@/src/contracts/event-schema";
 import { EventQueries } from "@/src/domain/use-cases/events/EventRegistrations";
 import { CreateEvent } from "@/src/domain/use-cases/events/SaveEvent";
 import { eventRepository } from "@/src/infrastructure/container";
+import { invalidatesCatalog } from "@/src/lib/api/invalidatesCatalog";
 import {
   errorResponse,
   errorResponseFromException,
@@ -11,6 +12,7 @@ import {
   parseJsonBody,
   unauthorizedResponse,
 } from "@/src/lib/api/responses";
+import { CATALOG_TAGS } from "@/src/lib/cache-tags";
 import { getSessionWith } from "@/src/lib/require-permission";
 
 export const dynamic = "force-dynamic";
@@ -25,7 +27,7 @@ export async function GET(): Promise<NextResponse> {
 }
 
 /** POST /api/events — create an event. Requires `events.manage`. */
-export async function POST(request: NextRequest): Promise<NextResponse> {
+async function handlePost(request: NextRequest): Promise<NextResponse> {
   const session = await getSessionWith("events.manage");
   if (!session) return unauthorizedResponse();
 
@@ -51,3 +53,5 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return errorResponseFromException(error, "POST /api/events failed");
   }
 }
+
+export const POST = invalidatesCatalog([CATALOG_TAGS.events], handlePost);

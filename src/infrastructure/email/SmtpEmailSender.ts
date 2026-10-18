@@ -1,6 +1,7 @@
 import nodemailer, { type Transporter } from "nodemailer";
 
 import type { EmailMessage, IEmailSender } from "@/src/domain/repositories/IEmailSender";
+import type { ILogger } from "@/src/domain/repositories/ILogger";
 
 export type SmtpConfig = {
   host: string;
@@ -30,7 +31,10 @@ const REQUEST_TIMEOUT_MS = 10_000;
 export class SmtpEmailSender implements IEmailSender {
   private readonly transporter: Transporter;
 
-  constructor(private readonly config: SmtpConfig) {
+  constructor(
+    private readonly config: SmtpConfig,
+    private readonly logger: ILogger,
+  ) {
     this.transporter = nodemailer.createTransport({
       host: config.host,
       port: config.port,
@@ -54,7 +58,7 @@ export class SmtpEmailSender implements IEmailSender {
       });
     } catch (error) {
       // Never rethrow: the change that triggered this mail has already committed.
-      console.error(`[email:smtp] failed to send "${message.subject}" to ${message.to}:`, error);
+      this.logger.error("SMTP send failed", { error, to: message.to, subject: message.subject });
     }
   }
 }

@@ -20,7 +20,8 @@ export function notificationValues(notification: Notification, locale: Locale): 
   const values: Record<string, string> = {};
   for (const [key, value] of Object.entries(notification.params)) {
     if (typeof value === "number") values[key] = formatNumber(value, locale);
-    else if (INSTANT_PARAMS.has(key)) values[key] = `${formatOrderDate(value, locale)} ${formatOrderTime(value, locale)}`;
+    else if (INSTANT_PARAMS.has(key))
+      values[key] = `${formatOrderDate(value, locale)} ${formatOrderTime(value, locale)}`;
     else if (DAY_OF_INSTANT_PARAMS.has(key)) values[key] = formatOrderDate(value, locale);
     else if (CAFE_DAY_PARAMS.has(key)) values[key] = formatCafeDayMedium(value, locale);
     else values[key] = value;

@@ -46,7 +46,14 @@ describe("ChangeOrderStatus", () => {
   it("passes the status it read, so a concurrent change can't be overwritten", async () => {
     const { repo, transition } = repoWith(order("accepted"));
     await new ChangeOrderStatus(repo).execute("o1", "preparing", STAFF);
-    expect(transition).toHaveBeenCalledWith("o1", "accepted", "preparing", STAFF, expect.any(Function), expect.any(Function));
+    expect(transition).toHaveBeenCalledWith(
+      "o1",
+      "accepted",
+      "preparing",
+      STAFF,
+      expect.any(Function),
+      expect.any(Function),
+    );
   });
 
   it("audits the change as order #number", async () => {
@@ -58,7 +65,9 @@ describe("ChangeOrderStatus", () => {
 
   it("refuses transitions the workflow doesn't allow", async () => {
     const { repo, transition } = repoWith(order("ready"));
-    await expect(new ChangeOrderStatus(repo).execute("o1", "cancelled", STAFF)).rejects.toThrow(InvalidOrderTransitionError);
+    await expect(new ChangeOrderStatus(repo).execute("o1", "cancelled", STAFF)).rejects.toThrow(
+      InvalidOrderTransitionError,
+    );
     expect(transition).not.toHaveBeenCalled();
   });
 });
@@ -71,11 +80,11 @@ describe("CancelOwnOrder", () => {
   });
 
   it("hides other guests' orders and refuses once accepted", async () => {
-    await expect(new CancelOwnOrder(repoWith(order("pending", "other")).repo).execute("o1", { id: "guest", name: "Sara" })).rejects.toThrow(
-      NotFoundError,
-    );
-    await expect(new CancelOwnOrder(repoWith(order("accepted")).repo).execute("o1", { id: "guest", name: "Sara" })).rejects.toThrow(
-      InvalidOrderTransitionError,
-    );
+    await expect(
+      new CancelOwnOrder(repoWith(order("pending", "other")).repo).execute("o1", { id: "guest", name: "Sara" }),
+    ).rejects.toThrow(NotFoundError);
+    await expect(
+      new CancelOwnOrder(repoWith(order("accepted")).repo).execute("o1", { id: "guest", name: "Sara" }),
+    ).rejects.toThrow(InvalidOrderTransitionError);
   });
 });

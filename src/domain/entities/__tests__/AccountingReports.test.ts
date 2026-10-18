@@ -11,7 +11,14 @@ import {
 
 import type { Account, AccountType } from "../Ledger";
 
-const account = (code: string, type: AccountType): Account => ({ code, name: code, nameFa: code, type, isSystem: true, isActive: true });
+const account = (code: string, type: AccountType): Account => ({
+  code,
+  name: code,
+  nameFa: code,
+  type,
+  isSystem: true,
+  isActive: true,
+});
 
 const ACCOUNTS: Account[] = [
   account("1110", "asset"),
@@ -67,10 +74,24 @@ describe("financial statements", () => {
   });
 
   it("account ledger carries an opening and a running balance", () => {
-    const ledger = buildAccountLedger(account("1110", "asset"), "2026-10-01", "2026-10-31", { accountCode: "1110", debit: 500, credit: 0 }, [
-      { entryId: "a", number: 1, date: "2026-10-02", description: "sale", source: "orderPayment", debit: 300, credit: 0 },
-      { entryId: "b", number: 2, date: "2026-10-03", description: "rent", source: "expense", debit: 0, credit: 600 },
-    ]);
+    const ledger = buildAccountLedger(
+      account("1110", "asset"),
+      "2026-10-01",
+      "2026-10-31",
+      { accountCode: "1110", debit: 500, credit: 0 },
+      [
+        {
+          entryId: "a",
+          number: 1,
+          date: "2026-10-02",
+          description: "sale",
+          source: "orderPayment",
+          debit: 300,
+          credit: 0,
+        },
+        { entryId: "b", number: 2, date: "2026-10-03", description: "rent", source: "expense", debit: 0, credit: 600 },
+      ],
+    );
     expect(ledger.lines.map((line) => line.runningBalance)).toEqual([800, 200]);
     expect(ledger.closingBalance).toBe(200);
   });
@@ -80,7 +101,15 @@ describe("financial statements", () => {
       "2026-10-01",
       "2026-10-31",
       [
-        { productId: "latte", name: "Latte", quantity: 10, gross: 1_100_000, taxableGross: 1_100_000, cost: 400_000, costKnown: true },
+        {
+          productId: "latte",
+          name: "Latte",
+          quantity: 10,
+          gross: 1_100_000,
+          taxableGross: 1_100_000,
+          cost: 400_000,
+          costKnown: true,
+        },
         { productId: "novel", name: "Novel", quantity: 1, gross: 330_000, taxableGross: 0, cost: 0, costKnown: false },
       ],
       1000,

@@ -6,7 +6,13 @@ import { Link } from "@/src/i18n/navigation";
 import { STATEMENTS } from "./accounting-format";
 import { AccountingTabs } from "./AccountingTabs";
 
-const ICONS = { "profit-and-loss": TrendingUp, "balance-sheet": Scale, "trial-balance": Sigma, vat: Percent, margins: Wallet } as const;
+const ICONS = {
+  "profit-and-loss": TrendingUp,
+  "balance-sheet": Scale,
+  "trial-balance": Sigma,
+  vat: Percent,
+  margins: Wallet,
+} as const;
 
 /** The financial statements on offer, each built from the ledger on demand. */
 export async function StatementsScreen() {

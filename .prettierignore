@@ -1,0 +1,19 @@
+# Dependencies, build output, caches
+node_modules/
+.next/
+out/
+build/
+coverage/
+next-env.d.ts
+
+# Lockfile and generated code
+package-lock.json
+prisma/migrations/
+src/styles/tokens.css
+
+# Runtime data and static assets
+storage/
+public/
+
+# Claude Code worktrees carry full repo copies
+.claude/

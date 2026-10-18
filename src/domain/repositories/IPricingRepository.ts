@@ -35,5 +35,10 @@ export type IPricingRepository = {
    * Change an item's menu price, guarded on the price the owner saw so a concurrent
    * edit isn't overwritten (`ConflictError("INVALID_TRANSITION")`), with its audit entry.
    */
-  applyPrice(productId: string, expectedPrice: number, newPrice: number, audit?: AuditHook<RepricedProduct>): Promise<RepricedProduct>;
+  applyPrice(
+    productId: string,
+    expectedPrice: number,
+    newPrice: number,
+    audit?: AuditHook<RepricedProduct>,
+  ): Promise<RepricedProduct>;
 };

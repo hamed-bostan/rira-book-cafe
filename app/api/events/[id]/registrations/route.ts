@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { eventRegistrationSchema } from "@/src/contracts/event-schema";
 import { RegisterForEvent } from "@/src/domain/use-cases/events/EventRegistrations";
 import { eventRepository, userRepository } from "@/src/infrastructure/container";
+import { invalidatesCatalog } from "@/src/lib/api/invalidatesCatalog";
 import {
   errorResponse,
   errorResponseFromException,
@@ -10,6 +11,7 @@ import {
   parseJsonBody,
   unauthorizedResponse,
 } from "@/src/lib/api/responses";
+import { CATALOG_TAGS } from "@/src/lib/cache-tags";
 import { getUserSession } from "@/src/lib/require-auth";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -18,7 +20,7 @@ type RouteContext = { params: Promise<{ id: string }> };
  * POST /api/events/:id/registrations — the signed-in guest signs up. 201 with the
  * registration; 409 when the event is full, closed, or they're already in.
  */
-export async function POST(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
+async function handlePost(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   const session = await getUserSession();
   if (!session?.user.id) return unauthorizedResponse();
 
@@ -45,3 +47,5 @@ export async function POST(request: NextRequest, { params }: RouteContext): Prom
     return errorResponseFromException(error, `POST /api/events/${id}/registrations failed`);
   }
 }
+
+export const POST = invalidatesCatalog([CATALOG_TAGS.events], handlePost);

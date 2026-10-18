@@ -5,7 +5,9 @@ import * as React from "react";
 
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
-import { Button, ConfirmSheet, FormMessage } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { ConfirmSheet } from "@/src/presentation/design-system/components/Sheet/ConfirmSheet";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { eventsApi } from "./event-api";
 
@@ -21,28 +23,34 @@ export function CancelRegistrationButton({ eventId, registrationId, guestName }:
   const tApiErrors = useTranslations("apiErrors");
   const router = useRouter();
   const [open, setOpen] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
+  const { toast } = useToast();
   const [pending, startTransition] = React.useTransition();
 
   function handleConfirm(): void {
     setOpen(false);
-    setError(null);
     startTransition(async () => {
       try {
         await eventsApi.cancelRegistration(eventId, registrationId);
+        toast({ tone: "success", title: t("registrationCancelledToast", { name: guestName }) });
         router.refresh();
       } catch (err) {
-        setError(localizeApiError(err, tApiErrors, t("cancelRegistrationError")));
+        toast({ tone: "error", title: localizeApiError(err, tApiErrors, t("cancelRegistrationError")) });
       }
     });
   }
 
   return (
     <div className="flex flex-col items-end gap-1">
-      <Button type="button" variant="ghost" size="sm" className="text-destructive" disabled={pending} onClick={() => setOpen(true)}>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="text-destructive"
+        loading={pending}
+        onClick={() => setOpen(true)}
+      >
         {t("cancelRegistration")}
       </Button>
-      {error ? <FormMessage>{error}</FormMessage> : null}
       <ConfirmSheet
         open={open}
         onOpenChange={setOpen}

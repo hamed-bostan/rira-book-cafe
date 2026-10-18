@@ -5,7 +5,9 @@ import * as React from "react";
 
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
-import { FormMessage, Input } from "@/src/presentation/design-system";
+import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
+import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { inventoryApi } from "./inventory-api";
 
@@ -14,6 +16,7 @@ export function ReorderLevelField({ id, reorderLevel, unit }: { id: string; reor
   const t = useTranslations("dashInventory");
   const tApiErrors = useTranslations("apiErrors");
   const router = useRouter();
+  const { toast } = useToast();
   const initial = reorderLevel === undefined ? "" : String(reorderLevel);
   const [value, setValue] = React.useState(initial);
   const [error, setError] = React.useState<string | null>(null);
@@ -26,6 +29,7 @@ export function ReorderLevelField({ id, reorderLevel, unit }: { id: string; reor
     startTransition(async () => {
       try {
         await inventoryApi.setReorderLevel(id, { reorderLevel: next });
+        toast({ tone: "success", title: t("reorderSaved") });
         router.refresh();
       } catch (err) {
         setError(localizeApiError(err, tApiErrors, t("reorderError")));

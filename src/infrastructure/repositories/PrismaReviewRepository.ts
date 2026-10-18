@@ -1,4 +1,10 @@
-import { ratingSummary, REVIEW_STATUSES, type ModerationStatus, type ProductReview, type ReviewStatus } from "@/src/domain/entities/ProductReview";
+import {
+  ratingSummary,
+  REVIEW_STATUSES,
+  type ModerationStatus,
+  type ProductReview,
+  type ReviewStatus,
+} from "@/src/domain/entities/ProductReview";
 import { ConflictError } from "@/src/domain/errors/ConflictError";
 import { NotFoundError } from "@/src/domain/errors/NotFoundError";
 import type { AuditHook } from "@/src/domain/repositories/AuditHook";
@@ -110,7 +116,8 @@ export class PrismaReviewRepository implements IReviewRepository {
         data: { status, moderatedById: moderator.id, moderatedByName: moderator.name, moderatedAt: at },
       });
       if (result.count === 0) {
-        if (!(await tx.productReview.findUnique({ where: { id }, select: { id: true } }))) throw new NotFoundError("review", id);
+        if (!(await tx.productReview.findUnique({ where: { id }, select: { id: true } })))
+          throw new NotFoundError("review", id);
         throw new ConflictError("INVALID_TRANSITION", "This review was just changed.");
       }
       const row = await tx.productReview.findUniqueOrThrow({ where: { id } });
@@ -124,7 +131,10 @@ export class PrismaReviewRepository implements IReviewRepository {
 
 /** Recompute an item's stars from its approved reviews (the item may have been deleted since — then there's nothing to update). */
 async function refreshProductRating(tx: Prisma.TransactionClient, productId: string): Promise<void> {
-  const approved = await tx.productReview.findMany({ where: { productId, status: "approved" }, select: { rating: true } });
+  const approved = await tx.productReview.findMany({
+    where: { productId, status: "approved" },
+    select: { rating: true },
+  });
   const summary = ratingSummary(approved.map((review) => review.rating));
   await tx.product.updateMany({ where: { id: productId }, data: summary });
 }

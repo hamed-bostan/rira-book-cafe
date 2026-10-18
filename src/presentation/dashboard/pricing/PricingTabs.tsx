@@ -2,7 +2,7 @@ import { getTranslations } from "next-intl/server";
 
 import { Link } from "@/src/i18n/navigation";
 import { cn } from "@/src/lib/utils";
-import { focusRing } from "@/src/presentation/design-system";
+import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 
 export type PricingTab = "items" | "ingredients" | "settings";
 
@@ -13,7 +13,15 @@ const TABS: readonly { tab: PricingTab; href: string }[] = [
 ];
 
 /** The page heading and the pricing section's tabs. */
-export async function PricingTabs({ active, title, subtitle }: { active: PricingTab; title: string; subtitle?: string }) {
+export async function PricingTabs({
+  active,
+  title,
+  subtitle,
+}: {
+  active: PricingTab;
+  title: string;
+  subtitle?: string;
+}) {
   const t = await getTranslations("dashPricing");
 
   return (

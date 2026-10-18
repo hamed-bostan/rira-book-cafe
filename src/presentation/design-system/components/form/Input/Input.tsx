@@ -8,25 +8,22 @@ import { cn } from "@/src/lib/utils";
 import { focusRing } from "../../shared/focusRing";
 import { baseFieldStyles } from "../shared/baseFieldStyles";
 
-const inputVariants = cva(
-  ["px-5", focusRing],
-  {
-    variants: {
-      hasLeftElement: {
-        true: "ps-10",
-      },
-
-      hasRightElement: {
-        true: "pe-10",
-      },
+const inputVariants = cva(["px-5", focusRing], {
+  variants: {
+    hasLeftElement: {
+      true: "ps-10",
     },
 
-    defaultVariants: {
-      hasLeftElement: false,
-      hasRightElement: false,
+    hasRightElement: {
+      true: "pe-10",
     },
   },
-);
+
+  defaultVariants: {
+    hasLeftElement: false,
+    hasRightElement: false,
+  },
+});
 
 export interface InputProps
   extends

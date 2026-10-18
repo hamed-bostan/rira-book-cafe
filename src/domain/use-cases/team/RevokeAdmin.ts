@@ -36,10 +36,7 @@ export class RevokeAdmin {
     }
 
     if (target.role === "owner") {
-      throw new AdminRevokeError(
-        "owner",
-        "You can't remove the owner. Transfer ownership to someone else first.",
-      );
+      throw new AdminRevokeError("owner", "You can't remove the owner. Transfer ownership to someone else first.");
     }
 
     const actor = await this.userRepo.getById(actorId);

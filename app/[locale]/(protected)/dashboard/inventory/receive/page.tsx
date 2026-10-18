@@ -10,7 +10,11 @@ export const dynamic = "force-dynamic";
 
 export default async function ReceiveStockPage() {
   await requirePermission("inventory.manage");
-  const [t, summary, suppliers] = await Promise.all([getTranslations("dashInventory"), inventoryServerApi.getSummary(), suppliersServerApi.list(false)]);
+  const [t, summary, suppliers] = await Promise.all([
+    getTranslations("dashInventory"),
+    inventoryServerApi.getSummary(),
+    suppliersServerApi.list(false),
+  ]);
 
   return (
     <div className="flex max-w-4xl flex-col gap-6">
@@ -18,7 +22,11 @@ export default async function ReceiveStockPage() {
         <h1 className="dashboard-page-title">{t("receive.heading")}</h1>
         <p className="text-body-small text-muted-foreground">{t("receive.subtitle")}</p>
       </div>
-      <ReceiveStockForm items={summary.items.filter((item) => item.isActive)} suppliers={suppliers} today={cafeDayOf(new Date())} />
+      <ReceiveStockForm
+        items={summary.items.filter((item) => item.isActive)}
+        suppliers={suppliers}
+        today={cafeDayOf(new Date())}
+      />
     </div>
   );
 }

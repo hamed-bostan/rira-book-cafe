@@ -3,10 +3,16 @@
 import { useTranslations } from "next-intl";
 import * as React from "react";
 
-import { ANALYTICS_RANGE_PRESETS, DEFAULT_ANALYTICS_PRESET, type AnalyticsRangePreset } from "@/src/domain/entities/Analytics";
+import {
+  ANALYTICS_RANGE_PRESETS,
+  DEFAULT_ANALYTICS_PRESET,
+  type AnalyticsRangePreset,
+} from "@/src/domain/entities/Analytics";
 import { usePathname, useRouter } from "@/src/i18n/navigation";
 import { cn } from "@/src/lib/utils";
-import { Button, Input, focusRing } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
+import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 
 type ReportRangePickerProps = {
   /** The highlighted option. */
@@ -76,11 +82,25 @@ export function ReportRangePicker({ selected, fromDay, toDay, keep }: ReportRang
         >
           <label className="flex flex-col gap-1 text-body-caption text-muted-foreground">
             {t("rangeFrom")}
-            <Input type="date" value={from} max={to || undefined} onChange={(event) => setFrom(event.target.value)} className="h-9" dir="ltr" />
+            <Input
+              type="date"
+              value={from}
+              max={to || undefined}
+              onChange={(event) => setFrom(event.target.value)}
+              className="h-9"
+              dir="ltr"
+            />
           </label>
           <label className="flex flex-col gap-1 text-body-caption text-muted-foreground">
             {t("rangeTo")}
-            <Input type="date" value={to} min={from || undefined} onChange={(event) => setTo(event.target.value)} className="h-9" dir="ltr" />
+            <Input
+              type="date"
+              value={to}
+              min={from || undefined}
+              onChange={(event) => setTo(event.target.value)}
+              className="h-9"
+              dir="ltr"
+            />
           </label>
           <Button type="submit" size="sm" disabled={!from || !to || from > to}>
             {t("apply")}

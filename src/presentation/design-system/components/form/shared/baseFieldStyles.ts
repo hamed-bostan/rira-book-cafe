@@ -13,7 +13,7 @@ import { cva } from "class-variance-authority";
  */
 export const baseFieldStyles = cva(
   [
-    "w-full rounded-input outline-none transition-colors",
+    "w-full rounded-input transition-colors outline-none",
     "text-input-foreground placeholder:text-input-placeholder",
     "disabled:cursor-not-allowed disabled:opacity-50",
     // Error state is driven by `aria-invalid` so it composes with <Field /> and

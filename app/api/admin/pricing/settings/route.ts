@@ -20,12 +20,18 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
   if (!body.ok) return errorResponse(400, { message: "Expected a JSON body.", code: "BAD_REQUEST" });
   const parsed = pricingSettingsSchema.safeParse(body.data);
   if (!parsed.success) {
-    return errorResponse(400, { message: "Please fix the highlighted fields.", code: "VALIDATION", fieldErrors: firstFieldErrors(parsed.error) });
+    return errorResponse(400, {
+      message: "Please fix the highlighted fields.",
+      code: "VALIDATION",
+      fieldErrors: firstFieldErrors(parsed.error),
+    });
   }
 
   try {
     const { defaultMarkup, ...rest } = parsed.data;
-    return NextResponse.json(await new UpdatePricingSettings(pricingRepository).execute({ ...rest, defaultMarkupBps: defaultMarkup }));
+    return NextResponse.json(
+      await new UpdatePricingSettings(pricingRepository).execute({ ...rest, defaultMarkupBps: defaultMarkup }),
+    );
   } catch (error) {
     return errorResponseFromException(error, "PUT /api/admin/pricing/settings failed");
   }

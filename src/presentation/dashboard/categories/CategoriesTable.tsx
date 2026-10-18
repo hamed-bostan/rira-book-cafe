@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import {
@@ -9,10 +8,11 @@ import type { Category } from "@/src/domain/entities/Category";
 import { Link } from "@/src/i18n/navigation";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { formatOrderDateShort } from "@/src/lib/formatOrderDate";
+import { FadeInImage } from "@/src/presentation/components/FadeInImage";
 import { BulkRowCheckbox, BulkSelectAllCheckbox } from "@/src/presentation/dashboard/bulk";
 import { ListSortHeader } from "@/src/presentation/dashboard/list";
+import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
 import {
-  Badge,
   DataTable,
   Table,
   TableBody,
@@ -20,8 +20,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-  Thumbnail,
-} from "@/src/presentation/design-system";
+} from "@/src/presentation/design-system/components/DataTable/DataTable";
+import { Thumbnail } from "@/src/presentation/design-system/components/Thumbnail/Thumbnail";
 
 import { CategoryMobileSort } from "./CategoryMobileSort";
 import { CategoryRowActions } from "./CategoryRowActions";
@@ -48,7 +48,10 @@ export async function CategoriesTable({ categories, footer }: CategoriesTablePro
   const locale = await getLocale();
 
   return (
-    <DataTable footer={footer} className="@container min-w-0 rounded-none border-0 [&>div:last-child>div>div:last-child]:flex-wrap">
+    <DataTable
+      footer={footer}
+      className="@container min-w-0 rounded-none border-0 [&>div:last-child>div>div:last-child]:flex-wrap"
+    >
       <div className="@[48rem]:hidden">
         <div className="flex flex-wrap items-center gap-3 border-b border-border bg-surface-sunken/50 px-4 py-3">
           <label className="flex min-h-11 cursor-pointer items-center gap-2 text-body-small-strong text-muted-foreground">
@@ -65,16 +68,16 @@ export async function CategoriesTable({ categories, footer }: CategoriesTablePro
                   <BulkRowCheckbox id={category.id} label={t("selectRowAria", { name: category.name })} />
                 </label>
                 <Thumbnail className="size-12 border border-border/60">
-                  <Image src={category.iconUrl} alt="" width={36} height={36} className="object-contain" />
+                  <FadeInImage src={category.iconUrl} alt="" width={36} height={36} className="object-contain" />
                 </Thumbnail>
                 <div className="min-w-0 flex-1">
                   <Link
                     href={`/dashboard/categories/${category.id}/edit`}
-                    className="block rounded-sm text-body-bold break-words text-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="block rounded-sm text-body-bold break-words text-foreground hover:text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                   >
                     {category.name}
                   </Link>
-                  <p className="mt-1 break-all text-body-small text-muted-foreground">{category.slug}</p>
+                  <p className="mt-1 text-body-small break-all text-muted-foreground">{category.slug}</p>
                 </div>
                 <CategoryRowActions id={category.id} name={category.name} productCount={category.productCount} />
               </div>
@@ -85,7 +88,7 @@ export async function CategoriesTable({ categories, footer }: CategoriesTablePro
                     <Link
                       href={`/dashboard/products?categoryId=${encodeURIComponent(category.id)}`}
                       aria-label={t("viewProductsAria", { name: category.name, count: category.productCount })}
-                      className="inline-flex min-h-11 min-w-11 items-center rounded-sm text-body-bold tabular-nums text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      className="inline-flex min-h-11 min-w-11 items-center rounded-sm text-body-bold text-primary tabular-nums underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                     >
                       {formatNumber(category.productCount, locale)}
                     </Link>
@@ -102,14 +105,18 @@ export async function CategoriesTable({ categories, footer }: CategoriesTablePro
                 </div>
                 <div className="col-span-2 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-t border-border pt-3 text-body-small-emphasis text-muted-foreground">
                   <dt>{t("colUpdatedAt")}</dt>
-                  <dd><time dateTime={category.updatedAt.toISOString()}>{formatOrderDateShort(category.updatedAt.toISOString(), locale)}</time></dd>
+                  <dd>
+                    <time dateTime={category.updatedAt.toISOString()}>
+                      {formatOrderDateShort(category.updatedAt.toISOString(), locale)}
+                    </time>
+                  </dd>
                 </div>
               </dl>
             </li>
           ))}
         </ul>
       </div>
-      <Table className="hidden table-fixed @[48rem]:table [&_th]:whitespace-nowrap [&_td]:py-4 [&_th:first-child]:ps-5 [&_td:first-child]:ps-5 [&_th:last-child]:pe-5 [&_td:last-child]:pe-5">
+      <Table className="hidden table-fixed @[48rem]:table [&_td]:py-4 [&_td:first-child]:ps-5 [&_td:last-child]:pe-5 [&_th]:whitespace-nowrap [&_th:first-child]:ps-5 [&_th:last-child]:pe-5">
         <TableHeader>
           <tr>
             <TableHead className="w-10">
@@ -137,12 +144,12 @@ export async function CategoriesTable({ categories, footer }: CategoriesTablePro
               <TableCell>
                 <div className="flex items-center gap-3">
                   <Thumbnail className="size-12 border border-border/60">
-                    <Image src={category.iconUrl} alt="" width={36} height={36} className="object-contain" />
+                    <FadeInImage src={category.iconUrl} alt="" width={36} height={36} className="object-contain" />
                   </Thumbnail>
                   <div className="min-w-0">
                     <Link
                       href={`/dashboard/categories/${category.id}/edit`}
-                      className="block max-w-64 truncate rounded-sm text-body-bold text-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      className="block max-w-64 truncate rounded-sm text-body-bold text-foreground transition-colors hover:text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                     >
                       {category.name}
                     </Link>
@@ -153,7 +160,7 @@ export async function CategoriesTable({ categories, footer }: CategoriesTablePro
               <TableCell className="text-end text-body-small">
                 <Link
                   href={`/dashboard/products?categoryId=${encodeURIComponent(category.id)}`}
-                  className="inline-flex min-w-10 items-center justify-center rounded-card-md border border-border bg-surface-sunken px-2.5 py-1 text-body-small-emphasis tabular-nums text-foreground transition-colors hover:border-primary/30 hover:bg-accent hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="inline-flex min-w-10 items-center justify-center rounded-card-md border border-border bg-surface-sunken px-2.5 py-1 text-body-small-emphasis text-foreground tabular-nums transition-colors hover:border-primary/30 hover:bg-accent hover:text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                   aria-label={t("viewProductsAria", { name: category.name, count: category.productCount })}
                 >
                   {formatNumber(category.productCount, locale)}
@@ -165,7 +172,7 @@ export async function CategoriesTable({ categories, footer }: CategoriesTablePro
                   {category.isActive ? t("statusActive") : t("statusInactive")}
                 </Badge>
               </TableCell>
-              <TableCell className="whitespace-nowrap text-body-small-strong text-muted-foreground">
+              <TableCell className="text-body-small-strong whitespace-nowrap text-muted-foreground">
                 {formatOrderDateShort(category.updatedAt.toISOString(), locale)}
               </TableCell>
               <TableCell>

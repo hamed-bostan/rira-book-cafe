@@ -4,7 +4,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import type { Reservation } from "@/src/domain/entities/Reservation";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { formatOrderTime } from "@/src/lib/formatOrderDate";
-import { Icon } from "@/src/presentation/design-system";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 
 import { ReservationActions } from "./ReservationActions";
 import { ReservationStatusBadge } from "./ReservationStatusBadge";
@@ -23,7 +23,7 @@ export async function ReservationCard({ reservation, canManage }: ReservationCar
   return (
     <li className="flex flex-col gap-3 rounded-card-md border border-border bg-background p-4 @min-[40rem]:flex-row @min-[40rem]:items-start">
       <div className="w-20 shrink-0">
-        <p className="text-body-strong tabular-nums text-foreground">{formatOrderTime(reservation.startsAt, locale)}</p>
+        <p className="text-body-strong text-foreground tabular-nums">{formatOrderTime(reservation.startsAt, locale)}</p>
         <p className="text-body-caption text-muted-foreground">R-{reservation.reference}</p>
       </div>
 
@@ -32,7 +32,9 @@ export async function ReservationCard({ reservation, canManage }: ReservationCar
           <span className="text-body-small-strong text-foreground">{reservation.guestName}</span>
           <ReservationStatusBadge status={reservation.status} />
         </div>
-        <p dir="ltr" className="text-start text-body-small text-muted-foreground">{reservation.guestPhone}</p>
+        <p dir="ltr" className="text-start text-body-small text-muted-foreground">
+          {reservation.guestPhone}
+        </p>
         <p className="flex flex-wrap items-center gap-3 text-body-small text-foreground">
           <span className="flex items-center gap-1.5">
             <Icon icon={Users} size="xs" className="text-muted-foreground" />

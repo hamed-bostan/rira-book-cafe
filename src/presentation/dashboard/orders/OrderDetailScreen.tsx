@@ -11,7 +11,7 @@ import { formatOrderDate, formatOrderTime } from "@/src/lib/formatOrderDate";
 import { AutoRefresh } from "@/src/presentation/components/AutoRefresh";
 import { DashboardPanel, DashboardPanelHeader } from "@/src/presentation/dashboard/DashboardPanel";
 import { ProductThumbnail } from "@/src/presentation/dashboard/ProductThumbnail";
-import { Icon } from "@/src/presentation/design-system";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 import { OrderTotals } from "@/src/presentation/orders/OrderTotals";
 
 import { OrderItemServeToggle } from "./OrderItemServeToggle";
@@ -43,7 +43,7 @@ type OrderDetailScreenProps = {
  */
 export async function OrderDetailScreen({ order, events, notes, canFulfill, canNote }: OrderDetailScreenProps) {
   const t = await getTranslations("dashOrders");
-  const locale = (await getLocale());
+  const locale = await getLocale();
   const serving = canServeItems(order.status);
 
   return (
@@ -105,11 +105,16 @@ export async function OrderDetailScreen({ order, events, notes, canFulfill, canN
                     ) : null}
                   </div>
                   <div className="flex flex-col items-end gap-2">
-                    <span className="whitespace-nowrap text-body-small-emphasis text-foreground">
+                    <span className="text-body-small-emphasis whitespace-nowrap text-foreground">
                       {formatMoney(item.unitPrice * item.quantity, locale)}
                     </span>
                     {serving && canFulfill ? (
-                      <OrderItemServeToggle orderId={order.id} itemId={item.id} itemName={item.name} served={Boolean(item.servedAt)} />
+                      <OrderItemServeToggle
+                        orderId={order.id}
+                        itemId={item.id}
+                        itemName={item.name}
+                        served={Boolean(item.servedAt)}
+                      />
                     ) : null}
                   </div>
                 </li>
@@ -134,12 +139,16 @@ export async function OrderDetailScreen({ order, events, notes, canFulfill, canN
             <dl className="mt-4 flex flex-col gap-3 text-body-small">
               <div>
                 <dt className="text-muted-foreground">{t("colService")}</dt>
-                <dd className="mt-1"><OrderServiceLabel order={order} /></dd>
+                <dd className="mt-1">
+                  <OrderServiceLabel order={order} />
+                </dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">{t("colGuest")}</dt>
                 <dd className="mt-1 text-foreground">{order.customerName}</dd>
-                <dd dir="ltr" className="text-start text-muted-foreground">{order.customerPhone}</dd>
+                <dd dir="ltr" className="text-start text-muted-foreground">
+                  {order.customerPhone}
+                </dd>
               </div>
               {order.note ? (
                 <div>

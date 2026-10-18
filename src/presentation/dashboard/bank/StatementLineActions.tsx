@@ -7,22 +7,24 @@ import * as React from "react";
 import type { RecordStatementLineInput } from "@/src/contracts/bank-schema";
 import type { BankStatementLine } from "@/src/domain/entities/BankReconciliation";
 import { formatMoney } from "@/src/lib/formatMoney";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
 import {
-  Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuIconTrigger,
   DropdownMenuItem,
   DropdownMenuSeparator,
-  Icon,
-  Input,
-  Modal,
-  ModalContent,
-} from "@/src/presentation/design-system";
+} from "@/src/presentation/design-system/components/DropdownMenu/DropdownMenu";
+import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { Modal, ModalContent } from "@/src/presentation/design-system/components/Modal/Modal";
+import { Spinner } from "@/src/presentation/design-system/components/Spinner/Spinner";
 
 type StatementLineActionsProps = {
   line: BankStatementLine;
   disabled: boolean;
+  /** This line's own action is running — the trigger shows the spinner in place of its icon. */
+  busy?: boolean;
   onRecord: (values: RecordStatementLineInput) => void;
   onRemove: () => void;
 };
@@ -32,7 +34,7 @@ type StatementLineActionsProps = {
  * a bank fee (money out), as interest or a gateway payout (money in) — each posts
  * the entry and matches the line in one step — or remove a line entered by mistake.
  */
-export function StatementLineActions({ line, disabled, onRecord, onRemove }: StatementLineActionsProps) {
+export function StatementLineActions({ line, disabled, busy = false, onRecord, onRemove }: StatementLineActionsProps) {
   const t = useTranslations("dashBank");
   const locale = useLocale();
   const [payoutOpen, setPayoutOpen] = React.useState(false);
@@ -42,8 +44,12 @@ export function StatementLineActions({ line, disabled, onRecord, onRemove }: Sta
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuIconTrigger disabled={disabled} aria-label={t("workspace.lineActions")}>
-          <EllipsisVertical aria-hidden className="size-4" />
+        <DropdownMenuIconTrigger
+          disabled={disabled || busy}
+          aria-busy={busy || undefined}
+          aria-label={t("workspace.lineActions")}
+        >
+          {busy ? <Spinner size="xs" decorative /> : <EllipsisVertical aria-hidden className="size-4" />}
         </DropdownMenuIconTrigger>
         <DropdownMenuContent>
           {line.amount < 0 ? (
@@ -82,10 +88,18 @@ export function StatementLineActions({ line, disabled, onRecord, onRemove }: Sta
               onRecord({ kind: "gatewayPayout", fee });
             }}
           >
-            <p className="text-body-small text-muted-foreground">{t("workspace.payoutDescription", { amount: formatMoney(line.amount, locale) })}</p>
+            <p className="text-body-small text-muted-foreground">
+              {t("workspace.payoutDescription", { amount: formatMoney(line.amount, locale) })}
+            </p>
             <label className="flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
               {t("workspace.payoutFee")}
-              <Input value={fee} onChange={(event) => setFee(event.target.value)} inputMode="numeric" dir="ltr" aria-invalid={!feeValid} />
+              <Input
+                value={fee}
+                onChange={(event) => setFee(event.target.value)}
+                inputMode="numeric"
+                dir="ltr"
+                aria-invalid={!feeValid}
+              />
             </label>
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" size="sm" onClick={() => setPayoutOpen(false)}>

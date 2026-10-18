@@ -27,7 +27,7 @@ export const manualEntrySchema = z
   })
   .superRefine((value, ctx) => {
     value.lines.forEach((line, index) => {
-      if ((line.debit > 0) === (line.credit > 0)) {
+      if (line.debit > 0 === line.credit > 0) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["lines", index, "debit"], message: "lineOneSide" });
       }
     });
@@ -51,7 +51,10 @@ export type ReverseEntryInput = z.input<typeof reverseEntrySchema>;
 
 /** A new account in the chart of accounts. */
 export const ledgerAccountSchema = z.object({
-  code: z.string().trim().regex(/^\d{4}$/, "accountCodeInvalid"),
+  code: z
+    .string()
+    .trim()
+    .regex(/^\d{4}$/, "accountCodeInvalid"),
   name: z.string().trim().min(1, "nameRequired").max(80, "textTooLong"),
   nameFa: z.string().trim().min(1, "nameRequired").max(80, "textTooLong"),
   type: z.enum(ACCOUNT_TYPES, { message: "accountTypeInvalid" }),

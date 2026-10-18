@@ -23,7 +23,10 @@ export async function ExpenseDetailScreen({ expense, entries, accounts, canWrite
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
-      <nav aria-label={t("breadcrumbLabel")} className="flex items-center gap-2 text-body-caption text-muted-foreground">
+      <nav
+        aria-label={t("breadcrumbLabel")}
+        className="flex items-center gap-2 text-body-caption text-muted-foreground"
+      >
         <Link href="/dashboard/expenses" className="hover:text-foreground">
           {t("heading")}
         </Link>
@@ -40,11 +43,15 @@ export async function ExpenseDetailScreen({ expense, entries, accounts, canWrite
           <p className="text-body text-foreground" dir="auto">
             {expense.description}
           </p>
-          <p className="text-body-caption text-muted-foreground">{t("detail.recordedBy", { name: expense.createdByName })}</p>
+          <p className="text-body-caption text-muted-foreground">
+            {t("detail.recordedBy", { name: expense.createdByName })}
+          </p>
         </div>
         {canWrite && expense.status !== "void" ? (
           <div className="flex flex-wrap gap-2">
-            {expense.status === "unpaid" ? <PayExpenseButton id={expense.id} number={expense.number} expenseDate={expense.date} today={today} /> : null}
+            {expense.status === "unpaid" ? (
+              <PayExpenseButton id={expense.id} number={expense.number} expenseDate={expense.date} today={today} />
+            ) : null}
             <VoidExpenseButton id={expense.id} number={expense.number} />
           </div>
         ) : null}
@@ -61,19 +68,26 @@ export async function ExpenseDetailScreen({ expense, entries, accounts, canWrite
         </div>
         <div>
           <dt className="text-body-caption text-muted-foreground">{t("form.accountLabel")}</dt>
-          <dd className="text-body-small-emphasis text-foreground">{account ? accountLabel(account, locale) : expense.accountCode}</dd>
+          <dd className="text-body-small-emphasis text-foreground">
+            {account ? accountLabel(account, locale) : expense.accountCode}
+          </dd>
         </div>
         <div>
           <dt className="text-body-caption text-muted-foreground">{t("detail.payment")}</dt>
           <dd className="text-body-small-emphasis text-foreground">
             {expense.paidFrom && expense.paidOn
-              ? t("detail.paidFrom", { source: t(`detail.source.${expense.paidFrom}`), date: formatCafeDayMedium(expense.paidOn, locale) })
+              ? t("detail.paidFrom", {
+                  source: t(`detail.source.${expense.paidFrom}`),
+                  date: formatCafeDayMedium(expense.paidOn, locale),
+                })
               : t("status.unpaid")}
           </dd>
         </div>
         <div>
           <dt className="text-body-caption text-muted-foreground">{t("detail.net")}</dt>
-          <dd className="text-body-small-emphasis text-foreground">{formatMoney(expense.amount - expense.vatAmount, locale)}</dd>
+          <dd className="text-body-small-emphasis text-foreground">
+            {formatMoney(expense.amount - expense.vatAmount, locale)}
+          </dd>
         </div>
         <div>
           <dt className="text-body-caption text-muted-foreground">{t("detail.vat")}</dt>
@@ -90,7 +104,10 @@ export async function ExpenseDetailScreen({ expense, entries, accounts, canWrite
         <ul className="divide-y divide-border overflow-hidden rounded-card-lg border border-border bg-background">
           {entries.map((entry) => (
             <li key={entry.id} className="flex flex-wrap items-center gap-3 px-4 py-3 text-body-small">
-              <Link href={`/dashboard/accounting/journal/${entry.id}`} className="text-body-small-emphasis text-primary underline-offset-4 hover:underline">
+              <Link
+                href={`/dashboard/accounting/journal/${entry.id}`}
+                className="text-body-small-emphasis text-primary underline-offset-4 hover:underline"
+              >
                 JE-{entry.number}
               </Link>
               <span className="text-muted-foreground">{formatCafeDayMedium(entry.date, locale)}</span>

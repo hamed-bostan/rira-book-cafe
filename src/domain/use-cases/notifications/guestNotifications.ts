@@ -46,7 +46,11 @@ export function orderStatusNotification(order: Order): NewNotification | null {
 /** Staff confirmed or cancelled a table. A guest's own cancellation isn't news to them. */
 export function reservationNotification(reservation: Reservation): NewNotification | null {
   const kind =
-    reservation.status === "confirmed" ? "reservationConfirmed" : reservation.status === "cancelled" ? "reservationCancelled" : null;
+    reservation.status === "confirmed"
+      ? "reservationConfirmed"
+      : reservation.status === "cancelled"
+        ? "reservationCancelled"
+        : null;
   if (!kind) return null;
   return {
     userId: reservation.userId,
@@ -64,7 +68,8 @@ export function reservationNotification(reservation: Reservation): NewNotificati
 
 /** Staff confirmed or cancelled a suite stay. */
 export function suiteNotification(booking: SuiteBooking): NewNotification | null {
-  const kind = booking.status === "confirmed" ? "suiteConfirmed" : booking.status === "cancelled" ? "suiteCancelled" : null;
+  const kind =
+    booking.status === "confirmed" ? "suiteConfirmed" : booking.status === "cancelled" ? "suiteCancelled" : null;
   if (!kind) return null;
   return {
     userId: booking.userId,

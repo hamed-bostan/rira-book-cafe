@@ -22,8 +22,15 @@ function summarize(violations: Violation[]): string {
  */
 export async function expectNoSeriousA11yViolations(page: Page, testInfo: TestInfo, label: string): Promise<void> {
   // Audit the settled page: mid fade-in, text is partly transparent and axe would
-  // measure its contrast against a colour it never ends up with. (Looping animations,
-  // like a spinner, never settle and are left out.)
+  // measure its contrast against a colour it never ends up with. Waiting for running
+  // animations isn't enough on a slow runner — content that renders after the wait
+  // starts fading in during the audit — so every animation and transition is made
+  // instant first: running ones jump to their end state, later ones never start.
+  await page.addStyleTag({
+    content:
+      "*, *::before, *::after { animation-duration: 0s !important; animation-delay: 0s !important; transition-duration: 0s !important; transition-delay: 0s !important; }",
+  });
+  // Looping animations (a spinner) still loop; the rest have settled.
   await page.waitForFunction(() =>
     document
       .getAnimations()

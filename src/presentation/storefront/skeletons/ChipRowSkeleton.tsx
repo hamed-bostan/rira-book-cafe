@@ -1,5 +1,5 @@
 import { cn } from "@/src/lib/utils";
-import { Skeleton } from "@/src/presentation/design-system";
+import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
 /** Varied chip widths, so the row reads as labels of different lengths. */
 const CHIP_WIDTHS = ["w-14", "w-20", "w-16", "w-24", "w-18", "w-22"] as const;

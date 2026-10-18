@@ -5,7 +5,9 @@ import type { Category } from "@/src/domain/entities/Category";
 import { PRODUCT_KINDS, type Product, type ProductKind } from "@/src/domain/entities/Product";
 import { Link } from "@/src/i18n/navigation";
 import { cn } from "@/src/lib/utils";
-import { Button, EmptyState, focusRing } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
+import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 
 import { MenuItemCard } from "./MenuItemCard";
 
@@ -62,19 +64,24 @@ export async function MenuScreen({ categories, items, categoryId, kind }: MenuSc
         <p className="mt-1 text-body-small text-muted-foreground">{t("menu.subtitle")}</p>
       </div>
 
-      <nav aria-label={t("menu.kindFilter")} className="flex gap-2 overflow-x-auto scrollbar-hide">
+      <nav aria-label={t("menu.kindFilter")} className="scrollbar-hide flex gap-2 overflow-x-auto">
         <Link href={href({ categoryId })} aria-current={!kind ? "true" : undefined} className={chip(!kind)}>
           {t("menu.all")}
         </Link>
         {PRODUCT_KINDS.map((option) => (
-          <Link key={option} href={href({ kind: option })} aria-current={kind === option ? "true" : undefined} className={chip(kind === option)}>
+          <Link
+            key={option}
+            href={href({ kind: option })}
+            aria-current={kind === option ? "true" : undefined}
+            className={chip(kind === option)}
+          >
             {tProducts(`kind.${option}`)}
           </Link>
         ))}
       </nav>
 
       {offered.length > 1 ? (
-        <nav aria-label={t("menu.categoryFilter")} className="-mt-2 flex gap-2 overflow-x-auto scrollbar-hide">
+        <nav aria-label={t("menu.categoryFilter")} className="scrollbar-hide -mt-2 flex gap-2 overflow-x-auto">
           <Link href={href({ kind })} aria-current={!categoryId ? "true" : undefined} className={chip(!categoryId)}>
             {t("menu.allCategories")}
           </Link>

@@ -7,7 +7,7 @@ import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { formatOrderDateShort, formatOrderTime } from "@/src/lib/formatOrderDate";
 import { OrderStatusBadge } from "@/src/presentation/dashboard/orders/OrderStatusBadge";
-import { EmptyState } from "@/src/presentation/design-system";
+import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
 
 import { StatCard } from "../StatCard";
 
@@ -34,7 +34,12 @@ export async function PaymentReportScreen({ report, selected }: PaymentReportScr
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
-      <ReportHeader title={t("payments.title")} subtitle={t("payments.subtitle")} range={report.range} selected={selected} />
+      <ReportHeader
+        title={t("payments.title")}
+        subtitle={t("payments.subtitle")}
+        range={report.range}
+        selected={selected}
+      />
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <StatCard
@@ -57,8 +62,18 @@ export async function PaymentReportScreen({ report, selected }: PaymentReportScr
         heading={t("payments.splitHeading")}
         empty={t("noSales")}
         rows={[
-          { key: "paid", label: tOrders("payment.paid"), value: summary.paidValue, valueLabel: formatMoney(summary.paidValue, locale) },
-          { key: "unpaid", label: tOrders("payment.unpaid"), value: summary.unpaidValue, valueLabel: formatMoney(summary.unpaidValue, locale) },
+          {
+            key: "paid",
+            label: tOrders("payment.paid"),
+            value: summary.paidValue,
+            valueLabel: formatMoney(summary.paidValue, locale),
+          },
+          {
+            key: "unpaid",
+            label: tOrders("payment.unpaid"),
+            value: summary.unpaidValue,
+            valueLabel: formatMoney(summary.unpaidValue, locale),
+          },
         ]}
       />
 
@@ -71,7 +86,10 @@ export async function PaymentReportScreen({ report, selected }: PaymentReportScr
           <ul className="mt-4 flex flex-col divide-y divide-border">
             {report.unpaid.map((order) => (
               <li key={order.id} className="flex flex-wrap items-center gap-3 py-3">
-                <Link href={`/dashboard/orders/${order.id}`} className="text-body-small-emphasis text-primary underline-offset-4 hover:underline">
+                <Link
+                  href={`/dashboard/orders/${order.id}`}
+                  className="text-body-small-emphasis text-primary underline-offset-4 hover:underline"
+                >
                   #{order.orderNumber}
                 </Link>
                 <span className="min-w-0 flex-1 truncate text-body-small text-foreground">{order.customerName}</span>

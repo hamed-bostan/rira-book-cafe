@@ -6,7 +6,11 @@ import * as React from "react";
 import type { LoyaltySettings } from "@/src/domain/entities/Loyalty";
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
-import { Button, FormMessage, Input, Switch, useToast } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
+import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
+import { Switch } from "@/src/presentation/design-system/components/Switch/Switch";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { promotionsApi } from "./promotion-api";
 
@@ -30,8 +34,15 @@ export function LoyaltySettingsForm({ settings }: { settings: LoyaltySettings })
   function submit(event: React.FormEvent): void {
     event.preventDefault();
     setError(null);
-    const parsed = Object.fromEntries(NUMBER_FIELDS.map((field) => [field, Number(numbers[field])])) as Record<(typeof NUMBER_FIELDS)[number], number>;
-    if (NUMBER_FIELDS.some((field) => !Number.isInteger(parsed[field]) || parsed[field] < (field === "minRedeemPoints" ? 0 : 1))) {
+    const parsed = Object.fromEntries(NUMBER_FIELDS.map((field) => [field, Number(numbers[field])])) as Record<
+      (typeof NUMBER_FIELDS)[number],
+      number
+    >;
+    if (
+      NUMBER_FIELDS.some(
+        (field) => !Number.isInteger(parsed[field]) || parsed[field] < (field === "minRedeemPoints" ? 0 : 1),
+      )
+    ) {
       setError(t("loyaltyInvalid"));
       return;
     }

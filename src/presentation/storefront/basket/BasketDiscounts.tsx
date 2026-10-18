@@ -6,7 +6,11 @@ import * as React from "react";
 
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
-import { Button, FormMessage, Icon, Input, Switch } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
+import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { Switch } from "@/src/presentation/design-system/components/Switch/Switch";
 
 import type { OrderQuoteState } from "./useOrderQuote";
 
@@ -66,7 +70,14 @@ export function BasketDiscounts({
             <span className="text-body-small-strong text-success-foreground" dir="ltr">
               {quote.promoCode}
             </span>
-            <Button type="button" size="sm" variant="ghost" iconOnly aria-label={t("basket.promoRemove")} onClick={clearPromo}>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              iconOnly
+              aria-label={t("basket.promoRemove")}
+              onClick={clearPromo}
+            >
               <Icon icon={X} size="xs" />
             </Button>
           </div>
@@ -82,7 +93,12 @@ export function BasketDiscounts({
               autoComplete="off"
               aria-invalid={promoError ? true : undefined}
             />
-            <Button type="submit" variant="outline" disabled={!promoInput.trim()} loading={loading && Boolean(appliedPromo)}>
+            <Button
+              type="submit"
+              variant="outline"
+              disabled={!promoInput.trim()}
+              loading={loading && Boolean(appliedPromo)}
+            >
               {t("basket.promoApply")}
             </Button>
           </div>
@@ -93,7 +109,10 @@ export function BasketDiscounts({
       {quote?.loyaltyEnabled ? (
         <div className="flex flex-col gap-1.5 rounded-card-md bg-muted px-3 py-3">
           <div className="flex items-center justify-between gap-3">
-            <label htmlFor="redeem-points" className="flex items-center gap-1.5 text-body-small-emphasis text-foreground">
+            <label
+              htmlFor="redeem-points"
+              className="flex items-center gap-1.5 text-body-small-emphasis text-foreground"
+            >
               <Icon icon={Gift} size="xs" className="text-primary" />
               {t("basket.pointsBalance", { points: formatNumber(quote.pointsBalance, locale) })}
             </label>
@@ -108,7 +127,10 @@ export function BasketDiscounts({
             {redeemPoints || quote.pointsAvailable > 0
               ? t("basket.pointsUse", {
                   points: formatNumber(redeemPoints ? quote.pointsRedeemed : quote.pointsAvailable, locale),
-                  amount: formatMoney((redeemPoints ? quote.pointsRedeemed : quote.pointsAvailable) * quote.pointValue, locale),
+                  amount: formatMoney(
+                    (redeemPoints ? quote.pointsRedeemed : quote.pointsAvailable) * quote.pointValue,
+                    locale,
+                  ),
                 })
               : t("basket.pointsMinimum", { points: formatNumber(quote.minRedeemPoints, locale) })}
           </p>
@@ -143,7 +165,9 @@ export function BasketDiscounts({
           </dd>
         </div>
         {quote && quote.pointsToEarn > 0 ? (
-          <p className="text-body-caption text-primary">{t("basket.pointsToEarn", { points: formatNumber(quote.pointsToEarn, locale) })}</p>
+          <p className="text-body-caption text-primary">
+            {t("basket.pointsToEarn", { points: formatNumber(quote.pointsToEarn, locale) })}
+          </p>
         ) : null}
       </dl>
     </div>

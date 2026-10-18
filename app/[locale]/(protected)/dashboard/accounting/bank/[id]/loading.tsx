@@ -1,6 +1,7 @@
 import { BankMatchWorkspaceSkeleton } from "@/src/presentation/dashboard/bank/BankMatchWorkspaceSkeleton";
 import { BreadcrumbSkeleton } from "@/src/presentation/dashboard/skeletons";
-import { LoadingRegion, Skeleton } from "@/src/presentation/design-system";
+import { LoadingRegion } from "@/src/presentation/design-system/components/Skeleton/LoadingRegion";
+import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
 /** The proof's lines: book balance, outstanding, cleared after, adjusted book, closing, difference. */
 const SUMMARY_ROWS = 6;

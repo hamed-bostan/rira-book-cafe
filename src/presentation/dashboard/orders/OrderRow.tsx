@@ -5,7 +5,8 @@ import { Link } from "@/src/i18n/navigation";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formatOrderDateShort, formatOrderTime } from "@/src/lib/formatOrderDate";
 import { maskPhoneNumber } from "@/src/lib/maskPhoneNumber";
-import { Badge, TableCell, TableRow } from "@/src/presentation/design-system";
+import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
+import { TableCell, TableRow } from "@/src/presentation/design-system/components/DataTable/DataTable";
 
 import { OrderServiceLabel } from "./OrderServiceLabel";
 import { OrderStatusBadge } from "./OrderStatusBadge";
@@ -21,7 +22,7 @@ export function OrderRow({ order }: { order: Order }) {
         <Link
           href={`/dashboard/orders/${order.id}`}
           aria-label={t("viewOrderAria", { number: order.orderNumber })}
-          className="inline-block py-2 text-body-small-emphasis text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="inline-block py-2 text-body-small-emphasis text-primary underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         >
           #{order.orderNumber}
         </Link>
@@ -40,9 +41,11 @@ export function OrderRow({ order }: { order: Order }) {
       </TableCell>
 
       <TableCell>
-        <span className="block text-body-small text-muted-foreground">{t("itemCount", { count: orderItemCount(order) })}</span>
+        <span className="block text-body-small text-muted-foreground">
+          {t("itemCount", { count: orderItemCount(order) })}
+        </span>
         {canServeItems(order.status) ? (
-          <span className="block whitespace-nowrap text-body-caption text-muted-foreground">
+          <span className="block text-body-caption whitespace-nowrap text-muted-foreground">
             {t("servedProgress", servedLineCount(order))}
           </span>
         ) : null}
@@ -51,18 +54,24 @@ export function OrderRow({ order }: { order: Order }) {
       <TableCell>
         <div className="flex flex-wrap items-center gap-1.5">
           <OrderStatusBadge status={order.status} />
-          {order.paymentStatus === "paid" ? <Badge variant="success" appearance="outline">{t("payment.paid")}</Badge> : null}
+          {order.paymentStatus === "paid" ? (
+            <Badge variant="success" appearance="outline">
+              {t("payment.paid")}
+            </Badge>
+          ) : null}
         </div>
       </TableCell>
 
       <TableCell>
-        <span className="block whitespace-nowrap text-body-small text-foreground">{formatOrderTime(order.placedAt, locale)}</span>
-        <span className="block whitespace-nowrap text-body-small-strong text-muted-foreground">
+        <span className="block text-body-small whitespace-nowrap text-foreground">
+          {formatOrderTime(order.placedAt, locale)}
+        </span>
+        <span className="block text-body-small-strong whitespace-nowrap text-muted-foreground">
           {formatOrderDateShort(order.placedAt, locale)}
         </span>
       </TableCell>
 
-      <TableCell className="whitespace-nowrap text-end text-body-small-emphasis text-foreground">
+      <TableCell className="text-end text-body-small-emphasis whitespace-nowrap text-foreground">
         {formatMoney(order.total, locale)}
       </TableCell>
     </TableRow>

@@ -1,5 +1,5 @@
 import { BreadcrumbSkeleton } from "@/src/presentation/dashboard/skeletons";
-import { Skeleton } from "@/src/presentation/design-system";
+import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
 import { PeriodPickerSkeleton } from "./PeriodPickerSkeleton";
 

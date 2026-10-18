@@ -1,4 +1,5 @@
-import { LoadingRegion, Skeleton } from "@/src/presentation/design-system";
+import { LoadingRegion } from "@/src/presentation/design-system/components/Skeleton/LoadingRegion";
+import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
 /** Mirrors the new-entry page: heading, then `ManualEntryForm` — date + description, two debit/credit lines, add-line row, submit. */
 export default function NewJournalEntryLoading() {

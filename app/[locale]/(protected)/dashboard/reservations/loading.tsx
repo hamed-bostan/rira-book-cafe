@@ -1,5 +1,6 @@
 import { DashboardHeaderSkeleton } from "@/src/presentation/dashboard/skeletons";
-import { LoadingRegion, Skeleton } from "@/src/presentation/design-system";
+import { LoadingRegion } from "@/src/presentation/design-system/components/Skeleton/LoadingRegion";
+import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
 /** Booking cards drawn — a typical day's first screen. */
 const BOOKING_CARDS = 5;

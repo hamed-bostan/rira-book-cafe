@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/src/lib/utils";
-import { PopoverClose } from "@/src/presentation/design-system";
+import { PopoverClose } from "@/src/presentation/design-system/components/Popover/Popover";
 
 import { ListFilterPopover } from "./ListFilterPopover";
 
@@ -37,7 +37,8 @@ export function ControlledChoicePicker({
   ariaInvalid,
   triggerClassName,
 }: ControlledChoicePickerProps) {
-  const selectedLabel = options.find((option) => option.value === value)?.label ?? placeholder ?? options[0]?.label ?? label;
+  const selectedLabel =
+    options.find((option) => option.value === value)?.label ?? placeholder ?? options[0]?.label ?? label;
 
   return (
     <ListFilterPopover
@@ -79,7 +80,9 @@ export function ControlledChoicePicker({
                 >
                   {isSelected ? <span className="size-2 rounded-full bg-primary" /> : null}
                 </span>
-                <span dir="auto" className="min-w-0 truncate">{option.label}</span>
+                <span dir="auto" className="min-w-0 truncate">
+                  {option.label}
+                </span>
               </label>
             </PopoverClose>
           );

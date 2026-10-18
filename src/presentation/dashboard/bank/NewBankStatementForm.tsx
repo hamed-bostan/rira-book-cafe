@@ -11,13 +11,23 @@ import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatCafeDayMedium } from "@/src/lib/formatCafeDay";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
-import { Button, FormMessage, Input, TextField, useToast } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
+import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
+import { TextField } from "@/src/presentation/design-system/components/form/TextField/TextField";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { bankStatementsApi } from "./bank-statement-api";
 import { parseStatementAmount } from "./parseStatementCsv";
 import { linesTotal, StatementLinesFields, type StatementLinesForm } from "./StatementLinesFields";
 
-const FORM_FIELDS = ["fromDay", "toDay", "openingBalance", "closingBalance", "lines"] as const satisfies readonly (keyof BankStatementFormInput)[];
+const FORM_FIELDS = [
+  "fromDay",
+  "toDay",
+  "openingBalance",
+  "closingBalance",
+  "lines",
+] as const satisfies readonly (keyof BankStatementFormInput)[];
 
 type NewBankStatementFormProps = {
   /** The suggested period — the Persian month after the last statement (or the last full month). */
@@ -50,12 +60,24 @@ export function NewBankStatementForm({ fromDay, toDay, openingBalance, today }: 
     formState: { errors, isSubmitting },
   } = useForm<BankStatementFormInput>({
     resolver: zodResolver(bankStatementSchema, undefined, { raw: true }),
-    defaultValues: { fromDay, toDay, openingBalance: openingBalance === undefined ? "" : String(openingBalance), closingBalance: "", lines: [] },
+    defaultValues: {
+      fromDay,
+      toDay,
+      openingBalance: openingBalance === undefined ? "" : String(openingBalance),
+      closingBalance: "",
+      lines: [],
+    },
   });
-  const [from, to, opening, closing, lines] = useWatch({ control, name: ["fromDay", "toDay", "openingBalance", "closingBalance", "lines"] });
+  const [from, to, opening, closing, lines] = useWatch({
+    control,
+    name: ["fromDay", "toDay", "openingBalance", "closingBalance", "lines"],
+  });
   const openingValue = parseStatementAmount(opening);
   const closingValue = parseStatementAmount(closing);
-  const gap = openingValue !== null && closingValue !== null && closing.trim() !== "" ? closingValue - openingValue - linesTotal(lines) : null;
+  const gap =
+    openingValue !== null && closingValue !== null && closing.trim() !== ""
+      ? closingValue - openingValue - linesTotal(lines)
+      : null;
 
   const onSubmit = handleSubmit(async (values) => {
     try {
@@ -79,12 +101,26 @@ export function NewBankStatementForm({ fromDay, toDay, openingBalance, today }: 
   });
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-5 rounded-card-lg border border-border bg-background p-4 md:p-6" noValidate>
+    <form
+      onSubmit={onSubmit}
+      className="flex flex-col gap-5 rounded-card-lg border border-border bg-background p-4 md:p-6"
+      noValidate
+    >
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <TextField label={t("form.fromDay")} required description={from ? formatCafeDayMedium(from, locale) : undefined} error={fieldError(errors.fromDay?.message)}>
+        <TextField
+          label={t("form.fromDay")}
+          required
+          description={from ? formatCafeDayMedium(from, locale) : undefined}
+          error={fieldError(errors.fromDay?.message)}
+        >
           {(field) => <Input {...field} {...register("fromDay")} type="date" max={today} dir="ltr" />}
         </TextField>
-        <TextField label={t("form.toDay")} required description={to ? formatCafeDayMedium(to, locale) : undefined} error={fieldError(errors.toDay?.message)}>
+        <TextField
+          label={t("form.toDay")}
+          required
+          description={to ? formatCafeDayMedium(to, locale) : undefined}
+          error={fieldError(errors.toDay?.message)}
+        >
           {(field) => <Input {...field} {...register("toDay")} type="date" max={today} dir="ltr" />}
         </TextField>
         <TextField
@@ -95,7 +131,12 @@ export function NewBankStatementForm({ fromDay, toDay, openingBalance, today }: 
         >
           {(field) => <Input {...field} {...register("openingBalance")} inputMode="numeric" dir="ltr" />}
         </TextField>
-        <TextField label={t("form.closingBalance")} required description={t("form.closingHint")} error={fieldError(errors.closingBalance?.message)}>
+        <TextField
+          label={t("form.closingBalance")}
+          required
+          description={t("form.closingHint")}
+          error={fieldError(errors.closingBalance?.message)}
+        >
           {(field) => <Input {...field} {...register("closingBalance")} inputMode="numeric" dir="ltr" />}
         </TextField>
       </div>
@@ -108,7 +149,10 @@ export function NewBankStatementForm({ fromDay, toDay, openingBalance, today }: 
       />
 
       {gap !== null ? (
-        <p className={gap === 0 ? "text-body-small text-success-foreground" : "text-body-small text-warning-foreground"} aria-live="polite">
+        <p
+          className={gap === 0 ? "text-body-small text-success-foreground" : "text-body-small text-warning-foreground"}
+          aria-live="polite"
+        >
           {gap === 0 ? t("form.addsUp") : t("form.gap", { amount: formatMoney(gap, locale) })}
         </p>
       ) : null}

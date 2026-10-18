@@ -1,7 +1,8 @@
 import { AccountingTableSkeleton } from "@/src/presentation/dashboard/accounting/AccountingTableSkeleton";
 import { PeriodPickerSkeleton } from "@/src/presentation/dashboard/accounting/PeriodPickerSkeleton";
 import { BreadcrumbSkeleton } from "@/src/presentation/dashboard/skeletons";
-import { LoadingRegion, Skeleton } from "@/src/presentation/design-system";
+import { LoadingRegion } from "@/src/presentation/design-system/components/Skeleton/LoadingRegion";
+import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
 const LEDGER_COLUMNS = ["start", "start", "start", "end", "end", "end"] as const;
 

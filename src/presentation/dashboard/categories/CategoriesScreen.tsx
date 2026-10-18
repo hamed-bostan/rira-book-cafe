@@ -7,7 +7,9 @@ import type { Page } from "@/src/domain/entities/Pagination";
 import { Link } from "@/src/i18n/navigation";
 import { BulkActionBar, BulkSelectionProvider } from "@/src/presentation/dashboard/bulk";
 import { ListFilterSelect, ListPager, ListSearchInput, ListToolbar } from "@/src/presentation/dashboard/list";
-import { Button, EmptyState, Icon } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 
 import { CategoriesTable } from "./CategoriesTable";
 import { CategoryBulkActions } from "./CategoryBulkActions";
@@ -53,7 +55,13 @@ export async function CategoriesScreen({ categories, filters }: CategoriesScreen
       <div className="overflow-hidden rounded-card-lg border border-border bg-background shadow-sm">
         <ListToolbar
           className="border-b border-border p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5"
-          search={<ListSearchInput label={t("searchLabel")} placeholder={t("searchPlaceholder")} className="sm:max-w-sm [&_input]:h-11 sm:[&_input]:h-10" />}
+          search={
+            <ListSearchInput
+              label={t("searchLabel")}
+              placeholder={t("searchPlaceholder")}
+              className="sm:max-w-sm [&_input]:h-11 sm:[&_input]:h-10"
+            />
+          }
           filters={
             <ListFilterSelect
               className="h-11 w-full sm:h-10 sm:w-auto"

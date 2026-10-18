@@ -8,7 +8,7 @@ import { cn } from "@/src/lib/utils";
 import { AutoRefresh } from "@/src/presentation/components/AutoRefresh";
 import { DashboardPanel, DashboardPanelHeader } from "@/src/presentation/dashboard/DashboardPanel";
 import { StatCard } from "@/src/presentation/dashboard/StatCard";
-import { EmptyState } from "@/src/presentation/design-system";
+import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
 
 import { CloseShiftForm, OpenShiftForm } from "./CashShiftForms";
 
@@ -47,13 +47,36 @@ export async function CashShiftsScreen({ overview }: { overview: CashShiftOvervi
               {t("openedBy", { name: current.shift.openedByName, date: when(current.shift.openedAt) })}
             </p>
             <div className="mt-4 grid grid-cols-2 gap-3 @min-[50rem]:grid-cols-4">
-              <StatCard label={t("float")} value={formatMoney(current.shift.openingFloat, locale)} icon={Wallet} tone="info" />
-              <StatCard label={t("expected")} value={formatMoney(current.expectedCash, locale)} icon={Banknote} tone="brand" />
-              <StatCard label={t("bank")} value={formatMoney(current.movements.bank, locale)} icon={CreditCard} tone="info" />
-              <StatCard label={t("online")} value={formatMoney(current.movements.online, locale)} icon={Globe} tone="info" />
+              <StatCard
+                label={t("float")}
+                value={formatMoney(current.shift.openingFloat, locale)}
+                icon={Wallet}
+                tone="info"
+              />
+              <StatCard
+                label={t("expected")}
+                value={formatMoney(current.expectedCash, locale)}
+                icon={Banknote}
+                tone="brand"
+              />
+              <StatCard
+                label={t("bank")}
+                value={formatMoney(current.movements.bank, locale)}
+                icon={CreditCard}
+                tone="info"
+              />
+              <StatCard
+                label={t("online")}
+                value={formatMoney(current.movements.online, locale)}
+                icon={Globe}
+                tone="info"
+              />
             </div>
             <p className="mt-3 text-body-caption text-muted-foreground">
-              {t("paymentsCount", { count: current.movements.payments, formatted: formatNumber(current.movements.payments, locale) })}
+              {t("paymentsCount", {
+                count: current.movements.payments,
+                formatted: formatNumber(current.movements.payments, locale),
+              })}
             </p>
           </DashboardPanel>
           <DashboardPanel>
@@ -94,11 +117,20 @@ export async function CashShiftsScreen({ overview }: { overview: CashShiftOvervi
                     </p>
                   </div>
                   <div className="text-end text-body-caption text-muted-foreground">
-                    <p>{t("expectedCounted", { expected: formatMoney(shift.expectedCash ?? 0, locale), counted: formatMoney(shift.countedCash ?? 0, locale) })}</p>
+                    <p>
+                      {t("expectedCounted", {
+                        expected: formatMoney(shift.expectedCash ?? 0, locale),
+                        counted: formatMoney(shift.countedCash ?? 0, locale),
+                      })}
+                    </p>
                     <p
                       className={cn(
                         "text-body-small-strong",
-                        difference === 0 ? "text-success-foreground" : difference > 0 ? "text-info-foreground" : "text-error-foreground",
+                        difference === 0
+                          ? "text-success-foreground"
+                          : difference > 0
+                            ? "text-info-foreground"
+                            : "text-error-foreground",
                       )}
                     >
                       {difference === 0

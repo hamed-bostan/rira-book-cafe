@@ -7,7 +7,9 @@ import { Link } from "@/src/i18n/navigation";
 import { formatCafeDayMedium } from "@/src/lib/formatCafeDay";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { ListFilterSelect, ListPager } from "@/src/presentation/dashboard/list";
-import { Badge, Button, EmptyState } from "@/src/presentation/design-system";
+import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
 
 import { entryTotal } from "./accounting-format";
 import { AccountingTabs } from "./AccountingTabs";
@@ -43,7 +45,10 @@ export async function JournalScreen({ page, fromDay, toDay, keep, canWrite }: Jo
               className="h-9 min-w-44"
               paramName="source"
               label={t("journal.filterSource")}
-              options={[{ value: "", label: t("journal.allSources") }, ...JOURNAL_SOURCES.map((source) => ({ value: source, label: t(`source.${source}`) }))]}
+              options={[
+                { value: "", label: t("journal.allSources") },
+                ...JOURNAL_SOURCES.map((source) => ({ value: source, label: t(`source.${source}`) })),
+              ]}
             />
           </label>
           {canWrite ? (
@@ -73,22 +78,37 @@ export async function JournalScreen({ page, fromDay, toDay, keep, canWrite }: Jo
             <table className="w-full min-w-[40rem] text-body-small">
               <thead className="bg-surface text-start text-body-caption text-muted-foreground">
                 <tr>
-                  <th scope="col" className="px-4 py-3 text-start font-medium">{t("journal.colNumber")}</th>
-                  <th scope="col" className="px-4 py-3 text-start font-medium">{t("journal.colDate")}</th>
-                  <th scope="col" className="px-4 py-3 text-start font-medium">{t("journal.colDescription")}</th>
-                  <th scope="col" className="px-4 py-3 text-start font-medium">{t("journal.colSource")}</th>
-                  <th scope="col" className="px-4 py-3 text-end font-medium">{t("journal.colAmount")}</th>
+                  <th scope="col" className="px-4 py-3 text-start font-medium">
+                    {t("journal.colNumber")}
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-start font-medium">
+                    {t("journal.colDate")}
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-start font-medium">
+                    {t("journal.colDescription")}
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-start font-medium">
+                    {t("journal.colSource")}
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-end font-medium">
+                    {t("journal.colAmount")}
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {page.items.map((entry) => (
                   <tr key={entry.id} className="align-top">
                     <td className="px-4 py-3">
-                      <Link href={`/dashboard/accounting/journal/${entry.id}`} className="text-body-small-emphasis text-primary underline-offset-4 hover:underline">
+                      <Link
+                        href={`/dashboard/accounting/journal/${entry.id}`}
+                        className="text-body-small-emphasis text-primary underline-offset-4 hover:underline"
+                      >
                         JE-{entry.number}
                       </Link>
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">{formatCafeDayMedium(entry.date, locale)}</td>
+                    <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
+                      {formatCafeDayMedium(entry.date, locale)}
+                    </td>
                     <td className="px-4 py-3 text-foreground">
                       <span dir="auto">{entry.description}</span>
                       {entry.reversedById ? (
@@ -102,7 +122,9 @@ export async function JournalScreen({ page, fromDay, toDay, keep, canWrite }: Jo
                         {t(`source.${entry.source}`)}
                       </Badge>
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-end text-body-small-emphasis text-foreground">{formatMoney(entryTotal(entry), locale)}</td>
+                    <td className="px-4 py-3 text-end text-body-small-emphasis whitespace-nowrap text-foreground">
+                      {formatMoney(entryTotal(entry), locale)}
+                    </td>
                   </tr>
                 ))}
               </tbody>

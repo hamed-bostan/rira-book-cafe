@@ -1,6 +1,7 @@
 import { AccountingTableSkeleton } from "@/src/presentation/dashboard/accounting/AccountingTableSkeleton";
 import { BreadcrumbSkeleton } from "@/src/presentation/dashboard/skeletons";
-import { LoadingRegion, Skeleton } from "@/src/presentation/design-system";
+import { LoadingRegion } from "@/src/presentation/design-system/components/Skeleton/LoadingRegion";
+import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
 const ENTRY_COLUMNS = ["start", "start", "end", "end"] as const;
 

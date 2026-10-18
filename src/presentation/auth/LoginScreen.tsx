@@ -5,7 +5,10 @@ import { useTranslations } from "next-intl";
 import * as React from "react";
 
 import { useRouter } from "@/src/i18n/navigation";
-import { Button, FormMessage, Icon, TextField } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
+import { TextField } from "@/src/presentation/design-system/components/form/TextField/TextField";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 
 import { requestOtp } from "./actions";
 
@@ -36,13 +39,13 @@ export default function LoginScreen({ callbackUrl = "/" }: { callbackUrl?: strin
 
   return (
     <div className="flex min-h-dvh flex-col px-6 pb-10">
-      <header className="pt-16 text-center mb-16">
-        <h1 className="text-heading-subsection text-foreground mb-2">{t("welcomeTitle")}</h1>
+      <header className="mb-16 pt-16 text-center">
+        <h1 className="mb-2 text-heading-subsection text-foreground">{t("welcomeTitle")}</h1>
         <p className="text-body-strong text-muted-foreground">{t("welcomeSubtitle")}</p>
       </header>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-8">
-        <div className="flex flex-col gap-2 min-h-28">
+        <div className="flex min-h-28 flex-col gap-2">
           <TextField
             label={t("phoneLabel")}
             size="lg"
@@ -56,9 +59,7 @@ export default function LoginScreen({ callbackUrl = "/" }: { callbackUrl?: strin
             onChange={(event) => setPhone(event.target.value)}
           />
 
-          {error && (
-            <FormMessage>{error}</FormMessage>
-          )}
+          {error && <FormMessage>{error}</FormMessage>}
         </div>
 
         <Button type="submit" size="lg" loading={pending} className="mt-auto">

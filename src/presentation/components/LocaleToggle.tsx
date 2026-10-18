@@ -11,10 +11,10 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  Icon,
-  Spinner,
-  focusRing,
-} from "@/src/presentation/design-system";
+} from "@/src/presentation/design-system/components/DropdownMenu/DropdownMenu";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
+import { Spinner } from "@/src/presentation/design-system/components/Spinner/Spinner";
 
 // Each language is labelled with its own endonym — see `LocaleSwitcher` (the
 // settings-page counterpart this mirrors) for why it isn't routed through the

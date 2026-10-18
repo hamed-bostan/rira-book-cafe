@@ -1,5 +1,6 @@
 import { DashboardHeaderSkeleton } from "@/src/presentation/dashboard/skeletons";
-import { LoadingRegion, Skeleton } from "@/src/presentation/design-system";
+import { LoadingRegion } from "@/src/presentation/design-system/components/Skeleton/LoadingRegion";
+import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
 /** Promo code rows drawn in the codes panel. */
 const PROMO_ROWS = 4;

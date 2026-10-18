@@ -7,7 +7,8 @@ import type { PublicReview, ReviewEligibility } from "@/src/domain/entities/Prod
 import { Link } from "@/src/i18n/navigation";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { FadeInImage } from "@/src/presentation/components/FadeInImage";
-import { Badge, Icon } from "@/src/presentation/design-system";
+import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 
 import { AddToBasketForm } from "./AddToBasketForm";
 import { BookWaitlistPanel } from "./BookWaitlistPanel";

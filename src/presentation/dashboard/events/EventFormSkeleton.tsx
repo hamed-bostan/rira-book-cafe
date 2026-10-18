@@ -1,4 +1,4 @@
-import { Skeleton } from "@/src/presentation/design-system";
+import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
 /**
  * Placeholder for `EventForm`: kind picker, the locale tabs with title and

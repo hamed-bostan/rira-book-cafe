@@ -5,7 +5,8 @@ import { seatsLeft, type CafeEvent, type EventRegistration } from "@/src/domain/
 import { formatNumber } from "@/src/lib/formatNumber";
 import { formatOrderDateShort } from "@/src/lib/formatOrderDate";
 import { DashboardPanel, DashboardPanelHeader } from "@/src/presentation/dashboard/DashboardPanel";
-import { Badge, EmptyState } from "@/src/presentation/design-system";
+import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
+import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
 
 import { CancelRegistrationButton } from "./CancelRegistrationButton";
 
@@ -45,7 +46,9 @@ export async function EventRegistrationsPanel({ event, registrations, canManage 
               <div className="min-w-0 flex-1">
                 <p className="flex flex-wrap items-center gap-2 text-body-small-strong text-foreground">
                   {registration.guestName}
-                  {registration.status === "cancelled" ? <Badge variant="neutral">{t("registrationCancelled")}</Badge> : null}
+                  {registration.status === "cancelled" ? (
+                    <Badge variant="neutral">{t("registrationCancelled")}</Badge>
+                  ) : null}
                 </p>
                 <p className="text-body-caption text-muted-foreground">
                   <span dir="ltr">{registration.guestPhone}</span> ·{" "}

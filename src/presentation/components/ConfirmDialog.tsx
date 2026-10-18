@@ -2,8 +2,8 @@
 
 import { useTranslations } from "next-intl";
 
-import { Button , Modal, ModalClose, ModalContent } from "@/src/presentation/design-system";
-
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { Modal, ModalClose, ModalContent } from "@/src/presentation/design-system/components/Modal/Modal";
 
 interface ConfirmDialogProps {
   /** Controlled open state. */

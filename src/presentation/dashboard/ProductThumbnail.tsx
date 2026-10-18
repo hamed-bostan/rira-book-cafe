@@ -1,6 +1,5 @@
-
 import { FadeInImage } from "@/src/presentation/components/FadeInImage";
-import { Thumbnail } from "@/src/presentation/design-system";
+import { Thumbnail } from "@/src/presentation/design-system/components/Thumbnail/Thumbnail";
 
 type ProductThumbnailSize = "compact" | "table" | "card" | "responsive";
 

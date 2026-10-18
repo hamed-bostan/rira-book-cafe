@@ -4,7 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { SUITE_BOOKING_STATUSES, type SuiteBooking } from "@/src/domain/entities/SuiteBooking";
 import { AutoRefresh } from "@/src/presentation/components/AutoRefresh";
 import { ListFilterSelect } from "@/src/presentation/dashboard/list";
-import { EmptyState } from "@/src/presentation/design-system";
+import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
 
 import { SuiteBookingCard } from "./SuiteBookingCard";
 

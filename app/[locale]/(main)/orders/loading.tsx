@@ -1,4 +1,4 @@
-import { LoadingRegion } from "@/src/presentation/design-system";
+import { LoadingRegion } from "@/src/presentation/design-system/components/Skeleton/LoadingRegion";
 import { PageTitleSkeleton, RecordListSkeleton } from "@/src/presentation/storefront/skeletons";
 
 export default function MyOrdersLoading() {

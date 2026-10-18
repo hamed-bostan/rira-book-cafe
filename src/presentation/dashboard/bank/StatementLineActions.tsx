@@ -7,19 +7,18 @@ import * as React from "react";
 import type { RecordStatementLineInput } from "@/src/contracts/bank-schema";
 import type { BankStatementLine } from "@/src/domain/entities/BankReconciliation";
 import { formatMoney } from "@/src/lib/formatMoney";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
 import {
-  Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuIconTrigger,
   DropdownMenuItem,
   DropdownMenuSeparator,
-  Icon,
-  Input,
-  Modal,
-  ModalContent,
-  Spinner,
-} from "@/src/presentation/design-system";
+} from "@/src/presentation/design-system/components/DropdownMenu/DropdownMenu";
+import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { Modal, ModalContent } from "@/src/presentation/design-system/components/Modal/Modal";
+import { Spinner } from "@/src/presentation/design-system/components/Spinner/Spinner";
 
 type StatementLineActionsProps = {
   line: BankStatementLine;
@@ -45,7 +44,11 @@ export function StatementLineActions({ line, disabled, busy = false, onRecord, o
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuIconTrigger disabled={disabled || busy} aria-busy={busy || undefined} aria-label={t("workspace.lineActions")}>
+        <DropdownMenuIconTrigger
+          disabled={disabled || busy}
+          aria-busy={busy || undefined}
+          aria-label={t("workspace.lineActions")}
+        >
           {busy ? <Spinner size="xs" decorative /> : <EllipsisVertical aria-hidden className="size-4" />}
         </DropdownMenuIconTrigger>
         <DropdownMenuContent>
@@ -85,10 +88,18 @@ export function StatementLineActions({ line, disabled, busy = false, onRecord, o
               onRecord({ kind: "gatewayPayout", fee });
             }}
           >
-            <p className="text-body-small text-muted-foreground">{t("workspace.payoutDescription", { amount: formatMoney(line.amount, locale) })}</p>
+            <p className="text-body-small text-muted-foreground">
+              {t("workspace.payoutDescription", { amount: formatMoney(line.amount, locale) })}
+            </p>
             <label className="flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
               {t("workspace.payoutFee")}
-              <Input value={fee} onChange={(event) => setFee(event.target.value)} inputMode="numeric" dir="ltr" aria-invalid={!feeValid} />
+              <Input
+                value={fee}
+                onChange={(event) => setFee(event.target.value)}
+                inputMode="numeric"
+                dir="ltr"
+                aria-invalid={!feeValid}
+              />
             </label>
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" size="sm" onClick={() => setPayoutOpen(false)}>

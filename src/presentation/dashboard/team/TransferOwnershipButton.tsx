@@ -6,7 +6,10 @@ import * as React from "react";
 
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
-import { Button, ConfirmSheet, Icon, useToast } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { ConfirmSheet } from "@/src/presentation/design-system/components/Sheet/ConfirmSheet";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { teamApi } from "./team-api";
 
@@ -53,7 +56,10 @@ export function TransferOwnershipButton({ id, name, intent }: TransferOwnershipB
       try {
         await teamApi.transferOwnership(id);
         setOpen(false);
-        toast({ tone: "success", title: intent === "transfer" ? t("ownership.transferred", { name }) : t("ownership.claimed") });
+        toast({
+          tone: "success",
+          title: intent === "transfer" ? t("ownership.transferred", { name }) : t("ownership.claimed"),
+        });
         // Re-run the server render: the caller is an admin now, so the team page
         // stops being theirs to manage and the server is what says so.
         router.refresh();

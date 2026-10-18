@@ -1,5 +1,5 @@
 import { cn } from "@/src/lib/utils";
-import { Skeleton } from "@/src/presentation/design-system";
+import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
 type PageTitleSkeletonProps = {
   /** Reserve the muted `text-body-small` line under the heading (`mt-1`). */

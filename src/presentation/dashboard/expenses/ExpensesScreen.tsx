@@ -10,7 +10,8 @@ import { accountName } from "@/src/presentation/dashboard/accounting/accounting-
 import type { ExpensePageWire } from "@/src/presentation/dashboard/accounting/accounting-response-schema";
 import { PeriodPicker } from "@/src/presentation/dashboard/accounting/PeriodPicker";
 import { ListFilterSelect, ListPager } from "@/src/presentation/dashboard/list";
-import { Button, EmptyState } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
 
 import { StatCard } from "../StatCard";
 
@@ -27,7 +28,15 @@ type ExpensesScreenProps = {
 };
 
 /** Bills and purchases for a period, with what's owed to suppliers right now. */
-export async function ExpensesScreen({ page, accounts, suppliers, fromDay, toDay, keep, canWrite }: ExpensesScreenProps) {
+export async function ExpensesScreen({
+  page,
+  accounts,
+  suppliers,
+  fromDay,
+  toDay,
+  keep,
+  canWrite,
+}: ExpensesScreenProps) {
   const t = await getTranslations("dashExpenses");
   const tList = await getTranslations("dashList");
   const locale = await getLocale();
@@ -55,7 +64,12 @@ export async function ExpensesScreen({ page, accounts, suppliers, fromDay, toDay
       </div>
 
       <div className="max-w-sm">
-        <StatCard label={t("owed")} value={formatMoney(page.totalUnpaid, locale)} icon={Truck} tone={page.totalUnpaid > 0 ? "warning" : "brand"} />
+        <StatCard
+          label={t("owed")}
+          value={formatMoney(page.totalUnpaid, locale)}
+          icon={Truck}
+          tone={page.totalUnpaid > 0 ? "warning" : "brand"}
+        />
       </div>
 
       <div className="flex flex-col gap-4 rounded-card-lg border border-border bg-background p-4 md:flex-row md:items-start md:justify-between md:p-6">
@@ -67,7 +81,10 @@ export async function ExpensesScreen({ page, accounts, suppliers, fromDay, toDay
               className="h-9 min-w-36"
               paramName="status"
               label={t("filterStatus")}
-              options={[{ value: "", label: t("allStatuses") }, ...EXPENSE_STATUSES.map((status) => ({ value: status, label: t(`status.${status}`) }))]}
+              options={[
+                { value: "", label: t("allStatuses") },
+                ...EXPENSE_STATUSES.map((status) => ({ value: status, label: t(`status.${status}`) })),
+              ]}
             />
           </label>
           <label className="flex flex-col gap-1 text-body-caption text-muted-foreground">
@@ -76,7 +93,10 @@ export async function ExpensesScreen({ page, accounts, suppliers, fromDay, toDay
               className="h-9 min-w-40"
               paramName="supplier"
               label={t("filterSupplier")}
-              options={[{ value: "", label: t("allSuppliers") }, ...suppliers.map((supplier) => ({ value: supplier.id, label: supplier.name }))]}
+              options={[
+                { value: "", label: t("allSuppliers") },
+                ...suppliers.map((supplier) => ({ value: supplier.id, label: supplier.name })),
+              ]}
             />
           </label>
         </div>
@@ -101,12 +121,24 @@ export async function ExpensesScreen({ page, accounts, suppliers, fromDay, toDay
             <table className="w-full min-w-[44rem] text-body-small">
               <thead className="bg-surface text-body-caption text-muted-foreground">
                 <tr>
-                  <th scope="col" className="px-4 py-3 text-start font-medium">{t("colNumber")}</th>
-                  <th scope="col" className="px-4 py-3 text-start font-medium">{t("colDate")}</th>
-                  <th scope="col" className="px-4 py-3 text-start font-medium">{t("colDescription")}</th>
-                  <th scope="col" className="px-4 py-3 text-start font-medium">{t("colAccount")}</th>
-                  <th scope="col" className="px-4 py-3 text-start font-medium">{t("colStatus")}</th>
-                  <th scope="col" className="px-4 py-3 text-end font-medium">{t("colAmount")}</th>
+                  <th scope="col" className="px-4 py-3 text-start font-medium">
+                    {t("colNumber")}
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-start font-medium">
+                    {t("colDate")}
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-start font-medium">
+                    {t("colDescription")}
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-start font-medium">
+                    {t("colAccount")}
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-start font-medium">
+                    {t("colStatus")}
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-end font-medium">
+                    {t("colAmount")}
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -115,22 +147,37 @@ export async function ExpensesScreen({ page, accounts, suppliers, fromDay, toDay
                   return (
                     <tr key={expense.id} className="align-top">
                       <td className="px-4 py-3">
-                        <Link href={`/dashboard/expenses/${expense.id}`} className="text-body-small-emphasis text-primary underline-offset-4 hover:underline">
+                        <Link
+                          href={`/dashboard/expenses/${expense.id}`}
+                          className="text-body-small-emphasis text-primary underline-offset-4 hover:underline"
+                        >
                           EX-{expense.number}
                         </Link>
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">{formatCafeDayMedium(expense.date, locale)}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
+                        {formatCafeDayMedium(expense.date, locale)}
+                      </td>
                       <td className="px-4 py-3">
                         <span className="block text-foreground" dir="auto">
                           {expense.description}
                         </span>
-                        {expense.supplierName ? <span className="text-body-caption text-muted-foreground">{expense.supplierName}</span> : null}
+                        {expense.supplierName ? (
+                          <span className="text-body-caption text-muted-foreground">{expense.supplierName}</span>
+                        ) : null}
                       </td>
-                      <td className="px-4 py-3 text-muted-foreground">{account ? accountName(account, locale) : expense.accountCode}</td>
+                      <td className="px-4 py-3 text-muted-foreground">
+                        {account ? accountName(account, locale) : expense.accountCode}
+                      </td>
                       <td className="px-4 py-3">
                         <ExpenseStatusBadge status={expense.status} />
                       </td>
-                      <td className={expense.status === "void" ? "whitespace-nowrap px-4 py-3 text-end text-muted-foreground line-through" : "whitespace-nowrap px-4 py-3 text-end text-body-small-emphasis text-foreground"}>
+                      <td
+                        className={
+                          expense.status === "void"
+                            ? "px-4 py-3 text-end whitespace-nowrap text-muted-foreground line-through"
+                            : "px-4 py-3 text-end text-body-small-emphasis whitespace-nowrap text-foreground"
+                        }
+                      >
                         {formatMoney(expense.amount, locale)}
                       </td>
                     </tr>

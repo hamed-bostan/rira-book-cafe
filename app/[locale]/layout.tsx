@@ -9,7 +9,7 @@ import { getLangDir } from "@/src/i18n/direction";
 import { routing } from "@/src/i18n/routing";
 import { getSiteUrl } from "@/src/lib/siteUrl";
 import { DirectionProvider } from "@/src/presentation/components/DirectionProvider";
-import { Toaster } from "@/src/presentation/design-system";
+import { Toaster } from "@/src/presentation/design-system/components/Toast";
 import { defaultShareImage } from "@/src/presentation/seo/shareImage";
 
 import type { Metadata } from "next";

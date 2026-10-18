@@ -3,10 +3,16 @@
 import { useTranslations } from "next-intl";
 import * as React from "react";
 
-import { nextSuiteBookingStatuses, type SuiteBooking, type SuiteBookingStatus } from "@/src/domain/entities/SuiteBooking";
+import {
+  nextSuiteBookingStatuses,
+  type SuiteBooking,
+  type SuiteBookingStatus,
+} from "@/src/domain/entities/SuiteBooking";
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
-import { Button, ConfirmSheet, useToast } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { ConfirmSheet } from "@/src/presentation/design-system/components/Sheet/ConfirmSheet";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { suiteBookingsApi } from "./suite-booking-api";
 
@@ -41,7 +47,10 @@ export function SuiteBookingActions({ booking }: SuiteBookingActionsProps) {
     startTransition(async () => {
       try {
         await suiteBookingsApi.update(booking.id, { status });
-        toast({ tone: "success", title: t("statusChanged", { reference: booking.reference, status: t(`status.${status}`) }) });
+        toast({
+          tone: "success",
+          title: t("statusChanged", { reference: booking.reference, status: t(`status.${status}`) }),
+        });
       } catch (err) {
         toast({ tone: "error", title: localizeApiError(err, tApiErrors, t("updateError")) });
       }
@@ -70,7 +79,11 @@ export function SuiteBookingActions({ booking }: SuiteBookingActionsProps) {
       <ConfirmSheet
         open={confirming !== null}
         onOpenChange={(open) => !open && setConfirming(null)}
-        title={confirming ? t(`confirmTitle.${confirming === "noShow" ? "noShow" : "cancelled"}`, { reference: booking.reference }) : ""}
+        title={
+          confirming
+            ? t(`confirmTitle.${confirming === "noShow" ? "noShow" : "cancelled"}`, { reference: booking.reference })
+            : ""
+        }
         message={t("confirmMessage")}
         confirmLabel={confirming ? t(`action.${confirming}`) : ""}
         cancelLabel={t("dialogCancel")}

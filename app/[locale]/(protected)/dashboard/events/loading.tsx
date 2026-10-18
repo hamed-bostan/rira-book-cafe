@@ -1,4 +1,5 @@
-import { LoadingRegion, Skeleton } from "@/src/presentation/design-system";
+import { LoadingRegion } from "@/src/presentation/design-system/components/Skeleton/LoadingRegion";
+import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
 /** Upcoming event cards drawn while the list loads. */
 const EVENT_CARDS = 4;

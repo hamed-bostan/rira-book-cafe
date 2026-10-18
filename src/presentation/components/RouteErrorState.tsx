@@ -5,7 +5,9 @@ import { useTranslations } from "next-intl";
 import * as React from "react";
 
 import { Link } from "@/src/i18n/navigation";
-import { Button, EmptyState, Icon } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 
 /** The props Next hands every `error.tsx`. */
 export type RouteErrorProps = {

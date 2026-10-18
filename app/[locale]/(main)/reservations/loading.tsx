@@ -1,4 +1,5 @@
-import { LoadingRegion, Skeleton } from "@/src/presentation/design-system";
+import { LoadingRegion } from "@/src/presentation/design-system/components/Skeleton/LoadingRegion";
+import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 import { RecordListSkeleton } from "@/src/presentation/storefront/skeletons";
 
 export default function MyReservationsLoading() {

@@ -1,4 +1,4 @@
-import { Skeleton } from "@/src/presentation/design-system";
+import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
 /**
  * Placeholder for `StockLinesFields` — the item / quantity / cost line the

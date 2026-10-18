@@ -7,7 +7,7 @@ import {
 } from "@/src/domain/entities/AdminOrderFilters";
 import { Link } from "@/src/i18n/navigation";
 import { cn } from "@/src/lib/utils";
-import { focusRing } from "@/src/presentation/design-system";
+import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 
 type OrderStatusTabsProps = {
   /** The status filter the page was rendered with; `undefined` is "All". */
@@ -44,7 +44,7 @@ export async function OrderStatusTabs({ current, counts, params }: OrderStatusTa
   ];
 
   return (
-    <nav aria-label={t("tabsLabel")} className="flex gap-2 overflow-x-auto scrollbar-hide">
+    <nav aria-label={t("tabsLabel")} className="scrollbar-hide flex gap-2 overflow-x-auto">
       {tabs.map((tab) => {
         const selected = tab.value === current;
         return (
@@ -53,15 +53,13 @@ export async function OrderStatusTabs({ current, counts, params }: OrderStatusTa
             href={hrefFor(tab.value)}
             aria-current={selected ? "page" : undefined}
             className={cn(
-              "flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-4 text-button-default-medium transition-colors",
+              "flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-4 text-button-default-medium whitespace-nowrap transition-colors",
               focusRing,
               selected ? "border-primary bg-accent text-primary" : "border-border text-foreground hover:bg-muted",
             )}
           >
             {tab.label}
-            {tab.count !== undefined ? (
-              <span className="tabular-nums text-muted-foreground">{tab.count}</span>
-            ) : null}
+            {tab.count !== undefined ? <span className="text-muted-foreground tabular-nums">{tab.count}</span> : null}
           </Link>
         );
       })}

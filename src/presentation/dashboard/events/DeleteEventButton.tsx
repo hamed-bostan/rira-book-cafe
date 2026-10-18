@@ -6,7 +6,10 @@ import * as React from "react";
 
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
-import { Button, ConfirmSheet, Icon, useToast } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { ConfirmSheet } from "@/src/presentation/design-system/components/Sheet/ConfirmSheet";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { eventsApi } from "./event-api";
 
@@ -42,7 +45,14 @@ export function DeleteEventButton({ id, title }: { id: string; title: string }) 
 
   return (
     <>
-      <Button type="button" variant="outline" size="sm" onClick={() => setOpen(true)} loading={pending} className="text-destructive">
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={() => setOpen(true)}
+        loading={pending}
+        className="text-destructive"
+      >
         <Icon icon={Trash2} size="sm" className="me-1.5" />
         {t("delete")}
       </Button>

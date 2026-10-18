@@ -1,5 +1,5 @@
 import { cn } from "@/src/lib/utils";
-import { Skeleton } from "@/src/presentation/design-system";
+import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
 type DashboardPanelSkeletonProps = {
   /** Size of the body block — a chart's height, a list's height (`h-64`, `h-80`). */

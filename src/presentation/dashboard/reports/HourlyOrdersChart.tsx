@@ -5,8 +5,8 @@ import { useLocale } from "next-intl";
 import { Bar, BarChart, CartesianGrid, Tooltip, XAxis, YAxis } from "recharts";
 
 import { formatNumber } from "@/src/lib/formatNumber";
-import { EmptyState } from "@/src/presentation/design-system";
 import { ChartContainer, ChartTooltip } from "@/src/presentation/design-system/chart";
+import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
 
 type HourlyOrdersChartProps = {
   hourly: { hour: number; orders: number }[];

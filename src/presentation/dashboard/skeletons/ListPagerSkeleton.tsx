@@ -1,4 +1,4 @@
-import { Skeleton } from "@/src/presentation/design-system";
+import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
 /** Placeholder for `ListPager`: the page-size select at the start, the range and the two arrows at the end. */
 export function ListPagerSkeleton() {

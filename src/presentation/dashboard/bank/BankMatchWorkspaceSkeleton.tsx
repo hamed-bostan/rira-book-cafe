@@ -1,4 +1,4 @@
-import { Skeleton } from "@/src/presentation/design-system";
+import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
 /** Open lines drawn per side — enough to fill the column without guessing a long statement. */
 const ROWS_PER_SIDE = 5;

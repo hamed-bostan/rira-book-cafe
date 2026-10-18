@@ -3,12 +3,10 @@ import { useTranslations } from "next-intl";
 
 import type { TeamMember } from "@/src/contracts/team-response-schema";
 import type { UserRole } from "@/src/domain/entities/User";
-import {
-  Avatar,
-  Badge,
-  Button,
-  Icon,
-} from "@/src/presentation/design-system";
+import { Avatar } from "@/src/presentation/design-system/components/Avatar/Avatar";
+import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 
 import { RevokeAdminButton } from "./RevokeAdminButton";
 import { TransferOwnershipButton } from "./TransferOwnershipButton";
@@ -41,26 +39,40 @@ export function TeamTable({ members }: TeamTableProps) {
   const hasOwner = members.some((member) => member.role === "owner");
 
   return (
-    <section aria-label={t("membersHeading")} className="overflow-hidden rounded-card-lg border border-border bg-background">
+    <section
+      aria-label={t("membersHeading")}
+      className="overflow-hidden rounded-card-lg border border-border bg-background"
+    >
       <div className="flex items-center gap-3 border-b border-border px-4 py-4 sm:px-5">
         <h2 className="text-body-strong text-foreground">{t("membersHeading")}</h2>
         <Badge variant="neutral">{members.length}</Badge>
       </div>
-      <div aria-hidden="true" className="hidden grid-cols-[minmax(0,1fr)_10rem_6rem] gap-4 bg-surface-sunken/60 px-5 py-3 text-body-small-strong text-muted-foreground md:grid">
-        <span>{t("colMember")}</span><span>{t("colAccess")}</span><span className="text-end">{t("colActions")}</span>
+      <div
+        aria-hidden="true"
+        className="hidden grid-cols-[minmax(0,1fr)_10rem_6rem] gap-4 bg-surface-sunken/60 px-5 py-3 text-body-small-strong text-muted-foreground md:grid"
+      >
+        <span>{t("colMember")}</span>
+        <span>{t("colAccess")}</span>
+        <span className="text-end">{t("colActions")}</span>
       </div>
       <ul className="divide-y divide-border">
         {members.map((member) => (
-          <li key={member.id} className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-3 p-4 sm:p-5 md:grid-cols-[minmax(0,1fr)_10rem_6rem] md:gap-4">
+          <li
+            key={member.id}
+            className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-3 p-4 sm:p-5 md:grid-cols-[minmax(0,1fr)_10rem_6rem] md:gap-4"
+          >
             <div className="col-span-2 flex min-w-0 items-center gap-3 md:col-span-1">
               <Avatar name={member.name} className="size-11" />
               <div className="min-w-0">
-                <p className="text-body-small-emphasis text-foreground [overflow-wrap:anywhere]">
+                <p className="text-body-small-emphasis [overflow-wrap:anywhere] text-foreground">
                   {member.name}
-                  {member.isSelf && <span className="ms-1 text-body-small text-muted-foreground">{t("youSuffix")}</span>}
+                  {member.isSelf && (
+                    <span className="ms-1 text-body-small text-muted-foreground">{t("youSuffix")}</span>
+                  )}
                 </p>
-                <p dir="ltr" className="mt-1 w-fit text-body-small text-muted-foreground [overflow-wrap:anywhere]">
-                  <span className="sr-only">{t("colPhone")}: </span>{member.phone}
+                <p dir="ltr" className="mt-1 w-fit text-body-small [overflow-wrap:anywhere] text-muted-foreground">
+                  <span className="sr-only">{t("colPhone")}: </span>
+                  {member.phone}
                 </p>
               </div>
             </div>
@@ -79,9 +91,7 @@ export function TeamTable({ members }: TeamTableProps) {
                 <TransferOwnershipButton
                   id={member.id}
                   name={member.name}
-                  intent={
-                    !member.isSelf ? "transfer" : hasOwner ? "takeOver" : "claim"
-                  }
+                  intent={!member.isSelf ? "transfer" : hasOwner ? "takeOver" : "claim"}
                 />
               )}
               {member.revokeBlocked === null ? (

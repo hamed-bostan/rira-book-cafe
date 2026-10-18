@@ -1,7 +1,7 @@
 import { useTranslations } from "next-intl";
 
 import type { OrderStatus } from "@/src/domain/entities/Order";
-import { Badge, type BadgeProps } from "@/src/presentation/design-system";
+import { Badge, type BadgeProps } from "@/src/presentation/design-system/components/Badge/Badge";
 
 /**
  * Colour by urgency, not by step: what needs someone's attention now (pending) is

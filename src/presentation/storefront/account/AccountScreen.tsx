@@ -1,4 +1,14 @@
-import { BedDouble, Bell, BookOpen, CalendarClock, CalendarDays, ChevronRight, ClipboardList, Gift, LayoutDashboard } from "lucide-react";
+import {
+  BedDouble,
+  Bell,
+  BookOpen,
+  CalendarClock,
+  CalendarDays,
+  ChevronRight,
+  ClipboardList,
+  Gift,
+  LayoutDashboard,
+} from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import type { ProfileWire } from "@/src/contracts/profile-schema";
@@ -8,7 +18,10 @@ import { formatNumber } from "@/src/lib/formatNumber";
 import { formatOrderDate } from "@/src/lib/formatOrderDate";
 import { cn } from "@/src/lib/utils";
 import { LocaleToggle } from "@/src/presentation/components/LocaleToggle";
-import { Button, EmptyState, Icon, focusRing } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 
 import { eventTitle } from "../eventCopy";
 
@@ -30,7 +43,13 @@ type AccountScreenProps = {
 };
 
 /** The guest's account: profile, shortcuts to their orders and bookings, their event sign-ups, language and sign out. */
-export async function AccountScreen({ profile, signUps, canOpenDashboard, unreadNotifications, pointsBalance }: AccountScreenProps) {
+export async function AccountScreen({
+  profile,
+  signUps,
+  canOpenDashboard,
+  unreadNotifications,
+  pointsBalance,
+}: AccountScreenProps) {
   const t = await getTranslations("site");
   const locale = await getLocale();
 
@@ -55,14 +74,23 @@ export async function AccountScreen({ profile, signUps, canOpenDashboard, unread
 
       <ProfileForm profile={profile} />
 
-      <nav aria-label={t("account.heading")} className="flex flex-col divide-y divide-border rounded-card-lg border border-border">
+      <nav
+        aria-label={t("account.heading")}
+        className="flex flex-col divide-y divide-border rounded-card-lg border border-border"
+      >
         {links.map((link) => (
-          <Link key={link.href} href={link.href} className={cn("flex items-center gap-3 px-4 py-4 hover:bg-muted", focusRing)}>
+          <Link
+            key={link.href}
+            href={link.href}
+            className={cn("flex items-center gap-3 px-4 py-4 hover:bg-muted", focusRing)}
+          >
             <Icon icon={link.icon} size="sm" className="text-primary" />
             <span className="flex-1 text-body-small-strong text-foreground">{link.label}</span>
             {link.detail ? <span className="text-body-caption text-muted-foreground">{link.detail}</span> : null}
             {link.count ? (
-              <span className="rounded-full bg-primary px-2 py-0.5 text-body-caption text-primary-foreground">{formatNumber(link.count, locale)}</span>
+              <span className="rounded-full bg-primary px-2 py-0.5 text-body-caption text-primary-foreground">
+                {formatNumber(link.count, locale)}
+              </span>
             ) : null}
             <Icon icon={ChevronRight} size="xs" className="text-muted-foreground rtl:-scale-x-100" />
           </Link>
@@ -86,13 +114,26 @@ export async function AccountScreen({ profile, signUps, canOpenDashboard, unread
           <ul className="flex flex-col gap-2">
             {signUps.map(({ registration, event }) => (
               <li key={registration.id}>
-                <Link href={`/events/${event.id}`} className={cn("flex items-center gap-3 rounded-card-md border border-border p-3 hover:bg-muted", focusRing)}>
+                <Link
+                  href={`/events/${event.id}`}
+                  className={cn(
+                    "flex items-center gap-3 rounded-card-md border border-border p-3 hover:bg-muted",
+                    focusRing,
+                  )}
+                >
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-body-small-strong text-foreground">{eventTitle(event, locale)}</span>
-                    <span className="text-body-caption text-muted-foreground">{formatOrderDate(event.startsAt, locale)}</span>
+                    <span className="block truncate text-body-small-strong text-foreground">
+                      {eventTitle(event, locale)}
+                    </span>
+                    <span className="text-body-caption text-muted-foreground">
+                      {formatOrderDate(event.startsAt, locale)}
+                    </span>
                   </span>
                   <span className="text-body-caption text-muted-foreground">
-                    {t("events.seatCount", { count: registration.seats, formatted: formatNumber(registration.seats, locale) })}
+                    {t("events.seatCount", {
+                      count: registration.seats,
+                      formatted: formatNumber(registration.seats, locale),
+                    })}
                   </span>
                 </Link>
               </li>

@@ -6,7 +6,9 @@ import * as React from "react";
 
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
-import { Button, Icon, useToast } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { bookLoansApi } from "./book-loan-api";
 
@@ -31,7 +33,15 @@ export function RemoveWaitlistEntryButton({ entryId, guestName }: { entryId: str
   }
 
   return (
-    <Button type="button" size="sm" variant="ghost" iconOnly aria-label={t("waitlistRemoveAria", { name: guestName })} loading={pending} onClick={remove}>
+    <Button
+      type="button"
+      size="sm"
+      variant="ghost"
+      iconOnly
+      aria-label={t("waitlistRemoveAria", { name: guestName })}
+      loading={pending}
+      onClick={remove}
+    >
       <Icon icon={X} size="xs" />
     </Button>
   );

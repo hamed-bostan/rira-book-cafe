@@ -1,5 +1,5 @@
 import { cn } from "@/src/lib/utils";
-import { Skeleton } from "@/src/presentation/design-system";
+import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
 type DashboardFormSkeletonProps = {
   /** Labelled single-line fields to draw. */
@@ -15,7 +15,12 @@ type DashboardFormSkeletonProps = {
  * Placeholder for a dashboard create/edit form: label + input pairs at the
  * `flex-col gap-5` rhythm the forms use, then the submit row.
  */
-export function DashboardFormSkeleton({ fields = 4, textarea = false, tabs = false, className }: DashboardFormSkeletonProps) {
+export function DashboardFormSkeleton({
+  fields = 4,
+  textarea = false,
+  tabs = false,
+  className,
+}: DashboardFormSkeletonProps) {
   return (
     <div className={cn("flex flex-col gap-5", className)}>
       {tabs ? (

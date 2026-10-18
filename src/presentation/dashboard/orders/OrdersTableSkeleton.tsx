@@ -1,4 +1,4 @@
-import { Skeleton } from "@/src/presentation/design-system";
+import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
 /** Cards drawn below the table breakpoint; rows from it — the list's first screen. */
 const CARD_COUNT = 6;
@@ -62,7 +62,9 @@ export function OrdersTableSkeleton() {
               {Array.from({ length: COLUMN_COUNT }, (_, column) => (
                 <div key={column} className="flex flex-1 flex-col gap-1.5">
                   <Skeleton className="h-4 w-4/5 rounded-pill" />
-                  {column === 1 || column === 3 || column === 5 ? <Skeleton className="h-3.5 w-3/5 rounded-pill" /> : null}
+                  {column === 1 || column === 3 || column === 5 ? (
+                    <Skeleton className="h-3.5 w-3/5 rounded-pill" />
+                  ) : null}
                 </div>
               ))}
             </li>

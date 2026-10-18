@@ -6,7 +6,8 @@ import * as React from "react";
 import { PAYMENT_METHODS, type PaymentMethod, type PaymentStatus } from "@/src/domain/entities/Order";
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
-import { Button, useToast } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { ordersApi } from "./order-api";
 
@@ -57,7 +58,14 @@ export function OrderPaymentToggle({ orderId, paymentStatus, paymentMethod, canc
           <span className="text-body-small-emphasis text-foreground">
             {paymentMethod ? t("paidWith", { method: t(`paymentMethod.${paymentMethod}`) }) : t("payment.paid")}
           </span>
-          <Button type="button" size="sm" variant="ghost" loading={pending && active === "unpaid"} disabled={pending} onClick={() => save({ paymentStatus: "unpaid" })}>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            loading={pending && active === "unpaid"}
+            disabled={pending}
+            onClick={() => save({ paymentStatus: "unpaid" })}
+          >
             {t("unmarkPaid")}
           </Button>
         </div>

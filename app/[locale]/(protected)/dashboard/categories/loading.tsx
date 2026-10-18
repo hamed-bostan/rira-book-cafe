@@ -1,5 +1,5 @@
 import { DashboardHeaderSkeleton, DashboardTableSkeleton } from "@/src/presentation/dashboard/skeletons";
-import { LoadingRegion } from "@/src/presentation/design-system";
+import { LoadingRegion } from "@/src/presentation/design-system/components/Skeleton/LoadingRegion";
 
 /** Mirrors `CategoriesScreen`: heading + count with the new-category button, then the search / status card with icon rows and pager. */
 export default function CategoriesLoading() {

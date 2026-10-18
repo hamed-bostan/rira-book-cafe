@@ -9,7 +9,11 @@ import { MAX_ORDER_NOTE_LENGTH } from "@/src/domain/entities/OrderNote";
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatOrderDate } from "@/src/lib/formatOrderDate";
-import { Avatar, Button, EmptyState, Icon, Textarea } from "@/src/presentation/design-system";
+import { Avatar } from "@/src/presentation/design-system/components/Avatar/Avatar";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
+import { Textarea } from "@/src/presentation/design-system/components/form/Textarea/Textarea";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 
 import { ordersApi } from "./order-api";
 
@@ -70,13 +74,7 @@ export function OrderNotesPanel({ orderId, notes, canWrite }: OrderNotesPanelPro
             rows={3}
             disabled={pending}
           />
-          <Button
-            size="sm"
-            className="self-start"
-            loading={pending}
-            disabled={body.trim() === ""}
-            onClick={submit}
-          >
+          <Button size="sm" className="self-start" loading={pending} disabled={body.trim() === ""} onClick={submit}>
             <Icon icon={StickyNote} size="sm" className="me-1.5" />
             {t("add")}
           </Button>
@@ -98,7 +96,7 @@ export function OrderNotesPanel({ orderId, notes, canWrite }: OrderNotesPanelPro
                     {formatOrderDate(note.createdAt, locale)}
                   </time>
                 </div>
-                <p className="whitespace-pre-wrap text-body-small text-foreground">{note.body}</p>
+                <p className="text-body-small whitespace-pre-wrap text-foreground">{note.body}</p>
               </div>
             </li>
           ))}

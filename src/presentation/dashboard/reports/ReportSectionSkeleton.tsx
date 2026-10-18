@@ -1,5 +1,5 @@
 import { cn } from "@/src/lib/utils";
-import { Skeleton } from "@/src/presentation/design-system";
+import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
 type ReportSectionSkeletonProps = {
   /** Reserve the muted description line under the heading (hourly chart, unpaid orders). */
@@ -19,7 +19,14 @@ type ReportSectionSkeletonProps = {
  * Placeholder for one of the reports' bordered sections (`p-4 md:p-6`): the
  * heading row, then a chart, a ranked list, or a set of share bars.
  */
-export function ReportSectionSkeleton({ description = false, action, rows, bars, chartClassName, className }: ReportSectionSkeletonProps) {
+export function ReportSectionSkeleton({
+  description = false,
+  action,
+  rows,
+  bars,
+  chartClassName,
+  className,
+}: ReportSectionSkeletonProps) {
   return (
     <div className={cn("min-w-0 rounded-card-lg border border-border bg-background p-4 md:p-6", className)}>
       <div className="flex flex-wrap items-center justify-between gap-3">

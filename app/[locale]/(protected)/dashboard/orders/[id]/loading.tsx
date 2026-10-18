@@ -1,5 +1,6 @@
 import { OrderDetailSkeleton } from "@/src/presentation/dashboard/orders/OrderDetailSkeleton";
-import { LoadingRegion, Skeleton } from "@/src/presentation/design-system";
+import { LoadingRegion } from "@/src/presentation/design-system/components/Skeleton/LoadingRegion";
+import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
 export default function OrderDetailLoading() {
   return (

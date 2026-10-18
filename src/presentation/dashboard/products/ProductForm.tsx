@@ -7,11 +7,7 @@ import { Controller, useForm, useWatch } from "react-hook-form";
 
 import { productFormSchema, type ProductFormInput } from "@/src/contracts/product-schema";
 import type { Category } from "@/src/domain/entities/Category";
-import {
-  BOOK_AVAILABILITIES,
-  PRODUCT_KINDS,
-  type Product,
-} from "@/src/domain/entities/Product";
+import { BOOK_AVAILABILITIES, PRODUCT_KINDS, type Product } from "@/src/domain/entities/Product";
 import { DIETARY_TAGS } from "@/src/domain/entities/ProductFilters";
 import type { ProductTranslationInput } from "@/src/domain/repositories/IProductRepository";
 import { Link, useRouter } from "@/src/i18n/navigation";
@@ -19,22 +15,17 @@ import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
 import { ControlledChoicePicker } from "@/src/presentation/dashboard/list";
-import {
-  Button,
-  Field,
-  FormMessage,
-  Input,
-  RequiredMark,
-  Switch,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-  Textarea,
-  TextField,
-  ToggleChip,
-  useToast,
-} from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { ToggleChip } from "@/src/presentation/design-system/components/Chip/ToggleChip";
+import { Field } from "@/src/presentation/design-system/components/form/Field/Field";
+import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
+import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
+import { RequiredMark } from "@/src/presentation/design-system/components/form/shared/RequiredMark";
+import { Textarea } from "@/src/presentation/design-system/components/form/Textarea/Textarea";
+import { TextField } from "@/src/presentation/design-system/components/form/TextField/TextField";
+import { Switch } from "@/src/presentation/design-system/components/Switch/Switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/presentation/design-system/components/Tabs/Tabs";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { productsApi } from "./product-api";
 import { ProductImageUpload } from "./ProductImageUpload";
@@ -133,10 +124,7 @@ export function ProductForm(props: ProductFormProps) {
     formState: { errors, isSubmitting },
   } = useForm<ProductFormInput>({
     resolver: zodResolver(productFormSchema, undefined, { raw: true }),
-    defaultValues: toDefaults(
-      editing ? props.product : undefined,
-      editing ? props.translations : undefined,
-    ),
+    defaultValues: toDefaults(editing ? props.product : undefined, editing ? props.translations : undefined),
   });
 
   const imageUrl = useWatch({ control, name: "imageUrl" });
@@ -219,13 +207,21 @@ export function ProductForm(props: ProductFormProps) {
             {(control) => <Input {...control} {...register("unit")} dir="ltr" placeholder={t("unitPlaceholder")} />}
           </TextField>
 
-          <TextField label={t("descriptionLabel")} description={t("descriptionHelp")} error={fieldError(errors.description?.message)}>
+          <TextField
+            label={t("descriptionLabel")}
+            description={t("descriptionHelp")}
+            error={fieldError(errors.description?.message)}
+          >
             {(control) => (
               <Textarea {...control} {...register("description")} dir="ltr" placeholder={t("descriptionPlaceholder")} />
             )}
           </TextField>
 
-          <TextField label={t("nutritionLabel")} description={t("nutritionHelp")} error={fieldError(errors.nutrition?.message)}>
+          <TextField
+            label={t("nutritionLabel")}
+            description={t("nutritionHelp")}
+            error={fieldError(errors.nutrition?.message)}
+          >
             {(control) => (
               <Textarea {...control} {...register("nutrition")} dir="ltr" placeholder={t("nutritionPlaceholder")} />
             )}
@@ -245,7 +241,11 @@ export function ProductForm(props: ProductFormProps) {
             {(control) => <Input {...control} {...register("faName")} dir="rtl" placeholder={t("faNamePlaceholder")} />}
           </TextField>
 
-          <TextField label={t("unitLabel")} description={t("unitDescription")} error={fieldError(errors.faUnit?.message)}>
+          <TextField
+            label={t("unitLabel")}
+            description={t("unitDescription")}
+            error={fieldError(errors.faUnit?.message)}
+          >
             {(control) => <Input {...control} {...register("faUnit")} dir="rtl" placeholder={t("faUnitPlaceholder")} />}
           </TextField>
 
@@ -264,13 +264,21 @@ export function ProductForm(props: ProductFormProps) {
             )}
           </TextField>
 
-          <TextField label={t("nutritionLabel")} description={t("nutritionHelp")} error={fieldError(errors.faNutrition?.message)}>
+          <TextField
+            label={t("nutritionLabel")}
+            description={t("nutritionHelp")}
+            error={fieldError(errors.faNutrition?.message)}
+          >
             {(control) => (
               <Textarea {...control} {...register("faNutrition")} dir="rtl" placeholder={t("faNutritionPlaceholder")} />
             )}
           </TextField>
 
-          <TextField label={t("originLabel")} description={t("originHelp")} error={fieldError(errors.faOrigin?.message)}>
+          <TextField
+            label={t("originLabel")}
+            description={t("originHelp")}
+            error={fieldError(errors.faOrigin?.message)}
+          >
             {(control) => (
               <Textarea {...control} {...register("faOrigin")} dir="rtl" placeholder={t("faOriginPlaceholder")} />
             )}
@@ -283,11 +291,19 @@ export function ProductForm(props: ProductFormProps) {
           <legend className="px-1 text-body-small-emphasis text-input-foreground">{t("bookLegend")}</legend>
 
           <TextField label={t("bookAuthorLabel")} required error={fieldError(errors.bookAuthor?.message)}>
-            {(control) => <Input {...control} {...register("bookAuthor")} dir="auto" placeholder={t("bookAuthorPlaceholder")} />}
+            {(control) => (
+              <Input {...control} {...register("bookAuthor")} dir="auto" placeholder={t("bookAuthorPlaceholder")} />
+            )}
           </TextField>
 
-          <TextField label={t("bookIsbnLabel")} description={t("bookIsbnDescription")} error={fieldError(errors.bookIsbn?.message)}>
-            {(control) => <Input {...control} {...register("bookIsbn")} dir="ltr" inputMode="numeric" placeholder="978-600-..." />}
+          <TextField
+            label={t("bookIsbnLabel")}
+            description={t("bookIsbnDescription")}
+            error={fieldError(errors.bookIsbn?.message)}
+          >
+            {(control) => (
+              <Input {...control} {...register("bookIsbn")} dir="ltr" inputMode="numeric" placeholder="978-600-..." />
+            )}
           </TextField>
 
           <Field error={fieldError(errors.bookAvailability?.message)}>
@@ -367,7 +383,12 @@ export function ProductForm(props: ProductFormProps) {
           error={fieldError(errors.originalPrice?.message)}
         >
           {(control) => (
-            <Input {...control} {...register("originalPrice")} inputMode="numeric" placeholder={t("pricePlaceholder")} />
+            <Input
+              {...control}
+              {...register("originalPrice")}
+              inputMode="numeric"
+              placeholder={t("pricePlaceholder")}
+            />
           )}
         </TextField>
       </div>
@@ -423,9 +444,7 @@ export function ProductForm(props: ProductFormProps) {
         render={({ field }) => (
           <fieldset>
             <legend className="text-body-small-emphasis text-input-foreground">{t("dietaryLegend")}</legend>
-            <p className="mb-2 text-body-caption text-muted-foreground">
-              {t("dietaryDescription")}
-            </p>
+            <p className="mb-2 text-body-caption text-muted-foreground">{t("dietaryDescription")}</p>
             <div className="flex flex-wrap gap-2">
               {DIETARY_TAGS.map((tag) => {
                 const checked = field.value?.includes(tag) ?? false;
@@ -513,9 +532,7 @@ export function ProductForm(props: ProductFormProps) {
         )}
       />
 
-      {errors.root?.message && (
-        <FormMessage size="md">{errors.root.message}</FormMessage>
-      )}
+      {errors.root?.message && <FormMessage size="md">{errors.root.message}</FormMessage>}
 
       <div className="flex gap-3 pt-2">
         <Button type="submit" loading={isSubmitting}>

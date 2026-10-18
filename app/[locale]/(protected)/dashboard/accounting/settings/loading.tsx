@@ -1,5 +1,6 @@
 import { AccountingTabsSkeleton } from "@/src/presentation/dashboard/accounting/AccountingTabsSkeleton";
-import { LoadingRegion, Skeleton } from "@/src/presentation/design-system";
+import { LoadingRegion } from "@/src/presentation/design-system/components/Skeleton/LoadingRegion";
+import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
 /** Mirrors the accounting settings page: tabs, the VAT / books-closed form card, the fiscal-year close panel. */
 export default function AccountingSettingsLoading() {

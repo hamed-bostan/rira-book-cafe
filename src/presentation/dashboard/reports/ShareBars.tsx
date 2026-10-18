@@ -1,7 +1,7 @@
 import { ChartPie } from "lucide-react";
 
-import { EmptyState } from "@/src/presentation/design-system";
 import { chartColor } from "@/src/presentation/design-system/chart";
+import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
 
 type ShareBarsProps = {
   heading: string;

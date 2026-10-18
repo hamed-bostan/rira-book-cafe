@@ -9,7 +9,7 @@ import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { cn } from "@/src/lib/utils";
 import { ListFilterSelect, ListPager } from "@/src/presentation/dashboard/list";
-import { EmptyState } from "@/src/presentation/design-system";
+import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
 
 type MovementsScreenProps = { page: Page<StockMovement>; items: StockItem[]; costsVisible: boolean };
 
@@ -28,7 +28,10 @@ export async function MovementsScreen({ page, items, costsVisible }: MovementsSc
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
-      <nav aria-label={t("breadcrumbLabel")} className="flex items-center gap-2 text-body-caption text-muted-foreground">
+      <nav
+        aria-label={t("breadcrumbLabel")}
+        className="flex items-center gap-2 text-body-caption text-muted-foreground"
+      >
         <Link href="/dashboard/inventory" className="hover:text-foreground">
           {t("heading")}
         </Link>
@@ -47,7 +50,10 @@ export async function MovementsScreen({ page, items, costsVisible }: MovementsSc
             className="h-9 min-w-48"
             paramName="item"
             label={t("col.item")}
-            options={[{ value: "", label: t("movements.allItems") }, ...items.map((item) => ({ value: item.id, label: item.name }))]}
+            options={[
+              { value: "", label: t("movements.allItems") },
+              ...items.map((item) => ({ value: item.id, label: item.name })),
+            ]}
           />
         </label>
         <label className="flex flex-col gap-1 text-body-caption text-muted-foreground">
@@ -56,7 +62,10 @@ export async function MovementsScreen({ page, items, costsVisible }: MovementsSc
             className="h-9 min-w-40"
             paramName="kind"
             label={t("movements.kindLabel")}
-            options={[{ value: "", label: t("movements.allKinds") }, ...STOCK_MOVEMENT_KINDS.map((kind) => ({ value: kind, label: t(`kind.${kind}`) }))]}
+            options={[
+              { value: "", label: t("movements.allKinds") },
+              ...STOCK_MOVEMENT_KINDS.map((kind) => ({ value: kind, label: t(`kind.${kind}`) })),
+            ]}
           />
         </label>
       </div>
@@ -69,12 +78,26 @@ export async function MovementsScreen({ page, items, costsVisible }: MovementsSc
             <table className="w-full min-w-[40rem] text-body-small">
               <thead className="bg-surface text-body-caption text-muted-foreground">
                 <tr>
-                  <th scope="col" className="px-4 py-3 text-start font-medium">{t("dateLabel")}</th>
-                  <th scope="col" className="px-4 py-3 text-start font-medium">{t("col.item")}</th>
-                  <th scope="col" className="px-4 py-3 text-start font-medium">{t("movements.kindLabel")}</th>
-                  <th scope="col" className="px-4 py-3 text-end font-medium">{t("movements.quantity")}</th>
-                  {costsVisible ? <th scope="col" className="px-4 py-3 text-end font-medium">{t("col.value")}</th> : null}
-                  <th scope="col" className="px-4 py-3 text-start font-medium">{t("movements.by")}</th>
+                  <th scope="col" className="px-4 py-3 text-start font-medium">
+                    {t("dateLabel")}
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-start font-medium">
+                    {t("col.item")}
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-start font-medium">
+                    {t("movements.kindLabel")}
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-end font-medium">
+                    {t("movements.quantity")}
+                  </th>
+                  {costsVisible ? (
+                    <th scope="col" className="px-4 py-3 text-end font-medium">
+                      {t("col.value")}
+                    </th>
+                  ) : null}
+                  <th scope="col" className="px-4 py-3 text-start font-medium">
+                    {t("movements.by")}
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -83,7 +106,9 @@ export async function MovementsScreen({ page, items, costsVisible }: MovementsSc
                   const unit = t(`unit.${units.get(movement.ingredientId) ?? "piece"}`);
                   return (
                     <tr key={movement.id}>
-                      <td className="whitespace-nowrap px-4 py-2.5 text-muted-foreground">{formatCafeDayMedium(movement.date, locale)}</td>
+                      <td className="px-4 py-2.5 whitespace-nowrap text-muted-foreground">
+                        {formatCafeDayMedium(movement.date, locale)}
+                      </td>
                       <td className="px-4 py-2.5 text-foreground" dir="auto">
                         {movement.ingredientName}
                       </td>
@@ -101,11 +126,20 @@ export async function MovementsScreen({ page, items, costsVisible }: MovementsSc
                           </span>
                         ) : null}
                       </td>
-                      <td className={cn("whitespace-nowrap px-4 py-2.5 text-end", movement.quantity < 0 ? "text-error-foreground" : "text-success-foreground")}>
+                      <td
+                        className={cn(
+                          "px-4 py-2.5 text-end whitespace-nowrap",
+                          movement.quantity < 0 ? "text-error-foreground" : "text-success-foreground",
+                        )}
+                      >
                         {movement.quantity > 0 ? "+" : ""}
                         {formatNumber(movement.quantity, locale, 3)} {unit}
                       </td>
-                      {costsVisible ? <td className="whitespace-nowrap px-4 py-2.5 text-end">{formatMoney(movement.value, locale)}</td> : null}
+                      {costsVisible ? (
+                        <td className="px-4 py-2.5 text-end whitespace-nowrap">
+                          {formatMoney(movement.value, locale)}
+                        </td>
+                      ) : null}
                       <td className="px-4 py-2.5 text-muted-foreground">{movement.createdByName}</td>
                     </tr>
                   );

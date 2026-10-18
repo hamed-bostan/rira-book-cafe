@@ -1,4 +1,4 @@
-import { Skeleton } from "@/src/presentation/design-system";
+import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
 /** Name and unit inputs, then the description / nutrition / origin textareas, in the base locale tab. */
 const TEXTAREAS = 3;
@@ -104,7 +104,10 @@ export function ProductFormSkeleton() {
       </div>
 
       {Array.from({ length: SWITCH_ROWS }, (_, row) => (
-        <div key={row} className="flex items-center justify-between gap-3 rounded-card-md border border-border px-4 py-3">
+        <div
+          key={row}
+          className="flex items-center justify-between gap-3 rounded-card-md border border-border px-4 py-3"
+        >
           <div className="flex flex-col gap-1.5">
             <Skeleton className="h-4 w-24 rounded-pill" />
             <Skeleton className="h-3.5 w-48 rounded-pill" />

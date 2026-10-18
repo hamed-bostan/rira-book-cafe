@@ -1,4 +1,4 @@
-import { Skeleton } from "@/src/presentation/design-system";
+import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
 /**
  * Placeholder for `MenuItemCard`: the same bordered card, the 4:3 photo, the

@@ -6,7 +6,9 @@ import * as React from "react";
 import { Link } from "@/src/i18n/navigation";
 import { cn } from "@/src/lib/utils";
 import { PageHeader } from "@/src/presentation/components/PageHeader";
-import { Button, OTPInput, useToast } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { OTPInput } from "@/src/presentation/design-system/components/form/OTPInput/OTPInput";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { peekDevOtp, requestOtp, verifyOtp } from "./actions";
 

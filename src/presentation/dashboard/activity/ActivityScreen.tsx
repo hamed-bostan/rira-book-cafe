@@ -1,13 +1,10 @@
 import { History, Search } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
-import {
-  ACTIVITY_ENTITY_TYPES,
-  FILTERABLE_ACTIVITY_FIELDS,
-} from "@/src/domain/entities/ActivityEntry";
+import { ACTIVITY_ENTITY_TYPES, FILTERABLE_ACTIVITY_FIELDS } from "@/src/domain/entities/ActivityEntry";
 import type { Page } from "@/src/domain/entities/Pagination";
 import { ListFilterSelect, ListPager } from "@/src/presentation/dashboard/list";
-import { EmptyState } from "@/src/presentation/design-system";
+import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
 
 import { ActivityList } from "./ActivityList";
 
@@ -49,7 +46,7 @@ export async function ActivityScreen({ entries, actors, isFiltered }: ActivitySc
 
       <ActivityList
         entries={entries.items}
-        toolbar={(
+        toolbar={
           <section aria-label={t("heading")} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 lg:gap-4">
             <label className="flex min-w-0 flex-col gap-1.5 text-body-small-strong font-medium text-muted-foreground">
               <span>{t("filterActor")}</span>
@@ -98,14 +95,14 @@ export async function ActivityScreen({ entries, actors, isFiltered }: ActivitySc
               />
             </label>
           </section>
-        )}
-        emptyState={(
+        }
+        emptyState={
           <EmptyState
             icon={isFiltered ? Search : History}
             title={isFiltered ? tList("noResultsTitle") : t("empty")}
             description={isFiltered ? tList("noResultsBody") : t("emptyBody")}
           />
-        )}
+        }
         footer={<ListPager page={entries} />}
       />
     </div>

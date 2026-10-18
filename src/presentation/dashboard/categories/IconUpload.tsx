@@ -5,7 +5,10 @@ import Image from "next/image";
 import { useTranslations } from "next-intl";
 import * as React from "react";
 
-import { Button, FormMessage, Icon, Thumbnail } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { Thumbnail } from "@/src/presentation/design-system/components/Thumbnail/Thumbnail";
 import { imagesApi } from "@/src/presentation/images/image-api";
 
 type IconUploadProps = {
@@ -60,29 +63,11 @@ export function IconUpload({ value, onChange, id, ...aria }: IconUploadProps) {
       </Thumbnail>
 
       <div className="flex flex-col items-start gap-1.5">
-        <input
-          ref={inputRef}
-          id={id}
-          type="file"
-          accept={ACCEPT}
-          className="sr-only"
-          onChange={handleFile}
-          {...aria}
-        />
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          loading={uploading}
-          onClick={() => inputRef.current?.click()}
-        >
+        <input ref={inputRef} id={id} type="file" accept={ACCEPT} className="sr-only" onChange={handleFile} {...aria} />
+        <Button type="button" variant="outline" size="sm" loading={uploading} onClick={() => inputRef.current?.click()}>
           {uploading ? t("uploading") : value ? t("replaceImage") : t("uploadImage")}
         </Button>
-        {error ? (
-          <FormMessage>{error}</FormMessage>
-        ) : (
-          <FormMessage tone="hint">{t("uploadHint")}</FormMessage>
-        )}
+        {error ? <FormMessage>{error}</FormMessage> : <FormMessage tone="hint">{t("uploadHint")}</FormMessage>}
       </div>
     </div>
   );

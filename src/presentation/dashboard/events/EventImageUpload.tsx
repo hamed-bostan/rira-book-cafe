@@ -5,7 +5,10 @@ import Image from "next/image";
 import { useTranslations } from "next-intl";
 import * as React from "react";
 
-import { Button, FormMessage, Icon, Thumbnail } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { Thumbnail } from "@/src/presentation/design-system/components/Thumbnail/Thumbnail";
 import { imagesApi } from "@/src/presentation/images/image-api";
 
 type EventImageUploadProps = {
@@ -52,7 +55,13 @@ export function EventImageUpload({ value, onChange, id }: EventImageUploadProps)
       <div className="flex flex-col items-start gap-1.5">
         <input ref={inputRef} id={id} type="file" accept={ACCEPT} className="sr-only" onChange={handleFile} />
         <div className="flex gap-2">
-          <Button type="button" variant="outline" size="sm" loading={uploading} onClick={() => inputRef.current?.click()}>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            loading={uploading}
+            onClick={() => inputRef.current?.click()}
+          >
             {uploading ? t("uploading") : value ? t("replaceImage") : t("uploadImage")}
           </Button>
           {value ? (

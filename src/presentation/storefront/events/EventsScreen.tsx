@@ -2,7 +2,7 @@ import { CalendarDays } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
 import type { CafeEvent } from "@/src/domain/entities/CafeEvent";
-import { EmptyState } from "@/src/presentation/design-system";
+import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
 
 import { EventCard } from "./EventCard";
 
@@ -23,7 +23,11 @@ export async function EventsScreen({ events }: { events: CafeEvent[] }) {
           ))}
         </div>
       ) : (
-        <EmptyState icon={CalendarDays} title={t("events.none")} className="rounded-card-lg border border-dashed border-border" />
+        <EmptyState
+          icon={CalendarDays}
+          title={t("events.none")}
+          className="rounded-card-lg border border-dashed border-border"
+        />
       )}
     </div>
   );

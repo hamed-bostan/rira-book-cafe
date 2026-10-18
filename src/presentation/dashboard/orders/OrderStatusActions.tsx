@@ -6,7 +6,9 @@ import * as React from "react";
 import { isStaffCancellable, nextOrderStatus, type OrderStatus } from "@/src/domain/entities/Order";
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
-import { Button, ConfirmSheet, useToast } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { ConfirmSheet } from "@/src/presentation/design-system/components/Sheet/ConfirmSheet";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { ordersApi } from "./order-api";
 
@@ -43,7 +45,10 @@ export function OrderStatusActions({ orderId, orderNumber, status }: OrderStatus
         await ordersApi.changeStatus(orderId, { status: to });
         toast({
           tone: "success",
-          title: to === "cancelled" ? t("cancelledToast", { number: orderNumber }) : t("statusChanged", { number: orderNumber, status: t(`status.${to}`) }),
+          title:
+            to === "cancelled"
+              ? t("cancelledToast", { number: orderNumber })
+              : t("statusChanged", { number: orderNumber, status: t(`status.${to}`) }),
         });
       } catch (err) {
         toast({ tone: "error", title: localizeApiError(err, tApiErrors, t("statusError")) });
@@ -63,7 +68,13 @@ export function OrderStatusActions({ orderId, orderNumber, status }: OrderStatus
           </Button>
         ) : null}
         {cancellable ? (
-          <Button type="button" variant="outline" onClick={() => setConfirmCancel(true)} loading={pending && active === "cancelled"} disabled={pending}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setConfirmCancel(true)}
+            loading={pending && active === "cancelled"}
+            disabled={pending}
+          >
             {t("cancelOrder")}
           </Button>
         ) : null}

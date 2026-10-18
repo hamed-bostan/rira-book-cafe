@@ -6,7 +6,7 @@ import { SYSTEM_ACCOUNTS, type AccountingSettings } from "@/src/domain/entities/
 import { Link } from "@/src/i18n/navigation";
 import { formatCafeDayMedium } from "@/src/lib/formatCafeDay";
 import { formatMoney } from "@/src/lib/formatMoney";
-import { Button } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
 
 import { StatCard } from "../StatCard";
 
@@ -39,7 +39,13 @@ const BALANCES = [
  * The books at a glance: today's balances in the money accounts and what's owed
  * either way, the period's profit, and whether the ledger balances.
  */
-export async function AccountingOverviewScreen({ trialBalance, profitAndLoss, settings, canWrite, today }: AccountingOverviewScreenProps) {
+export async function AccountingOverviewScreen({
+  trialBalance,
+  profitAndLoss,
+  settings,
+  canWrite,
+  today,
+}: AccountingOverviewScreenProps) {
   const t = await getTranslations("dashAccounting");
   const locale = await getLocale();
   const balanceOf = (code: string) => trialBalance.rows.find((row) => row.account.code === code)?.balance ?? 0;
@@ -55,7 +61,11 @@ export async function AccountingOverviewScreen({ trialBalance, profitAndLoss, se
             : "flex items-center gap-2 rounded-card-md border border-error-foreground bg-error px-4 py-3 text-body-small text-error-foreground"
         }
       >
-        {trialBalance.balanced ? <CircleCheck className="size-4 shrink-0 text-success-foreground" aria-hidden /> : <CircleAlert className="size-4 shrink-0" aria-hidden />}
+        {trialBalance.balanced ? (
+          <CircleCheck className="size-4 shrink-0 text-success-foreground" aria-hidden />
+        ) : (
+          <CircleAlert className="size-4 shrink-0" aria-hidden />
+        )}
         <span>{trialBalance.balanced ? t("overview.balanced") : t("overview.unbalanced")}</span>
         <span className="ms-auto flex items-center gap-1.5 text-body-caption text-muted-foreground">
           <Lock className="size-3.5" aria-hidden />
@@ -70,7 +80,12 @@ export async function AccountingOverviewScreen({ trialBalance, profitAndLoss, se
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
           {BALANCES.map(({ key, code, icon, tone }) => (
             <Link key={key} href={`/dashboard/accounting/accounts/${code}`} className="rounded-card-lg">
-              <StatCard label={t(`overview.balance.${key}`)} value={formatMoney(balanceOf(code), locale)} icon={icon} tone={tone} />
+              <StatCard
+                label={t(`overview.balance.${key}`)}
+                value={formatMoney(balanceOf(code), locale)}
+                icon={icon}
+                tone={tone}
+              />
             </Link>
           ))}
         </div>
@@ -90,7 +105,9 @@ export async function AccountingOverviewScreen({ trialBalance, profitAndLoss, se
           ).map(([key, value]) => (
             <div key={key} className="flex flex-col gap-1">
               <dt className="text-body-caption text-muted-foreground">{t(`overview.${key}`)}</dt>
-              <dd className={value < 0 ? "text-body-strong text-error-foreground" : "text-body-strong text-foreground"}>{formatMoney(value, locale)}</dd>
+              <dd className={value < 0 ? "text-body-strong text-error-foreground" : "text-body-strong text-foreground"}>
+                {formatMoney(value, locale)}
+              </dd>
             </div>
           ))}
         </dl>

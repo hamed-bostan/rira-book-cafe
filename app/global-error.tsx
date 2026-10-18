@@ -4,7 +4,9 @@ import { CloudOff, RotateCcw } from "lucide-react";
 import { useSyncExternalStore } from "react";
 
 import { LOCALE_COOKIE_NAME, routing } from "@/src/i18n/routing";
-import { Button, EmptyState, Icon } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button";
+import { EmptyState } from "@/src/presentation/design-system/components/EmptyState";
+import { Icon } from "@/src/presentation/design-system/components/Icon";
 import "@/src/styles/globals.css";
 
 /**

@@ -1,4 +1,5 @@
-import { LoadingRegion, Skeleton } from "@/src/presentation/design-system";
+import { LoadingRegion } from "@/src/presentation/design-system/components/Skeleton/LoadingRegion";
+import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
 /** Unpaid, paid in cash, paid from the bank. */
 const PAYMENT_CHOICES = 3;

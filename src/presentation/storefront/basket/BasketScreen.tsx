@@ -5,7 +5,12 @@ import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
 import * as React from "react";
 
-import { MAX_LINE_QUANTITY, MAX_ORDER_NOTE_TEXT_LENGTH, MAX_TABLE_LABEL_LENGTH, type ServiceType } from "@/src/domain/entities/Order";
+import {
+  MAX_LINE_QUANTITY,
+  MAX_ORDER_NOTE_TEXT_LENGTH,
+  MAX_TABLE_LABEL_LENGTH,
+  type ServiceType,
+} from "@/src/domain/entities/Order";
 import { Link, useRouter } from "@/src/i18n/navigation";
 import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
@@ -13,7 +18,14 @@ import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
 import { cn } from "@/src/lib/utils";
-import { Button, EmptyState, FormMessage, Icon, Input, Textarea, focusRing, useToast } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
+import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
+import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
+import { Textarea } from "@/src/presentation/design-system/components/form/Textarea/Textarea";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { storefrontApi } from "../storefront-api";
 
@@ -23,7 +35,12 @@ import { useBasket } from "./BasketProvider";
 import { useOrderQuote } from "./useOrderQuote";
 
 /** Refusals that are about the promo code: shown under its field, and the code is dropped. */
-const PROMO_ERRORS: ReadonlySet<string> = new Set(["PROMO_INVALID", "PROMO_EXPIRED", "PROMO_USED_UP", "PROMO_MIN_SUBTOTAL"]);
+const PROMO_ERRORS: ReadonlySet<string> = new Set([
+  "PROMO_INVALID",
+  "PROMO_EXPIRED",
+  "PROMO_USED_UP",
+  "PROMO_MIN_SUBTOTAL",
+]);
 
 type BasketScreenProps = {
   /** Whether a guest is signed in — ordering needs an account. */
@@ -68,7 +85,13 @@ export function BasketScreen({ signedIn }: BasketScreenProps) {
     },
     [tApiErrors, t],
   );
-  const quoteState = useOrderQuote({ basket, promoCode: appliedPromo, redeemPoints, enabled: signedIn && ready, onRejected: onQuoteRejected });
+  const quoteState = useOrderQuote({
+    basket,
+    promoCode: appliedPromo,
+    redeemPoints,
+    enabled: signedIn && ready,
+    onRejected: onQuoteRejected,
+  });
 
   if (!ready) return null;
 
@@ -131,7 +154,14 @@ export function BasketScreen({ signedIn }: BasketScreenProps) {
         serviceType === value ? "border-primary bg-accent text-primary" : "border-border text-foreground",
       )}
     >
-      <input type="radio" name="serviceType" value={value} checked={serviceType === value} onChange={() => setServiceType(value)} className="sr-only" />
+      <input
+        type="radio"
+        name="serviceType"
+        value={value}
+        checked={serviceType === value}
+        onChange={() => setServiceType(value)}
+        className="sr-only"
+      />
       <Icon icon={icon} size="sm" />
       {label}
     </label>
@@ -152,10 +182,19 @@ export function BasketScreen({ signedIn }: BasketScreenProps) {
                 {line.note ? <p className="text-body-caption text-warning-foreground">{line.note}</p> : null}
                 <p className="text-body-small text-muted-foreground">{formatMoney(line.unitPrice, locale)}</p>
                 <div className="mt-2 flex items-center gap-2">
-                  <Button type="button" variant="outline" size="sm" iconOnly aria-label={t("menu.decrease")} onClick={() => setQuantity(index, line.quantity - 1)}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    iconOnly
+                    aria-label={t("menu.decrease")}
+                    onClick={() => setQuantity(index, line.quantity - 1)}
+                  >
                     <Icon icon={Minus} size="xs" />
                   </Button>
-                  <span className="w-6 text-center text-body-small-strong tabular-nums">{formatNumber(line.quantity, locale)}</span>
+                  <span className="w-6 text-center text-body-small-strong tabular-nums">
+                    {formatNumber(line.quantity, locale)}
+                  </span>
                   <Button
                     type="button"
                     variant="outline"
@@ -167,12 +206,22 @@ export function BasketScreen({ signedIn }: BasketScreenProps) {
                   >
                     <Icon icon={Plus} size="xs" />
                   </Button>
-                  <Button type="button" variant="ghost" size="sm" iconOnly aria-label={t("basket.removeAria", { name: line.name })} className="ms-auto text-destructive" onClick={() => remove(index)}>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    iconOnly
+                    aria-label={t("basket.removeAria", { name: line.name })}
+                    className="ms-auto text-destructive"
+                    onClick={() => remove(index)}
+                  >
                     <Icon icon={Trash2} size="sm" />
                   </Button>
                 </div>
               </div>
-              <span className="shrink-0 text-body-small-emphasis text-foreground">{formatMoney(line.unitPrice * line.quantity, locale)}</span>
+              <span className="shrink-0 text-body-small-emphasis text-foreground">
+                {formatMoney(line.unitPrice * line.quantity, locale)}
+              </span>
             </li>
           ))}
         </ul>
@@ -204,7 +253,12 @@ export function BasketScreen({ signedIn }: BasketScreenProps) {
 
         <label className="flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
           {t("basket.noteLabel")}
-          <Textarea value={note} onChange={(event) => setNote(event.target.value)} maxLength={MAX_ORDER_NOTE_TEXT_LENGTH} rows={2} />
+          <Textarea
+            value={note}
+            onChange={(event) => setNote(event.target.value)}
+            maxLength={MAX_ORDER_NOTE_TEXT_LENGTH}
+            rows={2}
+          />
         </label>
 
         {signedIn ? (

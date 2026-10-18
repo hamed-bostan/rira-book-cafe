@@ -1,6 +1,7 @@
 import { ProductFormSkeleton } from "@/src/presentation/dashboard/products/ProductFormSkeleton";
 import { DashboardHeaderSkeleton } from "@/src/presentation/dashboard/skeletons";
-import { LoadingRegion, Skeleton } from "@/src/presentation/design-system";
+import { LoadingRegion } from "@/src/presentation/design-system/components/Skeleton/LoadingRegion";
+import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
 export default function EditProductLoading() {
   return (

@@ -6,7 +6,8 @@ import * as React from "react";
 import { nextOrderStatus, type OrderStatus } from "@/src/domain/entities/Order";
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
-import { Button, useToast } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { ordersApi } from "../orders/order-api";
 

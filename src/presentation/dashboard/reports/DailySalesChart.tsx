@@ -9,8 +9,8 @@ import { formatCafeDayShort } from "@/src/lib/formatCafeDay";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { ChartSegmentedControl } from "@/src/presentation/dashboard/ChartSegmentedControl";
-import { EmptyState } from "@/src/presentation/design-system";
 import { ChartContainer, ChartTooltip } from "@/src/presentation/design-system/chart";
+import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
 
 type Metric = "revenue" | "orders";
 

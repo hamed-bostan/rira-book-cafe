@@ -1,5 +1,5 @@
 import { cn } from "@/src/lib/utils";
-import { Skeleton } from "@/src/presentation/design-system";
+import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
 type StatementSectionSkeletonProps = {
   rows?: number;
@@ -15,7 +15,12 @@ type StatementSectionSkeletonProps = {
  * section of the chart of accounts: a `bg-surface` heading strip, code / name /
  * amount rows, and the total.
  */
-export function StatementSectionSkeleton({ rows = 4, total = true, dense = true, className }: StatementSectionSkeletonProps) {
+export function StatementSectionSkeleton({
+  rows = 4,
+  total = true,
+  dense = true,
+  className,
+}: StatementSectionSkeletonProps) {
   return (
     <section className={cn("min-w-0 overflow-hidden rounded-card-lg border border-border bg-background", className)}>
       <div className="flex h-11 items-center border-b border-border bg-surface px-4">

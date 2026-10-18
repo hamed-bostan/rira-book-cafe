@@ -7,7 +7,10 @@ import { MAX_SEATS_PER_REGISTRATION, type EventRegistration } from "@/src/domain
 import { Link, useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatNumber } from "@/src/lib/formatNumber";
-import { Button, ConfirmSheet, Select, useToast } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { Select } from "@/src/presentation/design-system/components/form/Select/Select";
+import { ConfirmSheet } from "@/src/presentation/design-system/components/Sheet/ConfirmSheet";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { storefrontApi } from "../storefront-api";
 
@@ -55,7 +58,14 @@ export function EventSignUp({ eventId, open, seatsLeft, signedIn, registration }
         <p className="text-body-strong text-primary">
           {t("events.signedUp", { count: registration.seats, formatted: formatNumber(registration.seats, locale) })}
         </p>
-        <Button type="button" variant="outline" size="sm" className="self-start" loading={pending} onClick={() => setConfirmCancel(true)}>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="self-start"
+          loading={pending}
+          onClick={() => setConfirmCancel(true)}
+        >
           {t("events.cancelSignUp")}
         </Button>
         <ConfirmSheet
@@ -75,7 +85,11 @@ export function EventSignUp({ eventId, open, seatsLeft, signedIn, registration }
   }
 
   if (!open) {
-    return <p className="rounded-card-md border border-border px-4 py-3 text-body-small text-muted-foreground">{t("events.closed")}</p>;
+    return (
+      <p className="rounded-card-md border border-border px-4 py-3 text-body-small text-muted-foreground">
+        {t("events.closed")}
+      </p>
+    );
   }
 
   if (!signedIn) {
@@ -100,7 +114,12 @@ export function EventSignUp({ eventId, open, seatsLeft, signedIn, registration }
           ))}
         </Select>
       </label>
-      <Button type="button" className="self-start" loading={pending} onClick={() => run(() => storefrontApi.registerForEvent(eventId, { seats }))}>
+      <Button
+        type="button"
+        className="self-start"
+        loading={pending}
+        onClick={() => run(() => storefrontApi.registerForEvent(eventId, { seats }))}
+      >
         {pending ? t("events.joining") : t("events.join")}
       </Button>
     </div>

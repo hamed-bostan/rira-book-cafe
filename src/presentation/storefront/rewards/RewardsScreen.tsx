@@ -7,7 +7,8 @@ import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { formatOrderDateShort } from "@/src/lib/formatOrderDate";
 import { cn } from "@/src/lib/utils";
-import { EmptyState, Icon } from "@/src/presentation/design-system";
+import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 
 /**
  * The guest's place in the loyalty club: their balance and what it's worth, how
@@ -30,7 +31,9 @@ export async function RewardsScreen({ overview }: { overview: GuestLoyaltyOvervi
           <Icon icon={Gift} size="lg" />
         </span>
         <div>
-          <p className="text-heading-subsection text-foreground">{t("rewards.balance", { points: formatNumber(balance, locale) })}</p>
+          <p className="text-heading-subsection text-foreground">
+            {t("rewards.balance", { points: formatNumber(balance, locale) })}
+          </p>
           <p className="text-body-small text-muted-foreground">
             {t("rewards.worth", { amount: formatMoney(balance * settings.pointValue, locale) })}
           </p>
@@ -47,13 +50,19 @@ export async function RewardsScreen({ overview }: { overview: GuestLoyaltyOvervi
           </ul>
         </section>
       ) : (
-        <p className="rounded-card-md bg-muted px-4 py-3 text-body-small text-muted-foreground">{t("rewards.paused")}</p>
+        <p className="rounded-card-md bg-muted px-4 py-3 text-body-small text-muted-foreground">
+          {t("rewards.paused")}
+        </p>
       )}
 
       <section className="flex flex-col gap-3">
         <h2 className="text-body-lead text-foreground">{t("rewards.historyHeading")}</h2>
         {history.length === 0 ? (
-          <EmptyState icon={Gift} title={t("rewards.empty")} className="rounded-card-lg border border-dashed border-border py-10" />
+          <EmptyState
+            icon={Gift}
+            title={t("rewards.empty")}
+            className="rounded-card-lg border border-dashed border-border py-10"
+          />
         ) : (
           <ul className="flex flex-col divide-y divide-border rounded-card-lg border border-border">
             {history.map((entry) => (
@@ -73,7 +82,13 @@ export async function RewardsScreen({ overview }: { overview: GuestLoyaltyOvervi
                     {entry.note ? ` · ${entry.note}` : null}
                   </p>
                 </div>
-                <span className={cn("text-body-small-strong tabular-nums", entry.delta > 0 ? "text-success-foreground" : "text-foreground")} dir="ltr">
+                <span
+                  className={cn(
+                    "text-body-small-strong tabular-nums",
+                    entry.delta > 0 ? "text-success-foreground" : "text-foreground",
+                  )}
+                  dir="ltr"
+                >
                   {entry.delta > 0 ? "+" : "−"}
                   {formatNumber(Math.abs(entry.delta), locale)}
                 </span>

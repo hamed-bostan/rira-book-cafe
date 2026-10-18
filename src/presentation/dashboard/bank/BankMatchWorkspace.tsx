@@ -11,7 +11,11 @@ import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatCafeDayShort } from "@/src/lib/formatCafeDay";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { cn } from "@/src/lib/utils";
-import { Button, Checkbox, EmptyState, Icon, useToast } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { Checkbox } from "@/src/presentation/design-system/components/Checkbox/Checkbox";
+import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { bankStatementsApi } from "./bank-statement-api";
 import { StatementLineActions } from "./StatementLineActions";
@@ -51,7 +55,9 @@ export function BankMatchWorkspace({ statement, candidates, suggestions, canWrit
   const openLines = statement.lines.filter((line) => !line.matchId);
   const openCandidates = candidates.filter((candidate) => !candidate.matchId);
   const bankTotal = sum(openLines.filter((line) => bankPicked.has(line.id)).map((line) => line.amount));
-  const bookTotal = sum(openCandidates.filter((candidate) => bookPicked.has(candidate.lineId)).map((candidate) => candidate.amount));
+  const bookTotal = sum(
+    openCandidates.filter((candidate) => bookPicked.has(candidate.lineId)).map((candidate) => candidate.amount),
+  );
   const canMatch = editable && bankPicked.size > 0 && bookPicked.size > 0 && bankTotal === bookTotal;
 
   const matchIds = [...new Set(statement.lines.flatMap((line) => (line.matchId ? [line.matchId] : [])))];
@@ -86,10 +92,14 @@ export function BankMatchWorkspace({ statement, candidates, suggestions, canWrit
   };
 
   const record = (lineId: string, values: RecordStatementLineInput): void =>
-    run(`line:${lineId}`, async () => {
-      const entry = await bankStatementsApi.recordLine(statement.id, lineId, values);
-      return t("workspace.recorded", { number: entry.number });
-    }, t("workspace.recordError"));
+    run(
+      `line:${lineId}`,
+      async () => {
+        const entry = await bankStatementsApi.recordLine(statement.id, lineId, values);
+        return t("workspace.recorded", { number: entry.number });
+      },
+      t("workspace.recordError"),
+    );
 
   const amountClass = (amount: number): string => (amount < 0 ? "text-error-foreground" : "text-success-foreground");
 
@@ -104,7 +114,13 @@ export function BankMatchWorkspace({ statement, candidates, suggestions, canWrit
               variant="outline"
               loading={isRunning("autoMatch")}
               disabled={pending}
-              onClick={() => run("autoMatch", async () => t("workspace.autoMatched", { count: await bankStatementsApi.autoMatch(statement.id) }), t("workspace.matchError"))}
+              onClick={() =>
+                run(
+                  "autoMatch",
+                  async () => t("workspace.autoMatched", { count: await bankStatementsApi.autoMatch(statement.id) }),
+                  t("workspace.matchError"),
+                )
+              }
             >
               <Icon icon={Wand2} size="sm" className="me-1.5" />
               {t("workspace.autoMatch", { count: suggestions.length })}
@@ -120,10 +136,17 @@ export function BankMatchWorkspace({ statement, candidates, suggestions, canWrit
             disabled={!canMatch || pending}
             className="ms-auto"
             onClick={() =>
-              run("match", async () => {
-                await bankStatementsApi.match(statement.id, { statementLineIds: [...bankPicked], ledgerLineIds: [...bookPicked] });
-                return t("workspace.matchedToast");
-              }, t("workspace.matchError"))
+              run(
+                "match",
+                async () => {
+                  await bankStatementsApi.match(statement.id, {
+                    statementLineIds: [...bankPicked],
+                    ledgerLineIds: [...bookPicked],
+                  });
+                  return t("workspace.matchedToast");
+                },
+                t("workspace.matchError"),
+              )
             }
           >
             <Icon icon={Link2} size="sm" className="me-1.5" />
@@ -134,7 +157,9 @@ export function BankMatchWorkspace({ statement, candidates, suggestions, canWrit
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <section className="flex min-w-0 flex-col rounded-card-lg border border-border bg-background">
-          <h2 className="border-b border-border px-4 py-3 text-body-strong text-foreground">{t("workspace.bankSide", { count: openLines.length })}</h2>
+          <h2 className="border-b border-border px-4 py-3 text-body-strong text-foreground">
+            {t("workspace.bankSide", { count: openLines.length })}
+          </h2>
           {openLines.length === 0 ? (
             <EmptyState icon={CheckCheck} title={t("workspace.bankDone")} className="py-8" />
           ) : (
@@ -167,10 +192,14 @@ export function BankMatchWorkspace({ statement, candidates, suggestions, canWrit
                       busy={isRunning(`line:${line.id}`)}
                       onRecord={(values) => record(line.id, values)}
                       onRemove={() =>
-                        run(`line:${line.id}`, async () => {
-                          await bankStatementsApi.removeLine(statement.id, line.id);
-                          return t("workspace.lineRemoved");
-                        }, t("workspace.removeError"))
+                        run(
+                          `line:${line.id}`,
+                          async () => {
+                            await bankStatementsApi.removeLine(statement.id, line.id);
+                            return t("workspace.lineRemoved");
+                          },
+                          t("workspace.removeError"),
+                        )
                       }
                     />
                   ) : null}
@@ -181,7 +210,9 @@ export function BankMatchWorkspace({ statement, candidates, suggestions, canWrit
         </section>
 
         <section className="flex min-w-0 flex-col rounded-card-lg border border-border bg-background">
-          <h2 className="border-b border-border px-4 py-3 text-body-strong text-foreground">{t("workspace.bookSide", { count: openCandidates.length })}</h2>
+          <h2 className="border-b border-border px-4 py-3 text-body-strong text-foreground">
+            {t("workspace.bookSide", { count: openCandidates.length })}
+          </h2>
           {openCandidates.length === 0 ? (
             <EmptyState icon={CheckCheck} title={t("workspace.bookDone")} className="py-8" />
           ) : (
@@ -191,11 +222,18 @@ export function BankMatchWorkspace({ statement, candidates, suggestions, canWrit
                   {editable ? (
                     <Checkbox
                       checked={bookPicked.has(candidate.lineId)}
-                      onCheckedChange={(checked) => setBookPicked((set) => toggle(set, candidate.lineId, checked === true))}
+                      onCheckedChange={(checked) =>
+                        setBookPicked((set) => toggle(set, candidate.lineId, checked === true))
+                      }
                       aria-label={t("workspace.pick", { description: candidate.description })}
                     />
                   ) : null}
-                  <span className={cn("w-20 shrink-0", candidate.date > statement.toDay ? "text-warning-foreground" : "text-muted-foreground")}>
+                  <span
+                    className={cn(
+                      "w-20 shrink-0",
+                      candidate.date > statement.toDay ? "text-warning-foreground" : "text-muted-foreground",
+                    )}
+                  >
                     {formatCafeDayShort(candidate.date, locale)}
                   </span>
                   <span className="min-w-0 flex-1">
@@ -203,13 +241,18 @@ export function BankMatchWorkspace({ statement, candidates, suggestions, canWrit
                       {candidate.description}
                     </span>
                     <span className="block truncate text-body-caption text-muted-foreground">
-                      <Link href={`/dashboard/accounting/journal/${candidate.entryId}`} className="text-primary underline-offset-4 hover:underline">
+                      <Link
+                        href={`/dashboard/accounting/journal/${candidate.entryId}`}
+                        className="text-primary underline-offset-4 hover:underline"
+                      >
                         JE-{candidate.entryNumber}
                       </Link>{" "}
                       · {tAccounting(`source.${candidate.source}`)}
                     </span>
                   </span>
-                  <span className={cn("shrink-0", amountClass(candidate.amount))}>{formatMoney(candidate.amount, locale)}</span>
+                  <span className={cn("shrink-0", amountClass(candidate.amount))}>
+                    {formatMoney(candidate.amount, locale)}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -219,7 +262,9 @@ export function BankMatchWorkspace({ statement, candidates, suggestions, canWrit
 
       {matches.length > 0 ? (
         <section className="flex flex-col rounded-card-lg border border-border bg-background">
-          <h2 className="border-b border-border px-4 py-3 text-body-strong text-foreground">{t("workspace.matched", { count: matches.length })}</h2>
+          <h2 className="border-b border-border px-4 py-3 text-body-strong text-foreground">
+            {t("workspace.matched", { count: matches.length })}
+          </h2>
           <ul className="divide-y divide-border">
             {matches.map((match) => (
               <li key={match.matchId} className="flex flex-wrap items-start gap-3 px-4 py-2.5 text-body-small">
@@ -237,7 +282,10 @@ export function BankMatchWorkspace({ statement, candidates, suggestions, canWrit
                 <div className="min-w-0 flex-1 basis-60 text-muted-foreground">
                   {match.ledger.map((candidate) => (
                     <p key={candidate.lineId} className="flex gap-2">
-                      <Link href={`/dashboard/accounting/journal/${candidate.entryId}`} className="text-primary underline-offset-4 hover:underline">
+                      <Link
+                        href={`/dashboard/accounting/journal/${candidate.entryId}`}
+                        className="text-primary underline-offset-4 hover:underline"
+                      >
                         JE-{candidate.entryNumber}
                       </Link>
                       <span className="min-w-0 flex-1 truncate" dir="auto">
@@ -255,10 +303,14 @@ export function BankMatchWorkspace({ statement, candidates, suggestions, canWrit
                     loading={isRunning(`unmatch:${match.matchId}`)}
                     disabled={pending}
                     onClick={() =>
-                      run(`unmatch:${match.matchId}`, async () => {
-                        await bankStatementsApi.unmatch(statement.id, match.matchId);
-                        return t("workspace.unmatchedToast");
-                      }, t("workspace.matchError"))
+                      run(
+                        `unmatch:${match.matchId}`,
+                        async () => {
+                          await bankStatementsApi.unmatch(statement.id, match.matchId);
+                          return t("workspace.unmatchedToast");
+                        },
+                        t("workspace.matchError"),
+                      )
                     }
                   >
                     <Icon icon={Unlink} size="sm" className="me-1.5" />

@@ -11,12 +11,24 @@ import type { Supplier } from "@/src/domain/entities/Expense";
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
-import { Button, FormMessage, Icon, Input, Modal, ModalContent, Switch, TextField, useToast } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
+import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
+import { TextField } from "@/src/presentation/design-system/components/form/TextField/TextField";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { Modal, ModalContent } from "@/src/presentation/design-system/components/Modal/Modal";
+import { Switch } from "@/src/presentation/design-system/components/Switch/Switch";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { suppliersApi } from "./expense-api";
 
 function toDefaults(supplier?: Supplier): SupplierFormInput {
-  return { name: supplier?.name ?? "", phone: supplier?.phone ?? "", note: supplier?.note ?? "", isActive: supplier?.isActive ?? true };
+  return {
+    name: supplier?.name ?? "",
+    phone: supplier?.phone ?? "",
+    note: supplier?.note ?? "",
+    isActive: supplier?.isActive ?? true,
+  };
 }
 
 /** Add a supplier, or edit one (including switching it off). */
@@ -57,7 +69,13 @@ export function SupplierDialog({ supplier }: { supplier?: Supplier }) {
   return (
     <>
       {supplier ? (
-        <Button type="button" size="sm" variant="ghost" onClick={() => setOpen(true)} aria-label={t("suppliers.edit", { name: supplier.name })}>
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          onClick={() => setOpen(true)}
+          aria-label={t("suppliers.edit", { name: supplier.name })}
+        >
           <Icon icon={Pencil} size="sm" />
         </Button>
       ) : (

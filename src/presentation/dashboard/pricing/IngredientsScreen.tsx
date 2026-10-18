@@ -4,7 +4,8 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { ingredientUnitCost, type Ingredient } from "@/src/domain/entities/Pricing";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
-import { Badge, EmptyState } from "@/src/presentation/design-system";
+import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
+import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
 
 import { IngredientDialog } from "./IngredientDialog";
 import { PricingTabs } from "./PricingTabs";
@@ -33,9 +34,15 @@ export async function IngredientsScreen({ ingredients, canWrite }: { ingredients
           <table className="w-full min-w-[36rem] text-body-small">
             <thead className="bg-surface text-body-caption text-muted-foreground">
               <tr>
-                <th scope="col" className="px-4 py-3 text-start font-medium">{t("ingredients.colName")}</th>
-                <th scope="col" className="px-4 py-3 text-end font-medium">{t("ingredients.colBought")}</th>
-                <th scope="col" className="px-4 py-3 text-end font-medium">{t("ingredients.colUnitCost")}</th>
+                <th scope="col" className="px-4 py-3 text-start font-medium">
+                  {t("ingredients.colName")}
+                </th>
+                <th scope="col" className="px-4 py-3 text-end font-medium">
+                  {t("ingredients.colBought")}
+                </th>
+                <th scope="col" className="px-4 py-3 text-end font-medium">
+                  {t("ingredients.colUnitCost")}
+                </th>
                 <th scope="col" className="px-4 py-3" />
               </tr>
             </thead>
@@ -52,17 +59,22 @@ export async function IngredientsScreen({ ingredients, canWrite }: { ingredients
                       </Badge>
                     ) : null}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-end">
+                  <td className="px-4 py-3 text-end whitespace-nowrap">
                     {t("ingredients.bought", {
                       price: formatMoney(ingredient.purchasePrice, locale),
                       quantity: formatNumber(ingredient.purchaseQuantity, locale, 3),
                       unit: t(`unit.${ingredient.unit}`),
                     })}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-end text-muted-foreground">
-                    {t("ingredients.perUnit", { cost: formatNumber(ingredientUnitCost(ingredient), locale, 2), unit: t(`unit.${ingredient.unit}`) })}
+                  <td className="px-4 py-3 text-end whitespace-nowrap text-muted-foreground">
+                    {t("ingredients.perUnit", {
+                      cost: formatNumber(ingredientUnitCost(ingredient), locale, 2),
+                      unit: t(`unit.${ingredient.unit}`),
+                    })}
                   </td>
-                  <td className="px-4 py-3 text-end">{canWrite ? <IngredientDialog ingredient={ingredient} /> : null}</td>
+                  <td className="px-4 py-3 text-end">
+                    {canWrite ? <IngredientDialog ingredient={ingredient} /> : null}
+                  </td>
                 </tr>
               ))}
             </tbody>

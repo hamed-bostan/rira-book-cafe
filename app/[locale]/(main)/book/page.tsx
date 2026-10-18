@@ -5,7 +5,8 @@ import { cafeDayOf } from "@/src/domain/entities/CafeTime";
 import { Link } from "@/src/i18n/navigation";
 import { requireAuth } from "@/src/lib/require-auth";
 import { cn } from "@/src/lib/utils";
-import { Icon, focusRing } from "@/src/presentation/design-system";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 import { noIndexMetadata } from "@/src/presentation/seo/noIndexMetadata";
 import { BookTableForm } from "@/src/presentation/storefront/reservations/BookTableForm";
 
@@ -30,7 +31,13 @@ export default async function BookTablePage() {
         <p className="mt-1 text-body-small text-muted-foreground">{t("book.subtitle")}</p>
       </div>
       <BookTableForm today={cafeDayOf(new Date())} />
-      <Link href="/suite" className={cn("flex items-center gap-3 rounded-card-lg border border-border px-4 py-4 hover:bg-muted", focusRing)}>
+      <Link
+        href="/suite"
+        className={cn(
+          "flex items-center gap-3 rounded-card-lg border border-border px-4 py-4 hover:bg-muted",
+          focusRing,
+        )}
+      >
         <Icon icon={BedDouble} size="sm" className="text-primary" />
         <span className="min-w-0 flex-1">
           <span className="block text-body-small-strong text-foreground">{t("suite.promoTitle")}</span>

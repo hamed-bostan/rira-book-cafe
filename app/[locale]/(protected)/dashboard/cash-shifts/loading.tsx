@@ -1,5 +1,6 @@
 import { DashboardStatGridSkeleton } from "@/src/presentation/dashboard/skeletons";
-import { LoadingRegion, Skeleton } from "@/src/presentation/design-system";
+import { LoadingRegion } from "@/src/presentation/design-system/components/Skeleton/LoadingRegion";
+import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
 /** Closed shifts drawn in the history panel. */
 const HISTORY_ROWS = 5;
@@ -20,7 +21,10 @@ export default function CashShiftsLoading() {
       <div className="rounded-card-lg border border-border bg-background p-4 sm:p-5">
         <Skeleton className="h-6 w-40 rounded-pill" />
         <Skeleton className="mt-1.5 h-4 w-56 max-w-full rounded-pill" />
-        <DashboardStatGridSkeleton count={4} className="mt-4 grid-cols-2 sm:grid-cols-2 xl:grid-cols-2 @min-[50rem]:grid-cols-4" />
+        <DashboardStatGridSkeleton
+          count={4}
+          className="mt-4 grid-cols-2 sm:grid-cols-2 xl:grid-cols-2 @min-[50rem]:grid-cols-4"
+        />
         <Skeleton className="mt-3 h-3.5 w-28 rounded-pill" />
       </div>
 

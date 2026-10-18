@@ -3,7 +3,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 
 import type { OrderStatusEvent } from "@/src/domain/entities/OrderStatusEvent";
 import { formatOrderDate } from "@/src/lib/formatOrderDate";
-import { EmptyState } from "@/src/presentation/design-system";
+import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
 
 /** The order's status history, oldest first: when it came in, and who moved it at each step. */
 export async function OrderTimeline({ events }: { events: OrderStatusEvent[] }) {

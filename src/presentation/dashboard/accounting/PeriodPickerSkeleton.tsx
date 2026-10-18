@@ -1,4 +1,4 @@
-import { Skeleton } from "@/src/presentation/design-system";
+import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
 /** Placeholder for `PeriodPicker`: the fiscal-year and period selects, then the caption naming the span. */
 export function PeriodPickerSkeleton() {

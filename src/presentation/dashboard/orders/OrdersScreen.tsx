@@ -20,7 +20,8 @@ import {
   ListSortSelect,
   type ListSortOption,
 } from "@/src/presentation/dashboard/list";
-import { Button, EmptyState } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
 
 import { OrdersTable } from "./OrdersTable";
 import { OrderStatusTabs } from "./OrderStatusTabs";
@@ -68,7 +69,7 @@ export async function OrdersScreen({ orders, counts, filters, params }: OrdersSc
 
       <OrdersTable
         orders={orders.items}
-        toolbar={(
+        toolbar={
           <section aria-label={t("searchLabel")} className="min-w-0 space-y-3">
             <div className="flex min-w-0 flex-col gap-3 @min-[36rem]:flex-row @min-[36rem]:items-center">
               <ListSearchInput
@@ -112,8 +113,8 @@ export async function OrdersScreen({ orders, counts, filters, params }: OrdersSc
               />
             </div>
           </section>
-        )}
-        emptyState={(
+        }
+        emptyState={
           <EmptyState
             icon={isFiltered ? SearchX : ClipboardList}
             title={isFiltered ? tList("noResultsTitle") : t("emptyTitle")}
@@ -126,7 +127,7 @@ export async function OrdersScreen({ orders, counts, filters, params }: OrdersSc
               ) : undefined
             }
           />
-        )}
+        }
         footer={<ListPager page={orders} />}
       />
     </div>

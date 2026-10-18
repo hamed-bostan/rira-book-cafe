@@ -1,7 +1,7 @@
 import { useTranslations } from "next-intl";
 
 import type { StockLevel } from "@/src/domain/entities/Inventory";
-import { Badge } from "@/src/presentation/design-system";
+import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
 
 const VARIANT = { out: "error", low: "warning", ok: "success" } as const;
 

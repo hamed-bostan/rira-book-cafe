@@ -11,7 +11,13 @@ import { Link, useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
-import { Button, EmptyState, FormMessage, Icon, Input, Select, useToast } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
+import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
+import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
+import { Select } from "@/src/presentation/design-system/components/form/Select/Select";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { recipesApi } from "./pricing-api";
 
@@ -47,7 +53,9 @@ export function RecipeForm({ productId, lines, ingredients }: RecipeFormProps) {
     formState: { errors, isSubmitting },
   } = useForm<RecipeFormInput>({
     resolver: zodResolver(recipeSchema, undefined, { raw: true }),
-    defaultValues: { lines: lines.map((line) => ({ ingredientId: line.ingredientId, quantity: String(line.quantity) })) },
+    defaultValues: {
+      lines: lines.map((line) => ({ ingredientId: line.ingredientId, quantity: String(line.quantity) })),
+    },
   });
   const { fields, append, remove } = useFieldArray({ control, name: "lines" });
   const watched = useWatch({ control, name: "lines" });
@@ -80,7 +88,11 @@ export function RecipeForm({ productId, lines, ingredients }: RecipeFormProps) {
         return (
           <div key={field.id} className="grid grid-cols-[minmax(0,1fr)_7rem_auto] items-start gap-2">
             <div className="flex flex-col gap-1">
-              <Select {...register(`lines.${index}.ingredientId`)} aria-label={t("recipe.ingredientLabel")} className="h-10">
+              <Select
+                {...register(`lines.${index}.ingredientId`)}
+                aria-label={t("recipe.ingredientLabel")}
+                className="h-10"
+              >
                 <option value="">{t("recipe.ingredientPlaceholder")}</option>
                 {choices.map((choice) => (
                   <option key={choice.id} value={choice.id}>
@@ -88,16 +100,35 @@ export function RecipeForm({ productId, lines, ingredients }: RecipeFormProps) {
                   </option>
                 ))}
               </Select>
-              {lineErrors?.ingredientId?.message ? <FormMessage>{fieldError(lineErrors.ingredientId.message)}</FormMessage> : null}
+              {lineErrors?.ingredientId?.message ? (
+                <FormMessage>{fieldError(lineErrors.ingredientId.message)}</FormMessage>
+              ) : null}
             </div>
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-1">
-                <Input {...register(`lines.${index}.quantity`)} inputMode="decimal" aria-label={t("recipe.quantityLabel")} className="h-10" dir="ltr" />
-                <span className="text-body-caption text-muted-foreground">{ingredient ? t(`unit.${ingredient.unit}`) : ""}</span>
+                <Input
+                  {...register(`lines.${index}.quantity`)}
+                  inputMode="decimal"
+                  aria-label={t("recipe.quantityLabel")}
+                  className="h-10"
+                  dir="ltr"
+                />
+                <span className="text-body-caption text-muted-foreground">
+                  {ingredient ? t(`unit.${ingredient.unit}`) : ""}
+                </span>
               </div>
-              {lineErrors?.quantity?.message ? <FormMessage>{fieldError(lineErrors.quantity.message)}</FormMessage> : null}
+              {lineErrors?.quantity?.message ? (
+                <FormMessage>{fieldError(lineErrors.quantity.message)}</FormMessage>
+              ) : null}
             </div>
-            <Button type="button" variant="ghost" size="sm" className="h-10" onClick={() => remove(index)} aria-label={t("recipe.removeLine")}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-10"
+              onClick={() => remove(index)}
+              aria-label={t("recipe.removeLine")}
+            >
               <Icon icon={X} size="sm" />
             </Button>
           </div>
@@ -115,7 +146,9 @@ export function RecipeForm({ productId, lines, ingredients }: RecipeFormProps) {
           <Icon icon={Plus} size="sm" className="me-1.5" />
           {t("recipe.addLine")}
         </Button>
-        <p className="text-body-small-emphasis text-foreground">{t("recipe.total", { cost: formatMoney(Math.round(total), locale) })}</p>
+        <p className="text-body-small-emphasis text-foreground">
+          {t("recipe.total", { cost: formatMoney(Math.round(total), locale) })}
+        </p>
       </div>
       {choices.length === 0 ? (
         <p className="text-body-small text-muted-foreground">

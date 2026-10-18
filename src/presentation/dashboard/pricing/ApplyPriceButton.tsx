@@ -6,7 +6,9 @@ import * as React from "react";
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatMoney } from "@/src/lib/formatMoney";
-import { ConfirmSheet, Spinner, useToast } from "@/src/presentation/design-system";
+import { ConfirmSheet } from "@/src/presentation/design-system/components/Sheet/ConfirmSheet";
+import { Spinner } from "@/src/presentation/design-system/components/Spinner/Spinner";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { pricingApi } from "./pricing-api";
 
@@ -51,7 +53,10 @@ export function ApplyPriceButton({ productId, name, currentPrice, suggestedPrice
         open={open}
         onOpenChange={setOpen}
         title={t("applyTitle", { name })}
-        message={t("applyMessage", { from: formatMoney(currentPrice, locale), to: formatMoney(suggestedPrice, locale) })}
+        message={t("applyMessage", {
+          from: formatMoney(currentPrice, locale),
+          to: formatMoney(suggestedPrice, locale),
+        })}
         confirmLabel={t("applyConfirm")}
         onConfirm={apply}
       />

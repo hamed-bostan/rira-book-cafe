@@ -1,6 +1,6 @@
 import { cn } from "@/src/lib/utils";
 import { ListPagerSkeleton } from "@/src/presentation/dashboard/skeletons";
-import { Skeleton } from "@/src/presentation/design-system";
+import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
 type ActivityListSkeletonProps = {
   rows?: number;
@@ -16,7 +16,12 @@ type ActivityListSkeletonProps = {
  * Placeholder for `ActivityList` in its `DataTable` frame: the history badge, the
  * chip + timestamp line, the sentence, and on every other entry a small field diff.
  */
-export function ActivityListSkeleton({ rows = 6, filters = false, pager = false, showEntity = true }: ActivityListSkeletonProps) {
+export function ActivityListSkeleton({
+  rows = 6,
+  filters = false,
+  pager = false,
+  showEntity = true,
+}: ActivityListSkeletonProps) {
   return (
     <div className="overflow-hidden rounded-card-lg border border-border">
       {filters ? (

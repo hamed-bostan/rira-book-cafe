@@ -1,6 +1,7 @@
 import { ActivityPanelSkeleton } from "@/src/presentation/dashboard/activity/ActivityPanelSkeleton";
 import { EventFormSkeleton } from "@/src/presentation/dashboard/events/EventFormSkeleton";
-import { LoadingRegion, Skeleton } from "@/src/presentation/design-system";
+import { LoadingRegion } from "@/src/presentation/design-system/components/Skeleton/LoadingRegion";
+import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
 /** Guests drawn in the registrations panel. */
 const REGISTRATION_ROWS = 4;

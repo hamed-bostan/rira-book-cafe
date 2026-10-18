@@ -1,4 +1,4 @@
-import { Skeleton } from "@/src/presentation/design-system";
+import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
 /** Ticket count per lane (new · in progress · ready) — enough to fill the board's first screen. */
 const LANE_TICKETS = [2, 2, 1] as const;

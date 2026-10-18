@@ -11,8 +11,8 @@ import {
   DropdownMenuIconTrigger,
   DropdownMenuItem,
   DropdownMenuSeparator,
-  Icon,
-} from "@/src/presentation/design-system";
+} from "@/src/presentation/design-system/components/DropdownMenu/DropdownMenu";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 
 import { DeleteCategoryButton } from "./DeleteCategoryButton";
 

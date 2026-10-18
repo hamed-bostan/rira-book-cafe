@@ -1,5 +1,5 @@
 import { cn } from "@/src/lib/utils";
-import { Skeleton } from "@/src/presentation/design-system";
+import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
 type DashboardHeaderSkeletonProps = {
   /** Reserve the primary action button at the inline-end ("New category"). */

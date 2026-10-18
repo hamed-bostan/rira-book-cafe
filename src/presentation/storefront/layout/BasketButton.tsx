@@ -7,7 +7,8 @@ import * as React from "react";
 import { Link } from "@/src/i18n/navigation";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { cn } from "@/src/lib/utils";
-import { Icon, focusRing } from "@/src/presentation/design-system";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 
 import { basketCount } from "../basket/basket";
 import { useBasket } from "../basket/BasketProvider";

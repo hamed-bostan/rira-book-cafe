@@ -6,7 +6,8 @@ import * as React from "react";
 import { MODERATION_STATUSES, type ModerationStatus, type ProductReview } from "@/src/domain/entities/ProductReview";
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
-import { Button, useToast } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { reviewsApi } from "./review-api";
 

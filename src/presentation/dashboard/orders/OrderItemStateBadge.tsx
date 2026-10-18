@@ -1,7 +1,7 @@
 import { useTranslations } from "next-intl";
 
 import { itemServiceState, type OrderItem, type OrderItemServiceState } from "@/src/domain/entities/Order";
-import { Badge, type BadgeProps } from "@/src/presentation/design-system";
+import { Badge, type BadgeProps } from "@/src/presentation/design-system/components/Badge/Badge";
 
 const VARIANT: Record<OrderItemServiceState, NonNullable<BadgeProps["variant"]>> = {
   preparing: "warning",

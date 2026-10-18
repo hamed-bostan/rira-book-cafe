@@ -7,7 +7,8 @@ import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { formatOrderDateShort } from "@/src/lib/formatOrderDate";
 import { DashboardPanel, DashboardPanelHeader } from "@/src/presentation/dashboard/DashboardPanel";
-import { Badge, EmptyState } from "@/src/presentation/design-system";
+import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
+import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
 
 import { GuestPointsPanel } from "./GuestPointsPanel";
 import { LoyaltySettingsForm } from "./LoyaltySettingsForm";
@@ -39,7 +40,13 @@ export async function PromotionsScreen({ promoCodes, loyaltySettings, now }: Pro
     return "active";
   }
 
-  const STATE_VARIANT = { active: "success", inactive: "neutral", scheduled: "info", expired: "neutral", usedUp: "warning" } as const;
+  const STATE_VARIANT = {
+    active: "success",
+    inactive: "neutral",
+    scheduled: "info",
+    expired: "neutral",
+    usedUp: "warning",
+  } as const;
 
   return (
     <div className="@container flex min-w-0 flex-col gap-4 sm:gap-6">
@@ -68,19 +75,35 @@ export async function PromotionsScreen({ promoCodes, loyaltySettings, now }: Pro
                         {promo.kind === "percent"
                           ? t("percentOff", { value: formatNumber(promo.value, locale) })
                           : t("amountOff", { amount: formatMoney(promo.value, locale) })}
-                        {promo.maxDiscount !== undefined ? ` · ${t("upTo", { amount: formatMoney(promo.maxDiscount, locale) })}` : null}
+                        {promo.maxDiscount !== undefined
+                          ? ` · ${t("upTo", { amount: formatMoney(promo.maxDiscount, locale) })}`
+                          : null}
                       </span>
                     </div>
-                    {promo.description ? <p className="text-body-small text-muted-foreground">{promo.description}</p> : null}
+                    {promo.description ? (
+                      <p className="text-body-small text-muted-foreground">{promo.description}</p>
+                    ) : null}
                     <p className="text-body-caption text-muted-foreground">
                       {[
                         promo.usageLimit !== undefined
-                          ? t("usesOf", { uses: formatNumber(promo.uses, locale), limit: formatNumber(promo.usageLimit, locale) })
+                          ? t("usesOf", {
+                              uses: formatNumber(promo.uses, locale),
+                              limit: formatNumber(promo.usageLimit, locale),
+                            })
                           : t("uses", { uses: formatNumber(promo.uses, locale) }),
-                        promo.perGuestLimit !== undefined ? t("perGuest", { limit: formatNumber(promo.perGuestLimit, locale) }) : null,
+                        promo.perGuestLimit !== undefined
+                          ? t("perGuest", { limit: formatNumber(promo.perGuestLimit, locale) })
+                          : null,
                         promo.minSubtotal > 0 ? t("minimum", { amount: formatMoney(promo.minSubtotal, locale) }) : null,
                         promo.startsAt ? t("from", { date: formatOrderDateShort(promo.startsAt, locale) }) : null,
-                        promo.endsAt ? t("until", { date: formatOrderDateShort(new Date(new Date(promo.endsAt).getTime() - 1).toISOString(), locale) }) : null,
+                        promo.endsAt
+                          ? t("until", {
+                              date: formatOrderDateShort(
+                                new Date(new Date(promo.endsAt).getTime() - 1).toISOString(),
+                                locale,
+                              ),
+                            })
+                          : null,
                       ]
                         .filter(Boolean)
                         .join(" · ")}

@@ -1,6 +1,7 @@
 import { cn } from "@/src/lib/utils";
 import { DashboardHeaderSkeleton } from "@/src/presentation/dashboard/skeletons";
-import { LoadingRegion, Skeleton } from "@/src/presentation/design-system";
+import { LoadingRegion } from "@/src/presentation/design-system/components/Skeleton/LoadingRegion";
+import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
 /** Sales · payments · guests — the last, odd one spans both columns from `md`. */
 const REPORT_CARDS = 3;

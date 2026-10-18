@@ -13,21 +13,16 @@ import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
 import { ControlledChoicePicker } from "@/src/presentation/dashboard/list";
-import {
-  Button,
-  Field,
-  FormMessage,
-  Input,
-  RequiredMark,
-  Switch,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-  Textarea,
-  TextField,
-  useToast,
-} from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { Field } from "@/src/presentation/design-system/components/form/Field/Field";
+import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
+import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
+import { RequiredMark } from "@/src/presentation/design-system/components/form/shared/RequiredMark";
+import { Textarea } from "@/src/presentation/design-system/components/form/Textarea/Textarea";
+import { TextField } from "@/src/presentation/design-system/components/form/TextField/TextField";
+import { Switch } from "@/src/presentation/design-system/components/Switch/Switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/presentation/design-system/components/Tabs/Tabs";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { eventsApi } from "./event-api";
 import { EventImageUpload } from "./EventImageUpload";
@@ -186,10 +181,18 @@ export function EventForm(props: EventFormProps) {
       <p className="-mt-3 text-body-caption text-muted-foreground">{t("timeZoneHint")}</p>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <TextField label={t("capacityLabel")} description={t("capacityDescription")} error={fieldError(errors.capacity?.message)}>
+        <TextField
+          label={t("capacityLabel")}
+          description={t("capacityDescription")}
+          error={fieldError(errors.capacity?.message)}
+        >
           {(control) => <Input {...control} {...register("capacity")} inputMode="numeric" placeholder="20" />}
         </TextField>
-        <TextField label={t("priceLabel")} description={t("priceDescription")} error={fieldError(errors.price?.message)}>
+        <TextField
+          label={t("priceLabel")}
+          description={t("priceDescription")}
+          error={fieldError(errors.price?.message)}
+        >
           {(control) => <Input {...control} {...register("price")} inputMode="numeric" placeholder="0" />}
         </TextField>
       </div>
@@ -200,7 +203,11 @@ export function EventForm(props: EventFormProps) {
             <label htmlFor={id} className="text-body-small-emphasis text-input-foreground">
               {t("imageLabel")}
             </label>
-            <EventImageUpload id={id} value={imageUrl} onChange={(url) => setValue("imageUrl", url, { shouldValidate: true })} />
+            <EventImageUpload
+              id={id}
+              value={imageUrl}
+              onChange={(url) => setValue("imageUrl", url, { shouldValidate: true })}
+            />
           </>
         )}
       </Field>
@@ -217,7 +224,12 @@ export function EventForm(props: EventFormProps) {
               </label>
               <p className="text-body-caption text-muted-foreground">{t("publishedDescription")}</p>
             </div>
-            <Switch id="isPublished" checked={field.value} onCheckedChange={field.onChange} aria-label={t("publishedLabel")} />
+            <Switch
+              id="isPublished"
+              checked={field.value}
+              onCheckedChange={field.onChange}
+              aria-label={t("publishedLabel")}
+            />
           </div>
         )}
       />

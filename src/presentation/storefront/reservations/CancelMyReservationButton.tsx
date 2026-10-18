@@ -5,7 +5,9 @@ import * as React from "react";
 
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
-import { Button, ConfirmSheet, useToast } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { ConfirmSheet } from "@/src/presentation/design-system/components/Sheet/ConfirmSheet";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { storefrontApi } from "../storefront-api";
 
@@ -20,7 +22,14 @@ export function CancelMyReservationButton({ reservationId }: { reservationId: st
 
   return (
     <div className="flex flex-col items-end gap-1">
-      <Button type="button" variant="ghost" size="sm" className="text-destructive" loading={pending} onClick={() => setOpen(true)}>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="text-destructive"
+        loading={pending}
+        onClick={() => setOpen(true)}
+      >
         {t("reservations.cancel")}
       </Button>
       <ConfirmSheet

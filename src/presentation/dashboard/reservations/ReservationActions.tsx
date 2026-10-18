@@ -6,15 +6,12 @@ import * as React from "react";
 import { nextReservationStatuses, type Reservation, type ReservationStatus } from "@/src/domain/entities/Reservation";
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
-import {
-  Button,
-  ConfirmSheet,
-  FormMessage,
-  Input,
-  Modal,
-  ModalContent,
-  useToast,
-} from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
+import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
+import { Modal, ModalContent } from "@/src/presentation/design-system/components/Modal/Modal";
+import { ConfirmSheet } from "@/src/presentation/design-system/components/Sheet/ConfirmSheet";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { reservationsApi } from "./reservation-api";
 
@@ -111,7 +108,14 @@ export function ReservationActions({ reservation }: ReservationActionsProps) {
           </Button>
         ))}
         {holdsTable ? (
-          <Button type="button" size="sm" variant="ghost" loading={pending && active === "move"} disabled={pending} onClick={() => openTable("move")}>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            loading={pending && active === "move"}
+            disabled={pending}
+            onClick={() => openTable("move")}
+          >
             {t("changeTable")}
           </Button>
         ) : null}
@@ -148,7 +152,13 @@ export function ReservationActions({ reservation }: ReservationActionsProps) {
       <ConfirmSheet
         open={confirming !== null}
         onOpenChange={(open) => !open && setConfirming(null)}
-        title={confirming ? t(`confirmTitle.${confirming === "noShow" ? "noShow" : "cancelled"}`, { reference: reservation.reference }) : ""}
+        title={
+          confirming
+            ? t(`confirmTitle.${confirming === "noShow" ? "noShow" : "cancelled"}`, {
+                reference: reservation.reference,
+              })
+            : ""
+        }
         message={t("confirmMessage")}
         confirmLabel={confirming ? t(`action.${confirming}`) : ""}
         cancelLabel={t("dialogCancel")}

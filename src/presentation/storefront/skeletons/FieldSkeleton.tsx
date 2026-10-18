@@ -1,5 +1,5 @@
 import { cn } from "@/src/lib/utils";
-import { Skeleton } from "@/src/presentation/design-system";
+import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
 type FieldSkeletonProps = {
   /** A multi-line `Textarea` (`min-h-32`) instead of a single-line control. */

@@ -5,7 +5,7 @@ import { isBookLoanOverdue, type BookLoan } from "@/src/domain/entities/BookLoan
 import type { BookWaitlistEntry } from "@/src/domain/entities/BookWaitlist";
 import { BOOK_LOAN_VIEWS, type BookLoanView, type LendableBook } from "@/src/domain/repositories/IBookLoanRepository";
 import { ListFilterSelect, ListSearchInput } from "@/src/presentation/dashboard/list";
-import { EmptyState } from "@/src/presentation/design-system";
+import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
 
 import { BookLoanCard } from "./BookLoanCard";
 import { BookWaitlistSection } from "./BookWaitlistSection";
@@ -30,7 +30,16 @@ type BookLoansScreenProps = {
  * the page fetches over the REST API (BFF). The view and search live in the URL;
  * every action `router.refresh()`es.
  */
-export async function BookLoansScreen({ loans, books, waitlist, view, isSearching, now, today, canManage }: BookLoansScreenProps) {
+export async function BookLoansScreen({
+  loans,
+  books,
+  waitlist,
+  view,
+  isSearching,
+  now,
+  today,
+  canManage,
+}: BookLoansScreenProps) {
   const t = await getTranslations("dashBookLoans");
   const nowDate = new Date(now);
   const overdueCount = loans.filter((loan) => isBookLoanOverdue(loan, nowDate)).length;

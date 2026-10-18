@@ -160,6 +160,29 @@ const eslintConfig = defineConfig([
     },
   },
 
+  // Design-system components are imported from their own module, never through a
+  // barrel: a Server Component importing a barrel registers every "use client"
+  // component it re-exports, so the whole design system shipped on every page.
+  // (Later blocks that restrict imports for `src/domain` and `app/api` replace this
+  // rule for their files — both already forbid `presentation` outright.)
+  {
+    files: ["app/**/*.{ts,tsx}", "src/**/*.{ts,tsx}", "e2e/**/*.ts", "tests/**/*.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "@/src/presentation/design-system",
+              message:
+                "Import the component from its own module (e.g. @/src/presentation/design-system/components/Button/Button) — the barrel ships every client component to the browser.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+
   // --- Clean Architecture boundaries (CLAUDE.md § Architecture) ---
   // `domain` is framework-free: it must never import outward, from
   // `infrastructure`, `presentation`, `app`, or Next.js itself.

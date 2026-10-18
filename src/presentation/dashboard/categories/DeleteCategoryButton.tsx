@@ -7,7 +7,10 @@ import * as React from "react";
 import { useRouter } from "@/src/i18n/navigation";
 import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
-import { Button, ConfirmSheet, Icon, useToast } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { ConfirmSheet } from "@/src/presentation/design-system/components/Sheet/ConfirmSheet";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { categoriesApi } from "./category-api";
 
@@ -63,7 +66,9 @@ export function DeleteCategoryButton({
         // error reads in context and the user can retry — instead of a
         // disruptive window.alert.
         const message =
-          err instanceof ApiError && err.code === "IN_USE" ? err.message : localizeApiError(err, tApiErrors, t("deleteError"));
+          err instanceof ApiError && err.code === "IN_USE"
+            ? err.message
+            : localizeApiError(err, tApiErrors, t("deleteError"));
         setError(message);
         setOpen(true);
       }

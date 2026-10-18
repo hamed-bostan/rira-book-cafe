@@ -5,7 +5,8 @@ import { ArrowDown, ArrowUp, ChevronsUpDown } from "lucide-react";
 import type { SortDirection } from "@/src/domain/entities/Pagination";
 import { mergePageParams } from "@/src/lib/api/pagination-params";
 import { cn } from "@/src/lib/utils";
-import { Icon, TableHead } from "@/src/presentation/design-system";
+import { TableHead } from "@/src/presentation/design-system/components/DataTable/DataTable";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 import { focusRing } from "@/src/presentation/design-system/components/shared";
 
 import { useListParams } from "./useListParams";

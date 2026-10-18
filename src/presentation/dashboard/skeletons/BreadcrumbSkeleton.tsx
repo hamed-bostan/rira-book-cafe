@@ -1,4 +1,4 @@
-import { Skeleton } from "@/src/presentation/design-system";
+import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
 /** Placeholder for the detail pages' breadcrumb nav: parent link, chevron, current item. */
 export function BreadcrumbSkeleton() {

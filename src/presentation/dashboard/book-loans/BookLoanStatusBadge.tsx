@@ -1,7 +1,7 @@
 import { useTranslations } from "next-intl";
 
 import type { BookLoanStatus } from "@/src/domain/entities/BookLoan";
-import { Badge, type BadgeProps } from "@/src/presentation/design-system";
+import { Badge, type BadgeProps } from "@/src/presentation/design-system/components/Badge/Badge";
 
 type BookLoanStatusBadgeProps = {
   status: BookLoanStatus;

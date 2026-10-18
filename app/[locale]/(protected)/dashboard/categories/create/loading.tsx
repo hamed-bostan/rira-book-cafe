@@ -1,5 +1,6 @@
 import { CategoryFormSkeleton } from "@/src/presentation/dashboard/categories/CategoryFormSkeleton";
-import { LoadingRegion, Skeleton } from "@/src/presentation/design-system";
+import { LoadingRegion } from "@/src/presentation/design-system/components/Skeleton/LoadingRegion";
+import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
 /** Mirrors the create-category page: heading + subtitle over `CategoryForm`, in the `max-w-xl` form column. */
 export default function CreateCategoryLoading() {

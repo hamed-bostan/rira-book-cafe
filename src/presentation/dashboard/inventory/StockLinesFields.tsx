@@ -7,7 +7,11 @@ import { useFieldArray, useWatch, type Control, type FieldErrors, type UseFormRe
 import type { StockItem } from "@/src/domain/entities/Inventory";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
-import { Button, FormMessage, Icon, Input, Select } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
+import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
+import { Select } from "@/src/presentation/design-system/components/form/Select/Select";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 
 /** The shape both the delivery and the opening-stock forms share. */
 export type StockLinesForm = { lines: { ingredientId: string; quantity: string; cost: string }[] };
@@ -41,7 +45,10 @@ export function StockLinesFields({ control, register, errors, items, costLabel }
         const item = byId.get(lines[index]?.ingredientId ?? "");
         const lineErrors = errors.lines?.[index];
         return (
-          <div key={field.id} className="grid grid-cols-2 gap-2 rounded-card-md border border-border p-3 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_auto] md:items-start md:border-0 md:p-0">
+          <div
+            key={field.id}
+            className="grid grid-cols-2 gap-2 rounded-card-md border border-border p-3 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_auto] md:items-start md:border-0 md:p-0"
+          >
             <div className="col-span-2 flex flex-col gap-1 md:col-span-1">
               <Select {...register(`lines.${index}.ingredientId`)} aria-label={t("lines.item")} className="h-10">
                 <option value="">{t("lines.itemPlaceholder")}</option>
@@ -51,20 +58,46 @@ export function StockLinesFields({ control, register, errors, items, costLabel }
                   </option>
                 ))}
               </Select>
-              {lineErrors?.ingredientId?.message ? <FormMessage>{fieldError(lineErrors.ingredientId.message)}</FormMessage> : null}
+              {lineErrors?.ingredientId?.message ? (
+                <FormMessage>{fieldError(lineErrors.ingredientId.message)}</FormMessage>
+              ) : null}
             </div>
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-1">
-                <Input {...register(`lines.${index}.quantity`)} inputMode="decimal" placeholder={t("lines.quantity")} aria-label={t("lines.quantity")} className="h-10" dir="ltr" />
+                <Input
+                  {...register(`lines.${index}.quantity`)}
+                  inputMode="decimal"
+                  placeholder={t("lines.quantity")}
+                  aria-label={t("lines.quantity")}
+                  className="h-10"
+                  dir="ltr"
+                />
                 <span className="text-body-caption text-muted-foreground">{item ? t(`unit.${item.unit}`) : ""}</span>
               </div>
-              {lineErrors?.quantity?.message ? <FormMessage>{fieldError(lineErrors.quantity.message)}</FormMessage> : null}
+              {lineErrors?.quantity?.message ? (
+                <FormMessage>{fieldError(lineErrors.quantity.message)}</FormMessage>
+              ) : null}
             </div>
             <div className="flex flex-col gap-1">
-              <Input {...register(`lines.${index}.cost`)} inputMode="numeric" placeholder={costLabel} aria-label={costLabel} className="h-10" dir="ltr" />
+              <Input
+                {...register(`lines.${index}.cost`)}
+                inputMode="numeric"
+                placeholder={costLabel}
+                aria-label={costLabel}
+                className="h-10"
+                dir="ltr"
+              />
               {lineErrors?.cost?.message ? <FormMessage>{fieldError(lineErrors.cost.message)}</FormMessage> : null}
             </div>
-            <Button type="button" variant="ghost" size="sm" className="h-10 justify-self-end" onClick={() => remove(index)} disabled={fields.length <= 1} aria-label={t("lines.remove")}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-10 justify-self-end"
+              onClick={() => remove(index)}
+              disabled={fields.length <= 1}
+              aria-label={t("lines.remove")}
+            >
               <Icon icon={X} size="sm" />
             </Button>
           </div>
@@ -75,7 +108,9 @@ export function StockLinesFields({ control, register, errors, items, costLabel }
           <Icon icon={Plus} size="sm" className="me-1.5" />
           {t("lines.add")}
         </Button>
-        <p className="text-body-small-emphasis text-foreground">{t("lines.total", { total: formatMoney(total, locale) })}</p>
+        <p className="text-body-small-emphasis text-foreground">
+          {t("lines.total", { total: formatMoney(total, locale) })}
+        </p>
       </div>
       {linesError ? <FormMessage>{fieldError(linesError)}</FormMessage> : null}
     </fieldset>

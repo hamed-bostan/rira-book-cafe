@@ -4,7 +4,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { suiteNights, type SuiteBooking } from "@/src/domain/entities/SuiteBooking";
 import { formatCafeDayMedium } from "@/src/lib/formatCafeDay";
 import { formatNumber } from "@/src/lib/formatNumber";
-import { Icon } from "@/src/presentation/design-system";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 
 import { SuiteBookingActions } from "./SuiteBookingActions";
 import { SuiteBookingStatusBadge } from "./SuiteBookingStatusBadge";
@@ -37,7 +37,9 @@ export async function SuiteBookingCard({ booking, canManage }: SuiteBookingCardP
           <span className="text-body-small-strong text-foreground">{booking.guestName}</span>
           <SuiteBookingStatusBadge status={booking.status} />
         </div>
-        <p dir="ltr" className="text-start text-body-small text-muted-foreground">{booking.guestPhone}</p>
+        <p dir="ltr" className="text-start text-body-small text-muted-foreground">
+          {booking.guestPhone}
+        </p>
         <p className="flex items-center gap-1.5 text-body-small text-foreground">
           <Icon icon={Users} size="xs" className="text-muted-foreground" />
           {t("guests", { count: booking.guests, formatted: formatNumber(booking.guests, locale) })}

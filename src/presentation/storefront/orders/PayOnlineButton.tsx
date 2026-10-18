@@ -6,7 +6,9 @@ import * as React from "react";
 
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
-import { Button, Icon, useToast } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { storefrontApi } from "../storefront-api";
 

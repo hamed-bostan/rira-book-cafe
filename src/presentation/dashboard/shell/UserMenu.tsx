@@ -8,18 +8,18 @@ import * as React from "react";
 import type { UserRole } from "@/src/domain/entities/User";
 import { cn } from "@/src/lib/utils";
 import { logout } from "@/src/presentation/auth/actions";
+import { Avatar } from "@/src/presentation/design-system/components/Avatar/Avatar";
+import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
 import {
-  Avatar,
-  Badge,
-  ConfirmSheet,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  Icon,
-  focusRing,
-} from "@/src/presentation/design-system";
+} from "@/src/presentation/design-system/components/DropdownMenu/DropdownMenu";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
+import { ConfirmSheet } from "@/src/presentation/design-system/components/Sheet/ConfirmSheet";
 
 import type { DashboardViewer } from "./viewer";
 

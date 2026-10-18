@@ -5,7 +5,9 @@ import { Link } from "@/src/i18n/navigation";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { cn } from "@/src/lib/utils";
 import { FadeInImage } from "@/src/presentation/components/FadeInImage";
-import { Badge, focusRing, interactiveCard, zoomOnGroupHover } from "@/src/presentation/design-system";
+import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
+import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
+import { interactiveCard, zoomOnGroupHover } from "@/src/presentation/design-system/components/shared/motion";
 
 import { AddToBasketButton } from "./AddToBasketButton";
 

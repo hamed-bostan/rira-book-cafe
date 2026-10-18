@@ -2,7 +2,8 @@ import { SearchX } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
 import { Link } from "@/src/i18n/navigation";
-import { Button, EmptyState } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
 
 /**
  * 404 for public pages that call `notFound()` (an unknown menu item, event or

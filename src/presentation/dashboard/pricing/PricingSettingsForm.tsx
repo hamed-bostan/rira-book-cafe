@@ -10,11 +10,22 @@ import { useRouter } from "@/src/i18n/navigation";
 import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
-import { Button, FormMessage, Input, TextField, useToast } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
+import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
+import { TextField } from "@/src/presentation/design-system/components/form/TextField/TextField";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { pricingApi } from "./pricing-api";
 
-const FIELDS = ["defaultMarkup", "roundingStep", "overheadSource", "manualMonthlyOverhead", "expectedMonthlyUnits", "overheadMonths"] as const;
+const FIELDS = [
+  "defaultMarkup",
+  "roundingStep",
+  "overheadSource",
+  "manualMonthlyOverhead",
+  "expectedMonthlyUnits",
+  "overheadMonths",
+] as const;
 
 function toDefaults(settings: PricingSettings): PricingSettingsInput {
   return {
@@ -73,15 +84,38 @@ export function PricingSettingsForm({ settings, canWrite }: { settings: PricingS
   });
 
   return (
-    <form onSubmit={onSubmit} className="flex max-w-xl flex-col gap-5 rounded-card-lg border border-border bg-background p-4 md:p-6" noValidate>
-      <TextField label={t("settings.defaultMarkupLabel")} required description={t("settings.defaultMarkupHint")} error={fieldError(errors.defaultMarkup?.message)}>
-        {(control) => <Input {...control} {...register("defaultMarkup")} inputMode="decimal" dir="ltr" className="max-w-32" disabled={!canWrite} />}
+    <form
+      onSubmit={onSubmit}
+      className="flex max-w-xl flex-col gap-5 rounded-card-lg border border-border bg-background p-4 md:p-6"
+      noValidate
+    >
+      <TextField
+        label={t("settings.defaultMarkupLabel")}
+        required
+        description={t("settings.defaultMarkupHint")}
+        error={fieldError(errors.defaultMarkup?.message)}
+      >
+        {(control) => (
+          <Input
+            {...control}
+            {...register("defaultMarkup")}
+            inputMode="decimal"
+            dir="ltr"
+            className="max-w-32"
+            disabled={!canWrite}
+          />
+        )}
       </TextField>
 
       <fieldset className="flex flex-col gap-2" disabled={!canWrite}>
-        <legend className="mb-1 text-body-small-emphasis text-input-foreground">{t("settings.overheadSourceLabel")}</legend>
+        <legend className="mb-1 text-body-small-emphasis text-input-foreground">
+          {t("settings.overheadSourceLabel")}
+        </legend>
         {OVERHEAD_SOURCES.map((option) => (
-          <label key={option} className="flex cursor-pointer items-start gap-2 rounded-card-md border border-border px-3 py-2 text-body-small has-[:checked]:border-primary has-[:checked]:bg-accent">
+          <label
+            key={option}
+            className="flex cursor-pointer items-start gap-2 rounded-card-md border border-border px-3 py-2 text-body-small has-[:checked]:border-primary has-[:checked]:bg-accent"
+          >
             <input type="radio" value={option} {...register("overheadSource")} className="mt-1 accent-primary" />
             <span>
               <span className="block text-body-small-emphasis text-foreground">{t(`settings.source.${option}`)}</span>
@@ -92,21 +126,73 @@ export function PricingSettingsForm({ settings, canWrite }: { settings: PricingS
       </fieldset>
 
       {source === "manual" ? (
-        <TextField label={t("settings.manualOverheadLabel")} required description={t("settings.manualOverheadHint")} error={fieldError(errors.manualMonthlyOverhead?.message)}>
-          {(control) => <Input {...control} {...register("manualMonthlyOverhead")} inputMode="numeric" dir="ltr" disabled={!canWrite} />}
+        <TextField
+          label={t("settings.manualOverheadLabel")}
+          required
+          description={t("settings.manualOverheadHint")}
+          error={fieldError(errors.manualMonthlyOverhead?.message)}
+        >
+          {(control) => (
+            <Input
+              {...control}
+              {...register("manualMonthlyOverhead")}
+              inputMode="numeric"
+              dir="ltr"
+              disabled={!canWrite}
+            />
+          )}
         </TextField>
       ) : (
-        <TextField label={t("settings.monthsLabel")} description={t("settings.monthsHint")} error={fieldError(errors.overheadMonths?.message)}>
-          {(control) => <Input {...control} {...register("overheadMonths")} inputMode="numeric" dir="ltr" className="max-w-24" disabled={!canWrite} />}
+        <TextField
+          label={t("settings.monthsLabel")}
+          description={t("settings.monthsHint")}
+          error={fieldError(errors.overheadMonths?.message)}
+        >
+          {(control) => (
+            <Input
+              {...control}
+              {...register("overheadMonths")}
+              inputMode="numeric"
+              dir="ltr"
+              className="max-w-24"
+              disabled={!canWrite}
+            />
+          )}
         </TextField>
       )}
 
-      <TextField label={t("settings.expectedUnitsLabel")} description={t("settings.expectedUnitsHint")} error={fieldError(errors.expectedMonthlyUnits?.message)}>
-        {(control) => <Input {...control} {...register("expectedMonthlyUnits")} inputMode="numeric" dir="ltr" className="max-w-40" disabled={!canWrite} />}
+      <TextField
+        label={t("settings.expectedUnitsLabel")}
+        description={t("settings.expectedUnitsHint")}
+        error={fieldError(errors.expectedMonthlyUnits?.message)}
+      >
+        {(control) => (
+          <Input
+            {...control}
+            {...register("expectedMonthlyUnits")}
+            inputMode="numeric"
+            dir="ltr"
+            className="max-w-40"
+            disabled={!canWrite}
+          />
+        )}
       </TextField>
 
-      <TextField label={t("settings.roundingLabel")} description={t("settings.roundingHint")} error={fieldError(errors.roundingStep?.message)}>
-        {(control) => <Input {...control} {...register("roundingStep")} inputMode="numeric" dir="ltr" className="max-w-40" disabled={!canWrite} />}
+      <TextField
+        label={t("settings.roundingLabel")}
+        description={t("settings.roundingHint")}
+        error={fieldError(errors.roundingStep?.message)}
+      >
+        {(control) => (
+          <Input
+            {...control}
+            {...register("roundingStep")}
+            inputMode="numeric"
+            dir="ltr"
+            className="max-w-40"
+            disabled={!canWrite}
+          />
+        )}
       </TextField>
 
       {errors.root?.message ? <FormMessage size="md">{errors.root.message}</FormMessage> : null}

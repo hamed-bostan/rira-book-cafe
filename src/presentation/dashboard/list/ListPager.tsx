@@ -4,15 +4,12 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useId } from "react";
 
-import {
-  DEFAULT_PAGE_SIZE,
-  TABLE_PAGE_SIZE_OPTIONS,
-  pageCount,
-  type Page,
-} from "@/src/domain/entities/Pagination";
+import { DEFAULT_PAGE_SIZE, TABLE_PAGE_SIZE_OPTIONS, pageCount, type Page } from "@/src/domain/entities/Pagination";
 import { mergePageParams } from "@/src/lib/api/pagination-params";
 import { formatNumber } from "@/src/lib/formatNumber";
-import { Button, Icon, Select } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { Select } from "@/src/presentation/design-system/components/form/Select/Select";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 
 import { useListParams } from "./useListParams";
 
@@ -71,7 +68,14 @@ export function ListPager({
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 px-0.5">
       <div className="flex flex-wrap items-center gap-2">
-        <label htmlFor={pageSizeId} className={compact ? "text-body-default text-muted-foreground dashboard-phone:text-body-small" : "text-body-small-strong text-muted-foreground"}>
+        <label
+          htmlFor={pageSizeId}
+          className={
+            compact
+              ? "text-body-default text-muted-foreground dashboard-phone:text-body-small"
+              : "text-body-small-strong text-muted-foreground"
+          }
+        >
           {t("rowsPerPage")}
         </label>
         <Select
@@ -79,7 +83,11 @@ export function ListPager({
           size="sm"
           value={page.pageSize}
           onChange={(event) => changePageSize(Number(event.target.value))}
-          className={compact ? "h-auto w-auto appearance-none border-transparent bg-transparent p-0 text-body-small" : "h-11 w-auto sm:h-10"}
+          className={
+            compact
+              ? "h-auto w-auto appearance-none border-transparent bg-transparent p-0 text-body-small"
+              : "h-11 w-auto sm:h-10"
+          }
         >
           {pageSizeOptions.map((size) => (
             <option key={size} value={size}>
@@ -90,44 +98,52 @@ export function ListPager({
       </div>
 
       <div className="ms-auto flex max-w-full flex-wrap items-center justify-end gap-2">
-        <p className={compact ? "text-body-default text-muted-foreground dashboard-phone:text-body-small" : "text-body-small-strong text-muted-foreground"}>
+        <p
+          className={
+            compact
+              ? "text-body-default text-muted-foreground dashboard-phone:text-body-small"
+              : "text-body-small-strong text-muted-foreground"
+          }
+        >
           {t("range", {
             first: formatNumber(first, locale),
             last: formatNumber(last, locale),
             total: formatNumber(page.total, locale),
           })}
         </p>
-        {totalPages > 1 && <>
-        <p className="text-body-small-strong text-muted-foreground">
-          {t("pageOf", {
-            page: formatNumber(page.page, locale),
-            pages: formatNumber(totalPages, locale),
-          })}
-        </p>
-        {/* The chevrons point at previous/next in reading order, so they mirror
+        {totalPages > 1 && (
+          <>
+            <p className="text-body-small-strong text-muted-foreground">
+              {t("pageOf", {
+                page: formatNumber(page.page, locale),
+                pages: formatNumber(totalPages, locale),
+              })}
+            </p>
+            {/* The chevrons point at previous/next in reading order, so they mirror
             under RTL — `ms/me` logic isn't enough for a glyph that has a
             direction of its own. */}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => goTo(page.page - 1)}
-          disabled={page.page <= 1}
-          aria-label={t("previous")}
-          className="size-11"
-        >
-          <Icon icon={ChevronLeft} size="sm" className="rtl:rotate-180" />
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => goTo(page.page + 1)}
-          disabled={page.page >= totalPages}
-          aria-label={t("next")}
-          className="size-11"
-        >
-          <Icon icon={ChevronRight} size="sm" className="rtl:rotate-180" />
-        </Button>
-        </>}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => goTo(page.page - 1)}
+              disabled={page.page <= 1}
+              aria-label={t("previous")}
+              className="size-11"
+            >
+              <Icon icon={ChevronLeft} size="sm" className="rtl:rotate-180" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => goTo(page.page + 1)}
+              disabled={page.page >= totalPages}
+              aria-label={t("next")}
+              className="size-11"
+            >
+              <Icon icon={ChevronRight} size="sm" className="rtl:rotate-180" />
+            </Button>
+          </>
+        )}
       </div>
     </div>
   );

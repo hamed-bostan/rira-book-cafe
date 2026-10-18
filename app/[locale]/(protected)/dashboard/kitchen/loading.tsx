@@ -1,5 +1,6 @@
 import { KitchenBoardSkeleton } from "@/src/presentation/dashboard/kitchen/KitchenBoardSkeleton";
-import { LoadingRegion, Skeleton } from "@/src/presentation/design-system";
+import { LoadingRegion } from "@/src/presentation/design-system/components/Skeleton/LoadingRegion";
+import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
 export default function KitchenLoading() {
   return (

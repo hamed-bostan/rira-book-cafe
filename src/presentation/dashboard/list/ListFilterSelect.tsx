@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/src/lib/utils";
-import { PopoverClose } from "@/src/presentation/design-system";
+import { PopoverClose } from "@/src/presentation/design-system/components/Popover/Popover";
 
 import { ListFilterPopover } from "./ListFilterPopover";
 import { useListParams } from "./useListParams";
@@ -49,9 +49,7 @@ export function ListFilterSelect({ paramName, label, options, className }: ListF
               <label
                 className={cn(
                   "flex min-h-10 cursor-pointer items-center gap-2 rounded-button px-2 py-2 text-start text-body-bold transition-colors",
-                  isSelected
-                    ? "bg-accent font-medium text-primary"
-                    : "text-foreground hover:bg-muted",
+                  isSelected ? "bg-accent font-medium text-primary" : "text-foreground hover:bg-muted",
                 )}
               >
                 <input

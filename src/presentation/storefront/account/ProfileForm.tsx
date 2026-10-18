@@ -9,7 +9,11 @@ import { PLACEHOLDER_USER_NAME } from "@/src/domain/entities/User";
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
-import { Button, FormMessage, Input, TextField, useToast } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
+import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
+import { TextField } from "@/src/presentation/design-system/components/form/TextField/TextField";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { storefrontApi } from "../storefront-api";
 

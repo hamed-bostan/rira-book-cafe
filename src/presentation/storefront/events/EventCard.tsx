@@ -8,7 +8,10 @@ import { formatNumber } from "@/src/lib/formatNumber";
 import { formatOrderDate, formatOrderTime } from "@/src/lib/formatOrderDate";
 import { cn } from "@/src/lib/utils";
 import { FadeInImage } from "@/src/presentation/components/FadeInImage";
-import { Badge, Icon, focusRing, interactiveCard, zoomOnGroupHover } from "@/src/presentation/design-system";
+import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
+import { interactiveCard, zoomOnGroupHover } from "@/src/presentation/design-system/components/shared/motion";
 
 import { eventTitle } from "../eventCopy";
 

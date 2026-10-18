@@ -4,7 +4,8 @@ import { Search } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { cn } from "@/src/lib/utils";
-import { Icon, Input } from "@/src/presentation/design-system";
+import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 
 import { useListParams } from "./useListParams";
 

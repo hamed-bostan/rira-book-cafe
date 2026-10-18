@@ -8,7 +8,9 @@ import { formatNumber } from "@/src/lib/formatNumber";
 import { formatOrderDateShort, formatOrderTime } from "@/src/lib/formatOrderDate";
 import { cn } from "@/src/lib/utils";
 import { OrderStatusBadge } from "@/src/presentation/dashboard/orders/OrderStatusBadge";
-import { Button, EmptyState, focusRing } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
+import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 
 /** The guest's order history, newest first; each links to its live status page. */
 export async function MyOrdersScreen({ orders }: { orders: Order[] }) {
@@ -35,13 +37,19 @@ export async function MyOrdersScreen({ orders }: { orders: Order[] }) {
             <li key={order.id}>
               <Link
                 href={`/orders/${order.id}`}
-                className={cn("flex items-center gap-3 rounded-card-md border border-border p-4 transition-colors hover:bg-muted", focusRing)}
+                className={cn(
+                  "flex items-center gap-3 rounded-card-md border border-border p-4 transition-colors hover:bg-muted",
+                  focusRing,
+                )}
               >
                 <div className="min-w-0 flex-1">
                   <p className="text-body-small-strong text-foreground">#{formatNumber(order.orderNumber, locale)}</p>
                   <p className="text-body-caption text-muted-foreground">
                     {formatOrderDateShort(order.placedAt, locale)} · {formatOrderTime(order.placedAt, locale)} ·{" "}
-                    {t("orders.itemCount", { count: orderItemCount(order), formatted: formatNumber(orderItemCount(order), locale) })}
+                    {t("orders.itemCount", {
+                      count: orderItemCount(order),
+                      formatted: formatNumber(orderItemCount(order), locale),
+                    })}
                   </p>
                 </div>
                 <OrderStatusBadge status={order.status} />

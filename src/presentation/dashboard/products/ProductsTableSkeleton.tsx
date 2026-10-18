@@ -1,4 +1,4 @@
-import { Skeleton } from "@/src/presentation/design-system";
+import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
 /** Rows (and phone cards) drawn — the list's first screen. */
 const ROW_COUNT = 10;

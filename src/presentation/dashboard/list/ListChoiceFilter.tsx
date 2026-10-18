@@ -3,7 +3,7 @@
 import { Check } from "lucide-react";
 
 import { cn } from "@/src/lib/utils";
-import { PopoverClose } from "@/src/presentation/design-system";
+import { PopoverClose } from "@/src/presentation/design-system/components/Popover/Popover";
 
 import { ListFilterPopover } from "./ListFilterPopover";
 import { useListParams } from "./useListParams";
@@ -83,10 +83,8 @@ export function ListChoiceFilter({
               onClick={() => setFilter(paramName, option.value || null)}
               className={cn(
                 "flex items-center gap-2 rounded-button px-2 py-2 text-start text-body-bold transition-colors",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                isSelected
-                  ? "bg-accent font-medium text-primary"
-                  : "text-foreground hover:bg-muted",
+                "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                isSelected ? "bg-accent font-medium text-primary" : "text-foreground hover:bg-muted",
               )}
             >
               <Check

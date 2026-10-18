@@ -1,4 +1,4 @@
-import { Skeleton } from "@/src/presentation/design-system";
+import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
 /** today · 7d · 30d · 90d · custom. */
 const RANGE_CHIPS = 5;

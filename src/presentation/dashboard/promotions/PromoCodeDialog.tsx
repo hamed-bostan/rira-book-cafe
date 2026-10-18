@@ -6,12 +6,25 @@ import * as React from "react";
 
 import type { PromoCodeFormInput } from "@/src/contracts/promotion-schema";
 import { cafeDayOf } from "@/src/domain/entities/CafeTime";
-import { MAX_PROMO_DESCRIPTION_LENGTH, normalizePromoCode, PROMO_KINDS, type PromoCode, type PromoKind } from "@/src/domain/entities/Promotion";
+import {
+  MAX_PROMO_DESCRIPTION_LENGTH,
+  normalizePromoCode,
+  PROMO_KINDS,
+  type PromoCode,
+  type PromoKind,
+} from "@/src/domain/entities/Promotion";
 import { useRouter } from "@/src/i18n/navigation";
 import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
-import { Button, FormMessage, Icon, Input, Modal, ModalContent, Select, Switch, useToast } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
+import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
+import { Select } from "@/src/presentation/design-system/components/form/Select/Select";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { Modal, ModalContent } from "@/src/presentation/design-system/components/Modal/Modal";
+import { Switch } from "@/src/presentation/design-system/components/Switch/Switch";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { promotionsApi } from "./promotion-api";
 
@@ -20,7 +33,18 @@ type PromoCodeDialogProps = {
   promo?: PromoCode;
 };
 
-const FIELDS = ["code", "description", "kind", "value", "maxDiscount", "minSubtotal", "startsOn", "endsOn", "usageLimit", "perGuestLimit"] as const;
+const FIELDS = [
+  "code",
+  "description",
+  "kind",
+  "value",
+  "maxDiscount",
+  "minSubtotal",
+  "startsOn",
+  "endsOn",
+  "usageLimit",
+  "perGuestLimit",
+] as const;
 
 /** A code's stored window back to the inclusive cafe days the form shows. */
 function initialValues(promo?: PromoCode): PromoCodeFormInput {
@@ -93,19 +117,21 @@ export function PromoCodeDialog({ promo }: PromoCodeDialogProps) {
   const text = (field: (typeof FIELDS)[number], props: React.ComponentProps<typeof Input> = {}) => (
     <label className="flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
       {t(`field.${field}`)}
-      <Input
-        value={values[field]}
-        onChange={(event) => set(field, event.target.value)}
-        autoComplete="off"
-        {...props}
-      />
+      <Input value={values[field]} onChange={(event) => set(field, event.target.value)} autoComplete="off" {...props} />
     </label>
   );
 
   return (
     <>
       {promo ? (
-        <Button type="button" size="sm" variant="ghost" iconOnly aria-label={t("editAria", { code: promo.code })} onClick={openDialog}>
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          iconOnly
+          aria-label={t("editAria", { code: promo.code })}
+          onClick={openDialog}
+        >
           <Icon icon={Pencil} size="xs" />
         </Button>
       ) : (
@@ -133,8 +159,15 @@ export function PromoCodeDialog({ promo }: PromoCodeDialogProps) {
             </div>
             {text("description", { maxLength: MAX_PROMO_DESCRIPTION_LENGTH, placeholder: t("descriptionPlaceholder") })}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {text("value", { inputMode: "numeric", dir: "ltr", required: true, placeholder: values.kind === "percent" ? "10" : "50000" })}
-              {values.kind === "percent" ? text("maxDiscount", { inputMode: "numeric", dir: "ltr", placeholder: t("optional") }) : null}
+              {text("value", {
+                inputMode: "numeric",
+                dir: "ltr",
+                required: true,
+                placeholder: values.kind === "percent" ? "10" : "50000",
+              })}
+              {values.kind === "percent"
+                ? text("maxDiscount", { inputMode: "numeric", dir: "ltr", placeholder: t("optional") })
+                : null}
               {text("minSubtotal", { inputMode: "numeric", dir: "ltr", placeholder: t("optional") })}
               {text("usageLimit", { inputMode: "numeric", dir: "ltr", placeholder: t("unlimited") })}
               {text("perGuestLimit", { inputMode: "numeric", dir: "ltr", placeholder: t("unlimited") })}

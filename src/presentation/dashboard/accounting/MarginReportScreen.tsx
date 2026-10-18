@@ -5,7 +5,7 @@ import type { MarginReport } from "@/src/domain/entities/AccountingReports";
 import { formatPercent } from "@/src/lib/formatCafeDay";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
-import { EmptyState } from "@/src/presentation/design-system";
+import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
 
 import { StatementHeader } from "./StatementHeader";
 
@@ -17,7 +17,11 @@ export async function MarginReportScreen({ report }: { report: MarginReport }) {
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
-      <StatementHeader title={t("statements.margins.title")} subtitle={t("statements.margins.subtitle")} span={report} />
+      <StatementHeader
+        title={t("statements.margins.title")}
+        subtitle={t("statements.margins.subtitle")}
+        span={report}
+      />
 
       <dl className="grid grid-cols-2 gap-x-6 gap-y-4 rounded-card-lg border border-border bg-background p-4 md:grid-cols-4 md:p-6">
         {(
@@ -47,12 +51,24 @@ export async function MarginReportScreen({ report }: { report: MarginReport }) {
           <table className="w-full min-w-[40rem] text-body-small">
             <thead className="bg-surface text-body-caption text-muted-foreground">
               <tr>
-                <th scope="col" className="px-4 py-3 text-start font-medium">{t("margins.colItem")}</th>
-                <th scope="col" className="px-4 py-3 text-end font-medium">{t("margins.colQuantity")}</th>
-                <th scope="col" className="px-4 py-3 text-end font-medium">{t("margins.netRevenue")}</th>
-                <th scope="col" className="px-4 py-3 text-end font-medium">{t("margins.cost")}</th>
-                <th scope="col" className="px-4 py-3 text-end font-medium">{t("margins.grossProfit")}</th>
-                <th scope="col" className="px-4 py-3 text-end font-medium">{t("margins.marginRate")}</th>
+                <th scope="col" className="px-4 py-3 text-start font-medium">
+                  {t("margins.colItem")}
+                </th>
+                <th scope="col" className="px-4 py-3 text-end font-medium">
+                  {t("margins.colQuantity")}
+                </th>
+                <th scope="col" className="px-4 py-3 text-end font-medium">
+                  {t("margins.netRevenue")}
+                </th>
+                <th scope="col" className="px-4 py-3 text-end font-medium">
+                  {t("margins.cost")}
+                </th>
+                <th scope="col" className="px-4 py-3 text-end font-medium">
+                  {t("margins.grossProfit")}
+                </th>
+                <th scope="col" className="px-4 py-3 text-end font-medium">
+                  {t("margins.marginRate")}
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -61,11 +77,17 @@ export async function MarginReportScreen({ report }: { report: MarginReport }) {
                   <td className="px-4 py-2.5 text-foreground" dir="auto">
                     {row.name}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-2.5 text-end">{formatNumber(row.quantity, locale)}</td>
-                  <td className="whitespace-nowrap px-4 py-2.5 text-end">{formatMoney(row.netRevenue, locale)}</td>
-                  <td className="whitespace-nowrap px-4 py-2.5 text-end">{row.marginRate === null ? t("margins.noCost") : formatMoney(row.cost, locale)}</td>
-                  <td className="whitespace-nowrap px-4 py-2.5 text-end">{row.marginRate === null ? "—" : formatMoney(row.grossProfit, locale)}</td>
-                  <td className="whitespace-nowrap px-4 py-2.5 text-end text-body-small-emphasis">{row.marginRate === null ? "—" : formatPercent(row.marginRate, locale)}</td>
+                  <td className="px-4 py-2.5 text-end whitespace-nowrap">{formatNumber(row.quantity, locale)}</td>
+                  <td className="px-4 py-2.5 text-end whitespace-nowrap">{formatMoney(row.netRevenue, locale)}</td>
+                  <td className="px-4 py-2.5 text-end whitespace-nowrap">
+                    {row.marginRate === null ? t("margins.noCost") : formatMoney(row.cost, locale)}
+                  </td>
+                  <td className="px-4 py-2.5 text-end whitespace-nowrap">
+                    {row.marginRate === null ? "—" : formatMoney(row.grossProfit, locale)}
+                  </td>
+                  <td className="px-4 py-2.5 text-end text-body-small-emphasis whitespace-nowrap">
+                    {row.marginRate === null ? "—" : formatPercent(row.marginRate, locale)}
+                  </td>
                 </tr>
               ))}
             </tbody>

@@ -9,7 +9,10 @@ import type { Category } from "@/src/domain/entities/Category";
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { useBulkSelection } from "@/src/presentation/dashboard/bulk";
-import { Button, Icon, Select, useToast } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { Select } from "@/src/presentation/design-system/components/form/Select/Select";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { productsApi } from "./product-api";
 
@@ -63,11 +66,23 @@ export function ProductBulkActions({ categories }: ProductBulkActionsProps) {
 
   return (
     <>
-      <Button variant="outline" size="sm" loading={pending && active === "publish"} disabled={pending} onClick={() => apply({ type: "publish" })}>
+      <Button
+        variant="outline"
+        size="sm"
+        loading={pending && active === "publish"}
+        disabled={pending}
+        onClick={() => apply({ type: "publish" })}
+      >
         <Icon icon={Eye} size="sm" className="me-1.5" />
         {t("bulkPublish")}
       </Button>
-      <Button variant="outline" size="sm" loading={pending && active === "unpublish"} disabled={pending} onClick={() => apply({ type: "unpublish" })}>
+      <Button
+        variant="outline"
+        size="sm"
+        loading={pending && active === "unpublish"}
+        disabled={pending}
+        onClick={() => apply({ type: "unpublish" })}
+      >
         <Icon icon={EyeOff} size="sm" className="me-1.5" />
         {t("bulkUnpublish")}
       </Button>

@@ -8,7 +8,9 @@ import type { BookWaitlistStatus } from "@/src/domain/entities/BookWaitlist";
 import { Link, useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatNumber } from "@/src/lib/formatNumber";
-import { Button, Icon, useToast } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { storefrontApi } from "../storefront-api";
 
@@ -53,7 +55,9 @@ export function BookWaitlistPanel({ productId, status, signedIn }: BookWaitlistP
         <Icon icon={BellRing} size="xs" className="mt-0.5 shrink-0 text-primary" />
         <span>
           {t("waitlist.onLoan", { count: status.onLoan, formatted: formatNumber(status.onLoan, locale) })}{" "}
-          {status.queueLength > 0 ? t("waitlist.inLine", { count: status.queueLength, formatted: formatNumber(status.queueLength, locale) }) : null}
+          {status.queueLength > 0
+            ? t("waitlist.inLine", { count: status.queueLength, formatted: formatNumber(status.queueLength, locale) })
+            : null}
         </span>
       </p>
 
@@ -75,11 +79,20 @@ export function BookWaitlistPanel({ productId, status, signedIn }: BookWaitlistP
           </Button>
         </div>
       ) : signedIn ? (
-        <Button type="button" size="sm" className="self-start" loading={pending} onClick={() => run(() => storefrontApi.joinBookWaitlist(productId))}>
+        <Button
+          type="button"
+          size="sm"
+          className="self-start"
+          loading={pending}
+          onClick={() => run(() => storefrontApi.joinBookWaitlist(productId))}
+        >
           {t("waitlist.join")}
         </Button>
       ) : (
-        <Link href={`/login?callbackUrl=${encodeURIComponent(`/menu/${productId}`)}`} className="text-body-small-emphasis text-primary underline-offset-4 hover:underline">
+        <Link
+          href={`/login?callbackUrl=${encodeURIComponent(`/menu/${productId}`)}`}
+          className="text-body-small-emphasis text-primary underline-offset-4 hover:underline"
+        >
           {t("waitlist.signIn")}
         </Link>
       )}

@@ -2,7 +2,8 @@ import { SearchX } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
 import { Link } from "@/src/i18n/navigation";
-import { Button, EmptyState } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
 
 /**
  * Localized 404 for unmatched URLs under the `[locale]` segment (routed here by the

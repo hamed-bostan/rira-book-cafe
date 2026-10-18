@@ -1,4 +1,4 @@
-import { Skeleton } from "@/src/presentation/design-system";
+import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
 /**
  * Placeholder for `EventCard`: the bordered card, the 16:9 cover, the kind badge,

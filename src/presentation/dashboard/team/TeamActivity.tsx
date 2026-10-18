@@ -4,7 +4,8 @@ import { useLocale, useTranslations } from "next-intl";
 import { roleChangeKind } from "@/src/domain/entities/RoleChange";
 import { formatRelativeTime } from "@/src/lib/formatRelativeTime";
 import type { ActivityEntryWire } from "@/src/presentation/dashboard/activity/activity-response-schema";
-import { DataTable, EmptyState } from "@/src/presentation/design-system";
+import { DataTable } from "@/src/presentation/design-system/components/DataTable/DataTable";
+import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
 
 type TeamActivityProps = {
   /** Recent `user.roleChanged` entries from the activity log, newest first. */

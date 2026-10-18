@@ -8,7 +8,9 @@ import type { CategoryBulkAction } from "@/src/contracts/bulk-action-schema";
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { useBulkSelection } from "@/src/presentation/dashboard/bulk";
-import { Button, Icon, useToast } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { categoriesApi } from "./category-api";
 
@@ -41,7 +43,10 @@ export function CategoryBulkActions() {
     startTransition(async () => {
       try {
         await categoriesApi.bulkUpdate(selected, action);
-        toast({ tone: "success", title: action.type === "activate" ? t("bulkActivated", { count }) : t("bulkDeactivated", { count }) });
+        toast({
+          tone: "success",
+          title: action.type === "activate" ? t("bulkActivated", { count }) : t("bulkDeactivated", { count }),
+        });
         router.refresh();
         clear();
       } catch (err) {
@@ -52,11 +57,23 @@ export function CategoryBulkActions() {
 
   return (
     <>
-      <Button variant="outline" size="sm" loading={pending && active === "activate"} disabled={pending} onClick={() => apply({ type: "activate" })}>
+      <Button
+        variant="outline"
+        size="sm"
+        loading={pending && active === "activate"}
+        disabled={pending}
+        onClick={() => apply({ type: "activate" })}
+      >
         <Icon icon={Check} size="sm" className="me-1.5" />
         {t("bulkActivate")}
       </Button>
-      <Button variant="outline" size="sm" loading={pending && active === "deactivate"} disabled={pending} onClick={() => apply({ type: "deactivate" })}>
+      <Button
+        variant="outline"
+        size="sm"
+        loading={pending && active === "deactivate"}
+        disabled={pending}
+        onClick={() => apply({ type: "deactivate" })}
+      >
         <Icon icon={X} size="sm" className="me-1.5" />
         {t("bulkDeactivate")}
       </Button>

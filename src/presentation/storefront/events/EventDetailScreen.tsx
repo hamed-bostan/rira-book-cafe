@@ -12,7 +12,8 @@ import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { formatOrderDate, formatOrderTime } from "@/src/lib/formatOrderDate";
 import { FadeInImage } from "@/src/presentation/components/FadeInImage";
-import { Badge, Icon } from "@/src/presentation/design-system";
+import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 
 import { eventDescription, eventTitle } from "../eventCopy";
 

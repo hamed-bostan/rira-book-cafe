@@ -6,7 +6,12 @@ import * as React from "react";
 import { PAYMENT_SOURCES, type PaymentSource } from "@/src/domain/entities/Expense";
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
-import { Button, FormMessage, Input, Modal, ModalContent, Select, useToast } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
+import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
+import { Select } from "@/src/presentation/design-system/components/form/Select/Select";
+import { Modal, ModalContent } from "@/src/presentation/design-system/components/Modal/Modal";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { expensesApi } from "./expense-api";
 
@@ -64,7 +69,14 @@ export function PayExpenseButton({ id, number, expenseDate, today }: PayExpenseB
             </label>
             <label className="flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
               {t("detail.paidOn")}
-              <Input type="date" value={paidOn} min={expenseDate} max={today} onChange={(event) => setPaidOn(event.target.value)} dir="ltr" />
+              <Input
+                type="date"
+                value={paidOn}
+                min={expenseDate}
+                max={today}
+                onChange={(event) => setPaidOn(event.target.value)}
+                dir="ltr"
+              />
             </label>
             {error ? <FormMessage>{error}</FormMessage> : null}
             <div className="flex justify-end gap-2">

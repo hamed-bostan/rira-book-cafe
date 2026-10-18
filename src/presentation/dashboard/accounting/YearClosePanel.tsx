@@ -8,7 +8,10 @@ import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatCafeDayMedium } from "@/src/lib/formatCafeDay";
 import { fiscalYearsApi } from "@/src/presentation/dashboard/inventory/inventory-api";
-import { Badge, Button, ConfirmSheet, useToast } from "@/src/presentation/design-system";
+import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { ConfirmSheet } from "@/src/presentation/design-system/components/Sheet/ConfirmSheet";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { formatYear } from "./accounting-format";
 
@@ -50,7 +53,9 @@ export function YearClosePanel({ years, canWrite }: { years: FiscalYearStatus[];
       <ul className="divide-y divide-border">
         {years.map((year) => (
           <li key={year.year} className="flex flex-wrap items-center gap-3 py-3">
-            <span className="text-body-small-emphasis text-foreground">{t("yearClose.year", { year: formatYear(year.year, locale) })}</span>
+            <span className="text-body-small-emphasis text-foreground">
+              {t("yearClose.year", { year: formatYear(year.year, locale) })}
+            </span>
             <span className="text-body-caption text-muted-foreground">
               {formatCafeDayMedium(year.fromDay, locale)} – {formatCafeDayMedium(year.toDay, locale)}
             </span>
@@ -64,7 +69,13 @@ export function YearClosePanel({ years, canWrite }: { years: FiscalYearStatus[];
                   {t("yearClose.open")}
                 </Badge>
               ) : canWrite ? (
-                <Button type="button" size="sm" loading={pending && running === year.year} disabled={pending} onClick={() => setClosing(year.year)}>
+                <Button
+                  type="button"
+                  size="sm"
+                  loading={pending && running === year.year}
+                  disabled={pending}
+                  onClick={() => setClosing(year.year)}
+                >
                   {t("yearClose.close")}
                 </Button>
               ) : (

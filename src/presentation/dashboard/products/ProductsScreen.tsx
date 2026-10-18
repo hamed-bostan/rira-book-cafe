@@ -12,7 +12,9 @@ import { PRODUCT_KINDS, type Product } from "@/src/domain/entities/Product";
 import { Link } from "@/src/i18n/navigation";
 import { BulkActionBar, BulkSelectionProvider } from "@/src/presentation/dashboard/bulk";
 import { ListFilterSelect, ListPager, ListSearchInput } from "@/src/presentation/dashboard/list";
-import { Button, EmptyState, Icon } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 
 import { ProductBulkActions } from "./ProductBulkActions";
 import { ProductsTable } from "./ProductsTable";
@@ -89,17 +91,21 @@ export async function ProductsScreen({ products, categories, filters, canWrite }
           Creation remains a page-level action. */}
       <BulkSelectionProvider ids={products.items.map((product) => product.id)}>
         {products.items.length > 0 && canWrite ? (
-            <BulkActionBar>
-              <ProductBulkActions categories={categories} />
-            </BulkActionBar>
+          <BulkActionBar>
+            <ProductBulkActions categories={categories} />
+          </BulkActionBar>
         ) : null}
         <ProductsTable
           products={products.items}
           categoryNames={categoryNames}
           canWrite={canWrite}
-          toolbar={(
+          toolbar={
             <section aria-label={t("searchLabel")} className="min-w-0 space-y-3">
-              <ListSearchInput label={t("searchLabel")} placeholder={t("searchPlaceholder")} className="sm:max-w-none [&_input]:h-11 sm:[&_input]:h-10" />
+              <ListSearchInput
+                label={t("searchLabel")}
+                placeholder={t("searchPlaceholder")}
+                className="sm:max-w-none [&_input]:h-11 sm:[&_input]:h-10"
+              />
               <div className="grid min-w-0 grid-cols-1 gap-2 border-t border-border pt-3 @sm/products:grid-cols-2 @3xl/products:grid-cols-4 [&>a]:min-h-11 [&>a]:justify-center">
                 <ListFilterSelect
                   className="h-11 w-full min-w-0 truncate"
@@ -153,8 +159,8 @@ export async function ProductsScreen({ products, categories, filters, canWrite }
                 />
               </div>
             </section>
-          )}
-          emptyState={(
+          }
+          emptyState={
             <EmptyState
               icon={isFiltered ? SearchX : Coffee}
               title={isFiltered ? tList("noResultsTitle") : t("emptyTitle")}
@@ -174,7 +180,7 @@ export async function ProductsScreen({ products, categories, filters, canWrite }
                 ) : undefined
               }
             />
-          )}
+          }
           footer={<ListPager page={products} />}
         />
       </BulkSelectionProvider>

@@ -8,7 +8,12 @@ import { useRouter } from "@/src/i18n/navigation";
 import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
-import { Badge, Button, FormMessage, RatingStars, Textarea, useToast } from "@/src/presentation/design-system";
+import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
+import { Textarea } from "@/src/presentation/design-system/components/form/Textarea/Textarea";
+import { RatingStars } from "@/src/presentation/design-system/components/RatingStars/RatingStars";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { storefrontApi } from "../storefront-api";
 
@@ -50,7 +55,11 @@ export function ReviewForm({ productId, review }: ReviewFormProps) {
         router.refresh();
       } catch (err) {
         const field = err instanceof ApiError ? (err.fieldErrors?.rating ?? err.fieldErrors?.comment) : undefined;
-        setError(field ? (formErrorMessage(tFormErrors, field) ?? field) : localizeApiError(err, tApiErrors, t("reviews.saveError")));
+        setError(
+          field
+            ? (formErrorMessage(tFormErrors, field) ?? field)
+            : localizeApiError(err, tApiErrors, t("reviews.saveError")),
+        );
       }
     });
   }

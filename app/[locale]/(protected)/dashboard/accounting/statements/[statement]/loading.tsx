@@ -1,6 +1,6 @@
 import { StatementHeaderSkeleton } from "@/src/presentation/dashboard/accounting/StatementHeaderSkeleton";
 import { StatementSectionSkeleton } from "@/src/presentation/dashboard/accounting/StatementSectionSkeleton";
-import { LoadingRegion } from "@/src/presentation/design-system";
+import { LoadingRegion } from "@/src/presentation/design-system/components/Skeleton/LoadingRegion";
 
 /**
  * Mirrors the statement pages' shared shape: `StatementHeader` (breadcrumb, title,

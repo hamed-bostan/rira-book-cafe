@@ -1,5 +1,6 @@
 import { DashboardHeaderSkeleton, DashboardStatGridSkeleton } from "@/src/presentation/dashboard/skeletons";
-import { LoadingRegion, Skeleton } from "@/src/presentation/design-system";
+import { LoadingRegion } from "@/src/presentation/design-system/components/Skeleton/LoadingRegion";
+import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
 /** Best sellers listed beside the week's chart. */
 const TOP_ITEMS = 5;
@@ -19,7 +20,10 @@ export default function DashboardOverviewLoading() {
       {/* Today's revenue / orders: StatCard with a sparkline in place of the icon badge. */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {Array.from({ length: 2 }, (_, index) => (
-          <div key={index} className="flex min-h-40 flex-col justify-between gap-1 rounded-card-lg border border-border bg-background p-5">
+          <div
+            key={index}
+            className="flex min-h-40 flex-col justify-between gap-1 rounded-card-lg border border-border bg-background p-5"
+          >
             <Skeleton className="h-4 w-24 rounded-pill" />
             <div className="flex flex-col">
               <Skeleton className="h-8 w-32 rounded-button" />

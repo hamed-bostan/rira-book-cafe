@@ -3,7 +3,8 @@ import { getTranslations } from "next-intl/server";
 
 import type { Supplier } from "@/src/domain/entities/Expense";
 import { Link } from "@/src/i18n/navigation";
-import { Badge, EmptyState } from "@/src/presentation/design-system";
+import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
+import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
 
 import { SupplierDialog } from "./SupplierDialog";
 
@@ -13,7 +14,10 @@ export async function SuppliersScreen({ suppliers, canWrite }: { suppliers: Supp
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
-      <nav aria-label={t("breadcrumbLabel")} className="flex items-center gap-2 text-body-caption text-muted-foreground">
+      <nav
+        aria-label={t("breadcrumbLabel")}
+        className="flex items-center gap-2 text-body-caption text-muted-foreground"
+      >
         <Link href="/dashboard/expenses" className="hover:text-foreground">
           {t("heading")}
         </Link>
@@ -36,7 +40,10 @@ export async function SuppliersScreen({ suppliers, canWrite }: { suppliers: Supp
             {suppliers.map((supplier) => (
               <li key={supplier.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
                 <div className="min-w-0 flex-1">
-                  <Link href={`/dashboard/expenses?supplier=${supplier.id}`} className="text-body-small-emphasis text-foreground underline-offset-4 hover:underline">
+                  <Link
+                    href={`/dashboard/expenses?supplier=${supplier.id}`}
+                    className="text-body-small-emphasis text-foreground underline-offset-4 hover:underline"
+                  >
                     {supplier.name}
                   </Link>
                   {supplier.phone || supplier.note ? (

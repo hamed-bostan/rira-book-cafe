@@ -1,5 +1,6 @@
 import { EventFormSkeleton } from "@/src/presentation/dashboard/events/EventFormSkeleton";
-import { LoadingRegion, Skeleton } from "@/src/presentation/design-system";
+import { LoadingRegion } from "@/src/presentation/design-system/components/Skeleton/LoadingRegion";
+import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
 /** Mirrors the create-event page: heading + subtitle over `EventForm`, in the `max-w-xl` form column. */
 export default function CreateEventLoading() {

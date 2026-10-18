@@ -5,7 +5,8 @@ import { useTranslations } from "next-intl";
 
 import { Link, usePathname } from "@/src/i18n/navigation";
 import { cn } from "@/src/lib/utils";
-import { focusRing, Icon } from "@/src/presentation/design-system";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 
 import { isSectionActive } from "./sections";
 
@@ -53,7 +54,7 @@ export function BottomNav({ onOpenMore }: BottomNavProps) {
   return (
     <nav
       className={cn(
-        "fixed inset-x-0 bottom-0 z-40 mx-auto flex w-full max-w-[40.75rem] items-stretch justify-around border-x border-t border-border bg-background dashboard-short:hidden dashboard-landscape:hidden xl:hidden",
+        "fixed inset-x-0 bottom-0 z-40 mx-auto flex w-full max-w-[40.75rem] items-stretch justify-around border-x border-t border-border bg-background xl:hidden dashboard-landscape:hidden dashboard-short:hidden",
         "pb-[env(safe-area-inset-bottom)]",
       )}
     >
@@ -66,7 +67,7 @@ export function BottomNav({ onOpenMore }: BottomNavProps) {
             aria-current={active ? "page" : undefined}
             className={cn(
               focusRing,
-              "flex flex-1 flex-col items-center gap-1 pb-4 pt-7 text-body-caption-emphasis transition-colors dashboard-phone:pb-2 dashboard-phone:pt-3",
+              "flex flex-1 flex-col items-center gap-1 pt-7 pb-4 text-body-caption-emphasis transition-colors dashboard-phone:pt-3 dashboard-phone:pb-2",
               active ? "text-primary" : "text-muted-foreground hover:text-foreground",
             )}
           >
@@ -82,7 +83,7 @@ export function BottomNav({ onOpenMore }: BottomNavProps) {
         aria-label={t("moreAria")}
         className={cn(
           focusRing,
-          "flex flex-1 flex-col items-center gap-1 pb-4 pt-7 text-body-caption-emphasis text-muted-foreground transition-colors hover:text-foreground dashboard-phone:pb-2 dashboard-phone:pt-3",
+          "flex flex-1 flex-col items-center gap-1 pt-7 pb-4 text-body-caption-emphasis text-muted-foreground transition-colors hover:text-foreground dashboard-phone:pt-3 dashboard-phone:pb-2",
         )}
       >
         <Icon icon={MoreHorizontal} size="sm" />

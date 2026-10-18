@@ -1,5 +1,6 @@
 import { DashboardHeaderSkeleton } from "@/src/presentation/dashboard/skeletons";
-import { LoadingRegion, Skeleton } from "@/src/presentation/design-system";
+import { LoadingRegion } from "@/src/presentation/design-system/components/Skeleton/LoadingRegion";
+import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
 /** Member rows drawn — a small team. */
 const MEMBER_ROWS = 4;
@@ -8,7 +9,7 @@ const ACTIVITY_ROWS = 4;
 
 export default function TeamLoading() {
   return (
-    <LoadingRegion className="mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-4 sm:gap-6">
+    <LoadingRegion className="mx-auto flex w-full max-w-6xl min-w-0 flex-col gap-4 sm:gap-6">
       <DashboardHeaderSkeleton />
 
       {/* Grant access: phone, name, role, submit — two columns from `sm`, one row from `xl`. */}
@@ -68,7 +69,10 @@ export default function TeamLoading() {
         <div className="overflow-hidden rounded-card-lg border border-border">
           <div className="divide-y divide-border">
             {Array.from({ length: ACTIVITY_ROWS }, (_, row) => (
-              <div key={row} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5 bg-background px-4 py-3">
+              <div
+                key={row}
+                className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5 bg-background px-4 py-3"
+              >
                 <Skeleton className="h-4 w-64 max-w-full rounded-pill" />
                 <Skeleton className="h-3.5 w-24 rounded-pill" />
               </div>

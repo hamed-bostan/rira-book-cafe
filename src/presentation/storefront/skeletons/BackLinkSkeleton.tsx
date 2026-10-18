@@ -1,4 +1,4 @@
-import { Skeleton } from "@/src/presentation/design-system";
+import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
 /** Placeholder for the "Back to …" link that tops a detail page (`text-body-small-strong`, a 21px line). */
 export function BackLinkSkeleton() {

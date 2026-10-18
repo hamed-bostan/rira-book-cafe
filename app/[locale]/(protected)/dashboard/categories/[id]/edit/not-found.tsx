@@ -2,7 +2,8 @@ import { FolderX } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
 import { Link } from "@/src/i18n/navigation";
-import { Button, EmptyState } from "@/src/presentation/design-system";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
 
 /** Shown when editing a category that no longer exists (the page called `notFound()`). */
 export default async function EditCategoryNotFound() {

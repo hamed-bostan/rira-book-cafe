@@ -1,4 +1,5 @@
-import { LoadingRegion, Skeleton } from "@/src/presentation/design-system";
+import { LoadingRegion } from "@/src/presentation/design-system/components/Skeleton/LoadingRegion";
+import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
 /** Mirrors the new-statement page: heading, then `NewBankStatementForm` — period and balances two-up, the paste-lines box, add-line row, submit. */
 export default function NewBankStatementLoading() {

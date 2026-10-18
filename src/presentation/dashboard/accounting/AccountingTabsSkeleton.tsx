@@ -1,5 +1,5 @@
 import { cn } from "@/src/lib/utils";
-import { Skeleton } from "@/src/presentation/design-system";
+import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
 /** One width per tab, in `AccountingTabs` order, so the pills read as labels of different lengths. */
 const TAB_WIDTHS = ["w-20", "w-20", "w-24", "w-24", "w-16", "w-20"] as const;

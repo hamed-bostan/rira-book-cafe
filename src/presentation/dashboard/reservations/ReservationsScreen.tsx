@@ -7,7 +7,7 @@ import { formatNumber } from "@/src/lib/formatNumber";
 import { formatOrderDate } from "@/src/lib/formatOrderDate";
 import { AutoRefresh } from "@/src/presentation/components/AutoRefresh";
 import { ListFilterSelect } from "@/src/presentation/dashboard/list";
-import { EmptyState } from "@/src/presentation/design-system";
+import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
 
 import { ReservationCard } from "./ReservationCard";
 import { ReservationDayPicker } from "./ReservationDayPicker";
@@ -31,7 +31,14 @@ type ReservationsScreenProps = {
  * day over the REST API (BFF). The day and status filter live in the URL; the
  * list re-reads itself while open, and every action `router.refresh()`es.
  */
-export async function ReservationsScreen({ reservations, day, today, isFiltered, query, canManage }: ReservationsScreenProps) {
+export async function ReservationsScreen({
+  reservations,
+  day,
+  today,
+  isFiltered,
+  query,
+  canManage,
+}: ReservationsScreenProps) {
   const t = await getTranslations("dashReservations");
   const locale = await getLocale();
 

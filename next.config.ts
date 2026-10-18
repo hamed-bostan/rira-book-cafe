@@ -58,6 +58,9 @@ const nextConfig: NextConfig = {
       { source: "/:path*", headers: SECURITY_HEADERS },
       { source: "/api/:path*", headers: [NON_DOCUMENT_CSP] },
       { source: "/uploads/:path*", headers: [NON_DOCUMENT_CSP] },
+      // Self-hosted fonts carry a content hash in their name (src/styles/fonts.css),
+      // so a changed file gets a new URL and the old one can be cached forever.
+      { source: "/fonts/:file*", headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }] },
     ];
   },
 };

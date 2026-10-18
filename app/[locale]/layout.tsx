@@ -1,12 +1,12 @@
-import { Inter } from "next/font/google";
-import localFont from "next/font/local";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { preload } from "react-dom";
 
 import { getLangDir } from "@/src/i18n/direction";
 import { routing } from "@/src/i18n/routing";
+import { PRIMARY_FONT_URL } from "@/src/lib/fonts";
 import { getSiteUrl } from "@/src/lib/siteUrl";
 import { DirectionProvider } from "@/src/presentation/components/DirectionProvider";
 import { Toaster } from "@/src/presentation/design-system/components/Toast";
@@ -15,20 +15,6 @@ import { defaultShareImage } from "@/src/presentation/seo/shareImage";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import "@/src/styles/globals.css";
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-});
-
-// One self-hosted variable WOFF2 covers every UI weight and mixed Persian/Latin text.
-const vazirmatn = localFont({
-  src: "../../src/shared/fonts/Vazirmatn[wght].woff2",
-  weight: "100 900",
-  style: "normal",
-  display: "swap",
-  variable: "--font-vazirmatn",
-});
 
 export function generateStaticParams(): { locale: string }[] {
   return routing.locales.map((locale) => ({ locale }));
@@ -89,8 +75,13 @@ export default async function LocaleLayout({
   // Hand next-intl this render's locale (it reads it from here, not from headers).
   setRequestLocale(locale);
 
+  // Preload only the font this locale renders in (src/styles/fonts.css declares
+  // both): next/font preloaded every face on every page, so English visitors
+  // fetched 111 kB of Persian font they never used, and vice versa.
+  preload(PRIMARY_FONT_URL[locale], { as: "font", type: "font/woff2", crossOrigin: "anonymous" });
+
   return (
-    <html lang={locale} dir={getLangDir(locale)} className={`${inter.variable} ${vazirmatn.variable}`}>
+    <html lang={locale} dir={getLangDir(locale)}>
       <body className="font-sans">
         {/* Locale + messages are inherited from the request config (src/i18n/request.ts). */}
         <NextIntlClientProvider>

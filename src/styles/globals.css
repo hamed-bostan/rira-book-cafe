@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "./tokens.css";
+@import "./fonts.css";
 @plugin "tailwindcss-animate";
 
 @custom-variant dark (&:is(.dark *));
@@ -56,7 +57,7 @@
   }
 
   body {
-    @apply bg-background text-foreground text-body-default;
+    @apply bg-background text-body-default text-foreground;
     font-family: var(--font-sans);
     /* Long words and identifiers must not force overflow at enlarged sizes. */
     overflow-wrap: anywhere;

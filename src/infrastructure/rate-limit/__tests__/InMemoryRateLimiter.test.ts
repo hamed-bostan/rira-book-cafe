@@ -64,4 +64,15 @@ describe("InMemoryRateLimiter", () => {
     for (let i = 0; i < 5; i += 1) await limiter.consume("fresh", RULE);
     expect(limiter.size).toBe(1);
   });
+
+  it("forgets every count on clear()", async () => {
+    const limiter = new InMemoryRateLimiter({ now: () => 0 });
+    for (let i = 0; i < RULE.limit; i += 1) await limiter.consume("a", RULE);
+    expect((await limiter.consume("a", RULE)).allowed).toBe(false);
+
+    limiter.clear();
+
+    expect(limiter.size).toBe(0);
+    expect((await limiter.consume("a", RULE)).allowed).toBe(true);
+  });
 });

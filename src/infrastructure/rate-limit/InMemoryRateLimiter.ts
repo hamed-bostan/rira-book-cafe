@@ -64,6 +64,12 @@ export class InMemoryRateLimiter implements IRateLimiter {
     return this.buckets.size;
   }
 
+  /** Forget every count — for test suites that reset all state between tests. */
+  clear(): void {
+    this.buckets.clear();
+    this.hitsSinceSweep = 0;
+  }
+
   private maybeSweep(now: number): void {
     this.hitsSinceSweep += 1;
     if (this.hitsSinceSweep < this.sweepEvery && this.buckets.size < this.maxKeys) return;

@@ -1,6 +1,8 @@
 import { afterAll, beforeEach, vi } from "vitest";
 
+import { rateLimiter } from "@/src/infrastructure/container";
 import { prisma } from "@/src/infrastructure/prisma/client";
+import { InMemoryRateLimiter } from "@/src/infrastructure/rate-limit/InMemoryRateLimiter";
 
 import { restoreTestDatabase } from "../fixtures/database";
 
@@ -25,11 +27,13 @@ vi.mock("@/auth", async () => {
 // instead, so a test can assert which tags a write expired.
 vi.mock("next/cache", () => ({ revalidateTag: vi.fn() }));
 
-// Every test starts from the same database, signed out.
+// Every test starts from the same database, signed out, with no rate-limit history
+// (the limiter counts in process memory, so earlier tests' orders would add up).
 beforeEach(async () => {
   await restoreTestDatabase();
   signInAs(null);
   vi.clearAllMocks();
+  if (rateLimiter instanceof InMemoryRateLimiter) rateLimiter.clear();
 });
 
 afterAll(async () => {

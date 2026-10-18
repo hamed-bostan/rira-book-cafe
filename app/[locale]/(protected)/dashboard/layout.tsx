@@ -1,12 +1,21 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 import { requirePermission, sessionPermissions } from "@/src/lib/require-permission";
 import { DashboardShell } from "@/src/presentation/dashboard/shell/DashboardShell";
 import { SIDEBAR_COLLAPSED_COOKIE_NAME } from "@/src/presentation/dashboard/shell/sidebarCollapseCookie";
 import { dashboardViewerFor } from "@/src/presentation/dashboard/shell/viewer";
+import { NO_INDEX } from "@/src/presentation/seo/noIndexMetadata";
 
+import type { Metadata } from "next";
 import type { ReactNode } from "react";
+
+/** The whole dashboard is staff-only: titled for the tab, never indexed (robots.txt also disallows it). */
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("dashboard");
+  return { title: t("navDashboard"), robots: NO_INDEX };
+}
 
 /**
  * Shell for the dashboard. Gates the whole `/dashboard` tree on `dashboard.view`,

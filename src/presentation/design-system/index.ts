@@ -22,4 +22,7 @@ export * from "./components/Chip";
 export * from "./components/SelectableTile";
 export * from "./components/RatingStars";
 export * from "./icons";
-export * from "./chart";
+
+// Charts are a separate entry point — `@/src/presentation/design-system/chart` — because
+// they pull in Recharts: re-exported here, its code rode along into every screen that
+// imports the design system, the storefront included.

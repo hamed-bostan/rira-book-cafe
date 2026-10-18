@@ -7,7 +7,9 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { getLangDir } from "@/src/i18n/direction";
 import { routing } from "@/src/i18n/routing";
+import { getSiteUrl } from "@/src/lib/siteUrl";
 import { DirectionProvider } from "@/src/presentation/components/DirectionProvider";
+import { defaultShareImage } from "@/src/presentation/seo/shareImage";
 
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
@@ -36,22 +38,18 @@ export function generateStaticParams(): { locale: string }[] {
  * description. Locale is negotiated per request from the `NEXT_LOCALE` cookie, so a page
  * lives at a single locale-agnostic URL (no per-locale paths → no `hreflang` alternates);
  * the served `<html lang>` and copy reflect the active locale. `openGraph.locale` still
- * advertises that language. URLs resolve against `metadataBase` (`NEXT_PUBLIC_SITE_URL`,
- * unset in dev → relative).
+ * advertises that language. Pages add their own canonical URL and Open Graph data
+ * (`src/presentation/seo/pageMetadata.ts`), resolved against `metadataBase` — the public
+ * origin from `getSiteUrl`.
  */
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ locale: string }>;
-}): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale: requested } = await params;
   const locale = hasLocale(routing.locales, requested) ? requested : routing.defaultLocale;
   const t = await getTranslations({ locale, namespace: "meta" });
   const isFa = locale === "fa";
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
 
   return {
-    metadataBase: siteUrl ? new URL(siteUrl) : undefined,
+    metadataBase: await getSiteUrl(),
     title: { default: t("title"), template: t("titleTemplate") },
     description: t("description"),
     applicationName: t("siteName"),
@@ -62,7 +60,9 @@ export async function generateMetadata({
       description: t("description"),
       locale: isFa ? "fa_IR" : "en_US",
       alternateLocale: isFa ? "en_US" : "fa_IR",
+      images: [defaultShareImage(locale, t("siteName"))],
     },
+    twitter: { card: "summary_large_image" },
   };
 }
 
@@ -89,11 +89,7 @@ export default async function LocaleLayout({
   setRequestLocale(locale);
 
   return (
-    <html
-      lang={locale}
-      dir={getLangDir(locale)}
-      className={`${inter.variable} ${vazirmatn.variable}`}
-    >
+    <html lang={locale} dir={getLangDir(locale)} className={`${inter.variable} ${vazirmatn.variable}`}>
       <body className="font-sans">
         {/* Locale + messages are inherited from the request config (src/i18n/request.ts). */}
         <NextIntlClientProvider>

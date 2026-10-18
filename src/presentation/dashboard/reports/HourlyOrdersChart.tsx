@@ -4,7 +4,7 @@ import { useLocale } from "next-intl";
 import { Bar, BarChart, CartesianGrid, Tooltip, XAxis, YAxis } from "recharts";
 
 import { formatNumber } from "@/src/lib/formatNumber";
-import { ChartContainer, ChartTooltip } from "@/src/presentation/design-system";
+import { ChartContainer, ChartTooltip } from "@/src/presentation/design-system/chart";
 
 type HourlyOrdersChartProps = {
   hourly: { hour: number; orders: number }[];

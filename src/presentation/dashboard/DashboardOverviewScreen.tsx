@@ -9,7 +9,7 @@ import { formatNumber } from "@/src/lib/formatNumber";
 import { AutoRefresh } from "@/src/presentation/components/AutoRefresh";
 
 import { LowStockAlert } from "./inventory/LowStockAlert";
-import { DailySalesChart } from "./reports/DailySalesChart";
+import { LazyDailySalesChart } from "./reports/LazyDailySalesChart";
 import { TopItemsTable } from "./reports/TopItemsTable";
 import { StatCard } from "./StatCard";
 
@@ -102,7 +102,7 @@ export async function DashboardOverviewScreen({ overview, week, stockItems }: Da
             />
           </div>
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-            <DailySalesChart
+            <LazyDailySalesChart
               daily={week.daily}
               labels={{
                 heading: t("weekHeading"),

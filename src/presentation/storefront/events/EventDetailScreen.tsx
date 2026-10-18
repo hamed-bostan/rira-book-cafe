@@ -37,7 +37,7 @@ export async function EventDetailScreen({ event, signedIn, registration, now }: 
 
       {event.imageUrl ? (
         <div className="relative aspect-[16/9] overflow-hidden rounded-card-lg bg-muted">
-          <Image src={event.imageUrl} alt="" fill sizes="(min-width: 768px) 768px, 100vw" className="object-cover" priority />
+          <Image src={event.imageUrl} alt={eventTitle(event, locale)} fill sizes="(min-width: 800px) 768px, calc(100vw - 32px)" className="object-cover" preload />
         </div>
       ) : null}
 

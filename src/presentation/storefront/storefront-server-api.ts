@@ -1,3 +1,5 @@
+import { cache } from "react";
+
 import { profileResponseSchema, type ProfileWire } from "@/src/contracts/profile-schema";
 import type { BookLoan } from "@/src/domain/entities/BookLoan";
 import type { BookWaitlistEntry, BookWaitlistStatus } from "@/src/domain/entities/BookWaitlist";
@@ -50,6 +52,16 @@ async function orNull<T>(read: Promise<T>): Promise<T | null> {
   }
 }
 
+// Reads that both a page's `generateMetadata` and its body make. `serverApiGet` passes
+// a timeout `signal`, which opts its fetch out of Next's request memoization, so these
+// are memoized per request with React `cache` instead of hitting the API twice.
+const readCategories = cache(async (): Promise<Category[]> => {
+  const all = await serverApiGet("/categories", categoryListResponseSchema);
+  return all.filter((category) => category.isActive);
+});
+const readItem = cache((id: string): Promise<Product | null> => orNull(serverApiGet(`/products/${id}`, productResponseSchema)));
+const readEvent = cache((id: string): Promise<CafeEvent | null> => orNull(serverApiGet(`/events/${id}`, eventResponseSchema)));
+
 /**
  * Server-side reads for the public site (BFF), fetched during server render in the
  * guest's language. Guest-owned reads forward the session cookie, so each
@@ -57,9 +69,8 @@ async function orNull<T>(read: Promise<T>): Promise<T | null> {
  */
 export const storefrontServerApi = {
   /** Active categories only — an inactive one is hidden from guests with its items. */
-  async categories(): Promise<Category[]> {
-    const all = await serverApiGet("/categories", categoryListResponseSchema);
-    return all.filter((category) => category.isActive);
+  categories(): Promise<Category[]> {
+    return readCategories();
   },
 
   /** The published menu. */
@@ -72,7 +83,7 @@ export const storefrontServerApi = {
   },
 
   item(id: string): Promise<Product | null> {
-    return orNull(serverApiGet(`/products/${id}`, productResponseSchema));
+    return readItem(id);
   },
 
   /** An item's approved reviews, newest first. */
@@ -90,7 +101,7 @@ export const storefrontServerApi = {
   },
 
   event(id: string): Promise<CafeEvent | null> {
-    return orNull(serverApiGet(`/events/${id}`, eventResponseSchema));
+    return readEvent(id);
   },
 
   myOrders(): Promise<Order[]> {

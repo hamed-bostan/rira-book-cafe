@@ -1,4 +1,4 @@
-import { chartColor } from "@/src/presentation/design-system";
+import { chartColor } from "@/src/presentation/design-system/chart";
 
 type ShareBarsProps = {
   heading: string;

@@ -26,7 +26,7 @@ export async function EventCard({ event }: { event: CafeEvent }) {
     >
       {event.imageUrl ? (
         <div className="relative aspect-[16/9] bg-muted">
-          <Image src={event.imageUrl} alt="" fill sizes="(min-width: 768px) 33vw, 100vw" className="object-cover" />
+          <Image src={event.imageUrl} alt="" fill sizes="(min-width: 1152px) 365px, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw" className="object-cover" />
         </div>
       ) : null}
       <div className="flex flex-1 flex-col gap-2 p-4">

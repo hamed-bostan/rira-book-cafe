@@ -1159,7 +1159,11 @@
       "origin": "Origin",
       "nutrition": "Nutrition & allergens",
       "noResults": "Nothing matches this filter.",
-      "clearFilters": "Show everything"
+      "clearFilters": "Show everything",
+      "pagination": "Menu pages",
+      "pageRange": "{first}–{last} of {total}",
+      "previousPage": "Previous",
+      "nextPage": "Next"
     },
     "basket": {
       "heading": "Your basket",

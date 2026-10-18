@@ -11,12 +11,19 @@ import { interactiveCard, zoomOnGroupHover } from "@/src/presentation/design-sys
 
 import { AddToBasketButton } from "./AddToBasketButton";
 
+type MenuItemCardProps = {
+  item: Product;
+  /** Preload the photo — for the cards that are likely the page's largest paint. */
+  preload?: boolean;
+};
+
 /**
  * One menu item: photo, name, price, and a quick add. Books show their author and
  * whether they're for sale or for reading here; a reading-only book has no add
  * button, and a sold-out item says so instead.
  */
-export async function MenuItemCard({ item }: { item: Product }) {
+
+export async function MenuItemCard({ item, preload = false }: MenuItemCardProps) {
   const t = await getTranslations("site");
   const locale = await getLocale();
   const soldOut = item.stockQuantity <= 0;
@@ -40,6 +47,7 @@ export async function MenuItemCard({ item }: { item: Product }) {
             fill
             sizes="(min-width: 1152px) 272px, (min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
             className={cn("object-cover", zoomOnGroupHover)}
+            preload={preload}
           />
           {item.badge ? (
             <span className="absolute start-2 top-2">

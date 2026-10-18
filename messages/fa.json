@@ -1159,7 +1159,11 @@
       "origin": "خاستگاه",
       "nutrition": "ارزش غذایی و آلرژن‌ها",
       "noResults": "چیزی با این فیلتر پیدا نشد.",
-      "clearFilters": "نمایش همه"
+      "clearFilters": "نمایش همه",
+      "pagination": "صفحه‌های منو",
+      "pageRange": "{first} تا {last} از {total}",
+      "previousPage": "قبلی",
+      "nextPage": "بعدی"
     },
     "basket": {
       "heading": "سبد شما",

@@ -2,6 +2,7 @@ import { Coffee, SearchX } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
 import type { Category } from "@/src/domain/entities/Category";
+import { pageCount } from "@/src/domain/entities/Pagination";
 import { PRODUCT_KINDS, type Product, type ProductKind } from "@/src/domain/entities/Product";
 import { Link } from "@/src/i18n/navigation";
 import { cn } from "@/src/lib/utils";
@@ -10,6 +11,13 @@ import { EmptyState } from "@/src/presentation/design-system/components/EmptySta
 import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 
 import { MenuItemCard } from "./MenuItemCard";
+import { MenuPager } from "./MenuPager";
+
+/** Items per menu page: six rows of the four-column grid, twelve of the two-column phone grid. */
+export const MENU_PAGE_SIZE = 24;
+
+/** Cards whose photo is preloaded — the first row on a phone, where the largest paint usually is. */
+const PRELOADED_CARDS = 2;
 
 type MenuScreenProps = {
   categories: Category[];
@@ -17,6 +25,8 @@ type MenuScreenProps = {
   /** The filters the page was opened with. */
   categoryId?: string;
   kind?: ProductKind;
+  /** 1-based page from `?page=`; out-of-range values are clamped. */
+  page?: number;
 };
 
 /**
@@ -24,7 +34,7 @@ type MenuScreenProps = {
  * Filters are links, so a filtered menu ("just the books") can be shared.
  * Items in a hidden category are left out.
  */
-export async function MenuScreen({ categories, items, categoryId, kind }: MenuScreenProps) {
+export async function MenuScreen({ categories, items, categoryId, kind, page: requestedPage = 1 }: MenuScreenProps) {
   const t = await getTranslations("site");
   const tProducts = await getTranslations("dashProducts");
 
@@ -35,6 +45,8 @@ export async function MenuScreen({ categories, items, categoryId, kind }: MenuSc
       (!categoryId || item.categoryId === categoryId) &&
       (!kind || item.kind === kind),
   );
+  const page = Math.min(Math.max(1, requestedPage), pageCount(visible.length, MENU_PAGE_SIZE));
+  const onPage = visible.slice((page - 1) * MENU_PAGE_SIZE, page * MENU_PAGE_SIZE);
   // Empty because of the filters (the unfiltered menu has something), not because the menu is.
   const isFiltered = Boolean(kind || categoryId) && items.some((item) => activeCategoryIds.has(item.categoryId));
   // Categories worth offering: ones with something of the chosen type in them.
@@ -42,10 +54,12 @@ export async function MenuScreen({ categories, items, categoryId, kind }: MenuSc
     items.some((item) => item.categoryId === category.id && (!kind || item.kind === kind)),
   );
 
-  function href(next: { categoryId?: string; kind?: ProductKind }): string {
+  // A filter link starts over at page 1; only the pager carries a page.
+  function href(next: { categoryId?: string; kind?: ProductKind; page?: number }): string {
     const params = new URLSearchParams();
     if (next.kind) params.set("kind", next.kind);
     if (next.categoryId) params.set("category", next.categoryId);
+    if (next.page && next.page > 1) params.set("page", String(next.page));
     const qs = params.toString();
     return qs ? `/menu?${qs}` : "/menu";
   }
@@ -99,11 +113,19 @@ export async function MenuScreen({ categories, items, categoryId, kind }: MenuSc
       ) : null}
 
       {visible.length > 0 ? (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-          {visible.map((item) => (
-            <MenuItemCard key={item.id} item={item} />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {onPage.map((item, index) => (
+              <MenuItemCard key={item.id} item={item} preload={index < PRELOADED_CARDS} />
+            ))}
+          </div>
+          <MenuPager
+            page={page}
+            pageSize={MENU_PAGE_SIZE}
+            total={visible.length}
+            href={(target) => href({ kind, categoryId, page: target })}
+          />
+        </>
       ) : (
         <EmptyState
           icon={isFiltered ? SearchX : Coffee}

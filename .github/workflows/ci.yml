@@ -6,17 +6,16 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
-  ci:
-    name: Lint, build & publish
+  # --- Fast feedback: lint, typecheck, unit tests with coverage thresholds ---
+  checks:
+    name: Lint, typecheck & unit tests
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
     steps:
       - uses: actions/checkout@v4
-
-      # --- Lint, typecheck & test (fast feedback on the runner) ---
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
@@ -26,10 +25,128 @@ jobs:
         run: npm run lint
       - name: Typecheck
         run: npm run typecheck
-      - name: Test
-        run: npm run test
+      - name: Unit tests (coverage thresholds on src/domain and src/contracts)
+        run: npm run test:coverage
 
-      # --- Build the image (this runs `next build` => also type-checks) ---
+  # --- Known vulnerabilities in dependencies (its own job: an advisory is a finding to act
+  # on, not a broken build, so it doesn't hold back the image publish below) ---
+  audit:
+    name: npm audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Audit (high and critical)
+        run: npm audit --audit-level=high
+
+  # --- Route handlers + use-cases + Prisma against a real Postgres ---
+  integration:
+    name: Integration tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          # Throwaway CI credentials for the service container only.
+          POSTGRES_USER: rira
+          POSTGRES_PASSWORD: testpassword
+          POSTGRES_DB: rira_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U rira -d rira_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql://rira:testpassword@localhost:5432/rira_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - name: Integration tests
+        run: npm run test:integration
+
+  # --- A few critical flows in a real browser against a production build ---
+  e2e:
+    name: E2E tests (Playwright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: rira
+          POSTGRES_PASSWORD: testpassword
+          POSTGRES_DB: rira_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U rira -d rira_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # The global setup creates this database next to the service's default one.
+      E2E_DATABASE_URL: postgresql://rira:testpassword@localhost:5432/rira_e2e_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+
+      - name: Read the Playwright version
+        id: playwright
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+      - name: Install Chromium
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+      - name: Install Chromium's system dependencies
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      # Playwright's webServer runs `next build` + `next start` with the test env.
+      - name: E2E tests
+        run: npm run test:e2e
+
+      - name: Upload the Playwright report and traces
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+
+  # --- Build the image; publish it on main once every test job has passed ---
+  publish:
+    name: Build & publish image
+    needs: [checks, integration, e2e]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      # This runs `next build` => also type-checks.
       - uses: docker/setup-buildx-action@v3
 
       - name: Log in to GHCR

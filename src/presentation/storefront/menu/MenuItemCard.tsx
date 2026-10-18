@@ -27,7 +27,10 @@ export async function MenuItemCard({ item }: { item: Product }) {
         interactiveCard,
       )}
     >
-      <Link href={`/menu/${item.id}`} className={cn("block", focusRing)}>
+      {/* A pointer-only shortcut: the name link below is the card's one link for keyboard
+          and screen-reader users, so this duplicate (a decorative image, no text) stays out
+          of the tab order and the accessibility tree. */}
+      <Link href={`/menu/${item.id}`} tabIndex={-1} aria-hidden className="block">
         <div className="relative aspect-[4/3] overflow-hidden bg-muted">
           <FadeInImage
             src={item.imageUrl}

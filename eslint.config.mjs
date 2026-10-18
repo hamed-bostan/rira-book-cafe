@@ -40,6 +40,11 @@ const eslintConfig = defineConfig([
     // Claude Code session state — worktrees carry a full repo copy (incl. its own
     // .next build output), which otherwise floods lint with generated-code errors.
     ".claude/**",
+    // Test reports (Playwright's HTML report bundles megabytes of minified JS).
+    "coverage/**",
+    "playwright-report/**",
+    "test-results/**",
+    "blob-report/**",
   ]),
 
   // Accessibility (eslint-config-next already registers the jsx-a11y plugin but

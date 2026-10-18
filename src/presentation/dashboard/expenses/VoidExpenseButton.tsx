@@ -5,7 +5,7 @@ import * as React from "react";
 
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
-import { Button, FormMessage, Modal, ModalContent, Textarea } from "@/src/presentation/design-system";
+import { Button, FormMessage, Modal, ModalContent, Textarea, useToast } from "@/src/presentation/design-system";
 
 import { expensesApi } from "./expense-api";
 
@@ -14,6 +14,7 @@ export function VoidExpenseButton({ id, number }: { id: string; number: number }
   const t = useTranslations("dashExpenses");
   const tApiErrors = useTranslations("apiErrors");
   const router = useRouter();
+  const { toast } = useToast();
   const [open, setOpen] = React.useState(false);
   const [reason, setReason] = React.useState("");
   const [error, setError] = React.useState<string | null>(null);
@@ -24,6 +25,7 @@ export function VoidExpenseButton({ id, number }: { id: string; number: number }
     startTransition(async () => {
       try {
         await expensesApi.void(id, reason);
+        toast({ tone: "success", title: t("detail.voided", { number }) });
         setOpen(false);
         router.refresh();
       } catch (err) {
@@ -56,7 +58,7 @@ export function VoidExpenseButton({ id, number }: { id: string; number: number }
               <Button type="button" variant="outline" size="sm" onClick={() => setOpen(false)}>
                 {t("cancel")}
               </Button>
-              <Button type="submit" size="sm" disabled={pending}>
+              <Button type="submit" size="sm" loading={pending}>
                 {t("detail.voidConfirm")}
               </Button>
             </div>

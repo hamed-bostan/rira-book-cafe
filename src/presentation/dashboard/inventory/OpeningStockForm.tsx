@@ -10,7 +10,7 @@ import { Link, useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatCafeDayMedium } from "@/src/lib/formatCafeDay";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
-import { Button, FormMessage, Input, TextField } from "@/src/presentation/design-system";
+import { Button, FormMessage, Input, TextField, useToast } from "@/src/presentation/design-system";
 
 import { inventoryApi } from "./inventory-api";
 import { StockLinesFields, type StockLinesForm } from "./StockLinesFields";
@@ -26,6 +26,7 @@ export function OpeningStockForm({ items, today }: { items: StockItem[]; today: 
   const fieldError = (message?: string): string | undefined => formErrorMessage(tFormErrors, message);
   const locale = useLocale();
   const router = useRouter();
+  const { toast } = useToast();
 
   const {
     register,
@@ -42,6 +43,7 @@ export function OpeningStockForm({ items, today }: { items: StockItem[]; today: 
   const onSubmit = handleSubmit(async (values) => {
     try {
       await inventoryApi.recordOpening(values);
+      toast({ tone: "success", title: t("opening.saved") });
       router.push("/dashboard/inventory");
       router.refresh();
     } catch (error) {
@@ -63,7 +65,7 @@ export function OpeningStockForm({ items, today }: { items: StockItem[]; today: 
       />
       {errors.root?.message ? <FormMessage size="md">{errors.root.message}</FormMessage> : null}
       <div className="flex gap-3 pt-2">
-        <Button type="submit" disabled={isSubmitting}>
+        <Button type="submit" loading={isSubmitting}>
           {t("opening.save")}
         </Button>
         <Button asChild variant="outline" type="button">

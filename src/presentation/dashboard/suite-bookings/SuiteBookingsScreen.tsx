@@ -1,8 +1,10 @@
+import { BedDouble, SearchX } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
 import { SUITE_BOOKING_STATUSES, type SuiteBooking } from "@/src/domain/entities/SuiteBooking";
 import { AutoRefresh } from "@/src/presentation/components/AutoRefresh";
 import { ListFilterSelect } from "@/src/presentation/dashboard/list";
+import { EmptyState } from "@/src/presentation/design-system";
 
 import { SuiteBookingCard } from "./SuiteBookingCard";
 
@@ -56,9 +58,12 @@ export async function SuiteBookingsScreen({ bookings, isFiltered, canManage }: S
           ))}
         </ul>
       ) : (
-        <div className="rounded-card-lg border border-dashed border-border px-6 py-16 text-center">
-          <p className="text-body-strong text-foreground">{isFiltered ? t("noMatchesTitle") : t("emptyTitle")}</p>
-          <p className="mt-1 text-body-small text-muted-foreground">{isFiltered ? t("noMatchesBody") : t("emptyBody")}</p>
+        <div className="rounded-card-lg border border-dashed border-border">
+          <EmptyState
+            icon={isFiltered ? SearchX : BedDouble}
+            title={isFiltered ? t("noMatchesTitle") : t("emptyTitle")}
+            description={isFiltered ? t("noMatchesBody") : t("emptyBody")}
+          />
         </div>
       )}
     </div>

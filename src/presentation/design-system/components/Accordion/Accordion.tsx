@@ -67,10 +67,17 @@ export const AccordionContent = React.forwardRef<
 >(({ className, children, ...props }, ref) => (
   <AccordionPrimitive.Content
     ref={ref}
-    className={cn("overflow-hidden px-4 pb-4 text-body-small text-muted-foreground", className)}
+    className={cn(
+      "overflow-hidden",
+      // Grows to / shrinks from the height Radix measures. A size change, so
+      // motion-safe only — under reduced motion the panel simply opens.
+      "motion-safe:data-[state=open]:animate-accordion-down motion-safe:data-[state=closed]:animate-accordion-up",
+    )}
     {...props}
   >
-    {children}
+    {/* Padding lives on an inner box: on the animated element it would keep
+        a sliver of height at "0" and snap at the end of the collapse. */}
+    <div className={cn("px-4 pb-4 text-body-small text-muted-foreground", className)}>{children}</div>
   </AccordionPrimitive.Content>
 ));
 

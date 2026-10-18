@@ -12,7 +12,7 @@ import { useRouter } from "@/src/i18n/navigation";
 import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
-import { Button, FormMessage, Icon, Input, Modal, ModalContent, Select, TextField } from "@/src/presentation/design-system";
+import { Button, FormMessage, Icon, Input, Modal, ModalContent, Select, TextField, useToast } from "@/src/presentation/design-system";
 
 import { accountsApi } from "./accounting-api";
 
@@ -28,6 +28,7 @@ export function NewAccountButton() {
   const tFormErrors = useTranslations("formErrors");
   const fieldError = (message?: string): string | undefined => formErrorMessage(tFormErrors, message);
   const router = useRouter();
+  const { toast } = useToast();
   const [open, setOpen] = React.useState(false);
 
   const {
@@ -45,6 +46,7 @@ export function NewAccountButton() {
   const onSubmit = handleSubmit(async (values) => {
     try {
       await accountsApi.create(values);
+      toast({ tone: "success", title: t("accounts.created", { code: values.code }) });
       setOpen(false);
       reset();
       router.refresh();
@@ -112,7 +114,7 @@ export function NewAccountButton() {
               <Button type="button" variant="outline" size="sm" onClick={() => setOpen(false)}>
                 {t("cancel")}
               </Button>
-              <Button type="submit" size="sm" disabled={isSubmitting}>
+              <Button type="submit" size="sm" loading={isSubmitting}>
                 {t("accounts.create")}
               </Button>
             </div>

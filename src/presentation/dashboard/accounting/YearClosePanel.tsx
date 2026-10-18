@@ -8,7 +8,7 @@ import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatCafeDayMedium } from "@/src/lib/formatCafeDay";
 import { fiscalYearsApi } from "@/src/presentation/dashboard/inventory/inventory-api";
-import { Badge, Button, ConfirmSheet, FormMessage } from "@/src/presentation/design-system";
+import { Badge, Button, ConfirmSheet, useToast } from "@/src/presentation/design-system";
 
 import { formatYear } from "./accounting-format";
 
@@ -22,18 +22,21 @@ export function YearClosePanel({ years, canWrite }: { years: FiscalYearStatus[];
   const tApiErrors = useTranslations("apiErrors");
   const locale = useLocale();
   const router = useRouter();
+  const { toast } = useToast();
   const [closing, setClosing] = React.useState<number | null>(null);
-  const [error, setError] = React.useState<string | null>(null);
+  /** The year whose close is running — its button shows the spinner. */
+  const [running, setRunning] = React.useState<number | null>(null);
   const [pending, startTransition] = React.useTransition();
 
   function close(year: number): void {
-    setError(null);
+    setRunning(year);
     startTransition(async () => {
       try {
         await fiscalYearsApi.close(year);
+        toast({ tone: "success", title: t("yearClose.closedToast", { year: formatYear(year, locale) }) });
         router.refresh();
       } catch (err) {
-        setError(localizeApiError(err, tApiErrors, t("yearClose.error")));
+        toast({ tone: "error", title: localizeApiError(err, tApiErrors, t("yearClose.error")) });
       }
     });
   }
@@ -61,7 +64,7 @@ export function YearClosePanel({ years, canWrite }: { years: FiscalYearStatus[];
                   {t("yearClose.open")}
                 </Badge>
               ) : canWrite ? (
-                <Button type="button" size="sm" disabled={pending} onClick={() => setClosing(year.year)}>
+                <Button type="button" size="sm" loading={pending && running === year.year} disabled={pending} onClick={() => setClosing(year.year)}>
                   {t("yearClose.close")}
                 </Button>
               ) : (
@@ -73,7 +76,6 @@ export function YearClosePanel({ years, canWrite }: { years: FiscalYearStatus[];
           </li>
         ))}
       </ul>
-      {error ? <FormMessage>{error}</FormMessage> : null}
       <ConfirmSheet
         open={closing !== null}
         onOpenChange={(open) => !open && setClosing(null)}

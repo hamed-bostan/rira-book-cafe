@@ -46,10 +46,13 @@ export function UserMenu({ viewer }: UserMenuProps) {
   const t = useTranslations("dashboard");
   const tTeam = useTranslations("dashTeam");
   const [confirmOpen, setConfirmOpen] = React.useState(false);
+  const [pending, startTransition] = React.useTransition();
 
-  const handleLogout = async () => {
-    await logout();
-  };
+  // The server action redirects away; the transition stays pending until it has,
+  // so the sheet stays up with a spinner instead of closing on a page that lingers.
+  function handleLogout(): void {
+    startTransition(() => logout());
+  }
 
   return (
     <>
@@ -94,6 +97,7 @@ export function UserMenu({ viewer }: UserMenuProps) {
         title={t("signOutTitle")}
         message={t("signOutMessage")}
         confirmLabel={t("signOut")}
+        pending={pending}
         onConfirm={handleLogout}
       />
     </>

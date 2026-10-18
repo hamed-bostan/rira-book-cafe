@@ -6,7 +6,7 @@ import * as React from "react";
 
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
-import { Button, ConfirmSheet, Icon } from "@/src/presentation/design-system";
+import { Button, ConfirmSheet, Icon, useToast } from "@/src/presentation/design-system";
 
 import { productsApi } from "./product-api";
 
@@ -29,6 +29,7 @@ export function DeleteProductButton({
   const t = useTranslations("dashProducts");
   const tApiErrors = useTranslations("apiErrors");
   const router = useRouter();
+  const { toast } = useToast();
   const [internalOpen, setInternalOpen] = React.useState(false);
   const open = controlledOpen ?? internalOpen;
   const [error, setError] = React.useState<string | null>(null);
@@ -40,6 +41,7 @@ export function DeleteProductButton({
       try {
         await productsApi.remove(id);
         setOpen(false);
+        toast({ tone: "success", title: t("deleted", { name }) });
         // Re-run the server render so the list reflects the delete — the server
         // stays the source of truth instead of patching local state.
         router.refresh();
@@ -73,7 +75,7 @@ export function DeleteProductButton({
           iconOnly
           aria-label={t("deleteAria", { name })}
           onClick={() => setOpen(true)}
-          disabled={pending}
+          loading={pending}
           className="text-destructive"
         >
           <Icon icon={Trash2} size="sm" />

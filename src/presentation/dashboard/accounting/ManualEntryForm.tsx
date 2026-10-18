@@ -13,7 +13,7 @@ import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatCafeDayMedium } from "@/src/lib/formatCafeDay";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
-import { Button, FormMessage, Icon, Input, Select, TextField } from "@/src/presentation/design-system";
+import { Button, FormMessage, Icon, Input, Select, TextField, useToast } from "@/src/presentation/design-system";
 
 import { journalEntriesApi } from "./accounting-api";
 import { accountLabel } from "./accounting-format";
@@ -37,6 +37,7 @@ export function ManualEntryForm({ accounts, today }: { accounts: Account[]; toda
   const fieldError = (message?: string): string | undefined => formErrorMessage(tFormErrors, message);
   const locale = useLocale();
   const router = useRouter();
+  const { toast } = useToast();
   const active = accounts.filter((account) => account.isActive);
 
   const {
@@ -60,6 +61,7 @@ export function ManualEntryForm({ accounts, today }: { accounts: Account[]; toda
   const onSubmit = handleSubmit(async (values) => {
     try {
       const entry = await journalEntriesApi.create(values);
+      toast({ tone: "success", title: t("form.posted", { number: entry.number }) });
       router.push(`/dashboard/accounting/journal/${entry.id}`);
       router.refresh();
     } catch (error) {
@@ -146,7 +148,7 @@ export function ManualEntryForm({ accounts, today }: { accounts: Account[]; toda
       {errors.root?.message ? <FormMessage size="md">{errors.root.message}</FormMessage> : null}
 
       <div className="flex gap-3 pt-2">
-        <Button type="submit" disabled={isSubmitting}>
+        <Button type="submit" loading={isSubmitting}>
           {t("form.post")}
         </Button>
         <Button asChild variant="outline" type="button">

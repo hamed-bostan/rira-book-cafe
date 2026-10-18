@@ -7,7 +7,7 @@ import { MAX_SEATS_PER_REGISTRATION, type EventRegistration } from "@/src/domain
 import { Link, useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatNumber } from "@/src/lib/formatNumber";
-import { Button, ConfirmSheet, FormMessage, Select } from "@/src/presentation/design-system";
+import { Button, ConfirmSheet, Select, useToast } from "@/src/presentation/design-system";
 
 import { storefrontApi } from "../storefront-api";
 
@@ -31,18 +31,19 @@ export function EventSignUp({ eventId, open, seatsLeft, signedIn, registration }
   const tApiErrors = useTranslations("apiErrors");
   const locale = useLocale();
   const router = useRouter();
+  const { toast } = useToast();
   const [seats, setSeats] = React.useState(1);
   const [confirmCancel, setConfirmCancel] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
   const [pending, startTransition] = React.useTransition();
 
-  function run(action: () => Promise<unknown>, fallback: string): void {
-    setError(null);
+  /** Runs a sign-up change; `success` is toasted when the refreshed panel doesn't make the outcome obvious. */
+  function run(action: () => Promise<unknown>, success?: string): void {
     startTransition(async () => {
       try {
         await action();
+        if (success) toast({ tone: "success", title: success });
       } catch (err) {
-        setError(localizeApiError(err, tApiErrors, fallback));
+        toast({ tone: "error", title: localizeApiError(err, tApiErrors, t("events.error")) });
       }
       router.refresh();
     });
@@ -54,10 +55,9 @@ export function EventSignUp({ eventId, open, seatsLeft, signedIn, registration }
         <p className="text-body-strong text-primary">
           {t("events.signedUp", { count: registration.seats, formatted: formatNumber(registration.seats, locale) })}
         </p>
-        <Button type="button" variant="outline" size="sm" className="self-start" disabled={pending} onClick={() => setConfirmCancel(true)}>
+        <Button type="button" variant="outline" size="sm" className="self-start" loading={pending} onClick={() => setConfirmCancel(true)}>
           {t("events.cancelSignUp")}
         </Button>
-        {error ? <FormMessage>{error}</FormMessage> : null}
         <ConfirmSheet
           open={confirmCancel}
           onOpenChange={setConfirmCancel}
@@ -67,7 +67,7 @@ export function EventSignUp({ eventId, open, seatsLeft, signedIn, registration }
           cancelLabel={t("keep")}
           onConfirm={() => {
             setConfirmCancel(false);
-            run(() => storefrontApi.cancelRegistration(registration.id), t("events.error"));
+            run(() => storefrontApi.cancelRegistration(registration.id), t("events.signUpCancelled"));
           }}
         />
       </div>
@@ -100,10 +100,9 @@ export function EventSignUp({ eventId, open, seatsLeft, signedIn, registration }
           ))}
         </Select>
       </label>
-      <Button type="button" className="self-start" disabled={pending} onClick={() => run(() => storefrontApi.registerForEvent(eventId, { seats }), t("events.error"))}>
+      <Button type="button" className="self-start" loading={pending} onClick={() => run(() => storefrontApi.registerForEvent(eventId, { seats }))}>
         {pending ? t("events.joining") : t("events.join")}
       </Button>
-      {error ? <FormMessage>{error}</FormMessage> : null}
     </div>
   );
 }

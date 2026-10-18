@@ -2,7 +2,6 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
-import * as React from "react";
 import { useForm } from "react-hook-form";
 
 import { profileUpdateSchema, type ProfileUpdateInput, type ProfileWire } from "@/src/contracts/profile-schema";
@@ -10,7 +9,7 @@ import { PLACEHOLDER_USER_NAME } from "@/src/domain/entities/User";
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
-import { Button, FormMessage, Input, TextField } from "@/src/presentation/design-system";
+import { Button, FormMessage, Input, TextField, useToast } from "@/src/presentation/design-system";
 
 import { storefrontApi } from "../storefront-api";
 
@@ -23,7 +22,7 @@ export function ProfileForm({ profile }: { profile: ProfileWire }) {
   const tApiErrors = useTranslations("apiErrors");
   const tFormErrors = useTranslations("formErrors");
   const router = useRouter();
-  const [saved, setSaved] = React.useState(false);
+  const { toast } = useToast();
   const isPlaceholder = profile.name === PLACEHOLDER_USER_NAME;
 
   const {
@@ -37,10 +36,9 @@ export function ProfileForm({ profile }: { profile: ProfileWire }) {
   });
 
   const onSubmit = handleSubmit(async (values) => {
-    setSaved(false);
     try {
       await storefrontApi.updateProfile(values);
-      setSaved(true);
+      toast({ tone: "success", title: t("account.saved") });
       router.refresh();
     } catch (error) {
       setError("root", { message: localizeApiError(error, tApiErrors, t("account.saveError")) });
@@ -60,8 +58,7 @@ export function ProfileForm({ profile }: { profile: ProfileWire }) {
         {t("account.phone")}: <span dir="ltr">{profile.phone}</span>
       </p>
       {errors.root?.message ? <FormMessage>{errors.root.message}</FormMessage> : null}
-      {saved ? <p className="text-body-small text-success-foreground">{t("account.saved")}</p> : null}
-      <Button type="submit" disabled={isSubmitting} className="self-start">
+      <Button type="submit" loading={isSubmitting} className="self-start">
         {t("account.save")}
       </Button>
     </form>

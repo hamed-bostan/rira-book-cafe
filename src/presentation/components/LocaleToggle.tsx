@@ -12,6 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   Icon,
+  Spinner,
   focusRing,
 } from "@/src/presentation/design-system";
 
@@ -50,6 +51,7 @@ export function LocaleToggle() {
           type="button"
           aria-label={t("languageAria")}
           disabled={pending}
+          aria-busy={pending || undefined}
           className={cn(
             "inline-flex h-11 min-w-24 items-center justify-between gap-2 rounded-input border border-border bg-background px-3 text-body-small-bold text-foreground transition-colors hover:bg-muted",
             focusRing,
@@ -57,7 +59,12 @@ export function LocaleToggle() {
           )}
         >
           <span>{LOCALE_NAMES[locale]}</span>
-          <Icon icon={ChevronDown} size="xs" className="text-muted-foreground" />
+          {/* Busy while the page reloads into the new language. */}
+          {pending ? (
+            <Spinner decorative size="xs" className="text-muted-foreground" />
+          ) : (
+            <Icon icon={ChevronDown} size="xs" className="text-muted-foreground" />
+          )}
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-32">

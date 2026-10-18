@@ -1,3 +1,4 @@
+import { Landmark } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import type { BankStatementSummary } from "@/src/domain/entities/BankReconciliation";
@@ -6,7 +7,7 @@ import { formatCafeDayMedium } from "@/src/lib/formatCafeDay";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { AccountingTabs } from "@/src/presentation/dashboard/accounting/AccountingTabs";
-import { Badge, Button } from "@/src/presentation/design-system";
+import { Badge, Button, EmptyState } from "@/src/presentation/design-system";
 
 /** Bank statements by period, newest first, with how far each is from reconciled. */
 export async function BankStatementsScreen({ statements, canWrite }: { statements: BankStatementSummary[]; canWrite: boolean }) {
@@ -29,7 +30,18 @@ export async function BankStatementsScreen({ statements, canWrite }: { statement
 
       <section className="min-w-0 overflow-hidden rounded-card-lg border border-border bg-background">
         {statements.length === 0 ? (
-          <p className="px-6 py-16 text-center text-body-small-emphasis text-muted-foreground">{t("empty")}</p>
+          <EmptyState
+            icon={Landmark}
+            title={t("emptyTitle")}
+            description={t("empty")}
+            action={
+              canWrite ? (
+                <Button asChild size="sm">
+                  <Link href="/dashboard/accounting/bank/new">{t("newStatement")}</Link>
+                </Button>
+              ) : undefined
+            }
+          />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[44rem] text-body-small">

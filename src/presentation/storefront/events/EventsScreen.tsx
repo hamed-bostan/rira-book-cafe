@@ -1,6 +1,8 @@
+import { CalendarDays } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
 import type { CafeEvent } from "@/src/domain/entities/CafeEvent";
+import { EmptyState } from "@/src/presentation/design-system";
 
 import { EventCard } from "./EventCard";
 
@@ -21,9 +23,7 @@ export async function EventsScreen({ events }: { events: CafeEvent[] }) {
           ))}
         </div>
       ) : (
-        <p className="rounded-card-lg border border-dashed border-border px-6 py-16 text-center text-body-small text-muted-foreground">
-          {t("events.none")}
-        </p>
+        <EmptyState icon={CalendarDays} title={t("events.none")} className="rounded-card-lg border border-dashed border-border" />
       )}
     </div>
   );

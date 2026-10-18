@@ -61,7 +61,7 @@ export default function LoginScreen({ callbackUrl = "/" }: { callbackUrl?: strin
           )}
         </div>
 
-        <Button type="submit" size="lg" disabled={pending} className="mt-auto">
+        <Button type="submit" size="lg" loading={pending} className="mt-auto">
           {pending ? t("sendingCode") : t("continue")}
         </Button>
       </form>

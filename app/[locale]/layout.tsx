@@ -9,6 +9,7 @@ import { getLangDir } from "@/src/i18n/direction";
 import { routing } from "@/src/i18n/routing";
 import { getSiteUrl } from "@/src/lib/siteUrl";
 import { DirectionProvider } from "@/src/presentation/components/DirectionProvider";
+import { Toaster } from "@/src/presentation/design-system";
 import { defaultShareImage } from "@/src/presentation/seo/shareImage";
 
 import type { Metadata } from "next";
@@ -96,7 +97,11 @@ export default async function LocaleLayout({
           {/* Reading direction for every Radix primitive (Radix reads this context,
               not the DOM `dir`), so RTL under `fa` flips roving focus + alignment
               app-wide — no per-component `dir` prop needed. */}
-          <DirectionProvider dir={getLangDir(locale)}>{children}</DirectionProvider>
+          <DirectionProvider dir={getLangDir(locale)}>
+            {/* Inside both providers: toasts are localized and swipe with the
+                reading direction. */}
+            <Toaster>{children}</Toaster>
+          </DirectionProvider>
         </NextIntlClientProvider>
       </body>
     </html>

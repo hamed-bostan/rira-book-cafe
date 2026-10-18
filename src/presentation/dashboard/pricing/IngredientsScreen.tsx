@@ -1,9 +1,10 @@
+import { Wheat } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { ingredientUnitCost, type Ingredient } from "@/src/domain/entities/Pricing";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
-import { Badge } from "@/src/presentation/design-system";
+import { Badge, EmptyState } from "@/src/presentation/design-system";
 
 import { IngredientDialog } from "./IngredientDialog";
 import { PricingTabs } from "./PricingTabs";
@@ -27,7 +28,7 @@ export async function IngredientsScreen({ ingredients, canWrite }: { ingredients
 
       <section className="min-w-0 overflow-x-auto rounded-card-lg border border-border bg-background">
         {ingredients.length === 0 ? (
-          <p className="px-6 py-16 text-center text-body-small-emphasis text-muted-foreground">{t("ingredients.empty")}</p>
+          <EmptyState icon={Wheat} title={t("ingredients.empty")} />
         ) : (
           <table className="w-full min-w-[36rem] text-body-small">
             <thead className="bg-surface text-body-caption text-muted-foreground">

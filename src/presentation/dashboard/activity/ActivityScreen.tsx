@@ -1,4 +1,4 @@
-import { History } from "lucide-react";
+import { History, Search } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
 import {
@@ -7,6 +7,7 @@ import {
 } from "@/src/domain/entities/ActivityEntry";
 import type { Page } from "@/src/domain/entities/Pagination";
 import { ListFilterSelect, ListPager } from "@/src/presentation/dashboard/list";
+import { EmptyState } from "@/src/presentation/design-system";
 
 import { ActivityList } from "./ActivityList";
 
@@ -99,17 +100,11 @@ export async function ActivityScreen({ entries, actors, isFiltered }: ActivitySc
           </section>
         )}
         emptyState={(
-          <div className="px-6 py-16 text-center">
-            <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-surface-sunken text-muted-foreground">
-              <History aria-hidden="true" className="size-5" />
-            </div>
-            <p className="text-body-strong text-foreground">
-              {isFiltered ? tList("noResultsTitle") : t("empty")}
-            </p>
-            <p className="mt-1 text-body-small text-muted-foreground">
-              {isFiltered ? tList("noResultsBody") : t("emptyBody")}
-            </p>
-          </div>
+          <EmptyState
+            icon={isFiltered ? Search : History}
+            title={isFiltered ? tList("noResultsTitle") : t("empty")}
+            description={isFiltered ? tList("noResultsBody") : t("emptyBody")}
+          />
         )}
         footer={<ListPager page={entries} />}
       />

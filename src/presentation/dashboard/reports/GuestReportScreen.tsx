@@ -6,6 +6,7 @@ import { formatPercent } from "@/src/lib/formatCafeDay";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { maskPhoneNumber } from "@/src/lib/maskPhoneNumber";
+import { EmptyState } from "@/src/presentation/design-system";
 
 import { StatCard } from "../StatCard";
 
@@ -60,7 +61,7 @@ export async function GuestReportScreen({ report, selected }: GuestReportScreenP
         <section className="min-w-0 rounded-card-lg border border-border bg-background p-4 md:p-6">
           <h2 className="text-body-lead text-foreground">{t("guests.topGuestsHeading")}</h2>
           {report.topGuests.length === 0 ? (
-            <p className="py-8 text-center text-body-small-emphasis text-muted-foreground">{t("noSales")}</p>
+            <EmptyState icon={Users} title={t("noSales")} className="py-8" />
           ) : (
             <ol className="mt-4 flex flex-col divide-y divide-border">
               {report.topGuests.map((guest, index) => (

@@ -1,5 +1,4 @@
 import { CalendarDays } from "lucide-react";
-import Image from "next/image";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { seatsLeft, type CafeEvent } from "@/src/domain/entities/CafeEvent";
@@ -8,7 +7,8 @@ import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { formatOrderDate, formatOrderTime } from "@/src/lib/formatOrderDate";
 import { cn } from "@/src/lib/utils";
-import { Badge, Icon, focusRing } from "@/src/presentation/design-system";
+import { FadeInImage } from "@/src/presentation/components/FadeInImage";
+import { Badge, Icon, focusRing, interactiveCard, zoomOnGroupHover } from "@/src/presentation/design-system";
 
 import { eventTitle } from "../eventCopy";
 
@@ -22,11 +22,21 @@ export async function EventCard({ event }: { event: CafeEvent }) {
   return (
     <Link
       href={`/events/${event.id}`}
-      className={cn("flex flex-col overflow-hidden rounded-card-lg border border-border bg-background transition-colors hover:bg-muted", focusRing)}
+      className={cn(
+        "group flex flex-col overflow-hidden rounded-card-lg border border-border bg-background hover:bg-muted",
+        interactiveCard,
+        focusRing,
+      )}
     >
       {event.imageUrl ? (
-        <div className="relative aspect-[16/9] bg-muted">
-          <Image src={event.imageUrl} alt="" fill sizes="(min-width: 1152px) 365px, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw" className="object-cover" />
+        <div className="relative aspect-[16/9] overflow-hidden bg-muted">
+          <FadeInImage
+            src={event.imageUrl}
+            alt=""
+            fill
+            sizes="(min-width: 1152px) 365px, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+            className={cn("object-cover", zoomOnGroupHover)}
+          />
         </div>
       ) : null}
       <div className="flex flex-1 flex-col gap-2 p-4">
@@ -41,7 +51,9 @@ export async function EventCard({ event }: { event: CafeEvent }) {
         </p>
         <p className="mt-auto text-body-small text-foreground">
           {event.price === 0 ? t("events.free") : formatMoney(event.price, locale)}
-          {left !== undefined && left > 0 ? ` · ${t("events.seatsLeft", { count: left, formatted: formatNumber(left, locale) })}` : null}
+          {left !== undefined && left > 0
+            ? ` · ${t("events.seatsLeft", { count: left, formatted: formatNumber(left, locale) })}`
+            : null}
         </p>
       </div>
     </Link>

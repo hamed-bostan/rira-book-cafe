@@ -26,6 +26,7 @@ import {
   TabsTrigger,
   Textarea,
   TextField,
+  useToast,
 } from "@/src/presentation/design-system";
 
 import { eventsApi } from "./event-api";
@@ -77,6 +78,7 @@ export function EventForm(props: EventFormProps) {
   const fieldError = (message?: string): string | undefined => formErrorMessage(tFormErrors, message);
   const editing = props.mode === "edit";
   const router = useRouter();
+  const { toast } = useToast();
 
   const {
     register,
@@ -96,6 +98,7 @@ export function EventForm(props: EventFormProps) {
     try {
       if (editing) await eventsApi.update(props.event.id, values);
       else await eventsApi.create(values);
+      toast({ tone: "success", title: editing ? t("savedToast") : t("createdToast") });
       router.push("/dashboard/events");
       router.refresh();
     } catch (error) {
@@ -222,7 +225,7 @@ export function EventForm(props: EventFormProps) {
       {errors.root?.message ? <FormMessage size="md">{errors.root.message}</FormMessage> : null}
 
       <div className="flex gap-3 pt-2">
-        <Button type="submit" disabled={isSubmitting}>
+        <Button type="submit" loading={isSubmitting}>
           {editing ? t("saveChanges") : t("createEvent")}
         </Button>
         <Button asChild variant="outline" type="button">

@@ -33,6 +33,7 @@ import {
   Textarea,
   TextField,
   ToggleChip,
+  useToast,
 } from "@/src/presentation/design-system";
 
 import { productsApi } from "./product-api";
@@ -122,6 +123,7 @@ export function ProductForm(props: ProductFormProps) {
   const tDietary = useTranslations("dietary");
   const editing = props.mode === "edit";
   const router = useRouter();
+  const { toast } = useToast();
   const {
     register,
     handleSubmit,
@@ -144,6 +146,7 @@ export function ProductForm(props: ProductFormProps) {
     try {
       if (editing) await productsApi.update(props.product.id, values);
       else await productsApi.create(values);
+      toast({ tone: "success", title: t(editing ? "saved" : "created", { name: values.name.trim() }) });
       router.push("/dashboard/products");
     } catch (error) {
       if (!(error instanceof ApiError)) {
@@ -515,7 +518,7 @@ export function ProductForm(props: ProductFormProps) {
       )}
 
       <div className="flex gap-3 pt-2">
-        <Button type="submit" disabled={isSubmitting}>
+        <Button type="submit" loading={isSubmitting}>
           {editing ? t("saveChanges") : t("createProduct")}
         </Button>
         <Button asChild variant="outline" type="button">

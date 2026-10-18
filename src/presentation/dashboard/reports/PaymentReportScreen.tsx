@@ -7,6 +7,7 @@ import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { formatOrderDateShort, formatOrderTime } from "@/src/lib/formatOrderDate";
 import { OrderStatusBadge } from "@/src/presentation/dashboard/orders/OrderStatusBadge";
+import { EmptyState } from "@/src/presentation/design-system";
 
 import { StatCard } from "../StatCard";
 
@@ -65,7 +66,7 @@ export async function PaymentReportScreen({ report, selected }: PaymentReportScr
         <h2 className="text-body-lead text-foreground">{t("payments.unpaidHeading")}</h2>
         <p className="text-body-small text-muted-foreground">{t("payments.unpaidDescription")}</p>
         {report.unpaid.length === 0 ? (
-          <p className="py-8 text-center text-body-small-emphasis text-muted-foreground">{t("payments.allPaid")}</p>
+          <EmptyState icon={CircleCheck} title={t("payments.allPaid")} className="py-8" />
         ) : (
           <ul className="mt-4 flex flex-col divide-y divide-border">
             {report.unpaid.map((order) => (

@@ -13,8 +13,9 @@ export function SignOutButton() {
   const [pending, startTransition] = React.useTransition();
 
   return (
-    <Button type="button" variant="outline" disabled={pending} onClick={() => startTransition(() => logout())}>
-      <Icon icon={LogOut} size="sm" className="me-1.5" />
+    <Button type="button" variant="outline" loading={pending} onClick={() => startTransition(() => logout())}>
+      {/* The spinner takes the icon's place while signing out. */}
+      {pending ? null : <Icon icon={LogOut} size="sm" className="me-1.5" />}
       {t("account.signOut")}
     </Button>
   );

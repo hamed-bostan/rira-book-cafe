@@ -1,10 +1,11 @@
+import { Star } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import type { PublicReview, ReviewEligibility } from "@/src/domain/entities/ProductReview";
 import { Link } from "@/src/i18n/navigation";
 import { formatNumber, formatRating } from "@/src/lib/formatNumber";
 import { formatOrderDateShort } from "@/src/lib/formatOrderDate";
-import { RatingStars } from "@/src/presentation/design-system";
+import { EmptyState, RatingStars } from "@/src/presentation/design-system";
 
 import { ReviewForm } from "./ReviewForm";
 
@@ -52,7 +53,7 @@ export async function ProductReviews({ productId, rating, ratingCount, reviews, 
       )}
 
       {reviews.length === 0 ? (
-        <p className="text-body-small text-muted-foreground">{t("reviews.empty")}</p>
+        <EmptyState icon={Star} title={t("reviews.empty")} className="rounded-card-lg border border-dashed border-border py-10" />
       ) : (
         <ul className="flex flex-col gap-3">
           {reviews.map((review) => (

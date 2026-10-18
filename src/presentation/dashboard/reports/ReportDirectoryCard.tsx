@@ -21,7 +21,7 @@ export function ReportDirectoryCard({ item, openAria, fullWidth }: Props) {
     <Link
       href={item.href}
       aria-label={openAria}
-      className={cn(focusRing, "group relative flex min-h-28 items-center gap-3 overflow-hidden rounded-card-lg border border-border/80 bg-background p-4 transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-card sm:gap-4 sm:p-5", tone.card, fullWidth && "md:col-span-2")}
+      className={cn(focusRing, "group relative flex min-h-28 items-center gap-3 overflow-hidden rounded-card-lg border border-border/80 bg-background p-4 transition-[border-color,box-shadow,translate] duration-200 hover:shadow-card motion-safe:hover:-translate-y-0.5 sm:gap-4 sm:p-5", tone.card, fullWidth && "md:col-span-2")}
     >
       <span aria-hidden="true" className={cn("absolute inset-y-4 start-0 w-0.5 rounded-full opacity-0 transition-opacity group-hover:opacity-100", tone.accent)} />
       <span className={cn("flex size-12 shrink-0 items-center justify-center rounded-card-lg ring-1 ring-inset sm:size-14", tone.icon)}>

@@ -10,6 +10,7 @@ export * from "./components/Icon";
 export * from "./components/Thumbnail";
 export * from "./components/Spinner";
 export * from "./components/Skeleton";
+export * from "./components/Toast";
 export * from "./components/Sheet";
 export * from "./components/Modal";
 export * from "./components/Popover";

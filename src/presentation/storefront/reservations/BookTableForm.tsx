@@ -16,7 +16,7 @@ import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
-import { Button, FormMessage, Input, Select, Textarea } from "@/src/presentation/design-system";
+import { Button, FormMessage, Input, Select, Textarea, useToast } from "@/src/presentation/design-system";
 
 import { storefrontApi } from "../storefront-api";
 
@@ -54,6 +54,7 @@ export function BookTableForm({ today }: BookTableFormProps) {
   const tFormErrors = useTranslations("formErrors");
   const locale = useLocale();
   const router = useRouter();
+  const { toast } = useToast();
 
   const [day, setDay] = React.useState(today);
   const [time, setTime] = React.useState("19:00");
@@ -68,6 +69,7 @@ export function BookTableForm({ today }: BookTableFormProps) {
     startTransition(async () => {
       try {
         await storefrontApi.requestReservation({ startsAt: `${day}T${time}`, partySize, note });
+        toast({ tone: "success", title: t("book.sent") });
         router.push("/reservations");
       } catch (err) {
         if (err instanceof ApiError) {
@@ -129,7 +131,7 @@ export function BookTableForm({ today }: BookTableFormProps) {
       </label>
       <p className="text-body-caption text-muted-foreground">{t("book.hint", { max: formatNumber(MAX_PARTY_SIZE, locale) })}</p>
       {error ? <FormMessage>{error}</FormMessage> : null}
-      <Button type="submit" disabled={pending} className="self-start">
+      <Button type="submit" loading={pending} className="self-start">
         {pending ? t("book.sending") : t("book.submit")}
       </Button>
     </form>

@@ -1,3 +1,6 @@
+import { ChartPie } from "lucide-react";
+
+import { EmptyState } from "@/src/presentation/design-system";
 import { chartColor } from "@/src/presentation/design-system/chart";
 
 type ShareBarsProps = {
@@ -17,7 +20,7 @@ export function ShareBars({ heading, rows, empty }: ShareBarsProps) {
     <section className="min-w-0 rounded-card-lg border border-border bg-background p-4 md:p-6">
       <h2 className="text-body-lead text-foreground">{heading}</h2>
       {total === 0 ? (
-        <p className="py-8 text-center text-body-small-emphasis text-muted-foreground">{empty}</p>
+        <EmptyState icon={ChartPie} title={empty} className="py-8" />
       ) : (
         <ul className="mt-4 flex flex-col gap-4">
           {rows.map((row, index) => {
@@ -32,7 +35,10 @@ export function ShareBars({ heading, rows, empty }: ShareBarsProps) {
                   </span>
                 </div>
                 <div className="h-2 overflow-hidden rounded-full bg-muted" aria-hidden>
-                  <div className="h-full rounded-full" style={{ width: `${Math.max(share * 100, 2)}%`, backgroundColor: chartColor(index) }} />
+                  <div
+                    className="h-full rounded-full"
+                    style={{ width: `${Math.max(share * 100, 2)}%`, backgroundColor: chartColor(index) }}
+                  />
                 </div>
               </li>
             );

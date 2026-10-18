@@ -1,9 +1,11 @@
+import { BookOpen, Search } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
 import { isBookLoanOverdue, type BookLoan } from "@/src/domain/entities/BookLoan";
 import type { BookWaitlistEntry } from "@/src/domain/entities/BookWaitlist";
 import { BOOK_LOAN_VIEWS, type BookLoanView, type LendableBook } from "@/src/domain/repositories/IBookLoanRepository";
 import { ListFilterSelect, ListSearchInput } from "@/src/presentation/dashboard/list";
+import { EmptyState } from "@/src/presentation/design-system";
 
 import { BookLoanCard } from "./BookLoanCard";
 import { BookWaitlistSection } from "./BookWaitlistSection";
@@ -74,10 +76,12 @@ export async function BookLoansScreen({ loans, books, waitlist, view, isSearchin
           ))}
         </ul>
       ) : (
-        <div className="rounded-card-lg border border-dashed border-border px-6 py-16 text-center">
-          <p className="text-body-strong text-foreground">{isSearching ? t("noMatchesTitle") : t("emptyTitle")}</p>
-          <p className="mt-1 text-body-small text-muted-foreground">{isSearching ? t("noMatchesBody") : t("emptyBody")}</p>
-        </div>
+        <EmptyState
+          icon={isSearching ? Search : BookOpen}
+          title={isSearching ? t("noMatchesTitle") : t("emptyTitle")}
+          description={isSearching ? t("noMatchesBody") : t("emptyBody")}
+          className="rounded-card-lg border border-dashed border-border"
+        />
       )}
     </div>
   );

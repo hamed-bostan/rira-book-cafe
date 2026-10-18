@@ -6,7 +6,7 @@ import * as React from "react";
 import type { LoyaltySettings } from "@/src/domain/entities/Loyalty";
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
-import { Button, FormMessage, Input, Switch } from "@/src/presentation/design-system";
+import { Button, FormMessage, Input, Switch, useToast } from "@/src/presentation/design-system";
 
 import { promotionsApi } from "./promotion-api";
 
@@ -17,6 +17,7 @@ export function LoyaltySettingsForm({ settings }: { settings: LoyaltySettings })
   const t = useTranslations("dashPromotions");
   const tApiErrors = useTranslations("apiErrors");
   const router = useRouter();
+  const { toast } = useToast();
   const [enabled, setEnabled] = React.useState(settings.enabled);
   const [numbers, setNumbers] = React.useState<Record<(typeof NUMBER_FIELDS)[number], string>>({
     tomanPerPoint: String(settings.tomanPerPoint),
@@ -24,13 +25,11 @@ export function LoyaltySettingsForm({ settings }: { settings: LoyaltySettings })
     minRedeemPoints: String(settings.minRedeemPoints),
   });
   const [error, setError] = React.useState<string | null>(null);
-  const [saved, setSaved] = React.useState(false);
   const [pending, startTransition] = React.useTransition();
 
   function submit(event: React.FormEvent): void {
     event.preventDefault();
     setError(null);
-    setSaved(false);
     const parsed = Object.fromEntries(NUMBER_FIELDS.map((field) => [field, Number(numbers[field])])) as Record<(typeof NUMBER_FIELDS)[number], number>;
     if (NUMBER_FIELDS.some((field) => !Number.isInteger(parsed[field]) || parsed[field] < (field === "minRedeemPoints" ? 0 : 1))) {
       setError(t("loyaltyInvalid"));
@@ -39,7 +38,7 @@ export function LoyaltySettingsForm({ settings }: { settings: LoyaltySettings })
     startTransition(async () => {
       try {
         await promotionsApi.saveLoyaltySettings({ enabled, ...parsed });
-        setSaved(true);
+        toast({ tone: "success", title: t("saved") });
         router.refresh();
       } catch (err) {
         setError(localizeApiError(err, tApiErrors, t("saveError")));
@@ -69,8 +68,7 @@ export function LoyaltySettingsForm({ settings }: { settings: LoyaltySettings })
         ))}
       </div>
       {error ? <FormMessage>{error}</FormMessage> : null}
-      {saved ? <p className="text-body-small text-success-foreground">{t("saved")}</p> : null}
-      <Button type="submit" size="sm" className="self-end" disabled={pending}>
+      <Button type="submit" size="sm" className="self-end" loading={pending}>
         {pending ? t("saving") : t("save")}
       </Button>
     </form>

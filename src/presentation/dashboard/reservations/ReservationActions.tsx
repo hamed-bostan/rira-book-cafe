@@ -13,6 +13,7 @@ import {
   Input,
   Modal,
   ModalContent,
+  useToast,
 } from "@/src/presentation/design-system";
 
 import { reservationsApi } from "./reservation-api";
@@ -31,14 +32,18 @@ const DESTRUCTIVE: readonly ReservationStatus[] = ["cancelled", "noShow"];
  * allows, a table dialog for confirming/seating (and moving tables), and a
  * confirmation before cancelling or marking a no-show. Each writes over the REST
  * API and `router.refresh()`es; a 409 (table taken, someone else moved it) shows
- * inline.
+ * in the table dialog when it came from there, as a toast otherwise.
  */
 export function ReservationActions({ reservation }: ReservationActionsProps) {
   const t = useTranslations("dashReservations");
   const tApiErrors = useTranslations("apiErrors");
   const router = useRouter();
+  const { toast } = useToast();
   const [pending, startTransition] = React.useTransition();
+  /** A failure inside the table dialog — shown there, since the admin is still in it. */
   const [error, setError] = React.useState<string | null>(null);
+  /** The step in flight — only its button shows the spinner; the rest just disable. */
+  const [active, setActive] = React.useState<ReservationStatus | "move" | null>(null);
   const [tableFor, setTableFor] = React.useState<ReservationStatus | "move" | null>(null);
   const [table, setTable] = React.useState(reservation.tableLabel ?? "");
   const [confirming, setConfirming] = React.useState<ReservationStatus | null>(null);
@@ -47,22 +52,37 @@ export function ReservationActions({ reservation }: ReservationActionsProps) {
   const holdsTable = reservation.status === "confirmed" || reservation.status === "seated";
 
   function save(status: ReservationStatus | undefined, tableLabel?: string | null): void {
+    const inDialog = tableFor !== null;
     setError(null);
+    setActive(status ?? "move");
     startTransition(async () => {
       try {
         await reservationsApi.update(reservation.id, { status, tableLabel });
         setTableFor(null);
+        toast({
+          tone: "success",
+          title: status
+            ? t("statusChanged", { reference: reservation.reference, status: t(`status.${status}`) })
+            : t("tableSaved", { reference: reservation.reference, table: tableLabel ?? "" }),
+        });
       } catch (err) {
-        setError(localizeApiError(err, tApiErrors, t("updateError")));
+        const message = localizeApiError(err, tApiErrors, t("updateError"));
+        if (inDialog) setError(message);
+        else toast({ tone: "error", title: message });
       }
       router.refresh();
     });
   }
 
+  function openTable(step: ReservationStatus | "move"): void {
+    setError(null);
+    setTable(reservation.tableLabel ?? "");
+    setTableFor(step);
+  }
+
   function onStep(status: ReservationStatus): void {
     if (NEEDS_TABLE.includes(status)) {
-      setTable(reservation.tableLabel ?? "");
-      setTableFor(status);
+      openTable(status);
     } else if (DESTRUCTIVE.includes(status)) {
       setConfirming(status);
     } else {
@@ -83,6 +103,7 @@ export function ReservationActions({ reservation }: ReservationActionsProps) {
             type="button"
             size="sm"
             variant={DESTRUCTIVE.includes(status) ? "outline" : "primary"}
+            loading={pending && active === status}
             disabled={pending}
             onClick={() => onStep(status)}
           >
@@ -90,12 +111,11 @@ export function ReservationActions({ reservation }: ReservationActionsProps) {
           </Button>
         ))}
         {holdsTable ? (
-          <Button type="button" size="sm" variant="ghost" disabled={pending} onClick={() => setTableFor("move")}>
+          <Button type="button" size="sm" variant="ghost" loading={pending && active === "move"} disabled={pending} onClick={() => openTable("move")}>
             {t("changeTable")}
           </Button>
         ) : null}
       </div>
-      {error ? <FormMessage>{error}</FormMessage> : null}
 
       <Modal open={tableFor !== null} onOpenChange={(open) => !open && setTableFor(null)}>
         <ModalContent title={t("tableDialogTitle", { reference: reservation.reference })}>
@@ -117,7 +137,7 @@ export function ReservationActions({ reservation }: ReservationActionsProps) {
               <Button type="button" variant="outline" size="sm" onClick={() => setTableFor(null)}>
                 {t("dialogCancel")}
               </Button>
-              <Button type="submit" size="sm" disabled={pending || (tableRequired && !table.trim())}>
+              <Button type="submit" size="sm" loading={pending} disabled={tableRequired && !table.trim()}>
                 {tableFor === "move" ? t("saveTable") : t(`action.${tableFor ?? "confirmed"}`)}
               </Button>
             </div>

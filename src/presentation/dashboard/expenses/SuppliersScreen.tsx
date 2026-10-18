@@ -1,9 +1,9 @@
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Truck } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
 import type { Supplier } from "@/src/domain/entities/Expense";
 import { Link } from "@/src/i18n/navigation";
-import { Badge } from "@/src/presentation/design-system";
+import { Badge, EmptyState } from "@/src/presentation/design-system";
 
 import { SupplierDialog } from "./SupplierDialog";
 
@@ -30,7 +30,7 @@ export async function SuppliersScreen({ suppliers, canWrite }: { suppliers: Supp
 
       <section className="min-w-0 overflow-hidden rounded-card-lg border border-border bg-background">
         {suppliers.length === 0 ? (
-          <p className="px-6 py-16 text-center text-body-small-emphasis text-muted-foreground">{t("suppliers.empty")}</p>
+          <EmptyState icon={Truck} title={t("suppliers.empty")} action={canWrite ? <SupplierDialog /> : undefined} />
         ) : (
           <ul className="divide-y divide-border">
             {suppliers.map((supplier) => (

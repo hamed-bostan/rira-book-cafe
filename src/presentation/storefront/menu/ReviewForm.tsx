@@ -8,7 +8,7 @@ import { useRouter } from "@/src/i18n/navigation";
 import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
-import { Badge, Button, FormMessage, RatingStars, Textarea } from "@/src/presentation/design-system";
+import { Badge, Button, FormMessage, RatingStars, Textarea, useToast } from "@/src/presentation/design-system";
 
 import { storefrontApi } from "../storefront-api";
 
@@ -29,17 +29,16 @@ export function ReviewForm({ productId, review }: ReviewFormProps) {
   const tApiErrors = useTranslations("apiErrors");
   const tFormErrors = useTranslations("formErrors");
   const router = useRouter();
+  const { toast } = useToast();
 
   const [rating, setRating] = React.useState(review?.rating ?? 0);
   const [comment, setComment] = React.useState(review?.comment ?? "");
   const [error, setError] = React.useState<string | null>(null);
-  const [saved, setSaved] = React.useState(false);
   const [pending, startTransition] = React.useTransition();
 
   function submit(event: React.FormEvent): void {
     event.preventDefault();
     setError(null);
-    setSaved(false);
     if (rating === 0) {
       setError(t("reviews.pickRating"));
       return;
@@ -47,7 +46,7 @@ export function ReviewForm({ productId, review }: ReviewFormProps) {
     startTransition(async () => {
       try {
         await storefrontApi.submitReview(productId, { rating, comment });
-        setSaved(true);
+        toast({ tone: "success", title: t("reviews.saved") });
         router.refresh();
       } catch (err) {
         const field = err instanceof ApiError ? (err.fieldErrors?.rating ?? err.fieldErrors?.comment) : undefined;
@@ -73,8 +72,7 @@ export function ReviewForm({ productId, review }: ReviewFormProps) {
       />
       <p className="text-body-caption text-muted-foreground">{t("reviews.moderationHint")}</p>
       {error ? <FormMessage>{error}</FormMessage> : null}
-      {saved ? <p className="text-body-small text-success-foreground">{t("reviews.saved")}</p> : null}
-      <Button type="submit" size="sm" className="self-end" disabled={pending}>
+      <Button type="submit" size="sm" className="self-end" loading={pending}>
         {pending ? t("reviews.saving") : review ? t("reviews.update") : t("reviews.submit")}
       </Button>
     </form>

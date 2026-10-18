@@ -13,7 +13,7 @@ import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
 import { slugify } from "@/src/lib/slugify";
-import { Button, Field, FormMessage, Input, RequiredMark, Switch, Tabs, TabsContent, TabsList, TabsTrigger, TextField } from "@/src/presentation/design-system";
+import { Button, Field, FormMessage, Input, RequiredMark, Switch, Tabs, TabsContent, TabsList, TabsTrigger, TextField, useToast } from "@/src/presentation/design-system";
 
 import { categoriesApi } from "./category-api";
 import { IconUpload } from "./IconUpload";
@@ -41,6 +41,7 @@ export function CategoryForm(props: CategoryFormProps) {
   const fieldError = (message?: string): string | undefined => formErrorMessage(tFormErrors, message);
   const editing = props.mode === "edit";
   const router = useRouter();
+  const { toast } = useToast();
   const {
     register,
     handleSubmit,
@@ -71,6 +72,7 @@ export function CategoryForm(props: CategoryFormProps) {
     try {
       if (editing) await categoriesApi.update(props.category.id, values);
       else await categoriesApi.create(values);
+      toast({ tone: "success", title: editing ? t("savedToast") : t("createdToast") });
       router.push("/dashboard/categories");
     } catch (error) {
       if (!(error instanceof ApiError)) {
@@ -192,7 +194,7 @@ export function CategoryForm(props: CategoryFormProps) {
       )}
 
       <div className="flex gap-3 pt-2">
-        <Button type="submit" disabled={isSubmitting}>
+        <Button type="submit" loading={isSubmitting}>
           {editing ? t("saveChanges") : t("createCategory")}
         </Button>
         <Button asChild variant="outline" type="button">

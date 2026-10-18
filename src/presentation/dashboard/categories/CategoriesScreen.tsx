@@ -7,7 +7,7 @@ import type { Page } from "@/src/domain/entities/Pagination";
 import { Link } from "@/src/i18n/navigation";
 import { BulkActionBar, BulkSelectionProvider } from "@/src/presentation/dashboard/bulk";
 import { ListFilterSelect, ListPager, ListSearchInput, ListToolbar } from "@/src/presentation/dashboard/list";
-import { Button, Icon } from "@/src/presentation/design-system";
+import { Button, EmptyState, Icon } from "@/src/presentation/design-system";
 
 import { CategoriesTable } from "./CategoriesTable";
 import { CategoryBulkActions } from "./CategoryBulkActions";
@@ -86,17 +86,21 @@ export async function CategoriesScreen({ categories, filters }: CategoriesScreen
             />
           </BulkSelectionProvider>
         ) : (
-          <div className="flex flex-col items-center px-6 py-20 text-center">
-            <div className="mb-5 flex size-14 items-center justify-center rounded-full bg-surface-sunken text-muted-foreground">
-              <Icon icon={isFiltered ? Search : FolderTree} size="lg" />
-            </div>
-            <p className="text-body-strong text-foreground">
-              {isFiltered ? tList("noResultsTitle") : t("emptyTitle")}
-            </p>
-            <p className="mt-1 text-body-small text-muted-foreground">
-              {isFiltered ? tList("noResultsBody") : t("emptyBody")}
-            </p>
-          </div>
+          <EmptyState
+            icon={isFiltered ? Search : FolderTree}
+            title={isFiltered ? tList("noResultsTitle") : t("emptyTitle")}
+            description={isFiltered ? tList("noResultsBody") : t("emptyBody")}
+            action={
+              isFiltered ? undefined : (
+                <Button asChild size="sm">
+                  <Link href="/dashboard/categories/create">
+                    <Icon icon={Plus} size="sm" className="me-1.5" />
+                    {t("newCategory")}
+                  </Link>
+                </Button>
+              )
+            }
+          />
         )}
       </div>
     </div>

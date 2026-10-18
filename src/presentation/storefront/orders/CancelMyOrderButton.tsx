@@ -5,7 +5,7 @@ import * as React from "react";
 
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
-import { Button, ConfirmSheet, FormMessage } from "@/src/presentation/design-system";
+import { Button, ConfirmSheet, useToast } from "@/src/presentation/design-system";
 
 import { storefrontApi } from "../storefront-api";
 
@@ -14,16 +14,15 @@ export function CancelMyOrderButton({ orderId }: { orderId: string }) {
   const t = useTranslations("site");
   const tApiErrors = useTranslations("apiErrors");
   const router = useRouter();
+  const { toast } = useToast();
   const [open, setOpen] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
   const [pending, startTransition] = React.useTransition();
 
   return (
     <div className="flex flex-col gap-1.5">
-      <Button type="button" variant="outline" disabled={pending} onClick={() => setOpen(true)}>
+      <Button type="button" variant="outline" loading={pending} onClick={() => setOpen(true)}>
         {t("orders.cancel")}
       </Button>
-      {error ? <FormMessage>{error}</FormMessage> : null}
       <ConfirmSheet
         open={open}
         onOpenChange={setOpen}
@@ -33,12 +32,12 @@ export function CancelMyOrderButton({ orderId }: { orderId: string }) {
         cancelLabel={t("keep")}
         onConfirm={() => {
           setOpen(false);
-          setError(null);
           startTransition(async () => {
             try {
               await storefrontApi.cancelOrder(orderId);
+              toast({ tone: "success", title: t("orders.cancelled") });
             } catch (err) {
-              setError(localizeApiError(err, tApiErrors, t("orders.cancelError")));
+              toast({ tone: "error", title: localizeApiError(err, tApiErrors, t("orders.cancelError")) });
             }
             router.refresh();
           });

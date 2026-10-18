@@ -1,4 +1,4 @@
-import { Plus } from "lucide-react";
+import { Coffee, Plus, SearchX } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
 import {
@@ -12,7 +12,7 @@ import { PRODUCT_KINDS, type Product } from "@/src/domain/entities/Product";
 import { Link } from "@/src/i18n/navigation";
 import { BulkActionBar, BulkSelectionProvider } from "@/src/presentation/dashboard/bulk";
 import { ListFilterSelect, ListPager, ListSearchInput } from "@/src/presentation/dashboard/list";
-import { Button, Icon } from "@/src/presentation/design-system";
+import { Button, EmptyState, Icon } from "@/src/presentation/design-system";
 
 import { ProductBulkActions } from "./ProductBulkActions";
 import { ProductsTable } from "./ProductsTable";
@@ -155,14 +155,25 @@ export async function ProductsScreen({ products, categories, filters, canWrite }
             </section>
           )}
           emptyState={(
-            <div className="px-6 py-16 text-center">
-              <p className="text-body-strong text-foreground">
-                {isFiltered ? tList("noResultsTitle") : t("emptyTitle")}
-              </p>
-              <p className="mt-1 text-body-small text-muted-foreground">
-                {isFiltered ? tList("noResultsBody") : t("emptyBody")}
-              </p>
-            </div>
+            <EmptyState
+              icon={isFiltered ? SearchX : Coffee}
+              title={isFiltered ? tList("noResultsTitle") : t("emptyTitle")}
+              description={isFiltered ? tList("noResultsBody") : t("emptyBody")}
+              action={
+                isFiltered ? (
+                  <Button asChild size="sm" variant="outline">
+                    <Link href="/dashboard/products">{tList("clearFilters")}</Link>
+                  </Button>
+                ) : canWrite ? (
+                  <Button asChild size="sm">
+                    <Link href="/dashboard/products/create">
+                      <Icon icon={Plus} size="sm" className="me-1.5" />
+                      {t("newProduct")}
+                    </Link>
+                  </Button>
+                ) : undefined
+              }
+            />
           )}
           footer={<ListPager page={products} />}
         />

@@ -25,6 +25,7 @@ import {
   TextField,
   focusRing,
   type FieldControlProps,
+  useToast,
 } from "@/src/presentation/design-system";
 
 import { teamApi } from "./team-api";
@@ -43,6 +44,7 @@ export function GrantAdminForm() {
   const tApiErrors = useTranslations("apiErrors");
   const tFormErrors = useTranslations("formErrors");
   const router = useRouter();
+  const { toast } = useToast();
   const {
     register,
     control: formControl,
@@ -61,6 +63,7 @@ export function GrantAdminForm() {
     try {
       await teamApi.grant(values);
       reset();
+      toast({ tone: "success", title: t("granted", { phone: values.phone.trim() }) });
       // The server stays the source of truth — re-render rather than splicing a
       // row into a local copy of the list.
       router.refresh();
@@ -163,7 +166,7 @@ export function GrantAdminForm() {
           </TextField>
         </div>
 
-        <Button type="submit" disabled={isSubmitting} className="h-11 w-full self-start text-body-small-emphasis sm:mt-7 sm:h-10 xl:w-auto">
+        <Button type="submit" loading={isSubmitting} className="h-11 w-full self-start text-body-small-emphasis sm:mt-7 sm:h-10 xl:w-auto">
           {isSubmitting ? t("granting") : t("grantSubmit")}
         </Button>
       </div>

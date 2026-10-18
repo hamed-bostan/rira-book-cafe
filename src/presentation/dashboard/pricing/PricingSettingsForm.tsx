@@ -2,7 +2,6 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
-import * as React from "react";
 import { useForm, useWatch } from "react-hook-form";
 
 import { pricingSettingsSchema, type PricingSettingsInput } from "@/src/contracts/pricing-schema";
@@ -11,7 +10,7 @@ import { useRouter } from "@/src/i18n/navigation";
 import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
-import { Button, FormMessage, Input, TextField } from "@/src/presentation/design-system";
+import { Button, FormMessage, Input, TextField, useToast } from "@/src/presentation/design-system";
 
 import { pricingApi } from "./pricing-api";
 
@@ -38,7 +37,7 @@ export function PricingSettingsForm({ settings, canWrite }: { settings: PricingS
   const tFormErrors = useTranslations("formErrors");
   const fieldError = (message?: string): string | undefined => formErrorMessage(tFormErrors, message);
   const router = useRouter();
-  const [saved, setSaved] = React.useState(false);
+  const { toast } = useToast();
 
   const {
     register,
@@ -54,10 +53,9 @@ export function PricingSettingsForm({ settings, canWrite }: { settings: PricingS
   const source = useWatch({ control, name: "overheadSource" });
 
   const onSubmit = handleSubmit(async (values) => {
-    setSaved(false);
     try {
       reset(toDefaults(await pricingApi.updateSettings(values)));
-      setSaved(true);
+      toast({ tone: "success", title: t("settings.saved") });
       router.refresh();
     } catch (error) {
       let applied = false;
@@ -112,10 +110,9 @@ export function PricingSettingsForm({ settings, canWrite }: { settings: PricingS
       </TextField>
 
       {errors.root?.message ? <FormMessage size="md">{errors.root.message}</FormMessage> : null}
-      {saved && !isDirty ? <p className="text-body-small text-success-foreground">{t("settings.saved")}</p> : null}
       {canWrite ? (
         <div>
-          <Button type="submit" disabled={isSubmitting || !isDirty}>
+          <Button type="submit" loading={isSubmitting} disabled={!isDirty}>
             {t("save")}
           </Button>
         </div>

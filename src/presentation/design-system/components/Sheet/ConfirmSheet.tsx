@@ -17,12 +17,19 @@ type ConfirmSheetProps = {
   cancelLabel?: string;
   confirmLabel?: string;
   onConfirm: () => void;
+  /**
+   * Pass while the confirmed action runs: Confirm shows a spinner, and Cancel
+   * and dismissal are blocked until it settles. When this prop is given the
+   * parent owns closing; without it, Confirm closes the sheet immediately.
+   */
+  pending?: boolean;
 };
 
 /**
  * Confirmation bottom sheet: a start-aligned question + message and a
  * Cancel / Confirm action pair, built on <Sheet>. Controlled via `open`.
- * `Cancel` closes; `Confirm` runs `onConfirm` then closes.
+ * `Cancel` closes; `Confirm` runs `onConfirm` then closes — unless the caller
+ * tracks `pending`, in which case the sheet stays up until the parent closes it.
  */
 export function ConfirmSheet({
   open,
@@ -32,11 +39,12 @@ export function ConfirmSheet({
   cancelLabel,
   confirmLabel,
   onConfirm,
+  pending,
 }: ConfirmSheetProps) {
   const t = useTranslations("ds");
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+    <Sheet open={open} onOpenChange={(next) => !pending && onOpenChange(next)}>
       <SheetContent title={title} titleClassName="mb-4 text-start">
         {/* Rendering Dialog.Description here makes the visible message double as the
             dialog's a11y description (so it's referenced, not duplicated sr-only). */}
@@ -46,16 +54,17 @@ export function ConfirmSheet({
 
         <div className="mt-8 flex gap-3">
           <SheetClose asChild>
-            <Button variant="outline" size="lg" className="flex-1">
+            <Button variant="outline" size="lg" className="flex-1" disabled={pending}>
               {cancelLabel ?? t("confirmCancel")}
             </Button>
           </SheetClose>
           <Button
             size="lg"
             className="flex-1"
+            loading={pending}
             onClick={() => {
               onConfirm();
-              onOpenChange(false);
+              if (pending === undefined) onOpenChange(false);
             }}
           >
             {confirmLabel ?? t("confirmYes")}

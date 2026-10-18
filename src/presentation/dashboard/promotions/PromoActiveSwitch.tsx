@@ -5,7 +5,7 @@ import * as React from "react";
 
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
-import { FormMessage, Switch } from "@/src/presentation/design-system";
+import { Switch, useToast } from "@/src/presentation/design-system";
 
 import { promotionsApi } from "./promotion-api";
 
@@ -14,25 +14,21 @@ export function PromoActiveSwitch({ id, code, isActive }: { id: string; code: st
   const t = useTranslations("dashPromotions");
   const tApiErrors = useTranslations("apiErrors");
   const router = useRouter();
+  const { toast } = useToast();
   const [pending, startTransition] = React.useTransition();
-  const [error, setError] = React.useState<string | null>(null);
 
   function toggle(next: boolean): void {
-    setError(null);
     startTransition(async () => {
       try {
         await promotionsApi.setPromoCodeActive(id, { isActive: next });
       } catch (err) {
-        setError(localizeApiError(err, tApiErrors, t("saveError")));
+        toast({ tone: "error", title: localizeApiError(err, tApiErrors, t("saveError")) });
       }
       router.refresh();
     });
   }
 
   return (
-    <span className="inline-flex flex-col items-end gap-1">
-      <Switch checked={isActive} disabled={pending} onCheckedChange={toggle} aria-label={t("activeAria", { code })} />
-      {error ? <FormMessage>{error}</FormMessage> : null}
-    </span>
+    <Switch checked={isActive} disabled={pending} onCheckedChange={toggle} aria-label={t("activeAria", { code })} />
   );
 }

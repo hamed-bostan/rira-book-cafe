@@ -12,7 +12,7 @@ import { useRouter } from "@/src/i18n/navigation";
 import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
-import { Button, FormMessage, Icon, Input, Modal, ModalContent, Select, Switch, TextField } from "@/src/presentation/design-system";
+import { Button, FormMessage, Icon, Input, Modal, ModalContent, Select, Switch, TextField, useToast } from "@/src/presentation/design-system";
 
 import { ingredientsApi } from "./pricing-api";
 
@@ -35,6 +35,7 @@ export function IngredientDialog({ ingredient }: { ingredient?: Ingredient }) {
   const tFormErrors = useTranslations("formErrors");
   const fieldError = (message?: string): string | undefined => formErrorMessage(tFormErrors, message);
   const router = useRouter();
+  const { toast } = useToast();
   const [open, setOpen] = React.useState(false);
 
   const {
@@ -55,6 +56,7 @@ export function IngredientDialog({ ingredient }: { ingredient?: Ingredient }) {
       else await ingredientsApi.create(values);
       setOpen(false);
       if (!ingredient) reset(toDefaults());
+      toast({ tone: "success", title: t("ingredients.saved", { name: values.name.trim() }) });
       router.refresh();
     } catch (error) {
       let applied = false;
@@ -126,7 +128,7 @@ export function IngredientDialog({ ingredient }: { ingredient?: Ingredient }) {
               <Button type="button" variant="outline" size="sm" onClick={() => setOpen(false)}>
                 {t("cancel")}
               </Button>
-              <Button type="submit" size="sm" disabled={isSubmitting}>
+              <Button type="submit" size="sm" loading={isSubmitting}>
                 {t("save")}
               </Button>
             </div>

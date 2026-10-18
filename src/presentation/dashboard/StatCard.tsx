@@ -1,6 +1,6 @@
 import { Link } from "@/src/i18n/navigation";
 import { cn } from "@/src/lib/utils";
-import { focusRing, Icon } from "@/src/presentation/design-system";
+import { focusRing, Icon, interactiveCard } from "@/src/presentation/design-system";
 
 import { StatSparkline } from "./StatSparkline";
 
@@ -138,7 +138,7 @@ export function StatCard({
 
   if (href) {
     return (
-      <Link href={href} className={cn(frame, focusRing, "transition-colors hover:bg-muted")}>
+      <Link href={href} className={cn(frame, focusRing, interactiveCard, "hover:bg-muted")}>
         {content}
       </Link>
     );

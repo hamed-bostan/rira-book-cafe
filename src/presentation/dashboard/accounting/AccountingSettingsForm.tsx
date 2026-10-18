@@ -2,7 +2,6 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocale, useTranslations } from "next-intl";
-import * as React from "react";
 import { useForm, useWatch } from "react-hook-form";
 
 import { accountingSettingsSchema, type AccountingSettingsInput } from "@/src/contracts/accounting-schema";
@@ -12,7 +11,7 @@ import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatCafeDayMedium } from "@/src/lib/formatCafeDay";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
-import { Button, FormMessage, Input, TextField } from "@/src/presentation/design-system";
+import { Button, FormMessage, Input, TextField, useToast } from "@/src/presentation/design-system";
 
 import { accountsApi } from "./accounting-api";
 
@@ -33,7 +32,7 @@ export function AccountingSettingsForm({ settings, today, canWrite }: { settings
   const fieldError = (message?: string): string | undefined => formErrorMessage(tFormErrors, message);
   const locale = useLocale();
   const router = useRouter();
-  const [saved, setSaved] = React.useState(false);
+  const { toast } = useToast();
 
   const {
     register,
@@ -49,11 +48,10 @@ export function AccountingSettingsForm({ settings, today, canWrite }: { settings
   const closedThrough = useWatch({ control, name: "booksClosedThrough" });
 
   const onSubmit = handleSubmit(async (values) => {
-    setSaved(false);
     try {
       const next = await accountsApi.updateSettings(values);
       reset({ vatRate: percentOf(next.vatRateBps), booksClosedThrough: next.booksClosedThrough ?? "" });
-      setSaved(true);
+      toast({ tone: "success", title: t("settings.savedToast") });
       router.refresh();
     } catch (error) {
       const fields = error instanceof ApiError ? error.fieldErrors : undefined;
@@ -81,10 +79,9 @@ export function AccountingSettingsForm({ settings, today, canWrite }: { settings
         {(control) => <Input {...control} {...register("booksClosedThrough")} type="date" max={today} dir="ltr" className="max-w-48" disabled={!canWrite} />}
       </TextField>
       {errors.root?.message ? <FormMessage size="md">{errors.root.message}</FormMessage> : null}
-      {saved && !isDirty ? <p className="text-body-small text-success-foreground">{t("settings.saved")}</p> : null}
       {canWrite ? (
         <div>
-          <Button type="submit" disabled={isSubmitting || !isDirty}>
+          <Button type="submit" loading={isSubmitting} disabled={!isDirty}>
             {t("settings.save")}
           </Button>
         </div>

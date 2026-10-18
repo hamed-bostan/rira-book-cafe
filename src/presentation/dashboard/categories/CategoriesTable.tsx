@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import {
@@ -9,6 +8,7 @@ import type { Category } from "@/src/domain/entities/Category";
 import { Link } from "@/src/i18n/navigation";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { formatOrderDateShort } from "@/src/lib/formatOrderDate";
+import { FadeInImage } from "@/src/presentation/components/FadeInImage";
 import { BulkRowCheckbox, BulkSelectAllCheckbox } from "@/src/presentation/dashboard/bulk";
 import { ListSortHeader } from "@/src/presentation/dashboard/list";
 import {
@@ -65,7 +65,7 @@ export async function CategoriesTable({ categories, footer }: CategoriesTablePro
                   <BulkRowCheckbox id={category.id} label={t("selectRowAria", { name: category.name })} />
                 </label>
                 <Thumbnail className="size-12 border border-border/60">
-                  <Image src={category.iconUrl} alt="" width={36} height={36} className="object-contain" />
+                  <FadeInImage src={category.iconUrl} alt="" width={36} height={36} className="object-contain" />
                 </Thumbnail>
                 <div className="min-w-0 flex-1">
                   <Link
@@ -137,7 +137,7 @@ export async function CategoriesTable({ categories, footer }: CategoriesTablePro
               <TableCell>
                 <div className="flex items-center gap-3">
                   <Thumbnail className="size-12 border border-border/60">
-                    <Image src={category.iconUrl} alt="" width={36} height={36} className="object-contain" />
+                    <FadeInImage src={category.iconUrl} alt="" width={36} height={36} className="object-contain" />
                   </Thumbnail>
                   <div className="min-w-0">
                     <Link

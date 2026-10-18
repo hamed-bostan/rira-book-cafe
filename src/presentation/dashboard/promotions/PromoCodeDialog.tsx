@@ -6,12 +6,12 @@ import * as React from "react";
 
 import type { PromoCodeFormInput } from "@/src/contracts/promotion-schema";
 import { cafeDayOf } from "@/src/domain/entities/CafeTime";
-import { MAX_PROMO_DESCRIPTION_LENGTH, PROMO_KINDS, type PromoCode, type PromoKind } from "@/src/domain/entities/Promotion";
+import { MAX_PROMO_DESCRIPTION_LENGTH, normalizePromoCode, PROMO_KINDS, type PromoCode, type PromoKind } from "@/src/domain/entities/Promotion";
 import { useRouter } from "@/src/i18n/navigation";
 import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
-import { Button, FormMessage, Icon, Input, Modal, ModalContent, Select, Switch } from "@/src/presentation/design-system";
+import { Button, FormMessage, Icon, Input, Modal, ModalContent, Select, Switch, useToast } from "@/src/presentation/design-system";
 
 import { promotionsApi } from "./promotion-api";
 
@@ -49,6 +49,7 @@ export function PromoCodeDialog({ promo }: PromoCodeDialogProps) {
   const tApiErrors = useTranslations("apiErrors");
   const tFormErrors = useTranslations("formErrors");
   const router = useRouter();
+  const { toast } = useToast();
 
   const [open, setOpen] = React.useState(false);
   const [values, setValues] = React.useState<PromoCodeFormInput>(() => initialValues(promo));
@@ -73,6 +74,7 @@ export function PromoCodeDialog({ promo }: PromoCodeDialogProps) {
         if (promo) await promotionsApi.updatePromoCode(promo.id, values);
         else await promotionsApi.createPromoCode(values);
         setOpen(false);
+        toast({ tone: "success", title: t("codeSaved", { code: normalizePromoCode(values.code) }) });
         router.refresh();
       } catch (err) {
         if (err instanceof ApiError) {
@@ -150,7 +152,7 @@ export function PromoCodeDialog({ promo }: PromoCodeDialogProps) {
               <Button type="button" variant="outline" size="sm" onClick={() => setOpen(false)}>
                 {t("cancel")}
               </Button>
-              <Button type="submit" size="sm" disabled={pending}>
+              <Button type="submit" size="sm" loading={pending}>
                 {pending ? t("saving") : t("save")}
               </Button>
             </div>

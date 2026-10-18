@@ -6,7 +6,7 @@ import * as React from "react";
 
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
-import { Button, ConfirmSheet, Icon } from "@/src/presentation/design-system";
+import { Button, ConfirmSheet, Icon, useToast } from "@/src/presentation/design-system";
 
 import { teamApi } from "./team-api";
 
@@ -41,6 +41,7 @@ export function TransferOwnershipButton({ id, name, intent }: TransferOwnershipB
   const t = useTranslations("dashTeam");
   const tApiErrors = useTranslations("apiErrors");
   const router = useRouter();
+  const { toast } = useToast();
   const [open, setOpen] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [pending, startTransition] = React.useTransition();
@@ -52,6 +53,7 @@ export function TransferOwnershipButton({ id, name, intent }: TransferOwnershipB
       try {
         await teamApi.transferOwnership(id);
         setOpen(false);
+        toast({ tone: "success", title: intent === "transfer" ? t("ownership.transferred", { name }) : t("ownership.claimed") });
         // Re-run the server render: the caller is an admin now, so the team page
         // stops being theirs to manage and the server is what says so.
         router.refresh();
@@ -77,7 +79,7 @@ export function TransferOwnershipButton({ id, name, intent }: TransferOwnershipB
         aria-label={label}
         title={label}
         onClick={() => setOpen(true)}
-        disabled={pending}
+        loading={pending}
         className="size-11 sm:size-10"
       >
         <Icon icon={Crown} size="sm" />

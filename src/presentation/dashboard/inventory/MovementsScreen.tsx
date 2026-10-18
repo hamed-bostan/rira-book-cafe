@@ -1,4 +1,4 @@
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, History } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { STOCK_MOVEMENT_KINDS, type StockItem, type StockMovement } from "@/src/domain/entities/Inventory";
@@ -9,6 +9,7 @@ import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { cn } from "@/src/lib/utils";
 import { ListFilterSelect, ListPager } from "@/src/presentation/dashboard/list";
+import { EmptyState } from "@/src/presentation/design-system";
 
 type MovementsScreenProps = { page: Page<StockMovement>; items: StockItem[]; costsVisible: boolean };
 
@@ -62,7 +63,7 @@ export async function MovementsScreen({ page, items, costsVisible }: MovementsSc
 
       <section className="min-w-0 overflow-hidden rounded-card-lg border border-border bg-background">
         {page.items.length === 0 ? (
-          <p className="px-6 py-16 text-center text-body-small-emphasis text-muted-foreground">{t("movements.empty")}</p>
+          <EmptyState icon={History} title={t("movements.empty")} />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[40rem] text-body-small">

@@ -1,3 +1,5 @@
+import { randomInt } from "node:crypto";
+
 import type { AuthIdentity, IAuthRepository } from "@/src/domain/repositories/IAuthRepository";
 
 import { normalizePhone } from "../../sms/smsIrClient";
@@ -24,7 +26,7 @@ export class MockAuthRepository implements IAuthRepository {
       return false;
     }
 
-    const code = String(Math.floor(1000 + Math.random() * 9000));
+    const code = String(randomInt(1000, 10_000));
     this.codes.set(mobile, code);
     console.log(`📱 [dev] OTP for ${phone}: ${code}`);
     return true;

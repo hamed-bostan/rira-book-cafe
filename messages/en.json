@@ -18,6 +18,7 @@
     "continue": "Continue",
     "verifyTitle": "Verification Code",
     "incorrectCode": "Incorrect Code. Please Try Again",
+    "tooManyAttempts": "Too Many Attempts. Please Wait A Few Minutes And Try Again",
     "enterCode": "Enter The 4-Digit Code We Sent To {phone}",
     "waitingCode": "We're Waiting For Your Code...",
     "codeAria": "Verification code",

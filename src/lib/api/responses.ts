@@ -38,6 +38,19 @@ export function unauthorizedResponse(): NextResponse {
 }
 
 /**
+ * 429 when a rate limit tripped. `Retry-After` (seconds) tells well-behaved
+ * clients when the oldest counted attempt leaves the window.
+ */
+export function tooManyRequestsResponse(retryAfterSeconds: number): NextResponse {
+  const response = errorResponse(429, {
+    message: "Too many attempts. Please wait a moment and try again.",
+    code: "RATE_LIMITED",
+  });
+  response.headers.set("Retry-After", String(retryAfterSeconds));
+  return response;
+}
+
+/**
  * Translate a thrown error into the correct HTTP response. Known domain errors
  * map to 4xx with a user-presentable message; anything else is an unexpected 500
  * and is logged server-side (its detail is never leaked to the client).

@@ -1,6 +1,7 @@
 import { Inter } from "next/font/google";
 import localFont from "next/font/local";
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
@@ -74,12 +75,17 @@ export default async function LocaleLayout({
 }) {
   const { locale } = await params;
 
+  // Every page renders per request: the Content-Security-Policy set in `proxy.ts`
+  // carries a fresh nonce that Next.js stamps onto its scripts during rendering. A
+  // prerendered (static/ISR) page would ship scripts without it and never hydrate.
+  await connection();
+
   // A first path segment that isn't a known locale has no valid render.
   if (!hasLocale(routing.locales, locale)) {
     notFound();
   }
 
-  // Opt this locale's routes into static rendering (next-intl reads the locale here).
+  // Hand next-intl this render's locale (it reads it from here, not from headers).
   setRequestLocale(locale);
 
   return (

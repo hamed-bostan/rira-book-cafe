@@ -21,7 +21,8 @@ interface OtpScreenProps {
 export default function OtpScreen({ phone, callbackUrl = "/" }: OtpScreenProps) {
   const t = useTranslations("auth");
   const [code, setCode] = React.useState("");
-  const [error, setError] = React.useState(false);
+  // Which message to show under the title, if any (a key in the `auth` namespace).
+  const [error, setError] = React.useState<"incorrectCode" | "tooManyAttempts" | false>(false);
   const [pending, setPending] = React.useState(false);
   const [secondsLeft, setSecondsLeft] = React.useState(RESEND_SECONDS);
   const [devCode, setDevCode] = React.useState<string | null>(null);
@@ -57,7 +58,7 @@ export default function OtpScreen({ phone, callbackUrl = "/" }: OtpScreenProps) 
     // Success redirects away; only a wrong code returns here.
     const result = await verifyOtp({ phone, code, callbackUrl });
     if (result?.error) {
-      setError(true);
+      setError(result.rateLimited ? "tooManyAttempts" : "incorrectCode");
       setPending(false);
     }
   };
@@ -74,7 +75,7 @@ export default function OtpScreen({ phone, callbackUrl = "/" }: OtpScreenProps) 
   const ss = String(secondsLeft % 60).padStart(2, "0");
 
   const subtitle = error
-    ? t("incorrectCode")
+    ? t(error)
     : code.length === 0
       ? t("enterCode", { phone: maskPhone(phone) })
       : t("waitingCode");
@@ -94,7 +95,7 @@ export default function OtpScreen({ phone, callbackUrl = "/" }: OtpScreenProps) 
           length={CODE_LENGTH}
           autoFocus
           aria-label={t("codeAria")}
-          aria-invalid={error || undefined}
+          aria-invalid={Boolean(error) || undefined}
         />
 
         {devCode && (

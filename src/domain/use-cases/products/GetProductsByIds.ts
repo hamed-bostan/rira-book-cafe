@@ -11,11 +11,15 @@ import type { IProductRepository } from "../../repositories/IProductRepository";
  *
  * Duplicate ids are collapsed before the read, since callers derive the list from
  * rows that often share a product.
+ *
+ * Unpublished (draft) items are dropped unless the caller may see them — the
+ * endpoint is public, and a draft's name and price aren't.
  */
 export class GetProductsByIds {
   constructor(private readonly productRepo: IProductRepository) {}
 
-  execute(ids: readonly string[], locale?: string): Promise<Product[]> {
-    return this.productRepo.getByIds([...new Set(ids)], locale);
+  async execute(ids: readonly string[], locale?: string, options: { includeUnpublished?: boolean } = {}): Promise<Product[]> {
+    const products = await this.productRepo.getByIds([...new Set(ids)], locale);
+    return options.includeUnpublished ? products : products.filter((product) => product.isPublished);
   }
 }

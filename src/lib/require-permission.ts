@@ -6,6 +6,7 @@ import type { Permission } from "@/src/domain/entities/Permission";
 import { roleHasPermission, ROLE_PERMISSIONS } from "@/src/domain/entities/Permission";
 import { isDashboardRole, type UserRole } from "@/src/domain/entities/User";
 import { userRepository } from "@/src/infrastructure/container";
+import { getEnv } from "@/src/lib/env";
 
 import type { Session } from "next-auth";
 
@@ -37,12 +38,7 @@ import type { Session } from "next-auth";
  * without a database console. Ids here are *not* revocable through the UI.
  */
 function breakGlassIds(): Set<string> {
-  return new Set(
-    (process.env.ADMIN_USER_IDS ?? "")
-      .split(",")
-      .map((id) => id.trim())
-      .filter(Boolean),
-  );
+  return new Set(getEnv().ADMIN_USER_IDS);
 }
 
 /** True when the id is an unrevocable break-glass owner from the environment. */

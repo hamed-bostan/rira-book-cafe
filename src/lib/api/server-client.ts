@@ -1,6 +1,8 @@
 import { headers } from "next/headers";
 import { getLocale } from "next-intl/server";
 
+import { getEnv } from "../env";
+
 import { ApiError } from "./ApiError";
 import { defaultMessageForStatus, type ErrorEnvelope } from "./normalizeAxiosError";
 import { badResponseError, parseApiResponse } from "./parseApiResponse";
@@ -134,11 +136,12 @@ async function safeJson(response: Response): Promise<ErrorEnvelope | undefined> 
  * origin from the incoming request so self-calls work in any environment.
  */
 function resolveBaseUrl(requestHeaders: Awaited<ReturnType<typeof headers>>): string {
-  if (process.env.API_BASE_URL) return process.env.API_BASE_URL;
+  const { API_BASE_URL, NODE_ENV } = getEnv();
+  if (API_BASE_URL) return API_BASE_URL;
 
   const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
   if (!host) throw new Error("Cannot resolve the API base URL: the request has no host header.");
 
-  const proto = requestHeaders.get("x-forwarded-proto") ?? (process.env.NODE_ENV === "development" ? "http" : "https");
+  const proto = requestHeaders.get("x-forwarded-proto") ?? (NODE_ENV === "development" ? "http" : "https");
   return `${proto}://${host}/api`;
 }

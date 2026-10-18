@@ -1,1 +1,4 @@
-npx lint-staged
+# Smaller argument chunks than lint-staged picks by default: on Windows, a chunk of
+# absolute paths can still exceed cmd.exe's 8191-character limit ("The command
+# line is too long") when a commit touches a few hundred files.
+npx lint-staged --max-arg-length 4000

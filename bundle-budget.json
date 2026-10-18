@@ -1,0 +1,8 @@
+{
+  "default": 270,
+  "routes": {
+    "/": 240,
+    "/menu": 240,
+    "/dashboard/*": 300
+  }
+}

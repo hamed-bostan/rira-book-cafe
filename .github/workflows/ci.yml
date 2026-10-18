@@ -125,6 +125,12 @@ jobs:
       - name: E2E tests
         run: npm run test:e2e
 
+      # Reuses the production build the E2E run just made. Fails when a page's
+      # first-load JS (gzip) grows past bundle-budget.json — e.g. a barrel import
+      # dragging a library into every page. Raise a budget deliberately, in review.
+      - name: Bundle size budget
+        run: npm run bundle:check
+
       - name: Upload the Playwright report and traces
         if: failure()
         uses: actions/upload-artifact@v4

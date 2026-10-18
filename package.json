@@ -8,6 +8,8 @@
     "dev": "next dev",
     "build": "next build",
     "analyze": "npm run generate:tokens && next build --webpack",
+    "bundle:size": "node scripts/bundle-size.mjs",
+    "bundle:check": "node scripts/bundle-size.mjs --check",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",

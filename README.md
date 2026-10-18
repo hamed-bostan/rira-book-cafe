@@ -87,6 +87,9 @@ duplicating them and leaves your own data alone.
 | `npm test`                        | Unit tests (Vitest, no database needed)                       |
 | `npm run format` / `format:check` | Prettier write / check (Tailwind classes sorted)              |
 | `npm run generate:tokens`         | Rebuild `src/styles/tokens.css` from the design-system tokens |
+| `npm run bundle:size`             | First-load JS (gzip) per page, from the last `npm run build`  |
+| `npm run bundle:check`            | Same, failing past `bundle-budget.json` (CI runs it)          |
+| `npm run analyze`                 | Webpack build with bundle treemaps in `.next/analyze/`        |
 | `npm run db:dev:up`               | Start the local Postgres container                            |
 | `npm run db:setup`                | Apply migrations, then seed                                   |
 | `npm run db:migrate`              | Create a new migration after changing `prisma/schema.prisma`  |
@@ -101,7 +104,15 @@ npm run typecheck
 npm run lint
 npm test
 npm run build
+npm run bundle:check
 ```
+
+**Performance guardrails.** Import design-system components from their own module
+(`…/design-system/components/Button/Button`), never through a barrel; ESLint enforces
+it, because one barrel import from a Server Component shipped the whole design system
+on every page. Public catalog reads are cached and expired by tag (`src/lib/cache-tags.ts`):
+a new write route that changes products, categories or events must be wrapped in
+`invalidatesCatalog`.
 
 ### Git hooks and commit messages
 

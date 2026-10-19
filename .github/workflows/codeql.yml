@@ -1,9 +1,13 @@
 name: CodeQL
 
 # Static security analysis (taint tracking for XSS, injection, SSRF, path
-# traversal, …) of the app code and of the workflows themselves. Findings land
-# in the repository's Security → Code scanning tab. Separate from ci.yml so the
-# two evolve independently.
+# traversal, …) of the app code and of the workflows themselves. Separate from
+# ci.yml so the two evolve independently.
+#
+# The repo is private without GitHub Advanced Security, so Code scanning (the
+# Security tab) is unavailable and SARIF uploads are rejected. Instead the
+# results stay in the run: listed in the job summary, kept as an artifact, and
+# any finding fails the job so it can't go unnoticed.
 
 on:
   push:
@@ -28,7 +32,6 @@ jobs:
     timeout-minutes: 30
     permissions:
       contents: read
-      security-events: write
       actions: read
     strategy:
       fail-fast: false
@@ -47,3 +50,32 @@ jobs:
       - uses: github/codeql-action/analyze@v4
         with:
           category: /language:${{ matrix.language }}
+          upload: never
+          output: sarif-results
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: codeql-${{ matrix.language }}
+          path: sarif-results
+          if-no-files-found: ignore
+
+      - name: Report findings
+        run: |
+          findings=$(jq -r '.runs[].results[]
+            | "| \(.level // "warning") | `\(.ruleId)` | `\(.locations[0].physicalLocation.artifactLocation.uri):\(.locations[0].physicalLocation.region.startLine // 0)` | \(.message.text | gsub("\n"; " ")) |"' \
+            sarif-results/*.sarif)
+          count=$(printf '%s' "$findings" | grep -c '^|' || true)
+          {
+            echo "## CodeQL (${{ matrix.language }}): $count finding(s)"
+            if [ "$count" -gt 0 ]; then
+              echo
+              echo "| Level | Rule | Location | Message |"
+              echo "| --- | --- | --- | --- |"
+              echo "$findings"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$count" -gt 0 ]; then
+            echo "::error::CodeQL reported $count finding(s); see the job summary or the codeql-${{ matrix.language }} artifact."
+            exit 1
+          fi

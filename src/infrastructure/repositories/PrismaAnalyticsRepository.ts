@@ -165,7 +165,7 @@ export class PrismaAnalyticsRepository implements IAnalyticsRepository {
     const rows = await prisma.order.findMany({
       where: {
         paymentStatus: "unpaid",
-        status: { in: ["ready", "completed"] },
+        status: "completed",
         placedAt: { gte: range.from, lt: range.to },
       },
       orderBy: { placedAt: "asc" },

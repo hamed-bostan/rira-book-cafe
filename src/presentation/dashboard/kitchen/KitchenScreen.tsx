@@ -1,14 +1,7 @@
 import { Clock, Inbox, StickyNote } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
-import {
-  KITCHEN_LANES,
-  KITCHEN_LATE_MINUTES,
-  KITCHEN_STATIONS,
-  kitchenLanes,
-  minutesWaiting,
-  type KitchenStation,
-} from "@/src/domain/entities/Kitchen";
+import { KITCHEN_LANES, KITCHEN_LATE_MINUTES, kitchenLanes, minutesWaiting } from "@/src/domain/entities/Kitchen";
 import { canServeItems, type Order } from "@/src/domain/entities/Order";
 import { Link } from "@/src/i18n/navigation";
 import { formatNumber } from "@/src/lib/formatNumber";
@@ -16,7 +9,6 @@ import { cn } from "@/src/lib/utils";
 import { AutoRefresh } from "@/src/presentation/components/AutoRefresh";
 import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
-import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 
 import { OrderItemServeToggle } from "../orders/OrderItemServeToggle";
 import { OrderServiceLabel } from "../orders/OrderServiceLabel";
@@ -24,9 +16,8 @@ import { OrderServiceLabel } from "../orders/OrderServiceLabel";
 import { KitchenAdvanceButton } from "./KitchenAdvanceButton";
 
 type KitchenScreenProps = {
-  /** Every active order (the board filters by station itself). */
+  /** Every active order. */
   orders: Order[];
-  station: KitchenStation;
   /** "Now", from the page, so waiting times are judged on the server's clock. */
   now: string;
   canFulfill: boolean;
@@ -36,46 +27,26 @@ type KitchenScreenProps = {
 const REFRESH_SECONDS = 15;
 
 /**
- * The bar and kitchen's wall screen: what's new, what's being made and what's
- * waiting at the pass, oldest first, with only the station's own lines. Lines are
- * ticked off as they go out and each order moves on with one tap. Presentational
- * — the page fetches over the REST API, and the board refreshes itself.
+ * The bar's wall screen: what's new and what's being made, oldest first, with
+ * every line of each order. Lines are ticked off as they go out and each order
+ * moves on with one tap — taken, then served. Presentational — the page
+ * fetches over the REST API, and the board refreshes itself.
  */
-export async function KitchenScreen({ orders, station, now, canFulfill }: KitchenScreenProps) {
+export async function KitchenScreen({ orders, now, canFulfill }: KitchenScreenProps) {
   const t = await getTranslations("dashKitchen");
   const locale = await getLocale();
   const nowDate = new Date(now);
-  const lanes = kitchenLanes(orders, station);
+  const lanes = kitchenLanes(orders);
 
   return (
     <div className="@container flex min-w-0 flex-col gap-4">
       <AutoRefresh intervalSeconds={REFRESH_SECONDS} />
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="space-y-1">
-          <h1 className="dashboard-page-title">{t("heading")}</h1>
-          <p className="text-body-small text-muted-foreground">{t("subtitle")}</p>
-        </div>
-        <nav aria-label={t("stationLabel")} className="flex gap-1 rounded-full bg-muted p-1">
-          {KITCHEN_STATIONS.map((option) => (
-            <Link
-              key={option}
-              href={option === "all" ? "/dashboard/kitchen" : `/dashboard/kitchen?station=${option}`}
-              aria-current={option === station ? "page" : undefined}
-              className={cn(
-                "rounded-full px-4 py-1.5 text-body-small-emphasis",
-                focusRing,
-                option === station
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              {t(`station.${option}`)}
-            </Link>
-          ))}
-        </nav>
+      <div className="space-y-1">
+        <h1 className="dashboard-page-title">{t("heading")}</h1>
+        <p className="text-body-small text-muted-foreground">{t("subtitle")}</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 @min-[56rem]:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 @min-[40rem]:grid-cols-2">
         {KITCHEN_LANES.map((lane) => (
           <section
             key={lane}
@@ -94,7 +65,7 @@ export async function KitchenScreen({ orders, station, now, canFulfill }: Kitche
               <ul className="flex flex-col gap-3">
                 {lanes[lane].map((order) => {
                   const waited = minutesWaiting(order, nowDate);
-                  const late = lane !== "ready" && waited >= KITCHEN_LATE_MINUTES;
+                  const late = waited >= KITCHEN_LATE_MINUTES;
                   return (
                     <li
                       key={order.id}

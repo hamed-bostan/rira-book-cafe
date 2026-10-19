@@ -46,13 +46,13 @@ describe("SetOrderItemServed", () => {
   });
 
   it("takes a mark back", async () => {
-    const { repo, setItemServed } = repoWith(order("ready", new Date(0).toISOString()));
+    const { repo, setItemServed } = repoWith(order("preparing", new Date(0).toISOString()));
     await new SetOrderItemServed(repo).execute("o1", "i1", false);
     expect(setItemServed).toHaveBeenCalledWith("o1", "i1", false);
   });
 
   it("is a no-op when the line is already in that state", async () => {
-    const { repo, setItemServed } = repoWith(order("ready", new Date(0).toISOString()));
+    const { repo, setItemServed } = repoWith(order("preparing", new Date(0).toISOString()));
     await new SetOrderItemServed(repo).execute("o1", "i1", true);
     expect(setItemServed).not.toHaveBeenCalled();
   });

@@ -21,7 +21,7 @@ function order(overrides: Partial<Order> = {}): Order {
     userId: "guest",
     customerName: "Sara",
     customerPhone: "0912",
-    status: "ready",
+    status: "preparing",
     serviceType: "dineIn",
     paymentStatus: "unpaid",
     items: [

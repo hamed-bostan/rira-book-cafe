@@ -273,7 +273,7 @@
     "navInventory": "Inventory",
     "navSuite": "Suite",
     "navBookLoans": "Book loans",
-    "navKitchen": "Kitchen display",
+    "navKitchen": "Bar display",
     "navReviews": "Reviews",
     "navPromotions": "Promotions",
     "navCashShifts": "Cash shifts"
@@ -633,19 +633,15 @@
     "tabAll": "All",
     "tabActive": "In queue",
     "status": {
-      "pending": "New",
-      "accepted": "Accepted",
+      "pending": "Placed",
       "preparing": "Preparing",
-      "ready": "Ready",
-      "completed": "Completed",
+      "completed": "Served",
       "cancelled": "Cancelled"
     },
     "advance": {
       "pending": "Mark new",
-      "accepted": "Accept order",
       "preparing": "Start preparing",
-      "ready": "Mark ready",
-      "completed": "Complete",
+      "completed": "Mark served",
       "cancelled": "Cancel"
     },
     "service": {
@@ -1021,7 +1017,7 @@
   "dashOverview": {
     "heading": "Today",
     "activeOrders": "Orders in the queue",
-    "activeOrdersHint": "New, accepted, preparing or ready",
+    "activeOrdersHint": "Placed or preparing",
     "todayBookings": "Bookings today",
     "awaitingConfirmation": "{count, plural, one {# awaiting confirmation} other {# awaiting confirmation}}",
     "covers": "{count, plural, one {{formatted} guest} other {{formatted} guests}}",
@@ -1206,23 +1202,19 @@
       "itemCount": "{count, plural, one {{formatted} item} other {{formatted} items}}",
       "cancelled": "This order was cancelled.",
       "step": {
-        "pending": "Sent",
-        "accepted": "Accepted",
+        "pending": "Placed",
         "preparing": "Preparing",
-        "ready": "Ready",
-        "completed": "Done"
+        "completed": "Served"
       },
       "statusLine": {
-        "pending": "We've got your order — the team will accept it shortly.",
-        "accepted": "Accepted. It'll be made shortly.",
+        "pending": "We've got your order — the team will start on it shortly.",
         "preparing": "Being prepared now.",
-        "ready": "Ready! We'll bring it over, or collect it at the counter.",
         "completed": "Enjoy! Thanks for coming."
       },
       "cancel": "Cancel order",
       "cancelTitle": "Cancel this order?",
-      "cancelMessage": "You can cancel until the team accepts it.",
-      "cancelError": "Couldn't cancel the order. It may already be accepted.",
+      "cancelMessage": "You can cancel until the team starts preparing it.",
+      "cancelError": "Couldn't cancel the order. It may already be being prepared.",
       "pay": {
         "button": "Pay online",
         "redirecting": "Taking you to the payment page…",
@@ -1348,7 +1340,7 @@
       "bellAria": "{count, plural, =0 {Notifications} one {Notifications, # unread} other {Notifications, # unread}}",
       "kinds": {
         "orderAccepted": {
-          "title": "Order #{orderNumber} is in hand",
+          "title": "Order #{orderNumber} is being prepared",
           "body": "We've started on your order."
         },
         "orderReady": {
@@ -1356,7 +1348,7 @@
           "body": "{serviceType, select, takeaway {It's waiting for you at the counter.} other {It's on its way to your table.}}"
         },
         "orderCompleted": {
-          "title": "Order #{orderNumber} is done",
+          "title": "Order #{orderNumber} has been served",
           "body": "Thanks for coming — enjoy!"
         },
         "orderCancelled": {
@@ -2365,18 +2357,11 @@
     "closed": "Shift closed"
   },
   "dashKitchen": {
-    "heading": "Kitchen display",
-    "subtitle": "The live queue for the bar and the kitchen. Refreshes on its own.",
-    "stationLabel": "Station",
-    "station": {
-      "all": "Everything",
-      "bar": "Bar",
-      "kitchen": "Kitchen"
-    },
+    "heading": "Bar display",
+    "subtitle": "The live queue for the bar: drinks, cakes and ready-made food. Refreshes on its own.",
     "lane": {
       "new": "New",
-      "making": "Being made",
-      "ready": "Ready"
+      "making": "Being made"
     },
     "laneEmpty": "Nothing here.",
     "minutes": "{minutes} min"

@@ -9,9 +9,7 @@ import { Badge, type BadgeProps } from "@/src/presentation/design-system/compone
  */
 const VARIANT: Record<OrderStatus, NonNullable<BadgeProps["variant"]>> = {
   pending: "warning",
-  accepted: "info",
   preparing: "info",
-  ready: "success",
   completed: "neutral",
   cancelled: "destructive",
 };

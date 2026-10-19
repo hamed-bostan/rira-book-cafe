@@ -8,7 +8,7 @@ import type { IOrderRepository } from "../../repositories/IOrderRepository";
  * Tick one line of an order off as served — or take a mistaken tick back — so the
  * floor can see what has reached the guest and what is still being made.
  *
- * Only while the order is being worked (`accepted` → `ready`): before that nobody
+ * Only while the order is `preparing`: before that nobody
  * has started on it, and once it's completed everything was served. Not audited:
  * it's the bar's running checklist, not a business change — the order's status
  * history already records who took and finished it. Setting the state a line

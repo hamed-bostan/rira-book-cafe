@@ -273,7 +273,7 @@
     "navInventory": "انبار",
     "navSuite": "سوئیت",
     "navBookLoans": "امانت کتاب",
-    "navKitchen": "نمایشگر آشپزخانه",
+    "navKitchen": "نمایشگر بار",
     "navReviews": "نظرها",
     "navPromotions": "تخفیف و باشگاه",
     "navCashShifts": "شیفت صندوق"
@@ -633,19 +633,15 @@
     "tabAll": "همه",
     "tabActive": "در صف",
     "status": {
-      "pending": "جدید",
-      "accepted": "پذیرفته‌شده",
+      "pending": "ثبت شد",
       "preparing": "در حال آماده‌سازی",
-      "ready": "آماده",
-      "completed": "تحویل‌شده",
+      "completed": "سرو شده",
       "cancelled": "لغوشده"
     },
     "advance": {
       "pending": "علامت جدید",
-      "accepted": "پذیرش سفارش",
       "preparing": "شروع آماده‌سازی",
-      "ready": "آماده شد",
-      "completed": "تحویل شد",
+      "completed": "سرو شد",
       "cancelled": "لغو"
     },
     "service": {
@@ -1021,7 +1017,7 @@
   "dashOverview": {
     "heading": "امروز",
     "activeOrders": "سفارش‌های در صف",
-    "activeOrdersHint": "جدید، پذیرفته، در حال آماده‌سازی یا آماده",
+    "activeOrdersHint": "ثبت‌شده یا در حال آماده‌سازی",
     "todayBookings": "رزروهای امروز",
     "awaitingConfirmation": "{count, plural, other {# در انتظار تأیید}}",
     "covers": "{count, plural, other {{formatted} مهمان}}",
@@ -1206,23 +1202,19 @@
       "itemCount": "{count, plural, other {{formatted} آیتم}}",
       "cancelled": "این سفارش لغو شد.",
       "step": {
-        "pending": "ارسال شد",
-        "accepted": "پذیرفته شد",
-        "preparing": "آماده‌سازی",
-        "ready": "آماده",
-        "completed": "تحویل"
+        "pending": "ثبت شد",
+        "preparing": "در حال آماده‌سازی",
+        "completed": "سرو شد"
       },
       "statusLine": {
-        "pending": "سفارش شما رسید — به‌زودی پذیرفته می‌شود.",
-        "accepted": "پذیرفته شد. به‌زودی آماده می‌شود.",
+        "pending": "سفارش شما ثبت شد — به‌زودی آماده‌سازی آن شروع می‌شود.",
         "preparing": "در حال آماده‌سازی است.",
-        "ready": "آماده است! برایتان می‌آوریم، یا از صندوق تحویل بگیرید.",
         "completed": "نوش جان! ممنون که آمدید."
       },
       "cancel": "لغو سفارش",
       "cancelTitle": "این سفارش لغو شود؟",
-      "cancelMessage": "تا پیش از پذیرش سفارش می‌توانید آن را لغو کنید.",
-      "cancelError": "لغو سفارش ممکن نشد. شاید پذیرفته شده باشد.",
+      "cancelMessage": "تا پیش از شروع آماده‌سازی می‌توانید سفارش را لغو کنید.",
+      "cancelError": "لغو سفارش ممکن نشد. شاید آماده‌سازی آن شروع شده باشد.",
       "pay": {
         "button": "پرداخت آنلاین",
         "redirecting": "در حال انتقال به صفحهٔ پرداخت…",
@@ -1348,7 +1340,7 @@
       "bellAria": "{count, plural, =0 {اعلان‌ها} other {اعلان‌ها، # خوانده‌نشده}}",
       "kinds": {
         "orderAccepted": {
-          "title": "سفارش #{orderNumber} دریافت شد",
+          "title": "سفارش #{orderNumber} در حال آماده‌سازی است",
           "body": "آماده‌کردن سفارشتان را شروع کردیم."
         },
         "orderReady": {
@@ -1356,7 +1348,7 @@
           "body": "{serviceType, select, takeaway {سر پیشخوان منتظر شماست.} other {در راه میز شماست.}}"
         },
         "orderCompleted": {
-          "title": "سفارش #{orderNumber} تحویل شد",
+          "title": "سفارش #{orderNumber} سرو شد",
           "body": "ممنون که آمدید — نوش جان!"
         },
         "orderCancelled": {
@@ -2365,18 +2357,11 @@
     "closed": "شیفت بسته شد"
   },
   "dashKitchen": {
-    "heading": "نمایشگر آشپزخانه",
-    "subtitle": "صف زنده‌ی بار و آشپزخانه. خودش به‌روز می‌شود.",
-    "stationLabel": "ایستگاه",
-    "station": {
-      "all": "همه",
-      "bar": "بار",
-      "kitchen": "آشپزخانه"
-    },
+    "heading": "نمایشگر بار",
+    "subtitle": "صف زنده‌ی بار: نوشیدنی‌ها، کیک‌ها و غذاهای آماده. خودش به‌روز می‌شود.",
     "lane": {
       "new": "جدید",
-      "making": "در حال آماده‌سازی",
-      "ready": "آماده"
+      "making": "در حال آماده‌سازی"
     },
     "laneEmpty": "چیزی نیست.",
     "minutes": "{minutes} دقیقه"

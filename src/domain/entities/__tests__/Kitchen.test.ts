@@ -33,25 +33,28 @@ function order(id: string, status: OrderStatus, placedAt: string, items: OrderIt
 
 const ORDERS = [
   order("late", "preparing", "2026-10-20T09:00:00Z", [item("latte", "drink"), item("cake", "food")]),
-  order("early", "accepted", "2026-10-20T08:00:00Z", [item("tea", "drink")]),
+  order("early", "preparing", "2026-10-20T08:00:00Z", [item("tea", "drink")]),
   order("new", "pending", "2026-10-20T09:30:00Z", [item("novel", "book")]),
-  order("done", "ready", "2026-10-20T07:00:00Z", [item("toast", "food")]),
 ];
 
 describe("kitchenLanes", () => {
   it("sorts orders into lanes, oldest first", () => {
-    const lanes = kitchenLanes(ORDERS, "all");
+    const lanes = kitchenLanes(ORDERS);
     expect(lanes.making.map((o) => o.id)).toEqual(["early", "late"]);
     expect(lanes.new.map((o) => o.id)).toEqual(["new"]);
-    expect(lanes.ready.map((o) => o.id)).toEqual(["done"]);
   });
 
-  it("shows a station only its own lines, and drops orders with none", () => {
-    const bar = kitchenLanes(ORDERS, "bar");
-    expect(bar.making.map((o) => o.items.map((i) => i.id))).toEqual([["tea"], ["latte"]]);
-    expect(bar.new).toEqual([]);
-    expect(bar.ready).toEqual([]);
-    expect(kitchenLanes(ORDERS, "kitchen").ready.map((o) => o.id)).toEqual(["done"]);
+  it("keeps every line of an order — drinks, food and books alike", () => {
+    const { making } = kitchenLanes(ORDERS);
+    expect(making.map((o) => o.items.map((i) => i.id))).toEqual([["tea"], ["latte", "cake"]]);
+  });
+
+  it("leaves served and cancelled orders off the board", () => {
+    const lanes = kitchenLanes([
+      order("served", "completed", "2026-10-20T06:00:00Z", [item("tea", "drink")]),
+      order("gone", "cancelled", "2026-10-20T06:30:00Z", [item("cake", "food")]),
+    ]);
+    expect([...lanes.new, ...lanes.making]).toEqual([]);
   });
 });
 

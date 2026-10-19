@@ -74,9 +74,7 @@ export const orderStatusEventListResponseSchema = z.array(
 export const orderStatusCountsResponseSchema = z.object({
   active: z.number(),
   pending: z.number(),
-  accepted: z.number(),
   preparing: z.number(),
-  ready: z.number(),
   completed: z.number(),
   cancelled: z.number(),
 }) satisfies z.ZodType<OrderStatusCounts>;

@@ -1,17 +1,17 @@
 import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
-/** Ticket count per lane (new · in progress · ready) — enough to fill the board's first screen. */
-const LANE_TICKETS = [2, 2, 1] as const;
+/** Ticket count per lane (new · in progress) — enough to fill the board's first screen. */
+const LANE_TICKETS = [2, 2] as const;
 
 /**
- * Placeholder for the kitchen board's three lanes: muted columns of order
- * tickets (number, service, waiting time, lines, advance button), stacked until
- * the `@container` is 56rem wide and side by side after. Sits inside a container
+ * Placeholder for the bar board's two lanes: muted columns of order tickets
+ * (number, service, waiting time, lines, advance button), stacked until the
+ * `@container` is 40rem wide and side by side after. Sits inside a container
  * root, like `KitchenScreen`.
  */
 export function KitchenBoardSkeleton() {
   return (
-    <div className="grid grid-cols-1 gap-4 @min-[56rem]:grid-cols-3">
+    <div className="grid grid-cols-1 gap-4 @min-[40rem]:grid-cols-2">
       {LANE_TICKETS.map((tickets, lane) => (
         <div key={lane} className="flex min-w-0 flex-col gap-3 rounded-card-lg bg-muted p-3">
           <div className="flex items-center justify-between px-1">

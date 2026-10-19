@@ -14,6 +14,12 @@ import type { ProductKind } from "./Product";
  *   menu price    — net price plus VAT for taxable items (menu prices include VAT),
  *                   rounded up to a tidy step.
  *
+ * With inflation the owner expects costs to rise by a set percentage a month and
+ * says how long a menu price will stay up. The suggested price then covers the
+ * *average* cost over that time: today's cost would lose money by its end, and the
+ * end-of-period cost would overcharge from day one. A recorded overhead average
+ * lags behind today's prices, so it is first brought up to date at the same rate.
+ *
  * Everything here is pure; amounts are Toman.
  */
 
@@ -58,6 +64,10 @@ export type PricingSettings = {
   expectedMonthlyUnits?: number;
   /** How many complete months of history the averages use. */
   overheadMonths: number;
+  /** Expected rise in costs per month, in basis points (300 = 3%); 0 turns the allowance off. */
+  monthlyInflationBps: number;
+  /** How many months a menu price is expected to stay unchanged. */
+  priceHorizonMonths: number;
 };
 
 export const DEFAULT_PRICING_SETTINGS: PricingSettings = {
@@ -65,11 +75,16 @@ export const DEFAULT_PRICING_SETTINGS: PricingSettings = {
   roundingStep: 5000,
   overheadSource: "ledger",
   overheadMonths: 3,
+  monthlyInflationBps: 0,
+  priceHorizonMonths: 3,
 };
 
 /** Markups are stored in basis points; 100% = 10000. Above 1000% is almost certainly a typo. */
 export const MAX_MARKUP_BPS = 100_000;
 export const MAX_OVERHEAD_MONTHS = 12;
+/** 20% a month is far beyond any plan; anything more is almost certainly a typo. */
+export const MAX_MONTHLY_INFLATION_BPS = 2000;
+export const MAX_PRICE_HORIZON_MONTHS = 12;
 
 /** Cost of one unit (g, ml, piece) of an ingredient, unrounded. */
 export function ingredientUnitCost(ingredient: Pick<Ingredient, "purchasePrice" | "purchaseQuantity">): number {
@@ -110,6 +125,36 @@ export type OverheadBasis = {
 export function overheadPerUnit(basis: Pick<OverheadBasis, "monthlyOverhead" | "monthlyUnits">): number | null {
   if (basis.monthlyOverhead === null || !basis.monthlyUnits || basis.monthlyUnits <= 0) return null;
   return Math.round(basis.monthlyOverhead / basis.monthlyUnits);
+}
+
+/** How expected inflation moves costs, as multipliers on today's figures. */
+export type InflationAllowance = {
+  monthlyInflationBps: number;
+  horizonMonths: number;
+  /** Brings a recorded overhead average up to today's prices; 1 for a planned figure or no inflation. */
+  overheadCatchUp: number;
+  /** From today's cost to the average cost over the horizon; 1 when inflation is off. */
+  costFactor: number;
+};
+
+/**
+ * The multipliers for a monthly rate `r` over `H` months. Costs grow as (1 + r)^t, so
+ * their average over the horizon is ((1 + r)^H − 1) / (H · ln(1 + r)). A recorded
+ * average over N past months sits about N/2 months back, so it catches up by (1 + r)^(N/2).
+ */
+export function inflationAllowance(
+  settings: Pick<PricingSettings, "monthlyInflationBps" | "priceHorizonMonths">,
+  basis: Pick<OverheadBasis, "source" | "months">,
+): InflationAllowance {
+  const rate = Math.max(0, settings.monthlyInflationBps) / 10_000;
+  const horizon = Math.max(1, settings.priceHorizonMonths);
+  const growth = 1 + rate;
+  return {
+    monthlyInflationBps: settings.monthlyInflationBps,
+    horizonMonths: horizon,
+    overheadCatchUp: rate > 0 && basis.source === "ledger" ? growth ** (basis.months / 2) : 1,
+    costFactor: rate > 0 ? (growth ** horizon - 1) / (horizon * Math.log(growth)) : 1,
+  };
 }
 
 export type PriceSuggestion = {
@@ -161,12 +206,16 @@ export type PricingRow = {
   /** Ingredients (or manual cost); `null` when unknown — no suggestion is possible. */
   directCost: number | null;
   overheadPerUnit: number;
+  /** At today's prices. */
   fullCost: number | null;
   markupBps: number;
   /** True when the item uses the cafe-wide default profit. */
   markupIsDefault: boolean;
+  /** The menu price at today's costs. */
+  suggestedPriceToday: number | null;
+  /** The price to apply: covers the average cost over the price horizon; today's when inflation is off. */
   suggestedPrice: number | null;
-  /** At the current price; `null` without a known cost. */
+  /** At the current price, against today's full cost; `null` without a known cost. */
   profitPerUnit: number | null;
   currentMarkupRate: number | null;
   /** Average sold per month over the basis span. */
@@ -176,8 +225,9 @@ export type PricingRow = {
 export type PricingReport = {
   settings: PricingSettings;
   basis: OverheadBasis;
-  /** `null` when the overhead couldn't be worked out — suggestions then cover direct cost only. */
+  /** At today's prices; `null` when the overhead couldn't be worked out — suggestions then cover direct cost only. */
   overheadPerUnit: number | null;
+  inflation: InflationAllowance;
   vatRateBps: number;
   rows: PricingRow[];
 };
@@ -204,7 +254,9 @@ export function buildPricingReport(input: {
   unitsSold: ReadonlyMap<string, number>;
 }): PricingReport {
   const ingredientsById = new Map(input.ingredients.map((ingredient) => [ingredient.id, ingredient]));
-  const perUnit = overheadPerUnit(input.basis);
+  const inflation = inflationAllowance(input.settings, input.basis);
+  const recordedPerUnit = overheadPerUnit(input.basis);
+  const perUnit = recordedPerUnit === null ? null : Math.round(recordedPerUnit * inflation.overheadCatchUp);
   const months = Math.max(1, input.basis.months);
 
   const rows = input.products.map((product): PricingRow => {
@@ -215,17 +267,19 @@ export function buildPricingReport(input: {
     const markupBps = product.targetMarkupBps ?? input.settings.defaultMarkupBps;
     const overhead = perUnit ?? 0;
 
-    const suggestion =
+    const suggestAt = (costFactor: number): PriceSuggestion | null =>
       directCost === null
         ? null
         : suggestPrice({
-            directCost,
-            overheadPerUnit: overhead,
+            directCost: directCost * costFactor,
+            overheadPerUnit: overhead * costFactor,
             markupBps,
             vatRateBps: input.vatRateBps,
             taxExempt: product.taxExempt,
             roundingStep: input.settings.roundingStep,
           });
+    const suggestion = suggestAt(1);
+    const ahead = inflation.costFactor === 1 ? suggestion : suggestAt(inflation.costFactor);
     const position = suggestion
       ? currentPosition({
           price: product.price,
@@ -247,12 +301,20 @@ export function buildPricingReport(input: {
       fullCost: suggestion?.fullCost ?? null,
       markupBps,
       markupIsDefault: product.targetMarkupBps === undefined,
-      suggestedPrice: suggestion?.suggestedPrice ?? null,
+      suggestedPriceToday: suggestion?.suggestedPrice ?? null,
+      suggestedPrice: ahead?.suggestedPrice ?? null,
       profitPerUnit: position?.profitPerUnit ?? null,
       currentMarkupRate: position?.markupRate ?? null,
       monthlyUnits: Math.round(((input.unitsSold.get(product.id) ?? 0) / months) * 10) / 10,
     };
   });
 
-  return { settings: input.settings, basis: input.basis, overheadPerUnit: perUnit, vatRateBps: input.vatRateBps, rows };
+  return {
+    settings: input.settings,
+    basis: input.basis,
+    overheadPerUnit: perUnit,
+    inflation,
+    vatRateBps: input.vatRateBps,
+    rows,
+  };
 }

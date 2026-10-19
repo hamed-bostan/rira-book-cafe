@@ -12,7 +12,7 @@ import { useToast } from "@/src/presentation/design-system/components/Toast/useT
 import { ordersApi } from "../orders/order-api";
 
 /**
- * The one button a station needs: move the order to its next step (accept →
+ * The one button the bar needs: move the order to its next step (accept →
  * start → ready → complete). Cancelling stays on the order's own page. A 409
  * (someone else moved it first) shows as a toast and the refresh brings the real state.
  */

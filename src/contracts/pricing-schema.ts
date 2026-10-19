@@ -3,7 +3,9 @@ import { z } from "zod";
 import {
   INGREDIENT_UNITS,
   MAX_MARKUP_BPS,
+  MAX_MONTHLY_INFLATION_BPS,
   MAX_OVERHEAD_MONTHS,
+  MAX_PRICE_HORIZON_MONTHS,
   MAX_RECIPE_LINES,
   OVERHEAD_SOURCES,
 } from "@/src/domain/entities/Pricing";
@@ -72,6 +74,19 @@ export const pricingSettingsSchema = z
       .regex(/^\d+$/, "numberInvalid")
       .transform(Number)
       .refine((n) => n >= 1 && n <= MAX_OVERHEAD_MONTHS, "numberInvalid"),
+    /** Expected monthly rise in costs as typed ("3", "4.5"), in basis points; blank is no inflation. */
+    monthlyInflation: z
+      .string()
+      .trim()
+      .refine((value) => value === "" || /^\d{1,2}(\.\d{1,2})?$/.test(value), "inflationInvalid")
+      .transform((value) => (value === "" ? 0 : Math.round(Number(value) * 100)))
+      .refine((bps) => bps <= MAX_MONTHLY_INFLATION_BPS, "inflationInvalid"),
+    priceHorizonMonths: z
+      .string()
+      .trim()
+      .regex(/^\d+$/, "numberInvalid")
+      .transform(Number)
+      .refine((n) => n >= 1 && n <= MAX_PRICE_HORIZON_MONTHS, "numberInvalid"),
   })
   .refine((value) => value.overheadSource !== "manual" || value.manualMonthlyOverhead !== undefined, {
     path: ["manualMonthlyOverhead"],

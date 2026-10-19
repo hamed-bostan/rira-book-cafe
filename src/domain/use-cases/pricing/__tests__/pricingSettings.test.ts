@@ -149,6 +149,11 @@ describe("UpdatePricingSettings", () => {
     [{ overheadMonths: 0 }, "overheadMonths"],
     [{ overheadMonths: 13 }, "overheadMonths"],
     [{ overheadSource: "manual", manualMonthlyOverhead: undefined }, "manualMonthlyOverhead"],
+    [{ monthlyInflationBps: -1 }, "monthlyInflation"],
+    [{ monthlyInflationBps: 2001 }, "monthlyInflation"],
+    [{ monthlyInflationBps: 2.5 }, "monthlyInflation"],
+    [{ priceHorizonMonths: 0 }, "priceHorizonMonths"],
+    [{ priceHorizonMonths: 13 }, "priceHorizonMonths"],
   ])("refuses %o", async (overrides, field) => {
     const { pricing, updateSettings } = pricingWith([]);
     await expect(

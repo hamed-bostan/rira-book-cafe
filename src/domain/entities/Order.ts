@@ -17,24 +17,18 @@ export const SERVICE_TYPES = ["dineIn", "takeaway"] as const;
 export type ServiceType = (typeof SERVICE_TYPES)[number];
 
 /**
- * The order's place in the workflow, in order:
- * - `pending` — placed, not yet seen by staff. The guest can still cancel it.
- * - `accepted` — staff took it.
- * - `preparing` — on the bar / in the kitchen.
- * - `ready` — waiting at the pass (takeaway) or about to go out (dine-in).
+ * The order's place in the workflow, in order. Drinks, cakes and ready-made food
+ * all follow the same three steps — the bar makes and hands over everything:
+ * - `pending` — placed, not yet picked up by staff. The guest can still cancel it.
+ * - `preparing` — staff took it and are making it.
  * - `completed` — served or picked up. Terminal.
  * - `cancelled` — withdrawn by the guest or staff. Terminal; stock goes back.
  */
-export const ORDER_STATUSES = ["pending", "accepted", "preparing", "ready", "completed", "cancelled"] as const;
+export const ORDER_STATUSES = ["pending", "preparing", "completed", "cancelled"] as const;
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
 /** Statuses an order is still being worked in — the queue a barista watches. */
-export const ACTIVE_ORDER_STATUSES = [
-  "pending",
-  "accepted",
-  "preparing",
-  "ready",
-] as const satisfies readonly OrderStatus[];
+export const ACTIVE_ORDER_STATUSES = ["pending", "preparing"] as const satisfies readonly OrderStatus[];
 
 /**
  * Whether the guest has paid. Payment is taken at the counter, so staff mark it.
@@ -148,14 +142,12 @@ export type Order = {
  * Which statuses each status may move to. The whole workflow in one table: every
  * transition the API accepts is listed here, and anything else is refused.
  *
- * Cancelling is allowed up to `preparing` and not after: once an order is `ready`
- * it has been made, and withdrawing it is a refund conversation, not a click.
+ * Staff may cancel while the order is being made, not after: once it is served,
+ * withdrawing it is a refund conversation, not a click.
  */
 const TRANSITIONS: Record<OrderStatus, readonly OrderStatus[]> = {
-  pending: ["accepted", "cancelled"],
-  accepted: ["preparing", "cancelled"],
-  preparing: ["ready", "cancelled"],
-  ready: ["completed"],
+  pending: ["preparing", "cancelled"],
+  preparing: ["completed", "cancelled"],
   completed: [],
   cancelled: [],
 };
@@ -186,12 +178,12 @@ export function isActiveOrder(status: OrderStatus): boolean {
 }
 
 /**
- * Statuses in which staff tick lines off as they go out: once the order is taken
- * and until it's finished. A dine-in order often goes out in parts — the drinks
- * first, the cake when it's plated — so each line is marked on its own. Completing
- * the order marks whatever is left served.
+ * Statuses in which staff tick lines off as they go out: while the order is being
+ * made. A dine-in order often goes out in parts — the drinks first, the cake when
+ * it's plated — so each line is marked on its own. Serving the order marks
+ * whatever is left served.
  */
-export const SERVING_ORDER_STATUSES = ["accepted", "preparing", "ready"] as const satisfies readonly OrderStatus[];
+export const SERVING_ORDER_STATUSES = ["preparing"] as const satisfies readonly OrderStatus[];
 
 /** Whether staff may mark the order's lines served (or take a mark back). */
 export function canServeItems(status: OrderStatus): boolean {

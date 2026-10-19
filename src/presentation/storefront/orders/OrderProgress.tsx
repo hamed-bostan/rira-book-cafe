@@ -5,15 +5,15 @@ import type { OrderStatus } from "@/src/domain/entities/Order";
 import { cn } from "@/src/lib/utils";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 
-const STEPS = ["pending", "accepted", "preparing", "ready", "completed"] as const satisfies readonly OrderStatus[];
+const STEPS = ["pending", "preparing", "completed"] as const satisfies readonly OrderStatus[];
 
-/** The order's progress as the guest sees it: placed → accepted → preparing → ready → served. */
+/** The order's progress as the guest sees it: placed → preparing → served. */
 export async function OrderProgress({ status }: { status: OrderStatus }) {
   const t = await getTranslations("site");
   const current = STEPS.indexOf(status as (typeof STEPS)[number]);
 
   return (
-    <ol className="grid grid-cols-5 gap-1">
+    <ol className="grid grid-cols-3 gap-1">
       {STEPS.map((step, index) => {
         const done = current >= index;
         return (

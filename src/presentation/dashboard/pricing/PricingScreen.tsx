@@ -31,8 +31,10 @@ export async function PricingScreen({ report, canWrite, canApply }: PricingScree
   const t = await getTranslations("dashPricing");
   const tProducts = await getTranslations("dashProducts");
   const locale = await getLocale();
-  const { basis } = report;
+  const { basis, inflation } = report;
   const defaultPercent = report.settings.defaultMarkupBps / 100;
+  /** With inflation on, today's price and the inflation-adjusted one sit side by side. */
+  const withInflation = inflation.costFactor !== 1;
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
@@ -89,11 +91,26 @@ export async function PricingScreen({ report, canWrite, canApply }: PricingScree
 
       <p className="text-body-small text-muted-foreground">{t("formula")}</p>
 
+      {withInflation ? (
+        <p className="-mt-3 text-body-small text-muted-foreground">
+          {t("inflation.summary", {
+            rate: formatNumber(inflation.monthlyInflationBps / 100, locale, 2),
+            months: inflation.horizonMonths,
+            uplift: formatNumber((inflation.costFactor - 1) * 100, locale, 1),
+          })}
+          {inflation.overheadCatchUp !== 1
+            ? ` ${t("inflation.catchUp", { percent: formatNumber((inflation.overheadCatchUp - 1) * 100, locale, 1) })}`
+            : null}
+        </p>
+      ) : null}
+
       <section className="min-w-0 overflow-x-auto rounded-card-lg border border-border bg-background">
         {report.rows.length === 0 ? (
           <EmptyState icon={Coffee} title={tProducts("emptyTitle")} description={tProducts("emptyBody")} />
         ) : (
-          <table className="w-full min-w-[60rem] text-body-small">
+          <table
+            className={withInflation ? "w-full min-w-[66rem] text-body-small" : "w-full min-w-[60rem] text-body-small"}
+          >
             <thead className="bg-surface text-body-caption text-muted-foreground">
               <tr>
                 <th scope="col" className="px-3 py-3 text-start font-medium">
@@ -111,8 +128,13 @@ export async function PricingScreen({ report, canWrite, canApply }: PricingScree
                 <th scope="col" className="px-3 py-3 text-start font-medium">
                   {t("col.profit")}
                 </th>
+                {withInflation ? (
+                  <th scope="col" className="px-3 py-3 text-end font-medium">
+                    {t("col.suggestedToday")}
+                  </th>
+                ) : null}
                 <th scope="col" className="px-3 py-3 text-end font-medium">
-                  {t("col.suggested")}
+                  {withInflation ? t("col.suggestedInflation") : t("col.suggested")}
                 </th>
                 <th scope="col" className="px-3 py-3 text-end font-medium">
                   {t("col.current")}
@@ -171,6 +193,11 @@ export async function PricingScreen({ report, canWrite, canApply }: PricingScree
                         <span>{formatNumber(row.markupBps / 100, locale, 1)}%</span>
                       )}
                     </td>
+                    {withInflation ? (
+                      <td className="px-3 py-3 text-end whitespace-nowrap text-muted-foreground">
+                        {row.suggestedPriceToday === null ? "—" : formatMoney(row.suggestedPriceToday, locale)}
+                      </td>
+                    ) : null}
                     <td className="px-3 py-3 text-end text-body-small-emphasis whitespace-nowrap text-foreground">
                       {row.suggestedPrice === null ? "—" : formatMoney(row.suggestedPrice, locale)}
                       {canApply && row.suggestedPrice !== null && row.suggestedPrice !== row.price ? (

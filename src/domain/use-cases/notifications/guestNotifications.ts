@@ -11,17 +11,18 @@ import type { SuiteBooking } from "../../entities/SuiteBooking";
  * these decide *what*.
  */
 
+/**
+ * `preparing` keeps the `orderAccepted` kind (staff took it and are making it), so
+ * notifications already stored still read right. `orderReady` is no longer sent —
+ * there's no separate "ready" step — but stays a known kind for old rows.
+ */
 const ORDER_KINDS: Partial<Record<OrderStatus, NewNotification["kind"]>> = {
-  accepted: "orderAccepted",
-  ready: "orderReady",
+  preparing: "orderAccepted",
   completed: "orderCompleted",
   cancelled: "orderCancelled",
 };
 
-/**
- * An order moved. `preparing` isn't worth a ping — `accepted` already said it's in
- * hand. A completed order that earned points says so instead of a plain "done".
- */
+/** An order moved. A served order that earned points says so instead of a plain "served". */
 export function orderStatusNotification(order: Order): NewNotification | null {
   if (order.status === "completed" && order.pointsEarned > 0) {
     return {

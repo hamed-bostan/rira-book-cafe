@@ -3,6 +3,7 @@ import { parseAdminProductFilters } from "@/src/lib/api/admin-product-params";
 import { toSearchParams } from "@/src/lib/api/searchParams";
 import { sessionHas } from "@/src/lib/require-permission";
 import { categoriesServerApi } from "@/src/presentation/dashboard/categories/category-server-api";
+import { withRememberedPageSize } from "@/src/presentation/dashboard/list/withRememberedPageSize";
 import { productsServerApi } from "@/src/presentation/dashboard/products/product-server-api";
 import { ProductsScreen } from "@/src/presentation/dashboard/products/ProductsScreen";
 
@@ -19,7 +20,7 @@ type DashboardProductsPageProps = {
 };
 
 export default async function DashboardProductsPage({ searchParams }: DashboardProductsPageProps) {
-  const params = toSearchParams(await searchParams);
+  const params = await withRememberedPageSize(toSearchParams(await searchParams));
 
   // The query string is forwarded to the API as-is; the screen gets the parsed
   // filters back only to tell "no products yet" from "nothing matched".

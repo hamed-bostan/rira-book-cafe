@@ -10,23 +10,21 @@ import {
 } from "../Order";
 
 describe("order workflow", () => {
-  it("walks forward one step at a time", () => {
-    expect(nextOrderStatus("pending")).toBe("accepted");
-    expect(nextOrderStatus("accepted")).toBe("preparing");
-    expect(nextOrderStatus("preparing")).toBe("ready");
-    expect(nextOrderStatus("ready")).toBe("completed");
+  it("walks forward one step at a time: placed → preparing → served", () => {
+    expect(nextOrderStatus("pending")).toBe("preparing");
+    expect(nextOrderStatus("preparing")).toBe("completed");
     expect(nextOrderStatus("completed")).toBeNull();
     expect(nextOrderStatus("cancelled")).toBeNull();
   });
 
   it("refuses skipping steps and going backwards", () => {
-    expect(canTransition("pending", "ready")).toBe(false);
-    expect(canTransition("ready", "preparing")).toBe(false);
+    expect(canTransition("pending", "completed")).toBe(false);
+    expect(canTransition("preparing", "pending")).toBe(false);
     expect(canTransition("completed", "cancelled")).toBe(false);
   });
 
-  it("lets staff cancel until the order is ready, and the guest only while pending", () => {
-    expect(ORDER_STATUSES.filter(isStaffCancellable)).toEqual(["pending", "accepted", "preparing"]);
+  it("lets staff cancel until the order is served, and the guest only while pending", () => {
+    expect(ORDER_STATUSES.filter(isStaffCancellable)).toEqual(["pending", "preparing"]);
     expect(ORDER_STATUSES.filter(isGuestCancellable)).toEqual(["pending"]);
   });
 

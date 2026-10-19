@@ -12,7 +12,7 @@ import {
 } from "@/src/lib/api/responses";
 import { getSessionWith } from "@/src/lib/require-permission";
 
-/** PUT /api/admin/pricing/settings — default profit, rounding, and where overhead comes from. Requires `accounting.write`. */
+/** PUT /api/admin/pricing/settings — default profit, rounding, where overhead comes from, and expected inflation. Requires `accounting.write`. */
 export async function PUT(request: NextRequest): Promise<NextResponse> {
   if (!(await getSessionWith("accounting.write"))) return unauthorizedResponse();
 
@@ -28,9 +28,13 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
   }
 
   try {
-    const { defaultMarkup, ...rest } = parsed.data;
+    const { defaultMarkup, monthlyInflation, ...rest } = parsed.data;
     return NextResponse.json(
-      await new UpdatePricingSettings(pricingRepository).execute({ ...rest, defaultMarkupBps: defaultMarkup }),
+      await new UpdatePricingSettings(pricingRepository).execute({
+        ...rest,
+        defaultMarkupBps: defaultMarkup,
+        monthlyInflationBps: monthlyInflation,
+      }),
     );
   } catch (error) {
     return errorResponseFromException(error, "PUT /api/admin/pricing/settings failed");

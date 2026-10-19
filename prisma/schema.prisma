@@ -547,6 +547,10 @@ model PricingSettings {
   manualMonthlyOverhead BigInt?  @map("manual_monthly_overhead")
   expectedMonthlyUnits  Int?     @map("expected_monthly_units")
   overheadMonths        Int      @default(3) @map("overhead_months")
+  /// Expected cost rise per month in basis points (300 = 3%); 0 = no inflation allowance.
+  monthlyInflationBps   Int      @default(0) @map("monthly_inflation_bps")
+  /// Months a menu price is expected to stay unchanged.
+  priceHorizonMonths    Int      @default(3) @map("price_horizon_months")
   updatedAt             DateTime @updatedAt @map("updated_at")
 
   @@map("pricing_settings")

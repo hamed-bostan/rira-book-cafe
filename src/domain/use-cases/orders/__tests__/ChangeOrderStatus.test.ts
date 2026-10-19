@@ -44,11 +44,11 @@ const STAFF = { id: "staff", name: "Ali" };
 
 describe("ChangeOrderStatus", () => {
   it("passes the status it read, so a concurrent change can't be overwritten", async () => {
-    const { repo, transition } = repoWith(order("accepted"));
+    const { repo, transition } = repoWith(order("pending"));
     await new ChangeOrderStatus(repo).execute("o1", "preparing", STAFF);
     expect(transition).toHaveBeenCalledWith(
       "o1",
-      "accepted",
+      "pending",
       "preparing",
       STAFF,
       expect.any(Function),
@@ -57,14 +57,14 @@ describe("ChangeOrderStatus", () => {
   });
 
   it("audits the change as order #number", async () => {
-    const { repo, transition } = repoWith(order("ready"));
+    const { repo, transition } = repoWith(order("preparing"));
     await new ChangeOrderStatus(repo).execute("o1", "completed", STAFF);
     const audit = transition.mock.calls[0][4];
     expect(audit?.(order("completed"))).toMatchObject({ action: "order.stageChanged", entityLabel: "#7" });
   });
 
   it("refuses transitions the workflow doesn't allow", async () => {
-    const { repo, transition } = repoWith(order("ready"));
+    const { repo, transition } = repoWith(order("completed"));
     await expect(new ChangeOrderStatus(repo).execute("o1", "cancelled", STAFF)).rejects.toThrow(
       InvalidOrderTransitionError,
     );
@@ -79,12 +79,12 @@ describe("CancelOwnOrder", () => {
     expect(result.status).toBe("cancelled");
   });
 
-  it("hides other guests' orders and refuses once accepted", async () => {
+  it("hides other guests' orders and refuses once staff are preparing it", async () => {
     await expect(
       new CancelOwnOrder(repoWith(order("pending", "other")).repo).execute("o1", { id: "guest", name: "Sara" }),
     ).rejects.toThrow(NotFoundError);
     await expect(
-      new CancelOwnOrder(repoWith(order("accepted")).repo).execute("o1", { id: "guest", name: "Sara" }),
+      new CancelOwnOrder(repoWith(order("preparing")).repo).execute("o1", { id: "guest", name: "Sara" }),
     ).rejects.toThrow(InvalidOrderTransitionError);
   });
 });

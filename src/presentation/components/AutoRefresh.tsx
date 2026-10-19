@@ -16,7 +16,9 @@ type AutoRefreshProps = {
  * source of truth, exactly as after a mutation.
  *
  * Paused while the tab is hidden (no point polling a screen nobody is looking at),
- * and refreshes immediately when it comes back.
+ * and refreshes immediately when it comes back. Also refreshes once on mount: going
+ * back to a live screen can show it from the client router cache (`staleTimes`), up
+ * to half a minute old, so it catches up in the background straight away.
  */
 export function AutoRefresh({ intervalSeconds }: AutoRefreshProps) {
   const router = useRouter();
@@ -41,7 +43,10 @@ export function AutoRefresh({ intervalSeconds }: AutoRefreshProps) {
       }
     }
 
-    if (document.visibilityState === "visible") start();
+    if (document.visibilityState === "visible") {
+      router.refresh();
+      start();
+    }
     document.addEventListener("visibilitychange", onVisibilityChange);
     return () => {
       stop();

@@ -110,6 +110,8 @@ export class PrismaPricingRepository implements IPricingRepository {
       manualMonthlyOverhead: row.manualMonthlyOverhead === null ? undefined : Number(row.manualMonthlyOverhead),
       expectedMonthlyUnits: row.expectedMonthlyUnits ?? undefined,
       overheadMonths: row.overheadMonths,
+      monthlyInflationBps: row.monthlyInflationBps,
+      priceHorizonMonths: row.priceHorizonMonths,
     };
   }
 
@@ -122,6 +124,8 @@ export class PrismaPricingRepository implements IPricingRepository {
         settings.manualMonthlyOverhead === undefined ? null : BigInt(settings.manualMonthlyOverhead),
       expectedMonthlyUnits: settings.expectedMonthlyUnits ?? null,
       overheadMonths: settings.overheadMonths,
+      monthlyInflationBps: settings.monthlyInflationBps,
+      priceHorizonMonths: settings.priceHorizonMonths,
     };
     await prisma.pricingSettings.upsert({ where: { id: 1 }, create: { id: 1, ...data }, update: data });
     return this.getSettings();

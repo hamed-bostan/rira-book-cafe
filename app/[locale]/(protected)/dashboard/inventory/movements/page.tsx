@@ -2,6 +2,7 @@ import { toSearchParams } from "@/src/lib/api/searchParams";
 import { requirePermission } from "@/src/lib/require-permission";
 import { inventoryServerApi } from "@/src/presentation/dashboard/inventory/inventory-server-api";
 import { MovementsScreen } from "@/src/presentation/dashboard/inventory/MovementsScreen";
+import { withRememberedPageSize } from "@/src/presentation/dashboard/list/withRememberedPageSize";
 
 export const dynamic = "force-dynamic";
 
@@ -9,7 +10,7 @@ type MovementsPageProps = { searchParams: Promise<Record<string, string | string
 
 export default async function StockMovementsPage({ searchParams }: MovementsPageProps) {
   await requirePermission("inventory.view");
-  const params = toSearchParams(await searchParams);
+  const params = await withRememberedPageSize(toSearchParams(await searchParams));
   const query: Record<string, string> = {};
   for (const key of ["item", "kind", "from", "to", "page", "pageSize"]) {
     const value = params.get(key);

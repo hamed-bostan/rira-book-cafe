@@ -12,6 +12,7 @@ import { EmptyState } from "@/src/presentation/design-system/components/EmptySta
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 
 import { CategoriesTable } from "./CategoriesTable";
+import { CATEGORY_PAGE_SIZES } from "./category-page-sizes";
 import { CategoryBulkActions } from "./CategoryBulkActions";
 
 type CategoriesScreenProps = {
@@ -90,7 +91,13 @@ export async function CategoriesScreen({ categories, filters }: CategoriesScreen
             </div>
             <CategoriesTable
               categories={categories.items}
-              footer={<ListPager page={categories} defaultPageSize={10} pageSizeOptions={[10, 25, 50]} />}
+              footer={
+                <ListPager
+                  page={categories}
+                  defaultPageSize={CATEGORY_PAGE_SIZES.defaultPageSize}
+                  pageSizeOptions={CATEGORY_PAGE_SIZES.options}
+                />
+              }
             />
           </BulkSelectionProvider>
         ) : (

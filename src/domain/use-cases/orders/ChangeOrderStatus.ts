@@ -10,8 +10,8 @@ import type { ICustomerNotifier } from "../../repositories/INotificationReposito
 import type { IOrderRepository } from "../../repositories/IOrderRepository";
 
 /**
- * Move an order along the workflow on behalf of staff — accept, start preparing,
- * mark ready, complete, or cancel.
+ * Move an order along the workflow on behalf of staff — start preparing it, mark
+ * it served, or cancel it.
  *
  * The workflow table in `Order.ts` is the whole rule; this checks it against the
  * order as it stands and hands the repository the status it read, so a change
@@ -20,7 +20,7 @@ import type { IOrderRepository } from "../../repositories/IOrderRepository";
 export class ChangeOrderStatus {
   constructor(
     private readonly orderRepo: IOrderRepository,
-    /** Tells the guest their order moved (accepted, ready, done, cancelled). */
+    /** Tells the guest their order moved (being prepared, served, cancelled). */
     private readonly notifier?: ICustomerNotifier,
   ) {}
 

@@ -51,18 +51,18 @@ function loan(dueAt: string, overrides: Partial<BookLoan> = {}): BookLoan {
 }
 
 describe("orderStatusNotification", () => {
-  it("tells the guest when their order is ready, keyed so it's sent once", () => {
-    expect(orderStatusNotification(order("ready"))).toMatchObject({
+  it("tells the guest their order is being prepared, keyed so it's sent once", () => {
+    expect(orderStatusNotification(order("preparing"))).toMatchObject({
       userId: "g1",
-      kind: "orderReady",
+      kind: "orderAccepted",
       params: { orderNumber: 42, serviceType: "takeaway" },
       link: "/orders/o1",
-      dedupeKey: "order:o1:ready",
+      dedupeKey: "order:o1:preparing",
     });
   });
 
-  it("stays quiet while it's being made", () => {
-    expect(orderStatusNotification(order("preparing"))).toBeNull();
+  it("stays quiet about the guest's own placement", () => {
+    expect(orderStatusNotification(order("pending"))).toBeNull();
   });
 
   it("says what a completed order earned instead of a plain 'done'", () => {

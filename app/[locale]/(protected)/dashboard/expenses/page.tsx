@@ -5,6 +5,7 @@ import { requirePermission, sessionHas } from "@/src/lib/require-permission";
 import { accountsServerApi } from "@/src/presentation/dashboard/accounting/accounting-server-api";
 import { expensesServerApi, suppliersServerApi } from "@/src/presentation/dashboard/expenses/expense-server-api";
 import { ExpensesScreen } from "@/src/presentation/dashboard/expenses/ExpensesScreen";
+import { withRememberedPageSize } from "@/src/presentation/dashboard/list/withRememberedPageSize";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +13,7 @@ type ExpensesPageProps = { searchParams: Promise<Record<string, string | string[
 
 export default async function ExpensesPage({ searchParams }: ExpensesPageProps) {
   await requirePermission("accounting.view");
-  const params = toSearchParams(await searchParams);
+  const params = await withRememberedPageSize(toSearchParams(await searchParams));
   const { fromDay, toDay } = parseDaySpan(params);
   const filters = { ...parseExpenseFilters(params), fromDay, toDay };
 

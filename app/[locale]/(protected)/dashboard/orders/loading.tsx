@@ -3,8 +3,8 @@ import { DashboardHeaderSkeleton } from "@/src/presentation/dashboard/skeletons"
 import { LoadingRegion } from "@/src/presentation/design-system/components/Skeleton/LoadingRegion";
 import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
-/** All · active · pending · accepted · preparing · ready · completed · cancelled. */
-const STATUS_TABS = 8;
+/** All · active · pending · preparing · completed · cancelled. */
+const STATUS_TABS = 6;
 
 export default function OrdersLoading() {
   return (

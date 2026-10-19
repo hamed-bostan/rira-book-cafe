@@ -143,7 +143,7 @@ describe("a guest's own orders", () => {
   it("won't let the guest cancel once staff are preparing it (409)", async () => {
     const order = await placeAs("customer");
     signInAs("staff");
-    expect((await moveTo(order.id, "accepted")).status).toBe(200);
+    expect((await moveTo(order.id, "preparing")).status).toBe(200);
 
     signInAs("customer");
     const response = await cancelOrder(
@@ -161,17 +161,15 @@ describe("staff working an order", () => {
     const order = await placeAs("customer");
     signInAs("staff");
 
-    for (const status of ["accepted", "preparing", "ready"]) {
-      const response = await moveTo(order.id, status);
-      expect(response.status, status).toBe(200);
-      expect((await readJson<Order>(response)).status).toBe(status);
-    }
+    const response = await moveTo(order.id, "preparing");
+    expect(response.status).toBe(200);
+    expect((await readJson<Order>(response)).status).toBe("preparing");
 
     const events = await prisma.orderStatusEvent.findMany({
       where: { orderId: order.id },
       orderBy: { createdAt: "asc" },
     });
-    expect(events.map((event) => event.toStatus)).toEqual(["pending", "accepted", "preparing", "ready"]);
+    expect(events.map((event) => event.toStatus)).toEqual(["pending", "preparing"]);
   });
 
   it("refuses a transition the workflow doesn't allow (409)", async () => {
@@ -197,13 +195,13 @@ describe("staff working an order", () => {
   it("answers 404 for an order that doesn't exist", async () => {
     signInAs("staff");
 
-    expect((await moveTo("00000000-0000-0000-0000-000000000000", "accepted")).status).toBe(404);
+    expect((await moveTo("00000000-0000-0000-0000-000000000000", "preparing")).status).toBe(404);
   });
 
   it("keeps guests and support out of the workflow", async () => {
     const order = await placeAs("customer");
 
-    expect((await moveTo(order.id, "accepted")).status).toBe(401);
+    expect((await moveTo(order.id, "preparing")).status).toBe(401);
     const adminRead = await getAdminOrder(getRequest(`/api/admin/orders/${order.id}`), routeParams({ id: order.id }));
     expect(adminRead.status).toBe(401);
   });

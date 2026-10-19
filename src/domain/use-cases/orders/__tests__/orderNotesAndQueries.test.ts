@@ -75,9 +75,7 @@ type OrdersFake = {
 
 const COUNTS: OrderStatusCounts = {
   pending: 1,
-  accepted: 0,
   preparing: 2,
-  ready: 0,
   completed: 5,
   cancelled: 1,
   active: 3,
@@ -207,7 +205,7 @@ describe("order entity helpers", () => {
   });
 
   it("tracks the queue and which lines have gone out", () => {
-    expect(isActiveOrder("ready")).toBe(true);
+    expect(isActiveOrder("preparing")).toBe(true);
     expect(isActiveOrder("completed")).toBe(false);
     expect(canServeItems("pending")).toBe(false);
     expect(canServeItems("preparing")).toBe(true);

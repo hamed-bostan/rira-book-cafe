@@ -137,39 +137,42 @@ export function BasketDiscounts({
         </div>
       ) : null}
 
-      <dl className="flex flex-col gap-1.5 border-t border-border pt-4">
-        {quote && (quote.promoDiscount > 0 || quote.pointsDiscount > 0) ? (
-          <>
-            <div className="flex items-center justify-between text-body-small text-muted-foreground">
-              <dt>{t("basket.subtotal")}</dt>
-              <dd>{formatMoney(quote.subtotal, locale)}</dd>
-            </div>
-            {quote.promoDiscount > 0 ? (
-              <div className="flex items-center justify-between text-body-small text-success-foreground">
-                <dt>{t("basket.promoDiscount")}</dt>
-                <dd>−{formatMoney(quote.promoDiscount, locale)}</dd>
+      <div className="flex flex-col gap-1.5 border-t border-border pt-4">
+        <dl className="flex flex-col gap-1.5">
+          {quote && (quote.promoDiscount > 0 || quote.pointsDiscount > 0) ? (
+            <>
+              <div className="flex items-center justify-between text-body-small text-muted-foreground">
+                <dt>{t("basket.subtotal")}</dt>
+                <dd>{formatMoney(quote.subtotal, locale)}</dd>
               </div>
-            ) : null}
-            {quote.pointsDiscount > 0 ? (
-              <div className="flex items-center justify-between text-body-small text-success-foreground">
-                <dt>{t("basket.pointsDiscount")}</dt>
-                <dd>−{formatMoney(quote.pointsDiscount, locale)}</dd>
-              </div>
-            ) : null}
-          </>
-        ) : null}
-        <div className="flex items-center justify-between">
-          <dt className="text-body-strong text-foreground">{t("basket.total")}</dt>
-          <dd className="text-body-strong text-foreground" aria-busy={loading}>
-            {formatMoney(total, locale)}
-          </dd>
-        </div>
+              {quote.promoDiscount > 0 ? (
+                <div className="flex items-center justify-between text-body-small text-success-foreground">
+                  <dt>{t("basket.promoDiscount")}</dt>
+                  <dd>−{formatMoney(quote.promoDiscount, locale)}</dd>
+                </div>
+              ) : null}
+              {quote.pointsDiscount > 0 ? (
+                <div className="flex items-center justify-between text-body-small text-success-foreground">
+                  <dt>{t("basket.pointsDiscount")}</dt>
+                  <dd>−{formatMoney(quote.pointsDiscount, locale)}</dd>
+                </div>
+              ) : null}
+            </>
+          ) : null}
+          <div className="flex items-center justify-between">
+            <dt className="text-body-strong text-foreground">{t("basket.total")}</dt>
+            <dd className="text-body-strong text-foreground" aria-busy={loading}>
+              {formatMoney(total, locale)}
+            </dd>
+          </div>
+        </dl>
+        {/* Outside the <dl>: a definition list may only hold <dt>/<dd> groups. */}
         {quote && quote.pointsToEarn > 0 ? (
           <p className="text-body-caption text-primary">
             {t("basket.pointsToEarn", { points: formatNumber(quote.pointsToEarn, locale) })}
           </p>
         ) : null}
-      </dl>
+      </div>
     </div>
   );
 }

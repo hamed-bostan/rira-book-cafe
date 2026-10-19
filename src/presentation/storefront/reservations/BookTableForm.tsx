@@ -76,6 +76,7 @@ export function BookTableForm({ today }: BookTableFormProps) {
         await storefrontApi.requestReservation({ startsAt: `${day}T${time}`, partySize, note });
         toast({ tone: "success", title: t("book.sent") });
         router.push("/reservations");
+        router.refresh();
       } catch (err) {
         if (err instanceof ApiError) {
           const field = err.fieldErrors?.startsAt ?? err.fieldErrors?.partySize ?? err.fieldErrors?.note;

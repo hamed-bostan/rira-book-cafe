@@ -132,6 +132,7 @@ export function BasketScreen({ signedIn }: BasketScreenProps) {
         clear();
         toast({ tone: "success", title: t("basket.orderPlaced") });
         router.push(`/orders/${order.id}`);
+        router.refresh();
       } catch (err) {
         if (err instanceof ApiError && err.status === 401) {
           router.push(`/login?callbackUrl=${encodeURIComponent("/basket")}`);

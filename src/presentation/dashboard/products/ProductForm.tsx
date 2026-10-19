@@ -136,6 +136,7 @@ export function ProductForm(props: ProductFormProps) {
       else await productsApi.create(values);
       toast({ tone: "success", title: t(editing ? "saved" : "created", { name: values.name.trim() }) });
       router.push("/dashboard/products");
+      router.refresh();
     } catch (error) {
       if (!(error instanceof ApiError)) {
         setError("root", { message: t("formError") });

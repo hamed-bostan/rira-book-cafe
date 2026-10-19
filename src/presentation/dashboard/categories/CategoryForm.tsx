@@ -81,6 +81,7 @@ export function CategoryForm(props: CategoryFormProps) {
       else await categoriesApi.create(values);
       toast({ tone: "success", title: editing ? t("savedToast") : t("createdToast") });
       router.push("/dashboard/categories");
+      router.refresh();
     } catch (error) {
       if (!(error instanceof ApiError)) {
         setError("root", { message: t("formError") });

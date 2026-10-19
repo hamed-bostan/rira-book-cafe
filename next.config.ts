@@ -53,6 +53,14 @@ const ANALYZE = process.env.ANALYZE === "true" || process.env.npm_lifecycle_even
 // (see `app/uploads/[...path]/route.ts`), so next/image needs no remote hosts.
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  experimental: {
+    // Every page renders per request (the CSP nonce), so by default the client
+    // router keeps nothing and each visit waits a full server round trip. Keep a
+    // visited page for 30 s so going back to it is instant. Mutations still show at
+    // once: they call `router.refresh()`, which clears this cache, and live screens
+    // (`AutoRefresh`) re-read on mount.
+    staleTimes: { dynamic: 30 },
+  },
   async headers() {
     return [
       { source: "/:path*", headers: SECURITY_HEADERS },

@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { cache } from "react";
 
 import { auth } from "@/auth";
 import type { Permission } from "@/src/domain/entities/Permission";
@@ -21,11 +22,12 @@ import type { Session } from "next-auth";
  * permission never does — adding a role is an edit to `ROLE_PERMISSIONS` and
  * nothing else.
  *
- * The role is read from the database on every check rather than carried in the
+ * The role is read from the database on every request rather than carried in the
  * session JWT. That costs one indexed lookup per dashboard request — dashboard
  * traffic is a rounding error next to the storefront — and buys instant
  * revocation: a demoted user loses access on their next request instead of
- * whenever their token happens to expire.
+ * whenever their token happens to expire. Within one server render the lookup is
+ * shared (`cache`), so the layout, the page and every guard ask the database once.
  */
 
 /**
@@ -66,10 +68,19 @@ export async function sessionRole(session: Session | null): Promise<UserRole | n
   const userId = session?.user?.id;
   if (!userId) return null;
   if (isBreakGlassAdmin(userId)) return "owner";
+  return storedRole(userId);
+}
 
+/**
+ * The role stored on the user, memoized for the current server render: a dashboard
+ * page asks from its layout, its own guard and its permission checks, and they all
+ * get one database read. Outside a render (route handlers, tests) `cache` is a
+ * plain call, so each API request still reads the role fresh.
+ */
+const storedRole = cache(async (userId: string): Promise<UserRole | null> => {
   const user = await userRepository.getById(userId);
   return user?.role ?? null;
-}
+});
 
 /** Whether a session carries a permission. The single question every guard asks. */
 export async function sessionHas(session: Session | null, permission: Permission): Promise<boolean> {

@@ -42,7 +42,7 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - name: Audit (high and critical)
-        run: npm audit --audit-level=high
+        run: npm run audit
 
   # --- Route handlers + use-cases + Prisma against a real Postgres ---
   integration:

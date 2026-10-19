@@ -4,6 +4,7 @@ import { toSearchParams } from "@/src/lib/api/searchParams";
 import { requirePermission, sessionHas } from "@/src/lib/require-permission";
 import { journalEntriesServerApi } from "@/src/presentation/dashboard/accounting/accounting-server-api";
 import { JournalScreen } from "@/src/presentation/dashboard/accounting/JournalScreen";
+import { withRememberedPageSize } from "@/src/presentation/dashboard/list/withRememberedPageSize";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +12,7 @@ type JournalPageProps = { searchParams: Promise<Record<string, string | string[]
 
 export default async function JournalPage({ searchParams }: JournalPageProps) {
   await requirePermission("accounting.view");
-  const params = toSearchParams(await searchParams);
+  const params = await withRememberedPageSize(toSearchParams(await searchParams));
   const { fromDay, toDay } = parseDaySpan(params);
   const filters = { ...parseJournalFilters(params), fromDay, toDay };
 

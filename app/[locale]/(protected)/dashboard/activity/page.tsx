@@ -2,6 +2,7 @@ import { toSearchParams } from "@/src/lib/api/searchParams";
 import { requirePermission } from "@/src/lib/require-permission";
 import { activityServerApi } from "@/src/presentation/dashboard/activity/activity-server-api";
 import { ActivityScreen } from "@/src/presentation/dashboard/activity/ActivityScreen";
+import { withRememberedPageSize } from "@/src/presentation/dashboard/list/withRememberedPageSize";
 
 // The log is read from the REST API (BFF) per request — an audit trail that
 // showed a cached past would be worthless.
@@ -15,7 +16,7 @@ export default async function DashboardActivityPage({ searchParams }: DashboardA
   // Every dashboard role holds `activity.view` today; checking it here keeps the
   // page honest if a role without it is ever added.
   await requirePermission("activity.view");
-  const params = toSearchParams(await searchParams);
+  const params = await withRememberedPageSize(toSearchParams(await searchParams));
 
   // The dashboard layout already gates this tree to admins; the BFF reads forward
   // the admin's session cookie so the admin endpoints authorize the calls.

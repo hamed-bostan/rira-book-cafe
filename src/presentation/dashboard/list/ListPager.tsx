@@ -2,7 +2,7 @@
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { useEffect, useId } from "react";
+import { useId } from "react";
 
 import { DEFAULT_PAGE_SIZE, TABLE_PAGE_SIZE_OPTIONS, pageCount, type Page } from "@/src/domain/entities/Pagination";
 import { mergePageParams } from "@/src/lib/api/pagination-params";
@@ -11,6 +11,7 @@ import { Button } from "@/src/presentation/design-system/components/Button/Butto
 import { Select } from "@/src/presentation/design-system/components/form/Select/Select";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 
+import { writePageSizeCookie } from "./pageSizeCookie";
 import { useListParams } from "./useListParams";
 
 type ListPagerProps = {
@@ -22,11 +23,10 @@ type ListPagerProps = {
   compact?: boolean;
 };
 
-const PAGE_SIZE_STORAGE_KEY = "dashboard:table-page-size";
-
 /**
  * Page controls for an admin list: which rows are on screen, out of how many, and
- * the way to the next slice.
+ * the way to the next slice. The chosen size is remembered in a cookie, which the
+ * list pages read before fetching (`withRememberedPageSize`).
  *
  * Previous/next only, no numbered pages: the tables are sorted and filtered to
  * find rows, not browsed by ordinal, and jumping to "page 34" of a list you can
@@ -54,16 +54,14 @@ export function ListPager({
   }
 
   function changePageSize(pageSize: number): void {
-    window.localStorage.setItem(PAGE_SIZE_STORAGE_KEY, String(pageSize));
-    setParams(mergePageParams(searchParams, { page: 1, pageSize }, { pageSize: defaultPageSize }));
+    writePageSizeCookie(pageSize);
+    const next = mergePageParams(searchParams, { page: 1 }, { pageSize: defaultPageSize });
+    // Named in the URL even when it's the default: the list page fills a missing
+    // size from the cookie, and the client router may still hold this URL rendered
+    // under the old one — an explicit size is a different URL, so it can't be reused.
+    next.set("pageSize", String(pageSize));
+    setParams(next);
   }
-
-  useEffect(() => {
-    if (searchParams.has("pageSize")) return;
-    const remembered = Number(window.localStorage.getItem(PAGE_SIZE_STORAGE_KEY));
-    if (!pageSizeOptions.includes(remembered) || remembered === defaultPageSize) return;
-    setParams(mergePageParams(searchParams, { page: 1, pageSize: remembered }, { pageSize: defaultPageSize }));
-  }, [defaultPageSize, pageSizeOptions, searchParams, setParams]);
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 px-0.5">

@@ -1,5 +1,6 @@
 import { parseAdminOrderFilters } from "@/src/lib/api/admin-order-params";
 import { toSearchParams } from "@/src/lib/api/searchParams";
+import { withRememberedPageSize } from "@/src/presentation/dashboard/list/withRememberedPageSize";
 import { ordersServerApi } from "@/src/presentation/dashboard/orders/order-server-api";
 import { OrdersScreen } from "@/src/presentation/dashboard/orders/OrdersScreen";
 
@@ -14,7 +15,7 @@ type DashboardOrdersPageProps = {
 };
 
 export default async function DashboardOrdersPage({ searchParams }: DashboardOrdersPageProps) {
-  const params = toSearchParams(await searchParams);
+  const params = await withRememberedPageSize(toSearchParams(await searchParams));
 
   const [orders, counts] = await Promise.all([ordersServerApi.listPage(params), ordersServerApi.counts()]);
 

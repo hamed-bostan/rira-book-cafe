@@ -10,7 +10,7 @@ import { storefrontApi } from "../storefront-api";
 
 import { basketToOrderItems, type Basket } from "./basket";
 
-/** Wait this long after the last change before asking the server, so +/− taps don't each fire a request. */
+/** After the first answer, wait this long after the last change before asking again, so +/− taps don't each fire a request. */
 const QUOTE_DEBOUNCE_MS = 300;
 
 type UseOrderQuoteOptions = {
@@ -53,23 +53,32 @@ export function useOrderQuote({
     redeemPoints,
   } satisfies QuoteOrderInput);
   const active = enabled && basket.lines.length > 0;
+  // The first question goes out at once — opening the basket shouldn't wait out a
+  // debounce meant for a burst of taps. Only later changes are debounced.
+  const answered = React.useRef(false);
 
   React.useEffect(() => {
     if (!active) return;
     let stale = false;
-    const timer = window.setTimeout(() => {
-      storefrontApi
-        .quoteOrder(JSON.parse(requestKey) as QuoteOrderInput)
-        .then((quote) => {
-          if (!stale) setAnswer({ key: requestKey, quote, error: null });
-        })
-        .catch((error: unknown) => {
-          if (stale) return;
-          const apiError = error instanceof ApiError ? error : null;
-          setAnswer({ key: requestKey, quote: null, error: apiError });
-          if (apiError) onRejected?.(apiError);
-        });
-    }, QUOTE_DEBOUNCE_MS);
+    const timer = window.setTimeout(
+      () => {
+        storefrontApi
+          .quoteOrder(JSON.parse(requestKey) as QuoteOrderInput)
+          .then((quote) => {
+            if (stale) return;
+            answered.current = true;
+            setAnswer({ key: requestKey, quote, error: null });
+          })
+          .catch((error: unknown) => {
+            if (stale) return;
+            answered.current = true;
+            const apiError = error instanceof ApiError ? error : null;
+            setAnswer({ key: requestKey, quote: null, error: apiError });
+            if (apiError) onRejected?.(apiError);
+          });
+      },
+      answered.current ? QUOTE_DEBOUNCE_MS : 0,
+    );
     return () => {
       stale = true;
       window.clearTimeout(timer);

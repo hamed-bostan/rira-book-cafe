@@ -1,5 +1,3 @@
-import { Prisma } from "@prisma/client";
-
 import {
   EVENT_KINDS,
   REGISTRATION_STATUSES,
@@ -14,6 +12,7 @@ import { ResourceInUseError } from "@/src/domain/errors/ResourceInUseError";
 import type { AuditHook } from "@/src/domain/repositories/AuditHook";
 import type { IEventRepository, NewCafeEvent, NewRegistration } from "@/src/domain/repositories/IEventRepository";
 import { prisma } from "@/src/infrastructure/prisma/client";
+import { Prisma } from "@/src/infrastructure/prisma/generated/client";
 import { inTransaction, type PrismaDb } from "@/src/infrastructure/prisma/transaction";
 
 import { recordAudit } from "./writeActivityEntry";

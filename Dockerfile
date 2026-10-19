@@ -7,9 +7,10 @@ ARG NODE_VERSION=24
 # ---- deps: install all deps (dev included — needed to build, and the Prisma CLI at runtime) ----
 FROM node:${NODE_VERSION}-alpine AS deps
 WORKDIR /app
-# libc6-compat for native modules; openssl for Prisma's query engine.
+# libc6-compat for native modules; openssl for Prisma's schema engine (migrate).
 RUN apk add --no-cache libc6-compat openssl
-COPY package.json package-lock.json ./
+# The schema and config are here for the `postinstall` hook's `prisma generate`.
+COPY package.json package-lock.json prisma.config.ts ./
 COPY prisma ./prisma
 RUN npm ci
 
@@ -38,7 +39,7 @@ ARG SENTRY_PROJECT
 ARG SENTRY_RELEASE
 RUN --mount=type=secret,id=sentry_auth_token,env=SENTRY_AUTH_TOKEN npm run build
 
-# ---- runner: production server. Full node_modules so Prisma's client, engine, and
+# ---- runner: production server. Full node_modules so Prisma's runtime, pg driver, and
 #      migrate CLI are all present — no standalone file-tracing to fight. ----
 FROM node:${NODE_VERSION}-alpine AS runner
 WORKDIR /app
@@ -54,6 +55,8 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/next.config.ts ./next.config.ts
 COPY --from=builder /app/prisma ./prisma
+# `prisma migrate deploy` reads the schema path and DATABASE_URL from here.
+COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
 
 EXPOSE 3000
 

@@ -1,5 +1,3 @@
-import { Prisma } from "@prisma/client";
-
 import { cafeDayOf } from "@/src/domain/entities/CafeTime";
 import {
   EXPENSE_STATUSES,
@@ -23,6 +21,7 @@ import type {
 } from "@/src/domain/repositories/IExpenseRepository";
 import type { LedgerHook } from "@/src/domain/repositories/ILedgerRepository";
 import { prisma } from "@/src/infrastructure/prisma/client";
+import { Prisma } from "@/src/infrastructure/prisma/generated/client";
 import { inTransaction, type PrismaDb } from "@/src/infrastructure/prisma/transaction";
 
 import { recordAudit } from "./writeActivityEntry";

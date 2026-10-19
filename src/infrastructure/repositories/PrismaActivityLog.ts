@@ -16,10 +16,9 @@ import { createPage, toSkipTake } from "@/src/domain/entities/Pagination";
 import type { IActivityLog } from "@/src/domain/repositories/IActivityLog";
 import type { ILogger } from "@/src/domain/repositories/ILogger";
 import { prisma } from "@/src/infrastructure/prisma/client";
+import type { Prisma } from "@/src/infrastructure/prisma/generated/client";
 
 import { toActivityRow } from "./writeActivityEntry";
-
-import type { Prisma } from "@prisma/client";
 
 /**
  * The activity log backed by PostgreSQL via Prisma. Server-side only (it opens a

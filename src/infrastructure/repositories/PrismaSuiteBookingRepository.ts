@@ -10,11 +10,10 @@ import { NotFoundError } from "@/src/domain/errors/NotFoundError";
 import type { AuditHook } from "@/src/domain/repositories/AuditHook";
 import type { ISuiteBookingRepository, NewSuiteBooking } from "@/src/domain/repositories/ISuiteBookingRepository";
 import { prisma } from "@/src/infrastructure/prisma/client";
+import type { Prisma } from "@/src/infrastructure/prisma/generated/client";
 import { inTransaction, type PrismaDb } from "@/src/infrastructure/prisma/transaction";
 
 import { recordAudit } from "./writeActivityEntry";
-
-import type { Prisma } from "@prisma/client";
 
 /**
  * Suite stays backed by PostgreSQL via Prisma. Days are stored as `DATE` columns,

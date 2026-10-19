@@ -1,13 +1,18 @@
 // Rira Book Cafe database schema.
 // Data lives in PostgreSQL. Images live in Supabase Storage — rows store only the image's URL.
 
+// Generated into infrastructure — the only layer that talks to the database — and
+// not committed: run `npm run db:generate` after a schema change (and after a fresh
+// clone; `npm install` no longer generates it).
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../src/infrastructure/prisma/generated"
 }
 
+// The connection URL lives in `prisma.config.ts` for the CLI, and in the driver
+// adapter in `src/infrastructure/prisma/client.ts` for the app.
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model User {

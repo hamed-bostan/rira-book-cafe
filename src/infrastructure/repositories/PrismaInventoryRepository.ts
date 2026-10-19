@@ -1,7 +1,5 @@
 import { randomUUID } from "node:crypto";
 
-import { type Prisma } from "@prisma/client";
-
 import type { Expense } from "@/src/domain/entities/Expense";
 import {
   issueStock,
@@ -29,6 +27,7 @@ import type {
 } from "@/src/domain/repositories/IInventoryRepository";
 import type { LedgerHook } from "@/src/domain/repositories/ILedgerRepository";
 import { prisma } from "@/src/infrastructure/prisma/client";
+import { type Prisma } from "@/src/infrastructure/prisma/generated/client";
 
 import { PrismaExpenseRepository } from "./PrismaExpenseRepository";
 import { recostProductsUsing } from "./PrismaPricingRepository";

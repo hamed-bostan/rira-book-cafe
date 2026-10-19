@@ -1,5 +1,3 @@
-import { Prisma } from "@prisma/client";
-
 import {
   CASH_SHIFT_STATUSES,
   expectedDrawer,
@@ -17,6 +15,7 @@ import type {
 } from "@/src/domain/repositories/ICashShiftRepository";
 import type { LedgerHook } from "@/src/domain/repositories/ILedgerRepository";
 import { prisma } from "@/src/infrastructure/prisma/client";
+import { Prisma } from "@/src/infrastructure/prisma/generated/client";
 import { inTransaction, type PrismaDb } from "@/src/infrastructure/prisma/transaction";
 
 import { postHook } from "./writeJournal";

@@ -1,5 +1,3 @@
-import { Prisma } from "@prisma/client";
-
 import {
   DEFAULT_PRICING_SETTINGS,
   INGREDIENT_UNITS,
@@ -23,6 +21,7 @@ import type {
   RepricedProduct,
 } from "@/src/domain/repositories/IPricingRepository";
 import { prisma } from "@/src/infrastructure/prisma/client";
+import { Prisma } from "@/src/infrastructure/prisma/generated/client";
 
 import { recordAudit } from "./writeActivityEntry";
 

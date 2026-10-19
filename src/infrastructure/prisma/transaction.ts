@@ -1,4 +1,4 @@
-import type { Prisma, PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@/src/infrastructure/prisma/generated/client";
 
 /**
  * Either the root Prisma client or a transaction-scoped one.

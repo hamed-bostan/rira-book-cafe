@@ -1,5 +1,5 @@
 /**
- * `npm run db:seed` (`prisma db seed`, which loads `.env`): loads the sample data
+ * `npm run db:seed` (`prisma db seed`; `prisma.config.ts` loads `.env`): loads the sample data
  * from `seed-sample-data.ts`, making `SEED_OWNER_PHONE` the owner when it's set.
  */
 import { rmSync } from "node:fs";

@@ -1,5 +1,3 @@
-import { Prisma } from "@prisma/client";
-
 import {
   consumptionFor,
   roundQuantity,
@@ -7,6 +5,7 @@ import {
   type StockState,
 } from "@/src/domain/entities/Inventory";
 import type { RecipeLine } from "@/src/domain/entities/Pricing";
+import { Prisma } from "@/src/infrastructure/prisma/generated/client";
 
 import { dayToDate } from "./writeJournal";
 

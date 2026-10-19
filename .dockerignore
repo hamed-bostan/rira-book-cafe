@@ -6,6 +6,8 @@ build
 
 # Generated at build time by the `prebuild` hook
 src/styles/tokens.css
+# Generated in the image by `prisma generate` — a local copy may be stale
+src/infrastructure/prisma/generated
 
 # VCS & CI
 .git

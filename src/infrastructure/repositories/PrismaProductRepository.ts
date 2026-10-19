@@ -1,5 +1,3 @@
-import { Prisma } from "@prisma/client";
-
 import type { AdminProductFilters, AdminProductSort } from "@/src/domain/entities/AdminProductFilters";
 import { DEFAULT_ADMIN_PRODUCT_DIRECTION } from "@/src/domain/entities/AdminProductFilters";
 import { createPage, toSkipTake, type Page, type PageRequest } from "@/src/domain/entities/Pagination";
@@ -23,6 +21,7 @@ import type {
   ProductTranslationInput,
 } from "@/src/domain/repositories/IProductRepository";
 import { prisma } from "@/src/infrastructure/prisma/client";
+import { Prisma } from "@/src/infrastructure/prisma/generated/client";
 import { inTransaction, type PrismaDb } from "@/src/infrastructure/prisma/transaction";
 
 import { recordAudit } from "./writeActivityEntry";

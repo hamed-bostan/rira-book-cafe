@@ -1,5 +1,3 @@
-import { Prisma } from "@prisma/client";
-
 import {
   OPEN_WAITLIST_STATUSES,
   WAITLIST_STATUSES,
@@ -9,6 +7,7 @@ import {
 import { ConflictError } from "@/src/domain/errors/ConflictError";
 import type { IBookWaitlistRepository, NewWaitlistEntry } from "@/src/domain/repositories/IBookWaitlistRepository";
 import { prisma } from "@/src/infrastructure/prisma/client";
+import { Prisma } from "@/src/infrastructure/prisma/generated/client";
 import { inTransaction, type PrismaDb } from "@/src/infrastructure/prisma/transaction";
 
 const OPEN = { in: [...OPEN_WAITLIST_STATUSES] };

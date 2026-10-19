@@ -1,5 +1,3 @@
-import { type Prisma } from "@prisma/client";
-
 import type { ActivityActor } from "@/src/domain/entities/ActivityEntry";
 import {
   DEFAULT_ADMIN_ORDER_DIRECTION,
@@ -34,6 +32,7 @@ import type { AuditHook } from "@/src/domain/repositories/AuditHook";
 import type { LedgerHook } from "@/src/domain/repositories/ILedgerRepository";
 import type { IOrderRepository, NewOrder, PaymentChange } from "@/src/domain/repositories/IOrderRepository";
 import { prisma } from "@/src/infrastructure/prisma/client";
+import { type Prisma } from "@/src/infrastructure/prisma/generated/client";
 import { inTransaction, type PrismaDb } from "@/src/infrastructure/prisma/transaction";
 
 import { recordAudit } from "./writeActivityEntry";

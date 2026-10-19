@@ -4,6 +4,7 @@ import {
   buildPricingReport,
   currentPosition,
   DEFAULT_PRICING_SETTINGS,
+  inflationAllowance,
   overheadPerUnit,
   recipeCost,
   suggestPrice,
@@ -111,5 +112,53 @@ describe("pricing", () => {
     });
     expect(cake).toMatchObject({ costSource: "manual", directCost: 44_000, markupBps: 3000, markupIsDefault: true });
     expect(mystery).toMatchObject({ costSource: "none", suggestedPrice: null, profitPerUnit: null });
+  });
+});
+
+describe("inflation", () => {
+  const CAKE = { id: "cake", name: "Cake", kind: "food", price: 110_000, taxExempt: false, costPrice: 44_000 } as const;
+  const report = (monthlyInflationBps: number, source: "ledger" | "manual") =>
+    buildPricingReport({
+      products: [CAKE],
+      recipes: new Map(),
+      ingredients: [],
+      basis: { source, monthlyOverhead: 300_000_000, monthlyUnits: 6000, months: 3 },
+      settings: { ...DEFAULT_PRICING_SETTINGS, monthlyInflationBps, priceHorizonMonths: 3 },
+      vatRateBps: 1000,
+      unitsSold: new Map(),
+    });
+
+  it("is off at 0%: no multipliers, and both suggestions agree", () => {
+    expect(
+      inflationAllowance({ monthlyInflationBps: 0, priceHorizonMonths: 3 }, { source: "ledger", months: 3 }),
+    ).toEqual({ monthlyInflationBps: 0, horizonMonths: 3, overheadCatchUp: 1, costFactor: 1 });
+    const [cake] = report(0, "ledger").rows;
+    expect(cake.suggestedPrice).toBe(cake.suggestedPriceToday);
+  });
+
+  it("covers the average cost over the horizon, not its end", () => {
+    const { costFactor } = inflationAllowance(
+      { monthlyInflationBps: 300, priceHorizonMonths: 3 },
+      { source: "manual", months: 3 },
+    );
+    // 3% a month for 3 months ends 9.27% up; the average over the span is ~4.57% up.
+    expect(costFactor).toBeCloseTo(1.04568, 5);
+    expect(costFactor).toBeLessThan(1.03 ** 3);
+  });
+
+  it("brings a recorded overhead average up to today, but trusts a planned figure", () => {
+    expect(report(300, "ledger").overheadPerUnit).toBe(52_267); // 50,000 × 1.03^1.5
+    expect(report(300, "manual").overheadPerUnit).toBe(50_000);
+  });
+
+  it("suggests both prices, and reads today's profit against today's cost", () => {
+    // Full cost 94,000. Today: ×1.3 ×1.1 = 134,420 → 135,000. Ahead: ×1.04567 first → 140,559 → 145,000.
+    const [cake] = report(300, "manual").rows;
+    expect(cake).toMatchObject({
+      fullCost: 94_000,
+      suggestedPriceToday: 135_000,
+      suggestedPrice: 145_000,
+      profitPerUnit: 6_000,
+    });
   });
 });

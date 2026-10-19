@@ -29,6 +29,8 @@ const SETTINGS: PricingSettingsInput = {
   manualMonthlyOverhead: "",
   expectedMonthlyUnits: "",
   overheadMonths: "3",
+  monthlyInflation: "",
+  priceHorizonMonths: "3",
 };
 
 const settingsErrors = (input: unknown): Record<string, string[] | undefined> | undefined =>
@@ -117,6 +119,8 @@ describe("pricingSettingsSchema", () => {
       manualMonthlyOverhead: undefined,
       expectedMonthlyUnits: undefined,
       overheadMonths: 3,
+      monthlyInflation: 0,
+      priceHorizonMonths: 3,
     });
     expect(
       pricingSettingsSchema.parse({ ...SETTINGS, defaultMarkup: "12.5", expectedMonthlyUnits: "1200" }),
@@ -162,6 +166,21 @@ describe("pricingSettingsSchema", () => {
 
   it("refuses zero expected units", () => {
     expect(settingsErrors({ ...SETTINGS, expectedMonthlyUnits: "0" })?.expectedMonthlyUnits).toEqual(["numberInvalid"]);
+  });
+
+  it("reads monthly inflation in basis points, up to 20%", () => {
+    expect(pricingSettingsSchema.parse({ ...SETTINGS, monthlyInflation: "3.5" }).monthlyInflation).toBe(350);
+    expect(pricingSettingsSchema.parse({ ...SETTINGS, monthlyInflation: "20" }).monthlyInflation).toBe(2000);
+    for (const monthlyInflation of ["20.01", "-3", "abc", "3.456"]) {
+      expect(settingsErrors({ ...SETTINGS, monthlyInflation })?.monthlyInflation).toEqual(["inflationInvalid"]);
+    }
+  });
+
+  it("bounds the months a price stays up", () => {
+    expect(pricingSettingsSchema.parse({ ...SETTINGS, priceHorizonMonths: "12" }).priceHorizonMonths).toBe(12);
+    for (const priceHorizonMonths of ["0", "13", ""]) {
+      expect(settingsErrors({ ...SETTINGS, priceHorizonMonths })?.priceHorizonMonths).toEqual(["numberInvalid"]);
+    }
   });
 });
 

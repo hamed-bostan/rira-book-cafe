@@ -25,6 +25,8 @@ const FIELDS = [
   "manualMonthlyOverhead",
   "expectedMonthlyUnits",
   "overheadMonths",
+  "monthlyInflation",
+  "priceHorizonMonths",
 ] as const;
 
 function toDefaults(settings: PricingSettings): PricingSettingsInput {
@@ -35,12 +37,15 @@ function toDefaults(settings: PricingSettings): PricingSettingsInput {
     manualMonthlyOverhead: settings.manualMonthlyOverhead === undefined ? "" : String(settings.manualMonthlyOverhead),
     expectedMonthlyUnits: settings.expectedMonthlyUnits === undefined ? "" : String(settings.expectedMonthlyUnits),
     overheadMonths: String(settings.overheadMonths),
+    monthlyInflation: settings.monthlyInflationBps === 0 ? "" : String(settings.monthlyInflationBps / 100),
+    priceHorizonMonths: String(settings.priceHorizonMonths),
   };
 }
 
 /**
- * The advisor's assumptions: the default profit, how prices round, and where the
- * monthly running costs come from — the books (recorded expenses) or a planned figure.
+ * The advisor's assumptions: the default profit, how prices round, where the
+ * monthly running costs come from — the books (recorded expenses) or a planned
+ * figure — and how fast costs are expected to rise until the next price change.
  */
 export function PricingSettingsForm({ settings, canWrite }: { settings: PricingSettings; canWrite: boolean }) {
   const t = useTranslations("dashPricing");
@@ -177,6 +182,44 @@ export function PricingSettingsForm({ settings, canWrite }: { settings: PricingS
           />
         )}
       </TextField>
+
+      <fieldset className="flex flex-col gap-3" disabled={!canWrite}>
+        <legend className="mb-1 text-body-small-emphasis text-input-foreground">{t("settings.inflationLegend")}</legend>
+        <p className="-mt-1 text-body-caption text-muted-foreground">{t("settings.inflationHint")}</p>
+        <div className="flex flex-col gap-4 sm:flex-row">
+          <TextField
+            label={t("settings.monthlyInflationLabel")}
+            description={t("settings.monthlyInflationHint")}
+            error={fieldError(errors.monthlyInflation?.message)}
+          >
+            {(control) => (
+              <Input
+                {...control}
+                {...register("monthlyInflation")}
+                inputMode="decimal"
+                dir="ltr"
+                placeholder="0"
+                className="max-w-24"
+              />
+            )}
+          </TextField>
+          <TextField
+            label={t("settings.horizonLabel")}
+            description={t("settings.horizonHint")}
+            error={fieldError(errors.priceHorizonMonths?.message)}
+          >
+            {(control) => (
+              <Input
+                {...control}
+                {...register("priceHorizonMonths")}
+                inputMode="numeric"
+                dir="ltr"
+                className="max-w-24"
+              />
+            )}
+          </TextField>
+        </div>
+      </fieldset>
 
       <TextField
         label={t("settings.roundingLabel")}

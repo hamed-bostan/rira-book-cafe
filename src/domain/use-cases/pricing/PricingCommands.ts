@@ -5,7 +5,9 @@ import {
   buildPricingReport,
   INGREDIENT_UNITS,
   MAX_MARKUP_BPS,
+  MAX_MONTHLY_INFLATION_BPS,
   MAX_OVERHEAD_MONTHS,
+  MAX_PRICE_HORIZON_MONTHS,
   MAX_RECIPE_LINES,
   type Ingredient,
   type OverheadBasis,
@@ -104,6 +106,20 @@ export class UpdatePricingSettings {
     }
     if (settings.overheadSource === "manual" && settings.manualMonthlyOverhead === undefined) {
       throw new ValidationError("manualMonthlyOverhead", "Enter the monthly running costs.");
+    }
+    if (
+      !Number.isInteger(settings.monthlyInflationBps) ||
+      settings.monthlyInflationBps < 0 ||
+      settings.monthlyInflationBps > MAX_MONTHLY_INFLATION_BPS
+    ) {
+      throw new ValidationError("monthlyInflation", "Enter a monthly inflation from 0 to 20%.");
+    }
+    if (
+      !Number.isInteger(settings.priceHorizonMonths) ||
+      settings.priceHorizonMonths < 1 ||
+      settings.priceHorizonMonths > MAX_PRICE_HORIZON_MONTHS
+    ) {
+      throw new ValidationError("priceHorizonMonths", "Plan 1 to 12 months ahead.");
     }
     return this.pricing.updateSettings(settings);
   }

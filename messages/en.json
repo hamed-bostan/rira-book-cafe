@@ -147,6 +147,7 @@
     "exceedsGatewayBalance": "That's more than the gateway holds for the cafe on that date.",
     "quantityInvalid": "Enter a quantity above zero, e.g. 18 or 0.5.",
     "markupInvalid": "Enter a profit percentage, e.g. 30.",
+    "inflationInvalid": "Enter a monthly inflation from 0 to 20, e.g. 3.",
     "numberInvalid": "Enter a whole number.",
     "unitInvalid": "Choose a unit.",
     "ingredientRequired": "Choose an ingredient.",
@@ -1871,6 +1872,10 @@
     },
     "noOverhead": "Running costs aren't included yet — record expenses such as rent, salaries and utilities, or enter a planned monthly figure in",
     "formula": "Suggested price = (ingredients + running costs per item) + your profit %, plus VAT for taxable items, rounded up.",
+    "inflation": {
+      "summary": "At {rate}% inflation a month over the next {months} months, prices cover the average cost over that time (+{uplift}% on today's cost).",
+      "catchUp": "The recorded running-cost average is also brought up to today's prices (+{percent}%)."
+    },
     "col": {
       "item": "Item",
       "ingredients": "Ingredients",
@@ -1878,6 +1883,8 @@
       "fullCost": "Full cost",
       "profit": "Profit %",
       "suggested": "Suggested price",
+      "suggestedToday": "At today's cost",
+      "suggestedInflation": "With inflation",
       "current": "Price now",
       "earnsNow": "Earns now (per item)"
     },
@@ -1969,6 +1976,12 @@
       "expectedUnitsHint": "Leave blank to use your recent sales. Running costs are shared equally across every item sold.",
       "roundingLabel": "Round prices up to (Toman)",
       "roundingHint": "e.g. 5000 turns 126,698 into 130,000.",
+      "inflationLegend": "Inflation",
+      "inflationHint": "Suggested prices cover the average cost until your next price change — not just today's cost.",
+      "monthlyInflationLabel": "Monthly inflation (%)",
+      "monthlyInflationHint": "e.g. 3. Leave blank to turn it off.",
+      "horizonLabel": "Months until the next price change",
+      "horizonHint": "1 to 12.",
       "saved": "Saved.",
       "error": "Couldn't save the settings. Please try again."
     },

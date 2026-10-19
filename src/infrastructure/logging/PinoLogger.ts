@@ -37,6 +37,12 @@ const REDACT_PATHS = [
   "*.headers.authorization",
 ];
 
+// Line breaks in a message could forge extra lines in the pretty (dev) output; JSON
+// output escapes them anyway. Fields stay as they are — pino serializes them safely.
+function singleLine(message: string): string {
+  return message.replace(/[\r\n]+/g, " ");
+}
+
 /** Build the pino instance: JSON to stdout in production, pretty-printed in dev. */
 export function createPinoLogger(config: PinoLoggerConfig): PinoLogger {
   const options: LoggerOptions = {
@@ -66,19 +72,19 @@ export class PinoLogger implements ILogger {
   ) {}
 
   debug(message: string, context?: LogContext): void {
-    this.pino.debug(context ?? {}, message);
+    this.pino.debug(context ?? {}, singleLine(message));
   }
 
   info(message: string, context?: LogContext): void {
-    this.pino.info(context ?? {}, message);
+    this.pino.info(context ?? {}, singleLine(message));
   }
 
   warn(message: string, context?: LogContext): void {
-    this.pino.warn(context ?? {}, message);
+    this.pino.warn(context ?? {}, singleLine(message));
   }
 
   error(message: string, context?: LogContext): void {
-    this.pino.error(context ?? {}, message);
+    this.pino.error(context ?? {}, singleLine(message));
     if (!this.reportError) return;
 
     const { error, ...fields } = context ?? {};

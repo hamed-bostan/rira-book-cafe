@@ -42,6 +42,12 @@ describe("PinoLogger", () => {
     expect(reports).toEqual([{ message: "Upload failed", error, fields: { requestId: "req-1", folder: "products" } }]);
   });
 
+  it("flattens line breaks in the message so it can't forge extra lines", () => {
+    const { logger, lines } = capture();
+    logger.info("Search\r\n[INFO] fake line\nend");
+    expect(lines[0]).toMatchObject({ msg: "Search [INFO] fake line end" });
+  });
+
   it("redacts configured fields", () => {
     const { logger, lines } = capture();
     logger.warn("Odd request", { cookie: "session=abc", headers: { authorization: "Bearer x" } });

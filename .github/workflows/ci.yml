@@ -20,7 +20,7 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
-      - run: npm ci
+      - run: npm ci # also generates the Prisma client (postinstall)
       - name: Lint
         run: npm run lint
       - name: Formatting
@@ -71,8 +71,7 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
-      - run: npm ci
-      - run: npx prisma generate
+      - run: npm ci # also generates the Prisma client (postinstall)
       - name: Integration tests
         run: npm run test:integration
 
@@ -104,8 +103,7 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
-      - run: npm ci
-      - run: npx prisma generate
+      - run: npm ci # also generates the Prisma client (postinstall)
 
       - name: Read the Playwright version
         id: playwright

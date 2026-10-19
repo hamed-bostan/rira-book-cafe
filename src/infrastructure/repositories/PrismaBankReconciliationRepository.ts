@@ -1,5 +1,3 @@
-import { Prisma } from "@prisma/client";
-
 import {
   assertMatchBalances,
   assertStatementFollows,
@@ -25,6 +23,7 @@ import type {
   StatementChange,
 } from "@/src/domain/repositories/IBankReconciliationRepository";
 import { prisma } from "@/src/infrastructure/prisma/client";
+import { Prisma } from "@/src/infrastructure/prisma/generated/client";
 
 import { recordAudit } from "./writeActivityEntry";
 import { dateToDay, dayToDate, postEntry, toJournalEntry } from "./writeJournal";

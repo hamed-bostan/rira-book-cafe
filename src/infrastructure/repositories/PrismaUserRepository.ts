@@ -1,5 +1,3 @@
-import { Prisma } from "@prisma/client";
-
 import { changedFields } from "@/src/domain/entities/ActivityEntry";
 import type { User, UserRole } from "@/src/domain/entities/User";
 import { PLACEHOLDER_USER_NAME, toUserRole } from "@/src/domain/entities/User";
@@ -11,6 +9,7 @@ import type {
   RoleChangeBatch,
 } from "@/src/domain/repositories/IUserRepository";
 import { prisma } from "@/src/infrastructure/prisma/client";
+import { Prisma } from "@/src/infrastructure/prisma/generated/client";
 
 /**
  * Users backed by PostgreSQL via Prisma. Server-side only (it opens a DB

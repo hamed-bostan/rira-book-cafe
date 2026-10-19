@@ -1,5 +1,3 @@
-import { Prisma } from "@prisma/client";
-
 import {
   PROMO_KINDS,
   type PromoCode,
@@ -12,6 +10,7 @@ import { UniqueConstraintError } from "@/src/domain/errors/UniqueConstraintError
 import type { AuditHook } from "@/src/domain/repositories/AuditHook";
 import type { IPromotionRepository, PromoCodeInput } from "@/src/domain/repositories/IPromotionRepository";
 import { prisma } from "@/src/infrastructure/prisma/client";
+import { Prisma } from "@/src/infrastructure/prisma/generated/client";
 import { inTransaction, type PrismaDb } from "@/src/infrastructure/prisma/transaction";
 
 import { recordAudit } from "./writeActivityEntry";

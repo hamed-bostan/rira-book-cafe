@@ -1,5 +1,3 @@
-import { Prisma } from "@prisma/client";
-
 import {
   type DailySales,
   type DateRange,
@@ -25,6 +23,7 @@ import {
 import { PRODUCT_KINDS, type ProductKind } from "@/src/domain/entities/Product";
 import type { IAnalyticsRepository } from "@/src/domain/repositories/IAnalyticsRepository";
 import { prisma } from "@/src/infrastructure/prisma/client";
+import { Prisma } from "@/src/infrastructure/prisma/generated/client";
 
 /**
  * Store aggregates computed in PostgreSQL. Timestamps are stored as UTC

@@ -54,7 +54,7 @@ Next.js, Prisma or HTTP. **Dependencies only point inward.**
 Requirements: Node 24 (see `.nvmrc`) and Docker Desktop (for the local database).
 
 ```bash
-npm install                   # also installs the git hooks (husky)
+npm install                   # also generates the Prisma client and installs the git hooks
 cp .env.example .env          # then fill in AUTH_SECRET and SEED_OWNER_PHONE
 npx auth secret               # prints an AUTH_SECRET to paste into .env
 npm run db:dev:up             # starts Postgres on localhost:5545

@@ -28,6 +28,9 @@ All notable changes to this project are documented here. The format follows
 
 - Server code no longer logs with `console.*`; infrastructure adapters receive the
   logger from the container.
+- Prisma 7: the client is generated into `src/infrastructure/prisma/generated` (on
+  `npm install`) and reaches Postgres through the `pg` driver adapter; CLI settings
+  (schema, migrations, seed, `DATABASE_URL`) moved to `prisma.config.ts`.
 
 ## [0.1.0]
 

@@ -9,11 +9,10 @@ import type {
   NewBookLoan,
 } from "@/src/domain/repositories/IBookLoanRepository";
 import { prisma } from "@/src/infrastructure/prisma/client";
+import type { Prisma } from "@/src/infrastructure/prisma/generated/client";
 import { inTransaction, type PrismaDb } from "@/src/infrastructure/prisma/transaction";
 
 import { recordAudit } from "./writeActivityEntry";
-
-import type { Prisma } from "@prisma/client";
 
 /** The dashboard list is a working view, not an archive — older history stays searchable. */
 const LIST_LIMIT = 200;

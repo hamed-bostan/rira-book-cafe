@@ -15,11 +15,10 @@ import type {
   ReservationChange,
 } from "@/src/domain/repositories/IReservationRepository";
 import { prisma } from "@/src/infrastructure/prisma/client";
+import type { Prisma } from "@/src/infrastructure/prisma/generated/client";
 import { inTransaction, type PrismaDb } from "@/src/infrastructure/prisma/transaction";
 
 import { recordAudit } from "./writeActivityEntry";
-
-import type { Prisma } from "@prisma/client";
 
 /** The longest booking, bounding how far back the clash check needs to look. */
 const MAX_DURATION_MS = 6 * 60 * 60 * 1000;

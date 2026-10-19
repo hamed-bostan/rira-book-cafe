@@ -1,5 +1,3 @@
-import { Prisma } from "@prisma/client";
-
 import {
   NOTIFICATION_KINDS,
   type NewNotification,
@@ -9,6 +7,7 @@ import {
 } from "@/src/domain/entities/Notification";
 import type { INotificationRepository } from "@/src/domain/repositories/INotificationRepository";
 import { prisma } from "@/src/infrastructure/prisma/client";
+import { Prisma } from "@/src/infrastructure/prisma/generated/client";
 import type { PrismaDb } from "@/src/infrastructure/prisma/transaction";
 
 /**

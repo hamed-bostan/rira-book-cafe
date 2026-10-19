@@ -1,5 +1,3 @@
-import { Prisma, type PaymentAttempt as PaymentAttemptRow } from "@prisma/client";
-
 import {
   PAYMENT_ATTEMPT_STATUSES,
   PAYMENT_FAILURE_REASONS,
@@ -14,6 +12,7 @@ import type {
   PaymentAttemptResult,
 } from "@/src/domain/repositories/IPaymentAttemptRepository";
 import { prisma } from "@/src/infrastructure/prisma/client";
+import { Prisma, type PaymentAttempt as PaymentAttemptRow } from "@/src/infrastructure/prisma/generated/client";
 
 import { inTransaction, type PrismaDb } from "../prisma/transaction";
 

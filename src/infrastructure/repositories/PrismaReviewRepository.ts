@@ -10,11 +10,10 @@ import { NotFoundError } from "@/src/domain/errors/NotFoundError";
 import type { AuditHook } from "@/src/domain/repositories/AuditHook";
 import type { IReviewRepository, ReviewDraft, ReviewFilters } from "@/src/domain/repositories/IReviewRepository";
 import { prisma } from "@/src/infrastructure/prisma/client";
+import type { Prisma } from "@/src/infrastructure/prisma/generated/client";
 import { inTransaction, type PrismaDb } from "@/src/infrastructure/prisma/transaction";
 
 import { recordAudit } from "./writeActivityEntry";
-
-import type { Prisma } from "@prisma/client";
 
 /** The queue is a working view, not an archive. */
 const LIST_LIMIT = 200;

@@ -1,6 +1,6 @@
 import { execSync } from "node:child_process";
 
-import { PrismaClient } from "@prisma/client";
+import { createPrismaClient } from "@/src/infrastructure/prisma/createPrismaClient";
 
 import { assertTestDatabase } from "./test-env";
 
@@ -15,7 +15,7 @@ export async function ensureTestDatabase(databaseUrl: string): Promise<void> {
   const name = url.pathname.replace(/^\//, "");
   url.pathname = "/postgres";
 
-  const client = new PrismaClient({ datasourceUrl: url.toString() });
+  const client = createPrismaClient(url.toString());
   try {
     const rows = await client.$queryRaw<{ exists: boolean }[]>`
       SELECT EXISTS (SELECT 1 FROM pg_database WHERE datname = ${name}) AS "exists"`;
@@ -37,7 +37,7 @@ export async function ensureTestDatabase(databaseUrl: string): Promise<void> {
 export async function migrateTestDatabase(databaseUrl: string): Promise<void> {
   assertTestDatabase(databaseUrl);
 
-  const client = new PrismaClient({ datasourceUrl: databaseUrl });
+  const client = createPrismaClient(databaseUrl);
   try {
     // The integration tests' reset snapshot (see `database.ts`) goes with it.
     await client.$executeRawUnsafe('DROP SCHEMA IF EXISTS "snapshot" CASCADE');

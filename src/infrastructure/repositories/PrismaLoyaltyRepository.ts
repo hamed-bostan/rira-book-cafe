@@ -7,11 +7,10 @@ import {
 import { ConflictError } from "@/src/domain/errors/ConflictError";
 import type { ILoyaltyRepository, PointsAdjustment } from "@/src/domain/repositories/ILoyaltyRepository";
 import { prisma } from "@/src/infrastructure/prisma/client";
+import type { Prisma } from "@/src/infrastructure/prisma/generated/client";
 import { inTransaction, type PrismaDb } from "@/src/infrastructure/prisma/transaction";
 
 import { lockGuestPoints, pointsBalance, readLoyaltySettings } from "./writeLoyalty";
-
-import type { Prisma } from "@prisma/client";
 
 /**
  * The loyalty club's settings and points ledger, backed by PostgreSQL via Prisma.

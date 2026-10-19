@@ -1,5 +1,3 @@
-import { Prisma } from "@prisma/client";
-
 import type { AdminCategoryFilters, AdminCategorySort } from "@/src/domain/entities/AdminCategoryFilters";
 import type { Category } from "@/src/domain/entities/Category";
 import { createPage, toSkipTake, type Page, type PageRequest } from "@/src/domain/entities/Pagination";
@@ -14,6 +12,7 @@ import type {
   NewCategory,
 } from "@/src/domain/repositories/ICategoryRepository";
 import { prisma } from "@/src/infrastructure/prisma/client";
+import { Prisma } from "@/src/infrastructure/prisma/generated/client";
 
 import { recordAudit } from "./writeActivityEntry";
 

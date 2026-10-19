@@ -1,5 +1,3 @@
-import { Prisma } from "@prisma/client";
-
 import {
   assertBalanced,
   DEFAULT_VAT_RATE_BPS,
@@ -12,6 +10,7 @@ import {
 } from "@/src/domain/entities/Ledger";
 import { ConflictError } from "@/src/domain/errors/ConflictError";
 import type { LedgerHook } from "@/src/domain/repositories/ILedgerRepository";
+import { Prisma } from "@/src/infrastructure/prisma/generated/client";
 
 /**
  * The single write path into the general ledger. Every posting — from an order,

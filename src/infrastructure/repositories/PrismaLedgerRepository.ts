@@ -1,5 +1,3 @@
-import { Prisma } from "@prisma/client";
-
 import type { AccountMovement } from "@/src/domain/entities/AccountingReports";
 import {
   ACCOUNT_TYPES,
@@ -24,6 +22,7 @@ import type {
   VatMovement,
 } from "@/src/domain/repositories/ILedgerRepository";
 import { prisma } from "@/src/infrastructure/prisma/client";
+import { Prisma } from "@/src/infrastructure/prisma/generated/client";
 
 import { recordAudit } from "./writeActivityEntry";
 import {

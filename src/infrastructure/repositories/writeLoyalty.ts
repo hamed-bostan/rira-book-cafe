@@ -1,7 +1,6 @@
 import { DEFAULT_LOYALTY_SETTINGS, pointsEarnedFor, type LoyaltySettings } from "@/src/domain/entities/Loyalty";
 import { ConflictError } from "@/src/domain/errors/ConflictError";
-
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from "@/src/infrastructure/prisma/generated/client";
 
 /**
  * The single write path into the points ledger, inside the caller's transaction —

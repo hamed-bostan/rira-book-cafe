@@ -34,3 +34,28 @@ export function rememberedPageSize(
 export function writePageSizeCookie(pageSize: number): void {
   document.cookie = `${PAGE_SIZE_COOKIE_NAME}=${pageSize}; path=/; max-age=${PAGE_SIZE_COOKIE_MAX_AGE}; samesite=lax`;
 }
+
+/** Where the size was kept before the cookie (browser-only, so the server couldn't read it). */
+const LEGACY_STORAGE_KEY = "dashboard:table-page-size";
+
+/**
+ * One-time carry-over of a size saved the old way: copy it into the cookie and drop
+ * the old entry. Returns the size carried over, or `undefined` when there was none
+ * (or the cookie already exists — the newer choice wins). Safe to call on every
+ * mount: after the first run there is nothing left to carry.
+ */
+export function adoptLegacyPageSize(): number | undefined {
+  try {
+    const legacy = window.localStorage.getItem(LEGACY_STORAGE_KEY);
+    if (legacy === null) return undefined;
+    window.localStorage.removeItem(LEGACY_STORAGE_KEY);
+    const hasCookie = document.cookie.split("; ").some((entry) => entry.startsWith(`${PAGE_SIZE_COOKIE_NAME}=`));
+    const size = Number(legacy);
+    if (hasCookie || !(TABLE_PAGE_SIZE_OPTIONS as readonly number[]).includes(size)) return undefined;
+    writePageSizeCookie(size);
+    return size;
+  } catch {
+    // Storage blocked — nothing to carry over.
+    return undefined;
+  }
+}

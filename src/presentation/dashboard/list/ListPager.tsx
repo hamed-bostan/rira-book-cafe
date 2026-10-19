@@ -2,16 +2,17 @@
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { useId } from "react";
+import { useEffect, useId } from "react";
 
 import { DEFAULT_PAGE_SIZE, TABLE_PAGE_SIZE_OPTIONS, pageCount, type Page } from "@/src/domain/entities/Pagination";
+import { useRouter } from "@/src/i18n/navigation";
 import { mergePageParams } from "@/src/lib/api/pagination-params";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
 import { Select } from "@/src/presentation/design-system/components/form/Select/Select";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 
-import { writePageSizeCookie } from "./pageSizeCookie";
+import { adoptLegacyPageSize, writePageSizeCookie } from "./pageSizeCookie";
 import { useListParams } from "./useListParams";
 
 type ListPagerProps = {
@@ -40,6 +41,7 @@ export function ListPager({
   compact = false,
 }: ListPagerProps) {
   const { searchParams, setParams } = useListParams();
+  const router = useRouter();
   const t = useTranslations("dashList");
   const locale = useLocale();
   const pageSizeId = useId();
@@ -62,6 +64,15 @@ export function ListPager({
     next.set("pageSize", String(pageSize));
     setParams(next);
   }
+
+  // A size saved before it moved to a cookie: carry it over once, and re-render this
+  // list if it would have shown a different number of rows. Every visit after that
+  // reads the cookie on the server and needs nothing here.
+  useEffect(() => {
+    const adopted = adoptLegacyPageSize();
+    if (adopted === undefined || searchParams.has("pageSize")) return;
+    if (pageSizeOptions.includes(adopted) && adopted !== page.pageSize) router.refresh();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- runs once per mount by design
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 px-0.5">

@@ -71,13 +71,13 @@ export function DashboardNav({ permissions, badges, collapsed = false, onNavigat
                 className={cn(
                   "relative flex items-center gap-3 rounded-button text-body-small transition-colors",
                   focusRing,
-                  collapsed ? "size-11 shrink-0 justify-center self-center p-0" : "h-10 px-3",
+                  collapsed ? "size-11 shrink-0 justify-center self-center p-0" : "h-11 px-3 sm:h-10",
                   active
                     ? "bg-accent font-semibold text-accent-foreground [&>svg]:text-primary"
                     : "font-medium text-foreground hover:bg-muted [&>svg]:text-muted-foreground",
                 )}
               >
-                <Icon icon={section.icon} size="sm" />
+                <Icon icon={section.icon} size="md" className="sm:size-5" />
                 <span className={cn("min-w-0 flex-1 truncate", collapsed && "sr-only")}>{label}</span>
                 {badge ? (
                   collapsed ? (

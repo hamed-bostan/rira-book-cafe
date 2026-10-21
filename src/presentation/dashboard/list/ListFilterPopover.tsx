@@ -4,6 +4,7 @@ import { ChevronDown } from "lucide-react";
 import * as React from "react";
 
 import { cn } from "@/src/lib/utils";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 import { Popover, PopoverContent, PopoverTrigger } from "@/src/presentation/design-system/components/Popover/Popover";
 
 type ListFilterPopoverProps = {
@@ -72,7 +73,7 @@ export function ListFilterPopover({
         aria-invalid={triggerAriaInvalid}
         disabled={disabled}
         className={cn(
-          "group flex h-10 cursor-pointer items-center gap-1.5 rounded-button border px-3 text-body-small whitespace-nowrap transition-colors",
+          "group flex h-11 cursor-pointer items-center gap-1.5 rounded-button border px-3 text-body-small whitespace-nowrap transition-colors sm:h-10",
           "disabled:cursor-not-allowed disabled:opacity-50",
           "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
           // An active filter is carried by border and text colour, never by
@@ -97,9 +98,9 @@ export function ListFilterPopover({
         ) : null}
         {/* Rotates with the panel, so the trigger says whether it's open without
             depending on the panel being visible on screen. */}
-        <ChevronDown
-          aria-hidden
-          className="ms-auto size-4 shrink-0 text-muted-foreground transition-transform duration-150 group-data-[state=open]:rotate-180"
+        <Icon
+          icon={ChevronDown}
+          className="ms-auto size-5 shrink-0 text-muted-foreground transition-transform duration-150 group-data-[state=open]:rotate-180 sm:size-4"
         />
       </PopoverTrigger>
 

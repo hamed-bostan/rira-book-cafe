@@ -621,7 +621,8 @@
     "noResultsTitle": "نتیجه‌ای نیست",
     "noResultsBody": "هیچ ردیفی با جست‌وجو و فیلترهای فعلی مطابقت ندارد.",
     "clearFilters": "پاک کردن فیلترها",
-    "clearFiltersShort": "پاک کردن"
+    "clearFiltersShort": "پاک کردن",
+    "clearSearch": "پاک کردن جست‌وجو"
   },
   "dietary": {
     "Vegan": "وگان",

@@ -85,11 +85,11 @@ export function NotificationsMenu({ orders }: NotificationsMenuProps) {
           type="button"
           aria-label={hasUnread ? t("notificationsUnread") : t("notifications")}
           className={cn(
-            "relative flex size-10 shrink-0 items-center justify-center rounded-button text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+            "relative flex size-11 shrink-0 items-center justify-center rounded-button text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:size-10",
             focusRing,
           )}
         >
-          <Icon icon={Bell} size="sm" />
+          <Icon icon={Bell} size="md" className="sm:size-5" />
           {hasUnread ? (
             <span aria-hidden className="absolute end-2 top-2 size-2 rounded-full bg-primary ring-2 ring-background" />
           ) : null}
@@ -104,7 +104,8 @@ export function NotificationsMenu({ orders }: NotificationsMenuProps) {
               type="button"
               onClick={markSeen}
               className={cn(
-                "text-body-small-emphasis text-primary transition-colors hover:text-primary-hover",
+                // The tap area grows to 44px on a phone without moving the text.
+                "-my-3 py-3 text-body-small-emphasis text-primary transition-colors hover:text-primary-hover sm:my-0 sm:py-0",
                 focusRing,
               )}
             >
@@ -132,7 +133,7 @@ export function NotificationsMenu({ orders }: NotificationsMenuProps) {
                   <span className={cn("text-body-small text-foreground", unread && "font-semibold")}>
                     {t("newOrder", { number: order.orderNumber })}
                   </span>
-                  <span className="text-body-caption text-muted-foreground">
+                  <span className="text-body-small text-muted-foreground sm:text-body-caption">
                     {order.serviceType === "dineIn"
                       ? tOrders("table", { table: order.tableLabel ?? "?" })
                       : tOrders("service.takeaway")}

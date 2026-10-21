@@ -31,20 +31,22 @@ export function OrderCard({ order }: { order: Order }) {
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-body-strong text-foreground">#{order.orderNumber}</p>
-          <p className="truncate text-body-small text-muted-foreground">{order.customerName}</p>
+          <p className="truncate text-body-default text-muted-foreground sm:text-body-small">{order.customerName}</p>
         </div>
         <OrderStatusBadge status={order.status} />
       </div>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <OrderServiceLabel order={order} />
-        <span className="text-body-small text-muted-foreground">
+        <span className="text-body-default text-muted-foreground sm:text-body-small">
           {t("itemCount", { count: orderItemCount(order) })}
           {canServeItems(order.status) ? ` (${t("servedProgress", servedLineCount(order))})` : null} ·{" "}
           {formatOrderTime(order.placedAt, locale)}
         </span>
       </div>
       <div className="flex items-center justify-between gap-2 border-t border-border pt-3">
-        <span className="text-body-small-emphasis text-foreground">{formatMoney(order.total, locale)}</span>
+        <span className="text-body-emphasis text-foreground tabular-nums sm:text-body-small-emphasis">
+          {formatMoney(order.total, locale)}
+        </span>
         <Badge variant={order.paymentStatus === "paid" ? "success" : "neutral"}>
           {t(`payment.${order.paymentStatus}`)}
         </Badge>

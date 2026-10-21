@@ -23,11 +23,18 @@ export interface IconProps extends Omit<LucideProps, "size">, VariantProps<typeo
   label?: string;
 }
 
+/**
+ * The line weight comes from the surrounding theme (`--icon-stroke`, see
+ * `themes.ts`), falling back to lucide's 2. It's set as a style rather than the
+ * `stroke-width` attribute because an attribute can't read a CSS variable; the
+ * paths inherit it from the `<svg>`. A caller's own `strokeWidth` still wins.
+ */
 export const Icon = React.forwardRef<SVGSVGElement, IconProps>(
-  ({ icon: LucideIcon, size, className, label, ...props }, ref) => (
+  ({ icon: LucideIcon, size, className, label, style, ...props }, ref) => (
     <LucideIcon
       ref={ref}
       className={cn(iconVariants({ size }), className)}
+      style={props.strokeWidth === undefined ? { strokeWidth: "var(--icon-stroke, 2)", ...style } : style}
       aria-hidden={label ? undefined : true}
       aria-label={label}
       role={label ? "img" : undefined}

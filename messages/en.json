@@ -621,7 +621,8 @@
     "noResultsTitle": "No matches",
     "noResultsBody": "No rows match the current search and filters.",
     "clearFilters": "Clear filters",
-    "clearFiltersShort": "Clear"
+    "clearFiltersShort": "Clear",
+    "clearSearch": "Clear search"
   },
   "dietary": {
     "Vegan": "Vegan",

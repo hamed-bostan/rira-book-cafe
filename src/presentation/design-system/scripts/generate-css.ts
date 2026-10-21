@@ -86,7 +86,11 @@ const themeVars = [
 // Tailwind's utilities read the variables (`var(--color-primary)`), so inside a
 // themed element the same class names resolve to the theme's values.
 const themeBlocks = Object.entries(themes).map(([name, theme]) => {
-  const vars = [...createNestedVars("color", theme.colors), ...createNestedVars("radius", theme.radius)];
+  const vars = [
+    ...createNestedVars("color", theme.colors),
+    ...createNestedVars("radius", theme.radius),
+    ...("iconStroke" in theme ? [`--icon-stroke: ${theme.iconStroke};`] : []),
+  ];
   return `[data-theme="${name}"] {\n${vars.map((v) => `  ${v}`).join("\n")}\n}`;
 });
 

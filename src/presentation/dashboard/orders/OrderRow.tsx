@@ -32,7 +32,7 @@ export function OrderRow({ order, canFulfill }: OrderRowProps) {
   return (
     <TableRow className="relative hover:bg-muted">
       {canFulfill ? (
-        <TableCell className="relative z-10 w-10 py-0 pe-0">
+        <TableCell className="relative z-10 w-10 py-0 ps-2 pe-0">
           <label className="flex size-8 cursor-pointer items-center justify-center">
             <BulkRowCheckbox id={order.id} label={t("selectRowAria", { number: order.orderNumber })} />
           </label>

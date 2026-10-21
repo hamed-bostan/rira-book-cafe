@@ -88,7 +88,7 @@ export function DashboardShell({
         />
         {/* Extra bottom padding below `md` clears the fixed BottomNav — without
             it the tab bar covers whatever the page renders last. */}
-        <main className="mx-auto w-full max-w-[40.75rem] min-w-0 flex-1 border-x border-border bg-canvas px-6 pt-7 pb-28 sm:pt-8 xl:max-w-none xl:border-x-0 xl:px-8 xl:pt-8 xl:pb-16 dashboard-landscape:max-w-none dashboard-landscape:border-x-0 dashboard-landscape:px-6 dashboard-landscape:pt-6 dashboard-landscape:pb-6 dashboard-short:max-w-none dashboard-short:border-x-0 dashboard-short:px-5 dashboard-short:pt-5 dashboard-short:pb-6 dashboard-phone:px-4 dashboard-phone:pt-5 dashboard-phone:pb-20">
+        <main className="mx-auto w-full max-w-[40.75rem] min-w-0 flex-1 border-x border-border bg-canvas px-4 pt-7 pb-28 sm:px-6 sm:pt-8 lg:px-8 xl:max-w-none xl:border-x-0 xl:pt-8 xl:pb-16 dashboard-landscape:max-w-none dashboard-landscape:border-x-0 dashboard-landscape:pt-6 dashboard-landscape:pb-6 dashboard-short:max-w-none dashboard-short:border-x-0 dashboard-short:pt-5 dashboard-short:pb-6 dashboard-phone:pt-5 dashboard-phone:pb-20">
           {children}
         </main>
       </div>

@@ -24,10 +24,10 @@
 
 /* One semantic title treatment for every dashboard page. Keeping this as a
  * plain class also makes nested report and detail screens follow the same
- * hierarchy as the primary navigation destinations. 24px at every width: a
- * dashboard title labels the page, it doesn't headline it. */
+ * hierarchy as the primary navigation destinations. 20px on a phone, 24px from
+ * `lg`: a dashboard title labels the page, it doesn't headline it. */
 .dashboard-page-title {
-  @apply text-heading-section tracking-tight;
+  @apply text-heading-subsection tracking-tight lg:text-heading-section;
   color: var(--color-foreground);
 }
 

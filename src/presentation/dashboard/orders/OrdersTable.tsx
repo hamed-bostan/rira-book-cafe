@@ -60,7 +60,7 @@ export async function OrdersTable({ orders, canFulfill, tabs, toolbar, emptyStat
               <TableHeader>
                 <tr>
                   {canFulfill ? (
-                    <TableHead className="w-10 py-0 pe-0">
+                    <TableHead className="w-10 py-0 ps-2 pe-0">
                       <label className="flex size-8 cursor-pointer items-center justify-center">
                         <BulkSelectAllCheckbox label={t("selectAllAria")} />
                       </label>

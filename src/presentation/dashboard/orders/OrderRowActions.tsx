@@ -90,7 +90,7 @@ export function OrderRowActions({ order }: OrderRowActionsProps) {
     <>
       <DropdownMenu>
         <DropdownMenuIconTrigger disabled={pending} aria-label={t("rowActionsAria", { number: order.orderNumber })}>
-          <MoreHorizontal aria-hidden className="size-4" />
+          <Icon icon={MoreHorizontal} size="xs" />
         </DropdownMenuIconTrigger>
         <DropdownMenuContent>
           <DropdownMenuItem onSelect={() => router.push(`/dashboard/orders/${order.id}`)}>

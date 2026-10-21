@@ -1,11 +1,13 @@
 "use client";
 
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import { cn } from "@/src/lib/utils";
 import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 
 import { useListParams } from "./useListParams";
 
@@ -32,6 +34,7 @@ type ListSearchInputProps = {
  * while the committed term trails behind in the URL.
  */
 export function ListSearchInput({ paramName = "q", placeholder, label, className }: ListSearchInputProps) {
+  const t = useTranslations("dashList");
   const { searchParams, setFilter } = useListParams();
   const committed = searchParams.get(paramName) ?? "";
   const [value, setValue] = useState(committed);
@@ -55,6 +58,12 @@ export function ListSearchInput({ paramName = "q", placeholder, label, className
     return () => clearTimeout(timer);
   }, [value, committed, paramName, setFilter]);
 
+  // Clearing is a decision, not more typing: it navigates at once, skipping the debounce.
+  function clear(): void {
+    setValue("");
+    setFilter(paramName, null);
+  }
+
   return (
     <Input
       type="search"
@@ -63,7 +72,27 @@ export function ListSearchInput({ paramName = "q", placeholder, label, className
       placeholder={placeholder}
       aria-label={label}
       className={cn("w-full sm:max-w-xs", className)}
+      // The browser's own clear glyph is hidden so there's one ✕, styled like the rest.
+      inputClassName="[&::-webkit-search-cancel-button]:appearance-none"
       leftElement={<Icon icon={Search} size="sm" className="text-muted-foreground" />}
+      rightElement={
+        value ? (
+          <button
+            type="button"
+            aria-label={t("clearSearch")}
+            onClick={clear}
+            className={cn(
+              // A 24px glyph with a 44px touch area on a phone (the pseudo-element),
+              // so it's easy to hit without crowding the field.
+              "relative flex size-6 items-center justify-center rounded-button text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+              "after:absolute after:-inset-2.5 sm:after:inset-0",
+              focusRing,
+            )}
+          >
+            <Icon icon={X} size="xs" />
+          </button>
+        ) : undefined
+      }
     />
   );
 }

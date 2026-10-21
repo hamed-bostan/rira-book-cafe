@@ -117,7 +117,12 @@ export async function OrdersScreen({ orders, counts, filters, params, canFulfill
                 defaultSort={DEFAULT_ADMIN_ORDER_SORT}
                 defaultDirection={DEFAULT_ADMIN_ORDER_DIRECTION}
               />
-              <ListFilterReset label={t("clearAll")} paramNames={FILTER_PARAMS} icon={false} className="h-10 px-2" />
+              <ListFilterReset
+                label={t("clearAll")}
+                paramNames={FILTER_PARAMS}
+                icon={false}
+                className="h-11 px-2 sm:h-10"
+              />
             </section>
           }
           emptyState={

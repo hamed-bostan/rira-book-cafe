@@ -11,6 +11,8 @@ type DeepPartial<T> = { [K in keyof T]?: T[K] extends object ? DeepPartial<T[K]>
 type Theme = {
   colors: DeepPartial<typeof colors>;
   radius: DeepPartial<typeof radius>;
+  /** Line weight of every `Icon` (lucide's default is 2) → `--icon-stroke`. */
+  iconStroke?: string;
 };
 
 /**
@@ -21,7 +23,8 @@ type Theme = {
  * `admin` is the dashboard, one-for-one with the Rira design project's admin
  * pages ("Dashboard Orders v2"): navy ink on a pale slate canvas, white cards
  * with hairline borders, teal actions, tinted status badges with soft borders,
- * and square-ish 4px corners (8px on cards) that echo the logo's angular cut.
+ * square-ish 4px corners (8px on cards) that echo the logo's angular cut, and
+ * lighter 1.75 icon strokes.
  */
 export const themes = {
   admin: {
@@ -56,6 +59,7 @@ export const themes = {
       card: { md: primitiveRadius.sm, lg: primitiveRadius.md, xl: primitiveRadius.md },
       badge: { md: primitiveRadius.sm },
     },
+    iconStroke: "1.75",
   },
 } satisfies Record<string, Theme>;
 

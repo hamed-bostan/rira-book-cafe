@@ -13,8 +13,10 @@ import { PAYMENT_STATUSES, SERVICE_TYPES, type Order } from "@/src/domain/entiti
 import type { Page } from "@/src/domain/entities/Pagination";
 import { Link } from "@/src/i18n/navigation";
 import { AutoRefresh } from "@/src/presentation/components/AutoRefresh";
+import { BulkActionBar, BulkSelectionProvider } from "@/src/presentation/dashboard/bulk";
 import {
-  ListFilterSelect,
+  ListChoiceFilter,
+  ListFilterReset,
   ListPager,
   ListSearchInput,
   ListSortSelect,
@@ -23,11 +25,15 @@ import {
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
 import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
 
+import { OrderBulkActions } from "./OrderBulkActions";
 import { OrdersTable } from "./OrdersTable";
 import { OrderStatusTabs } from "./OrderStatusTabs";
 
 /** How often an open order list re-reads — short enough that the counter sees new orders promptly. */
 const REFRESH_SECONDS = 20;
+
+/** The params the toolbar's filters write — what "Clear all" removes. The sort and tab stay. */
+const FILTER_PARAMS = ["q", "service", "payment"];
 
 type OrdersScreenProps = {
   orders: Page<Order>;
@@ -36,15 +42,20 @@ type OrdersScreenProps = {
   filters: AdminOrderFilters;
   /** The page's query string, for the status tabs' links. */
   params: URLSearchParams;
+  /**
+   * Whether the viewer may move orders along (`orders.fulfill`). Decides whether the
+   * selection and row menus are drawn; the endpoints behind them check for themselves.
+   */
+  canFulfill: boolean;
 };
 
 /**
  * Dashboard order list. Presentational: the page fetches one page and the status
  * counts over the REST API (BFF) during server render. Search, tabs, filters,
  * sorting and paging all live in the URL; the list re-reads itself every few
- * seconds while open, and the detail screen's actions `router.refresh()`.
+ * seconds while open, and the row and bulk actions `router.refresh()`.
  */
-export async function OrdersScreen({ orders, counts, filters, params }: OrdersScreenProps) {
+export async function OrdersScreen({ orders, counts, filters, params, canFulfill }: OrdersScreenProps) {
   const t = await getTranslations("dashOrders");
   const tList = await getTranslations("dashList");
   const isFiltered = hasAdminOrderFilters(filters);
@@ -65,71 +76,67 @@ export async function OrdersScreen({ orders, counts, filters, params }: OrdersSc
         <p className="text-body-small text-muted-foreground">{t("activeSummary", { count: counts.active })}</p>
       </div>
 
-      <OrderStatusTabs current={filters.status} counts={counts} params={params} />
+      <BulkSelectionProvider ids={orders.items.map((order) => order.id)}>
+        {canFulfill && orders.items.length > 0 ? (
+          <BulkActionBar>
+            <OrderBulkActions
+              orders={orders.items.map(({ id, status, paymentStatus }) => ({ id, status, paymentStatus }))}
+            />
+          </BulkActionBar>
+        ) : null}
 
-      <OrdersTable
-        orders={orders.items}
-        toolbar={
-          <section aria-label={t("searchLabel")} className="min-w-0 space-y-3">
-            <div className="flex min-w-0 flex-col gap-3 @min-[36rem]:flex-row @min-[36rem]:items-center">
+        <OrdersTable
+          orders={orders.items}
+          canFulfill={canFulfill}
+          tabs={<OrderStatusTabs current={filters.status} counts={counts} params={params} />}
+          toolbar={
+            <section aria-label={t("searchLabel")} className="flex min-w-0 flex-wrap items-center gap-2">
               <ListSearchInput
                 label={t("searchLabel")}
                 placeholder={t("searchPlaceholder")}
-                className="min-w-0 flex-1 sm:max-w-none [&_input]:h-11 sm:[&_input]:h-10"
+                className="min-w-0 flex-[1_1_20rem] sm:max-w-none [&_input]:h-11 sm:[&_input]:h-10"
               />
-              <div className="min-w-0 shrink-0 [&_select]:min-h-11 [&_select]:w-full">
-                <ListSortSelect
-                  label={t("sortLabel")}
-                  options={sortOptions}
-                  defaultSort={DEFAULT_ADMIN_ORDER_SORT}
-                  defaultDirection={DEFAULT_ADMIN_ORDER_DIRECTION}
-                />
-              </div>
-            </div>
-            <div className="grid min-w-0 grid-cols-1 gap-2 border-t border-border pt-3 @sm:grid-cols-2">
-              <ListFilterSelect
-                className="h-11 w-full min-w-0 truncate"
+              <ListChoiceFilter
                 paramName="service"
-                label={t("filterServiceLabel")}
-                options={[
-                  { value: "", label: t("filterServiceOption", { service: t("filterServiceAll") }) },
-                  ...SERVICE_TYPES.map((service) => ({
-                    value: service,
-                    label: t("filterServiceOption", { service: t(`service.${service}`) }),
-                  })),
-                ]}
+                label={t("filterService")}
+                allLabel={t("filterAny")}
+                showAllValue
+                options={SERVICE_TYPES.map((service) => ({ value: service, label: t(`service.${service}`) }))}
               />
-              <ListFilterSelect
-                className="h-11 w-full min-w-0 truncate"
+              <ListChoiceFilter
                 paramName="payment"
-                label={t("filterPaymentLabel")}
-                options={[
-                  { value: "", label: t("filterPaymentOption", { payment: t("filterPaymentAll") }) },
-                  ...PAYMENT_STATUSES.map((payment) => ({
-                    value: payment,
-                    label: t("filterPaymentOption", { payment: t(`payment.${payment}`) }),
-                  })),
-                ]}
+                label={t("filterPayment")}
+                allLabel={t("filterAny")}
+                showAllValue
+                options={PAYMENT_STATUSES.map((payment) => ({ value: payment, label: t(`payment.${payment}`) }))}
               />
-            </div>
-          </section>
-        }
-        emptyState={
-          <EmptyState
-            icon={isFiltered ? SearchX : ClipboardList}
-            title={isFiltered ? tList("noResultsTitle") : t("emptyTitle")}
-            description={isFiltered ? tList("noResultsBody") : t("emptyBody")}
-            action={
-              isFiltered ? (
-                <Button asChild size="sm" variant="outline">
-                  <Link href="/dashboard/orders">{tList("clearFilters")}</Link>
-                </Button>
-              ) : undefined
-            }
-          />
-        }
-        footer={<ListPager page={orders} />}
-      />
+              <ListSortSelect
+                label={t("sortLabel")}
+                triggerLabel={t("sortShort")}
+                options={sortOptions}
+                defaultSort={DEFAULT_ADMIN_ORDER_SORT}
+                defaultDirection={DEFAULT_ADMIN_ORDER_DIRECTION}
+              />
+              <ListFilterReset label={t("clearAll")} paramNames={FILTER_PARAMS} icon={false} className="h-10 px-2" />
+            </section>
+          }
+          emptyState={
+            <EmptyState
+              icon={isFiltered ? SearchX : ClipboardList}
+              title={isFiltered ? tList("noResultsTitle") : t("emptyTitle")}
+              description={isFiltered ? tList("noResultsBody") : t("emptyBody")}
+              action={
+                isFiltered ? (
+                  <Button asChild size="sm" variant="outline">
+                    <Link href="/dashboard/orders">{tList("clearFilters")}</Link>
+                  </Button>
+                ) : undefined
+              }
+            />
+          }
+          footer={<ListPager page={orders} />}
+        />
+      </BulkSelectionProvider>
     </div>
   );
 }

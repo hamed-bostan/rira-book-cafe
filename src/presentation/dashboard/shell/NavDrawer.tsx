@@ -13,10 +13,13 @@ import { DashboardNav } from "./DashboardNav";
 import { SidebarBrand } from "./SidebarBrand";
 import { ViewStoreLink } from "./ViewStoreLink";
 
+import type { DashboardNavBadges } from "./sections";
+
 type NavDrawerProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   permissions: readonly Permission[];
+  badges?: DashboardNavBadges;
 };
 
 /**
@@ -26,7 +29,7 @@ type NavDrawerProps = {
  * list to keep in sync. The profile card is desktop-rail only; the drawer
  * skips it to keep the mobile nav compact.
  */
-export function NavDrawer({ open, onOpenChange, permissions }: NavDrawerProps) {
+export function NavDrawer({ open, onOpenChange, permissions, badges }: NavDrawerProps) {
   const t = useTranslations("dashboard");
   const tDs = useTranslations("ds");
 
@@ -70,7 +73,7 @@ export function NavDrawer({ open, onOpenChange, permissions }: NavDrawerProps) {
           </div>
 
           <div className="flex-1 overflow-y-auto px-3 py-2">
-            <DashboardNav permissions={permissions} onNavigate={close} />
+            <DashboardNav permissions={permissions} badges={badges} onNavigate={close} />
           </div>
 
           <ViewStoreLink onNavigate={close} />

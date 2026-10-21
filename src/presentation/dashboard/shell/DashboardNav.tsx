@@ -1,14 +1,15 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import type { Permission } from "@/src/domain/entities/Permission";
 import { Link, usePathname } from "@/src/i18n/navigation";
+import { formatNumber } from "@/src/lib/formatNumber";
 import { cn } from "@/src/lib/utils";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 
-import { isSectionActive, navGroupsFor } from "./sections";
+import { isSectionActive, navGroupsFor, type DashboardNavBadges } from "./sections";
 
 type DashboardNavProps = {
   /** What the viewer may do — decides which sections are offered. */
@@ -21,6 +22,8 @@ type DashboardNavProps = {
   collapsed?: boolean;
   /** Called after a link is chosen — the drawer uses it to close itself. */
   onNavigate?: () => void;
+  /** Counts beside some links — the orders waiting in the queue. Zero shows nothing. */
+  badges?: DashboardNavBadges;
 };
 
 /**
@@ -30,8 +33,9 @@ type DashboardNavProps = {
  * can't drift apart. It owns no layout of its own beyond the list — the container
  * decides how wide it is and where it sits.
  */
-export function DashboardNav({ permissions, collapsed = false, onNavigate }: DashboardNavProps) {
+export function DashboardNav({ permissions, badges, collapsed = false, onNavigate }: DashboardNavProps) {
   const t = useTranslations("dashboard");
+  const locale = useLocale();
   const pathname = usePathname();
   const groups = navGroupsFor(permissions);
 
@@ -47,7 +51,7 @@ export function DashboardNav({ permissions, collapsed = false, onNavigate }: Das
             (collapsed ? (
               <hr className="my-2 border-border" />
             ) : (
-              <p className="mt-3 px-3 pb-1 text-body-small-bold tracking-wide text-muted-foreground uppercase">
+              <p className="mt-4 px-3 pb-1 text-body-caption-bold tracking-wider text-muted-foreground uppercase">
                 {t(group.id)}
               </p>
             ))}
@@ -55,6 +59,7 @@ export function DashboardNav({ permissions, collapsed = false, onNavigate }: Das
           {group.sections.map((section) => {
             const active = isSectionActive(section.href, pathname);
             const label = t(section.labelKey);
+            const badge = badges?.[section.labelKey];
 
             return (
               <Link
@@ -64,16 +69,26 @@ export function DashboardNav({ permissions, collapsed = false, onNavigate }: Das
                 aria-current={active ? "page" : undefined}
                 title={collapsed ? label : undefined}
                 className={cn(
-                  "flex items-center gap-3 text-body-small-emphasis transition-colors",
+                  "relative flex items-center gap-3 rounded-button text-body-small transition-colors",
                   focusRing,
-                  collapsed ? "size-11 shrink-0 justify-center self-center rounded-xl p-0" : "rounded-xl px-3 py-2",
+                  collapsed ? "size-11 shrink-0 justify-center self-center p-0" : "h-10 px-3",
                   active
-                    ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:bg-surface-sunken hover:text-foreground",
+                    ? "bg-accent font-semibold text-accent-foreground [&>svg]:text-primary"
+                    : "font-medium text-foreground hover:bg-muted [&>svg]:text-muted-foreground",
                 )}
               >
                 <Icon icon={section.icon} size="sm" />
-                <span className={cn(collapsed && "sr-only")}>{label}</span>
+                <span className={cn("min-w-0 flex-1 truncate", collapsed && "sr-only")}>{label}</span>
+                {badge ? (
+                  collapsed ? (
+                    // No room for a number on the rail: a dot says "something's waiting".
+                    <span aria-hidden className="absolute end-2 top-2 size-2 rounded-full bg-primary" />
+                  ) : (
+                    <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-badge-md bg-primary px-1.5 text-body-caption-bold text-primary-foreground tabular-nums">
+                      {formatNumber(badge, locale)}
+                    </span>
+                  )
+                ) : null}
               </Link>
             );
           })}

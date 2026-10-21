@@ -61,6 +61,9 @@ export type DashboardSectionLabelKey =
   | "navActivity"
   | "navTeam";
 
+/** A count shown beside a section's link (the orders waiting in the queue), keyed by section. */
+export type DashboardNavBadges = Partial<Record<DashboardSectionLabelKey, number>>;
+
 export type DashboardSection = {
   href: string;
   labelKey: DashboardSectionLabelKey;

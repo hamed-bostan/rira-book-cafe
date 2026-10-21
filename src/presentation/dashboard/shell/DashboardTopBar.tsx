@@ -3,31 +3,37 @@
 import { Menu } from "lucide-react";
 import { useTranslations } from "next-intl";
 
+import type { Permission } from "@/src/domain/entities/Permission";
 import { Link } from "@/src/i18n/navigation";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 
 import { BrandMark } from "./BrandMark";
+import { DashboardBreadcrumb } from "./DashboardBreadcrumb";
+import { NotificationsMenu, type NewOrderNotice } from "./NotificationsMenu";
 import { UserMenu } from "./UserMenu";
 
 import type { DashboardViewer } from "./viewer";
 
 type DashboardTopBarProps = {
   viewer: DashboardViewer;
+  permissions: readonly Permission[];
+  /** Orders waiting to be picked up, for the bell; `null` when they couldn't be read. */
+  newOrders: NewOrderNotice[] | null;
   /** Opens the mobile nav drawer — only the hamburger on short landscape viewports needs this. */
   onOpenNav: () => void;
 };
 
 /**
  * Persistent chrome above every dashboard page: the brand (where the rail is
- * hidden), the nav trigger, and the account menu. Global search and the
- * notification bell slot in here once those features exist.
+ * hidden) or the breadcrumb (where it isn't), the nav trigger, the notifications
+ * bell, and the account menu.
  */
-export function DashboardTopBar({ viewer, onOpenNav }: DashboardTopBarProps) {
+export function DashboardTopBar({ viewer, permissions, newOrders, onOpenNav }: DashboardTopBarProps) {
   const t = useTranslations("dashboard");
 
   return (
-    <header className="sticky top-0 z-30 mx-auto flex h-[5.625rem] w-full max-w-[40.75rem] items-center gap-2 border-x border-b border-border bg-background px-6 xl:h-16 xl:max-w-none xl:border-x-0 dashboard-landscape:h-16 dashboard-landscape:max-w-none dashboard-landscape:border-x-0 dashboard-short:h-16 dashboard-short:max-w-none dashboard-short:border-x-0 dashboard-short:px-5 dashboard-phone:h-16 dashboard-phone:px-4">
+    <header className="sticky top-0 z-30 mx-auto flex h-[5.625rem] w-full max-w-[40.75rem] items-center gap-2 border-x border-b border-border bg-background px-6 xl:h-16 xl:max-w-none xl:border-x-0 xl:px-8 dashboard-landscape:h-16 dashboard-landscape:max-w-none dashboard-landscape:border-x-0 dashboard-short:h-16 dashboard-short:max-w-none dashboard-short:border-x-0 dashboard-short:px-5 dashboard-phone:h-16 dashboard-phone:px-4">
       <Link
         href="/dashboard"
         className="flex shrink-0 items-center gap-2 text-heading-subsection text-foreground xl:hidden dashboard-landscape:hidden"
@@ -47,8 +53,11 @@ export function DashboardTopBar({ viewer, onOpenNav }: DashboardTopBarProps) {
         <Icon icon={Menu} size="sm" />
       </Button>
 
+      <DashboardBreadcrumb permissions={permissions} className="hidden xl:block dashboard-landscape:block" />
+
       <div className="flex-1" />
 
+      {newOrders ? <NotificationsMenu orders={newOrders} /> : null}
       <UserMenu viewer={viewer} />
     </header>
   );

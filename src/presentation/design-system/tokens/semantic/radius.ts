@@ -25,6 +25,8 @@ export const radius = {
     md: primitiveRadius.md,
     lg: primitiveRadius["2xl"],
   },
+  // A 16px box: anything rounder reads as a radio.
+  checkbox: primitiveRadius.sm,
   modal: primitiveRadius.lg,
   sheet: primitiveRadius["2xl"],
   pill: primitiveRadius.full,

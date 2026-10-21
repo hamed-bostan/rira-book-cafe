@@ -18,6 +18,8 @@ type ListSortSelectProps<TSort extends string> = {
   /** The list's default ordering, so the default option leaves the URL clean. */
   defaultSort: TSort;
   defaultDirection: SortDirection;
+  /** A short name shown on the trigger before the chosen order ("Sort"). */
+  triggerLabel?: string;
 };
 
 /**
@@ -38,6 +40,7 @@ export function ListSortSelect<TSort extends string>({
   options,
   defaultSort,
   defaultDirection,
+  triggerLabel,
 }: ListSortSelectProps<TSort>) {
   const { searchParams, setParams } = useListParams();
 
@@ -64,7 +67,8 @@ export function ListSortSelect<TSort extends string>({
       value={activeValue}
       onValueChange={apply}
       isActive={false}
-      triggerClassName="h-11 w-full min-w-0 justify-between rounded-input sm:w-auto"
+      triggerLabel={triggerLabel}
+      triggerClassName="h-11 w-full min-w-0 justify-between rounded-input sm:h-10 sm:w-auto"
       options={options.map((option) => ({
         value: `${option.sort}:${option.direction}`,
         label: option.label,

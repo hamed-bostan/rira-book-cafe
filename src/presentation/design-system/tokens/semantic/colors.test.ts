@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { colors } from "./colors";
+import { themes } from "./themes";
 
 // WCAG relative luminance, calculated from unrounded sRGB channel values.
 function luminance(hex: string) {
@@ -53,6 +54,30 @@ describe("readable semantic colors", () => {
 
   it.each(pairs)("%s meets 4.5:1 for normal text", (_name, foreground, background) => {
     expect(contrast(foreground, background)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  describe("admin theme", () => {
+    const admin = themes.admin.colors;
+    it.each([
+      ["ink", admin.foreground, admin.background],
+      ["ink on canvas", admin.foreground, admin.canvas],
+      ["muted text", admin.muted.foreground, admin.background],
+      ["muted text on canvas", admin.muted.foreground, admin.canvas],
+      ["muted badge / table header", admin.muted.foreground, admin.muted.DEFAULT],
+      ["primary button", admin.primary.foreground, admin.primary.DEFAULT],
+      ["primary hover", admin.primary.foreground, admin.primary.hover],
+      ["primary link", admin.primary.DEFAULT, admin.background],
+      ["accent", admin.accent.foreground, admin.accent.DEFAULT],
+      ["success", admin.success.foreground, admin.success.DEFAULT],
+      ["warning", admin.warning.foreground, admin.warning.DEFAULT],
+      ["info", admin.info.foreground, admin.info.DEFAULT],
+      ["error", admin.error.foreground, admin.error.DEFAULT],
+      ["destructive", admin.destructive.foreground, admin.destructive.DEFAULT],
+      ["placeholder", admin.input.placeholder, admin.input.DEFAULT],
+      ["accent icon", admin.icon.accent, admin.background],
+    ])("%s meets 4.5:1 for normal text", (_name, foreground, background) => {
+      expect(contrast(foreground, background)).toBeGreaterThanOrEqual(4.5);
+    });
   });
 
   for (const background of [colors.background, colors.surface.DEFAULT, colors.surface.sunken, colors.accent.DEFAULT]) {

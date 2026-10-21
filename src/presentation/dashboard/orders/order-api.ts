@@ -1,3 +1,4 @@
+import { bulkResultSchema, type BulkResult, type OrderBulkAction } from "@/src/contracts/bulk-action-schema";
 import type { OrderNoteInput } from "@/src/contracts/order-note-schema";
 import { orderNoteResponseSchema } from "@/src/contracts/order-note-schema";
 import type { OrderItemServedInput, OrderPaymentInput, OrderStatusChangeInput } from "@/src/contracts/order-schema";
@@ -28,5 +29,10 @@ export const ordersApi = {
 
   addNote(id: string, values: OrderNoteInput): Promise<OrderNote> {
     return apiPost(`/admin/orders/${id}/notes`, values, orderNoteResponseSchema);
+  },
+
+  /** Apply one action to a selection; answers how many orders it actually changed. */
+  bulkUpdate(ids: readonly string[], action: OrderBulkAction): Promise<BulkResult> {
+    return apiPatch("/admin/orders/bulk", { ids, action }, bulkResultSchema);
   },
 };

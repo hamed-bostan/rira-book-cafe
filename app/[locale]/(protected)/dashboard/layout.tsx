@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
 import { requirePermission, sessionPermissions } from "@/src/lib/require-permission";
+import { ordersServerApi } from "@/src/presentation/dashboard/orders/order-server-api";
 import { DashboardShell } from "@/src/presentation/dashboard/shell/DashboardShell";
 import { SIDEBAR_COLLAPSED_COOKIE_NAME } from "@/src/presentation/dashboard/shell/sidebarCollapseCookie";
 import { dashboardViewerFor } from "@/src/presentation/dashboard/shell/viewer";
@@ -10,6 +11,9 @@ import { NO_INDEX } from "@/src/presentation/seo/noIndexMetadata";
 
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+
+/** How many of the newest waiting orders the top bar's bell lists. */
+const BELL_ORDER_COUNT = 5;
 
 /** The whole dashboard is staff-only: titled for the tab, never indexed (robots.txt also disallows it). */
 export async function generateMetadata(): Promise<Metadata> {
@@ -39,11 +43,31 @@ export default async function DashboardLayout({ children }: { children: ReactNod
 
   const sidebarCollapsed = (await cookies()).get(SIDEBAR_COLLAPSED_COOKIE_NAME)?.value === "1";
 
+  // The queue count beside "Orders" and the bell's new orders. Chrome, not content:
+  // if either read fails the page still renders, just without the count or the bell.
+  const [counts, newOrders] = await Promise.all([
+    ordersServerApi.counts().catch(() => null),
+    ordersServerApi
+      .listPage(new URLSearchParams({ status: "pending", pageSize: String(BELL_ORDER_COUNT) }))
+      .then((page) =>
+        page.items.map(({ id, orderNumber, serviceType, tableLabel, placedAt }) => ({
+          id,
+          orderNumber,
+          serviceType,
+          tableLabel,
+          placedAt,
+        })),
+      )
+      .catch(() => null),
+  ]);
+
   return (
     <DashboardShell
       permissions={await sessionPermissions(session)}
       viewer={viewer}
       initialSidebarCollapsed={sidebarCollapsed}
+      navBadges={counts ? { navOrders: counts.active } : undefined}
+      newOrders={newOrders}
     >
       {children}
     </DashboardShell>

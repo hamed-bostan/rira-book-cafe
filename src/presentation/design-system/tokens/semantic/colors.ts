@@ -3,6 +3,9 @@ import { primary, magenta, neutral, success, error, warning, info, amber } from 
 export const colors = {
   background: neutral[0],
   foreground: neutral[950],
+  // What a page's cards and tables sit on. The same white as `background` by
+  // default; a theme (see `themes.ts`) can tint it so the cards lift off it.
+  canvas: neutral[0],
 
   surface: {
     // Default elevated neutral fill used across cards, panels, inputs and wells.
@@ -57,29 +60,37 @@ export const colors = {
     foreground: neutral[0],
   },
 
+  // Each status's `border` outlines an `outline` badge. By default it's the text
+  // colour; a theme can soften it to a tint.
   success: {
     DEFAULT: success[100],
     foreground: success[700],
+    border: success[700],
   },
 
   warning: {
     DEFAULT: warning[100],
     foreground: warning[700],
     strong: warning[800],
+    border: warning[700],
   },
 
   info: {
     DEFAULT: info[100],
     foreground: info[700],
+    border: info[700],
   },
 
   error: {
     DEFAULT: error[100],
     foreground: error[700],
+    border: error[700],
   },
 
   icon: {
     muted: neutral[500],
+    // A coloured glyph that carries meaning beside text (a table or a bag in a row).
+    accent: info[700],
   },
 
   // Rating stars (and gold decorative glyphs such as the cash-on-delivery coin).
@@ -117,7 +128,11 @@ export const colors = {
     6: neutral[500],
   },
 
-  border: neutral[200],
+  border: {
+    DEFAULT: neutral[200],
+    // Hovered outlines, and controls that must read against a tinted surface.
+    strong: neutral[300],
+  },
   ring: primary[700],
 
   // Wallet card brand gradients (green / magenta), cycled per card.

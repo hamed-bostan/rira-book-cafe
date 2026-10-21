@@ -43,10 +43,10 @@ const badgeVariants = cva("inline-flex items-center", {
 
   compoundVariants: [
     { appearance: "outline", variant: "primary", className: "border-primary" },
-    { appearance: "outline", variant: "success", className: "border-success-foreground" },
-    { appearance: "outline", variant: "warning", className: "border-warning-foreground" },
-    { appearance: "outline", variant: "info", className: "border-info-foreground" },
-    { appearance: "outline", variant: "error", className: "border-error-foreground" },
+    { appearance: "outline", variant: "success", className: "border-success-border" },
+    { appearance: "outline", variant: "warning", className: "border-warning-border" },
+    { appearance: "outline", variant: "info", className: "border-info-border" },
+    { appearance: "outline", variant: "error", className: "border-error-border" },
     { appearance: "outline", variant: "destructive", className: "border-destructive" },
     { appearance: "outline", variant: "neutral", className: "border-border" },
   ],
@@ -58,11 +58,24 @@ const badgeVariants = cva("inline-flex items-center", {
   },
 });
 
-export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement>, VariantProps<typeof badgeVariants> {}
+export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement>, VariantProps<typeof badgeVariants> {
+  /**
+   * A leading dot in the text colour — for a status read down a table column,
+   * where the dot's position lines up and is found before the word is read.
+   */
+  dot?: boolean;
+}
 
 export const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
-  ({ className, variant, appearance, size, ...props }, ref) => (
-    <span ref={ref} className={cn(badgeVariants({ variant, appearance, size }), className)} {...props} />
+  ({ className, variant, appearance, size, dot = false, children, ...props }, ref) => (
+    <span
+      ref={ref}
+      className={cn(badgeVariants({ variant, appearance, size }), dot && "gap-1.5", className)}
+      {...props}
+    >
+      {dot ? <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-current" /> : null}
+      {children}
+    </span>
   ),
 );
 

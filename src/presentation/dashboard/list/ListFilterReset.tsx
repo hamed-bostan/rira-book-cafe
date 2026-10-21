@@ -13,6 +13,8 @@ type ListFilterResetProps = {
   /** Keep the action visible as a stable toolbar affordance, even at the default state. */
   alwaysVisible?: boolean;
   className?: string;
+  /** The reset glyph before the label on wide layouts. Off for a plain text action. */
+  icon?: boolean;
 };
 
 /**
@@ -28,7 +30,13 @@ type ListFilterResetProps = {
  * beside a list that isn't filtered invites the click that does nothing, and then
  * teaches people it never does anything.
  */
-export function ListFilterReset({ label, paramNames, alwaysVisible = false, className }: ListFilterResetProps) {
+export function ListFilterReset({
+  label,
+  paramNames,
+  alwaysVisible = false,
+  className,
+  icon = true,
+}: ListFilterResetProps) {
   const { searchParams, setParams } = useListParams();
 
   const active = paramNames.some((name) => searchParams.get(name));
@@ -43,7 +51,7 @@ export function ListFilterReset({ label, paramNames, alwaysVisible = false, clas
 
   return (
     <Button variant="link" size="sm" onClick={reset} className={className}>
-      <RotateCcw aria-hidden className="me-1 hidden size-4 xl:block dashboard-landscape:block" />
+      {icon ? <RotateCcw aria-hidden className="me-1 hidden size-4 xl:block dashboard-landscape:block" /> : null}
       {label}
     </Button>
   );

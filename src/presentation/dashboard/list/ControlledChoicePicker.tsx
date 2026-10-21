@@ -20,6 +20,11 @@ type ControlledChoicePickerProps = {
   ariaDescribedBy?: string;
   ariaInvalid?: boolean;
   triggerClassName?: string;
+  /**
+   * A short name shown on the trigger before the chosen value ("Sort · Newest
+   * first"). Without it the trigger shows the value alone.
+   */
+  triggerLabel?: string;
 };
 
 /** A styled single-choice picker for client-side table filters. */
@@ -36,13 +41,15 @@ export function ControlledChoicePicker({
   ariaDescribedBy,
   ariaInvalid,
   triggerClassName,
+  triggerLabel,
 }: ControlledChoicePickerProps) {
   const selectedLabel =
     options.find((option) => option.value === value)?.label ?? placeholder ?? options[0]?.label ?? label;
 
   return (
     <ListFilterPopover
-      label={selectedLabel}
+      label={triggerLabel ?? selectedLabel}
+      value={triggerLabel ? selectedLabel : undefined}
       isActive={isActive ?? value !== inactiveValue}
       disabled={disabled}
       triggerId={id}

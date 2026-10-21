@@ -87,19 +87,31 @@ describe("reviewBulkRequestSchema", () => {
 });
 
 describe("orderBulkRequestSchema", () => {
-  it("moves a delivery stage or cancels", () => {
+  it("serves, marks paid with a method, or cancels", () => {
+    expect(orderBulkRequestSchema.safeParse({ ids: ["o1"], action: { type: "serve" } }).success).toBe(true);
     expect(
-      orderBulkRequestSchema.parse({ ids: ["o1"], action: { type: "setStage", stage: "shipped" } }).action,
-    ).toEqual({
-      type: "setStage",
-      stage: "shipped",
-    });
+      orderBulkRequestSchema.parse({ ids: ["o1"], action: { type: "markPaid", paymentMethod: "cash" } }).action,
+    ).toEqual({ type: "markPaid", paymentMethod: "cash" });
     expect(orderBulkRequestSchema.safeParse({ ids: ["o1"], action: { type: "cancel" } }).success).toBe(true);
   });
 
-  it("refuses an unknown stage", () => {
-    const result = orderBulkRequestSchema.safeParse({ ids: ["o1"], action: { type: "setStage", stage: "delivered" } });
-    expect(messagesAt(result, "action.stage")).toHaveLength(1);
+  it("needs a known payment method to mark paid", () => {
+    expect(
+      messagesAt(
+        orderBulkRequestSchema.safeParse({ ids: ["o1"], action: { type: "markPaid" } }),
+        "action.paymentMethod",
+      ),
+    ).toHaveLength(1);
+    expect(
+      messagesAt(
+        orderBulkRequestSchema.safeParse({ ids: ["o1"], action: { type: "markPaid", paymentMethod: "cheque" } }),
+        "action.paymentMethod",
+      ),
+    ).toEqual(["methodInvalid"]);
+  });
+
+  it("refuses an action it doesn't know", () => {
+    expect(orderBulkRequestSchema.safeParse({ ids: ["o1"], action: { type: "refund" } }).success).toBe(false);
   });
 
   it("caps the selection tighter than products", () => {

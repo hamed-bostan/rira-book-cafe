@@ -11,11 +11,15 @@ const VARIANT: Record<OrderStatus, NonNullable<BadgeProps["variant"]>> = {
   pending: "warning",
   preparing: "info",
   completed: "neutral",
-  cancelled: "destructive",
+  cancelled: "error",
 };
 
-/** An order's status as a coloured pill. */
+/** An order's status as an outlined pill with a leading dot. */
 export function OrderStatusBadge({ status }: { status: OrderStatus }) {
   const t = useTranslations("dashOrders");
-  return <Badge variant={VARIANT[status]}>{t(`status.${status}`)}</Badge>;
+  return (
+    <Badge variant={VARIANT[status]} appearance="outline" dot className="whitespace-nowrap">
+      {t(`status.${status}`)}
+    </Badge>
+  );
 }

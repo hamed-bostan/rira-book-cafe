@@ -15,6 +15,10 @@ import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 import { adoptLegacyPageSize, writePageSizeCookie } from "./pageSizeCookie";
 import { useListParams } from "./useListParams";
 
+/** Previous/next: square, quiet outline — a pager is navigation, not a call to action. */
+const PAGE_BUTTON =
+  "size-11 border-border bg-background px-0 text-foreground hover:border-border-strong hover:bg-background sm:size-9";
+
 type ListPagerProps = {
   /** The page currently rendered — supplies the counts, so they can't disagree with the rows. */
   page: Pick<Page<unknown>, "total" | "page" | "pageSize">;
@@ -82,7 +86,7 @@ export function ListPager({
           className={
             compact
               ? "text-body-default text-muted-foreground dashboard-phone:text-body-small"
-              : "text-body-small-strong text-muted-foreground"
+              : "text-body-small text-muted-foreground"
           }
         >
           {t("rowsPerPage")}
@@ -95,7 +99,7 @@ export function ListPager({
           className={
             compact
               ? "h-auto w-auto appearance-none border-transparent bg-transparent p-0 text-body-small"
-              : "h-11 w-auto sm:h-10"
+              : "h-11 w-auto font-medium tabular-nums sm:h-9"
           }
         >
           {pageSizeOptions.map((size) => (
@@ -111,7 +115,7 @@ export function ListPager({
           className={
             compact
               ? "text-body-default text-muted-foreground dashboard-phone:text-body-small"
-              : "text-body-small-strong text-muted-foreground"
+              : "text-body-small text-foreground tabular-nums"
           }
         >
           {t("range", {
@@ -120,39 +124,33 @@ export function ListPager({
             total: formatNumber(page.total, locale),
           })}
         </p>
-        {totalPages > 1 && (
-          <>
-            <p className="text-body-small-strong text-muted-foreground">
-              {t("pageOf", {
-                page: formatNumber(page.page, locale),
-                pages: formatNumber(totalPages, locale),
-              })}
-            </p>
-            {/* The chevrons point at previous/next in reading order, so they mirror
-            under RTL — `ms/me` logic isn't enough for a glyph that has a
-            direction of its own. */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => goTo(page.page - 1)}
-              disabled={page.page <= 1}
-              aria-label={t("previous")}
-              className="size-11"
-            >
-              <Icon icon={ChevronLeft} size="sm" className="rtl:rotate-180" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => goTo(page.page + 1)}
-              disabled={page.page >= totalPages}
-              aria-label={t("next")}
-              className="size-11"
-            >
-              <Icon icon={ChevronRight} size="sm" className="rtl:rotate-180" />
-            </Button>
-          </>
-        )}
+        {/* Always drawn, disabled at the ends: the controls stay where the hand
+            expects them, and a single page reads as "nothing further" rather than
+            as a pager that went missing. The chevrons point at previous/next in
+            reading order, so they mirror under RTL — `ms/me` logic isn't enough
+            for a glyph that has a direction of its own. */}
+        <div className="flex gap-1">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => goTo(page.page - 1)}
+            disabled={page.page <= 1}
+            aria-label={t("previous")}
+            className={PAGE_BUTTON}
+          >
+            <Icon icon={ChevronLeft} size="sm" className="rtl:rotate-180" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => goTo(page.page + 1)}
+            disabled={page.page >= totalPages}
+            aria-label={t("next")}
+            className={PAGE_BUTTON}
+          >
+            <Icon icon={ChevronRight} size="sm" className="rtl:rotate-180" />
+          </Button>
+        </div>
       </div>
     </div>
   );

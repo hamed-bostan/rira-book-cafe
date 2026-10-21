@@ -72,35 +72,34 @@ export function ListFilterPopover({
         aria-invalid={triggerAriaInvalid}
         disabled={disabled}
         className={cn(
-          "group flex h-10 cursor-pointer items-center gap-2 rounded-button border px-3 text-body-small-emphasis transition-colors",
+          "group flex h-10 cursor-pointer items-center gap-1.5 rounded-button border px-3 text-body-small whitespace-nowrap transition-colors",
           "disabled:cursor-not-allowed disabled:opacity-50",
           "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
           // An active filter is carried by border and text colour, never by
           // colour alone — the value beside the label is the primary signal, so
           // this still reads for anyone who can't tell the two borders apart.
           active
-            ? "border-primary bg-accent text-primary hover:bg-muted"
-            : "border-border bg-background text-foreground hover:bg-muted",
+            ? "border-accent-border bg-accent text-foreground hover:border-primary"
+            : "border-border bg-background text-foreground hover:border-border-strong",
           triggerClassName,
         )}
       >
         {icon}
-        <span dir="auto" className="min-w-0 truncate">
+        {/* With a value beside it the label is just the field's name, so it steps
+            back; on its own it *is* the reading, so it keeps the ink. */}
+        <span dir="auto" className={cn("min-w-0 truncate", value != null && "text-muted-foreground")}>
           {label}
         </span>
         {value != null ? (
-          <>
-            <span aria-hidden className="text-border">
-              |
-            </span>
-            <span className="max-w-32 truncate font-medium">{value}</span>
-          </>
+          <span className={cn("max-w-32 truncate font-medium", active ? "text-accent-foreground" : "text-foreground")}>
+            {value}
+          </span>
         ) : null}
         {/* Rotates with the panel, so the trigger says whether it's open without
             depending on the panel being visible on screen. */}
         <ChevronDown
           aria-hidden
-          className="ms-auto size-4 shrink-0 transition-transform duration-150 group-data-[state=open]:rotate-180"
+          className="ms-auto size-4 shrink-0 text-muted-foreground transition-transform duration-150 group-data-[state=open]:rotate-180"
         />
       </PopoverTrigger>
 

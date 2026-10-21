@@ -29,7 +29,9 @@ export const Checkbox = React.forwardRef<HTMLButtonElement, CheckboxProps>(({ cl
   <CheckboxPrimitive.Root
     ref={ref}
     className={cn(
-      "inline-flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-badge-md border border-border bg-background transition-colors",
+      // Small and square on purpose — it sits beside rows of text, and a rounder,
+      // bigger box reads as a radio or a toggle. The target is the label around it.
+      "inline-flex size-4 shrink-0 cursor-pointer items-center justify-center rounded-checkbox border border-border-strong bg-background transition-colors hover:border-primary",
       focusRingOffset,
       "disabled:cursor-not-allowed disabled:opacity-50",
       "data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground",
@@ -40,9 +42,9 @@ export const Checkbox = React.forwardRef<HTMLButtonElement, CheckboxProps>(({ cl
   >
     <CheckboxPrimitive.Indicator className="flex items-center justify-center">
       {props.checked === "indeterminate" ? (
-        <Minus className="size-3.5" strokeWidth={3} />
+        <Minus className="size-3" strokeWidth={3} />
       ) : (
-        <Check className="size-3.5" strokeWidth={3} />
+        <Check className="size-3" strokeWidth={3} />
       )}
     </CheckboxPrimitive.Indicator>
   </CheckboxPrimitive.Root>

@@ -177,6 +177,44 @@ export function isActiveOrder(status: OrderStatus): boolean {
   return (ACTIVE_ORDER_STATUSES as readonly OrderStatus[]).includes(status);
 }
 
+/** Whether staff may record a counter payment: unpaid, and not called off. */
+export function canMarkPaid(order: Pick<Order, "status" | "paymentStatus">): boolean {
+  return order.paymentStatus === "unpaid" && order.status !== "cancelled";
+}
+
+/**
+ * What staff can do to a selection of orders from the list:
+ * - `serve` — hand over orders being prepared (`preparing` → `completed`).
+ * - `markPaid` — record a counter payment on unpaid orders.
+ * - `cancel` — call off orders still in the queue.
+ *
+ * No "start preparing": taking an order is a barista picking it up, one at a time.
+ */
+export const BULK_ORDER_ACTIONS = ["serve", "markPaid", "cancel"] as const;
+export type BulkOrderActionType = (typeof BULK_ORDER_ACTIONS)[number];
+
+/** How many orders one bulk action may touch — tighter than products: each one moves stock and money. */
+export const MAX_BULK_ORDERS = 100;
+
+/**
+ * Whether a bulk action would change this order. A selection is usually mixed, so
+ * the action applies to the orders it fits and skips the rest — the screen counts
+ * these to say how many it will touch, and the use-case re-checks each one.
+ */
+export function canApplyBulkOrderAction(
+  order: Pick<Order, "status" | "paymentStatus">,
+  type: BulkOrderActionType,
+): boolean {
+  switch (type) {
+    case "serve":
+      return canTransition(order.status, "completed");
+    case "markPaid":
+      return canMarkPaid(order);
+    case "cancel":
+      return isStaffCancellable(order.status);
+  }
+}
+
 /**
  * Statuses in which staff tick lines off as they go out: while the order is being
  * made. A dine-in order often goes out in parts — the drinks first, the cake when

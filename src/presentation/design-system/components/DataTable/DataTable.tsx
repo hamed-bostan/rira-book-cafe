@@ -29,7 +29,11 @@ export interface DataTableProps extends React.HTMLAttributes<HTMLDivElement> {
  */
 export const DataTable = React.forwardRef<HTMLDivElement, DataTableProps>(
   ({ className, minWidthClassName, toolbar, footer, children, ...props }, ref) => (
-    <div ref={ref} className={cn("overflow-hidden rounded-card-lg border border-border", className)} {...props}>
+    <div
+      ref={ref}
+      className={cn("overflow-hidden rounded-card-lg border border-border bg-background shadow-xs", className)}
+      {...props}
+    >
       {toolbar ? <DataTableToolbar>{toolbar}</DataTableToolbar> : null}
       {minWidthClassName ? (
         <div className="overflow-x-auto">

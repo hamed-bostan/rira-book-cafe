@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
 
-import { normalizePromoCode, promoDiscount, promoProblem, type PromoCode } from "../Promotion";
+import {
+  isPromoCodeFinished,
+  normalizePromoCode,
+  PROMO_CODE_STATES,
+  promoCodeState,
+  promoDiscount,
+  promoProblem,
+  type PromoCode,
+  type PromoCodeWithUses,
+} from "../Promotion";
 
 const NOW = new Date("2026-10-20T10:00:00Z");
 
@@ -60,5 +69,39 @@ describe("promoProblem", () => {
 describe("normalizePromoCode", () => {
   it("trims and upper-cases what the guest typed", () => {
     expect(normalizePromoCode("  welcome10 ")).toBe("WELCOME10");
+  });
+});
+
+describe("promoCodeState", () => {
+  const withUses = (overrides: Partial<PromoCode> = {}, uses = 0): PromoCodeWithUses => ({
+    ...promo(overrides),
+    uses,
+  });
+
+  it("is live when on, started, not ended and with uses left", () => {
+    expect(promoCodeState(withUses({ startsAt: "2026-10-01T00:00:00Z", usageLimit: 5 }, 4), NOW)).toBe("live");
+  });
+
+  it("is off when switched off", () => {
+    expect(promoCodeState(withUses({ isActive: false }), NOW)).toBe("off");
+  });
+
+  it("is scheduled when on but not started yet — and off wins over scheduled", () => {
+    expect(promoCodeState(withUses({ startsAt: "2026-11-01T00:00:00Z" }), NOW)).toBe("scheduled");
+    expect(promoCodeState(withUses({ startsAt: "2026-11-01T00:00:00Z", isActive: false }), NOW)).toBe("off");
+  });
+
+  it("is ended once its end has passed, switched on or not", () => {
+    expect(promoCodeState(withUses({ endsAt: NOW.toISOString() }), NOW)).toBe("ended");
+    expect(promoCodeState(withUses({ endsAt: "2026-10-01T00:00:00Z", isActive: false }), NOW)).toBe("ended");
+  });
+
+  it("is used up when every allowed use is taken, switched on or not", () => {
+    expect(promoCodeState(withUses({ usageLimit: 3 }, 3), NOW)).toBe("usedUp");
+    expect(promoCodeState(withUses({ usageLimit: 3, isActive: false }, 3), NOW)).toBe("usedUp");
+  });
+
+  it("calls only ended and used-up codes finished", () => {
+    expect(PROMO_CODE_STATES.filter(isPromoCodeFinished)).toEqual(["ended", "usedUp"]);
   });
 });

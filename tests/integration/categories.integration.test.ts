@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { POST as moveCategory } from "@/app/api/admin/categories/[id]/move/route";
 import { DELETE as deleteCategory, GET as getCategory, PUT as updateCategory } from "@/app/api/categories/[id]/route";
 import { GET as listCategories, POST as createCategory } from "@/app/api/categories/route";
 import type { Category } from "@/src/domain/entities/Category";
@@ -101,6 +102,29 @@ describe("categories", () => {
     expect(response.status).toBe(409);
     expect((await readError(response)).code).toBe("IN_USE");
     expect(await prisma.category.findUnique({ where: { id: books.id } })).not.toBeNull();
+  });
+
+  it("adds a new category at the end of the menu and moves it up", async () => {
+    signInAs("admin");
+    const category = await readJson<Category>(await create());
+
+    const slugs = async (): Promise<string[]> =>
+      (await readJson<Category[]>(await listCategories(getRequest("/api/categories")))).map((c) => c.slug);
+    const before = await slugs();
+    expect(before.at(-1)).toBe("pastries");
+
+    const move = (direction: string): Promise<Response> =>
+      moveCategory(
+        jsonRequest("POST", `/api/admin/categories/${category.id}/move`, { direction }),
+        routeParams({ id: category.id }),
+      );
+
+    expect((await move("down")).status).toBe(400);
+    expect((await move("up")).status).toBe(204);
+    expect(await slugs()).toEqual([...before.slice(0, -2), "pastries", before.at(-2)]);
+
+    signInAs("staff");
+    expect((await move("up")).status).toBe(401);
   });
 
   it("answers 404 when updating or deleting a category that doesn't exist", async () => {

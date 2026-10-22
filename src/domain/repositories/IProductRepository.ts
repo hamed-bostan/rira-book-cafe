@@ -37,7 +37,10 @@ export type NewProduct = Omit<Product, "id" | "discountPercent" | "rating" | "ra
  * fields where "the same value for all of them" is a sensible thing to want. Price,
  * stock and name are emphatically not that, so they aren't expressible here.
  */
-export type BulkProductChange = { field: "isPublished"; value: boolean } | { field: "categoryId"; value: string };
+export type BulkProductChange =
+  | { field: "isPublished"; value: boolean }
+  | { field: "isFeatured"; value: boolean }
+  | { field: "categoryId"; value: string };
 
 /**
  * One item a bulk change actually altered, paired with how it looked first — the

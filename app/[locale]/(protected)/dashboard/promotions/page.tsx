@@ -1,3 +1,4 @@
+import { cafeDayOf } from "@/src/domain/entities/CafeTime";
 import { requirePermission } from "@/src/lib/require-permission";
 import { promotionsServerApi } from "@/src/presentation/dashboard/promotions/promotion-server-api";
 import { PromotionsScreen } from "@/src/presentation/dashboard/promotions/PromotionsScreen";
@@ -12,5 +13,13 @@ export default async function DashboardPromotionsPage() {
     promotionsServerApi.loyaltySettings(),
   ]);
 
-  return <PromotionsScreen promoCodes={promoCodes} loyaltySettings={loyaltySettings} now={new Date().toISOString()} />;
+  const now = new Date();
+  return (
+    <PromotionsScreen
+      promoCodes={promoCodes}
+      loyaltySettings={loyaltySettings}
+      now={now.toISOString()}
+      today={cafeDayOf(now)}
+    />
+  );
 }

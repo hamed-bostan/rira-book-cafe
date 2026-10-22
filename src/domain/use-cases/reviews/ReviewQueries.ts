@@ -1,8 +1,10 @@
 import {
   PUBLIC_REVIEW_LIMIT,
+  ratingFromTotals,
   toPublicReview,
   type ProductReview,
   type PublicReview,
+  type RatingSummary,
   type ReviewEligibility,
   type ReviewStatus,
 } from "../../entities/ProductReview";
@@ -47,5 +49,15 @@ export class CountReviews {
 
   execute(): Promise<Record<ReviewStatus, number>> {
     return this.reviewRepo.countByStatus();
+  }
+}
+
+/** The average stars across every approved review, and how many — the queue's headline. Staff only. */
+export class GetApprovedRating {
+  constructor(private readonly reviewRepo: IReviewRepository) {}
+
+  async execute(): Promise<RatingSummary> {
+    const { sum, count } = await this.reviewRepo.approvedRatingTotals();
+    return ratingFromTotals(sum, count);
   }
 }

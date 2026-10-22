@@ -44,6 +44,31 @@ export type PromoCodeWithUses = PromoCode & { uses: number };
 /** How often a code has been used — in all, and by the guest at checkout. */
 export type PromoUsage = { total: number; byGuest: number };
 
+/**
+ * Where a code stands for the dashboard list:
+ * - `live` — on, started, not ended, uses left: guests can use it now;
+ * - `scheduled` — on, but its first day hasn't come;
+ * - `off` — switched off by staff;
+ * - `ended` — its last day has passed (whether or not it's switched on);
+ * - `usedUp` — every use it allowed has been taken.
+ * The last two can't come back by flipping the switch — only by editing the code.
+ */
+export const PROMO_CODE_STATES = ["live", "scheduled", "off", "ended", "usedUp"] as const;
+export type PromoCodeState = (typeof PROMO_CODE_STATES)[number];
+
+export function promoCodeState(promo: PromoCodeWithUses, now: Date): PromoCodeState {
+  if (promo.endsAt && now >= new Date(promo.endsAt)) return "ended";
+  if (promo.usageLimit !== undefined && promo.uses >= promo.usageLimit) return "usedUp";
+  if (!promo.isActive) return "off";
+  if (promo.startsAt && now < new Date(promo.startsAt)) return "scheduled";
+  return "live";
+}
+
+/** True once a code can only come back by editing it — the switch alone won't do. */
+export function isPromoCodeFinished(state: PromoCodeState): boolean {
+  return state === "ended" || state === "usedUp";
+}
+
 /** A typed code as stored: trimmed and upper-cased. */
 export function normalizePromoCode(code: string): string {
   return code.trim().toUpperCase();

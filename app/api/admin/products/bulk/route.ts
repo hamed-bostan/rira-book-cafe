@@ -19,7 +19,8 @@ export const dynamic = "force-dynamic";
 
 /**
  * PATCH /api/admin/products/bulk — apply one change to a selection of products
- * (publish, unpublish, move to a category). Admin only.
+ * (publish, unpublish, feature, unfeature, move to a category). Admin only. The
+ * menu list's row switches send a selection of one.
  *
  * Thin controller: authenticate → validate (the same Zod schema the selection UI
  * uses) → translate the wire action into the domain's `BulkProductChange` →
@@ -72,6 +73,10 @@ function toChange(action: ProductBulkAction): BulkProductChange {
       return { field: "isPublished", value: true };
     case "unpublish":
       return { field: "isPublished", value: false };
+    case "feature":
+      return { field: "isFeatured", value: true };
+    case "unfeature":
+      return { field: "isFeatured", value: false };
     case "assignCategory":
       return { field: "categoryId", value: action.categoryId };
   }

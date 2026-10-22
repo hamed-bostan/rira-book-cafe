@@ -275,6 +275,17 @@ describe("BulkUpdateProducts", () => {
     ]);
   });
 
+  it("features an item, and does nothing for one already featured", async () => {
+    const { repo, entries } = repoWith([product({ id: "p1" }), product({ id: "p2", isFeatured: true })]);
+    const changed = await new BulkUpdateProducts(repo).execute(
+      ["p1", "p2"],
+      { field: "isFeatured", value: true },
+      ACTOR,
+    );
+    expect(changed.map((p) => [p.id, p.isFeatured])).toEqual([["p1", true]]);
+    expect(entries[0]?.changes).toEqual([{ field: "isFeatured", before: "false", after: "true" }]);
+  });
+
   it("refuses an empty or oversized selection and a blank category", async () => {
     const { repo, applyBulkChange } = repoWith([]);
     const useCase = new BulkUpdateProducts(repo);

@@ -42,10 +42,14 @@ model Category {
   slug      String   @unique
   iconUrl   String   @map("icon_url")
   isActive  Boolean  @default(true) @map("is_active")
+  // Where it sits on the menu, first = 0. Staff move categories up and down from
+  // the dashboard; a new one goes to the end.
+  position  Int      @default(0)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([isActive])
+  @@index([position])
   @@map("categories")
 }
 

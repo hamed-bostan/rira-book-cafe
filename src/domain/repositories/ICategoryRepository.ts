@@ -1,7 +1,5 @@
 import type { AuditHook } from "./AuditHook";
-import type { AdminCategoryFilters, AdminCategorySort } from "../entities/AdminCategoryFilters";
 import type { Category } from "../entities/Category";
-import type { Page, PageRequest } from "../entities/Pagination";
 
 /** One locale's content override for a category — the admin-authored translated `name`. */
 export type CategoryTranslationInput = {
@@ -15,7 +13,10 @@ export type CategoryTranslationInput = {
  * `undefined` leaves existing translations untouched, a list replaces them (locales
  * absent from it are removed, so `[]` clears all).
  */
-export type NewCategory = Omit<Category, "id" | "createdAt" | "updatedAt" | "productCount" | "isActive"> & {
+export type NewCategory = Omit<
+  Category,
+  "id" | "createdAt" | "updatedAt" | "productCount" | "hiddenProductCount" | "isActive"
+> & {
   /** Omitted means "leave the default/current value" — see the repository impls. */
   isActive?: boolean;
   translations?: CategoryTranslationInput[];
@@ -47,21 +48,27 @@ export type ICategoryRepository = {
   // `locale` selects the language for the category `name`: omitted or the default
   // locale returns the canonical (base row) name; a supported locale overlays its
   // translation, falling back to the base row when none exists.
+  //
+  // `getAll` answers in menu order — the order guests see the categories in.
   getAll(locale?: string): Promise<Category[]>;
-  /** One page of the category-management list — filtered, sorted, and counted. */
-  listPage(
-    filters: AdminCategoryFilters,
-    page: PageRequest<AdminCategorySort>,
-    locale?: string,
-  ): Promise<Page<Category>>;
   getById(id: string, locale?: string): Promise<Category | null>;
   getBySlug(slug: string, locale?: string): Promise<Category | null>;
+  /** A new category goes to the end of the menu. */
   create(input: NewCategory, audit?: AuditHook<Category>): Promise<Category>;
   update(id: string, input: NewCategory, audit?: AuditHook<Category>): Promise<Category>;
   /** `audit` records the deletion inside the same transaction — the entry outlives the row. */
   delete(id: string, audit?: AuditHook<void>): Promise<void>;
   /** The stored per-locale translations for a category (for the admin edit form); empty when none. */
   getTranslations(categoryId: string): Promise<CategoryTranslationInput[]>;
+
+  /**
+   * Put the categories in this menu order, first id first. Ids that no longer
+   * exist are skipped, and a category the list leaves out (one added since the
+   * caller read the order) keeps its place after the listed ones — so a stale
+   * list can't leave two categories sharing a place. `audit` runs once, inside
+   * the same transaction.
+   */
+  setOrder(ids: readonly string[], audit?: AuditHook<void>): Promise<void>;
 
   /**
    * Apply one field change to many categories at once, returning the rows as

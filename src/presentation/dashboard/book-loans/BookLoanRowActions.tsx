@@ -89,8 +89,12 @@ export function BookLoanRowActions({ loan, firstInLine }: BookLoanRowActionsProp
       </Button>
       {loan.status === "out" ? (
         <DropdownMenu>
-          <DropdownMenuIconTrigger disabled={pending} aria-label={t("moreActionsAria", { reference: loan.reference })}>
-            <Icon icon={MoreHorizontal} size="xs" />
+          <DropdownMenuIconTrigger
+            appearance="outline"
+            disabled={pending}
+            aria-label={t("moreActionsAria", { reference: loan.reference })}
+          >
+            <Icon icon={MoreHorizontal} size="sm" className="sm:size-4" />
           </DropdownMenuIconTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onSelect={() => run({ extendDays: EXTEND_DAYS })}>

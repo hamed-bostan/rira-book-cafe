@@ -1,7 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { PUBLIC_REVIEW_LIMIT, type ProductReview } from "../../../entities/ProductReview";
-import { CountReviews, GetReviewEligibility, ListProductReviews, ListReviews } from "../ReviewQueries";
+import {
+  CountReviews,
+  GetApprovedRating,
+  GetReviewEligibility,
+  ListProductReviews,
+  ListReviews,
+} from "../ReviewQueries";
 
 import type { IReviewRepository } from "../../../repositories/IReviewRepository";
 
@@ -80,5 +86,20 @@ describe("ListReviews / CountReviews", () => {
 
   it("counts the queue's tabs", async () => {
     expect(await new CountReviews(reviews().repo).execute()).toEqual({ pending: 2, approved: 5, rejected: 1 });
+  });
+});
+
+describe("GetApprovedRating", () => {
+  function rated(sum: number, count: number): IReviewRepository {
+    return { approvedRatingTotals: vi.fn(async () => ({ sum, count })) } as unknown as IReviewRepository;
+  }
+
+  it("averages the approved stars to one decimal", async () => {
+    expect(await new GetApprovedRating(rated(23, 5)).execute()).toEqual({ rating: 4.6, ratingCount: 5 });
+    expect(await new GetApprovedRating(rated(13, 3)).execute()).toEqual({ rating: 4.3, ratingCount: 3 });
+  });
+
+  it("reads as no rating when nothing is approved", async () => {
+    expect(await new GetApprovedRating(rated(0, 0)).execute()).toEqual({ rating: 0, ratingCount: 0 });
   });
 });

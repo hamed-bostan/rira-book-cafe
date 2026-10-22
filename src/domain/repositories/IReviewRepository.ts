@@ -31,6 +31,8 @@ export type IReviewRepository = {
   /** The moderation queue: `pending` oldest first (first come, first served), the rest newest first. */
   list(filters: ReviewFilters): Promise<ProductReview[]>;
   countByStatus(): Promise<Record<ReviewStatus, number>>;
+  /** Every approved review's stars added up, and how many there are — the cafe's rating as guests see it. */
+  approvedRatingTotals(): Promise<{ sum: number; count: number }>;
   /** Whether the guest has a completed order containing the item. */
   hasPurchased(userId: string, productId: string): Promise<boolean>;
   /**

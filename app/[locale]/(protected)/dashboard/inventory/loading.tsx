@@ -1,35 +1,71 @@
-import { DashboardStatGridSkeleton, DashboardTableSkeleton } from "@/src/presentation/dashboard/skeletons";
 import { LoadingRegion } from "@/src/presentation/design-system/components/Skeleton/LoadingRegion";
 import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
+/** Stock rows drawn while the list loads. */
+const STOCK_ROWS = 6;
+/** All items, Running low, Out of stock. */
+const TABS = 3;
+
+/**
+ * Mirrors `InventoryScreen`: heading with the history / count / receive buttons,
+ * the three figures, then the stock card — tabs, search, rows.
+ */
 export default function InventoryLoading() {
   return (
     <LoadingRegion className="flex min-w-0 flex-col gap-6">
-      {/* Title + subtitle beside the movements / count / receive buttons. */}
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="flex flex-col gap-2">
-          <Skeleton className="h-8 w-40 rounded-button sm:h-9 sm:w-48" />
-          <Skeleton className="h-4 w-56 rounded-pill" />
+      <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+        <div className="flex flex-col gap-1.5">
+          <Skeleton className="h-8 w-40 rounded-button lg:h-9" />
+          <Skeleton className="h-4 w-72 max-w-full rounded-pill" />
         </div>
         <div className="flex flex-wrap gap-2">
-          <Skeleton className="h-10 w-28 rounded-button" />
-          <Skeleton className="h-10 w-28 rounded-button" />
-          <Skeleton className="h-10 w-28 rounded-button" />
+          <Skeleton className="h-11 w-32 rounded-button" />
+          <Skeleton className="h-11 w-28 rounded-button" />
+          <Skeleton className="h-11 w-40 rounded-button" />
         </div>
       </div>
 
-      <DashboardStatGridSkeleton count={3} className="sm:grid-cols-3 xl:grid-cols-3" />
-
-      {/* All / low / out chips. */}
-      <div className="flex flex-wrap gap-2">
-        <Skeleton className="h-9 w-16 rounded-full" />
-        <Skeleton className="h-9 w-20 rounded-full" />
-        <Skeleton className="h-9 w-20 rounded-full" />
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {Array.from({ length: 3 }, (_, index) => (
+          <div
+            key={index}
+            className="flex flex-col justify-between gap-4 rounded-card-lg border border-border bg-background px-5 py-4 shadow-xs last:col-span-2 sm:last:col-span-1"
+          >
+            <Skeleton className="h-4 w-24 rounded-pill" />
+            <div className="flex flex-col gap-1.5">
+              <Skeleton className="h-7 w-20 rounded-button" />
+              <Skeleton className="h-3.5 w-36 max-w-full rounded-pill" />
+            </div>
+          </div>
+        ))}
       </div>
 
-      <DashboardTableSkeleton toolbar={false} pager={false} columns={6} rows={8} />
-
-      <Skeleton className="h-3.5 w-64 rounded-pill" />
+      <div className="rounded-card-lg border border-border bg-background shadow-xs">
+        <div className="flex h-12 items-center gap-6 overflow-hidden border-b border-border px-4">
+          {Array.from({ length: TABS }, (_, index) => (
+            <Skeleton key={index} className="h-5 w-24 shrink-0 rounded-pill" />
+          ))}
+        </div>
+        <div className="border-b border-border px-4 py-3">
+          <Skeleton className="h-11 w-full max-w-md rounded-input sm:h-10" />
+        </div>
+        <ul>
+          {Array.from({ length: STOCK_ROWS }, (_, index) => (
+            <li
+              key={index}
+              className="flex flex-wrap items-center gap-x-5 gap-y-3 border-t border-border px-5 py-3 first:border-t-0"
+            >
+              <div className="flex min-w-0 flex-[1_1_12rem] flex-col gap-1.5">
+                <Skeleton className="h-5 w-40 max-w-full rounded-pill" />
+                <Skeleton className="h-3.5 w-32 max-w-full rounded-pill" />
+              </div>
+              <Skeleton className="h-4 w-20 rounded-pill" />
+              <Skeleton className="h-4 w-16 rounded-pill" />
+              <Skeleton className="ms-auto size-11 rounded-button sm:size-9" />
+            </li>
+          ))}
+        </ul>
+      </div>
     </LoadingRegion>
   );
 }

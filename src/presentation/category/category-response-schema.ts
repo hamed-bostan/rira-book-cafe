@@ -24,6 +24,7 @@ export const categoryResponseSchema = z.object({
   iconUrl: z.string(),
   isActive: z.boolean(),
   productCount: z.number(),
+  hiddenProductCount: z.number(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 }) satisfies z.ZodType<Category>;

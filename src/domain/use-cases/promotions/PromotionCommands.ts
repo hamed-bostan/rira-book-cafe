@@ -119,6 +119,30 @@ export class SetPromoCodeActive {
   }
 }
 
+/**
+ * Delete a code. Guests can't use it any more; orders that already did keep their
+ * discount. The log keeps what the code was.
+ */
+export class DeletePromoCode {
+  constructor(private readonly promoRepo: IPromotionRepository) {}
+
+  async execute(id: string, staff: ActivityActor): Promise<void> {
+    const current = await this.promoRepo.getById(id);
+    if (!current) throw new NotFoundError("promo code", id);
+    await this.promoRepo.delete(id, () => ({
+      actorId: staff.id,
+      actorName: staff.name,
+      action: "promoCode.deleted",
+      entityType: "promoCode",
+      entityId: id,
+      entityLabel: current.code,
+      changes: promoChanges(null, current)
+        .map(({ field, after }) => ({ field, before: after, after: null }))
+        .filter((change) => change.before !== null),
+    }));
+  }
+}
+
 export class ListPromoCodes {
   constructor(private readonly promoRepo: IPromotionRepository) {}
 

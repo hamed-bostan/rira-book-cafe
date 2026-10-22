@@ -6,6 +6,7 @@ import { ValidationError } from "../../../errors/ValidationError";
 import {
   AdjustGuestPoints,
   CreatePromoCode,
+  DeletePromoCode,
   GetLoyaltySettings,
   GetOwnLoyaltyAccount,
   ListPromoCodes,
@@ -55,6 +56,7 @@ type PromoFake = {
   repo: IPromotionRepository;
   create: ReturnType<typeof vi.fn<IPromotionRepository["create"]>>;
   update: ReturnType<typeof vi.fn<IPromotionRepository["update"]>>;
+  remove: ReturnType<typeof vi.fn<IPromotionRepository["delete"]>>;
   entries: (NewActivityEntry | null)[];
 };
 
@@ -68,6 +70,9 @@ function promoRepo(current: PromoCode | null): PromoFake {
   };
   const create = vi.fn<IPromotionRepository["create"]>(async (input, audit) => persist("new", input, audit));
   const update = vi.fn<IPromotionRepository["update"]>(async (id, input, audit) => persist(id, input, audit));
+  const remove = vi.fn<IPromotionRepository["delete"]>(async (_id, audit) => {
+    if (audit) entries.push(audit());
+  });
   const repo: IPromotionRepository = {
     list: vi.fn(async () => [{ ...promo(), uses: 3 }]),
     getById: vi.fn(async (id: string) => (current?.id === id ? current : null)),
@@ -75,8 +80,9 @@ function promoRepo(current: PromoCode | null): PromoFake {
     usage: vi.fn(async () => ({ total: 0, byGuest: 0 })),
     create,
     update,
+    delete: remove,
   };
-  return { repo, create, update, entries };
+  return { repo, create, update, remove, entries };
 }
 
 describe("CreatePromoCode", () => {
@@ -199,6 +205,32 @@ describe("SetPromoCodeActive", () => {
     expect(sent).not.toHaveProperty("createdAt");
     expect(sent).toMatchObject({ code: "WELCOME10", value: 10, maxDiscount: 50_000, isActive: false });
     expect(entries[0]?.action).toBe("promoCode.activeChanged");
+  });
+});
+
+describe("DeletePromoCode", () => {
+  it("is not found for an unknown id", async () => {
+    const { repo, remove } = promoRepo(null);
+    await expect(new DeletePromoCode(repo).execute("missing", STAFF)).rejects.toThrow(NotFoundError);
+    expect(remove).not.toHaveBeenCalled();
+  });
+
+  it("deletes the code and logs what it was", async () => {
+    const { repo, remove, entries } = promoRepo(promo());
+    await new DeletePromoCode(repo).execute("p1", STAFF);
+
+    expect(remove.mock.calls[0][0]).toBe("p1");
+    expect(entries[0]).toMatchObject({
+      actorId: "s1",
+      action: "promoCode.deleted",
+      entityType: "promoCode",
+      entityId: "p1",
+      entityLabel: "WELCOME10",
+    });
+    // Every field the code had, with nothing on the "after" side; unset ones are left out.
+    expect(entries[0]?.changes.every((change) => change.after === null && change.before !== null)).toBe(true);
+    expect(entries[0]?.changes.find((change) => change.field === "code")?.before).toBe("WELCOME10");
+    expect(entries[0]?.changes.some((change) => change.field === "endsAt")).toBe(false);
   });
 });
 

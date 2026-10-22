@@ -62,11 +62,21 @@ export type ReviewEligibility = {
   review: ProductReview | null;
 };
 
+/** An average of stars to one decimal, and how many reviews it comes from. */
+export type RatingSummary = { rating: number; ratingCount: number };
+
 /** An item's rating from its approved reviews' stars: the average to one decimal, and how many. */
-export function ratingSummary(ratings: readonly number[]): { rating: number; ratingCount: number } {
-  if (ratings.length === 0) return { rating: 0, ratingCount: 0 };
-  const average = ratings.reduce((sum, value) => sum + value, 0) / ratings.length;
-  return { rating: Math.round(average * 10) / 10, ratingCount: ratings.length };
+export function ratingSummary(ratings: readonly number[]): RatingSummary {
+  return ratingFromTotals(
+    ratings.reduce((sum, value) => sum + value, 0),
+    ratings.length,
+  );
+}
+
+/** The same rating from stars already added up — what a database sum hands back. */
+export function ratingFromTotals(sum: number, count: number): RatingSummary {
+  if (count === 0) return { rating: 0, ratingCount: 0 };
+  return { rating: Math.round((sum / count) * 10) / 10, ratingCount: count };
 }
 
 /**

@@ -1,52 +1,72 @@
 "use client";
 
-import { EllipsisVertical, Pencil, Trash2 } from "lucide-react";
+import { MoreHorizontal } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import * as React from "react";
 
 import { useRouter } from "@/src/i18n/navigation";
+import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuIconTrigger,
   DropdownMenuItem,
-  DropdownMenuSeparator,
 } from "@/src/presentation/design-system/components/DropdownMenu/DropdownMenu";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
-import { DeleteProductButton } from "./DeleteProductButton";
+import { DeleteProductConfirm } from "./DeleteProductConfirm";
+import { productsApi } from "./product-api";
 
 type ProductRowActionsProps = {
   id: string;
   name: string;
+  isFeatured: boolean;
 };
 
-/** Product commands grouped behind one predictable, keyboard-accessible trigger. */
-export function ProductRowActions({ id, name }: ProductRowActionsProps) {
+/**
+ * A menu item's commands behind "⋯": Edit (the item's page), Feature on the
+ * menu / Remove from featured, and Delete (which asks first). Each change writes
+ * over the REST API and `router.refresh()`es.
+ */
+export function ProductRowActions({ id, name, isFeatured }: ProductRowActionsProps) {
   const t = useTranslations("dashProducts");
+  const tApiErrors = useTranslations("apiErrors");
   const router = useRouter();
-  const [deleteOpen, setDeleteOpen] = useState(false);
+  const { toast } = useToast();
+  const [pending, startTransition] = React.useTransition();
+  const [deleteOpen, setDeleteOpen] = React.useState(false);
+
+  function toggleFeatured(): void {
+    startTransition(async () => {
+      try {
+        await productsApi.bulkUpdate([id], { type: isFeatured ? "unfeature" : "feature" });
+        toast({ tone: "success", title: isFeatured ? t("unfeaturedToast", { name }) : t("featuredToast", { name }) });
+      } catch (err) {
+        toast({ tone: "error", title: localizeApiError(err, tApiErrors, t("updateError")) });
+      }
+      router.refresh();
+    });
+  }
 
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuIconTrigger className="size-11 @4xl/products:size-8" aria-label={t("rowActionsAria", { name })}>
-          <EllipsisVertical aria-hidden className="size-4" />
+        <DropdownMenuIconTrigger appearance="outline" disabled={pending} aria-label={t("rowActionsAria", { name })}>
+          <Icon icon={MoreHorizontal} size="sm" className="sm:size-4" />
         </DropdownMenuIconTrigger>
-        <DropdownMenuContent>
+        <DropdownMenuContent align="end">
           <DropdownMenuItem onSelect={() => router.push(`/dashboard/products/${id}/edit`)}>
-            <Icon icon={Pencil} size="sm" />
             {t("edit")}
           </DropdownMenuItem>
-          <DropdownMenuSeparator />
+          <DropdownMenuItem onSelect={toggleFeatured}>{isFeatured ? t("unfeature") : t("feature")}</DropdownMenuItem>
           <DropdownMenuItem destructive onSelect={() => setDeleteOpen(true)}>
-            <Icon icon={Trash2} size="sm" />
             {t("delete")}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <DeleteProductButton id={id} name={name} trigger="none" open={deleteOpen} onOpenChange={setDeleteOpen} />
+      <DeleteProductConfirm id={id} name={name} open={deleteOpen} onOpenChange={setDeleteOpen} />
     </>
   );
 }

@@ -9,8 +9,9 @@ import type { BulkProductChange, IProductRepository } from "../../repositories/I
 const MAX_BULK_PRODUCTS = 200;
 
 /**
- * Apply one field change across a selection of products — the catalog list's bulk
- * actions: publish, unpublish, and move to a category. Admin only.
+ * Apply one field change across a selection of products: publish, unpublish,
+ * feature, unfeature, or move to a category. The menu list sends a selection of
+ * one from each row's "On menu" switch and "Feature" menu item. Admin only.
  *
  * Deliberately narrow. It writes exactly the fields {@link BulkProductChange}
  * allows and nothing else, so it can never become a way to set a price or a stock

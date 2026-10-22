@@ -5,8 +5,10 @@ import { getTranslations } from "next-intl/server";
 import { cafeDayOf } from "@/src/domain/entities/CafeTime";
 import { requirePermission, sessionPermissions } from "@/src/lib/require-permission";
 import { bookLoansServerApi } from "@/src/presentation/dashboard/book-loans/book-loan-server-api";
+import { inventoryServerApi } from "@/src/presentation/dashboard/inventory/inventory-server-api";
 import { ordersServerApi } from "@/src/presentation/dashboard/orders/order-server-api";
 import { reservationsServerApi } from "@/src/presentation/dashboard/reservations/reservation-server-api";
+import { reviewsServerApi } from "@/src/presentation/dashboard/reviews/review-server-api";
 import { DashboardShell } from "@/src/presentation/dashboard/shell/DashboardShell";
 import { SIDEBAR_COLLAPSED_COOKIE_NAME } from "@/src/presentation/dashboard/shell/sidebarCollapseCookie";
 import { dashboardViewerFor } from "@/src/presentation/dashboard/shell/viewer";
@@ -46,47 +48,62 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   if (!viewer) redirect("/login");
 
   const sidebarCollapsed = (await cookies()).get(SIDEBAR_COLLAPSED_COOKIE_NAME)?.value === "1";
+  const permissions = await sessionPermissions(session);
 
   // The counts beside the nav links — what needs someone: orders in the queue,
   // today's table requests, suite requests, overdue books, holds ready to
-  // collect — and the bell's new orders. Chrome, not content: a failed read
-  // drops that count, not the page.
+  // collect, stock running low or out, reviews waiting — and the bell's new
+  // orders. Chrome, not content: a failed read drops that count, not the page.
+  // Inventory and reviews are only asked for by someone whose sidebar shows them.
   const today = cafeDayOf(new Date());
-  const [counts, tableRequests, suiteRequests, overdueLoans, readyHolds, newOrders] = await Promise.all([
-    ordersServerApi.counts().catch(() => null),
-    reservationsServerApi
-      .listForDay(today, "requested")
-      .then((list) => list.length)
-      .catch(() => undefined),
-    suiteBookingsServerApi
-      .listFrom(today, "requested")
-      .then((list) => list.length)
-      .catch(() => undefined),
-    bookLoansServerApi
-      .list("overdue")
-      .then((list) => list.length)
-      .catch(() => undefined),
-    bookLoansServerApi
-      .listWaitlist()
-      .then((list) => list.filter((entry) => entry.status === "notified").length)
-      .catch(() => undefined),
-    ordersServerApi
-      .listPage(new URLSearchParams({ status: "pending", pageSize: String(BELL_ORDER_COUNT) }))
-      .then((page) =>
-        page.items.map(({ id, orderNumber, serviceType, tableLabel, placedAt }) => ({
-          id,
-          orderNumber,
-          serviceType,
-          tableLabel,
-          placedAt,
-        })),
-      )
-      .catch(() => null),
-  ]);
+  const [counts, tableRequests, suiteRequests, overdueLoans, readyHolds, lowStock, waitingReviews, newOrders] =
+    await Promise.all([
+      ordersServerApi.counts().catch(() => null),
+      reservationsServerApi
+        .listForDay(today, "requested")
+        .then((list) => list.length)
+        .catch(() => undefined),
+      suiteBookingsServerApi
+        .listFrom(today, "requested")
+        .then((list) => list.length)
+        .catch(() => undefined),
+      bookLoansServerApi
+        .list("overdue")
+        .then((list) => list.length)
+        .catch(() => undefined),
+      bookLoansServerApi
+        .listWaitlist()
+        .then((list) => list.filter((entry) => entry.status === "notified").length)
+        .catch(() => undefined),
+      permissions.includes("inventory.view")
+        ? inventoryServerApi
+            .getSummary()
+            .then((summary) => summary.lowCount + summary.outCount)
+            .catch(() => undefined)
+        : undefined,
+      permissions.includes("reviews.moderate")
+        ? reviewsServerApi
+            .counts()
+            .then((reviewCounts) => reviewCounts.pending)
+            .catch(() => undefined)
+        : undefined,
+      ordersServerApi
+        .listPage(new URLSearchParams({ status: "pending", pageSize: String(BELL_ORDER_COUNT) }))
+        .then((page) =>
+          page.items.map(({ id, orderNumber, serviceType, tableLabel, placedAt }) => ({
+            id,
+            orderNumber,
+            serviceType,
+            tableLabel,
+            placedAt,
+          })),
+        )
+        .catch(() => null),
+    ]);
 
   return (
     <DashboardShell
-      permissions={await sessionPermissions(session)}
+      permissions={permissions}
       viewer={viewer}
       initialSidebarCollapsed={sidebarCollapsed}
       navBadges={{
@@ -95,6 +112,8 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         navSuite: suiteRequests,
         navBookLoans: overdueLoans,
         navBookHolds: readyHolds,
+        navInventory: lowStock,
+        navReviews: waitingReviews,
       }}
       newOrders={newOrders}
     >

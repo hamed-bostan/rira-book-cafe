@@ -92,6 +92,15 @@ export class PrismaReviewRepository implements IReviewRepository {
     return counts;
   }
 
+  async approvedRatingTotals(): Promise<{ sum: number; count: number }> {
+    const totals = await this.db.productReview.aggregate({
+      where: { status: "approved" },
+      _sum: { rating: true },
+      _count: { _all: true },
+    });
+    return { sum: totals._sum.rating ?? 0, count: totals._count._all };
+  }
+
   async hasPurchased(userId: string, productId: string): Promise<boolean> {
     const line = await this.db.orderItem.findFirst({
       where: { productId, order: { userId, status: "completed" } },

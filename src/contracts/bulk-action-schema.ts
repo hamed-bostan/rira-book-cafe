@@ -9,7 +9,7 @@ import { MAX_BULK_ORDERS, PAYMENT_METHODS } from "@/src/domain/entities/Order";
  *
  * Both endpoints take the selected ids plus a *discriminated* action rather than a
  * loose patch object. The union is the guard rail: `PATCH /admin/products/bulk`
- * accepts publish, unpublish and "move to category" and cannot be made to express
+ * accepts publish, unpublish, feature, unfeature and "move to category" and cannot be made to express
  * "set the price of these forty products", because that variant doesn't exist. A
  * partial-`Product` body would have accepted it and left the refusal to a runtime
  * check somebody has to remember to write.
@@ -29,6 +29,9 @@ const idsField = z.array(z.string().min(1)).min(1, "selectionRequired").max(200,
 export const productBulkActionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("publish") }),
   z.object({ type: z.literal("unpublish") }),
+  // The menu list's "Feature on the menu" / "Remove from featured", sent for one row.
+  z.object({ type: z.literal("feature") }),
+  z.object({ type: z.literal("unfeature") }),
   z.object({ type: z.literal("assignCategory"), categoryId: z.string().min(1, "categoryRequired") }),
 ]);
 

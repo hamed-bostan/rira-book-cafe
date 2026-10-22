@@ -145,8 +145,12 @@ export function ReservationRowActions({ reservation, bookings, events }: Reserva
       </Button>
       {status === "confirmed" || status === "seated" ? (
         <DropdownMenu>
-          <DropdownMenuIconTrigger disabled={pending} aria-label={t("moreActionsAria", { reference })}>
-            <Icon icon={MoreHorizontal} size="xs" />
+          <DropdownMenuIconTrigger
+            appearance="outline"
+            disabled={pending}
+            aria-label={t("moreActionsAria", { reference })}
+          >
+            <Icon icon={MoreHorizontal} size="sm" className="sm:size-4" />
           </DropdownMenuIconTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onSelect={() => openTable("change")}>{t("changeTable")}</DropdownMenuItem>

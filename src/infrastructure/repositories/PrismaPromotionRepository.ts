@@ -80,6 +80,19 @@ export class PrismaPromotionRepository implements IPromotionRepository {
       throw toDomainError(error);
     }
   }
+
+  async delete(id: string, audit?: AuditHook<void>): Promise<void> {
+    try {
+      await inTransaction(this.db, async (tx) => {
+        // Orders carry the code's id without a foreign key, alongside the code
+        // and discount they got — deleting it leaves them as they were.
+        await tx.promoCode.delete({ where: { id } });
+        await recordAudit(tx, undefined, audit);
+      });
+    } catch (error) {
+      throw toDomainError(error);
+    }
+  }
 }
 
 type PromoRow = Prisma.PromoCodeGetPayload<object>;

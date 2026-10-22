@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { categoryFormSchema, type CategoryFormInput } from "../category-schema";
+import { categoryFormSchema, categoryMoveSchema, type CategoryFormInput } from "../category-schema";
 
 const FORM: CategoryFormInput = {
   name: " Hot drinks ",
@@ -47,5 +47,14 @@ describe("categoryFormSchema", () => {
     expect(fieldErrorsOf({ ...FORM, iconUrl: " " })?.iconUrl).toContain("iconRequired");
     expect(fieldErrorsOf({ ...FORM, iconUrl: "ftp://example.com/cup.png" })?.iconUrl).toEqual(["imageInvalid"]);
     expect(categoryFormSchema.safeParse({ ...FORM, iconUrl: "https://example.com/cup.png" }).success).toBe(true);
+  });
+});
+
+describe("categoryMoveSchema", () => {
+  it("takes up or down, and nothing else", () => {
+    expect(categoryMoveSchema.parse({ direction: "up" })).toEqual({ direction: "up" });
+    expect(categoryMoveSchema.parse({ direction: "down" })).toEqual({ direction: "down" });
+    expect(categoryMoveSchema.safeParse({ direction: "top" }).success).toBe(false);
+    expect(categoryMoveSchema.safeParse({}).success).toBe(false);
   });
 });

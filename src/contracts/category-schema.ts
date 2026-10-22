@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { CATEGORY_MOVE_DIRECTIONS } from "@/src/domain/entities/Category";
+
 import { imageUrlField } from "./image-url";
 
 /**
@@ -37,3 +39,7 @@ export const categoryFormSchema = z
 export type CategoryFormInput = z.input<typeof categoryFormSchema>;
 /** Validated payload shape (what the use-case receives) — matches `NewCategory`. */
 export type CategoryFormValues = z.output<typeof categoryFormSchema>;
+
+/** Moving a category one place on the menu — the list's up/down buttons. */
+export const categoryMoveSchema = z.object({ direction: z.enum(CATEGORY_MOVE_DIRECTIONS) });
+export type CategoryMoveInput = z.infer<typeof categoryMoveSchema>;

@@ -5,7 +5,8 @@ import { reviewsServerApi } from "@/src/presentation/dashboard/reviews/review-se
 import { ReviewsScreen } from "@/src/presentation/dashboard/reviews/ReviewsScreen";
 
 // The review queue is fetched over the REST API (BFF) during server render. The
-// view (`?view=`, default pending) and search (`?q=`) live in the query string.
+// view (`?view=`, default pending) and search (`?q=`) live in the query string;
+// the tab counts and the average under the heading ignore the search.
 export const dynamic = "force-dynamic";
 
 type DashboardReviewsPageProps = {
@@ -21,7 +22,11 @@ export default async function DashboardReviewsPage({ searchParams }: DashboardRe
   const view = viewParam && VIEW_SET.has(viewParam) ? (viewParam as ReviewView) : "pending";
   const q = params.get("q")?.trim() || undefined;
 
-  const [reviews, counts] = await Promise.all([reviewsServerApi.list(view, q), reviewsServerApi.counts()]);
+  const [reviews, counts, rating] = await Promise.all([
+    reviewsServerApi.list(view, q),
+    reviewsServerApi.counts(),
+    reviewsServerApi.getRating(),
+  ]);
 
-  return <ReviewsScreen reviews={reviews} counts={counts} isSearching={q !== undefined} />;
+  return <ReviewsScreen reviews={reviews} counts={counts} rating={rating} view={view} query={q} />;
 }

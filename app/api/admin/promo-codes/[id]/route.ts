@@ -1,7 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { promoCodeActiveSchema, promoCodeFormSchema } from "@/src/contracts/promotion-schema";
-import { SetPromoCodeActive, UpdatePromoCode } from "@/src/domain/use-cases/promotions/PromotionCommands";
+import {
+  DeletePromoCode,
+  SetPromoCodeActive,
+  UpdatePromoCode,
+} from "@/src/domain/use-cases/promotions/PromotionCommands";
 import { promotionRepository } from "@/src/infrastructure/container";
 import {
   errorResponse,
@@ -69,5 +73,22 @@ export async function PATCH(request: NextRequest, { params }: RouteContext): Pro
     return NextResponse.json(promo);
   } catch (error) {
     return errorResponseFromException(error, `PATCH /api/admin/promo-codes/${id} failed`);
+  }
+}
+
+/** DELETE /api/admin/promo-codes/:id — remove a code for good. Orders that used it keep their discount. 204. */
+export async function DELETE(_request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
+  const session = await getSessionWith("promotions.write");
+  if (!session) return unauthorizedResponse();
+
+  const { id } = await params;
+  try {
+    await new DeletePromoCode(promotionRepository).execute(id, {
+      id: session.user.id,
+      name: session.user.name ?? session.user.id,
+    });
+    return new NextResponse(null, { status: 204 });
+  } catch (error) {
+    return errorResponseFromException(error, `DELETE /api/admin/promo-codes/${id} failed`);
   }
 }

@@ -6,7 +6,7 @@ import type {
 } from "@/src/contracts/promotion-schema";
 import type { GuestLoyaltyLookup, LoyaltySettings, LoyaltyTransaction } from "@/src/domain/entities/Loyalty";
 import type { PromoCode } from "@/src/domain/entities/Promotion";
-import { apiGet, apiPatch, apiPost, apiPut } from "@/src/lib/api/client";
+import { apiDelete, apiGet, apiPatch, apiPost, apiPut } from "@/src/lib/api/client";
 import {
   guestLoyaltyLookupResponseSchema,
   loyaltySettingsResponseSchema,
@@ -27,6 +27,11 @@ export const promotionsApi = {
 
   setPromoCodeActive(id: string, values: PromoCodeActiveInput): Promise<PromoCode> {
     return apiPatch(`/admin/promo-codes/${id}`, values, promoCodeResponseSchema);
+  },
+
+  /** Orders that used it keep their discount. */
+  removePromoCode(id: string): Promise<void> {
+    return apiDelete(`/admin/promo-codes/${id}`);
   },
 
   saveLoyaltySettings(values: LoyaltySettingsInput): Promise<LoyaltySettings> {

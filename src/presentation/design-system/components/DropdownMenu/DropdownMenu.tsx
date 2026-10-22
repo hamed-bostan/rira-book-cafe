@@ -130,19 +130,33 @@ export const DropdownMenuSeparator = React.forwardRef<
 
 DropdownMenuSeparator.displayName = "DropdownMenuSeparator";
 
+export type DropdownMenuIconTriggerAppearance = "ghost" | "outline";
+
+const ICON_TRIGGER_APPEARANCE: Record<DropdownMenuIconTriggerAppearance, string> = {
+  ghost: "size-8 text-icon-muted hover:bg-accent hover:text-primary",
+  // The dashboard rows' "⋯": a bordered square, 44px to the touch on a phone.
+  outline:
+    "size-11 border border-border bg-background text-foreground/80 hover:bg-muted hover:text-foreground sm:size-9",
+};
+
+export type DropdownMenuIconTriggerProps = React.ComponentPropsWithoutRef<"button"> & {
+  /** `ghost` (a bare 32px icon) by default; `outline` for a dashboard list row's "⋯". */
+  appearance?: DropdownMenuIconTriggerAppearance;
+};
+
 /**
  * The square icon button a row's menu hangs off. Here rather than at the call
  * site because every list that grows a row menu needs the same
  * touch-target-sized, label-carrying button, and an icon-only control with no
  * accessible name is the defect that would otherwise be copied along with it.
  */
-export const DropdownMenuIconTrigger = React.forwardRef<HTMLButtonElement, React.ComponentPropsWithoutRef<"button">>(
-  ({ className, ...props }, ref) => (
+export const DropdownMenuIconTrigger = React.forwardRef<HTMLButtonElement, DropdownMenuIconTriggerProps>(
+  ({ className, appearance = "ghost", ...props }, ref) => (
     <DropdownMenuPrimitive.Trigger
       ref={ref}
       className={cn(
-        "inline-flex size-8 shrink-0 items-center justify-center rounded-button text-icon-muted",
-        "transition-colors hover:bg-accent hover:text-primary",
+        "inline-flex shrink-0 items-center justify-center rounded-button transition-colors",
+        ICON_TRIGGER_APPEARANCE[appearance],
         focusRing,
         className,
       )}

@@ -10,7 +10,7 @@ const PNG = Buffer.from(
 
 test.use({ storageState: storageStatePath("admin") });
 
-/** The list renders a card and a table row per item; whichever this viewport shows. */
+/** The list renders one row per item; only what this viewport shows counts. */
 function listed(page: Page, text: string): Locator {
   return page.getByText(text, { exact: true }).filter({ visible: true });
 }
@@ -45,7 +45,7 @@ test("an admin creates, edits and deletes a menu item, image included", async ({
 
   // Edit it.
   await page
-    .getByRole("button", { name: `Actions for ${name}`, exact: true })
+    .getByRole("button", { name: `More actions for ${name}`, exact: true })
     .filter({ visible: true })
     .click();
   await page.getByRole("menuitem", { name: "Edit" }).click();
@@ -58,12 +58,12 @@ test("an admin creates, edits and deletes a menu item, image included", async ({
 
   // Delete it.
   await page
-    .getByRole("button", { name: `Actions for ${name} doppio`, exact: true })
+    .getByRole("button", { name: `More actions for ${name} doppio`, exact: true })
     .filter({ visible: true })
     .click();
   await page.getByRole("menuitem", { name: "Delete" }).click();
   const confirm = page.getByRole("dialog");
-  await expect(confirm.getByText("Delete item?")).toBeVisible();
+  await expect(confirm.getByText(`Delete ${name} doppio?`)).toBeVisible();
   await confirm.getByRole("button", { name: "Delete" }).click();
   await expect(listed(page, `${name} doppio`)).toHaveCount(0);
 });

@@ -15,4 +15,9 @@ export type IPromotionRepository = {
   /** A taken code is `UniqueConstraintError(["code"])`. */
   create(input: PromoCodeInput, audit?: AuditHook<PromoCode>): Promise<PromoCode>;
   update(id: string, input: PromoCodeInput, audit?: AuditHook<PromoCode>): Promise<PromoCode>;
+  /**
+   * Remove a code for good. Orders that used it keep their snapshotted code and
+   * discount — they reference it by id without a foreign key.
+   */
+  delete(id: string, audit?: AuditHook<void>): Promise<void>;
 };

@@ -12,11 +12,11 @@ import { GetCategories } from "../GetCategories";
 import { GetCategoryById } from "../GetCategoryById";
 import { GetCategoryBySlug } from "../GetCategoryBySlug";
 import { GetCategoryTranslations } from "../GetCategoryTranslations";
-import { ListCategories } from "../ListCategories";
+import { MoveCategory } from "../MoveCategory";
 import { UpdateCategory } from "../UpdateCategory";
 
 import type { NewActivityEntry } from "../../../entities/ActivityEntry";
-import type { Category } from "../../../entities/Category";
+import type { Category, CategoryMoveDirection } from "../../../entities/Category";
 import type { BulkCategoryUpdate, ICategoryRepository, NewCategory } from "../../../repositories/ICategoryRepository";
 import type { IImageStorageRepository } from "../../../repositories/IImageStorageRepository";
 
@@ -30,6 +30,7 @@ function category(overrides: Partial<Category> = {}): Category {
     iconUrl: "https://cdn/categories/coffee.png",
     isActive: true,
     productCount: 0,
+    hiddenProductCount: 0,
     createdAt: new Date(0),
     updatedAt: new Date(0),
     ...overrides,
@@ -48,8 +49,8 @@ type Fake = {
   create: ReturnType<typeof vi.fn<ICategoryRepository["create"]>>;
   update: ReturnType<typeof vi.fn<ICategoryRepository["update"]>>;
   remove: ReturnType<typeof vi.fn<ICategoryRepository["delete"]>>;
-  listPage: ReturnType<typeof vi.fn<ICategoryRepository["listPage"]>>;
   applyBulkChange: ReturnType<typeof vi.fn<ICategoryRepository["applyBulkChange"]>>;
+  setOrder: ReturnType<typeof vi.fn<ICategoryRepository["setOrder"]>>;
   entries: (NewActivityEntry | null)[];
 };
 
@@ -78,12 +79,6 @@ function repoWith(rows: Category[]): Fake {
   const remove = vi.fn<ICategoryRepository["delete"]>(async (_id, audit) => {
     if (audit) entries.push(audit());
   });
-  const listPage = vi.fn<ICategoryRepository["listPage"]>(async (_filters, page) => ({
-    items: rows,
-    total: rows.length,
-    page: page.page,
-    pageSize: page.pageSize,
-  }));
   const applyBulkChange = vi.fn<ICategoryRepository["applyBulkChange"]>(async (ids, change, audit) => {
     const updates: BulkCategoryUpdate[] = ids
       .map((id) => byId.get(id))
@@ -93,9 +88,12 @@ function repoWith(rows: Category[]): Fake {
     return updates;
   });
 
+  const setOrder = vi.fn<ICategoryRepository["setOrder"]>(async (_ids, audit) => {
+    if (audit) entries.push(audit());
+  });
+
   const repo: ICategoryRepository = {
     getAll: vi.fn(async () => rows),
-    listPage,
     getById: vi.fn(async (id: string) => byId.get(id) ?? null),
     getBySlug: vi.fn(async (slug: string) => rows.find((row) => row.slug === slug) ?? null),
     create,
@@ -103,8 +101,9 @@ function repoWith(rows: Category[]): Fake {
     delete: remove,
     getTranslations: vi.fn(async () => [{ locale: "fa", name: "قهوه" }]),
     applyBulkChange,
+    setOrder,
   };
-  return { repo, create, update, remove, listPage, applyBulkChange, entries };
+  return { repo, create, update, remove, applyBulkChange, setOrder, entries };
 }
 
 function storage(): {
@@ -320,17 +319,50 @@ describe("BulkUpdateCategories", () => {
   });
 });
 
-describe("ListCategories", () => {
-  it.each<[string | undefined, string | undefined]>([
-    ["  tea  ", "tea"],
-    ["   ", undefined],
-    [undefined, undefined],
-  ])("normalizes the search term %j", async (query, expected) => {
-    const { repo, listPage } = repoWith([category()]);
-    const page = { page: 1, pageSize: 25 };
-    const result = await new ListCategories(repo).execute({ query, status: "active" }, page, "fa");
-    expect(listPage).toHaveBeenCalledWith({ query: expected, status: "active" }, page, "fa");
-    expect(result.total).toBe(1);
+describe("MoveCategory", () => {
+  const menu = (): Category[] => [
+    category({ id: "c1", name: "Coffee" }),
+    category({ id: "c2", name: "Tea" }),
+    category({ id: "c3", name: "Cakes" }),
+  ];
+
+  it("swaps a category with the one above it and records its new place", async () => {
+    const { repo, setOrder, entries } = repoWith(menu());
+    await new MoveCategory(repo).execute("c2", "up", ACTOR);
+
+    expect(setOrder.mock.calls[0][0]).toEqual(["c2", "c1", "c3"]);
+    expect(entries).toEqual([
+      {
+        actorId: ACTOR.id,
+        actorName: ACTOR.name,
+        action: "category.updated",
+        entityType: "category",
+        entityId: "c2",
+        entityLabel: "Tea",
+        changes: [{ field: "position", before: "2", after: "1" }],
+      },
+    ]);
+  });
+
+  it("swaps a category with the one below it", async () => {
+    const { repo, setOrder } = repoWith(menu());
+    await new MoveCategory(repo).execute("c2", "down", ACTOR);
+    expect(setOrder.mock.calls[0][0]).toEqual(["c1", "c3", "c2"]);
+  });
+
+  it.each<[string, CategoryMoveDirection]>([
+    ["c1", "up"],
+    ["c3", "down"],
+  ])("refuses to move %s %s past the end of the menu", async (id, direction) => {
+    const { repo, setOrder } = repoWith(menu());
+    await expect(new MoveCategory(repo).execute(id, direction, ACTOR)).rejects.toBeInstanceOf(ValidationError);
+    expect(setOrder).not.toHaveBeenCalled();
+  });
+
+  it("is a not-found for a category that doesn't exist", async () => {
+    const { repo, setOrder } = repoWith(menu());
+    await expect(new MoveCategory(repo).execute("nope", "up", ACTOR)).rejects.toBeInstanceOf(NotFoundError);
+    expect(setOrder).not.toHaveBeenCalled();
   });
 });
 

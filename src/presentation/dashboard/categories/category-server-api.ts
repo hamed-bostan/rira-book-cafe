@@ -1,8 +1,6 @@
 import type { Category } from "@/src/domain/entities/Category";
-import type { Page } from "@/src/domain/entities/Pagination";
 import type { CategoryTranslationInput } from "@/src/domain/repositories/ICategoryRepository";
 import { ApiError } from "@/src/lib/api/ApiError";
-import { pageResponseSchema } from "@/src/lib/api/page-response-schema";
 import { serverApiGet } from "@/src/lib/api/server-client";
 import {
   categoryListResponseSchema,
@@ -11,9 +9,6 @@ import {
 
 import { categoryTranslationListResponseSchema } from "./category-translation-response-schema";
 
-/** What `GET /api/admin/categories` promises: a page of categories plus the total behind it. */
-const categoryPageResponseSchema = pageResponseSchema(categoryResponseSchema);
-
 /**
  * Server-side category reads for the dashboard (BFF). Fetched during server
  * render so the data arrives with the page instead of after a client round-trip.
@@ -21,24 +16,13 @@ const categoryPageResponseSchema = pageResponseSchema(categoryResponseSchema);
  * to re-run these reads.
  */
 export const categoriesServerApi = {
-  list(): Promise<Category[]> {
-    // Localized: the admin list is for reading, so it follows the active locale
-    // (falling back to the base name where a category has no translation yet).
-    return serverApiGet("/categories", categoryListResponseSchema);
-  },
-
   /**
-   * The category-management list, with the search/status filters and ordering the
-   * caller's query string carries.
-   *
-   * `params` is forwarded verbatim so the screen never has to know the param
-   * names — it hands over the URL it was rendered with and the route parses it
-   * back through the same contract that built it.
+   * Every category in menu order, hidden ones included, each with its item
+   * counts. Localized: the admin list is for reading, so it follows the active
+   * locale (falling back to the base name where a category has no translation yet).
    */
-  listPage(params: URLSearchParams): Promise<Page<Category>> {
-    return serverApiGet("/admin/categories", categoryPageResponseSchema, {
-      params: Object.fromEntries(params),
-    });
+  list(): Promise<Category[]> {
+    return serverApiGet("/categories", categoryListResponseSchema);
   },
 
   /**

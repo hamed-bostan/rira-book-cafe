@@ -79,6 +79,7 @@ function waitlist(current: BookWaitlistEntry | null, cancelled: BookWaitlistEntr
     ]),
     listForUser: vi.fn(async () => [entry()]),
     listOpen: vi.fn(async () => [entry(), entry({ id: "w2", productId: "b2" })]),
+    notifyNext: vi.fn(async () => null),
   } as unknown as IBookWaitlistRepository;
   return { repo, cancel };
 }

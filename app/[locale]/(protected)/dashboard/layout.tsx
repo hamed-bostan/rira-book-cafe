@@ -48,10 +48,11 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   const sidebarCollapsed = (await cookies()).get(SIDEBAR_COLLAPSED_COOKIE_NAME)?.value === "1";
 
   // The counts beside the nav links — what needs someone: orders in the queue,
-  // today's table requests, suite requests, overdue books — and the bell's new
-  // orders. Chrome, not content: a failed read drops that count, not the page.
+  // today's table requests, suite requests, overdue books, holds ready to
+  // collect — and the bell's new orders. Chrome, not content: a failed read
+  // drops that count, not the page.
   const today = cafeDayOf(new Date());
-  const [counts, tableRequests, suiteRequests, overdueLoans, newOrders] = await Promise.all([
+  const [counts, tableRequests, suiteRequests, overdueLoans, readyHolds, newOrders] = await Promise.all([
     ordersServerApi.counts().catch(() => null),
     reservationsServerApi
       .listForDay(today, "requested")
@@ -64,6 +65,10 @@ export default async function DashboardLayout({ children }: { children: ReactNod
     bookLoansServerApi
       .list("overdue")
       .then((list) => list.length)
+      .catch(() => undefined),
+    bookLoansServerApi
+      .listWaitlist()
+      .then((list) => list.filter((entry) => entry.status === "notified").length)
       .catch(() => undefined),
     ordersServerApi
       .listPage(new URLSearchParams({ status: "pending", pageSize: String(BELL_ORDER_COUNT) }))
@@ -89,6 +94,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         navReservations: tableRequests,
         navSuite: suiteRequests,
         navBookLoans: overdueLoans,
+        navBookHolds: readyHolds,
       }}
       newOrders={newOrders}
     >

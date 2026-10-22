@@ -50,6 +50,7 @@ const FORM_FIELDS = [
   "bookAuthor",
   "bookIsbn",
   "bookAvailability",
+  "bookCopies",
 ] as const satisfies readonly (keyof ProductFormInput)[];
 
 type ProductFormProps =
@@ -85,6 +86,7 @@ function toDefaults(product?: Product, translations?: ProductTranslationInput[])
     bookAuthor: product?.book?.author ?? "",
     bookIsbn: product?.book?.isbn ?? "",
     bookAvailability: product?.book?.availability ?? "sale",
+    bookCopies: product?.book?.copies != null ? String(product.book.copies) : "",
     faName: fa?.name ?? "",
     faUnit: fa?.unit ?? "",
     faDescription: fa?.description ?? "",
@@ -304,6 +306,16 @@ export function ProductForm(props: ProductFormProps) {
           >
             {(control) => (
               <Input {...control} {...register("bookIsbn")} dir="ltr" inputMode="numeric" placeholder="978-600-..." />
+            )}
+          </TextField>
+
+          <TextField
+            label={t("bookCopiesLabel")}
+            description={t("bookCopiesDescription")}
+            error={fieldError(errors.bookCopies?.message)}
+          >
+            {(control) => (
+              <Input {...control} {...register("bookCopies")} dir="ltr" inputMode="numeric" placeholder="1" />
             )}
           </TextField>
 

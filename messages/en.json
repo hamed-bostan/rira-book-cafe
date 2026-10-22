@@ -172,7 +172,10 @@
     "outsideMatchRange": "That ledger line is outside what this statement can match.",
     "wrongAccount": "Only lines on the bank account can be matched.",
     "postingKindInvalid": "Choose what the line is.",
-    "tableInvalid": "Choose tables from the floor plan."
+    "tableInvalid": "Choose tables from the floor plan.",
+    "copiesWhole": "Enter a whole number of copies.",
+    "copiesRange": "Between 1 and 20 copies.",
+    "extendInvalid": "Choose how many days to extend by."
   },
   "apiErrors": {
     "badRequest": "The request couldn't be read. Please try again.",
@@ -223,7 +226,8 @@
     "matchUnbalanced": "The lines picked on each side don't add up to the same amount.",
     "notReconciled": "The statement doesn't reconcile yet — match every line and clear the difference first.",
     "previousNotReconciled": "Reconcile the earlier statements first.",
-    "tableHeld": "That table is held for an event at that time."
+    "tableHeld": "That table is held for an event at that time.",
+    "allCopiesOut": "Every copy of that book is out. Add the guest to its line instead."
   },
   "meta": {
     "siteName": "Rira Book Cafe",
@@ -286,7 +290,8 @@
     "newOrder": "New order #{number}",
     "notificationsEmpty": "No orders waiting. You're all caught up.",
     "groupBookings": "Bookings",
-    "groupLibrary": "Library"
+    "groupLibrary": "Library",
+    "navBookHolds": "Book holds"
   },
   "dashTeam": {
     "membersHeading": "Team members",
@@ -523,7 +528,9 @@
     "created": "“{name}” added to the menu.",
     "saved": "“{name}” saved.",
     "deleted": "“{name}” deleted.",
-    "bulkDone": "{count, plural, one {# item updated.} other {# items updated.}}"
+    "bulkDone": "{count, plural, one {# item updated.} other {# items updated.}}",
+    "bookCopiesLabel": "Copies to lend",
+    "bookCopiesDescription": "How many copies the lending shelf has. Leave blank for one."
   },
   "dashCategories": {
     "selectAllShort": "Select all",
@@ -844,7 +851,8 @@
       "bookLoan": {
         "lent": "{actor} lent a book ({entity})",
         "returned": "{actor} marked loan {entity} returned",
-        "lost": "{actor} marked loan {entity} lost"
+        "lost": "{actor} marked loan {entity} lost",
+        "extended": "{actor} extended loan {entity}"
       }
     },
     "role": {
@@ -906,7 +914,8 @@
       "linesRemoved": "Lines removed",
       "matched": "Matches made",
       "unmatched": "Matches undone",
-      "tableLabels": "Held tables"
+      "tableLabels": "Held tables",
+      "dueAt": "Due"
     },
     "filterField": "Filter by what changed",
     "allFields": "Any change",
@@ -2253,22 +2262,17 @@
     "lend": "Lend a book",
     "lendTitle": "Lend a book",
     "book": "Book",
-    "pickBook": "Choose a book…",
-    "copiesOut": "{count, plural, one {{formatted} out} other {{formatted} out}}",
     "borrowerName": "Borrower's name",
     "borrowerPhone": "Borrower's phone",
-    "dueOn": "Due back on",
     "note": "Note (optional)",
     "notePlaceholder": "e.g. condition, deposit taken",
     "phoneHint": "If the phone matches a guest account, they'll see this loan on their account page.",
     "lendSubmit": "Record loan",
-    "lending": "Saving…",
     "lendError": "Couldn't record the loan. Please try again.",
     "dialogCancel": "Back",
     "searchLabel": "Search loans",
     "searchPlaceholder": "Name, phone or book",
-    "viewLabel": "Show",
-    "viewOption": "Show: {view}",
+    "viewLabel": "Filter loans",
     "view": {
       "open": "On loan",
       "overdue": "Overdue",
@@ -2287,28 +2291,48 @@
       "returned": "Returned",
       "lost": "Lost"
     },
-    "overdueSummary": "{count, plural, one {# book is overdue} other {# books are overdue}}.",
     "lentOn": "Lent {date} by {by}",
-    "dueOnDate": "Due {date}",
     "returnedOn": "Returned {date}",
     "confirmLostTitle": "Mark L-{reference} as lost?",
-    "confirmLostMessage": "If the book turns up later you can still mark it returned.",
     "updateError": "Couldn't update the loan. Please try again.",
     "emptyTitle": "No books here",
     "emptyBody": "Books you lend will show up here.",
     "noMatchesTitle": "No matches",
     "noMatchesBody": "No loans match that search.",
-    "waitlistHeading": "Waitlist",
-    "waitlistSubtitle": "Guests waiting for a book that's out. The first in line is told on their account when a copy comes back.",
-    "waitlistNotified": "Told it's back",
-    "waitlistRemoveAria": "Take {name} off the waitlist",
     "updated": {
       "out": "L-{reference} is back on loan",
       "returned": "L-{reference} marked returned",
       "lost": "L-{reference} marked lost"
     },
-    "lent": "Loan recorded for {name}",
-    "waitlistRemoved": "{name} taken off the waitlist"
+    "overdueLink": "{count, plural, one {# book is overdue} other {# books are overdue}}",
+    "lendSub": "Note who takes it and when it's due back.",
+    "onShelf": "{count, plural, other {{formatted} on the shelf}}",
+    "allOut": "all out",
+    "namePlaceholder": "Full name",
+    "dueBack": "Due back",
+    "loanLength": "Loan length",
+    "days": "{count, plural, one {{formatted} day} other {{formatted} days}}",
+    "dueOnDay": "Due {date}",
+    "allOutError": "All copies are out. Add the guest to the line in Book holds instead.",
+    "heldForWarning": "Held for {name}, who's first in line. Lending it to someone else skips them.",
+    "lentToast": "Loan recorded for {name} · L-{reference}, due {date}",
+    "holdsCardTitle": "Book holds",
+    "holdsNone": "Nobody is waiting for a book.",
+    "holdsReady": "{count, plural, other {{formatted} ready to collect}}",
+    "holdsWaiting": "{count, plural, other {{formatted} waiting}} across {books, plural, one {{booksFormatted} book} other {{booksFormatted} books}}",
+    "openHolds": "Open book holds",
+    "loansLabel": "Loans",
+    "moreActionsAria": "More actions for L-{reference}",
+    "extend": "Extend {days, plural, other {{formatted} days}}",
+    "markLost": "Mark lost",
+    "confirmLostBody": "{title} · {name}. If the book turns up later you can still mark it returned.",
+    "firstInLineTold": "{name} is first in line for {title} and has been told.",
+    "extendedToast": "L-{reference} now due {date}",
+    "dueOverdue": "Due {date} · {days, plural, one {{formatted} day} other {{formatted} days}} overdue",
+    "dueToday": "Due today",
+    "dueIn": "Due {date} · in {days, plural, one {{formatted} day} other {{formatted} days}}",
+    "wasDue": "Was due {date}",
+    "peopleWaiting": "{count, plural, one {{formatted} person} other {{formatted} people}} waiting"
   },
   "dashSuite": {
     "heading": "Suite",
@@ -2684,5 +2708,60 @@
     "tableName": "{label, select, long {Long table} other {Table {number}}}",
     "wholeFloor": "Whole floor",
     "seats": "Seats {seats}"
+  },
+  "dashBookHolds": {
+    "heading": "Book holds",
+    "subtitle": "Guests waiting for a book that's out. When a copy comes back, the first in line is told it's theirs to collect.",
+    "addHold": "Add a hold",
+    "addHoldSub": "For a guest who asks at the counter or by phone.",
+    "book": "Book",
+    "onShelfLendInstead": "on the shelf, lend it instead",
+    "inLine": "{count, plural, one {{formatted} person} other {{formatted} people}} in line",
+    "guestName": "Guest name",
+    "guestNamePlaceholder": "Full name",
+    "guestPhone": "Phone",
+    "placeInLine": "They'll be number {position} in line.",
+    "addToLine": "Add to line",
+    "back": "Back",
+    "addedToast": "{name} added to the line for {title}.",
+    "actionError": "Couldn't update the line. Please try again.",
+    "holdsLabel": "Holds",
+    "tabsLabel": "Open or closed holds",
+    "tab": {
+      "open": "Open",
+      "closed": "Closed"
+    },
+    "onShelfHeld": "On the shelf · held for {name}",
+    "copiesOnShelf": "{count, plural, one {{formatted} copy} other {{formatted} copies}} on the shelf",
+    "outOnLoan": "Out on loan",
+    "allCopiesOut": "{count, plural, other {All {formatted} copies out}}",
+    "overdueSince": "L-{reference} overdue since {date}",
+    "nextBack": "next back {date}",
+    "positionTitle": "Number {position} in line",
+    "status": {
+      "waiting": "Waiting",
+      "notified": "Ready to collect",
+      "fulfilled": "Borrowed",
+      "cancelled": "Cancelled"
+    },
+    "toldOn": "Told {date}",
+    "toldAgo": "Told {date}, {days, plural, one {{formatted} day} other {{formatted} days}} ago",
+    "joinedOn": "Joined {date}",
+    "skip": "Skip",
+    "lendNow": "Lend now",
+    "remove": "Remove",
+    "removeAria": "Remove {name} from the line",
+    "skipTitle": "Skip {name}?",
+    "skipNext": "{name} is next and will be told {title} is waiting.",
+    "skipNobody": "Nobody else is in line. {title} goes back on the open shelf.",
+    "removeTitle": "Remove {name} from the line?",
+    "removeBody": "They lose their place for {title}.",
+    "lentToast": "Lent {title} to {name} · L-{reference}, due {date}",
+    "removedToast": "{name} taken off the line for {title}.",
+    "nextToldToast": "{name} has been told it's waiting.",
+    "emptyOpenTitle": "Nobody is waiting",
+    "emptyOpenBody": "When a guest asks for a book that's out, add them to the line.",
+    "emptyClosedTitle": "No closed holds",
+    "emptyClosedBody": "Borrowed and cancelled holds from the last two months land here."
   }
 }

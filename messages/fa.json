@@ -172,7 +172,10 @@
     "outsideMatchRange": "این ردیف دفتر خارج از بازه‌ای است که این صورت‌حساب می‌تواند تطبیق دهد.",
     "wrongAccount": "فقط ردیف‌های حساب بانک قابل تطبیق‌اند.",
     "postingKindInvalid": "نوع ردیف را انتخاب کنید.",
-    "tableInvalid": "میزها را از نقشهٔ سالن انتخاب کنید."
+    "tableInvalid": "میزها را از نقشهٔ سالن انتخاب کنید.",
+    "copiesWhole": "تعداد نسخه را به صورت عدد صحیح وارد کنید.",
+    "copiesRange": "بین ۱ تا ۲۰ نسخه.",
+    "extendInvalid": "مدت تمدید را انتخاب کنید."
   },
   "apiErrors": {
     "alreadyPosted": "این مورد قبلاً ثبت شده است.",
@@ -223,7 +226,8 @@
     "matchUnbalanced": "جمع ردیف‌های انتخاب‌شده در دو طرف برابر نیست.",
     "notReconciled": "صورت‌حساب هنوز تطبیق ندارد — همهٔ ردیف‌ها را تطبیق دهید و اختلاف را صفر کنید.",
     "previousNotReconciled": "اول صورت‌حساب‌های قبلی را مغایرت‌گیری کنید.",
-    "tableHeld": "این میز در آن زمان برای یک رویداد نگه داشته شده است."
+    "tableHeld": "این میز در آن زمان برای یک رویداد نگه داشته شده است.",
+    "allCopiesOut": "همهٔ نسخه‌های این کتاب بیرون است. مهمان را به صف آن اضافه کنید."
   },
   "meta": {
     "siteName": "کافه کتاب ریرا",
@@ -286,7 +290,8 @@
     "newOrder": "سفارش جدید #{number}",
     "notificationsEmpty": "سفارشی در انتظار نیست.",
     "groupBookings": "رزروها",
-    "groupLibrary": "کتابخانه"
+    "groupLibrary": "کتابخانه",
+    "navBookHolds": "رزرو کتاب"
   },
   "dashTeam": {
     "membersHeading": "اعضای تیم",
@@ -523,7 +528,9 @@
     "created": "«{name}» به منو اضافه شد.",
     "saved": "«{name}» ذخیره شد.",
     "deleted": "«{name}» حذف شد.",
-    "bulkDone": "{count, plural, other {# آیتم به‌روزرسانی شد.}}"
+    "bulkDone": "{count, plural, other {# آیتم به‌روزرسانی شد.}}",
+    "bookCopiesLabel": "نسخه‌های امانتی",
+    "bookCopiesDescription": "قفسهٔ امانت چند نسخه از این کتاب دارد. برای یک نسخه خالی بگذارید."
   },
   "dashCategories": {
     "selectAllShort": "انتخاب همه",
@@ -844,7 +851,8 @@
       "bookLoan": {
         "lent": "{actor} کتابی به امانت داد ({entity})",
         "returned": "{actor} امانت {entity} را بازگشته ثبت کرد",
-        "lost": "{actor} امانت {entity} را گم‌شده ثبت کرد"
+        "lost": "{actor} امانت {entity} را گم‌شده ثبت کرد",
+        "extended": "{actor} امانت {entity} را تمدید کرد"
       }
     },
     "role": {
@@ -906,7 +914,8 @@
       "linesRemoved": "ردیف‌های حذف‌شده",
       "matched": "تطبیق‌ها",
       "unmatched": "تطبیق‌های برداشته‌شده",
-      "tableLabels": "میزهای نگه‌داشته"
+      "tableLabels": "میزهای نگه‌داشته",
+      "dueAt": "موعد"
     },
     "filterField": "فیلتر بر اساس نوع تغییر",
     "allFields": "همه تغییرها",
@@ -2253,22 +2262,17 @@
     "lend": "امانت دادن کتاب",
     "lendTitle": "امانت دادن کتاب",
     "book": "کتاب",
-    "pickBook": "یک کتاب انتخاب کنید…",
-    "copiesOut": "{count, plural, other {{formatted} نسخه بیرون}}",
     "borrowerName": "نام امانت‌گیرنده",
     "borrowerPhone": "تلفن امانت‌گیرنده",
-    "dueOn": "تاریخ بازگرداندن",
     "note": "یادداشت (اختیاری)",
     "notePlaceholder": "مثلاً وضعیت کتاب، ودیعهٔ دریافتی",
     "phoneHint": "اگر این شماره حساب کاربری داشته باشد، مهمان این امانت را در صفحهٔ حسابش می‌بیند.",
     "lendSubmit": "ثبت امانت",
-    "lending": "در حال ذخیره…",
     "lendError": "ثبت امانت ممکن نشد. دوباره تلاش کنید.",
     "dialogCancel": "بازگشت",
     "searchLabel": "جست‌وجوی امانت‌ها",
     "searchPlaceholder": "نام، تلفن یا کتاب",
-    "viewLabel": "نمایش",
-    "viewOption": "نمایش: {view}",
+    "viewLabel": "فیلتر امانت‌ها",
     "view": {
       "open": "در امانت",
       "overdue": "دیرکرد",
@@ -2287,28 +2291,48 @@
       "returned": "برگشت",
       "lost": "گم شد"
     },
-    "overdueSummary": "{count, plural, other {# کتاب دیرکرد دارد}}.",
     "lentOn": "امانت در {date} توسط {by}",
-    "dueOnDate": "موعد {date}",
     "returnedOn": "بازگشت {date}",
     "confirmLostTitle": "L-{reference} گم‌شده ثبت شود؟",
-    "confirmLostMessage": "اگر کتاب بعداً پیدا شد، هنوز می‌توانید آن را بازگشته ثبت کنید.",
     "updateError": "به‌روزرسانی امانت ممکن نشد. دوباره تلاش کنید.",
     "emptyTitle": "کتابی اینجا نیست",
     "emptyBody": "کتاب‌هایی که امانت می‌دهید اینجا نمایش داده می‌شوند.",
     "noMatchesTitle": "نتیجه‌ای نیست",
     "noMatchesBody": "هیچ امانتی با این جست‌وجو پیدا نشد.",
-    "waitlistHeading": "صف انتظار",
-    "waitlistSubtitle": "مهمان‌هایی که منتظر کتابی هستند که امانت رفته. وقتی نسخه‌ای برگردد، نفر اول صف در حسابش باخبر می‌شود.",
-    "waitlistNotified": "باخبر شده",
-    "waitlistRemoveAria": "حذف {name} از صف انتظار",
     "updated": {
       "out": "L-{reference} دوباره امانت رفت",
       "returned": "L-{reference} بازگشته ثبت شد",
       "lost": "L-{reference} گم‌شده ثبت شد"
     },
-    "lent": "امانت برای {name} ثبت شد",
-    "waitlistRemoved": "{name} از صف انتظار حذف شد"
+    "overdueLink": "{count, plural, other {# کتاب دیرکرد دارد}}",
+    "lendSub": "ثبت کنید چه کسی می‌برد و کی باید برگرداند.",
+    "onShelf": "{count, plural, other {{formatted} نسخه در قفسه}}",
+    "allOut": "همه بیرون",
+    "namePlaceholder": "نام کامل",
+    "dueBack": "موعد بازگرداندن",
+    "loanLength": "مدت امانت",
+    "days": "{count, plural, other {{formatted} روز}}",
+    "dueOnDay": "موعد {date}",
+    "allOutError": "همهٔ نسخه‌ها بیرون است. مهمان را در «رزرو کتاب» به صف اضافه کنید.",
+    "heldForWarning": "برای {name} نگه داشته شده که نفر اول صف است. امانت دادن به کس دیگری او را رد می‌کند.",
+    "lentToast": "امانت برای {name} ثبت شد · L-{reference}، موعد {date}",
+    "holdsCardTitle": "رزرو کتاب",
+    "holdsNone": "کسی منتظر کتابی نیست.",
+    "holdsReady": "{count, plural, other {{formatted} آمادهٔ تحویل}}",
+    "holdsWaiting": "{count, plural, other {{formatted} در انتظار}} برای {books, plural, other {{booksFormatted} کتاب}}",
+    "openHolds": "باز کردن رزرو کتاب",
+    "loansLabel": "امانت‌ها",
+    "moreActionsAria": "کارهای بیشتر برای L-{reference}",
+    "extend": "تمدید {days, plural, other {{formatted} روز}}",
+    "markLost": "ثبت گم‌شدن",
+    "confirmLostBody": "{title} · {name}. اگر کتاب بعداً پیدا شد، هنوز می‌توانید آن را بازگشته ثبت کنید.",
+    "firstInLineTold": "{name} نفر اول صف {title} است و به او خبر داده شد.",
+    "extendedToast": "موعد L-{reference} شد {date}",
+    "dueOverdue": "موعد {date} · {days, plural, other {{formatted} روز}} دیرکرد",
+    "dueToday": "موعد امروز",
+    "dueIn": "موعد {date} · {days, plural, other {{formatted} روز}} دیگر",
+    "wasDue": "موعد {date} بود",
+    "peopleWaiting": "{count, plural, other {{formatted} نفر}} در انتظار"
   },
   "dashSuite": {
     "heading": "سوئیت",
@@ -2684,5 +2708,60 @@
     "tableName": "{label, select, long {میز بلند} other {میز {number}}}",
     "wholeFloor": "کل سالن",
     "seats": "{seats} جا"
+  },
+  "dashBookHolds": {
+    "heading": "رزرو کتاب",
+    "subtitle": "مهمان‌هایی که منتظر کتابی هستند که بیرون است. وقتی نسخه‌ای برگردد، به نفر اول صف خبر داده می‌شود که می‌تواند آن را ببرد.",
+    "addHold": "افزودن رزرو",
+    "addHoldSub": "برای مهمانی که حضوری یا تلفنی می‌پرسد.",
+    "book": "کتاب",
+    "onShelfLendInstead": "در قفسه است، امانتش بدهید",
+    "inLine": "{count, plural, other {{formatted} نفر}} در صف",
+    "guestName": "نام مهمان",
+    "guestNamePlaceholder": "نام کامل",
+    "guestPhone": "تلفن",
+    "placeInLine": "نفر {position} صف خواهد بود.",
+    "addToLine": "افزودن به صف",
+    "back": "بازگشت",
+    "addedToast": "{name} به صف {title} اضافه شد.",
+    "actionError": "به‌روزرسانی صف ممکن نشد. دوباره تلاش کنید.",
+    "holdsLabel": "رزروها",
+    "tabsLabel": "رزروهای باز یا بسته",
+    "tab": {
+      "open": "باز",
+      "closed": "بسته"
+    },
+    "onShelfHeld": "در قفسه · برای {name} نگه داشته شده",
+    "copiesOnShelf": "{count, plural, other {{formatted} نسخه}} در قفسه",
+    "outOnLoan": "در امانت",
+    "allCopiesOut": "{count, plural, other {هر {formatted} نسخه بیرون}}",
+    "overdueSince": "L-{reference} از {date} دیرکرد دارد",
+    "nextBack": "بازگشت بعدی {date}",
+    "positionTitle": "نفر {position} صف",
+    "status": {
+      "waiting": "در انتظار",
+      "notified": "آمادهٔ تحویل",
+      "fulfilled": "امانت گرفت",
+      "cancelled": "لغوشده"
+    },
+    "toldOn": "خبر داده شد {date}",
+    "toldAgo": "خبر داده شد {date}، {days, plural, other {{formatted} روز}} پیش",
+    "joinedOn": "پیوست {date}",
+    "skip": "رد کردن",
+    "lendNow": "امانت بده",
+    "remove": "حذف",
+    "removeAria": "حذف {name} از صف",
+    "skipTitle": "{name} رد شود؟",
+    "skipNext": "نفر بعد {name} است و به او خبر داده می‌شود که {title} منتظرش است.",
+    "skipNobody": "کس دیگری در صف نیست. {title} به قفسه برمی‌گردد.",
+    "removeTitle": "{name} از صف حذف شود؟",
+    "removeBody": "جایش در صف {title} را از دست می‌دهد.",
+    "lentToast": "{title} به {name} امانت داده شد · L-{reference}، موعد {date}",
+    "removedToast": "{name} از صف {title} خارج شد.",
+    "nextToldToast": "به {name} خبر داده شد که منتظرش است.",
+    "emptyOpenTitle": "کسی منتظر نیست",
+    "emptyOpenBody": "وقتی مهمانی کتابی را می‌خواهد که بیرون است، او را به صف اضافه کنید.",
+    "emptyClosedTitle": "رزرو بسته‌ای نیست",
+    "emptyClosedBody": "رزروهای امانت‌گرفته و لغوشدهٔ دو ماه اخیر اینجا می‌آیند."
   }
 }

@@ -1,4 +1,5 @@
 import { BOOK_LOAN_STATUSES, type BookLoan, type BookLoanStatus } from "@/src/domain/entities/BookLoan";
+import { lendingCopies } from "@/src/domain/entities/Product";
 import { ConflictError } from "@/src/domain/errors/ConflictError";
 import { NotFoundError } from "@/src/domain/errors/NotFoundError";
 import type { AuditHook } from "@/src/domain/repositories/AuditHook";
@@ -34,6 +35,14 @@ export class PrismaBookLoanRepository implements IBookLoanRepository {
       });
       if (existing) {
         throw new ConflictError("ALREADY_ON_LOAN", `This borrower already has this book (L-${existing.reference}).`);
+      }
+      // Every copy out: there's nothing on the shelf to hand over.
+      const [book, out] = await Promise.all([
+        tx.product.findUnique({ where: { id: input.productId }, select: { bookCopies: true } }),
+        tx.bookLoan.count({ where: { productId: input.productId, status: "out" } }),
+      ]);
+      if (out >= lendingCopies({ copies: book?.bookCopies ?? undefined })) {
+        throw new ConflictError("ALL_COPIES_OUT", "Every copy of this book is out. Add the guest to its line instead.");
       }
 
       const row = await tx.bookLoan.create({
@@ -109,7 +118,7 @@ export class PrismaBookLoanRepository implements IBookLoanRepository {
     const [books, open] = await Promise.all([
       this.db.product.findMany({
         where: { kind: "book" },
-        select: { id: true, name: true, bookAuthor: true },
+        select: { id: true, name: true, bookAuthor: true, bookCopies: true },
         orderBy: { name: "asc" },
       }),
       this.db.bookLoan.groupBy({ by: ["productId"], where: { status: "out" }, _count: { _all: true } }),
@@ -120,6 +129,7 @@ export class PrismaBookLoanRepository implements IBookLoanRepository {
       title: book.name,
       author: book.bookAuthor ?? undefined,
       onLoan: onLoan.get(book.id) ?? 0,
+      copies: lendingCopies({ copies: book.bookCopies ?? undefined }),
     }));
   }
 
@@ -127,12 +137,34 @@ export class PrismaBookLoanRepository implements IBookLoanRepository {
     return this.db.bookLoan.count({ where: { productId, status: "out" } });
   }
 
-  async getBook(productId: string): Promise<{ title: string; author?: string } | null> {
+  async getBook(productId: string): Promise<{ title: string; author?: string; copies: number } | null> {
     const book = await this.db.product.findFirst({
       where: { id: productId, kind: "book" },
-      select: { name: true, bookAuthor: true },
+      select: { name: true, bookAuthor: true, bookCopies: true },
     });
-    return book ? { title: book.name, author: book.bookAuthor ?? undefined } : null;
+    return book
+      ? {
+          title: book.name,
+          author: book.bookAuthor ?? undefined,
+          copies: lendingCopies({ copies: book.bookCopies ?? undefined }),
+        }
+      : null;
+  }
+
+  async extend(id: string, dueAt: string, audit?: AuditHook<BookLoan>): Promise<BookLoan> {
+    return inTransaction(this.db, async (tx) => {
+      // Only while it's still out: a loan closed meanwhile matches nothing.
+      const result = await tx.bookLoan.updateMany({ where: { id, status: "out" }, data: { dueAt: new Date(dueAt) } });
+      if (result.count === 0) {
+        if (!(await tx.bookLoan.findUnique({ where: { id }, select: { id: true } }))) {
+          throw new NotFoundError("book loan", id);
+        }
+        throw new ConflictError("INVALID_TRANSITION", "This loan was just closed by someone else.");
+      }
+      const saved = toBookLoan(await tx.bookLoan.findUniqueOrThrow({ where: { id } }));
+      await recordAudit(tx, saved, audit);
+      return saved;
+    });
   }
 
   async applyStatus(

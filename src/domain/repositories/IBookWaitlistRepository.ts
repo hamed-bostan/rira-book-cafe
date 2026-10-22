@@ -8,8 +8,8 @@ export type NewWaitlistEntry = Pick<
 
 export type IBookWaitlistRepository = {
   /**
-   * Put the guest in line. A guest already in line for the book is refused
-   * (`ConflictError("ALREADY_WAITING")`) — enforced by a unique index.
+   * Put the guest in line. A guest already in line for the book — by account or
+   * by phone — is refused (`ConflictError("ALREADY_WAITING")`), enforced by unique indexes.
    */
   join(input: NewWaitlistEntry): Promise<BookWaitlistEntry>;
   getById(id: string): Promise<BookWaitlistEntry | null>;
@@ -19,6 +19,8 @@ export type IBookWaitlistRepository = {
   listOpenForBook(productId: string): Promise<BookWaitlistEntry[]>;
   /** Everyone in line for anything, grouped by book, front of each line first — the dashboard's view. */
   listOpen(): Promise<BookWaitlistEntry[]>;
+  /** Lines that closed (borrowed or cancelled) since `since`, newest first — the dashboard's Closed tab. */
+  listClosedSince(since: Date): Promise<BookWaitlistEntry[]>;
   /** Take an open entry out of line. Returns `null` when it was no longer open. */
   cancel(id: string): Promise<BookWaitlistEntry | null>;
   /**

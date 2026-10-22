@@ -90,6 +90,8 @@ model Product {
   // VAT-exempt (books, in Iran). Prices are VAT-inclusive; exempt items carry none.
   taxExempt        Boolean      @default(false) @map("tax_exempt")
   bookAuthor       String?      @map("book_author")
+  // Copies of a book the shelf lends; null reads as one.
+  bookCopies       Int?         @map("book_copies")
   bookIsbn         String?      @map("book_isbn")
   bookAvailability String?      @map("book_availability")
   // The owner's profit target for this item, as a markup on full cost in basis
@@ -635,7 +637,8 @@ model BookWaitlistEntry {
   id         String    @id @default(uuid())
   productId  String    @map("product_id")
   bookTitle  String    @map("book_title")
-  userId     String    @map("user_id")
+  // The guest's account; null for a hold staff added for a guest at the counter or by phone.
+  userId     String?   @map("user_id")
   guestName  String    @map("guest_name")
   guestPhone String    @map("guest_phone")
   status     String    @default("waiting")

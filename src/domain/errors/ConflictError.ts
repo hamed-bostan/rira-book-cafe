@@ -47,6 +47,8 @@ export type ConflictCode =
   // The book waitlist.
   | "ALREADY_WAITING"
   | "BOOK_ON_SHELF"
+  // Every copy of the book is out — the guest joins its line instead.
+  | "ALL_COPIES_OUT"
   // Cash shifts.
   | "SHIFT_ALREADY_OPEN"
   | "NO_OPEN_SHIFT"

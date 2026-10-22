@@ -29,11 +29,11 @@ function entry(overrides: Partial<BookWaitlistEntry> = {}): BookWaitlistEntry {
 }
 
 describe("JoinBookWaitlist", () => {
-  const book = { title: "The Blind Owl" };
+  const book = { title: "The Blind Owl", copies: 1 };
 
   it("puts the guest in line for a book that's out, with their phone normalized", async () => {
     const join = vi.fn(async () => entry({ status: "waiting" }));
-    const waitlist = { join } as unknown as IBookWaitlistRepository;
+    const waitlist = { join, listOpenForBook: vi.fn(async () => []) } as unknown as IBookWaitlistRepository;
     const loans = { getBook: vi.fn(async () => book), countOpenForBook: vi.fn(async () => 1) };
     await new JoinBookWaitlist(waitlist, loans).execute("b1", GUEST);
     expect(join).toHaveBeenCalledWith({
@@ -47,11 +47,10 @@ describe("JoinBookWaitlist", () => {
 
   it("has no line for a book that's on the shelf", async () => {
     const loans = { getBook: vi.fn(async () => book), countOpenForBook: vi.fn(async () => 0) };
-    await expect(new JoinBookWaitlist({} as IBookWaitlistRepository, loans).execute("b1", GUEST)).rejects.toMatchObject(
-      {
-        code: "BOOK_ON_SHELF",
-      },
-    );
+    const waitlist = { listOpenForBook: vi.fn(async () => []) } as unknown as IBookWaitlistRepository;
+    await expect(new JoinBookWaitlist(waitlist, loans).execute("b1", GUEST)).rejects.toMatchObject({
+      code: "BOOK_ON_SHELF",
+    });
     expect(ConflictError).toBeDefined();
   });
 });

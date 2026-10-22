@@ -24,4 +24,9 @@ export const bookLoansServerApi = {
   listWaitlist(): Promise<BookWaitlistEntry[]> {
     return serverApiGet("/admin/book-waitlist", bookWaitlistEntryListResponseSchema);
   },
+
+  /** Holds that closed in the last two months (borrowed or cancelled), newest first. */
+  listClosedWaitlist(): Promise<BookWaitlistEntry[]> {
+    return serverApiGet("/admin/book-waitlist", bookWaitlistEntryListResponseSchema, { params: { view: "closed" } });
+  },
 };

@@ -21,7 +21,17 @@ export type BookDetails = {
   /** ISBN-10 or ISBN-13, digits (and a trailing X) only. Optional — not every used book has one. */
   isbn?: string;
   availability: BookAvailability;
+  /** Copies the shelf lends; absent means one. */
+  copies?: number;
 };
+
+/** The most copies of one book the lending shelf tracks. */
+export const MAX_BOOK_COPIES = 20;
+
+/** Copies of a book the shelf can lend — one unless the book says otherwise. */
+export function lendingCopies(book: Pick<BookDetails, "copies"> | undefined): number {
+  return book?.copies ?? 1;
+}
 
 export type Product = {
   id: string;

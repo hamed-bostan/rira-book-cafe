@@ -22,11 +22,11 @@ export class PrismaBookWaitlistRepository implements IBookWaitlistRepository {
 
   async join(input: NewWaitlistEntry): Promise<BookWaitlistEntry> {
     try {
-      const row = await this.db.bookWaitlistEntry.create({ data: input });
+      const row = await this.db.bookWaitlistEntry.create({ data: { ...input, userId: input.userId ?? null } });
       return toEntry(row);
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-        throw new ConflictError("ALREADY_WAITING", "You're already in line for this book.", { cause: error });
+        throw new ConflictError("ALREADY_WAITING", "This guest is already in line for this book.", { cause: error });
       }
       throw error;
     }
@@ -58,6 +58,15 @@ export class PrismaBookWaitlistRepository implements IBookWaitlistRepository {
     const rows = await this.db.bookWaitlistEntry.findMany({
       where: { status: OPEN },
       orderBy: [{ bookTitle: "asc" }, { productId: "asc" }, { createdAt: "asc" }],
+      take: 200,
+    });
+    return rows.map(toEntry);
+  }
+
+  async listClosedSince(since: Date): Promise<BookWaitlistEntry[]> {
+    const rows = await this.db.bookWaitlistEntry.findMany({
+      where: { status: { notIn: [...OPEN_WAITLIST_STATUSES] }, updatedAt: { gte: since } },
+      orderBy: [{ updatedAt: "desc" }],
       take: 200,
     });
     return rows.map(toEntry);
@@ -111,7 +120,7 @@ function toEntry(row: EntryRow): BookWaitlistEntry {
     id: row.id,
     productId: row.productId,
     bookTitle: row.bookTitle,
-    userId: row.userId,
+    userId: row.userId ?? undefined,
     guestName: row.guestName,
     guestPhone: row.guestPhone,
     status: toStatus(row.status),

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { BOOK_AVAILABILITIES, PRODUCT_KINDS } from "@/src/domain/entities/Product";
+import { BOOK_AVAILABILITIES, MAX_BOOK_COPIES, PRODUCT_KINDS } from "@/src/domain/entities/Product";
 import { DIETARY_TAGS } from "@/src/domain/entities/ProductFilters";
 
 import { imageUrlField } from "./image-url";
@@ -60,6 +60,18 @@ const isbnField = z
   .transform((value) => (value.length > 0 ? value : undefined))
   .refine((value) => value === undefined || ISBN_PATTERN.test(value), "isbnInvalid");
 
+/**
+ * Copies the lending shelf has, 1–MAX_BOOK_COPIES. Optional on the wire (a client
+ * that predates the field sends none); blank or absent reads as one.
+ */
+const copiesField = z
+  .string()
+  .trim()
+  .optional()
+  .refine((value) => !value || /^\d+$/.test(value), "copiesWhole")
+  .transform((value) => (value ? Number(value) : undefined))
+  .refine((value) => value === undefined || (value >= 1 && value <= MAX_BOOK_COPIES), "copiesRange");
+
 /** Dietary tags: a set of known tags (blank list allowed); the public filter reads these. */
 const dietaryField = z
   .array(z.string())
@@ -91,6 +103,7 @@ export const productFormSchema = z
     bookAuthor: optionalText,
     bookIsbn: isbnField,
     bookAvailability: z.enum(BOOK_AVAILABILITIES, { message: "availabilityInvalid" }),
+    bookCopies: copiesField,
     // Persian (fa) content overrides — optional. A blank fa name means "no fa
     // translation" for this item (the public site falls back to the base row).
     faName: optionalText,
@@ -108,13 +121,24 @@ export const productFormSchema = z
     message: "authorRequired",
   })
   .transform(
-    ({ faName, faUnit, faDescription, faNutrition, faOrigin, bookAuthor, bookIsbn, bookAvailability, ...base }) => ({
+    ({
+      faName,
+      faUnit,
+      faDescription,
+      faNutrition,
+      faOrigin,
+      bookAuthor,
+      bookIsbn,
+      bookAvailability,
+      bookCopies,
+      ...base
+    }) => ({
       ...base,
       // Book details only travel with books; for drinks and food they're dropped
       // even if the form still holds stale values from a kind switch.
       book:
         base.kind === "book" && bookAuthor !== undefined
-          ? { author: bookAuthor, isbn: bookIsbn, availability: bookAvailability }
+          ? { author: bookAuthor, isbn: bookIsbn, availability: bookAvailability, copies: bookCopies }
           : undefined,
       // Only author a translation when a localized name is provided (the DB requires
       // it); clearing the name drops the fa translation on save.

@@ -32,5 +32,6 @@ export const lendableBookListResponseSchema = z.array(
     title: z.string(),
     author: z.string().optional(),
     onLoan: z.number(),
+    copies: z.number(),
   }) satisfies z.ZodType<LendableBook>,
 );

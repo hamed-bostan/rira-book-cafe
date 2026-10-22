@@ -2,6 +2,7 @@ import {
   BarChart3,
   BedDouble,
   BookOpen,
+  Bookmark,
   Package,
   Calculator,
   CalendarDays,
@@ -54,6 +55,7 @@ export type DashboardSectionLabelKey =
   | "navReservations"
   | "navSuite"
   | "navBookLoans"
+  | "navBookHolds"
   | "navEvents"
   | "navProducts"
   | "navCategories"
@@ -123,6 +125,14 @@ const SECTIONS = [
     href: "/dashboard/book-loans",
     labelKey: "navBookLoans",
     icon: BookOpen,
+    needs: "dashboard.view",
+    group: "groupLibrary",
+  },
+  // The lines for books that are out — who's waiting, and who can collect.
+  {
+    href: "/dashboard/book-holds",
+    labelKey: "navBookHolds",
+    icon: Bookmark,
     needs: "dashboard.view",
     group: "groupLibrary",
   },

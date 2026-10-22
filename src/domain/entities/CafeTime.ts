@@ -54,3 +54,8 @@ export function shiftCafeDay(day: string, offset: number): string {
   const { from } = cafeDayRange(day);
   return cafeDayOf(new Date(from.getTime() + offset * 24 * 60 * 60 * 1000));
 }
+
+/** Whole cafe days from `from` to `to` (both `YYYY-MM-DD`); negative when `to` is earlier. */
+export function cafeDaysBetween(from: string, to: string): number {
+  return Math.round((cafeDayRange(to).from.getTime() - cafeDayRange(from).from.getTime()) / (24 * 60 * 60 * 1000));
+}

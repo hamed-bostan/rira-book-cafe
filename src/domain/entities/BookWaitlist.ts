@@ -21,7 +21,8 @@ export type BookWaitlistEntry = {
   productId: string;
   /** The book's title when they joined. */
   bookTitle: string;
-  userId: string;
+  /** The guest's account; absent for a hold staff added for a guest at the counter or by phone. */
+  userId?: string;
   guestName: string;
   guestPhone: string;
   status: WaitlistStatus;

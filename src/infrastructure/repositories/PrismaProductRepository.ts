@@ -316,6 +316,7 @@ function toRowData(product: Omit<NewProduct, "translations">) {
     bookAuthor: isBook ? book.author : null,
     bookIsbn: isBook ? (book.isbn ?? null) : null,
     bookAvailability: isBook ? book.availability : null,
+    bookCopies: isBook ? (book.copies ?? null) : null,
   };
 }
 
@@ -344,6 +345,7 @@ type ProductRow = {
   bookAuthor: string | null;
   bookIsbn: string | null;
   bookAvailability: string | null;
+  bookCopies: number | null;
 };
 
 /** Narrow a stored kind; an unknown value reads as a drink rather than failing the whole list. */
@@ -356,7 +358,12 @@ function toBook(row: ProductRow): BookDetails | undefined {
   const availability: BookAvailability = (BOOK_AVAILABILITIES as readonly string[]).includes(row.bookAvailability ?? "")
     ? (row.bookAvailability as BookAvailability)
     : "sale";
-  return { author: row.bookAuthor, isbn: row.bookIsbn ?? undefined, availability };
+  return {
+    author: row.bookAuthor,
+    isbn: row.bookIsbn ?? undefined,
+    availability,
+    ...(row.bookCopies != null ? { copies: row.bookCopies } : {}),
+  };
 }
 
 /**

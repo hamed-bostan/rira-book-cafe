@@ -23,6 +23,7 @@ const BASE: ProductFormInput = {
   bookAuthor: "",
   bookIsbn: "",
   bookAvailability: "sale",
+  bookCopies: "",
   faName: "",
   faUnit: "",
   faDescription: "",

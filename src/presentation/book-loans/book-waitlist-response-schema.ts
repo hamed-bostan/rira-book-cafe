@@ -7,7 +7,7 @@ export const bookWaitlistEntryResponseSchema = z.object({
   id: z.string(),
   productId: z.string(),
   bookTitle: z.string(),
-  userId: z.string(),
+  userId: z.string().optional(),
   guestName: z.string(),
   guestPhone: z.string(),
   status: z.enum(WAITLIST_STATUSES),

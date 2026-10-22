@@ -96,6 +96,7 @@ export const ACTIVITY_ACTIONS = [
   "bookLoan.lent",
   "bookLoan.returned",
   "bookLoan.lost",
+  "bookLoan.extended",
   "event.created",
   "event.updated",
   "event.deleted",

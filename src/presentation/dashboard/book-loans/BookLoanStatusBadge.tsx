@@ -7,6 +7,11 @@ type BookLoanStatusBadgeProps = {
   status: BookLoanStatus;
   /** Still out and past due — shown in place of the plain "out" badge. */
   overdue?: boolean;
+  /**
+   * The dashboard's look: a tinted pill with a border and a leading dot, a lost
+   * book red rather than solid. The guest's own list keeps the plain pill.
+   */
+  outlined?: boolean;
 };
 
 const VARIANT: Record<BookLoanStatus, NonNullable<BadgeProps["variant"]>> = {
@@ -16,8 +21,16 @@ const VARIANT: Record<BookLoanStatus, NonNullable<BadgeProps["variant"]>> = {
 };
 
 /** Loud when a book is late or gone, calm while it's out on time, quiet once it's back. */
-export function BookLoanStatusBadge({ status, overdue = false }: BookLoanStatusBadgeProps) {
+export function BookLoanStatusBadge({ status, overdue = false, outlined = false }: BookLoanStatusBadgeProps) {
   const t = useTranslations("dashBookLoans");
-  if (overdue) return <Badge variant="warning">{t("overdue")}</Badge>;
-  return <Badge variant={VARIANT[status]}>{t(`status.${status}`)}</Badge>;
+  const label = overdue ? t("overdue") : t(`status.${status}`);
+  if (outlined) {
+    const variant = overdue ? "warning" : status === "lost" ? "error" : VARIANT[status];
+    return (
+      <Badge variant={variant} appearance="outline" dot>
+        {label}
+      </Badge>
+    );
+  }
+  return <Badge variant={overdue ? "warning" : VARIANT[status]}>{label}</Badge>;
 }

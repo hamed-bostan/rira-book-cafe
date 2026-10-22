@@ -42,6 +42,25 @@
   margin-block-start: 1em;
 }
 
+/* The landing page's angular cut, echoing the logo: the top inline-end corner is
+ * sliced off, so it mirrors under RTL. Small for buttons, large for images. */
+.cut-corner-sm,
+.cut-corner-lg {
+  clip-path: polygon(0 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% 100%, 0 100%);
+}
+
+[dir="rtl"] :is(.cut-corner-sm, .cut-corner-lg) {
+  clip-path: polygon(var(--cut) 0, 100% 0, 100% 100%, 0 100%, 0 var(--cut));
+}
+
+.cut-corner-sm {
+  --cut: 0.75rem;
+}
+
+.cut-corner-lg {
+  --cut: 2.5rem;
+}
+
 @layer base {
   html {
     --font-ui: var(--font-inter);

@@ -41,6 +41,7 @@ export const typography = {
     caption,
     reading: style(16, "regular", "reading"),
     lead: style(18, "bold"),
+    intro: style(18, "regular"),
     emphasis: style(16, "medium"),
     bold: style(16, "bold"),
     smallEmphasis: style(14, "medium"),

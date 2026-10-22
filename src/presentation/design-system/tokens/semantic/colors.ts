@@ -1,4 +1,18 @@
-import { primary, magenta, neutral, success, error, warning, info, amber } from "../primitives/colors";
+import {
+  primary,
+  magenta,
+  neutral,
+  success,
+  error,
+  warning,
+  info,
+  amber,
+  navy,
+  teal,
+  blue,
+  slate,
+  warmNeutral,
+} from "../primitives/colors";
 
 export const colors = {
   background: neutral[0],
@@ -134,6 +148,34 @@ export const colors = {
     strong: neutral[300],
   },
   ring: primary[700],
+
+  // The home page's own system, one-for-one with the design's semantic tokens
+  // (`--color-ink` → `landing.ink`, …): navy ink on a warm page and a pale blue
+  // band, with teal actions. To restyle the home page, repoint these.
+  landing: {
+    // Headings, primary text, links.
+    ink: navy[900],
+    // Body copy, nav links.
+    inkSoft: slate[800],
+    // Descriptions, captions, notes.
+    inkMuted: slate[600],
+    // Wordmark only.
+    logoGray: warmNeutral[500],
+    // Buttons, active states, highlights.
+    primary: teal[600],
+    primaryHover: teal[700],
+    onPrimary: neutral[0],
+    // Eyebrow labels.
+    accent: blue[600],
+    // Icons.
+    icon: blue[700],
+    // Page background.
+    background: warmNeutral[50],
+    // Alternating section background.
+    band: blue[50],
+    // Dividers, outlines.
+    border: slate[200],
+  },
 
   // Wallet card brand gradients (green / magenta), cycled per card.
   wallet: {

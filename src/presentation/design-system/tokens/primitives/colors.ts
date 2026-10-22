@@ -123,6 +123,22 @@ export const slate = {
   950: "#151826",
 };
 
+// Warm neutral — page background, logo. The palette calls it "Neutral"; renamed
+// here so it doesn't collide with the app's cool grey `neutral` scale above.
+export const warmNeutral = {
+  50: "#FCFBF8",
+  100: "#F5F3EE",
+  200: "#E7E4DD",
+  300: "#D1CEC6",
+  400: "#A3A09A",
+  500: "#6E6E6E",
+  600: "#575654",
+  700: "#43423F",
+  800: "#2D2C2A",
+  900: "#1C1B1A",
+  950: "#0F0F0E",
+};
+
 // The palette's status hues — warnings and dangers in the admin theme. Named apart
 // from the app's own `warning`/`error` scales and the rating `amber` below.
 export const paletteAmber = {

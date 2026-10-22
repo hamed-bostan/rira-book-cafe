@@ -1110,7 +1110,6 @@
   "dashOverview": {
     "heading": "Today",
     "activeOrders": "Orders in the queue",
-    "activeOrdersHint": "Placed or preparing",
     "todayBookings": "Bookings today",
     "awaitingConfirmation": "{count, plural, one {# awaiting confirmation} other {# awaiting confirmation}}",
     "covers": "{count, plural, one {{formatted} guest} other {{formatted} guests}}",
@@ -1121,7 +1120,38 @@
     "todayOrders": "Orders served today",
     "weekOrders": "{count, plural, one {{formatted} order} other {{formatted} orders}} over the last 7 days",
     "weekHeading": "Last 7 days",
-    "allReports": "All reports"
+    "updated": "Updated {time}",
+    "longWaits": "{count, number} waiting over {minutes, number} min",
+    "placedCount": "{count, number} placed",
+    "preparingCount": "{count, number} preparing",
+    "nothingWaiting": "Nothing waiting",
+    "queueHeading": "Order queue",
+    "reservationsHeading": "Today's reservations",
+    "viewAll": "View all",
+    "waiting": "waiting",
+    "waitMinutes": "{minutes, number} min",
+    "waitHours": "{hours, number} h {minutes, number} min",
+    "queueEmptyTitle": "No orders in the queue",
+    "queueEmptyBody": "New orders appear here as they come in.",
+    "reservationsEmpty": "No bookings for the rest of today.",
+    "unconfirmed": "Unconfirmed",
+    "reservationConfirmed": "Reservation for {name} confirmed.",
+    "reservationError": "Couldn't confirm the reservation. Please try again.",
+    "confirmReservationAria": "Confirm reservation #{reference} for {name}",
+    "chartMetric": "Chart metric",
+    "metricRevenue": "Revenue",
+    "metricOrders": "Orders",
+    "metricUnits": "Units",
+    "viewReport": "View report",
+    "ordersUnit": "orders",
+    "ordersCount": "{count, plural, one {# order} other {# orders}}",
+    "chartSummary": "Last 7 days — {days}",
+    "today": "Today",
+    "todaySoFar": "Today so far",
+    "topHeading": "Top items",
+    "rankBy": "Rank top items by",
+    "sold": "{count, number} sold",
+    "topEmpty": "No sales in the last 7 days."
   },
   "dashReports": {
     "heading": "Reports",
@@ -1205,17 +1235,37 @@
     "keep": "Keep it",
     "basketAria": "{count, plural, =0 {Basket, empty} one {Basket, # item} other {Basket, # items}}",
     "home": {
-      "title": "Coffee, food and a shelf full of books",
-      "tagline": "Order at your table or take it with you, book a table for later, and join our book club and readings.",
+      "eyebrow": "Books bring us together",
+      "title": "Good coffee. Great company.",
+      "tagline": "Thoughtfully sourced coffee, a welcoming space and a community of curious people. Come for the coffee, stay for what comes next.",
+      "viewMenu": "View menu",
       "seeMenu": "See the menu",
-      "bookTable": "Book a table",
-      "featured": "Today's favourites",
-      "fullMenu": "Full menu",
-      "whatsOn": "What's on",
       "allEvents": "All events",
-      "booksTitle": "Books to buy or to read here",
-      "booksBody": "Browse the shelf — some are for sale, some for reading over a coffee.",
-      "browseBooks": "Browse books"
+      "browseBooks": "Browse books",
+      "heroImageAlt": "Friends talking over coffee at a long table in the cafe",
+      "favorites": {
+        "eyebrow": "Café favourites",
+        "title": "Bold flavours. Brighter days.",
+        "body": "A few favourites from our menu. Discover more coffee, cold drinks and sweet treats.",
+        "cta": "Explore full menu"
+      },
+      "story": {
+        "eyebrow": "Our story",
+        "title": "Stay a little longer.",
+        "body": "Rira Book Cafe started with a simple belief: great coffee brings people together. We're a neighbourhood book cafe focused on quality coffee, good books and a welcoming space for everyone.",
+        "imageAlt": "A guest reading a book with a coffee by the window",
+        "sourced": "Sustainably sourced beans",
+        "community": "A welcoming community",
+        "reading": "A space to read & connect"
+      },
+      "visit": {
+        "eyebrow": "Visit our café",
+        "title": "Your next quiet corner.",
+        "body": "Find us in the heart of the city. Walk-ins, friends, laptops and dogs always welcome.",
+        "imageAlt": "The Rira Book Cafe storefront with its blue awning",
+        "directions": "Get directions",
+        "hours": "Opening hours"
+      }
     },
     "menu": {
       "heading": "Menu",
@@ -2121,7 +2171,7 @@
     "reorderError": "Couldn't save the reorder level. Please try again.",
     "openingHint": "Starting out with stock already on the shelves?",
     "alert": {
-      "title": "{count, plural, one {# item needs restocking} other {# items need restocking}}",
+      "title": "{count, plural, one {# item low or out of stock} other {# items low or out of stock}}",
       "open": "Open inventory",
       "more": "and {count} more"
     },

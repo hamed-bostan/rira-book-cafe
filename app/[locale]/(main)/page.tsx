@@ -10,8 +10,7 @@ import { storefrontServerApi } from "@/src/presentation/storefront/storefront-se
 
 import type { Metadata } from "next";
 
-// Featured items and upcoming events are read over the REST API (BFF) per request,
-// in the guest's language.
+// Featured items are read over the REST API (BFF) per request, in the guest's language.
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -20,9 +19,8 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function HomePage() {
-  const [featured, events, categories, cafe, locale, t] = await Promise.all([
+  const [featured, categories, cafe, locale, t] = await Promise.all([
     storefrontServerApi.featured(),
-    storefrontServerApi.upcomingEvents(),
     storefrontServerApi.categories(),
     cafeIdentity(),
     getLocale(),
@@ -40,7 +38,7 @@ export default async function HomePage() {
           image: new URL(defaultShareImage(locale, cafe.name).url, cafe.url).toString(),
         })}
       />
-      <HomeScreen featured={featured.filter((item) => activeCategoryIds.has(item.categoryId))} events={events} />
+      <HomeScreen featured={featured.filter((item) => activeCategoryIds.has(item.categoryId))} />
     </>
   );
 }

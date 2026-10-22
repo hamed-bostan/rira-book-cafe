@@ -1110,7 +1110,6 @@
   "dashOverview": {
     "heading": "امروز",
     "activeOrders": "سفارش‌های در صف",
-    "activeOrdersHint": "ثبت‌شده یا در حال آماده‌سازی",
     "todayBookings": "رزروهای امروز",
     "awaitingConfirmation": "{count, plural, other {# در انتظار تأیید}}",
     "covers": "{count, plural, other {{formatted} مهمان}}",
@@ -1121,7 +1120,38 @@
     "todayOrders": "سفارش‌های تحویل‌شدهٔ امروز",
     "weekOrders": "{count, plural, other {{formatted} سفارش}} در ۷ روز گذشته",
     "weekHeading": "۷ روز گذشته",
-    "allReports": "همهٔ گزارش‌ها"
+    "updated": "به‌روزرسانی {time}",
+    "longWaits": "{count, plural, other {# سفارش}} بیش از {minutes, number} دقیقه در انتظار",
+    "placedCount": "{count, number} ثبت‌شده",
+    "preparingCount": "{count, number} در حال آماده‌سازی",
+    "nothingWaiting": "سفارشی در انتظار نیست",
+    "queueHeading": "صف سفارش‌ها",
+    "reservationsHeading": "رزروهای امروز",
+    "viewAll": "مشاهدهٔ همه",
+    "waiting": "در انتظار",
+    "waitMinutes": "{minutes, number} دقیقه",
+    "waitHours": "{hours, number} ساعت و {minutes, number} دقیقه",
+    "queueEmptyTitle": "سفارشی در صف نیست",
+    "queueEmptyBody": "سفارش‌های تازه همین‌جا نمایش داده می‌شوند.",
+    "reservationsEmpty": "برای باقی امروز رزروی نیست.",
+    "unconfirmed": "تأییدنشده",
+    "reservationConfirmed": "رزرو {name} تأیید شد.",
+    "reservationError": "تأیید رزرو ممکن نشد. دوباره تلاش کنید.",
+    "confirmReservationAria": "تأیید رزرو #{reference} برای {name}",
+    "chartMetric": "شاخص نمودار",
+    "metricRevenue": "فروش",
+    "metricOrders": "سفارش‌ها",
+    "metricUnits": "تعداد",
+    "viewReport": "مشاهدهٔ گزارش",
+    "ordersUnit": "سفارش",
+    "ordersCount": "{count, plural, other {# سفارش}}",
+    "chartSummary": "۷ روز گذشته — {days}",
+    "today": "امروز",
+    "todaySoFar": "امروز تا این لحظه",
+    "topHeading": "پرفروش‌ترین‌ها",
+    "rankBy": "مرتب‌سازی پرفروش‌ترین‌ها بر اساس",
+    "sold": "{count, number} فروخته‌شده",
+    "topEmpty": "در ۷ روز گذشته فروشی ثبت نشده."
   },
   "dashReports": {
     "heading": "گزارش‌ها",
@@ -1205,17 +1235,37 @@
     "keep": "نگه دار",
     "basketAria": "{count, plural, =0 {سبد، خالی} other {سبد، # آیتم}}",
     "home": {
-      "title": "قهوه، غذا و قفسه‌ای پر از کتاب",
-      "tagline": "سر میزتان سفارش دهید یا بیرون ببرید، برای بعد میز رزرو کنید و به باشگاه کتاب و کتاب‌خوانی‌های ما بپیوندید.",
+      "eyebrow": "کتاب‌ها ما را کنار هم می‌آورند",
+      "title": "قهوهٔ خوب. هم‌نشینی خوب.",
+      "tagline": "قهوه‌ای که با دقت انتخاب شده، فضایی دلپذیر و جمعی از آدم‌های کنجکاو. برای قهوه بیایید و برای آنچه پیش می‌آید بمانید.",
+      "viewMenu": "دیدن منو",
       "seeMenu": "دیدن منو",
-      "bookTable": "رزرو میز",
-      "featured": "محبوب‌های امروز",
-      "fullMenu": "منوی کامل",
-      "whatsOn": "برنامه‌ها",
       "allEvents": "همهٔ رویدادها",
-      "booksTitle": "کتاب برای خرید یا مطالعه در کافه",
-      "booksBody": "قفسه را ببینید — بعضی برای فروش‌اند و بعضی برای خواندن کنار یک فنجان قهوه.",
-      "browseBooks": "دیدن کتاب‌ها"
+      "browseBooks": "دیدن کتاب‌ها",
+      "heroImageAlt": "دوستانی که پشت میزی بلند در کافه قهوه می‌نوشند و گپ می‌زنند",
+      "favorites": {
+        "eyebrow": "محبوب‌های کافه",
+        "title": "طعم‌های پررنگ. روزهای روشن‌تر.",
+        "body": "چند انتخاب محبوب از منوی ما. قهوه، نوشیدنی‌های سرد و شیرینی‌های بیشتری را کشف کنید.",
+        "cta": "دیدن منوی کامل"
+      },
+      "story": {
+        "eyebrow": "داستان ما",
+        "title": "کمی بیشتر بمانید.",
+        "body": "کافه کتاب ریرا با یک باور ساده شروع شد: قهوهٔ خوب آدم‌ها را کنار هم می‌آورد. ما یک کافه‌کتاب محله‌ای هستیم که به قهوهٔ باکیفیت، کتاب خوب و فضایی گرم برای همه اهمیت می‌دهد.",
+        "imageAlt": "مهمانی که کنار پنجره با یک فنجان قهوه کتاب می‌خواند",
+        "sourced": "دانه‌های قهوه با منشأ پایدار",
+        "community": "جمعی گرم و صمیمی",
+        "reading": "جایی برای خواندن و آشنایی"
+      },
+      "visit": {
+        "eyebrow": "به کافه سر بزنید",
+        "title": "گوشهٔ دنج بعدی شما.",
+        "body": "ما را در قلب شهر پیدا کنید. مهمان سرزده، دوستان، لپ‌تاپ‌ها و سگ‌ها همیشه خوش آمدند.",
+        "imageAlt": "نمای بیرونی کافه کتاب ریرا با سایبان آبی",
+        "directions": "مسیریابی",
+        "hours": "ساعت کاری"
+      }
     },
     "menu": {
       "heading": "منو",
@@ -2121,7 +2171,7 @@
     "reorderError": "ذخیرهٔ حد سفارش انجام نشد. دوباره تلاش کنید.",
     "openingHint": "از قبل کالا در قفسه‌ها دارید؟",
     "alert": {
-      "title": "{count, plural, other {# قلم نیاز به تأمین دارد}}",
+      "title": "{count, plural, other {# قلم رو به اتمام یا ناموجود}}",
       "open": "باز کردن انبار",
       "more": "و {count} مورد دیگر"
     },

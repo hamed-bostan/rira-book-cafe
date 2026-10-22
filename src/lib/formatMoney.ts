@@ -15,3 +15,8 @@ const UNIT: Record<Locale, string> = { fa: "تومان", en: "Toman" };
 export function formatMoney(amountToman: number, locale: Locale): string {
   return `${FORMATTERS[locale].format(Math.round(amountToman))} ${UNIT[locale]}`;
 }
+
+/** The currency word alone ("Toman" / «تومان»), for a figure set apart from its unit. */
+export function moneyUnit(locale: Locale): string {
+  return UNIT[locale];
+}

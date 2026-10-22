@@ -79,3 +79,15 @@ export function formatPercent(value: number, locale: Locale, fractionDigits = 1)
 export function formatSignedPercent(value: number, locale: Locale, fractionDigits = 1): string {
   return getPercentFormatter(locale, fractionDigits, "always").format(value);
 }
+
+const compactCache = new Map<Locale, Intl.NumberFormat>();
+
+/** "2.5M", "800K" — for chart axis ticks, where the exact figure lives in the tooltip. */
+export function formatCompactNumber(value: number, locale: Locale): string {
+  let formatter = compactCache.get(locale);
+  if (!formatter) {
+    formatter = new Intl.NumberFormat(NUMBER_TAG[locale], { notation: "compact", maximumFractionDigits: 1 });
+    compactCache.set(locale, formatter);
+  }
+  return formatter.format(value);
+}

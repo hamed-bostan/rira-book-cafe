@@ -60,30 +60,6 @@ export function parsePageRequest<TSort extends string>(
 }
 
 /**
- * Serialise a page request into query params. Values equal to the defaults are
- * omitted so an untouched table keeps a clean URL — the same rule
- * `buildProductFilterParams` follows for the default sort.
- */
-export function buildPageParams<TSort extends string>(
-  request: Partial<PageRequest<TSort>>,
-  defaults: PageRequestDefaults<TSort> = {},
-): URLSearchParams {
-  const params = new URLSearchParams();
-  const defaultPageSize = defaults.pageSize ?? DEFAULT_PAGE_SIZE;
-
-  if (request.page != null && request.page > 1) params.set("page", String(request.page));
-  if (request.pageSize != null && request.pageSize !== defaultPageSize) {
-    params.set("pageSize", String(request.pageSize));
-  }
-  if (request.sort != null && request.sort !== defaults.sort) params.set("sort", request.sort);
-  if (request.direction != null && request.direction !== defaults.direction) {
-    params.set("dir", request.direction);
-  }
-
-  return params;
-}
-
-/**
  * Merge page params into an existing set, returning a new `URLSearchParams`.
  *
  * Paging and filtering share one query string, so a pager link has to preserve

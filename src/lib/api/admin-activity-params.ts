@@ -46,12 +46,3 @@ export function parseAdminActivityFilters(params: URLSearchParams): ActivityFilt
 
   return filters;
 }
-
-export function buildAdminActivityParams(filters: ActivityFilters): URLSearchParams {
-  const params = new URLSearchParams();
-  if (filters.actorId) params.set("actorId", filters.actorId);
-  if (filters.entityType) params.set("entityType", filters.entityType);
-  if (filters.entityId) params.set("entityId", filters.entityId);
-  if (filters.field) params.set("field", filters.field);
-  return params;
-}

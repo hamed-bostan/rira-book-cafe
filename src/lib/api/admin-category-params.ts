@@ -27,11 +27,3 @@ export function parseAdminCategoryFilters(params: URLSearchParams): AdminCategor
 
   return filters;
 }
-
-/** Serialise management-list filters into query params, omitting anything unset. */
-export function buildAdminCategoryParams(filters: AdminCategoryFilters): URLSearchParams {
-  const params = new URLSearchParams();
-  if (filters.query) params.set("q", filters.query);
-  if (filters.status) params.set("status", filters.status);
-  return params;
-}

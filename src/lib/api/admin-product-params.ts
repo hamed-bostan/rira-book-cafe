@@ -46,14 +46,3 @@ export function parseAdminProductFilters(params: URLSearchParams): AdminProductF
   if (parsed.visibility) filters.visibility = parsed.visibility;
   return filters;
 }
-
-/** Serialise management-list filters into query params, omitting anything unset. */
-export function buildAdminProductParams(filters: AdminProductFilters): URLSearchParams {
-  const params = new URLSearchParams();
-  if (filters.query) params.set("q", filters.query);
-  if (filters.categoryId) params.set("categoryId", filters.categoryId);
-  if (filters.kind) params.set("kind", filters.kind);
-  if (filters.stock) params.set("stock", filters.stock);
-  if (filters.visibility) params.set("visibility", filters.visibility);
-  return params;
-}

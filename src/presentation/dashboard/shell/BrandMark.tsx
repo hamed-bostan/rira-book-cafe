@@ -1,12 +1,29 @@
-import { Coffee } from "lucide-react";
+import Image from "next/image";
 
-import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { cn } from "@/src/lib/utils";
+import logoMark from "@/src/shared/images/brand/logo-mark.png";
 
-/** The cafe's square mark. A placeholder icon until a real logo lands in `public/images/`. */
-export function BrandMark() {
+/** The tallest the mark is drawn (the site headers); the dashboard rail draws it smaller. */
+const MARK_HEIGHT = 40;
+
+type BrandMarkProps = {
+  /** Size overrides — set the height; the width follows the mark's tall shape. */
+  className?: string;
+};
+
+/**
+ * Rira's mark: the tall wordmark with the bird. Always sits beside the written
+ * name, so it's decorative (empty alt). Sized for its largest use, so the
+ * optimizer's 1x/2x pair stays sharp wherever it's drawn smaller.
+ */
+export function BrandMark({ className }: BrandMarkProps) {
   return (
-    <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
-      <Icon icon={Coffee} size="sm" />
-    </span>
+    <Image
+      src={logoMark}
+      alt=""
+      height={MARK_HEIGHT}
+      width={Math.round((MARK_HEIGHT * logoMark.width) / logoMark.height)}
+      className={cn("h-10 w-auto shrink-0", className)}
+    />
   );
 }

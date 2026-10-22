@@ -23,22 +23,29 @@ import { recordAudit } from "./writeActivityEntry";
 export class PrismaSuiteBookingRepository implements ISuiteBookingRepository {
   constructor(private readonly db: PrismaDb = prisma) {}
 
-  async create(input: NewSuiteBooking): Promise<SuiteBooking> {
+  async create(
+    input: NewSuiteBooking,
+    status: "requested" | "confirmed" = "requested",
+    audit?: AuditHook<SuiteBooking>,
+  ): Promise<SuiteBooking> {
     return inTransaction(this.db, async (tx) => {
       await lockSuite(tx);
       await refuseClash(tx, null, input);
       const row = await tx.suiteBooking.create({
         data: {
-          userId: input.userId,
+          userId: input.userId ?? null,
           guestName: input.guestName,
           guestPhone: input.guestPhone,
           guests: input.guests,
           checkIn: fromDay(input.checkIn),
           checkOut: fromDay(input.checkOut),
+          status,
           note: input.note ?? null,
         },
       });
-      return toSuiteBooking(row);
+      const saved = toSuiteBooking(row);
+      await recordAudit(tx, saved, audit);
+      return saved;
     });
   }
 
@@ -139,7 +146,7 @@ function toSuiteBooking(row: SuiteBookingRow): SuiteBooking {
   return {
     id: row.id,
     reference: row.reference,
-    userId: row.userId,
+    userId: row.userId ?? undefined,
     guestName: row.guestName,
     guestPhone: row.guestPhone,
     guests: row.guests,

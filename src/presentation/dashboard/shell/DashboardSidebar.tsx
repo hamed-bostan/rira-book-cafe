@@ -43,8 +43,10 @@ export function DashboardSidebar({ permissions, collapsed, onToggleCollapsed, ba
     >
       {/* The `md`–`xl` tier: always the icon-only rail, no toggle — there's nowhere to put one. */}
       <div className="hidden h-full flex-col dashboard-landscape:flex">
-        <SidebarBrand collapsed />
-        <div className="flex-1 [scrollbar-gutter:stable_both-edges] overflow-y-auto px-3 py-2">
+        <div className="border-b border-border">
+          <SidebarBrand collapsed />
+        </div>
+        <div className="flex-1 [scrollbar-gutter:stable_both-edges] overflow-y-auto px-3 py-4">
           <DashboardNav permissions={permissions} badges={badges} collapsed />
         </div>
         <ViewStoreLink collapsed />
@@ -53,18 +55,18 @@ export function DashboardSidebar({ permissions, collapsed, onToggleCollapsed, ba
       {/* The `xl`+ tier: follows `collapsed`, with the toggle that controls it. */}
       <div className="hidden xl:flex xl:h-full xl:flex-col">
         {collapsed ? (
-          <div className="flex flex-col items-center gap-1">
+          <div className="flex flex-col items-center gap-1 border-b border-border">
             <SidebarBrand collapsed />
             <SidebarCollapseToggle collapsed={collapsed} onToggle={onToggleCollapsed} className="mb-2" />
           </div>
         ) : (
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between border-b border-border">
             <SidebarBrand />
             <SidebarCollapseToggle collapsed={collapsed} onToggle={onToggleCollapsed} className="me-3" />
           </div>
         )}
 
-        <div className={cn("flex-1 overflow-y-auto px-3 py-2", collapsed && "[scrollbar-gutter:stable_both-edges]")}>
+        <div className={cn("flex-1 overflow-y-auto px-3 py-4", collapsed && "[scrollbar-gutter:stable_both-edges]")}>
           <DashboardNav permissions={permissions} badges={badges} collapsed={collapsed} />
         </div>
 

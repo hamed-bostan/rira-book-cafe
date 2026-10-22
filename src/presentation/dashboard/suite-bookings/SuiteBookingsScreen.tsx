@@ -1,71 +1,147 @@
-import { BedDouble, SearchX } from "lucide-react";
+import { BedDouble } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
-import { SUITE_BOOKING_STATUSES, type SuiteBooking } from "@/src/domain/entities/SuiteBooking";
-import { AutoRefresh } from "@/src/presentation/components/AutoRefresh";
-import { ListFilterSelect } from "@/src/presentation/dashboard/list";
+import { shiftCafeDay } from "@/src/domain/entities/CafeTime";
+import {
+  MAX_SUITE_GUESTS,
+  firstFreeNight,
+  heldClashFor,
+  holdsSuite,
+  type SuiteBooking,
+} from "@/src/domain/entities/SuiteBooking";
+import { cn } from "@/src/lib/utils";
 import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
 
-import { SuiteBookingCard } from "./SuiteBookingCard";
+import { DashboardLinkTabs } from "../DashboardLinkTabs";
 
-const REFRESH_SECONDS = 60;
+import { NewStayDialog } from "./NewStayDialog";
+import { SuiteAvailability } from "./SuiteAvailability";
+import { WINDOW_LEAD_DAYS } from "./suiteCalendar";
+import { SuiteStayRow } from "./SuiteStayRow";
+
+export const SUITE_TABS = ["upcoming", "past"] as const;
+export type SuiteTab = (typeof SUITE_TABS)[number];
+
+/** Stays still in play — the Upcoming tab; everything else is Past. */
+const OPEN = ["requested", "confirmed", "checkedIn"];
 
 type SuiteBookingsScreenProps = {
+  /** Every stay that ends after the earliest day the page needs (calendar or Past tab). */
   bookings: SuiteBooking[];
-  /** Whether a status filter is applied — to tell "no stays" from "no matches". */
-  isFiltered: boolean;
+  today: string;
+  /** First day on the availability strip. */
+  windowStart: string;
+  tab: SuiteTab;
+  /** The stay picked from the strip or just booked, tinted in the list. */
+  focusId: string | undefined;
   canManage: boolean;
 };
 
 /**
- * The suite's book: every stay from today on, in check-in order. Presentational:
- * the page fetches over the REST API (BFF). The status filter lives in the URL;
- * the list re-reads itself while open, and every action `router.refresh()`es.
+ * The suite desk: a three-week availability strip (held stays and requests on
+ * separate rows, so clashes show at once) over the stays list in Upcoming / Past
+ * tabs. Presentational: the page fetches over the REST API (BFF); the strip's
+ * start, tab and focus live in the URL, and every action `router.refresh()`es.
  */
-export async function SuiteBookingsScreen({ bookings, isFiltered, canManage }: SuiteBookingsScreenProps) {
+export async function SuiteBookingsScreen({
+  bookings,
+  today,
+  windowStart,
+  tab,
+  focusId,
+  canManage,
+}: SuiteBookingsScreenProps) {
   const t = await getTranslations("dashSuite");
-  const waiting = bookings.filter((booking) => booking.status === "requested").length;
+
+  const upcoming = bookings
+    .filter((b) => OPEN.includes(b.status))
+    .sort((a, b) => a.checkIn.localeCompare(b.checkIn) || a.reference - b.reference);
+  const past = bookings
+    .filter((b) => !OPEN.includes(b.status))
+    .sort((a, b) => b.checkIn.localeCompare(a.checkIn) || b.reference - a.reference);
+  const shown = tab === "upcoming" ? upcoming : past;
+  const requests = bookings.filter((b) => b.status === "requested").length;
+  const held = bookings.filter(holdsSuite);
+
+  const home = shiftCafeDay(today, -WINDOW_LEAD_DAYS);
+  const hrefFor = ({ start, toTab, focus }: { start: string; toTab: SuiteTab; focus?: string }): string => {
+    const params = new URLSearchParams();
+    if (start !== home) params.set("from", start);
+    if (toTab !== "upcoming") params.set("tab", toTab);
+    if (focus) params.set("focus", focus);
+    const query = params.toString();
+    return `/dashboard/suite${query ? `?${query}` : ""}${focus ? `#stay-${focus}` : ""}`;
+  };
 
   return (
-    <div className="@container flex min-w-0 flex-col gap-4 sm:gap-6">
-      <AutoRefresh intervalSeconds={REFRESH_SECONDS} />
-
-      <div className="flex flex-col gap-3">
-        <div className="space-y-1">
+    <div className="flex min-w-0 flex-col gap-6">
+      <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+        <div className="flex min-w-0 flex-col gap-1">
           <h1 className="dashboard-page-title">{t("heading")}</h1>
-          <p className="text-body-small text-muted-foreground">{t("subtitle", { waiting })}</p>
+          <p className="flex flex-wrap items-center gap-x-2 text-body-default text-muted-foreground sm:text-body-small">
+            <span>{t("subtitle", { guests: MAX_SUITE_GUESTS })}</span>
+            {requests > 0 ? (
+              <>
+                <span aria-hidden>·</span>
+                <span className="font-semibold text-warning-foreground">
+                  {t("requestsWaiting", { count: requests })}
+                </span>
+              </>
+            ) : null}
+          </p>
         </div>
-        <div className="min-w-48 self-start">
-          <ListFilterSelect
-            className="h-9 w-full"
-            paramName="status"
-            label={t("filterStatusLabel")}
-            options={[
-              { value: "", label: t("filterStatusOption", { status: t("filterStatusAll") }) },
-              ...SUITE_BOOKING_STATUSES.map((status) => ({
-                value: status,
-                label: t("filterStatusOption", { status: t(`status.${status}`) }),
-              })),
-            ]}
-          />
-        </div>
+        {canManage ? <NewStayDialog held={held} today={today} firstFree={firstFreeNight(held, today)} /> : null}
       </div>
 
-      {bookings.length > 0 ? (
-        <ul className="flex flex-col gap-3">
-          {bookings.map((booking) => (
-            <SuiteBookingCard key={booking.id} booking={booking} canManage={canManage} />
-          ))}
-        </ul>
-      ) : (
-        <div className="rounded-card-lg border border-dashed border-border">
+      <SuiteAvailability
+        bookings={bookings}
+        windowStart={windowStart}
+        today={today}
+        focusId={focusId}
+        hrefForStay={(booking) =>
+          hrefFor({ start: windowStart, toTab: OPEN.includes(booking.status) ? "upcoming" : "past", focus: booking.id })
+        }
+        hrefForWindow={(start) => hrefFor({ start, toTab: tab })}
+      />
+
+      <section
+        aria-label={t("staysLabel")}
+        className="min-w-0 rounded-card-lg border border-border bg-background shadow-xs"
+      >
+        <DashboardLinkTabs
+          className="px-4"
+          label={t("tabsLabel")}
+          current={tab}
+          tabs={SUITE_TABS.map((value) => ({
+            key: value,
+            label: value === "upcoming" ? t("tabUpcoming") : t("tabPast"),
+            count: value === "upcoming" ? upcoming.length : past.length,
+            href: hrefFor({ start: windowStart, toTab: value }),
+          }))}
+        />
+        {shown.length > 0 ? (
+          <ul>
+            {shown.map((booking, index) => (
+              <li key={booking.id} className={cn(index > 0 && "border-t border-border")}>
+                <SuiteStayRow
+                  booking={booking}
+                  clash={heldClashFor(booking, bookings)}
+                  today={today}
+                  focused={booking.id === focusId}
+                  canManage={canManage}
+                />
+              </li>
+            ))}
+          </ul>
+        ) : (
           <EmptyState
-            icon={isFiltered ? SearchX : BedDouble}
-            title={isFiltered ? t("noMatchesTitle") : t("emptyTitle")}
-            description={isFiltered ? t("noMatchesBody") : t("emptyBody")}
+            icon={BedDouble}
+            title={tab === "upcoming" ? t("emptyUpcomingTitle") : t("emptyPastTitle")}
+            description={tab === "upcoming" ? t("emptyUpcomingBody") : t("emptyPastBody")}
+            className="py-12"
           />
-        </div>
-      )}
+        )}
+      </section>
     </div>
   );
 }

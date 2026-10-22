@@ -24,6 +24,8 @@ function eventSnapshot(event: CafeEvent | NewCafeEvent): Record<string, unknown>
     imageUrl: event.imageUrl,
     description: event.description,
     descriptionFa: event.descriptionFa,
+    // Saving a new time can release held tables that clash then.
+    tableLabels: "tableLabels" in event ? event.tableLabels.join(", ") : undefined,
   };
 }
 

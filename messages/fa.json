@@ -171,7 +171,8 @@
     "wrongDirection": "این با ردیف جور نیست — کارمزد برداشت است و سود و تسویهٔ درگاه واریز.",
     "outsideMatchRange": "این ردیف دفتر خارج از بازه‌ای است که این صورت‌حساب می‌تواند تطبیق دهد.",
     "wrongAccount": "فقط ردیف‌های حساب بانک قابل تطبیق‌اند.",
-    "postingKindInvalid": "نوع ردیف را انتخاب کنید."
+    "postingKindInvalid": "نوع ردیف را انتخاب کنید.",
+    "tableInvalid": "میزها را از نقشهٔ سالن انتخاب کنید."
   },
   "apiErrors": {
     "alreadyPosted": "این مورد قبلاً ثبت شده است.",
@@ -221,7 +222,8 @@
     "alreadyMatched": "یکی از این ردیف‌ها قبلاً تطبیق داده شده است.",
     "matchUnbalanced": "جمع ردیف‌های انتخاب‌شده در دو طرف برابر نیست.",
     "notReconciled": "صورت‌حساب هنوز تطبیق ندارد — همهٔ ردیف‌ها را تطبیق دهید و اختلاف را صفر کنید.",
-    "previousNotReconciled": "اول صورت‌حساب‌های قبلی را مغایرت‌گیری کنید."
+    "previousNotReconciled": "اول صورت‌حساب‌های قبلی را مغایرت‌گیری کنید.",
+    "tableHeld": "این میز در آن زمان برای یک رویداد نگه داشته شده است."
   },
   "meta": {
     "siteName": "کافه کتاب ریرا",
@@ -262,7 +264,7 @@
     "navActivity": "فعالیت‌ها",
     "navTeam": "تیم",
     "groupStore": "کافه",
-    "navReservations": "رزروها",
+    "navReservations": "میزها",
     "navEvents": "رویدادها",
     "navReports": "گزارش‌ها",
     "groupInsights": "تحلیل",
@@ -282,7 +284,9 @@
     "notificationsUnread": "اعلان‌ها (جدید)",
     "markAllRead": "علامت‌گذاری همه به‌عنوان خوانده‌شده",
     "newOrder": "سفارش جدید #{number}",
-    "notificationsEmpty": "سفارشی در انتظار نیست."
+    "notificationsEmpty": "سفارشی در انتظار نیست.",
+    "groupBookings": "رزروها",
+    "groupLibrary": "کتابخانه"
   },
   "dashTeam": {
     "membersHeading": "اعضای تیم",
@@ -809,7 +813,8 @@
         "deleted": "{actor} دسته‌بندی {entity} را حذف کرد"
       },
       "reservation": {
-        "changed": "{actor} رزرو {entity} را به‌روزرسانی کرد"
+        "changed": "{actor} رزرو {entity} را به‌روزرسانی کرد",
+        "booked": "{actor} رزرو میز {entity} را ثبت کرد"
       },
       "event": {
         "created": "{actor} رویداد {entity} را ایجاد کرد",
@@ -833,7 +838,8 @@
         "voided": "{actor} هزینهٔ {entity} را باطل کرد"
       },
       "suiteBooking": {
-        "changed": "{actor} رزرو سوئیت {entity} را به‌روز کرد"
+        "changed": "{actor} رزرو سوئیت {entity} را به‌روز کرد",
+        "booked": "{actor} اقامت سوئیت {entity} را ثبت کرد"
       },
       "bookLoan": {
         "lent": "{actor} کتابی به امانت داد ({entity})",
@@ -899,7 +905,8 @@
       "linesAdded": "ردیف‌های افزوده",
       "linesRemoved": "ردیف‌های حذف‌شده",
       "matched": "تطبیق‌ها",
-      "unmatched": "تطبیق‌های برداشته‌شده"
+      "unmatched": "تطبیق‌های برداشته‌شده",
+      "tableLabels": "میزهای نگه‌داشته"
     },
     "filterField": "فیلتر بر اساس نوع تغییر",
     "allFields": "همه تغییرها",
@@ -914,7 +921,7 @@
     }
   },
   "dashReservations": {
-    "heading": "رزروها",
+    "heading": "رزرو میز",
     "summary": "{bookings, plural, =0 {بدون رزرو} other {{bookingsFormatted} رزرو}} · {covers, plural, other {{coversFormatted} مهمان}}",
     "today": "امروز",
     "previousDay": "روز قبل",
@@ -922,7 +929,6 @@
     "pickDay": "انتخاب روز",
     "filterStatusLabel": "فیلتر وضعیت",
     "filterStatusAll": "همه",
-    "filterStatusOption": "وضعیت: {status}",
     "status": {
       "requested": "درخواست‌شده",
       "confirmed": "تأییدشده",
@@ -941,11 +947,8 @@
     },
     "changeTable": "تغییر میز",
     "partySize": "{count, plural, other {{formatted} نفر}}",
-    "table": "میز {table}",
     "noTable": "هنوز میزی تعیین نشده",
     "tableDialogTitle": "میز برای R-{reference}",
-    "tableLabelRequired": "میز",
-    "tableLabelOptional": "میز (اختیاری)",
     "saveTable": "ذخیرهٔ میز",
     "dialogCancel": "بازگشت",
     "confirmTitle": {
@@ -959,7 +962,46 @@
     "noMatchesTitle": "موردی پیدا نشد",
     "noMatchesBody": "در این روز رزروی با این وضعیت نیست.",
     "statusChanged": "وضعیت R-{reference}: {status}",
-    "tableSaved": "R-{reference} به میز {table} منتقل شد."
+    "tableSaved": "R-{reference} به {table} منتقل شد.",
+    "eventsCount": "{count, plural, other {# رویداد}}",
+    "needReply": "{count, plural, other {# منتظر پاسخ}}",
+    "bookingsLabel": "رزروها",
+    "nowLine": "اکنون · {time}",
+    "showAll": "نمایش همهٔ رزروها",
+    "until": "تا {time}",
+    "latePast": "{minutes} دقیقه از زمان رزرو گذشته",
+    "eventAria": "رویداد: {title}، {time}",
+    "eventBadge": "رویداد · {kind}",
+    "eventHolds": "{tables} نگه داشته شده",
+    "eventHoldsWholeFloor": "کل سالن نگه داشته شده",
+    "eventHoldsNone": "میزی نگه داشته نشده",
+    "eventSeats": "{taken} از {capacity} جا رزرو شده",
+    "eventSeatsUnlimited": "{taken} جا رزرو شده",
+    "openEvent": "باز کردن رویداد",
+    "tableGroupLabel": "میز",
+    "tableTaken": "گرفته شده · R-{reference}",
+    "tableHeld": "نگه‌داشته · {title}",
+    "tableTooSmall": "{seats} جا · کوچک است",
+    "moreActionsAria": "کارهای بیشتر برای R-{reference}",
+    "markNoShow": "ثبت عدم حضور",
+    "cancelBooking": "لغو رزرو",
+    "tableDialogSub": "{name} · {party} · {from}–{to}",
+    "confirmBooking": "تأیید رزرو",
+    "newBooking": "رزرو جدید",
+    "newBookingSub": "رزرو تلفنی یا حضوری برای {day}. برای تأیید فوری یک میز انتخاب کنید، یا آن را به‌صورت درخواست نگه دارید.",
+    "guestName": "نام مهمان",
+    "guestNamePlaceholder": "نام کامل",
+    "guestPhone": "تلفن",
+    "time": "ساعت",
+    "party": "تعداد",
+    "noteOptional": "یادداشت (اختیاری)",
+    "notePlaceholder": "مثلاً کنار پنجره، تولد",
+    "tableOptional": "میز (اختیاری)",
+    "saveAsRequest": "ذخیره به‌صورت درخواست",
+    "bookedToast": "R-{reference} برای {name} ثبت شد · {time} · {table}",
+    "noTableYet": "هنوز میزی ندارد",
+    "bookError": "ذخیرهٔ رزرو ممکن نشد. دوباره تلاش کنید.",
+    "table": "میز {table}"
   },
   "dashEvents": {
     "heading": "رویدادها",
@@ -1030,7 +1072,40 @@
     "savedToast": "رویداد ذخیره شد",
     "createdToast": "رویداد ایجاد شد",
     "deleted": "«{title}» حذف شد",
-    "registrationCancelledToast": "ثبت‌نام {name} لغو شد"
+    "registrationCancelledToast": "ثبت‌نام {name} لغو شد",
+    "summaryDrafts": "{count, plural, other {# پیش‌نویس}}",
+    "tabsLabel": "فهرست رویدادها",
+    "today": "امروز",
+    "edit": "ویرایش",
+    "editAria": "ویرایش {title}",
+    "seatsOf": "<strong>{taken}</strong> از {capacity} جا رزرو شده",
+    "tablesHeld": "میزهای نگه‌داشته",
+    "holdTables": "نگه‌داشتن میز",
+    "changeTables": "تغییر میزها",
+    "noTablesHeld": "هیچ. مهمان‌ها هر جا جا باشد می‌نشینند.",
+    "seatsHeld": "{held} جا برای {capacity} مهمان نگه داشته شده",
+    "seatsHeldShort": "{held} جا برای {capacity} مهمان نگه داشته شده · {short} جا کم است",
+    "seatsHeldUnlimited": "{held} جا نگه داشته شده",
+    "holdTitle": "میزهای {title}",
+    "holdSubtitle": "{when} · {capacity} جا. مهمان‌ها نمی‌توانند میزهای نگه‌داشته را رزرو کنند.",
+    "holdSubtitleUnlimited": "{when}. مهمان‌ها نمی‌توانند میزهای نگه‌داشته را رزرو کنند.",
+    "noTablesSelected": "میزی انتخاب نشده",
+    "selectAllFree": "انتخاب همهٔ میزهای آزاد",
+    "clearAll": "پاک کردن همه",
+    "tableBooked": "رزرو · R-{reference} {time}",
+    "tableHeldBy": "نگه‌داشته · {title}",
+    "back": "بازگشت",
+    "saveTables": "ذخیرهٔ میزها",
+    "tablesSaved": "میزهای {title} ذخیره شد",
+    "tablesReleased": "میزهای {title} آزاد شد",
+    "tablesReleasedOnSave": "{tables} آزاد شد، چون در زمان جدید گرفته شده بود.",
+    "tablesLoadError": "بارگذاری میزها ممکن نشد. دوباره تلاش کنید.",
+    "tablesSaveError": "ذخیرهٔ میزها ممکن نشد. دوباره تلاش کنید.",
+    "tryAgain": "تلاش دوباره",
+    "emptyUpcomingTitle": "هنوز برنامه‌ای نیست",
+    "emptyUpcomingBody": "باشگاه‌های کتاب، کتاب‌خوانی‌ها و کارگاه‌هایی که برنامه‌ریزی می‌کنید اینجا می‌آیند.",
+    "emptyPastTitle": "رویداد گذشته‌ای نیست",
+    "emptyPastBody": "رویدادهایی که برگزار شده‌اند اینجا می‌آیند."
   },
   "dashOverview": {
     "heading": "امروز",
@@ -2187,10 +2262,7 @@
   },
   "dashSuite": {
     "heading": "سوئیت",
-    "subtitle": "{waiting, plural, =0 {اقامت‌ها از امروز به بعد.} other {اقامت‌ها از امروز به بعد · # درخواست در انتظار.}}",
-    "filterStatusLabel": "فیلتر وضعیت",
-    "filterStatusAll": "همه",
-    "filterStatusOption": "وضعیت: {status}",
+    "subtitle": "یک اتاق برای حداکثر {guests} مهمان. اقامت‌های نگه‌داشته هرگز هم‌پوشانی ندارند.",
     "status": {
       "requested": "درخواست‌شده",
       "confirmed": "تأییدشده",
@@ -2216,11 +2288,52 @@
     },
     "confirmMessage": "سوئیت برای آن شب‌ها آزاد می‌شود و این کار برگشت‌پذیر نیست.",
     "updateError": "به‌روزرسانی رزرو ممکن نشد. دوباره تلاش کنید.",
-    "emptyTitle": "اقامتی در پیش نیست",
-    "emptyBody": "درخواست‌های سوئیت مهمان‌ها اینجا نمایش داده می‌شوند.",
-    "noMatchesTitle": "نتیجه‌ای نیست",
-    "noMatchesBody": "هیچ اقامت پیش‌رویی با این وضعیت نیست.",
-    "statusChanged": "وضعیت S-{reference}: {status}"
+    "statusChanged": "وضعیت S-{reference}: {status}",
+    "requestsWaiting": "{count, plural, other {# درخواست در انتظار}}",
+    "newStay": "اقامت جدید",
+    "availability": "وضعیت اتاق",
+    "availabilityNav": "جابه‌جایی تقویم",
+    "earlier": "قبل",
+    "later": "بعد",
+    "today": "امروز",
+    "rowHeld": "نگه‌داشته",
+    "rowRequests": "درخواست‌ها",
+    "barTitle": "S-{reference}، {name}، {from} → {to}، {status}",
+    "legend": "راهنما",
+    "staysLabel": "اقامت‌ها",
+    "tabsLabel": "اقامت‌های پیش‌رو یا گذشته",
+    "tabUpcoming": "پیش‌رو",
+    "tabPast": "گذشته",
+    "checksOutToday": "امروز تخلیه می‌کند",
+    "arrivesToday": "امروز می‌رسد",
+    "wasDue": "باید {day} می‌رسید",
+    "clashesWith": "با S-{reference} تداخل دارد · {range}",
+    "clashShort": "با S-{reference} تداخل دارد",
+    "checkInOpens": "پذیرش از {day} باز می‌شود",
+    "moreActionsAria": "کارهای بیشتر برای S-{reference}",
+    "markNoShow": "ثبت عدم حضور",
+    "cancelBooking": "لغو رزرو",
+    "emptyUpcomingTitle": "اقامت پیش‌رویی نیست",
+    "emptyUpcomingBody": "اقامت‌هایی که مهمان‌ها رزرو می‌کنند اینجا می‌آیند.",
+    "emptyPastTitle": "اقامت گذشته‌ای نیست",
+    "emptyPastBody": "اقامت‌های تمام‌شده، لغوشده و عدم حضورِ دو ماه اخیر اینجا می‌آیند.",
+    "newStaySub": "برای مهمانی که تلفنی یا حضوری رزرو می‌کند. بلافاصله تأیید می‌شود.",
+    "guestName": "نام مهمان",
+    "guestNamePlaceholder": "نام کامل",
+    "guestPhone": "تلفن",
+    "checkIn": "ورود",
+    "checkOut": "خروج",
+    "guestsLabel": "مهمان‌ها",
+    "noteOptional": "یادداشت (اختیاری)",
+    "notePlaceholder": "مثلاً دیر می‌رسد",
+    "errorPast": "روز ورود نمی‌تواند گذشته باشد.",
+    "errorOrder": "روز خروج باید بعد از روز ورود باشد.",
+    "errorTooLong": "اقامت حداکثر {nights} شب است.",
+    "errorClash": "با S-{reference} تداخل دارد · {range}. روزهای دیگری انتخاب کنید.",
+    "staySummary": "{nights} · {range} · اتاق آزاد است",
+    "confirmStay": "تأیید اقامت",
+    "stayBooked": "S-{reference} برای {name} تأیید شد · {range}",
+    "bookError": "ذخیرهٔ اقامت ممکن نشد. دوباره تلاش کنید."
   },
   "dashReviews": {
     "heading": "نظرها",
@@ -2516,5 +2629,10 @@
     "reservations": "بارگذاری رزروهای شما ممکن نشد",
     "rewards": "بارگذاری امتیازهای شما ممکن نشد",
     "suite": "بارگذاری سوئیت ممکن نشد"
+  },
+  "floorTables": {
+    "tableName": "{label, select, long {میز بلند} other {میز {number}}}",
+    "wholeFloor": "کل سالن",
+    "seats": "{seats} جا"
   }
 }

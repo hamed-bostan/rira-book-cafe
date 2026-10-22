@@ -6,6 +6,7 @@ import {
   MAX_EVENT_TITLE_LENGTH,
   MAX_SEATS_PER_REGISTRATION,
 } from "@/src/domain/entities/CafeEvent";
+import { CAFE_TABLE_LABELS } from "@/src/domain/entities/CafeTable";
 import { isWallTime, wallTimeToDate } from "@/src/domain/entities/CafeTime";
 
 import { isImageUrl } from "./image-url";
@@ -68,6 +69,15 @@ export const eventFormSchema = z
 
 export type EventFormInput = z.input<typeof eventFormSchema>;
 export type EventFormValues = z.output<typeof eventFormSchema>;
+
+/** Staff choosing the tables an event holds; an empty list releases them all. */
+export const eventTablesSchema = z.object({
+  tableLabels: z
+    .array(z.enum(CAFE_TABLE_LABELS, { message: "tableInvalid" }))
+    .max(CAFE_TABLE_LABELS.length, "tableInvalid"),
+});
+
+export type EventTablesInput = z.infer<typeof eventTablesSchema>;
 
 /** A guest signing up. */
 export const eventRegistrationSchema = z.object({

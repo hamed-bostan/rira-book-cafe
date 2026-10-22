@@ -88,7 +88,10 @@ export const ACTIVITY_ACTIONS = [
   "promoCode.activeChanged",
   "user.roleChanged",
   "reservation.changed",
+  // Staff booking a table or the suite for a guest who rang or walked in.
+  "reservation.booked",
   "suiteBooking.changed",
+  "suiteBooking.booked",
   // A book handed over, brought back, or written off.
   "bookLoan.lent",
   "bookLoan.returned",

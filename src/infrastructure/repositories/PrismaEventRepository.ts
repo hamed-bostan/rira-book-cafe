@@ -4,8 +4,11 @@ import {
   type CafeEvent,
   type EventKind,
   type EventRegistration,
+  type EventTableOption,
   type RegistrationStatus,
+  type TableHoldClash,
 } from "@/src/domain/entities/CafeEvent";
+import { CAFE_TABLE_LABELS, CAFE_TABLES } from "@/src/domain/entities/CafeTable";
 import { ConflictError } from "@/src/domain/errors/ConflictError";
 import { NotFoundError } from "@/src/domain/errors/NotFoundError";
 import { ResourceInUseError } from "@/src/domain/errors/ResourceInUseError";
@@ -15,6 +18,7 @@ import { prisma } from "@/src/infrastructure/prisma/client";
 import { Prisma } from "@/src/infrastructure/prisma/generated/client";
 import { inTransaction, type PrismaDb } from "@/src/infrastructure/prisma/transaction";
 
+import { bookingsHoldingTables, eventsHoldingTables, lockTables } from "./tableHolds";
 import { recordAudit } from "./writeActivityEntry";
 
 const ACTIVE = "registered";
@@ -55,7 +59,16 @@ export class PrismaEventRepository implements IEventRepository {
   async update(id: string, input: NewCafeEvent, audit?: AuditHook<CafeEvent>): Promise<CafeEvent> {
     try {
       return await inTransaction(this.db, async (tx) => {
-        const row = await tx.event.update({ where: { id }, data: toRowData(input) });
+        // A held table that something else has at the new time is released, not
+        // double-booked. Lock the row first so a concurrent hold can't slip in
+        // between reading the held tables and writing them back.
+        const held = await lockEvent(tx, id);
+        await lockTables(tx, held.tableLabels);
+        const clashes = await tableClashes(tx, held.tableLabels, new Date(input.startsAt), new Date(input.endsAt), id);
+        const row = await tx.event.update({
+          where: { id },
+          data: { ...toRowData(input), tableLabels: held.tableLabels.filter((label) => !clashes.has(label)) },
+        });
         const event = toEvent(row, await seatsTaken(tx, id));
         await recordAudit(tx, event, audit);
         return event;
@@ -63,6 +76,41 @@ export class PrismaEventRepository implements IEventRepository {
     } catch (error) {
       throw toDomainError(error, id);
     }
+  }
+
+  async listTableOptions(eventId: string): Promise<EventTableOption[] | null> {
+    const event = await this.db.event.findUnique({ where: { id: eventId } });
+    if (!event) return null;
+    const clashes = await tableClashes(this.db, CAFE_TABLE_LABELS, event.startsAt, event.endsAt, event.id);
+    return CAFE_TABLES.map(({ label, seats }) => ({
+      label,
+      seats,
+      held: event.tableLabels.includes(label),
+      clash: clashes.get(label),
+    }));
+  }
+
+  async holdTables(eventId: string, tableLabels: string[], audit?: AuditHook<CafeEvent>): Promise<CafeEvent> {
+    return inTransaction(this.db, async (tx) => {
+      const event = await lockEvent(tx, eventId);
+      // The same per-table lock a reservation takes before it checks for events.
+      await lockTables(tx, tableLabels);
+      const [taken] = await tableClashes(tx, tableLabels, event.startsAt, event.endsAt, eventId);
+      if (taken) {
+        const [label, clash] = taken;
+        throw new ConflictError(
+          "TABLE_TAKEN",
+          clash.kind === "booking"
+            ? `Table ${label} is already booked (R-${clash.reference}) at that time.`
+            : `Table ${label} is held for "${clash.title}" at that time.`,
+        );
+      }
+
+      const row = await tx.event.update({ where: { id: eventId }, data: { tableLabels } });
+      const saved = toEvent(row, await seatsTaken(tx, eventId));
+      await recordAudit(tx, saved, audit);
+      return saved;
+    });
   }
 
   async delete(id: string, audit?: AuditHook<void>): Promise<void> {
@@ -167,6 +215,48 @@ async function seatsTaken(tx: Prisma.TransactionClient, eventId: string): Promis
   return result._sum.seats ?? 0;
 }
 
+/** Lock the event row for the rest of the transaction and read it; `NotFoundError` when it's gone. */
+async function lockEvent(tx: Prisma.TransactionClient, id: string): Promise<EventRow> {
+  const locked = await tx.$queryRaw<{ id: string }[]>`SELECT id FROM events WHERE id = ${id} FOR UPDATE`;
+  if (locked.length === 0) throw new NotFoundError("event", id);
+  return tx.event.findUniqueOrThrow({ where: { id } });
+}
+
+/**
+ * What else has each of these tables during `[from, to)` — a guest booking or
+ * another event — keyed by table. A table with nothing on it is absent.
+ */
+async function tableClashes(
+  tx: Prisma.TransactionClient,
+  labels: readonly string[],
+  from: Date,
+  to: Date,
+  eventId: string,
+): Promise<Map<string, TableHoldClash>> {
+  const [bookings, events] = await Promise.all([
+    bookingsHoldingTables(tx, labels, from, to),
+    eventsHoldingTables(tx, labels, from, to, eventId),
+  ]);
+  const clashes = new Map<string, TableHoldClash>();
+  for (const booking of bookings) {
+    if (booking.tableLabel && !clashes.has(booking.tableLabel)) {
+      clashes.set(booking.tableLabel, {
+        kind: "booking",
+        reference: booking.reference,
+        startsAt: booking.startsAt.toISOString(),
+      });
+    }
+  }
+  for (const event of events) {
+    for (const label of event.tableLabels) {
+      if (labels.includes(label) && !clashes.has(label)) {
+        clashes.set(label, { kind: "event", eventId: event.id, title: event.title });
+      }
+    }
+  }
+  return clashes;
+}
+
 function toRowData(input: NewCafeEvent) {
   return {
     kind: input.kind,
@@ -206,6 +296,7 @@ function toEvent(row: EventRow, taken: number): CafeEvent {
     price: row.price,
     isPublished: row.isPublished,
     seatsTaken: taken,
+    tableLabels: row.tableLabels,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };

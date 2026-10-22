@@ -35,6 +35,7 @@ function event(overrides: Partial<CafeEvent> = {}): CafeEvent {
     startsAt: "2026-10-25T15:30:00.000Z",
     endsAt: "2026-10-25T17:30:00.000Z",
     seatsTaken: 0,
+    tableLabels: [],
     createdAt: "",
     updatedAt: "",
     ...overrides,
@@ -99,6 +100,8 @@ function repoWith(current: CafeEvent | null, reg: EventRegistration | null = nul
     cancelRegistration,
     listRegistrations: vi.fn(async () => [registration()]),
     listRegistrationsForUser: vi.fn(async () => [registration()]),
+    listTableOptions: vi.fn(async () => null),
+    holdTables: vi.fn(async () => event()),
   };
   return { repo, create, update, remove, register, cancelRegistration, entries };
 }

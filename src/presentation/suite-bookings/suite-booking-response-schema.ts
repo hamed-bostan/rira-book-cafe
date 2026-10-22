@@ -6,7 +6,7 @@ import { SUITE_BOOKING_STATUSES, type SuiteBooking, type SuiteBusyRange } from "
 export const suiteBookingResponseSchema = z.object({
   id: z.string(),
   reference: z.number(),
-  userId: z.string(),
+  userId: z.string().optional(),
   guestName: z.string(),
   guestPhone: z.string(),
   guests: z.number(),

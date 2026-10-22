@@ -18,10 +18,8 @@ import { prisma } from "@/src/infrastructure/prisma/client";
 import type { Prisma } from "@/src/infrastructure/prisma/generated/client";
 import { inTransaction, type PrismaDb } from "@/src/infrastructure/prisma/transaction";
 
+import { bookingsHoldingTables, eventsHoldingTables, lockTables } from "./tableHolds";
 import { recordAudit } from "./writeActivityEntry";
-
-/** The longest booking, bounding how far back the clash check needs to look. */
-const MAX_DURATION_MS = 6 * 60 * 60 * 1000;
 
 /**
  * Reservations backed by PostgreSQL via Prisma. Server-side only, bound through
@@ -30,19 +28,30 @@ const MAX_DURATION_MS = 6 * 60 * 60 * 1000;
 export class PrismaReservationRepository implements IReservationRepository {
   constructor(private readonly db: PrismaDb = prisma) {}
 
-  async create(input: NewReservation): Promise<Reservation> {
-    const row = await this.db.reservation.create({
-      data: {
-        userId: input.userId,
-        guestName: input.guestName,
-        guestPhone: input.guestPhone,
-        partySize: input.partySize,
-        startsAt: new Date(input.startsAt),
-        durationMinutes: input.durationMinutes,
-        note: input.note ?? null,
-      },
+  async create(input: NewReservation, audit?: AuditHook<Reservation>): Promise<Reservation> {
+    return inTransaction(this.db, async (tx) => {
+      // A booking made with a table is confirmed on the spot — the table is checked
+      // under the same lock as confirming one later.
+      if (input.tableLabel) {
+        const startsAt = new Date(input.startsAt);
+        await refuseTakenTable(tx, input.tableLabel, startsAt, reservationEndsAt(input), null);
+      }
+      const row = await tx.reservation.create({
+        data: {
+          userId: input.userId ?? null,
+          guestName: input.guestName,
+          guestPhone: input.guestPhone,
+          partySize: input.partySize,
+          startsAt: new Date(input.startsAt),
+          durationMinutes: input.durationMinutes,
+          note: input.note ?? null,
+          ...(input.tableLabel ? { status: "confirmed", tableLabel: input.tableLabel } : {}),
+        },
+      });
+      const saved = toReservation(row);
+      await recordAudit(tx, saved, audit);
+      return saved;
     });
-    return toReservation(row);
   }
 
   async getById(id: string): Promise<Reservation | null> {
@@ -78,30 +87,11 @@ export class PrismaReservationRepository implements IReservationRepository {
       const holdsTable = (TABLE_HOLDING_STATUSES as readonly string[]).includes(change.status);
 
       if (holdsTable && tableLabel) {
-        // Serialize every booking of this table: two staff assigning the same table
-        // at once take turns here, so the clash check below can't race.
-        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`table:${tableLabel}`}))`;
-
-        const startsAt = current.startsAt;
         const endsAt = reservationEndsAt({
-          startsAt: startsAt.toISOString(),
+          startsAt: current.startsAt.toISOString(),
           durationMinutes: current.durationMinutes,
         });
-        const candidates = await tx.reservation.findMany({
-          where: {
-            id: { not: id },
-            tableLabel,
-            status: { in: [...TABLE_HOLDING_STATUSES] },
-            startsAt: { gt: new Date(startsAt.getTime() - MAX_DURATION_MS), lt: endsAt },
-          },
-        });
-        const clash = candidates.find((other) => reservationEndsAt(toReservation(other)) > startsAt);
-        if (clash) {
-          throw new ConflictError(
-            "TABLE_TAKEN",
-            `Table ${tableLabel} is already booked (R-${clash.reference}) at that time.`,
-          );
-        }
+        await refuseTakenTable(tx, tableLabel, current.startsAt, endsAt, id);
       }
 
       // Guarded on the status the caller read: a concurrent change makes this match nothing.
@@ -122,6 +112,32 @@ export class PrismaReservationRepository implements IReservationRepository {
 
 type ReservationRow = Prisma.ReservationGetPayload<object>;
 
+/**
+ * Refuse a table another booking holds (`TABLE_TAKEN`) or an event holds
+ * (`TABLE_HELD`) during `[startsAt, endsAt)`. Takes the table's lock first, so
+ * every booking or event hold of it serializes here and the checks can't race.
+ */
+async function refuseTakenTable(
+  tx: Prisma.TransactionClient,
+  tableLabel: string,
+  startsAt: Date,
+  endsAt: Date,
+  reservationId: string | null,
+): Promise<void> {
+  await lockTables(tx, [tableLabel]);
+  const [clash] = await bookingsHoldingTables(tx, [tableLabel], startsAt, endsAt, reservationId ?? undefined);
+  if (clash) {
+    throw new ConflictError(
+      "TABLE_TAKEN",
+      `Table ${tableLabel} is already booked (R-${clash.reference}) at that time.`,
+    );
+  }
+  const [event] = await eventsHoldingTables(tx, [tableLabel], startsAt, endsAt);
+  if (event) {
+    throw new ConflictError("TABLE_HELD", `Table ${tableLabel} is held for "${event.title}" at that time.`);
+  }
+}
+
 function toStatus(value: string): ReservationStatus {
   return (RESERVATION_STATUSES as readonly string[]).includes(value) ? (value as ReservationStatus) : "requested";
 }
@@ -130,7 +146,7 @@ function toReservation(row: ReservationRow): Reservation {
   return {
     id: row.id,
     reference: row.reference,
-    userId: row.userId,
+    userId: row.userId ?? undefined,
     guestName: row.guestName,
     guestPhone: row.guestPhone,
     partySize: row.partySize,

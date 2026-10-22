@@ -40,18 +40,18 @@ export function DashboardNav({ permissions, badges, collapsed = false, onNavigat
   const groups = navGroupsFor(permissions);
 
   return (
-    <nav className="flex flex-col gap-1">
+    <nav className={cn("flex flex-col", collapsed ? "gap-2" : "gap-5")}>
       {groups.map((group, index) => (
-        <div key={group.id} className="flex flex-col gap-1">
+        <div key={group.id} className="flex flex-col gap-0.5">
           {/* The first group is a single item (the overview) and needs no heading;
-              every later group gets a rule to separate it from the one above. A
-              collapsed rail keeps the rule and drops the wording — at 40px there
-              is nowhere to put it, and the grouping still reads as grouping. */}
+              every later group gets one. A collapsed rail swaps the wording for a
+              rule — at 40px there is nowhere to put it, and the grouping still
+              reads as grouping. */}
           {index > 0 &&
             (collapsed ? (
-              <hr className="my-2 border-border" />
+              <hr className="mb-2 border-border" />
             ) : (
-              <p className="mt-4 px-3 pb-1 text-body-caption-bold tracking-wider text-muted-foreground uppercase">
+              <p className="px-3 pt-1 pb-2 text-body-caption-bold tracking-wider text-muted-foreground uppercase">
                 {t(group.id)}
               </p>
             ))}
@@ -69,12 +69,12 @@ export function DashboardNav({ permissions, badges, collapsed = false, onNavigat
                 aria-current={active ? "page" : undefined}
                 title={collapsed ? label : undefined}
                 className={cn(
-                  "relative flex items-center gap-3 rounded-button text-body-small transition-colors",
+                  "relative flex items-center gap-3 rounded-button text-body-default transition-colors sm:text-body-small",
                   focusRing,
                   collapsed ? "size-11 shrink-0 justify-center self-center p-0" : "h-11 px-3 sm:h-10",
                   active
                     ? "bg-accent font-semibold text-accent-foreground [&>svg]:text-primary"
-                    : "font-medium text-foreground hover:bg-muted [&>svg]:text-muted-foreground",
+                    : "font-medium text-foreground/80 hover:bg-muted hover:text-foreground [&>svg]:text-muted-foreground",
                 )}
               >
                 <Icon icon={section.icon} size="md" className="sm:size-5" />

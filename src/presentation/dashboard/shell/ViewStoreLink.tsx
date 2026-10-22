@@ -21,18 +21,21 @@ export function ViewStoreLink({ collapsed = false, onNavigate }: ViewStoreLinkPr
   const label = t("viewStore");
 
   return (
-    <Link
-      href="/"
-      onClick={onNavigate}
-      title={collapsed ? label : undefined}
-      className={cn(
-        "flex items-center justify-center gap-2 border-t border-border py-6 text-body-small-emphasis text-muted-foreground transition-colors hover:text-foreground",
-        focusRing,
-        collapsed ? "justify-center px-0" : "px-5",
-      )}
-    >
-      <Icon icon={ExternalLink} size="sm" />
-      <span className={cn(collapsed && "sr-only")}>{label}</span>
-    </Link>
+    <div className="border-t border-border p-3">
+      <Link
+        href="/"
+        onClick={onNavigate}
+        title={collapsed ? label : undefined}
+        // Drawn like a nav row, so it reads as one more place to go.
+        className={cn(
+          "flex h-11 items-center gap-3 rounded-button text-body-default font-medium text-foreground/80 transition-colors hover:bg-muted hover:text-foreground sm:h-10 sm:text-body-small [&>svg]:text-muted-foreground",
+          focusRing,
+          collapsed ? "justify-center px-0" : "px-3",
+        )}
+      >
+        <Icon icon={ExternalLink} size="md" className="sm:size-5" />
+        <span className={cn(collapsed && "sr-only")}>{label}</span>
+      </Link>
+    </div>
   );
 }

@@ -32,8 +32,27 @@ export type CafeEvent = {
   isPublished: boolean;
   /** Seats taken by active registrations. Derived, not stored. */
   seatsTaken: number;
+  /**
+   * Tables held for the event while it runs, in floor order (`CafeTable` labels).
+   * Guests can't book them at that time. Empty: guests sit wherever there's room.
+   */
+  tableLabels: string[];
   createdAt: string;
   updatedAt: string;
+};
+
+/** Why a table can't be held for an event: a guest booking or another event already has it then. */
+export type TableHoldClash =
+  { kind: "booking"; reference: number; startsAt: string } | { kind: "event"; eventId: string; title: string };
+
+/** One floor table as the "Hold tables" picker shows it for an event. */
+export type EventTableOption = {
+  label: string;
+  seats: number;
+  /** Whether this event holds it now. */
+  held: boolean;
+  /** Set when something else has the table during the event — it can't be held. */
+  clash?: TableHoldClash;
 };
 
 /** Seats still free, or `undefined` when the event has no limit. */

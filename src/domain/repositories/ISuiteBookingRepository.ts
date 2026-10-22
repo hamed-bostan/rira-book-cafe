@@ -6,11 +6,16 @@ export type NewSuiteBooking = Omit<SuiteBooking, "id" | "reference" | "status" |
 
 export type ISuiteBookingRepository = {
   /**
-   * Record a request. Refuses dates that overlap a stay already holding the suite
-   * (`ConflictError("SUITE_TAKEN")`) — a guest shouldn't be able to ask for nights
-   * that are already given away.
+   * Record a stay — a guest's request, or (`confirmed`) one staff booked for a
+   * guest. Refuses dates that overlap a stay already holding the suite
+   * (`ConflictError("SUITE_TAKEN")`), under the suite's lock — nobody can ask for or
+   * be given nights that are already gone.
    */
-  create(input: NewSuiteBooking): Promise<SuiteBooking>;
+  create(
+    input: NewSuiteBooking,
+    status?: "requested" | "confirmed",
+    audit?: AuditHook<SuiteBooking>,
+  ): Promise<SuiteBooking>;
   getById(id: string): Promise<SuiteBooking | null>;
   /** One guest's stays, soonest check-in first. */
   listForUser(userId: string): Promise<SuiteBooking[]>;

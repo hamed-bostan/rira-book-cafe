@@ -52,7 +52,8 @@ export function reservationNotification(reservation: Reservation): NewNotificati
       : reservation.status === "cancelled"
         ? "reservationCancelled"
         : null;
-  if (!kind) return null;
+  // A phone or walk-in booking has no account to tell.
+  if (!kind || !reservation.userId) return null;
   return {
     userId: reservation.userId,
     kind,
@@ -71,7 +72,7 @@ export function reservationNotification(reservation: Reservation): NewNotificati
 export function suiteNotification(booking: SuiteBooking): NewNotification | null {
   const kind =
     booking.status === "confirmed" ? "suiteConfirmed" : booking.status === "cancelled" ? "suiteCancelled" : null;
-  if (!kind) return null;
+  if (!kind || !booking.userId) return null;
   return {
     userId: booking.userId,
     kind,

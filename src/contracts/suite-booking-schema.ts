@@ -1,7 +1,9 @@
 import { z } from "zod";
 
 import { isCafeDay } from "@/src/domain/entities/CafeTime";
+import { isPlausiblePhone } from "@/src/domain/entities/Phone";
 import {
+  MAX_SUITE_GUEST_NAME_LENGTH,
   MAX_SUITE_GUESTS,
   MAX_SUITE_NOTE_LENGTH,
   MIN_SUITE_GUESTS,
@@ -14,26 +16,41 @@ import {
  * `formErrors` keys.
  */
 
+const stayFields = z.object({
+  checkIn: z.string().refine(isCafeDay, "dateInvalid"),
+  checkOut: z.string().refine(isCafeDay, "dateInvalid"),
+  guests: z
+    .number()
+    .int("suiteGuestsInvalid")
+    .min(MIN_SUITE_GUESTS, "suiteGuestsInvalid")
+    .max(MAX_SUITE_GUESTS, "suiteGuestsInvalid"),
+  note: z
+    .string()
+    .trim()
+    .max(MAX_SUITE_NOTE_LENGTH, "noteTooLong")
+    .optional()
+    .transform((value) => (value ? value : undefined)),
+});
+
+const checkOutAfterCheckIn = {
+  check: (data: { checkIn: string; checkOut: string }): boolean => data.checkOut > data.checkIn,
+  issue: { message: "checkOutBeforeCheckIn", path: ["checkOut"] },
+};
+
 /** A guest asking for the suite. */
-export const requestSuiteBookingSchema = z
-  .object({
-    checkIn: z.string().refine(isCafeDay, "dateInvalid"),
-    checkOut: z.string().refine(isCafeDay, "dateInvalid"),
-    guests: z
-      .number()
-      .int("suiteGuestsInvalid")
-      .min(MIN_SUITE_GUESTS, "suiteGuestsInvalid")
-      .max(MAX_SUITE_GUESTS, "suiteGuestsInvalid"),
-    note: z
-      .string()
-      .trim()
-      .max(MAX_SUITE_NOTE_LENGTH, "noteTooLong")
-      .optional()
-      .transform((value) => (value ? value : undefined)),
-  })
-  .refine((data) => data.checkOut > data.checkIn, { message: "checkOutBeforeCheckIn", path: ["checkOut"] });
+export const requestSuiteBookingSchema = stayFields.refine(checkOutAfterCheckIn.check, checkOutAfterCheckIn.issue);
 
 export type RequestSuiteBookingInput = z.input<typeof requestSuiteBookingSchema>;
+
+/** Staff booking the suite for a guest who rang or asked at the counter; it's confirmed straight away. */
+export const staffSuiteBookingSchema = stayFields
+  .extend({
+    guestName: z.string().trim().min(1, "nameRequired").max(MAX_SUITE_GUEST_NAME_LENGTH, "nameTooLong"),
+    guestPhone: z.string().trim().refine(isPlausiblePhone, "phoneInvalid"),
+  })
+  .refine(checkOutAfterCheckIn.check, checkOutAfterCheckIn.issue);
+
+export type StaffSuiteBookingInput = z.input<typeof staffSuiteBookingSchema>;
 
 /** Staff moving a stay along. */
 export const suiteBookingUpdateSchema = z.object({

@@ -26,14 +26,20 @@ export const DEFAULT_RESERVATION_MINUTES = 90;
 export const MAX_BOOKING_DAYS_AHEAD = 60;
 /** Booking times fall on quarter hours. */
 export const BOOKING_SLOT_MINUTES = 15;
+/** The first and last hour staff can book a table at (cafe wall clock). */
+export const FIRST_BOOKING_HOUR = 8;
+export const LAST_BOOKING_HOUR = 21;
 export const MAX_RESERVATION_NOTE_LENGTH = 300;
+/** A guest's name as staff type it for a phone or walk-in booking. */
+export const MAX_GUEST_NAME_LENGTH = 80;
 export const MAX_TABLE_LABEL_LENGTH = 20;
 
 export type Reservation = {
   id: string;
   /** Short sequential number staff and guests refer to. */
   reference: number;
-  userId: string;
+  /** The guest's account; absent for a phone or walk-in booking staff made for them. */
+  userId?: string;
   /** Guest's name and phone, snapshotted when they booked. */
   guestName: string;
   guestPhone: string;

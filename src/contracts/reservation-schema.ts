@@ -1,7 +1,10 @@
 import { z } from "zod";
 
+import { CAFE_TABLE_LABELS } from "@/src/domain/entities/CafeTable";
 import { isWallTime } from "@/src/domain/entities/CafeTime";
+import { isPlausiblePhone } from "@/src/domain/entities/Phone";
 import {
+  MAX_GUEST_NAME_LENGTH,
   MAX_PARTY_SIZE,
   MAX_RESERVATION_NOTE_LENGTH,
   MAX_TABLE_LABEL_LENGTH,
@@ -32,6 +35,15 @@ export const requestReservationSchema = z.object({
 });
 
 export type RequestReservationInput = z.input<typeof requestReservationSchema>;
+
+/** Staff booking a table for a guest who rang or walked in; with a table it's confirmed on the spot. */
+export const staffReservationSchema = requestReservationSchema.extend({
+  guestName: z.string().trim().min(1, "nameRequired").max(MAX_GUEST_NAME_LENGTH, "nameTooLong"),
+  guestPhone: z.string().trim().refine(isPlausiblePhone, "phoneInvalid"),
+  tableLabel: z.enum(CAFE_TABLE_LABELS, { message: "tableInvalid" }).optional(),
+});
+
+export type StaffReservationInput = z.input<typeof staffReservationSchema>;
 
 /** Staff acting on a reservation: a new status, a table, or both. */
 export const reservationUpdateSchema = z

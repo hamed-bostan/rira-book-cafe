@@ -2,11 +2,15 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
+import { cafeDayOf } from "@/src/domain/entities/CafeTime";
 import { requirePermission, sessionPermissions } from "@/src/lib/require-permission";
+import { bookLoansServerApi } from "@/src/presentation/dashboard/book-loans/book-loan-server-api";
 import { ordersServerApi } from "@/src/presentation/dashboard/orders/order-server-api";
+import { reservationsServerApi } from "@/src/presentation/dashboard/reservations/reservation-server-api";
 import { DashboardShell } from "@/src/presentation/dashboard/shell/DashboardShell";
 import { SIDEBAR_COLLAPSED_COOKIE_NAME } from "@/src/presentation/dashboard/shell/sidebarCollapseCookie";
 import { dashboardViewerFor } from "@/src/presentation/dashboard/shell/viewer";
+import { suiteBookingsServerApi } from "@/src/presentation/dashboard/suite-bookings/suite-booking-server-api";
 import { NO_INDEX } from "@/src/presentation/seo/noIndexMetadata";
 
 import type { Metadata } from "next";
@@ -43,10 +47,24 @@ export default async function DashboardLayout({ children }: { children: ReactNod
 
   const sidebarCollapsed = (await cookies()).get(SIDEBAR_COLLAPSED_COOKIE_NAME)?.value === "1";
 
-  // The queue count beside "Orders" and the bell's new orders. Chrome, not content:
-  // if either read fails the page still renders, just without the count or the bell.
-  const [counts, newOrders] = await Promise.all([
+  // The counts beside the nav links — what needs someone: orders in the queue,
+  // today's table requests, suite requests, overdue books — and the bell's new
+  // orders. Chrome, not content: a failed read drops that count, not the page.
+  const today = cafeDayOf(new Date());
+  const [counts, tableRequests, suiteRequests, overdueLoans, newOrders] = await Promise.all([
     ordersServerApi.counts().catch(() => null),
+    reservationsServerApi
+      .listForDay(today, "requested")
+      .then((list) => list.length)
+      .catch(() => undefined),
+    suiteBookingsServerApi
+      .listFrom(today, "requested")
+      .then((list) => list.length)
+      .catch(() => undefined),
+    bookLoansServerApi
+      .list("overdue")
+      .then((list) => list.length)
+      .catch(() => undefined),
     ordersServerApi
       .listPage(new URLSearchParams({ status: "pending", pageSize: String(BELL_ORDER_COUNT) }))
       .then((page) =>
@@ -66,7 +84,12 @@ export default async function DashboardLayout({ children }: { children: ReactNod
       permissions={await sessionPermissions(session)}
       viewer={viewer}
       initialSidebarCollapsed={sidebarCollapsed}
-      navBadges={counts ? { navOrders: counts.active } : undefined}
+      navBadges={{
+        navOrders: counts?.active,
+        navReservations: tableRequests,
+        navSuite: suiteRequests,
+        navBookLoans: overdueLoans,
+      }}
       newOrders={newOrders}
     >
       {children}

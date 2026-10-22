@@ -17,6 +17,8 @@ export class ConflictError extends Error {
 
 export type ConflictCode =
   | "TABLE_TAKEN"
+  // A guest booking asked for a table an event holds at that time.
+  | "TABLE_HELD"
   | "SUITE_TAKEN"
   | "ALREADY_ON_LOAN"
   | "EVENT_FULL"

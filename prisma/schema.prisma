@@ -267,7 +267,8 @@ model OrderNote {
 model Reservation {
   id              String   @id @default(uuid())
   reference       Int      @unique @default(autoincrement())
-  userId          String   @map("user_id")
+  // The guest's account; null for a phone or walk-in booking staff made for them.
+  userId          String?  @map("user_id")
   guestName       String   @map("guest_name")
   guestPhone      String   @map("guest_phone")
   partySize       Int      @map("party_size")
@@ -293,7 +294,8 @@ model Reservation {
 model SuiteBooking {
   id         String   @id @default(uuid())
   reference  Int      @unique @default(autoincrement())
-  userId     String   @map("user_id")
+  // The guest's account; null for a stay staff booked for them by phone or at the counter.
+  userId     String?  @map("user_id")
   guestName  String   @map("guest_name")
   guestPhone String   @map("guest_phone")
   guests     Int
@@ -355,11 +357,16 @@ model Event {
   // Toman; 0 is free.
   price         Int                 @default(0)
   isPublished   Boolean             @default(false) @map("is_published")
+  // Floor tables held for the event while it runs (`CafeTable` labels, floor
+  // order); guest bookings can't take them then. Checked under the same per-table
+  // advisory lock as reservations.
+  tableLabels   String[]            @default([]) @map("table_labels")
   registrations EventRegistration[]
   createdAt     DateTime            @default(now()) @map("created_at")
   updatedAt     DateTime            @updatedAt @map("updated_at")
 
   @@index([isPublished, startsAt])
+  @@index([tableLabels], type: Gin)
   @@map("events")
 }
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import * as React from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 
@@ -23,6 +23,8 @@ import { TextField } from "@/src/presentation/design-system/components/form/Text
 import { Switch } from "@/src/presentation/design-system/components/Switch/Switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/presentation/design-system/components/Tabs/Tabs";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
+
+import { tableNameValues } from "../floor/tableName";
 
 import { eventsApi } from "./event-api";
 import { EventImageUpload } from "./EventImageUpload";
@@ -68,10 +70,12 @@ function toDefaults(event?: CafeEvent): EventFormInput {
  */
 export function EventForm(props: EventFormProps) {
   const t = useTranslations("dashEvents");
+  const tFloor = useTranslations("floorTables");
   const tApiErrors = useTranslations("apiErrors");
   const tFormErrors = useTranslations("formErrors");
   const fieldError = (message?: string): string | undefined => formErrorMessage(tFormErrors, message);
   const editing = props.mode === "edit";
+  const locale = useLocale();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -91,9 +95,23 @@ export function EventForm(props: EventFormProps) {
 
   const onSubmit = handleSubmit(async (values) => {
     try {
-      if (editing) await eventsApi.update(props.event.id, values);
-      else await eventsApi.create(values);
-      toast({ tone: "success", title: editing ? t("savedToast") : t("createdToast") });
+      if (editing) {
+        const saved = await eventsApi.update(props.event.id, values);
+        // A new time can release held tables that a booking or another event has then.
+        const released = props.event.tableLabels.filter((label) => !saved.tableLabels.includes(label));
+        toast({
+          tone: "success",
+          title: t("savedToast"),
+          description: released.length
+            ? t("tablesReleasedOnSave", {
+                tables: released.map((label) => tFloor("tableName", tableNameValues(label, locale))).join(", "),
+              })
+            : undefined,
+        });
+      } else {
+        await eventsApi.create(values);
+        toast({ tone: "success", title: t("createdToast") });
+      }
       router.push("/dashboard/events");
       router.refresh();
     } catch (error) {

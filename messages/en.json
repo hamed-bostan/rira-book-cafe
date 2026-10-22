@@ -171,7 +171,8 @@
     "wrongDirection": "That doesn't fit this line — fees go out, interest and payouts come in.",
     "outsideMatchRange": "That ledger line is outside what this statement can match.",
     "wrongAccount": "Only lines on the bank account can be matched.",
-    "postingKindInvalid": "Choose what the line is."
+    "postingKindInvalid": "Choose what the line is.",
+    "tableInvalid": "Choose tables from the floor plan."
   },
   "apiErrors": {
     "badRequest": "The request couldn't be read. Please try again.",
@@ -221,7 +222,8 @@
     "alreadyMatched": "One of those lines is already matched.",
     "matchUnbalanced": "The lines picked on each side don't add up to the same amount.",
     "notReconciled": "The statement doesn't reconcile yet — match every line and clear the difference first.",
-    "previousNotReconciled": "Reconcile the earlier statements first."
+    "previousNotReconciled": "Reconcile the earlier statements first.",
+    "tableHeld": "That table is held for an event at that time."
   },
   "meta": {
     "siteName": "Rira Book Cafe",
@@ -262,7 +264,7 @@
     "navActivity": "Activity",
     "navTeam": "Team",
     "groupStore": "Cafe",
-    "navReservations": "Reservations",
+    "navReservations": "Tables",
     "navEvents": "Events",
     "navReports": "Reports",
     "groupInsights": "Insights",
@@ -282,7 +284,9 @@
     "notificationsUnread": "Notifications (new)",
     "markAllRead": "Mark all as read",
     "newOrder": "New order #{number}",
-    "notificationsEmpty": "No orders waiting. You're all caught up."
+    "notificationsEmpty": "No orders waiting. You're all caught up.",
+    "groupBookings": "Bookings",
+    "groupLibrary": "Library"
   },
   "dashTeam": {
     "membersHeading": "Team members",
@@ -809,7 +813,8 @@
         "deleted": "{actor} deleted category {entity}"
       },
       "reservation": {
-        "changed": "{actor} updated reservation {entity}"
+        "changed": "{actor} updated reservation {entity}",
+        "booked": "{actor} booked table reservation {entity}"
       },
       "event": {
         "created": "{actor} created event {entity}",
@@ -833,7 +838,8 @@
         "voided": "{actor} voided expense {entity}"
       },
       "suiteBooking": {
-        "changed": "{actor} updated suite booking {entity}"
+        "changed": "{actor} updated suite booking {entity}",
+        "booked": "{actor} booked suite stay {entity}"
       },
       "bookLoan": {
         "lent": "{actor} lent a book ({entity})",
@@ -899,7 +905,8 @@
       "linesAdded": "Lines added",
       "linesRemoved": "Lines removed",
       "matched": "Matches made",
-      "unmatched": "Matches undone"
+      "unmatched": "Matches undone",
+      "tableLabels": "Held tables"
     },
     "filterField": "Filter by what changed",
     "allFields": "Any change",
@@ -914,7 +921,7 @@
     }
   },
   "dashReservations": {
-    "heading": "Reservations",
+    "heading": "Table reservations",
     "summary": "{bookings, plural, =0 {No bookings} one {{bookingsFormatted} booking} other {{bookingsFormatted} bookings}} · {covers, plural, one {{coversFormatted} guest} other {{coversFormatted} guests}}",
     "today": "Today",
     "previousDay": "Previous day",
@@ -922,7 +929,6 @@
     "pickDay": "Pick a day",
     "filterStatusLabel": "Filter by status",
     "filterStatusAll": "All",
-    "filterStatusOption": "Status: {status}",
     "status": {
       "requested": "Requested",
       "confirmed": "Confirmed",
@@ -941,11 +947,8 @@
     },
     "changeTable": "Change table",
     "partySize": "{count, plural, one {{formatted} guest} other {{formatted} guests}}",
-    "table": "Table {table}",
     "noTable": "No table yet",
     "tableDialogTitle": "Table for R-{reference}",
-    "tableLabelRequired": "Table",
-    "tableLabelOptional": "Table (optional)",
     "saveTable": "Save table",
     "dialogCancel": "Back",
     "confirmTitle": {
@@ -959,7 +962,46 @@
     "noMatchesTitle": "No matches",
     "noMatchesBody": "No bookings this day have that status.",
     "statusChanged": "Updated R-{reference}: {status}",
-    "tableSaved": "R-{reference} moved to table {table}."
+    "tableSaved": "R-{reference} moved to {table}.",
+    "eventsCount": "{count, plural, one {# event} other {# events}}",
+    "needReply": "{count, plural, one {# needs a reply} other {# need a reply}}",
+    "bookingsLabel": "Bookings",
+    "nowLine": "Now · {time}",
+    "showAll": "Show all bookings",
+    "until": "until {time}",
+    "latePast": "{minutes} min past booking",
+    "eventAria": "Event: {title}, {time}",
+    "eventBadge": "Event · {kind}",
+    "eventHolds": "Holds {tables}",
+    "eventHoldsWholeFloor": "Holds the whole floor",
+    "eventHoldsNone": "Holds no tables",
+    "eventSeats": "{taken} of {capacity} seats taken",
+    "eventSeatsUnlimited": "{taken} seats taken",
+    "openEvent": "Open event",
+    "tableGroupLabel": "Table",
+    "tableTaken": "Taken · R-{reference}",
+    "tableHeld": "Held · {title}",
+    "tableTooSmall": "Seats {seats} · too small",
+    "moreActionsAria": "More actions for R-{reference}",
+    "markNoShow": "Mark no-show",
+    "cancelBooking": "Cancel booking",
+    "tableDialogSub": "{name} · {party} · {from}–{to}",
+    "confirmBooking": "Confirm booking",
+    "newBooking": "New booking",
+    "newBookingSub": "A phone or walk-in booking for {day}. Pick a table to confirm it now, or leave it as a request.",
+    "guestName": "Guest name",
+    "guestNamePlaceholder": "Full name",
+    "guestPhone": "Phone",
+    "time": "Time",
+    "party": "Party",
+    "noteOptional": "Note (optional)",
+    "notePlaceholder": "e.g. window seat, birthday",
+    "tableOptional": "Table (optional)",
+    "saveAsRequest": "Save as request",
+    "bookedToast": "R-{reference} booked for {name} · {time} · {table}",
+    "noTableYet": "no table yet",
+    "bookError": "Couldn't save the booking. Please try again.",
+    "table": "Table {table}"
   },
   "dashEvents": {
     "heading": "Events",
@@ -1030,7 +1072,40 @@
     "savedToast": "Event saved",
     "createdToast": "Event created",
     "deleted": "\"{title}\" deleted",
-    "registrationCancelledToast": "{name}'s sign-up cancelled"
+    "registrationCancelledToast": "{name}'s sign-up cancelled",
+    "summaryDrafts": "{count, plural, one {# draft} other {# drafts}}",
+    "tabsLabel": "Event list",
+    "today": "Today",
+    "edit": "Edit",
+    "editAria": "Edit {title}",
+    "seatsOf": "<strong>{taken}</strong> of {capacity} seats taken",
+    "tablesHeld": "Tables held",
+    "holdTables": "Hold tables",
+    "changeTables": "Change tables",
+    "noTablesHeld": "None. Guests sit wherever there's room.",
+    "seatsHeld": "{held} seats held for {capacity} guests",
+    "seatsHeldShort": "{held} seats held for {capacity} guests · {short} short",
+    "seatsHeldUnlimited": "{held} seats held",
+    "holdTitle": "Tables for {title}",
+    "holdSubtitle": "{when} · {capacity} seats. Held tables can't be booked by guests.",
+    "holdSubtitleUnlimited": "{when}. Held tables can't be booked by guests.",
+    "noTablesSelected": "No tables selected",
+    "selectAllFree": "Select all free",
+    "clearAll": "Clear all",
+    "tableBooked": "Booked · R-{reference} {time}",
+    "tableHeldBy": "Held · {title}",
+    "back": "Back",
+    "saveTables": "Save tables",
+    "tablesSaved": "Tables saved for {title}",
+    "tablesReleased": "Tables released for {title}",
+    "tablesReleasedOnSave": "Released {tables}, already taken at the new time.",
+    "tablesLoadError": "Couldn't load the tables. Please try again.",
+    "tablesSaveError": "Couldn't save the tables. Please try again.",
+    "tryAgain": "Try again",
+    "emptyUpcomingTitle": "Nothing scheduled yet",
+    "emptyUpcomingBody": "Book clubs, readings and workshops you plan show up here.",
+    "emptyPastTitle": "No past events",
+    "emptyPastBody": "Events that have happened land here."
   },
   "dashOverview": {
     "heading": "Today",
@@ -2187,10 +2262,7 @@
   },
   "dashSuite": {
     "heading": "Suite",
-    "subtitle": "{waiting, plural, =0 {Stays from today on.} one {Stays from today on · # request waiting.} other {Stays from today on · # requests waiting.}}",
-    "filterStatusLabel": "Filter by status",
-    "filterStatusAll": "All",
-    "filterStatusOption": "Status: {status}",
+    "subtitle": "One room for up to {guests} guests. Held stays never overlap.",
     "status": {
       "requested": "Requested",
       "confirmed": "Confirmed",
@@ -2216,11 +2288,52 @@
     },
     "confirmMessage": "This frees the suite for those nights and can't be undone.",
     "updateError": "Couldn't update the booking. Please try again.",
-    "emptyTitle": "No stays coming up",
-    "emptyBody": "Suite requests guests make will show up here.",
-    "noMatchesTitle": "No matches",
-    "noMatchesBody": "No upcoming stays have that status.",
-    "statusChanged": "Updated S-{reference}: {status}"
+    "statusChanged": "Updated S-{reference}: {status}",
+    "requestsWaiting": "{count, plural, one {# request waiting} other {# requests waiting}}",
+    "newStay": "New stay",
+    "availability": "Availability",
+    "availabilityNav": "Move the calendar",
+    "earlier": "Earlier",
+    "later": "Later",
+    "today": "Today",
+    "rowHeld": "Held",
+    "rowRequests": "Requests",
+    "barTitle": "S-{reference}, {name}, {from} → {to}, {status}",
+    "legend": "Legend",
+    "staysLabel": "Stays",
+    "tabsLabel": "Upcoming or past stays",
+    "tabUpcoming": "Upcoming",
+    "tabPast": "Past",
+    "checksOutToday": "Checks out today",
+    "arrivesToday": "Arrives today",
+    "wasDue": "Was due {day}",
+    "clashesWith": "Clashes with S-{reference} · {range}",
+    "clashShort": "Clashes with S-{reference}",
+    "checkInOpens": "Check-in opens on {day}",
+    "moreActionsAria": "More actions for S-{reference}",
+    "markNoShow": "Mark no-show",
+    "cancelBooking": "Cancel booking",
+    "emptyUpcomingTitle": "No upcoming stays",
+    "emptyUpcomingBody": "Stays guests book will show up here.",
+    "emptyPastTitle": "No past stays",
+    "emptyPastBody": "Finished, cancelled and no-show stays from the last two months land here.",
+    "newStaySub": "For a guest who books by phone or at the counter. It's confirmed straight away.",
+    "guestName": "Guest name",
+    "guestNamePlaceholder": "Full name",
+    "guestPhone": "Phone",
+    "checkIn": "Check-in",
+    "checkOut": "Check-out",
+    "guestsLabel": "Guests",
+    "noteOptional": "Note (optional)",
+    "notePlaceholder": "e.g. late arrival",
+    "errorPast": "Check-in can't be in the past.",
+    "errorOrder": "Check-out must be after check-in.",
+    "errorTooLong": "Stays can be up to {nights} nights.",
+    "errorClash": "Clashes with S-{reference} · {range}. Pick other days.",
+    "staySummary": "{nights} · {range} · the suite is free",
+    "confirmStay": "Confirm stay",
+    "stayBooked": "S-{reference} confirmed for {name} · {range}",
+    "bookError": "Couldn't save the stay. Please try again."
   },
   "dashReviews": {
     "heading": "Reviews",
@@ -2516,5 +2629,10 @@
     "reservations": "We couldn't load your reservations",
     "rewards": "We couldn't load your rewards",
     "suite": "We couldn't load the suite"
+  },
+  "floorTables": {
+    "tableName": "{label, select, long {Long table} other {Table {number}}}",
+    "wholeFloor": "Whole floor",
+    "seats": "Seats {seats}"
   }
 }

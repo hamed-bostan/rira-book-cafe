@@ -23,12 +23,12 @@ export function SidebarBrand({ collapsed = false }: SidebarBrandProps) {
       href="/dashboard"
       title={collapsed ? `${brand} ${t("admin")}` : undefined}
       className={cn(
-        "flex items-center gap-2 py-5 text-heading-subsection text-foreground md:h-24 md:py-0 xl:h-16",
+        "flex h-16 min-w-0 items-center gap-2 text-body-lead tracking-tight whitespace-nowrap text-foreground",
         focusRing,
         collapsed ? "justify-center px-0" : "px-5",
       )}
     >
-      <BrandMark />
+      <BrandMark className="h-8" />
       <span className={cn(collapsed && "sr-only")}>
         {brand} <span className="text-primary">{t("admin")}</span>
       </span>

@@ -63,7 +63,7 @@ export function NavDrawer({ open, onOpenChange, permissions, badges }: NavDrawer
             <Dialog.Title>{t("navMenuTitle")}</Dialog.Title>
           </VisuallyHidden.Root>
 
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between border-b border-border">
             <SidebarBrand />
             <Dialog.Close asChild>
               <Button variant="ghost" iconOnly size="sm" aria-label={tDs("close")} className="me-3">
@@ -72,7 +72,7 @@ export function NavDrawer({ open, onOpenChange, permissions, badges }: NavDrawer
             </Dialog.Close>
           </div>
 
-          <div className="flex-1 overflow-y-auto px-3 py-2">
+          <div className="flex-1 overflow-y-auto px-3 py-4">
             <DashboardNav permissions={permissions} badges={badges} onNavigate={close} />
           </div>
 

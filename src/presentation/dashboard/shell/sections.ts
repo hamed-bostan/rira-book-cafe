@@ -2,10 +2,10 @@ import {
   BarChart3,
   BedDouble,
   BookOpen,
-  Boxes,
+  Package,
   Calculator,
-  CalendarClock,
-  ChefHat,
+  CalendarDays,
+  Monitor,
   ClipboardList,
   Coffee,
   Gift,
@@ -37,7 +37,14 @@ import type { LucideIcon } from "lucide-react";
 
 /** A navigation group's stable id, which is also its label key under `dashboard`. */
 export type DashboardSectionGroup =
-  "groupOverview" | "groupService" | "groupMenu" | "groupInsights" | "groupFinance" | "groupStore";
+  | "groupOverview"
+  | "groupService"
+  | "groupBookings"
+  | "groupLibrary"
+  | "groupMenu"
+  | "groupInsights"
+  | "groupFinance"
+  | "groupStore";
 
 /** A section's label key under the `dashboard` namespace — spelled out so `t()` can check it. */
 export type DashboardSectionLabelKey =
@@ -92,32 +99,32 @@ const SECTIONS = [
     group: "groupService",
   },
   // The bar and kitchen's live board of what's being made — the same queue, sized for a wall screen.
-  { href: "/dashboard/kitchen", labelKey: "navKitchen", icon: ChefHat, needs: "dashboard.view", group: "groupService" },
-  // The day's bookings — readable by everyone on the floor; acting on them is
-  // `reservations.manage`, gated inside the page.
+  { href: "/dashboard/kitchen", labelKey: "navKitchen", icon: Monitor, needs: "dashboard.view", group: "groupService" },
+  // What guests book ahead: tables, the suite, events — readable by everyone on
+  // the floor; acting on them is `reservations.manage` / `events.manage`, gated inside.
   {
     href: "/dashboard/reservations",
     labelKey: "navReservations",
-    icon: CalendarClock,
+    icon: CalendarDays,
     needs: "dashboard.view",
-    group: "groupService",
+    group: "groupBookings",
   },
-  // The suite's stays and the shelf's lending book — readable by everyone on the
-  // floor; acting on them is `reservations.manage` / `loans.manage`, gated inside.
-  { href: "/dashboard/suite", labelKey: "navSuite", icon: BedDouble, needs: "dashboard.view", group: "groupService" },
-  {
-    href: "/dashboard/book-loans",
-    labelKey: "navBookLoans",
-    icon: BookOpen,
-    needs: "dashboard.view",
-    group: "groupService",
-  },
+  { href: "/dashboard/suite", labelKey: "navSuite", icon: BedDouble, needs: "dashboard.view", group: "groupBookings" },
   {
     href: "/dashboard/events",
     labelKey: "navEvents",
     icon: PartyPopper,
     needs: "dashboard.view",
-    group: "groupService",
+    group: "groupBookings",
+  },
+
+  // The shelf's lending book — readable by everyone; lending is `loans.manage`, gated inside.
+  {
+    href: "/dashboard/book-loans",
+    labelKey: "navBookLoans",
+    icon: BookOpen,
+    needs: "dashboard.view",
+    group: "groupLibrary",
   },
 
   // The menu list is a read for everyone with the dashboard — it's how staff answer
@@ -125,7 +132,13 @@ const SECTIONS = [
   { href: "/dashboard/products", labelKey: "navProducts", icon: Coffee, needs: "dashboard.view", group: "groupMenu" },
   { href: "/dashboard/categories", labelKey: "navCategories", icon: Tag, needs: "catalog.write", group: "groupMenu" },
   // What's on the shelves — everyone on the floor sees what's running out.
-  { href: "/dashboard/inventory", labelKey: "navInventory", icon: Boxes, needs: "inventory.view", group: "groupMenu" },
+  {
+    href: "/dashboard/inventory",
+    labelKey: "navInventory",
+    icon: Package,
+    needs: "inventory.view",
+    group: "groupMenu",
+  },
   // What guests said about it, and the levers that bring them back — promo codes and the loyalty club.
   { href: "/dashboard/reviews", labelKey: "navReviews", icon: Star, needs: "reviews.moderate", group: "groupMenu" },
   {
@@ -187,6 +200,8 @@ const SECTIONS = [
 const GROUP_ORDER: readonly DashboardSectionGroup[] = [
   "groupOverview",
   "groupService",
+  "groupBookings",
+  "groupLibrary",
   "groupMenu",
   "groupInsights",
   "groupFinance",

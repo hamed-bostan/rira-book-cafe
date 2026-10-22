@@ -1,4 +1,4 @@
-import { cafeDayRange } from "./CafeTime";
+import { cafeDayRange, shiftCafeDay } from "./CafeTime";
 
 /**
  * A stay in the cafe's suite. A guest asks for check-in and check-out days; staff
@@ -33,12 +33,15 @@ export const MAX_SUITE_NIGHTS = 14;
 /** How far ahead a guest may book. */
 export const MAX_SUITE_DAYS_AHEAD = 120;
 export const MAX_SUITE_NOTE_LENGTH = 300;
+/** A guest's name as staff type it for a phone or counter booking. */
+export const MAX_SUITE_GUEST_NAME_LENGTH = 80;
 
 export type SuiteBooking = {
   id: string;
   /** Short sequential number staff and guests refer to (`S-12`). */
   reference: number;
-  userId: string;
+  /** The guest's account; absent for a stay staff booked for them by phone or at the counter. */
+  userId?: string;
   /** Guest's name and phone, snapshotted when they booked. */
   guestName: string;
   guestPhone: string;
@@ -94,4 +97,29 @@ export function isGuestCancellableSuiteBooking(
   today: string,
 ): boolean {
   return (booking.status === "requested" || booking.status === "confirmed") && booking.checkIn > today;
+}
+
+type StayOnCalendar = Pick<SuiteBooking, "id" | "status" | "checkIn" | "checkOut">;
+
+/** Whether a stay holds the suite (and so blocks its nights for everyone else). */
+export function holdsSuite(booking: Pick<SuiteBooking, "status">): boolean {
+  return (SUITE_HOLDING_STATUSES as readonly string[]).includes(booking.status);
+}
+
+/**
+ * The stay already holding the suite that a request overlaps — why it can't be
+ * confirmed as asked. Only requests clash; a held stay is the one others clash with.
+ */
+export function heldClashFor<T extends StayOnCalendar>(booking: StayOnCalendar, all: readonly T[]): T | undefined {
+  if (booking.status !== "requested") return undefined;
+  return all.find((other) => other.id !== booking.id && holdsSuite(other) && staysOverlap(other, booking));
+}
+
+/** The first night from `today` on that no held stay covers — where a new stay starts by default. */
+export function firstFreeNight(held: readonly SuiteBusyRange[], today: string): string {
+  for (let offset = 0; offset < MAX_SUITE_DAYS_AHEAD; offset++) {
+    const night = shiftCafeDay(today, offset);
+    if (!held.some((range) => staysOverlap(range, { checkIn: night, checkOut: shiftCafeDay(night, 1) }))) return night;
+  }
+  return today;
 }

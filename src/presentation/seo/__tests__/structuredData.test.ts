@@ -39,6 +39,7 @@ function event(overrides: Partial<CafeEvent> = {}): CafeEvent {
     price: 50_000,
     isPublished: true,
     seatsTaken: 0,
+    tableLabels: [],
     createdAt: "2026-10-01T08:00:00.000Z",
     updatedAt: "2026-10-01T08:00:00.000Z",
     ...overrides,

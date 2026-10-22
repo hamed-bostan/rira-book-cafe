@@ -21,7 +21,7 @@ const INPUT: NewCafeEvent = {
 };
 
 function event(overrides: Partial<CafeEvent> = {}): CafeEvent {
-  return { ...INPUT, id: "e1", seatsTaken: 0, createdAt: "", updatedAt: "", ...overrides };
+  return { ...INPUT, id: "e1", seatsTaken: 0, tableLabels: [], createdAt: "", updatedAt: "", ...overrides };
 }
 
 describe("CreateEvent / UpdateEvent", () => {

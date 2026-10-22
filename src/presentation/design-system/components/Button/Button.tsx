@@ -33,6 +33,12 @@ const buttonVariants = cva(
         outline:
           "border border-primary bg-transparent text-primary hover:bg-accent active:border-primary-pressed active:bg-accent active:text-primary-pressed disabled:border-disabled-border disabled:text-disabled-foreground",
         soft: "bg-accent text-accent-foreground hover:bg-primary hover:text-primary-foreground active:bg-primary-pressed disabled:bg-disabled disabled:text-disabled-foreground",
+        // The quiet row action beside a primary one: a hairline and ink, no brand colour.
+        secondary:
+          "border border-border bg-background text-foreground hover:bg-muted active:bg-muted disabled:text-disabled-foreground [&_svg]:text-muted-foreground",
+        // A hard stop, behind a confirmation (cancel a booking, mark a no-show).
+        destructive:
+          "bg-destructive text-destructive-foreground hover:bg-error-foreground active:bg-error-foreground disabled:bg-disabled disabled:text-disabled-foreground",
         ghost: "bg-transparent px-0 text-foreground hover:text-primary disabled:text-disabled-foreground",
         link: "bg-transparent px-0 text-primary underline-offset-4 hover:text-primary-hover hover:underline disabled:text-disabled-foreground disabled:no-underline",
       },

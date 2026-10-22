@@ -6,7 +6,7 @@ import { RESERVATION_STATUSES, type Reservation } from "@/src/domain/entities/Re
 export const reservationResponseSchema = z.object({
   id: z.string(),
   reference: z.number(),
-  userId: z.string(),
+  userId: z.string().optional(),
   guestName: z.string(),
   guestPhone: z.string(),
   partySize: z.number(),

@@ -177,7 +177,7 @@ export async function ProductsScreen({
             title={t("noMatchesTitle")}
             description={query ? t("noMatchesSearch") : t("noMatchesView")}
             action={
-              <Button asChild size="sm" variant="outline">
+              <Button asChild size="sm" variant="secondary" className="px-3">
                 <Link href={hrefFor({ categoryId })}>{t("showEverything")}</Link>
               </Button>
             }

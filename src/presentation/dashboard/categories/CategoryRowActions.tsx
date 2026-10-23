@@ -44,13 +44,15 @@ export function CategoryRowActions({ category, isFirst, isLast }: CategoryRowAct
   const [pending, startTransition] = React.useTransition();
   const [confirmDelete, setConfirmDelete] = React.useState(false);
 
-  function move(direction: CategoryMoveDirection): void {
+  // `undoable` is off for an undo itself, so its toast doesn't offer to undo the undo.
+  function move(direction: CategoryMoveDirection, undoable = true): void {
     startTransition(async () => {
       try {
         await categoriesApi.move(category.id, { direction });
         toast({
           tone: "success",
           title: direction === "up" ? t("movedUp", { name: category.name }) : t("movedDown", { name: category.name }),
+          onUndo: undoable ? () => move(direction === "up" ? "down" : "up", false) : undefined,
         });
       } catch (err) {
         toast({ tone: "error", title: localizeApiError(err, tApiErrors, t("moveError")) });
@@ -59,13 +61,14 @@ export function CategoryRowActions({ category, isFirst, isLast }: CategoryRowAct
     });
   }
 
-  function setShown(shown: boolean): void {
+  function setShown(shown: boolean, undoable = true): void {
     startTransition(async () => {
       try {
         await categoriesApi.bulkUpdate([category.id], { type: shown ? "activate" : "deactivate" });
         toast({
           tone: "success",
           title: shown ? t("shownToast", { name: category.name }) : t("hiddenToast", { name: category.name }),
+          onUndo: undoable ? () => setShown(!shown, false) : undefined,
         });
       } catch (err) {
         toast({ tone: "error", title: localizeApiError(err, tApiErrors, t("updateError")) });
@@ -102,7 +105,7 @@ export function CategoryRowActions({ category, isFirst, isLast }: CategoryRowAct
         <DropdownMenuIconTrigger
           disabled={pending}
           aria-label={t("rowActionsAria", { name: category.name })}
-          appearance="outline"
+          appearance="secondary"
         >
           <Icon icon={MoreHorizontal} size="sm" className="sm:size-4" />
         </DropdownMenuIconTrigger>

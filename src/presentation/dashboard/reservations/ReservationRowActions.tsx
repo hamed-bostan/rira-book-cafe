@@ -146,7 +146,7 @@ export function ReservationRowActions({ reservation, bookings, events }: Reserva
       {status === "confirmed" || status === "seated" ? (
         <DropdownMenu>
           <DropdownMenuIconTrigger
-            appearance="outline"
+            appearance="secondary"
             disabled={pending}
             aria-label={t("moreActionsAria", { reference })}
           >

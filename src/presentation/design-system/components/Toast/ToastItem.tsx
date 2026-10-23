@@ -22,6 +22,9 @@ const TONE_ICON_CLASS: Record<ToastTone, string> = {
 /** Errors stay up longer: they're the ones a user may need to read twice. */
 const DEFAULT_DURATION: Record<ToastTone, number> = { success: 4000, info: 4000, error: 7000 };
 
+/** A toast that can be undone stays a little longer, so there's time to reach the button. */
+const UNDO_DURATION = 6000;
+
 type ToastItemProps = {
   toast: ToastRecord;
   onOpenChange: (open: boolean) => void;
@@ -36,7 +39,7 @@ export function ToastItem({ toast, onOpenChange }: ToastItemProps) {
     <Toast.Root
       open={toast.open}
       onOpenChange={onOpenChange}
-      duration={toast.duration ?? DEFAULT_DURATION[tone]}
+      duration={toast.duration ?? (toast.onUndo ? UNDO_DURATION : DEFAULT_DURATION[tone])}
       // A failure interrupts (assertive); a confirmation waits its turn (polite).
       type={tone === "error" ? "foreground" : "background"}
       className={cn(
@@ -61,6 +64,20 @@ export function ToastItem({ toast, onOpenChange }: ToastItemProps) {
           <Toast.Description className="text-body-small text-muted-foreground">{toast.description}</Toast.Description>
         ) : null}
       </div>
+
+      {toast.onUndo ? (
+        <Toast.Action
+          // A toast leaves on its own, so screen readers are told where else to undo.
+          altText={t("undoAlt")}
+          onClick={toast.onUndo}
+          className={cn(
+            "-my-1 inline-flex min-h-11 shrink-0 items-center rounded-button px-2 text-body-small-strong text-primary transition-colors hover:bg-accent sm:min-h-8",
+            focusRing,
+          )}
+        >
+          {t("undo")}
+        </Toast.Action>
+      ) : null}
 
       <Toast.Close
         aria-label={t("close")}

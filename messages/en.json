@@ -42,6 +42,8 @@
     "confirmCancel": "Cancel",
     "confirmYes": "Yes",
     "close": "Close",
+    "undo": "Undo",
+    "undoAlt": "To undo, change it back where you made the change",
     "confirmKeep": "Keep",
     "confirmWorking": "Working…",
     "loading": "Loading…",

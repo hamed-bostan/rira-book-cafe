@@ -64,7 +64,7 @@ export function PromoCodeRowActions({ promo, finished, takenCodes, today }: Prom
       {finished ? null : <PromoActiveSwitch id={promo.id} code={promo.code} isActive={promo.isActive} />}
       <DropdownMenu>
         <DropdownMenuIconTrigger
-          appearance="outline"
+          appearance="secondary"
           disabled={deleting}
           aria-label={t("moreActionsAria", { code: promo.code })}
         >

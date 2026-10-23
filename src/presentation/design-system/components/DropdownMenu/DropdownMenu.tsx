@@ -5,6 +5,7 @@ import * as React from "react";
 
 import { cn } from "@/src/lib/utils";
 
+import { buttonVariants } from "../Button/Button";
 import { focusRing } from "../shared/focusRing";
 
 /**
@@ -130,17 +131,18 @@ export const DropdownMenuSeparator = React.forwardRef<
 
 DropdownMenuSeparator.displayName = "DropdownMenuSeparator";
 
-export type DropdownMenuIconTriggerAppearance = "ghost" | "outline";
+export type DropdownMenuIconTriggerAppearance = "ghost" | "secondary";
 
 const ICON_TRIGGER_APPEARANCE: Record<DropdownMenuIconTriggerAppearance, string> = {
-  ghost: "size-8 text-icon-muted hover:bg-accent hover:text-primary",
-  // The dashboard rows' "⋯": a bordered square, 44px to the touch on a phone.
-  outline:
-    "size-11 border border-border bg-background text-foreground/80 hover:bg-muted hover:text-foreground sm:size-9",
+  ghost: "size-8 text-icon-muted transition-colors hover:bg-accent hover:text-primary",
+  // The dashboard rows' "⋯" is the secondary icon button, not a look of its own:
+  // the same hairline square as the row's other buttons (Categories' up/down),
+  // 44px to the touch on a phone, 36px from `sm`.
+  secondary: cn(buttonVariants({ variant: "secondary", iconOnly: true }), "size-11 sm:size-9"),
 };
 
 export type DropdownMenuIconTriggerProps = React.ComponentPropsWithoutRef<"button"> & {
-  /** `ghost` (a bare 32px icon) by default; `outline` for a dashboard list row's "⋯". */
+  /** `ghost` (a bare 32px icon) by default; `secondary` for a dashboard list row's "⋯". */
   appearance?: DropdownMenuIconTriggerAppearance;
 };
 
@@ -155,9 +157,9 @@ export const DropdownMenuIconTrigger = React.forwardRef<HTMLButtonElement, Dropd
     <DropdownMenuPrimitive.Trigger
       ref={ref}
       className={cn(
-        "inline-flex shrink-0 items-center justify-center rounded-button transition-colors",
-        ICON_TRIGGER_APPEARANCE[appearance],
+        "inline-flex shrink-0 items-center justify-center rounded-button",
         focusRing,
+        ICON_TRIGGER_APPEARANCE[appearance],
         className,
       )}
       {...props}

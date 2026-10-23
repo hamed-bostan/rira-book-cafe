@@ -30,11 +30,16 @@ export function ProductOnMenuSwitch({ id, name, isPublished }: ProductOnMenuSwit
   const [pending, startTransition] = React.useTransition();
   const switchId = React.useId();
 
-  function toggle(next: boolean): void {
+  /** `undoable` is off for the undo itself, so its toast doesn't offer to undo the undo. */
+  function toggle(next: boolean, undoable = true): void {
     startTransition(async () => {
       try {
         await productsApi.bulkUpdate([id], { type: next ? "publish" : "unpublish" });
-        toast({ tone: "success", title: next ? t("shownToast", { name }) : t("hiddenToast", { name }) });
+        toast({
+          tone: "success",
+          title: next ? t("shownToast", { name }) : t("hiddenToast", { name }),
+          onUndo: undoable ? () => toggle(!next, false) : undefined,
+        });
       } catch (err) {
         toast({ tone: "error", title: localizeApiError(err, tApiErrors, t("updateError")) });
       }
@@ -49,7 +54,7 @@ export function ProductOnMenuSwitch({ id, name, isPublished }: ProductOnMenuSwit
         size="sm"
         checked={isPublished}
         disabled={pending}
-        onCheckedChange={toggle}
+        onCheckedChange={(next) => toggle(next)}
         aria-label={t("onMenuAria", { name })}
       />
       <span className="text-body-default whitespace-nowrap text-foreground/80 sm:text-body-small">

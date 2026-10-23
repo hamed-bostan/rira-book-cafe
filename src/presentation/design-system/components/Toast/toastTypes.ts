@@ -9,6 +9,12 @@ export type ToastOptions = {
   tone?: ToastTone;
   /** Milliseconds before auto-dismiss. Defaults per tone (errors linger longer). */
   duration?: number;
+  /**
+   * Puts an "Undo" button in the toast that runs this and closes it. Only for a
+   * one-click change that can simply be made the other way again (a switch, a
+   * move) — never a delete or anything that went through a confirm step.
+   */
+  onUndo?: () => void;
 };
 
 export type ToastRecord = ToastOptions & {

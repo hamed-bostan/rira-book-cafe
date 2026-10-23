@@ -87,7 +87,7 @@ export function ReviewModerationActions({ review }: ReviewModerationActionsProps
     <div className="ms-auto flex shrink-0 items-center gap-2">
       <DropdownMenu>
         <DropdownMenuIconTrigger
-          appearance="outline"
+          appearance="secondary"
           disabled={pending}
           aria-label={t("moreActionsAria", { item: review.productName })}
         >

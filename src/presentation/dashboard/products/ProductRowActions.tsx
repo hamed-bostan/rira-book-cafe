@@ -37,11 +37,16 @@ export function ProductRowActions({ id, name, isFeatured }: ProductRowActionsPro
   const [pending, startTransition] = React.useTransition();
   const [deleteOpen, setDeleteOpen] = React.useState(false);
 
-  function toggleFeatured(): void {
+  /** `undoable` is off for the undo itself, so its toast doesn't offer to undo the undo. */
+  function setFeatured(featured: boolean, undoable = true): void {
     startTransition(async () => {
       try {
-        await productsApi.bulkUpdate([id], { type: isFeatured ? "unfeature" : "feature" });
-        toast({ tone: "success", title: isFeatured ? t("unfeaturedToast", { name }) : t("featuredToast", { name }) });
+        await productsApi.bulkUpdate([id], { type: featured ? "feature" : "unfeature" });
+        toast({
+          tone: "success",
+          title: featured ? t("featuredToast", { name }) : t("unfeaturedToast", { name }),
+          onUndo: undoable ? () => setFeatured(!featured, false) : undefined,
+        });
       } catch (err) {
         toast({ tone: "error", title: localizeApiError(err, tApiErrors, t("updateError")) });
       }
@@ -52,14 +57,16 @@ export function ProductRowActions({ id, name, isFeatured }: ProductRowActionsPro
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuIconTrigger appearance="outline" disabled={pending} aria-label={t("rowActionsAria", { name })}>
+        <DropdownMenuIconTrigger appearance="secondary" disabled={pending} aria-label={t("rowActionsAria", { name })}>
           <Icon icon={MoreHorizontal} size="sm" className="sm:size-4" />
         </DropdownMenuIconTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem onSelect={() => router.push(`/dashboard/products/${id}/edit`)}>
             {t("edit")}
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={toggleFeatured}>{isFeatured ? t("unfeature") : t("feature")}</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => setFeatured(!isFeatured)}>
+            {isFeatured ? t("unfeature") : t("feature")}
+          </DropdownMenuItem>
           <DropdownMenuItem destructive onSelect={() => setDeleteOpen(true)}>
             {t("delete")}
           </DropdownMenuItem>

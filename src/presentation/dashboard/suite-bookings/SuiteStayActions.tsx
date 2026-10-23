@@ -107,7 +107,7 @@ export function SuiteStayActions({ booking, today, clashReference, checkInLabel 
       {status === "confirmed" ? (
         <DropdownMenu>
           <DropdownMenuIconTrigger
-            appearance="outline"
+            appearance="secondary"
             disabled={pending}
             aria-label={t("moreActionsAria", { reference })}
           >

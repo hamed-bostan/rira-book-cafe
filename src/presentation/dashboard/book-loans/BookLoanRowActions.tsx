@@ -90,7 +90,7 @@ export function BookLoanRowActions({ loan, firstInLine }: BookLoanRowActionsProp
       {loan.status === "out" ? (
         <DropdownMenu>
           <DropdownMenuIconTrigger
-            appearance="outline"
+            appearance="secondary"
             disabled={pending}
             aria-label={t("moreActionsAria", { reference: loan.reference })}
           >

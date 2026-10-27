@@ -23,7 +23,7 @@ import { ConfirmSheet } from "@/src/presentation/design-system/components/Sheet/
 
 import type { DashboardViewer } from "./viewer";
 
-/** Mirrors `TeamTable`'s role tones — same role, same colour, wherever it's shown. */
+/** Mirrors `TeamMembers`' role tones — same role, same colour, wherever it's shown. */
 const ROLE_BADGE_VARIANT: Record<UserRole, "warning" | "success" | "info" | "neutral"> = {
   owner: "warning",
   admin: "success",

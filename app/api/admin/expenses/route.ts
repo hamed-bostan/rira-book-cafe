@@ -19,7 +19,8 @@ export const dynamic = "force-dynamic";
 /**
  * GET /api/admin/expenses — expenses, newest first, one page at a time, plus what's
  * owed to suppliers right now (`totalUnpaid`). Filters: `?from=&to=`, `?status=`,
- * `?supplier=`, `?account=`. Requires `accounting.view`.
+ * `?supplier=`, `?account=`, and a search `?q=` (description, supplier or number).
+ * Requires `accounting.view`.
  */
 export async function GET(request: NextRequest): Promise<NextResponse> {
   if (!(await getSessionWith("accounting.view"))) return unauthorizedResponse();

@@ -50,6 +50,8 @@ export function parseAsOfDay(params: URLSearchParams, now: Date = new Date()): s
 
 const SOURCE_SET = new Set<string>(JOURNAL_SOURCES);
 const STATUS_SET = new Set<string>(EXPENSE_STATUSES);
+/** A search longer than any description is cut, not refused. */
+const MAX_EXPENSE_QUERY_LENGTH = 100;
 
 /** Journal list filters. Unknown values are dropped (a stale URL lands on an unfiltered list). */
 export function parseJournalFilters(params: URLSearchParams): JournalFilters {
@@ -87,6 +89,8 @@ export function parseExpenseFilters(params: URLSearchParams): ExpenseFilters {
   if (supplier) filters.supplierId = supplier;
   const account = params.get("account")?.trim();
   if (account && /^\d{4}$/.test(account)) filters.accountCode = account;
+  const query = params.get("q")?.trim().slice(0, MAX_EXPENSE_QUERY_LENGTH);
+  if (query) filters.query = query;
   return filters;
 }
 
@@ -97,5 +101,6 @@ export function buildExpenseParams(filters: ExpenseFilters): URLSearchParams {
   if (filters.status) params.set("status", filters.status);
   if (filters.supplierId) params.set("supplier", filters.supplierId);
   if (filters.accountCode) params.set("account", filters.accountCode);
+  if (filters.query) params.set("q", filters.query);
   return params;
 }

@@ -28,7 +28,7 @@ export function OverviewSegmented<T extends string>({ label, value, options, onC
             aria-pressed={selected}
             onClick={() => onChange(option.value)}
             className={cn(
-              "h-11 rounded-button px-3 text-body-small whitespace-nowrap transition-colors sm:h-8",
+              "h-11 rounded-button px-3 text-body-default whitespace-nowrap transition-colors sm:h-8 sm:text-body-small",
               focusRing,
               selected
                 ? "bg-background font-semibold text-foreground shadow-xs"

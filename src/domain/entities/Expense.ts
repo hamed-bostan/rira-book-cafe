@@ -57,6 +57,19 @@ export type Expense = {
   createdAt: string;
 };
 
+/**
+ * The figures across the top of the Expenses page and the counts on its tabs:
+ * what's owed to suppliers now, what was recorded this month, and how many
+ * expenses sit in each status.
+ */
+export type ExpenseSummary = {
+  /** Bills still owed, and their total. */
+  owed: { count: number; total: number };
+  /** Expenses dated in the month (voids aside) and their total, VAT included. */
+  month: { fromDay: string; toDay: string; count: number; total: number };
+  counts: Record<ExpenseStatus, number>;
+};
+
 /** Accounts that hold money or what guests owe — never what an expense is spent *on*. */
 const MONEY_ACCOUNTS: readonly string[] = [
   SYSTEM_ACCOUNTS.cash,

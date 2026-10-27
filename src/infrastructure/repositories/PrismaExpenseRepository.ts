@@ -4,6 +4,7 @@ import {
   PAYMENT_SOURCES,
   type Expense,
   type ExpenseStatus,
+  type ExpenseSummary,
   type PaymentSource,
   type Supplier,
 } from "@/src/domain/entities/Expense";
@@ -94,6 +95,7 @@ export class PrismaExpenseRepository implements IExpenseRepository {
       ...(filters.status ? { status: filters.status } : {}),
       ...(filters.supplierId ? { supplierId: filters.supplierId } : {}),
       ...(filters.accountCode ? { accountCode: filters.accountCode } : {}),
+      ...(filters.query ? { OR: matchQuery(filters.query) } : {}),
     };
     const { skip, take } = toSkipTake(page);
     const [rows, total] = await prisma.$transaction([
@@ -106,6 +108,29 @@ export class PrismaExpenseRepository implements IExpenseRepository {
   async totalUnpaid(): Promise<number> {
     const result = await prisma.expense.aggregate({ where: { status: "unpaid" }, _sum: { amount: true } });
     return Number(result._sum.amount ?? 0);
+  }
+
+  async summary(month: { fromDay: string; toDay: string }): Promise<ExpenseSummary> {
+    const [byStatus, inMonth] = await Promise.all([
+      prisma.expense.groupBy({ by: ["status"], _count: { _all: true }, _sum: { amount: true } }),
+      prisma.expense.aggregate({
+        where: { status: { not: "void" }, date: { gte: dayToDate(month.fromDay), lte: dayToDate(month.toDay) } },
+        _count: { _all: true },
+        _sum: { amount: true },
+      }),
+    ]);
+    const counts: Record<ExpenseStatus, number> = { unpaid: 0, paid: 0, void: 0 };
+    let owedTotal = 0;
+    for (const group of byStatus) {
+      const status = toStatus(group.status);
+      counts[status] += group._count._all;
+      if (status === "unpaid") owedTotal += Number(group._sum.amount ?? 0);
+    }
+    return {
+      owed: { count: counts.unpaid, total: owedTotal },
+      month: { ...month, count: inMonth._count._all, total: Number(inMonth._sum.amount ?? 0) },
+      counts,
+    };
   }
 
   async create(input: NewExpense, ledger: LedgerHook<Expense>, audit?: AuditHook<Expense>): Promise<Expense> {
@@ -243,6 +268,20 @@ function toSupplier(row: Prisma.SupplierGetPayload<object>): Supplier {
     isActive: row.isActive,
     createdAt: row.createdAt.toISOString(),
   };
+}
+
+/** "1042", "EX-1042" or "ex 1042" — how staff quote an expense's number. Short enough to stay an Int. */
+const EXPENSE_NUMBER = /^(?:ex[-\s]?)?(\d{1,9})$/i;
+
+/** A search: the words in the description or the supplier's name, or the expense's number. */
+function matchQuery(query: string): Prisma.ExpenseWhereInput[] {
+  const match: Prisma.ExpenseWhereInput[] = [
+    { description: { contains: query, mode: "insensitive" } },
+    { supplierName: { contains: query, mode: "insensitive" } },
+  ];
+  const number = EXPENSE_NUMBER.exec(query)?.[1];
+  if (number) match.push({ number: Number(number) });
+  return match;
 }
 
 function toStatus(value: string): ExpenseStatus {

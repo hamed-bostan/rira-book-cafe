@@ -67,13 +67,14 @@ export function ReservationDayPicker({ day, today }: ReservationDayPickerProps) 
         </button>
       </div>
       <Input
+        size="control-md"
         type="date"
         aria-label={t("pickDay")}
         value={day}
         onChange={(event) => {
           if (event.target.value) go(event.target.value);
         }}
-        className="h-11 w-auto tabular-nums sm:h-9"
+        className="w-auto tabular-nums"
         dir="ltr"
       />
     </div>

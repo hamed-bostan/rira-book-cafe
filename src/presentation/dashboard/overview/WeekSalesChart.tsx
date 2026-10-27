@@ -92,7 +92,7 @@ export function WeekSalesChart({ days }: WeekSalesChartProps) {
             ]}
           />
           <Link
-            href="/dashboard/reports/sales?range=7d"
+            href="/dashboard/reports?range=7d"
             className={cn(
               "-my-3 py-3 text-body-small-emphasis whitespace-nowrap text-primary transition-colors hover:text-primary-hover sm:my-0 sm:py-0",
               focusRing,

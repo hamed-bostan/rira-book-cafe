@@ -48,6 +48,7 @@ export async function MovementsScreen({ page, items, costsVisible }: MovementsSc
           {t("col.item")}
           <ListFilterSelect
             className="h-9 min-w-48"
+            size="md"
             paramName="item"
             label={t("col.item")}
             options={[
@@ -60,6 +61,7 @@ export async function MovementsScreen({ page, items, costsVisible }: MovementsSc
           {t("movements.kindLabel")}
           <ListFilterSelect
             className="h-9 min-w-40"
+            size="md"
             paramName="kind"
             label={t("movements.kindLabel")}
             options={[
@@ -149,7 +151,7 @@ export async function MovementsScreen({ page, items, costsVisible }: MovementsSc
           </div>
         )}
         <div className="border-t border-border px-4 py-3">
-          <ListPager page={page} />
+          <ListPager page={page} size="md" />
         </div>
       </section>
     </div>

@@ -1,139 +1,99 @@
-import { NotebookText, Search } from "lucide-react";
-import { getLocale, getTranslations } from "next-intl/server";
+import { NotebookText, SearchX } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 
-import { JOURNAL_SOURCES, type JournalEntry } from "@/src/domain/entities/Ledger";
+import { isReversibleSource, JOURNAL_SOURCES, type Account, type JournalEntry } from "@/src/domain/entities/Ledger";
 import type { Page } from "@/src/domain/entities/Pagination";
-import { Link } from "@/src/i18n/navigation";
-import { formatCafeDayMedium } from "@/src/lib/formatCafeDay";
-import { formatMoney } from "@/src/lib/formatMoney";
-import { ListFilterSelect, ListPager } from "@/src/presentation/dashboard/list";
-import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
-import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { cn } from "@/src/lib/utils";
+import { ListChoiceFilter, ListPager } from "@/src/presentation/dashboard/list";
 import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
 
-import { entryTotal } from "./accounting-format";
-import { AccountingTabs } from "./AccountingTabs";
-import { PeriodPicker } from "./PeriodPicker";
+import { AccountingHeader } from "./AccountingHeader";
+import { JOURNAL_COLUMNS, JournalRow } from "./JournalRow";
 
 type JournalScreenProps = {
   page: Page<JournalEntry>;
-  fromDay: string;
-  toDay: string;
-  /** The other active filters, kept when the period changes. */
-  keep: Record<string, string>;
+  /** The chart of accounts, naming each entry's sides. */
+  accounts: Account[];
+  /** A "Posted by" filter is applied — to tell "nothing posted" from "nothing by this". */
+  filtered: boolean;
   canWrite: boolean;
+  /** Today on the cafe calendar — the day a manual entry or a reversal is booked. */
+  today: string;
 };
 
-/** Every entry in the books for a period, newest first, filterable by what posted it. */
-export async function JournalScreen({ page, fromDay, toDay, keep, canWrite }: JournalScreenProps) {
+/**
+ * Every entry in the books, newest first, filterable by what posted it. A
+ * reversible entry carries "Reverse entry" behind its "⋯"; nothing is ever edited
+ * or deleted. Presentational — the page reads the journal over the REST API (BFF).
+ */
+export async function JournalScreen({ page, accounts, filtered, canWrite, today }: JournalScreenProps) {
   const t = await getTranslations("dashAccounting");
-  const tList = await getTranslations("dashList");
-  const locale = await getLocale();
-  /** A source filter narrows the period — "no matches" rather than "nothing posted". */
-  const isFiltered = Boolean(keep.source);
+  const byCode = new Map(accounts.map((account) => [account.code, account]));
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
-      <AccountingTabs active="journal" title={t("journal.heading")} subtitle={t("journal.subtitle")} />
+      <AccountingHeader active="journal" intro={t("journal.subtitle")} writer={canWrite ? { accounts, today } : null} />
 
-      <div className="flex flex-col gap-4 rounded-card-lg border border-border bg-background p-4 md:flex-row md:items-start md:justify-between md:p-6">
-        <PeriodPicker fromDay={fromDay} toDay={toDay} keep={keep} />
-        <div className="flex flex-wrap items-end gap-2">
-          <label className="flex flex-col gap-1 text-body-caption text-muted-foreground">
-            {t("journal.filterSource")}
-            <ListFilterSelect
-              className="h-9 min-w-44"
-              paramName="source"
-              label={t("journal.filterSource")}
-              options={[
-                { value: "", label: t("journal.allSources") },
-                ...JOURNAL_SOURCES.map((source) => ({ value: source, label: t(`source.${source}`) })),
-              ]}
-            />
-          </label>
-          {canWrite ? (
-            <Button asChild size="sm">
-              <Link href="/dashboard/accounting/journal/new">{t("journal.newEntry")}</Link>
-            </Button>
-          ) : null}
+      <section
+        aria-label={t("journal.heading")}
+        className="@container/journal min-w-0 rounded-card-lg border border-border bg-background shadow-xs"
+      >
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-border px-4 py-3">
+          <ListChoiceFilter
+            paramName="source"
+            label={t("journal.filterSource")}
+            allLabel={t("journal.allSources")}
+            showAllValue
+            options={JOURNAL_SOURCES.map((source) => ({ value: source, label: t(`source.${source}`) }))}
+          />
         </div>
-      </div>
 
-      <section className="min-w-0 overflow-hidden rounded-card-lg border border-border bg-background">
-        {page.items.length === 0 ? (
+        {page.items.length > 0 ? (
+          <>
+            <div
+              aria-hidden
+              className={cn(
+                "hidden h-10 items-center gap-x-4 border-b border-border bg-muted px-5 text-body-caption-bold tracking-wider whitespace-nowrap text-muted-foreground uppercase @4xl/journal:grid",
+                JOURNAL_COLUMNS,
+              )}
+            >
+              <span>{t("journal.colEntry")}</span>
+              <span>{t("journal.colDate")}</span>
+              <span>{t("journal.colSource")}</span>
+              <span className="text-end">{t("journal.colAmount")}</span>
+              <span />
+            </div>
+            <ul>
+              {page.items.map((entry, index) => (
+                <li key={entry.id} className={cn(index > 0 && "border-t border-border")}>
+                  <JournalRow
+                    entry={entry}
+                    accounts={byCode}
+                    reversible={canWrite && isReversibleSource(entry.source) && !entry.reversedById}
+                    today={today}
+                  />
+                </li>
+              ))}
+            </ul>
+            <div className="border-t border-border px-4 py-3">
+              <ListPager page={page} />
+            </div>
+          </>
+        ) : filtered ? (
           <EmptyState
-            icon={isFiltered ? Search : NotebookText}
-            title={isFiltered ? tList("noResultsTitle") : t("journal.empty")}
-            description={isFiltered ? tList("noResultsBody") : undefined}
-            action={
-              !isFiltered && canWrite ? (
-                <Button asChild size="sm">
-                  <Link href="/dashboard/accounting/journal/new">{t("journal.newEntry")}</Link>
-                </Button>
-              ) : undefined
-            }
+            icon={SearchX}
+            title={t("journal.emptyTitle")}
+            description={t("journal.emptyFiltered")}
+            className="py-12"
           />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[40rem] text-body-small">
-              <thead className="bg-surface text-start text-body-caption text-muted-foreground">
-                <tr>
-                  <th scope="col" className="px-4 py-3 text-start font-medium">
-                    {t("journal.colNumber")}
-                  </th>
-                  <th scope="col" className="px-4 py-3 text-start font-medium">
-                    {t("journal.colDate")}
-                  </th>
-                  <th scope="col" className="px-4 py-3 text-start font-medium">
-                    {t("journal.colDescription")}
-                  </th>
-                  <th scope="col" className="px-4 py-3 text-start font-medium">
-                    {t("journal.colSource")}
-                  </th>
-                  <th scope="col" className="px-4 py-3 text-end font-medium">
-                    {t("journal.colAmount")}
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {page.items.map((entry) => (
-                  <tr key={entry.id} className="align-top">
-                    <td className="px-4 py-3">
-                      <Link
-                        href={`/dashboard/accounting/journal/${entry.id}`}
-                        className="text-body-small-emphasis text-primary underline-offset-4 hover:underline"
-                      >
-                        JE-{entry.number}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
-                      {formatCafeDayMedium(entry.date, locale)}
-                    </td>
-                    <td className="px-4 py-3 text-foreground">
-                      <span dir="auto">{entry.description}</span>
-                      {entry.reversedById ? (
-                        <Badge size="sm" variant="warning" className="ms-2">
-                          {t("journal.reversed")}
-                        </Badge>
-                      ) : null}
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge size="sm" variant={entry.source === "manual" ? "info" : "neutral"}>
-                        {t(`source.${entry.source}`)}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3 text-end text-body-small-emphasis whitespace-nowrap text-foreground">
-                      {formatMoney(entryTotal(entry), locale)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <EmptyState
+            icon={NotebookText}
+            title={t("journal.emptyTitle")}
+            description={t("journal.emptyBody")}
+            className="py-12"
+          />
         )}
-        <div className="border-t border-border px-4 py-3">
-          <ListPager page={page} />
-        </div>
       </section>
     </div>
   );

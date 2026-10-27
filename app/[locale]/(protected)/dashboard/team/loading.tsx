@@ -1,84 +1,83 @@
-import { DashboardHeaderSkeleton } from "@/src/presentation/dashboard/skeletons";
+import { cn } from "@/src/lib/utils";
 import { LoadingRegion } from "@/src/presentation/design-system/components/Skeleton/LoadingRegion";
 import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
 /** Member rows drawn — a small team. */
 const MEMBER_ROWS = 4;
-/** Role changes drawn in the history. */
-const ACTIVITY_ROWS = 4;
+/** Access changes drawn in the history. */
+const HISTORY_ROWS = 4;
 
 export default function TeamLoading() {
   return (
-    <LoadingRegion className="mx-auto flex w-full max-w-6xl min-w-0 flex-col gap-4 sm:gap-6">
-      <DashboardHeaderSkeleton />
+    <LoadingRegion className="flex min-w-0 flex-col gap-6">
+      {/* Title and how many people have access. */}
+      <div className="flex flex-col gap-2">
+        <Skeleton className="h-7 w-28 rounded-pill" />
+        <Skeleton className="h-4 w-56 max-w-full rounded-pill" />
+      </div>
 
-      {/* Grant access: phone, name, role, submit — two columns from `sm`, one row from `xl`. */}
-      <div className="flex flex-col gap-4 rounded-card-lg border border-border bg-background p-4 sm:p-6">
-        <div className="flex flex-col gap-1.5">
-          <Skeleton className="h-5 w-32 rounded-pill" />
-          <Skeleton className="h-4 w-full max-w-md rounded-pill" />
+      {/* Add a team member: phone, email, role — two columns from `md`, one row from `xl` — then Grant access. */}
+      <div className="flex flex-col gap-4 rounded-card-lg border border-border bg-background p-5 shadow-xs">
+        <div className="flex flex-col gap-2">
+          <Skeleton className="h-5 w-36 rounded-pill" />
+          <Skeleton className="h-4 w-full max-w-xl rounded-pill" />
         </div>
-        <div className="grid min-w-0 grid-cols-1 items-start gap-4 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_10rem_auto]">
+        <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_15rem]">
           {Array.from({ length: 3 }, (_, field) => (
             <div key={field} className="flex min-w-0 flex-col gap-1.5">
-              <Skeleton className="h-4 w-20 rounded-pill" />
-              <Skeleton className="h-10 w-full rounded-input" />
-            </div>
-          ))}
-          <Skeleton className="h-11 w-full rounded-button sm:mt-7 sm:h-10 xl:w-28" />
-        </div>
-      </div>
-
-      {/* Members: heading + count, column strip from `md`, one row per member. */}
-      <div className="overflow-hidden rounded-card-lg border border-border bg-background">
-        <div className="flex items-center gap-3 border-b border-border px-4 py-4 sm:px-5">
-          <Skeleton className="h-5 w-24 rounded-pill" />
-          <Skeleton className="h-6 w-8 rounded-pill" />
-        </div>
-        <div className="hidden grid-cols-[minmax(0,1fr)_10rem_6rem] gap-4 bg-surface-sunken/60 px-5 py-3 md:grid">
-          <Skeleton className="h-4 w-20 rounded-pill bg-muted" />
-          <Skeleton className="h-4 w-16 rounded-pill bg-muted" />
-          <Skeleton className="h-4 w-14 justify-self-end rounded-pill bg-muted" />
-        </div>
-        <div className="divide-y divide-border">
-          {Array.from({ length: MEMBER_ROWS }, (_, row) => (
-            <div
-              key={row}
-              className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-3 p-4 sm:p-5 md:grid-cols-[minmax(0,1fr)_10rem_6rem] md:gap-4"
-            >
-              <div className="col-span-2 flex min-w-0 items-center gap-3 md:col-span-1">
-                <Skeleton className="size-11 shrink-0 rounded-full" />
-                <div className="flex min-w-0 flex-col gap-1.5">
-                  <Skeleton className="h-4 w-32 rounded-pill" />
-                  <Skeleton className="h-4 w-28 rounded-pill" />
-                </div>
-              </div>
-              <Skeleton className="h-6 w-20 rounded-pill" />
-              <Skeleton className="size-11 justify-self-end rounded-button sm:size-10" />
+              <Skeleton className="h-4 w-24 rounded-pill" />
+              <Skeleton className="h-11 w-full rounded-input sm:h-9" />
             </div>
           ))}
         </div>
+        <Skeleton className="h-11 w-32 rounded-button sm:h-9" />
       </div>
 
-      {/* Role-change history. */}
-      <div className="flex flex-col gap-4 rounded-card-lg border border-border bg-background p-4 sm:p-6">
-        <div className="flex flex-col gap-1.5">
-          <Skeleton className="h-5 w-32 rounded-pill" />
-          <Skeleton className="h-4 w-64 max-w-full rounded-pill" />
+      {/* Team members: heading and count, the column strip from `md`, one row per member. */}
+      <div className="rounded-card-lg border border-border bg-background shadow-xs">
+        <div className="flex items-center gap-3 border-b border-border px-5 py-4">
+          <Skeleton className="h-5 w-28 rounded-pill" />
+          <Skeleton className="h-6 w-7 rounded-badge-md" />
         </div>
-        <div className="overflow-hidden rounded-card-lg border border-border">
-          <div className="divide-y divide-border">
-            {Array.from({ length: ACTIVITY_ROWS }, (_, row) => (
-              <div
-                key={row}
-                className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5 bg-background px-4 py-3"
-              >
-                <Skeleton className="h-4 w-64 max-w-full rounded-pill" />
+        <div className="hidden h-10 border-b border-border bg-muted md:block" />
+        {Array.from({ length: MEMBER_ROWS }, (_, row) => (
+          <div
+            key={row}
+            className={cn(
+              "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-3 px-5 py-3 md:grid-cols-[minmax(0,1fr)_10rem_2.5rem]",
+              row > 0 && "border-t border-border",
+            )}
+          >
+            <div className="flex min-w-0 items-center gap-3">
+              <Skeleton className="size-10 shrink-0 rounded-full" />
+              <div className="flex min-w-0 flex-col gap-1.5">
+                <Skeleton className="h-4 w-32 rounded-pill" />
                 <Skeleton className="h-3.5 w-24 rounded-pill" />
               </div>
-            ))}
+            </div>
+            <div className="order-1 col-span-full ps-13 md:order-none md:col-span-1 md:ps-0">
+              <Skeleton className="h-6 w-16 rounded-badge-md" />
+            </div>
+            <Skeleton className="size-11 justify-self-end rounded-button sm:size-9" />
           </div>
+        ))}
+      </div>
+
+      {/* Access history: heading, then one sentence and its date per change. */}
+      <div className="flex flex-col gap-2 rounded-card-lg border border-border bg-background p-5 shadow-xs">
+        <div className="flex flex-col gap-2">
+          <Skeleton className="h-5 w-32 rounded-pill" />
+          <Skeleton className="h-4 w-72 max-w-full rounded-pill" />
         </div>
+        {Array.from({ length: HISTORY_ROWS }, (_, row) => (
+          <div
+            key={row}
+            className={cn("flex items-center justify-between gap-4 py-3", row > 0 && "border-t border-border")}
+          >
+            <Skeleton className="h-4 w-64 max-w-full rounded-pill" />
+            <Skeleton className="h-3.5 w-12 rounded-pill" />
+          </div>
+        ))}
       </div>
     </LoadingRegion>
   );

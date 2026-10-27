@@ -35,7 +35,7 @@ export async function EventsScreen({ events, tab, canManage, now }: EventsScreen
   const drafts = upcoming.filter((event) => !event.isPublished).length;
 
   const createAction = canManage ? (
-    <Button asChild size="sm">
+    <Button asChild size="control-md">
       <Link href="/dashboard/events/create">
         <Icon icon={Plus} size="sm" className="me-1.5" />
         {t("newEvent")}
@@ -54,7 +54,7 @@ export async function EventsScreen({ events, tab, canManage, now }: EventsScreen
           </p>
         </div>
         {canManage ? (
-          <Button asChild className="gap-2 px-4">
+          <Button size="control-md" asChild className="gap-2 px-4">
             <Link href="/dashboard/events/create">
               <Icon icon={Plus} size="sm" />
               {t("newEvent")}

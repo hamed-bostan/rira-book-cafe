@@ -121,7 +121,7 @@ export function LendBookDialog({ books, heldFor, today }: LendBookDialogProps) {
 
   return (
     <>
-      <Button type="button" className="gap-2 px-4" onClick={openDialog} disabled={books.length === 0}>
+      <Button size="control-md" type="button" className="gap-2 px-4" onClick={openDialog} disabled={books.length === 0}>
         <Icon icon={Plus} size="sm" />
         {t("lend")}
       </Button>
@@ -136,7 +136,12 @@ export function LendBookDialog({ books, heldFor, today }: LendBookDialogProps) {
           <form onSubmit={submit} className="mt-5 flex flex-col gap-4">
             <label className="flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
               {t("book")}
-              <Select value={productId} onChange={(event) => setProductId(event.target.value)} required>
+              <Select
+                size="control-md"
+                value={productId}
+                onChange={(event) => setProductId(event.target.value)}
+                required
+              >
                 {books.map((option) => {
                   const count = free(option);
                   return (
@@ -151,6 +156,7 @@ export function LendBookDialog({ books, heldFor, today }: LendBookDialogProps) {
             <label className="flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
               {t("borrowerName")}
               <Input
+                size="control-md"
                 value={borrowerName}
                 onChange={(event) => setBorrowerName(event.target.value)}
                 maxLength={MAX_BORROWER_NAME_LENGTH}
@@ -162,6 +168,7 @@ export function LendBookDialog({ books, heldFor, today }: LendBookDialogProps) {
             <label className="flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
               {t("borrowerPhone")}
               <Input
+                size="control-md"
                 type="tel"
                 inputMode="tel"
                 value={borrowerPhone}
@@ -193,6 +200,7 @@ export function LendBookDialog({ books, heldFor, today }: LendBookDialogProps) {
             <label className="flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
               {t("note")}
               <Input
+                size="control-md"
                 value={note}
                 onChange={(event) => setNote(event.target.value)}
                 maxLength={MAX_LOAN_NOTE_LENGTH}
@@ -211,10 +219,16 @@ export function LendBookDialog({ books, heldFor, today }: LendBookDialogProps) {
             {error ? <FormMessage>{error}</FormMessage> : null}
 
             <div className="mt-1 flex flex-wrap justify-end gap-2">
-              <Button type="button" variant="secondary" size="sm" className="px-4" onClick={() => setOpen(false)}>
+              <Button
+                type="button"
+                variant="secondary"
+                size="control-md"
+                className="px-4"
+                onClick={() => setOpen(false)}
+              >
                 {t("dialogCancel")}
               </Button>
-              <Button type="submit" size="sm" className="px-4" loading={pending} disabled={blocked}>
+              <Button type="submit" size="control-md" className="px-4" loading={pending} disabled={blocked}>
                 {t("lendSubmit")}
               </Button>
             </div>

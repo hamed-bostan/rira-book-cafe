@@ -8,7 +8,7 @@ import { getSessionWith } from "@/src/lib/require-permission";
 
 export const dynamic = "force-dynamic";
 
-/** GET /api/admin/reports/guests — new vs returning guests, top spenders, bookings and events for a range. Requires `reports.view`. */
+/** GET /api/admin/reports/guests — guests against the period before, new vs returning, top spenders and bookings for a range. Requires `reports.view`. */
 export async function GET(request: NextRequest): Promise<NextResponse> {
   if (!(await getSessionWith("reports.view"))) return unauthorizedResponse();
 

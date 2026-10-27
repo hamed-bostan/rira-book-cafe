@@ -8,7 +8,7 @@ import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
 
 import { AccountActiveSwitch } from "./AccountActiveSwitch";
 import { accountName } from "./accounting-format";
-import { AccountingTabs } from "./AccountingTabs";
+import { AccountingHeader } from "./AccountingHeader";
 import { NewAccountButton } from "./NewAccountButton";
 
 type AccountsScreenProps = {
@@ -16,17 +16,23 @@ type AccountsScreenProps = {
   /** Today's balances. */
   trialBalance: TrialBalance;
   canWrite: boolean;
+  /** Today on the cafe calendar — for the header's "New manual entry". */
+  today: string;
 };
 
 /** The chart of accounts by type, each with today's balance and a link to its ledger. */
-export async function AccountsScreen({ accounts, trialBalance, canWrite }: AccountsScreenProps) {
+export async function AccountsScreen({ accounts, trialBalance, canWrite, today }: AccountsScreenProps) {
   const t = await getTranslations("dashAccounting");
   const locale = await getLocale();
   const balances = new Map(trialBalance.rows.map((row) => [row.account.code, row.balance]));
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
-      <AccountingTabs active="accounts" title={t("accounts.heading")} subtitle={t("accounts.subtitle")} />
+      <AccountingHeader
+        active="accounts"
+        intro={t("accounts.subtitle")}
+        writer={canWrite ? { accounts, today } : null}
+      />
       {canWrite ? (
         <div>
           <NewAccountButton />

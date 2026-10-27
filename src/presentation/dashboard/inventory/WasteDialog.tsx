@@ -105,6 +105,7 @@ export function WasteDialog({ open, onOpenChange, items, initialItemId, costsVis
       <label className="flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
         {t("waste.quantityLabel", { unit })}
         <Input
+          size="control-md"
           value={quantity}
           onChange={(event) => setQuantity(event.target.value)}
           inputMode="decimal"
@@ -116,6 +117,7 @@ export function WasteDialog({ open, onOpenChange, items, initialItemId, costsVis
       <label className="flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
         {t("waste.noteLabel")}
         <Input
+          size="control-md"
           value={note}
           onChange={(event) => setNote(event.target.value)}
           maxLength={MAX_REASON_LENGTH}

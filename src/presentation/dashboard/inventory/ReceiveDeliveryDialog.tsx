@@ -135,6 +135,7 @@ export function ReceiveDeliveryDialog({
       <label className="flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
         {t("quick.quantityLabel", { unit })}
         <Input
+          size="control-md"
           value={quantity}
           onChange={(event) => setQuantity(event.target.value)}
           inputMode="decimal"
@@ -146,6 +147,7 @@ export function ReceiveDeliveryDialog({
       <label className="flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
         {t("quick.costLabel")}
         <Input
+          size="control-md"
           value={cost}
           onChange={(event) => setCost(event.target.value)}
           inputMode="numeric"
@@ -160,6 +162,7 @@ export function ReceiveDeliveryDialog({
       <label className="flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
         {tExpenses("form.paymentLabel")}
         <Select
+          size="control-md"
           value={payment}
           onChange={(event) =>
             setPayment(EXPENSE_PAYMENT_CHOICES.find((choice) => choice === event.target.value) ?? "unpaid")

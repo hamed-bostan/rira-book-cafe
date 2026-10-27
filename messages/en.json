@@ -290,64 +290,80 @@
     "emailHint": "Optional — we'll email them the invitation too.",
     "emailPlaceholder": "name@example.com",
     "grantSubmit": "Grant access",
-    "granting": "Granting…",
     "grantError": "Couldn't grant access. Please try again.",
+    "alreadyMember": "That number already has dashboard access.",
     "colMember": "Member",
     "colPhone": "Phone",
     "colAccess": "Access",
-    "colActions": "Actions",
     "youSuffix": "(you)",
     "managedInEnv": "Set in server config",
-    "revokeBlocked": {
-      "breakGlass": "Set in server config — remove them from ADMIN_USER_IDS instead.",
-      "owner": "Can't remove the owner — transfer ownership first.",
-      "self": "You can't remove your own access."
+    "moreActionsAria": "More actions for {name}",
+    "back": "Back",
+    "changeRole": {
+      "menu": "Change role",
+      "title": "Change {name}'s role",
+      "message": "It applies the next time they load a dashboard page.",
+      "confirm": "Save role",
+      "done": "{name} is now {role}.",
+      "error": "Couldn't change the role. Please try again.",
+      "blocked": {
+        "self": "You can't change your own role.",
+        "owner": "The owner's role only changes by transferring ownership.",
+        "breakGlass": "Their access is set in the server config — change ADMIN_USER_IDS instead."
+      }
     },
     "ownership": {
       "transfer": {
-        "aria": "Make {name} the owner",
+        "menu": "Make owner",
         "title": "Transfer ownership?",
         "message": "{name} becomes the owner and can manage the team. You stay an admin and keep running the cafe, but you'll no longer be able to add or remove people.",
         "confirm": "Transfer ownership"
       },
       "claim": {
-        "aria": "Become the owner",
+        "menu": "Become the owner",
         "title": "Become the owner?",
         "message": "Nobody owns this cafe yet. You'll hold the owner role in the database rather than only through the server config, so you can manage the team without ADMIN_USER_IDS.",
         "confirm": "Become owner"
       },
       "takeOver": {
-        "aria": "Take ownership of the cafe",
+        "menu": "Take ownership",
         "title": "Take ownership?",
         "message": "Someone else owns this cafe. You can take it because your access is set in the server config — this is the recovery path for a lost owner account, not a routine change. The current owner becomes an admin.",
         "confirm": "Take ownership"
       },
       "transferred": "{name} is now the owner.",
-      "claimed": "You're now the owner."
+      "claimed": "You're now the owner.",
+      "error": "Couldn't transfer ownership. Please try again."
+    },
+    "remove": {
+      "menu": "Remove access",
+      "title": "Remove {name}'s access?",
+      "message": "They'll lose access to the dashboard. Their account and order history stay untouched.",
+      "confirm": "Remove access",
+      "done": "{name} no longer has access.",
+      "error": "Couldn't remove access. Please try again."
     },
     "activityHeading": "Access history",
     "activityDescription": "Every change to who can reach the dashboard. Kept permanently.",
     "activityEmpty": "No changes recorded yet.",
     "activity": {
-      "granted": "{actor} gave {user} admin access",
+      "granted": "{actor} gave {user} {role} access",
+      "changed": "{actor} changed {user} from {from} to {to}",
       "revoked": "{actor} removed {user}'s access",
       "ownershipTransferred": "{actor} made {user} the owner",
       "ownershipClaimed": "{user} took ownership",
       "steppedDown": "{user} stopped being the owner",
-      "unknown": "{actor} changed {user}'s access"
+      "unknown": "{actor} changed {user}'s access",
+      "you": "You",
+      "youObject": "you"
     },
-    "transferErrorTitle": "Couldn't transfer ownership",
-    "transferError": "Couldn't transfer ownership. Please try again.",
-    "transferTryAgain": "Try again",
-    "revokeAria": "Remove admin access for {name}",
-    "revokeTitle": "Remove admin access?",
-    "revokeMessage": "{name} will lose access to the dashboard. Their account and order history stay untouched.",
-    "revokeConfirm": "Remove access",
-    "revokeErrorTitle": "Couldn't remove access",
-    "revokeError": "Couldn't remove access. Please try again.",
-    "revokeTryAgain": "Try again",
     "roleLabel": "Role",
     "roleHint": "What they can do.",
+    "roleOption": {
+      "support": "Support — read only",
+      "staff": "Staff — runs the floor",
+      "admin": "Admin — runs the cafe"
+    },
     "role": {
       "support": "Support",
       "staff": "Staff",
@@ -355,8 +371,7 @@
       "owner": "Owner",
       "customer": "No access"
     },
-    "granted": "Access granted to {phone}.",
-    "revoked": "{name} no longer has access."
+    "granted": "Access granted to {phone}."
   },
   "dashProducts": {
     "heading": "Menu items",
@@ -712,11 +727,20 @@
     "summary": "Every change made from the dashboard, newest first. Kept permanently.",
     "empty": "No activity yet",
     "emptyBody": "Changes made from the dashboard will appear here.",
-    "filterActor": "Filter by who made the change",
-    "filterEntity": "Filter by what was changed",
+    "noMatchesTitle": "No matches",
+    "noMatchesBody": "No changes match these filters.",
+    "clearFilters": "Clear filters",
+    "listLabel": "Activity log",
+    "filterActor": "Changed by",
+    "filterEntity": "Area",
     "allActors": "Anyone",
     "allEntities": "Anything",
+    "day": {
+      "today": "Today",
+      "yesterday": "Yesterday"
+    },
     "open": "Open",
+    "openAria": "Open {entity}",
     "panelHeading": "Activity",
     "panelDescription": "Every change made to this from the dashboard.",
     "panelEmpty": "No changes recorded yet.",
@@ -737,75 +761,75 @@
     },
     "action": {
       "product": {
-        "created": "{actor} created {entity}",
-        "updated": "{actor} edited {entity}",
-        "deleted": "{actor} deleted {entity}"
+        "created": "<b>{actor}</b> created {entity}",
+        "updated": "<b>{actor}</b> edited {entity}",
+        "deleted": "<b>{actor}</b> deleted {entity}"
       },
       "order": {
-        "stageChanged": "{actor} changed the status of order {entity}",
-        "customerNotified": "{actor} messaged the guest about order {entity}",
-        "placed": "{actor} placed order {entity}",
-        "paymentChanged": "{actor} changed the payment of order {entity}"
+        "stageChanged": "<b>{actor}</b> changed the status of order {entity}",
+        "customerNotified": "<b>{actor}</b> messaged the guest about order {entity}",
+        "placed": "<b>{actor}</b> placed order {entity}",
+        "paymentChanged": "<b>{actor}</b> changed the payment of order {entity}"
       },
       "review": {
-        "moderated": "{actor} moderated {entity}'s review",
-        "submitted": "{actor} submitted a new review"
+        "moderated": "<b>{actor}</b> moderated {entity}'s review",
+        "submitted": "<b>{actor}</b> submitted a new review"
       },
       "promoCode": {
-        "created": "{actor} created promo code {entity}",
-        "updated": "{actor} edited promo code {entity}",
-        "activeChanged": "{actor} switched promo code {entity} on or off",
-        "deleted": "{actor} deleted promo code {entity}"
+        "created": "<b>{actor}</b> created promo code {entity}",
+        "updated": "<b>{actor}</b> edited promo code {entity}",
+        "activeChanged": "<b>{actor}</b> switched promo code {entity} on or off",
+        "deleted": "<b>{actor}</b> deleted promo code {entity}"
       },
-      "unknown": "{actor} changed {entity}",
+      "unknown": "<b>{actor}</b> changed {entity}",
       "category": {
-        "created": "{actor} created category {entity}",
-        "updated": "{actor} edited category {entity}",
-        "deleted": "{actor} deleted category {entity}"
+        "created": "<b>{actor}</b> created category {entity}",
+        "updated": "<b>{actor}</b> edited category {entity}",
+        "deleted": "<b>{actor}</b> deleted category {entity}"
       },
       "reservation": {
-        "changed": "{actor} updated reservation {entity}",
-        "booked": "{actor} booked table reservation {entity}"
+        "changed": "<b>{actor}</b> updated reservation {entity}",
+        "booked": "<b>{actor}</b> booked table reservation {entity}"
       },
       "event": {
-        "created": "{actor} created event {entity}",
-        "updated": "{actor} edited event {entity}",
-        "deleted": "{actor} deleted event {entity}",
-        "registrationCancelled": "{actor} cancelled a sign-up for {entity}"
+        "created": "<b>{actor}</b> created event {entity}",
+        "updated": "<b>{actor}</b> edited event {entity}",
+        "deleted": "<b>{actor}</b> deleted event {entity}",
+        "registrationCancelled": "<b>{actor}</b> cancelled a sign-up for {entity}"
       },
       "ledger": {
-        "entryPosted": "{actor} posted journal entry {entity}",
-        "entryReversed": "{actor} reversed journal entry {entity}",
-        "accountChanged": "{actor} changed account {entity}",
-        "settingsChanged": "{actor} changed the accounting settings",
-        "bankStatementChanged": "{actor} updated {entity}",
-        "bankMatched": "{actor} matched lines on {entity}",
-        "bankUnmatched": "{actor} unmatched lines on {entity}",
-        "bankReconciled": "{actor} reconciled {entity}"
+        "entryPosted": "<b>{actor}</b> posted journal entry {entity}",
+        "entryReversed": "<b>{actor}</b> reversed journal entry {entity}",
+        "accountChanged": "<b>{actor}</b> changed account {entity}",
+        "settingsChanged": "<b>{actor}</b> changed the accounting settings",
+        "bankStatementChanged": "<b>{actor}</b> updated {entity}",
+        "bankMatched": "<b>{actor}</b> matched lines on {entity}",
+        "bankUnmatched": "<b>{actor}</b> unmatched lines on {entity}",
+        "bankReconciled": "<b>{actor}</b> reconciled {entity}"
       },
       "expense": {
-        "recorded": "{actor} recorded expense {entity}",
-        "paid": "{actor} paid expense {entity}",
-        "voided": "{actor} voided expense {entity}"
+        "recorded": "<b>{actor}</b> recorded expense {entity}",
+        "paid": "<b>{actor}</b> paid expense {entity}",
+        "voided": "<b>{actor}</b> voided expense {entity}"
       },
       "suiteBooking": {
-        "changed": "{actor} updated suite booking {entity}",
-        "booked": "{actor} booked suite stay {entity}"
+        "changed": "<b>{actor}</b> updated suite booking {entity}",
+        "booked": "<b>{actor}</b> booked suite stay {entity}"
       },
       "bookLoan": {
-        "lent": "{actor} lent a book ({entity})",
-        "returned": "{actor} marked loan {entity} returned",
-        "lost": "{actor} marked loan {entity} lost",
-        "extended": "{actor} extended loan {entity}"
+        "lent": "<b>{actor}</b> lent a book ({entity})",
+        "returned": "<b>{actor}</b> marked loan {entity} returned",
+        "lost": "<b>{actor}</b> marked loan {entity} lost",
+        "extended": "<b>{actor}</b> extended loan {entity}"
       }
     },
     "role": {
-      "granted": "{actor} gave {user} admin access",
-      "revoked": "{actor} removed {user}'s access",
-      "ownershipTransferred": "{actor} made {user} the owner",
-      "ownershipClaimed": "{user} took ownership",
-      "steppedDown": "{user} stopped being the owner",
-      "unknown": "{actor} changed {user}'s access"
+      "granted": "<b>{actor}</b> gave {user} admin access",
+      "revoked": "<b>{actor}</b> removed {user}'s access",
+      "ownershipTransferred": "<b>{actor}</b> made {user} the owner",
+      "ownershipClaimed": "<b>{user}</b> took ownership",
+      "steppedDown": "<b>{user}</b> stopped being the owner",
+      "unknown": "<b>{actor}</b> changed {user}'s access"
     },
     "field": {
       "name": "Name",
@@ -862,17 +886,8 @@
       "dueAt": "Due",
       "position": "Menu order"
     },
-    "filterField": "Filter by what changed",
-    "allFields": "Any change",
-    "fieldOption": {
-      "price": "Price changes",
-      "stockQuantity": "Stock changes",
-      "isPublished": "Publish / unpublish",
-      "isActive": "Category on/off",
-      "status": "Order status changes",
-      "paymentStatus": "Payment changes",
-      "role": "Access changes"
-    }
+    "filterField": "Field",
+    "allFields": "Any field"
   },
   "dashReservations": {
     "heading": "Table reservations",
@@ -1105,8 +1120,6 @@
   "dashReports": {
     "heading": "Reports",
     "summary": "Sales, payments and guests over any range. Revenue counts completed orders.",
-    "openReport": "Open {title}",
-    "breadcrumbLabel": "Breadcrumb",
     "rangeLabel": "Date range",
     "preset": {
       "today": "Today",
@@ -1114,60 +1127,91 @@
       "30d": "30 days",
       "90d": "90 days"
     },
-    "presetCustom": "Custom",
-    "rangeFrom": "From",
-    "rangeTo": "To",
-    "apply": "Apply",
-    "rangeCaption": "{from} – {to}",
-    "comparedWith": "compared with {from} – {to}",
-    "vsPrevious": "vs previous period",
-    "thisPeriod": "This period",
-    "previousPeriod": "Previous period",
+    "tabsLabel": "Reports",
+    "tab": {
+      "sales": "Sales",
+      "payments": "Payments",
+      "guests": "Guests"
+    },
+    "rangeToday": "Today, {day}",
+    "rangeSpan": "{from} – {to}",
+    "comparedWithYesterday": "compared with yesterday",
+    "comparedWith": "compared with {span}",
+    "changeUp": "+{value} vs previous period",
+    "changeDown": "−{value} vs previous period",
+    "noBaseline": "Nothing the period before",
     "noSales": "No completed orders in this range.",
     "orderCount": "{count, plural, one {{formatted} order} other {{formatted} orders}}",
     "unitsSold": "{count, plural, one {{formatted} sold} other {{formatted} sold}}",
-    "topItemsHeading": "Best sellers",
-    "topItemsSort": {
-      "revenue": "By revenue",
-      "quantity": "By units"
-    },
     "sales": {
-      "title": "Sales",
-      "subtitle": "Revenue, orders, busy hours and best sellers.",
       "revenue": "Revenue",
       "orders": "Orders",
       "averageOrder": "Average order",
       "cancelled": "Cancelled orders",
       "cancelledValue": "{value} not taken",
-      "dailyHeading": "Sales by day",
-      "hourlyHeading": "Busy hours",
-      "hourlyDescription": "Completed orders by the hour they came in (cafe time).",
+      "chart": {
+        "hourly": "Busy hours",
+        "daily": "Sales by day",
+        "weekly": "Sales by week"
+      },
+      "chartHourlyDescription": "Completed orders by the hour they came in (cafe time).",
+      "chartRevenueDescription": "Revenue from completed orders.",
+      "chartOrdersDescription": "Completed orders.",
+      "chartMetric": "Chart metric",
+      "chartSummary": "{heading}: {points}",
+      "weekOf": "Week of {day}",
+      "bestSellers": "Best sellers",
+      "bestSellersSort": "Sort best sellers",
+      "sort": {
+        "revenue": "By revenue",
+        "quantity": "By units"
+      },
       "byKindHeading": "Drinks, food and books",
-      "byServiceHeading": "Dine-in vs takeaway"
+      "byKindDescription": "Share of revenue.",
+      "kind": {
+        "drink": "Drinks",
+        "food": "Food",
+        "book": "Books"
+      }
     },
     "payments": {
-      "title": "Payments",
-      "subtitle": "What's been paid at the counter, and what hasn't.",
       "paid": "Paid",
+      "paidShare": "{percent} of revenue",
       "unpaid": "Unpaid",
-      "splitHeading": "Paid vs unpaid",
+      "waiting": "{count, plural, one {{formatted} order waiting} other {{formatted} orders waiting}}",
+      "nothingWaiting": "Nothing waiting",
+      "paidByHeading": "Paid by",
+      "paidByDescription": "How paid orders were settled.",
+      "method": {
+        "bank": "Card & transfer",
+        "cash": "Cash",
+        "online": "Online"
+      },
+      "nothingPaid": "Nothing paid in this range yet.",
       "unpaidHeading": "Served but unpaid",
-      "unpaidDescription": "Ready or completed orders not yet marked paid, oldest first.",
-      "allPaid": "Everything served in this range is paid."
+      "unpaidDescription": "Completed orders not yet marked paid, oldest first.",
+      "allPaid": "Everything served in this range is paid.",
+      "orderTitle": "Order #{number} · {where}",
+      "todayAt": "Today, {time}",
+      "yesterdayAt": "Yesterday, {time}",
+      "dayAt": "{day}, {time}",
+      "markPaid": "Mark paid",
+      "markedPaid": "Order #{number} marked paid",
+      "markedUnpaid": "Order #{number} is unpaid again",
+      "markPaidError": "Couldn't mark the order paid."
     },
     "guests": {
-      "title": "Guests",
-      "subtitle": "Who came, how often, and how bookings and events went.",
       "guests": "Guests",
       "newGuests": "New guests",
       "returning": "{count, plural, one {{formatted} returning} other {{formatted} returning}}",
       "repeatRate": "Came back",
-      "repeatRateHint": "Guests with two or more orders in the range",
+      "repeatRateHint": "Two or more orders in the range",
       "bookings": "Bookings",
       "bookingsHint": "{covers} guests · {noShowRate} no-shows",
       "topGuestsHeading": "Top guests",
-      "events": "Events held",
-      "eventsHint": "{seats} seats taken"
+      "topGuestsDescription": "Regulars by what they spent in this range.",
+      "visits": "{count, plural, one {{formatted} visit} other {{formatted} visits}}",
+      "pickLonger": "Pick a range of a week or more to see your regulars."
     }
   },
   "site": {
@@ -1555,6 +1599,7 @@
     "tabsLabel": "Accounting sections",
     "breadcrumbLabel": "Breadcrumb",
     "cancel": "Cancel",
+    "back": "Back",
     "tab": {
       "overview": "Overview",
       "journal": "Journal",
@@ -1578,6 +1623,12 @@
         "vat": "VAT payable"
       },
       "resultsHeading": "Results for the period",
+      "periodLabel": "Period",
+      "period": {
+        "month": "This month",
+        "last": "Last month",
+        "year": "This year"
+      },
       "revenue": "Revenue (net of VAT)",
       "grossProfit": "Gross profit",
       "expenses": "Operating expenses",
@@ -1588,17 +1639,17 @@
         "heading": "Record a gateway payout",
         "hint": "When Zarinpal pays out, enter what reached the bank and the fee it kept. Together they leave the gateway balance.",
         "date": "Paid out on",
-        "deposited": "Deposited in the bank",
-        "fee": "Gateway fee",
+        "deposited": "Deposited in the bank (Toman)",
+        "fee": "Gateway fee (Toman)",
         "feeHint": "Leave blank if there was none.",
         "reference": "Payout reference",
         "referencePlaceholder": "e.g. the settlement number",
-        "clears": "Clears {amount} from the gateway balance.",
+        "clears": "Clears {amount} from the gateway balance, leaving {left}.",
+        "exceeds": "That's more than the gateway is holding ({amount}).",
         "submit": "Record payout",
-        "saved": "Payout recorded.",
+        "saved": "Payout recorded · JE-{number}",
         "error": "Couldn't record the payout. Please try again."
-      },
-      "reconcileBank": "Reconcile the bank"
+      }
     },
     "journal": {
       "heading": "Journal",
@@ -1607,12 +1658,32 @@
       "filterSource": "Posted by",
       "allSources": "Anything",
       "colNumber": "No.",
+      "colEntry": "Entry",
       "colDate": "Date",
       "colDescription": "Description",
       "colSource": "Source",
       "colAmount": "Amount",
+      "lines": "JE-{number} · Dr {debits} · Cr {credits}",
       "reversed": "Reversed",
-      "empty": "No entries in this period."
+      "emptyTitle": "No entries",
+      "emptyBody": "Nothing has been posted yet.",
+      "emptyFiltered": "Nothing has been posted by this source yet.",
+      "moreActionsAria": "More actions for JE-{number}",
+      "reverse": "Reverse entry",
+      "reverseTitle": "Reverse JE-{number}?",
+      "reverseSub": "A new entry posts the opposite lines today. The original stays in the journal, marked reversed.",
+      "reverseReasonPlaceholder": "e.g. Booked to the wrong account",
+      "reverseReasonHint": "Kept on the reversal, for whoever reads the books later."
+    },
+    "quickEntry": {
+      "title": "New manual entry",
+      "sub": "For what nothing else posts — an owner top-up, a correction. It can't be edited later, only reversed.",
+      "amountLabel": "Amount (Toman)",
+      "descriptionPlaceholder": "e.g. Owner top-up",
+      "sameAccount": "Debit and credit need to be different accounts.",
+      "preview": "Debits {debit} and credits {credit} with {amount}.",
+      "fullFormPrompt": "Touching more than two accounts?",
+      "fullFormLink": "Use the full form"
     },
     "source": {
       "orderSale": "Sale",
@@ -1735,7 +1806,6 @@
       }
     },
     "settings": {
-      "heading": "Accounting settings",
       "subtitle": "The VAT rate inside menu prices, and which periods are closed.",
       "vatRateLabel": "VAT rate (%)",
       "vatRateHint": "Menu prices include VAT; this rate takes it back out of each sale. VAT-exempt items (books) carry none.",
@@ -1844,18 +1914,32 @@
     "breadcrumbLabel": "Breadcrumb",
     "cancel": "Cancel",
     "new": "Record expense",
+    "back": "Back",
     "owed": "Owed to suppliers now",
-    "filterStatus": "Status",
-    "allStatuses": "All",
+    "owedHint": "{count, plural, one {{formatted} bill} other {{formatted} bills}} to pay",
+    "owedNone": "Nothing owed",
+    "monthLabel": "Recorded in {month}",
+    "monthHint": "{count, plural, one {{formatted} expense} other {{formatted} expenses}}, VAT included",
+    "listLabel": "Expenses",
+    "tabsLabel": "Filter by status",
+    "tabAll": "All",
+    "searchLabel": "Search expenses",
+    "searchPlaceholder": "Description, number or supplier",
     "filterSupplier": "Supplier",
     "allSuppliers": "All suppliers",
-    "empty": "No expenses in this period.",
-    "colNumber": "No.",
-    "colDate": "Date",
-    "colDescription": "Description",
-    "colAccount": "Booked to",
-    "colStatus": "Status",
-    "colAmount": "Total",
+    "col": {
+      "expense": "Expense",
+      "date": "Date",
+      "account": "Booked to",
+      "status": "Status",
+      "total": "Total"
+    },
+    "rowLabel": "EX-{number}, {description}",
+    "moreActionsAria": "More actions for EX-{number}",
+    "noMatchesTitle": "No matches",
+    "noMatchesBody": "No expenses match these filters.",
+    "emptyTitle": "No expenses yet",
+    "emptyBody": "Record a bill or purchase to start.",
     "status": {
       "unpaid": "Owed",
       "paid": "Paid",
@@ -1868,13 +1952,14 @@
       "supplierLabel": "Supplier",
       "noSupplier": "No supplier",
       "accountLabel": "Booked to",
-      "accountHint": "An expense account — or Inventory for stock bought to sell, Equipment for things the cafe keeps.",
+      "accountHint": "An expense account — or Equipment for things the cafe keeps. Stock bought to sell comes in through Inventory's Receive delivery.",
       "accountPlaceholder": "Choose an account",
       "descriptionLabel": "Description",
       "descriptionPlaceholder": "e.g. Electricity, Mehr",
       "amountLabel": "Total (VAT included)",
       "vatLabel": "VAT on the invoice",
-      "vatHint": "Leave blank if the invoice shows no VAT.",
+      "vatHint": "Blank if none.",
+      "vatTooHigh": "VAT can't be the whole total.",
       "breakdown": "{net} net + {vat} VAT = {total}",
       "paymentLabel": "Payment",
       "payment": {
@@ -1901,7 +1986,12 @@
       "entriesHeading": "Journal entries",
       "pay": "Pay",
       "payTitle": "Pay EX-{number}",
+      "paySub": "{description} · {amount}",
       "paySource": "Pay from",
+      "from": {
+        "cash": "Cash register",
+        "bank": "Bank"
+      },
       "paidOn": "Paid on",
       "payConfirm": "Record payment",
       "payError": "Couldn't record the payment. Please try again.",
@@ -2577,9 +2667,11 @@
     "openingFloat": "Opening float (Toman)",
     "openingFloatHint": "The change in the drawer before the first sale.",
     "note": "Note (optional)",
-    "open": "Open shift",
+    "openNumbered": "Open shift Z-{number}",
     "openShift": "Shift Z-{number} is open",
+    "openBadge": "Open",
     "openedBy": "Opened by {name}, {date}",
+    "when": "{day}, {time}",
     "float": "Float",
     "expected": "Cash expected in the drawer",
     "bank": "Card & transfer",
@@ -2590,17 +2682,25 @@
     "countedCash": "Cash counted (Toman)",
     "closeNotePlaceholder": "e.g. why it's short",
     "close": "Close shift",
-    "exact": "Exact — the drawer matches the books.",
-    "over": "{amount} over",
-    "short": "{amount} short",
+    "preview": {
+      "exact": "Exact — the drawer matches the books.",
+      "over": "{amount} over. It's booked as cash over.",
+      "short": "{amount} short. It's booked as cash short."
+    },
+    "result": {
+      "exact": "Exact",
+      "over": "{amount} over",
+      "short": "{amount} short"
+    },
     "amountInvalid": "Enter a whole number of Toman.",
     "saveError": "Couldn't save. Please try again.",
     "historyHeading": "Past shifts",
     "historyEmpty": "No closed shifts yet.",
+    "historyTitle": "Z-{number} · {when}",
     "by": "Opened by {opened}, closed by {closed}",
     "expectedCounted": "Expected {expected} · counted {counted}",
-    "opened": "Shift opened",
-    "closed": "Shift closed"
+    "opened": "Shift Z-{number} opened",
+    "closed": "Shift Z-{number} closed · {result}"
   },
   "dashKitchen": {
     "heading": "Bar display",

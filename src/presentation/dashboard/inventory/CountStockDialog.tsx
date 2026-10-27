@@ -111,6 +111,7 @@ export function CountStockDialog({
       <label className="flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
         {t("quick.countedLabel", { unit })}
         <Input
+          size="control-md"
           value={counted}
           onChange={(event) => setCounted(event.target.value)}
           inputMode="decimal"

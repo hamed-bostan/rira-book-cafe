@@ -57,7 +57,7 @@ export function ReviewModerationActions({ review }: ReviewModerationActionsProps
         <Button
           type="button"
           variant="secondary"
-          size="sm"
+          size="control-md"
           // The tick reads as part of the word, so it keeps the ink colour.
           className="gap-2 px-3 [&_svg]:text-foreground"
           loading={pending && active === "approved"}
@@ -70,7 +70,7 @@ export function ReviewModerationActions({ review }: ReviewModerationActionsProps
         <Button
           type="button"
           variant="secondary"
-          size="sm"
+          size="control-md"
           className="px-3"
           loading={pending && active === "rejected"}
           disabled={pending}

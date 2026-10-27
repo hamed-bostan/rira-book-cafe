@@ -30,6 +30,19 @@ type ListFilterPopoverProps = {
   triggerId?: string;
   triggerAriaDescribedBy?: string;
   triggerAriaInvalid?: boolean;
+  /**
+   * The trigger's size: `control-md` (the redesign's 36px from `sm`) by default;
+   * `md` keeps the 40px of the lists not redesigned yet.
+   */
+  size?: ListFilterSize;
+};
+
+export type ListFilterSize = "md" | "control-md";
+
+/** 44px to the touch on a phone either way; from `sm`, the redesign's 36px with 14px text. */
+const TRIGGER_SIZE: Record<ListFilterSize, string> = {
+  md: "h-11 text-body-small sm:h-10",
+  "control-md": "h-11 text-body-default sm:h-9 sm:text-body-small",
 };
 
 /**
@@ -62,6 +75,7 @@ export function ListFilterPopover({
   triggerId,
   triggerAriaDescribedBy,
   triggerAriaInvalid,
+  size = "control-md",
 }: ListFilterPopoverProps) {
   const active = isActive ?? value != null;
 
@@ -73,7 +87,8 @@ export function ListFilterPopover({
         aria-invalid={triggerAriaInvalid}
         disabled={disabled}
         className={cn(
-          "group flex h-11 cursor-pointer items-center gap-1.5 rounded-button border px-3 text-body-small whitespace-nowrap transition-colors sm:h-10",
+          "group flex cursor-pointer items-center gap-1.5 rounded-button border px-3 whitespace-nowrap transition-colors",
+          TRIGGER_SIZE[size],
           "disabled:cursor-not-allowed disabled:opacity-50",
           "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
           // An active filter is carried by border and text colour, never by

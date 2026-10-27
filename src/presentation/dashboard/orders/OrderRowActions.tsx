@@ -89,7 +89,12 @@ export function OrderRowActions({ order }: OrderRowActionsProps) {
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuIconTrigger disabled={pending} aria-label={t("rowActionsAria", { number: order.orderNumber })}>
+        <DropdownMenuIconTrigger
+          disabled={pending}
+          // The dense table's borderless "⋯": 44px to the touch on a phone, 32px from `sm`.
+          className="size-11 text-muted-foreground hover:bg-muted hover:text-foreground sm:size-8"
+          aria-label={t("rowActionsAria", { number: order.orderNumber })}
+        >
           <Icon icon={MoreHorizontal} size="xs" />
         </DropdownMenuIconTrigger>
         <DropdownMenuContent>

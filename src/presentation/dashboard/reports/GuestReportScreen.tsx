@@ -1,111 +1,128 @@
-import { CalendarCheck, PartyPopper, Repeat, UserPlus, Users } from "lucide-react";
+import { CalendarDays, Repeat, UserPlus, Users } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import type { AnalyticsRangePreset } from "@/src/domain/entities/Analytics";
+import { cafeDaysBetween } from "@/src/domain/entities/CafeTime";
 import { formatPercent } from "@/src/lib/formatCafeDay";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
-import { maskPhoneNumber } from "@/src/lib/maskPhoneNumber";
-import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
+import { cn } from "@/src/lib/utils";
+import { Avatar } from "@/src/presentation/design-system/components/Avatar/Avatar";
 
-import { StatCard } from "../StatCard";
+import { MetricCard, type MetricCardTone } from "../MetricCard";
 
-import { ReportHeader } from "./ReportHeader";
+import { changeOf, formatChange } from "./reportFormat";
+import { ReportPanel } from "./ReportPanel";
+import { ReportsFrame } from "./ReportsFrame";
 
 import type { GuestReportWire } from "./report-response-schema";
+
+const DAYS_PER_WEEK = 7;
 
 type GuestReportScreenProps = {
   report: GuestReportWire;
   selected: AnalyticsRangePreset | "custom";
+  /** The page's range params, carried across the tabs. */
+  rangeQuery: Record<string, string>;
 };
 
-/** Who came and how often, the best regulars, and how bookings and events went. */
-export async function GuestReportScreen({ report, selected }: GuestReportScreenProps) {
+/**
+ * The Guests tab: who came against the period before, how many were new and how
+ * many came back, how bookings went, and the regulars who spent the most.
+ * Presentational — the page fetches over the BFF.
+ */
+export async function GuestReportScreen({ report, selected, rangeQuery }: GuestReportScreenProps) {
   const t = await getTranslations("dashReports");
   const locale = await getLocale();
-  const { reservations, events } = report;
+  const { reservations } = report;
+
+  const moved = changeOf(report.guests, report.previousGuests);
+  const guestsChange: { hint: string; hintTone?: MetricCardTone } = moved
+    ? {
+        hint: t(moved.up ? "changeUp" : "changeDown", { value: formatChange(moved.share, locale) }),
+        hintTone: moved.up ? "success" : "danger",
+      }
+    : { hint: t("noBaseline") };
+  // A range short of a week says nothing about who keeps coming back.
+  const regularsShown = cafeDaysBetween(report.range.fromDay, report.range.toDay) + 1 >= DAYS_PER_WEEK;
 
   return (
-    <div className="flex min-w-0 flex-col gap-6">
-      <ReportHeader
-        title={t("guests.title")}
-        subtitle={t("guests.subtitle")}
-        range={report.range}
-        selected={selected}
-      />
-
+    <ReportsFrame
+      tab="guests"
+      selected={selected}
+      rangeQuery={rangeQuery}
+      range={report.range}
+      previousRange={report.previousRange}
+    >
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label={t("guests.guests")} value={formatNumber(report.guests, locale)} icon={Users} tone="brand" />
-        <StatCard
+        <MetricCard
+          label={t("guests.guests")}
+          icon={Users}
+          value={formatNumber(report.guests, locale)}
+          {...guestsChange}
+        />
+        <MetricCard
           label={t("guests.newGuests")}
+          icon={UserPlus}
           value={formatNumber(report.newGuests, locale)}
           hint={t("guests.returning", {
             count: report.returningGuests,
             formatted: formatNumber(report.returningGuests, locale),
           })}
-          icon={UserPlus}
-          tone="info"
         />
-        <StatCard
+        <MetricCard
           label={t("guests.repeatRate")}
+          icon={Repeat}
           value={formatPercent(report.repeatRate, locale)}
           hint={t("guests.repeatRateHint")}
-          icon={Repeat}
-          tone="info"
         />
-        <StatCard
+        <MetricCard
           label={t("guests.bookings")}
+          icon={CalendarDays}
           value={formatNumber(reservations.total, locale)}
           hint={t("guests.bookingsHint", {
             covers: formatNumber(reservations.covers, locale),
             noShowRate: formatPercent(reservations.noShowRate, locale),
           })}
-          icon={CalendarCheck}
-          tone={reservations.noShowRate > 0.15 ? "warning" : "brand"}
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <section className="min-w-0 rounded-card-lg border border-border bg-background p-4 md:p-6">
-          <h2 className="text-body-lead text-foreground">{t("guests.topGuestsHeading")}</h2>
-          {report.topGuests.length === 0 ? (
-            <EmptyState icon={Users} title={t("noSales")} className="py-8" />
-          ) : (
-            <ol className="mt-4 flex flex-col divide-y divide-border">
-              {report.topGuests.map((guest, index) => (
-                <li key={guest.userId} className="flex items-center gap-3 py-2.5">
-                  <span className="w-6 shrink-0 text-body-small text-muted-foreground tabular-nums">
-                    {formatNumber(index + 1, locale)}
+      <ReportPanel
+        title={t("guests.topGuestsHeading")}
+        description={t("guests.topGuestsDescription")}
+        className="gap-2"
+      >
+        {!regularsShown ? (
+          <p className="text-body-default text-muted-foreground sm:text-body-small">{t("guests.pickLonger")}</p>
+        ) : report.topGuests.length === 0 ? (
+          <p className="text-body-default text-muted-foreground sm:text-body-small">{t("noSales")}</p>
+        ) : (
+          <ol>
+            {report.topGuests.map((guest, index) => (
+              <li
+                key={guest.userId}
+                className={cn("flex items-center gap-3 py-3", index > 0 && "border-t border-border")}
+              >
+                <Avatar name={guest.name} className="size-10 text-body-small font-bold" />
+                <span className="flex min-w-0 flex-1 flex-col">
+                  <span
+                    dir="auto"
+                    className="text-body-strong [overflow-wrap:anywhere] text-foreground sm:text-body-small-strong"
+                  >
+                    {guest.name}
                   </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-body-small-strong text-foreground">{guest.name}</span>
-                    <span dir="ltr" className="text-body-caption text-muted-foreground">
-                      {maskPhoneNumber(guest.phone)}
-                    </span>
+                  <span className="text-body-small text-muted-foreground sm:text-body-caption">
+                    {t("guests.visits", { count: guest.orders, formatted: formatNumber(guest.orders, locale) })}
                   </span>
-                  <span className="text-end">
-                    <span className="block text-body-small-emphasis text-foreground">
-                      {formatMoney(guest.revenue, locale)}
-                    </span>
-                    <span className="text-body-caption text-muted-foreground">
-                      {t("orderCount", { count: guest.orders, formatted: formatNumber(guest.orders, locale) })}
-                    </span>
-                  </span>
-                </li>
-              ))}
-            </ol>
-          )}
-        </section>
-
-        <StatCard
-          label={t("guests.events")}
-          value={formatNumber(events.held, locale)}
-          hint={t("guests.eventsHint", { seats: formatNumber(events.seatsTaken, locale) })}
-          icon={PartyPopper}
-          tone="info"
-          href="/dashboard/events"
-        />
-      </div>
-    </div>
+                </span>
+                <span className="text-body-strong whitespace-nowrap text-foreground tabular-nums sm:text-body-small-strong">
+                  {formatMoney(guest.revenue, locale)}
+                </span>
+              </li>
+            ))}
+          </ol>
+        )}
+      </ReportPanel>
+    </ReportsFrame>
   );
 }

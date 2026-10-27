@@ -133,17 +133,16 @@ DropdownMenuSeparator.displayName = "DropdownMenuSeparator";
 
 export type DropdownMenuIconTriggerAppearance = "ghost" | "secondary";
 
-const ICON_TRIGGER_APPEARANCE: Record<DropdownMenuIconTriggerAppearance, string> = {
-  ghost: "size-8 text-icon-muted transition-colors hover:bg-accent hover:text-primary",
-  // The dashboard rows' "⋯" is the secondary icon button, not a look of its own:
-  // the same hairline square as the row's other buttons (Categories' up/down),
-  // 44px to the touch on a phone, 36px from `sm`.
-  secondary: cn(buttonVariants({ variant: "secondary", iconOnly: true }), "size-11 sm:size-9"),
-};
+const ICON_TRIGGER_GHOST = "size-8 text-icon-muted transition-colors hover:bg-accent hover:text-primary";
+
+/** How big a `secondary` trigger is from `sm`: 36px like the row's other buttons, or 32px in a dense table. */
+export type DropdownMenuIconTriggerSize = "control-md" | "control-sm";
 
 export type DropdownMenuIconTriggerProps = React.ComponentPropsWithoutRef<"button"> & {
   /** `ghost` (a bare 32px icon) by default; `secondary` for a dashboard list row's "⋯". */
   appearance?: DropdownMenuIconTriggerAppearance;
+  /** A `secondary` trigger's size — `control-md` unless the list is a dense table (Orders). */
+  size?: DropdownMenuIconTriggerSize;
 };
 
 /**
@@ -153,13 +152,18 @@ export type DropdownMenuIconTriggerProps = React.ComponentPropsWithoutRef<"butto
  * accessible name is the defect that would otherwise be copied along with it.
  */
 export const DropdownMenuIconTrigger = React.forwardRef<HTMLButtonElement, DropdownMenuIconTriggerProps>(
-  ({ className, appearance = "ghost", ...props }, ref) => (
+  ({ className, appearance = "ghost", size = "control-md", ...props }, ref) => (
     <DropdownMenuPrimitive.Trigger
       ref={ref}
       className={cn(
         "inline-flex shrink-0 items-center justify-center rounded-button",
         focusRing,
-        ICON_TRIGGER_APPEARANCE[appearance],
+        // The dashboard rows' "⋯" is the secondary icon button, not a look of its
+        // own: the same hairline square as the row's other buttons (Categories'
+        // up/down), 44px to the touch on a phone.
+        appearance === "secondary"
+          ? buttonVariants({ variant: "secondary", iconOnly: true, size })
+          : ICON_TRIGGER_GHOST,
         className,
       )}
       {...props}

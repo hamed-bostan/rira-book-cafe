@@ -87,7 +87,7 @@ export function OrderBulkActions({ orders }: OrderBulkActionsProps) {
     <>
       <Button
         variant="outline"
-        size="sm"
+        size="control-md"
         loading={pending && active === "serve"}
         disabled={pending || serveCount === 0}
         onClick={() => apply({ type: "serve" })}
@@ -98,7 +98,7 @@ export function OrderBulkActions({ orders }: OrderBulkActionsProps) {
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild disabled={pending || payCount === 0}>
-          <Button variant="outline" size="sm" loading={pending && active === "markPaid"}>
+          <Button variant="outline" size="control-md" loading={pending && active === "markPaid"}>
             <Icon icon={CreditCard} size="sm" className="me-1.5" />
             {labelFor(t("markPaid"), payCount)}
             <Icon icon={ChevronDown} size="sm" className="ms-1.5" />
@@ -115,7 +115,7 @@ export function OrderBulkActions({ orders }: OrderBulkActionsProps) {
 
       <Button
         variant="outline"
-        size="sm"
+        size="control-md"
         className="border-error-foreground text-error-foreground hover:bg-error"
         loading={pending && active === "cancel"}
         disabled={pending || cancelCount === 0}

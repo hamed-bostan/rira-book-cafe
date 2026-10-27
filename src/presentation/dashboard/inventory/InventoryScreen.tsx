@@ -12,9 +12,9 @@ import { EmptyState } from "@/src/presentation/design-system/components/EmptySta
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 
 import { DashboardLinkTabs } from "../DashboardLinkTabs";
+import { MetricCard } from "../MetricCard";
 
 import { InventoryHeaderActions } from "./InventoryHeaderActions";
-import { InventoryStatCard } from "./InventoryStatCard";
 import { StockDialogsProvider } from "./StockDialogsProvider";
 import { STOCK_COLUMNS, StockRow } from "./StockRow";
 
@@ -77,7 +77,7 @@ export async function InventoryScreen({ summary, view, query, today, canManage }
             <p className="text-body-default text-muted-foreground sm:text-body-small">{t("subtitle")}</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button asChild variant="secondary" className="gap-2 px-3">
+            <Button size="control-md" asChild variant="secondary" className="gap-2 px-3">
               <Link href="/dashboard/inventory/movements">
                 <Icon icon={History} size="sm" />
                 {t("movements.heading")}
@@ -88,26 +88,28 @@ export async function InventoryScreen({ summary, view, query, today, canManage }
         </div>
 
         <div className={cn("grid grid-cols-2 gap-3", summary.costsVisible && "sm:grid-cols-3")}>
-          <InventoryStatCard
+          <MetricCard
             label={t("summary.low")}
             icon={AlertTriangle}
             value={formatNumber(low, locale)}
             hint={t("summary.lowHint")}
-            alert={low > 0 ? "warning" : undefined}
+            hintTone={low > 0 ? "warning" : undefined}
+            hintDot={low > 0}
             href={view === "low" ? hrefFor("all", false) : hrefFor("low", false)}
             selected={view === "low"}
           />
-          <InventoryStatCard
+          <MetricCard
             label={t("summary.out")}
             icon={PackageX}
             value={formatNumber(out, locale)}
             hint={out > 0 ? t("summary.outHint") : t("summary.outNone")}
-            alert={out > 0 ? "danger" : undefined}
+            hintTone={out > 0 ? "danger" : undefined}
+            hintDot={out > 0}
             href={view === "out" ? hrefFor("all", false) : hrefFor("out", false)}
             selected={view === "out"}
           />
           {summary.costsVisible ? (
-            <InventoryStatCard
+            <MetricCard
               label={t("summary.value")}
               icon={Wallet}
               value={formatNumber(Math.round(summary.stockValue), locale)}
@@ -182,7 +184,7 @@ export async function InventoryScreen({ summary, view, query, today, canManage }
               className="py-12"
               action={
                 canManage ? (
-                  <Button asChild size="sm">
+                  <Button asChild size="control-md">
                     <Link href="/dashboard/pricing/ingredients">{t("addItems")}</Link>
                   </Button>
                 ) : undefined

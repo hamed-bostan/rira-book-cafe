@@ -32,7 +32,7 @@ export async function CategoriesScreen({ categories }: CategoriesScreenProps) {
           <h1 className="dashboard-page-title">{t("heading")}</h1>
           <p className="text-body-default text-muted-foreground sm:text-body-small">{t("subtitle")}</p>
         </div>
-        <Button asChild className="gap-2 px-4">
+        <Button size="control-md" asChild className="gap-2 px-4">
           <Link href="/dashboard/categories/create">
             <Icon icon={Plus} size="sm" />
             {t("newCategory")}

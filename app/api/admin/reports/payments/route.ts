@@ -8,7 +8,7 @@ import { getSessionWith } from "@/src/lib/require-permission";
 
 export const dynamic = "force-dynamic";
 
-/** GET /api/admin/reports/payments — paid vs unpaid for a range, and unpaid served orders to chase. Requires `reports.view`. */
+/** GET /api/admin/reports/payments — paid vs unpaid for a range, how it was paid, and unpaid served orders to chase. Requires `reports.view`. */
 export async function GET(request: NextRequest): Promise<NextResponse> {
   if (!(await getSessionWith("reports.view"))) return unauthorizedResponse();
 

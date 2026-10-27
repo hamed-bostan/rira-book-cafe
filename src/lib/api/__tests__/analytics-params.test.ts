@@ -6,12 +6,12 @@ import { parseAnalyticsRange, parseTopItemSort, rangeParams, selectedRangeOption
 const NOW = new Date("2026-10-20T10:00:00Z");
 
 describe("analytics params", () => {
-  it("defaults to the last 30 days", () => {
+  it("defaults to the last 7 days", () => {
     expect(parseAnalyticsRange(new URLSearchParams(), NOW)).toMatchObject({
-      fromDay: "2026-09-21",
+      fromDay: "2026-10-14",
       toDay: "2026-10-20",
     });
-    expect(selectedRangeOption(new URLSearchParams())).toBe("30d");
+    expect(selectedRangeOption(new URLSearchParams())).toBe("7d");
   });
 
   it("takes a custom span of cafe days, inclusive", () => {

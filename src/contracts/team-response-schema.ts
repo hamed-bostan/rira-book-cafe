@@ -1,5 +1,10 @@
 import { z } from "zod";
 
+import { GRANTABLE_ROLES } from "@/src/domain/entities/User";
+
+/** The roles a team row can carry: the owner, and every role a grant can give. */
+export const TEAM_ROLES = ["owner", ...GRANTABLE_ROLES] as const;
+
 /**
  * The shape the team endpoints promise to return — the one place both halves of
  * the BFF bind to. `app/api/admin/team` builds its rows as `TeamMember[]`, and the
@@ -18,8 +23,12 @@ export const teamMemberResponseSchema = z.object({
   name: z.string(),
   phone: z.string(),
   avatarUrl: z.string().nullable(),
-  /** Dashboard role — `owner` manages the team, `admin` runs the store. */
-  role: z.enum(["owner", "admin"]),
+  /**
+   * Dashboard role — `owner` manages the team, `admin` runs the cafe, `staff` runs
+   * the floor, `support` reads. A break-glass account with no role in the
+   * database reads as `admin`, which is what its environment access gives it.
+   */
+  role: z.enum(TEAM_ROLES),
   /** True when this member is the admin currently viewing the page. */
   isSelf: z.boolean(),
   /** True when access comes from the env allowlist and can't be revoked in the UI. */

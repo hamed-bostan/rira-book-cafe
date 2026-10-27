@@ -26,9 +26,9 @@ export function OrdersTableSkeleton() {
       </div>
 
       <div className="flex flex-wrap items-center gap-2 border-b border-border bg-background px-4 py-3">
-        <Skeleton className="h-11 min-w-0 flex-[1_1_20rem] rounded-card-md sm:h-10" />
+        <Skeleton className="h-11 min-w-0 flex-[1_1_20rem] rounded-card-md sm:h-9" />
         {Array.from({ length: TOOLBAR_DROPDOWNS }, (_, dropdown) => (
-          <Skeleton key={dropdown} className="h-10 w-32 rounded-card-md" />
+          <Skeleton key={dropdown} className="h-11 w-32 rounded-card-md sm:h-9" />
         ))}
       </div>
 

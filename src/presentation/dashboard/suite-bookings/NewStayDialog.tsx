@@ -137,7 +137,7 @@ export function NewStayDialog({ held, today, firstFree }: NewStayDialogProps) {
 
   return (
     <>
-      <Button type="button" className="gap-2 px-4" onClick={openDialog}>
+      <Button size="control-md" type="button" className="gap-2 px-4" onClick={openDialog}>
         <Icon icon={Plus} size="sm" />
         {t("newStay")}
       </Button>
@@ -156,6 +156,7 @@ export function NewStayDialog({ held, today, firstFree }: NewStayDialogProps) {
               <label className="col-span-2 flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
                 {t("guestName")}
                 <Input
+                  size="control-md"
                   value={guestName}
                   onChange={(event) => setGuestName(event.target.value)}
                   maxLength={MAX_SUITE_GUEST_NAME_LENGTH}
@@ -167,6 +168,7 @@ export function NewStayDialog({ held, today, firstFree }: NewStayDialogProps) {
               <label className="col-span-2 flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
                 {t("guestPhone")}
                 <Input
+                  size="control-md"
                   type="tel"
                   inputMode="tel"
                   value={guestPhone}
@@ -180,6 +182,7 @@ export function NewStayDialog({ held, today, firstFree }: NewStayDialogProps) {
               <label className="flex min-w-0 flex-col gap-1.5 text-body-small-emphasis text-foreground">
                 {t("checkIn")}
                 <Input
+                  size="control-md"
                   type="date"
                   value={checkIn}
                   min={today}
@@ -195,6 +198,7 @@ export function NewStayDialog({ held, today, firstFree }: NewStayDialogProps) {
               <label className="flex min-w-0 flex-col gap-1.5 text-body-small-emphasis text-foreground">
                 {t("checkOut")}
                 <Input
+                  size="control-md"
                   type="date"
                   value={checkOut}
                   min={shiftCafeDay(checkIn || today, 1)}
@@ -204,7 +208,11 @@ export function NewStayDialog({ held, today, firstFree }: NewStayDialogProps) {
               </label>
               <label className="col-span-2 flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
                 {t("guestsLabel")}
-                <Select value={String(guests)} onChange={(event) => setGuests(Number(event.target.value))}>
+                <Select
+                  size="control-md"
+                  value={String(guests)}
+                  onChange={(event) => setGuests(Number(event.target.value))}
+                >
                   {Array.from({ length: MAX_SUITE_GUESTS - MIN_SUITE_GUESTS + 1 }, (_, i) => i + MIN_SUITE_GUESTS).map(
                     (count) => (
                       <option key={count} value={count}>
@@ -217,6 +225,7 @@ export function NewStayDialog({ held, today, firstFree }: NewStayDialogProps) {
               <label className="col-span-2 flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
                 {t("noteOptional")}
                 <Input
+                  size="control-md"
                   value={note}
                   onChange={(event) => setNote(event.target.value)}
                   maxLength={MAX_SUITE_NOTE_LENGTH}
@@ -242,10 +251,16 @@ export function NewStayDialog({ held, today, firstFree }: NewStayDialogProps) {
             ) : null}
 
             <div className="flex flex-wrap justify-end gap-2">
-              <Button type="button" variant="secondary" size="sm" className="px-4" onClick={() => setOpen(false)}>
+              <Button
+                type="button"
+                variant="secondary"
+                size="control-md"
+                className="px-4"
+                onClick={() => setOpen(false)}
+              >
                 {t("dialogCancel")}
               </Button>
-              <Button type="submit" size="sm" className="px-4" loading={pending} disabled={blocked}>
+              <Button type="submit" size="control-md" className="px-4" loading={pending} disabled={blocked}>
                 {t("confirmStay")}
               </Button>
             </div>

@@ -10,7 +10,7 @@ export function ActivityPanelSkeleton() {
         <Skeleton className="h-5 w-32 rounded-pill" />
         <Skeleton className="h-4 w-64 max-w-full rounded-pill" />
       </div>
-      <ActivityListSkeleton rows={3} showEntity={false} />
+      <ActivityListSkeleton rows={3} />
     </div>
   );
 }

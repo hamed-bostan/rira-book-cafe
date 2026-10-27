@@ -4,10 +4,11 @@ import { POST as reverseEntry } from "@/app/api/admin/accounting/journal/[id]/re
 import { GET as listJournal, POST as postEntry } from "@/app/api/admin/accounting/journal/route";
 import { GET as getReport } from "@/app/api/admin/accounting/reports/[report]/route";
 import { GET as listExpenses, POST as recordExpense } from "@/app/api/admin/expenses/route";
+import { GET as expenseSummary } from "@/app/api/admin/expenses/summary/route";
 import { POST as createSupplier } from "@/app/api/admin/suppliers/route";
 import type { TrialBalance } from "@/src/domain/entities/AccountingReports";
 import { cafeDayOf } from "@/src/domain/entities/CafeTime";
-import type { Expense } from "@/src/domain/entities/Expense";
+import type { Expense, ExpenseSummary } from "@/src/domain/entities/Expense";
 import type { JournalEntry } from "@/src/domain/entities/Ledger";
 import { prisma } from "@/src/infrastructure/prisma/client";
 
@@ -142,6 +143,25 @@ describe("expenses and suppliers", () => {
 
     const list = await listExpenses(getRequest("/api/admin/expenses"));
     expect(list.status).toBe(200);
+  });
+
+  it("finds an expense by its number and counts it in this month's summary", async () => {
+    signInAs("admin");
+    const before = await readJson<ExpenseSummary>(await expenseSummary());
+    const expense = await readJson<Expense>(
+      await recordExpense(jsonRequest("POST", "/api/admin/expenses", { ...rent, payment: "unpaid" })),
+    );
+
+    const found = await readJson<{ items: Expense[] }>(
+      await listExpenses(getRequest(`/api/admin/expenses?q=EX-${expense.number}`)),
+    );
+    expect(found.items.map((item) => item.id)).toContain(expense.id);
+
+    const after = await readJson<ExpenseSummary>(await expenseSummary());
+    expect(after.counts.unpaid).toBe(before.counts.unpaid + 1);
+    expect(after.owed).toEqual({ count: before.owed.count + 1, total: before.owed.total + 30_000_000 });
+    expect(after.month.count).toBe(before.month.count + 1);
+    expect(after.month.total).toBe(before.month.total + 30_000_000);
   });
 
   it("validates an expense with 400 and per-field errors", async () => {

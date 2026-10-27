@@ -153,6 +153,7 @@ export function GuestPointsPanel({ pointValue }: GuestPointsPanelProps) {
           {t("guestPhone")}
         </label>
         <Input
+          size="control-md"
           id={phoneId}
           type="tel"
           inputMode="tel"
@@ -166,7 +167,7 @@ export function GuestPointsPanel({ pointValue }: GuestPointsPanelProps) {
         <Button
           type="submit"
           variant="secondary"
-          size="sm"
+          size="control-md"
           className="gap-2 px-3"
           loading={pending && active === "lookup"}
           disabled={pending || !phone.trim()}
@@ -211,6 +212,7 @@ export function GuestPointsPanel({ pointValue }: GuestPointsPanelProps) {
             <label className="flex min-w-0 flex-col gap-1.5 text-body-small-emphasis text-foreground">
               {t("pointsField")}
               <Input
+                size="control-md"
                 value={amount}
                 onChange={(event) => {
                   setAmount(event.target.value);
@@ -225,6 +227,7 @@ export function GuestPointsPanel({ pointValue }: GuestPointsPanelProps) {
             <label className="flex min-w-0 flex-col gap-1.5 text-body-small-emphasis text-foreground">
               {t("reasonField")}
               <Input
+                size="control-md"
                 value={reason}
                 onChange={(event) => {
                   setReason(event.target.value);
@@ -241,7 +244,7 @@ export function GuestPointsPanel({ pointValue }: GuestPointsPanelProps) {
             <Button
               type="button"
               variant="secondary"
-              size="sm"
+              size="control-md"
               className="px-3"
               loading={pending && active === "take"}
               disabled={pending}
@@ -252,7 +255,7 @@ export function GuestPointsPanel({ pointValue }: GuestPointsPanelProps) {
             <Button
               type="button"
               variant="secondary"
-              size="sm"
+              size="control-md"
               className="gap-2 px-3"
               loading={pending && active === "add"}
               disabled={pending}
@@ -299,7 +302,7 @@ export function GuestPointsPanel({ pointValue }: GuestPointsPanelProps) {
               <Button
                 type="button"
                 variant="link"
-                size="sm"
+                size="control-md"
                 className="self-start"
                 onClick={() => setShowAll((current) => !current)}
               >

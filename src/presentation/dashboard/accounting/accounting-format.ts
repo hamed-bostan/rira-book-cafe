@@ -25,6 +25,20 @@ export function sourceHref(entry: Pick<JournalEntry, "source" | "sourceId">): st
   return null;
 }
 
+const PERSIAN_ZERO = 0x06f0;
+const ARABIC_ZERO = 0x0660;
+
+/**
+ * An amount as typed, in the form the money fields read: Persian or Arabic digits
+ * become Latin, and grouping (commas, «٬», spaces) is dropped — "۱۲٬۵۰۰" → "12500".
+ */
+export function normalizeAmount(value: string): string {
+  return value
+    .replace(/[۰-۹]/g, (digit) => String(digit.charCodeAt(0) - PERSIAN_ZERO))
+    .replace(/[٠-٩]/g, (digit) => String(digit.charCodeAt(0) - ARABIC_ZERO))
+    .replace(/[,\s٬]/g, "");
+}
+
 /** An entry's size: the sum of its debits (which equals the sum of its credits). */
 export function entryTotal(entry: Pick<JournalEntry, "lines">): number {
   return entry.lines.reduce((sum, line) => sum + line.debit, 0);

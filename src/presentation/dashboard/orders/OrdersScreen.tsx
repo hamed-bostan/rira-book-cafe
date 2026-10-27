@@ -94,7 +94,7 @@ export async function OrdersScreen({ orders, counts, filters, params, canFulfill
               <ListSearchInput
                 label={t("searchLabel")}
                 placeholder={t("searchPlaceholder")}
-                className="min-w-0 flex-[1_1_20rem] sm:max-w-none [&_input]:h-11 sm:[&_input]:h-10"
+                className="min-w-0 flex-[1_1_20rem] sm:max-w-none"
               />
               <ListChoiceFilter
                 paramName="service"
@@ -132,7 +132,7 @@ export async function OrdersScreen({ orders, counts, filters, params, canFulfill
               description={isFiltered ? tList("noResultsBody") : t("emptyBody")}
               action={
                 isFiltered ? (
-                  <Button asChild size="sm" variant="outline">
+                  <Button asChild size="control-md" variant="outline">
                     <Link href="/dashboard/orders">{tList("clearFilters")}</Link>
                   </Button>
                 ) : undefined

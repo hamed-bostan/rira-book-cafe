@@ -50,7 +50,16 @@ export async function ExpenseDetailScreen({ expense, entries, accounts, canWrite
         {canWrite && expense.status !== "void" ? (
           <div className="flex flex-wrap gap-2">
             {expense.status === "unpaid" ? (
-              <PayExpenseButton id={expense.id} number={expense.number} expenseDate={expense.date} today={today} />
+              <PayExpenseButton
+                expense={{
+                  id: expense.id,
+                  number: expense.number,
+                  date: expense.date,
+                  description: expense.description,
+                  amount: expense.amount,
+                }}
+                today={today}
+              />
             ) : null}
             <VoidExpenseButton id={expense.id} number={expense.number} />
           </div>

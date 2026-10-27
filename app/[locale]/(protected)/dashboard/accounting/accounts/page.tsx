@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import { cafeDayOf } from "@/src/domain/entities/CafeTime";
 import { requirePermission, sessionHas } from "@/src/lib/require-permission";
 import { accountsServerApi, statementsServerApi } from "@/src/presentation/dashboard/accounting/accounting-server-api";
 import { AccountsScreen } from "@/src/presentation/dashboard/accounting/AccountsScreen";
@@ -13,5 +14,7 @@ export default async function AccountsPage() {
     auth().then((session) => sessionHas(session, "accounting.write")),
   ]);
 
-  return <AccountsScreen accounts={accounts} trialBalance={trialBalance} canWrite={canWrite} />;
+  return (
+    <AccountsScreen accounts={accounts} trialBalance={trialBalance} canWrite={canWrite} today={cafeDayOf(new Date())} />
+  );
 }

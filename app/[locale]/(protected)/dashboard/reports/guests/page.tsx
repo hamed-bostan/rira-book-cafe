@@ -13,7 +13,8 @@ type GuestReportPageProps = {
 export default async function GuestReportPage({ searchParams }: GuestReportPageProps) {
   await requirePermission("reports.view");
   const params = toSearchParams(await searchParams);
-  const report = await reportsServerApi.guests(rangeParams(params));
+  const { sort: _sort, ...rangeQuery } = rangeParams(params);
+  const report = await reportsServerApi.guests(rangeQuery);
 
-  return <GuestReportScreen report={report} selected={selectedRangeOption(params)} />;
+  return <GuestReportScreen report={report} selected={selectedRangeOption(params)} rangeQuery={rangeQuery} />;
 }

@@ -23,6 +23,7 @@ export function InventoryHeaderActions({ countItemId, receiveItemId }: Inventory
   return (
     <>
       <Button
+        size="control-md"
         type="button"
         variant="secondary"
         className="px-3"
@@ -34,6 +35,7 @@ export function InventoryHeaderActions({ countItemId, receiveItemId }: Inventory
         {t("count.heading")}
       </Button>
       <Button
+        size="control-md"
         type="button"
         className="gap-2 px-4"
         disabled={receiveItemId === undefined}

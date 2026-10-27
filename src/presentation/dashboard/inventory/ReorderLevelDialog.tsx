@@ -109,6 +109,7 @@ export function ReorderLevelDialog({ open, onOpenChange, items, initialItemId }:
       <label className="flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
         {t("quick.levelLabel", { unit })}
         <Input
+          size="control-md"
           value={level}
           onChange={(event) => setLevel(event.target.value)}
           inputMode="decimal"

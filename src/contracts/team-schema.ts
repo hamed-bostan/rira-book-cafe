@@ -34,3 +34,14 @@ export const grantAdminSchema = z.object({
 
 /** Form value shape, and the validated payload the route forwards to the use-case. */
 export type GrantAdminInput = z.infer<typeof grantAdminSchema>;
+
+/**
+ * Moving a team member to another job (`PUT /api/admin/team/:id`). The same
+ * roles a grant can give: ownership moves by transfer, and taking access away is
+ * a revoke, not a change to `customer`.
+ */
+export const changeRoleSchema = z.object({
+  role: z.enum(GRANTABLE_ROLES),
+});
+
+export type ChangeRoleInput = z.infer<typeof changeRoleSchema>;

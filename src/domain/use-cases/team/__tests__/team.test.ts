@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { AdminRevokeError } from "../../../errors/AdminRevokeError";
 import { NotFoundError } from "../../../errors/NotFoundError";
+import { ChangeRole } from "../ChangeRole";
 import { GrantAdmin } from "../GrantAdmin";
 import { RevokeAdmin } from "../RevokeAdmin";
 import { TransferOwnership } from "../TransferOwnership";
@@ -84,6 +85,35 @@ describe("RevokeAdmin", () => {
     const result = await new RevokeAdmin(repo).execute("s", "owner");
     expect(result.role).toBe("customer");
     expect(batches[0].entries).toHaveLength(1);
+  });
+});
+
+describe("ChangeRole", () => {
+  it("moves a member to another role with an audit entry in the same batch", async () => {
+    const { repo, batches, byId } = repoWith([user("owner", "owner"), user("s", "support")]);
+    const result = await new ChangeRole(repo).execute("s", "staff", "owner");
+    expect(result.role).toBe("staff");
+    expect(byId.get("s")?.role).toBe("staff");
+    expect(batches[0].entries).toHaveLength(1);
+    expect(batches[0].entries[0].changes).toEqual([{ field: "role", before: "support", after: "staff" }]);
+  });
+
+  it("writes and records nothing when the role is the one they hold", async () => {
+    const { repo, batches } = repoWith([user("owner", "owner"), user("a", "admin")]);
+    const result = await new ChangeRole(repo).execute("a", "admin", "owner");
+    expect(result.role).toBe("admin");
+    expect(batches).toEqual([]);
+  });
+
+  it("refuses changing yourself or the owner", async () => {
+    const { repo } = repoWith([user("owner", "owner"), user("a", "admin")]);
+    await expect(new ChangeRole(repo).execute("a", "staff", "a")).rejects.toMatchObject({ reason: "self" });
+    await expect(new ChangeRole(repo).execute("owner", "staff", "a")).rejects.toMatchObject({ reason: "owner" });
+  });
+
+  it("treats a customer as not on the team", async () => {
+    const { repo } = repoWith([user("owner", "owner"), user("c", "customer")]);
+    await expect(new ChangeRole(repo).execute("c", "staff", "owner")).rejects.toThrow(NotFoundError);
   });
 });
 

@@ -1,5 +1,5 @@
 import { teamMemberResponseSchema, type TeamMember } from "@/src/contracts/team-response-schema";
-import type { GrantAdminInput } from "@/src/contracts/team-schema";
+import type { ChangeRoleInput, GrantAdminInput } from "@/src/contracts/team-schema";
 import { apiDelete, apiPost, apiPut } from "@/src/lib/api/client";
 
 /**
@@ -12,6 +12,11 @@ import { apiDelete, apiPost, apiPut } from "@/src/lib/api/client";
 export const teamApi = {
   grant(values: GrantAdminInput): Promise<TeamMember> {
     return apiPost("/admin/team", values, teamMemberResponseSchema);
+  },
+
+  /** Move a member to another role. The endpoint answers with the new role; the refresh after shows it. */
+  changeRole(id: string, values: ChangeRoleInput): Promise<void> {
+    return apiPut(`/admin/team/${id}`, values);
   },
 
   revoke(id: string): Promise<void> {

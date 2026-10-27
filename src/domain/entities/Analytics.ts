@@ -1,6 +1,6 @@
 import { cafeDayOf, cafeDayRange, shiftCafeDay } from "./CafeTime";
 
-import type { OrderStatus, ServiceType } from "./Order";
+import type { PaymentMethod, ServiceType } from "./Order";
 import type { ProductKind } from "./Product";
 
 /**
@@ -16,7 +16,7 @@ import type { ProductKind } from "./Product";
 
 export const ANALYTICS_RANGE_PRESETS = ["today", "7d", "30d", "90d"] as const;
 export type AnalyticsRangePreset = (typeof ANALYTICS_RANGE_PRESETS)[number];
-export const DEFAULT_ANALYTICS_PRESET: AnalyticsRangePreset = "30d";
+export const DEFAULT_ANALYTICS_PRESET: AnalyticsRangePreset = "7d";
 
 /** Longest custom range a report accepts — keeps the day series and SQL bounded. */
 export const MAX_RANGE_DAYS = 366;
@@ -81,14 +81,11 @@ export type SalesSummary = {
 /** One cafe day's completed sales. */
 export type DailySales = { day: string; revenue: number; orders: number };
 
-/** Completed orders by the hour they were placed (cafe clock, 0–23). */
-export type HourlyOrders = { hour: number; orders: number };
+/** Completed orders, and what they took, by the hour they were placed (cafe clock, 0–23). */
+export type HourlySales = { hour: number; orders: number; revenue: number };
 
 /** Revenue split by what was sold. */
 export type KindSales = { kind: ProductKind; revenue: number; quantity: number };
-
-/** Revenue split by how it was served. */
-export type ServiceSales = { serviceType: ServiceType; revenue: number; orders: number };
 
 /** One menu item's performance in the range. */
 export type TopItem = { productId: string; name: string; kind: ProductKind; quantity: number; revenue: number };
@@ -103,14 +100,12 @@ export type SalesReport = {
   summary: SalesSummary;
   previousSummary: SalesSummary;
   daily: DailySales[];
-  previousDaily: DailySales[];
-  hourly: HourlyOrders[];
+  hourly: HourlySales[];
   byKind: KindSales[];
-  byService: ServiceSales[];
   topItems: TopItem[];
 };
 
-/** Payment status across non-cancelled orders in a range. */
+/** Paid vs unpaid across the range's completed orders — its revenue, and how much of it came in. */
 export type PaymentSummary = {
   paidOrders: number;
   paidValue: number;
@@ -118,12 +113,16 @@ export type PaymentSummary = {
   unpaidValue: number;
 };
 
+/** What the range's paid, completed orders came in as, by payment method. */
+export type MethodPayments = { method: PaymentMethod; orders: number; value: number };
+
 /** An order that was served but not marked paid — money to chase. */
 export type UnpaidOrder = {
   id: string;
   orderNumber: number;
-  customerName: string;
-  status: OrderStatus;
+  /** Where it was served: at a table, or over the counter. */
+  serviceType: ServiceType;
+  tableLabel?: string;
   total: number;
   placedAt: string;
 };
@@ -131,7 +130,9 @@ export type UnpaidOrder = {
 export type PaymentReport = {
   range: DateRange;
   summary: PaymentSummary;
-  /** Completed or ready orders still unpaid, oldest first. */
+  /** Paid completed orders by method; a method nobody paid with is left out. */
+  byMethod: MethodPayments[];
+  /** Completed orders still unpaid, oldest first. */
   unpaid: UnpaidOrder[];
 };
 
@@ -141,8 +142,11 @@ export type TopGuest = { userId: string; name: string; phone: string; orders: nu
 /** Who came, how often, and how they booked. */
 export type GuestReport = {
   range: DateRange;
+  previousRange: DateRange;
   /** Guests with at least one completed order in the range. */
   guests: number;
+  /** …and in the period just before it, to compare with. */
+  previousGuests: number;
   /** …of whom this was their first completed order ever. */
   newGuests: number;
   /** …who had ordered before the range began. */
@@ -158,12 +162,6 @@ export type GuestReport = {
     noShows: number;
     /** `noShows / (completed + seated + noShows)`, 0 when none resolved. */
     noShowRate: number;
-  };
-  events: {
-    /** Published events starting in the range. */
-    held: number;
-    /** Active sign-ups (seats) for them. */
-    seatsTaken: number;
   };
 };
 
@@ -194,7 +192,7 @@ export function fillDailySeries(range: DateRange, rows: readonly DailySales[]): 
 }
 
 /** One point per hour 0–23, filled. */
-export function fillHourlySeries(rows: readonly HourlyOrders[]): HourlyOrders[] {
-  const byHour = new Map(rows.map((row) => [row.hour, row.orders]));
-  return Array.from({ length: 24 }, (_, hour) => ({ hour, orders: byHour.get(hour) ?? 0 }));
+export function fillHourlySeries(rows: readonly HourlySales[]): HourlySales[] {
+  const byHour = new Map(rows.map((row) => [row.hour, row]));
+  return Array.from({ length: 24 }, (_, hour) => byHour.get(hour) ?? { hour, orders: 0, revenue: 0 });
 }

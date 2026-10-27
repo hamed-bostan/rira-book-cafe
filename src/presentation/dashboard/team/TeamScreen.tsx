@@ -3,9 +3,9 @@ import { useTranslations } from "next-intl";
 import type { TeamMember } from "@/src/contracts/team-response-schema";
 import type { ActivityEntryWire } from "@/src/presentation/dashboard/activity/activity-response-schema";
 
-import { GrantAdminForm } from "./GrantAdminForm";
+import { GrantAccessForm } from "./GrantAccessForm";
 import { TeamActivity } from "./TeamActivity";
-import { TeamTable } from "./TeamTable";
+import { TeamMembers } from "./TeamMembers";
 
 type TeamScreenProps = {
   /** Everyone who can reach the dashboard, fetched over the BFF during server render. */
@@ -15,28 +15,29 @@ type TeamScreenProps = {
 };
 
 /**
- * Admin team management. Presentational: the dashboard page fetches the members
- * over the REST API (BFF) during server render and passes them in; mutations
- * re-run that render via `router.refresh()`, so the server stays the single
- * source of truth and this screen holds no data state.
+ * Who can reach the dashboard: add someone by phone and role, the members with
+ * their roles and what can be done about each, and the history of every change.
+ * Presentational — the page fetches over the REST API (BFF) during server render;
+ * every change `router.refresh()`es, so the server stays the single source of
+ * truth and this screen holds no data state.
  */
 export function TeamScreen({ members, changes }: TeamScreenProps) {
   const t = useTranslations("dashTeam");
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl min-w-0 flex-col gap-4 sm:gap-6">
-      <div>
+    <div className="flex min-w-0 flex-col gap-6">
+      <div className="flex min-w-0 flex-col gap-1">
         <h1 className="dashboard-page-title">{t("heading")}</h1>
-        <p className="mt-1 text-body-small leading-relaxed text-muted-foreground">
+        <p className="text-body-default text-pretty text-muted-foreground sm:text-body-small">
           {t("summary", { count: members.length })}
         </p>
       </div>
 
-      <GrantAdminForm />
+      <GrantAccessForm memberIds={members.map((member) => member.id)} />
 
-      <TeamTable members={members} />
+      <TeamMembers members={members} />
 
-      <TeamActivity changes={changes} />
+      <TeamActivity changes={changes} viewerId={members.find((member) => member.isSelf)?.id} />
     </div>
   );
 }

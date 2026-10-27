@@ -7,15 +7,16 @@ or remove them in a later cleanup. Check again before deleting (see the end).
 
 ## Components
 
-| Component                     | Path                             | What it is                                                 | Note                                                                                                                          |
-| ----------------------------- | -------------------------------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| Accordion                     | `components/Accordion/`          | Disclosure list on Radix Accordion                         | Its open/close animation (`--animate-accordion-*` and the `accordion-*` keyframes) in `src/styles/globals.css` serves only it |
-| Chip                          | `components/Chip/Chip.tsx`       | Single-select chip group on Radix RadioGroup               | `ToggleChip` in the same folder **is** used; `chipRadioStateStyles` in `chipStyles.ts` serves only `Chip`                     |
-| FilterTabs                    | `components/FilterTabs/`         | Single-select filter bar (pill tabs) on Radix RadioGroup   | Dashboard tabs now use `dashboard/DashboardLinkTabs` (one link per tab)                                                       |
-| SelectableTile                | `components/SelectableTile/`     | A whole card acting as one option in a single-select group | `focusRingWithin` in `shared/focusRing.ts` serves only it                                                                     |
-| FloatingField, FloatingLabel  | `components/form/FloatingField/` | Form field whose label floats above the value              |                                                                                                                               |
-| PasswordInput, PasswordToggle | `components/form/PasswordInput/` | Password field with a show/hide toggle                     | Sign-in is by one-time code, so there are no password fields                                                                  |
-| ChartLegend                   | `chart/ChartLegend.tsx`          | The legend row for multi-series charts                     |                                                                                                                               |
+| Component                     | Path                             | What it is                                                 | Note                                                                                                                                      |
+| ----------------------------- | -------------------------------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Accordion                     | `components/Accordion/`          | Disclosure list on Radix Accordion                         | Its open/close animation (`--animate-accordion-*` and the `accordion-*` keyframes) in `src/styles/globals.css` serves only it             |
+| Chip                          | `components/Chip/Chip.tsx`       | Single-select chip group on Radix RadioGroup               | `ToggleChip` in the same folder **is** used; `chipRadioStateStyles` in `chipStyles.ts` serves only `Chip`                                 |
+| FilterTabs                    | `components/FilterTabs/`         | Single-select filter bar (pill tabs) on Radix RadioGroup   | Dashboard tabs now use `dashboard/DashboardLinkTabs` (one link per tab)                                                                   |
+| SelectableTile                | `components/SelectableTile/`     | A whole card acting as one option in a single-select group | `focusRingWithin` in `shared/focusRing.ts` serves only it                                                                                 |
+| FloatingField, FloatingLabel  | `components/form/FloatingField/` | Form field whose label floats above the value              |                                                                                                                                           |
+| PasswordInput, PasswordToggle | `components/form/PasswordInput/` | Password field with a show/hide toggle                     | Sign-in is by one-time code, so there are no password fields                                                                              |
+| ChartContainer, ChartTooltip  | `chart/`                         | The Recharts wrapper and its tooltip                       | Unused since the Reports redesign (2026-10-27) drew its bars by hand like the Overview; the `recharts` dependency serves only this folder |
+| ChartLegend                   | `chart/ChartLegend.tsx`          | The legend row for multi-series charts                     |                                                                                                                                           |
 
 ## Icons
 

@@ -40,7 +40,7 @@ export async function ActivityPanel({ entries }: ActivityPanelProps) {
           className="rounded-card-lg border border-dashed border-border py-10"
         />
       ) : (
-        <ActivityList entries={entries} showEntity={false} />
+        <ActivityList entries={entries} />
       )}
     </section>
   );

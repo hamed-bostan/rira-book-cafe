@@ -127,6 +127,7 @@ export function LoyaltySettingsForm({ settings }: { settings: LoyaltySettings })
           <label key={field} className="flex min-w-0 flex-col gap-1.5 text-body-small-emphasis text-foreground">
             {t(`club.${field}`)}
             <Input
+              size="control-md"
               value={form[field]}
               onChange={(event) => set(field, event.target.value)}
               inputMode="numeric"
@@ -152,7 +153,7 @@ export function LoyaltySettingsForm({ settings }: { settings: LoyaltySettings })
           <Button
             type="button"
             variant="secondary"
-            size="sm"
+            size="control-md"
             className="px-4"
             disabled={pending}
             onClick={() => {
@@ -163,7 +164,7 @@ export function LoyaltySettingsForm({ settings }: { settings: LoyaltySettings })
             {t("discard")}
           </Button>
         ) : null}
-        <Button type="submit" size="sm" className="px-4" loading={pending} disabled={!dirty}>
+        <Button type="submit" size="control-md" className="px-4" loading={pending} disabled={!dirty}>
           {t("saveChanges")}
         </Button>
       </div>

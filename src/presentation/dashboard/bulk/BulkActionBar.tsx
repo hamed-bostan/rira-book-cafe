@@ -66,7 +66,7 @@ export function BulkActionBar({ children }: BulkActionBarProps) {
           {t("selectedOf", { selected: padded(selected.length), total: padded(total) })}
         </span>
         {children}
-        <Button variant="ghost" size="sm" onClick={clear}>
+        <Button variant="ghost" size="control-md" onClick={clear}>
           <Icon icon={X} size="sm" className="me-1.5" />
           {t("clear")}
         </Button>

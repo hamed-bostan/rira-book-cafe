@@ -2,11 +2,11 @@ import {
   type DailySales,
   type DateRange,
   type GuestReport,
-  type HourlyOrders,
+  type HourlySales,
   type KindSales,
+  type MethodPayments,
   type PaymentSummary,
   type SalesSummary,
-  type ServiceSales,
   type TopGuest,
   type TopItem,
   type TopItemSort,
@@ -15,9 +15,9 @@ import {
 import { CAFE_TIME_ZONE } from "@/src/domain/entities/CafeTime";
 import {
   ACTIVE_ORDER_STATUSES,
-  ORDER_STATUSES,
+  PAYMENT_METHODS,
   SERVICE_TYPES,
-  type OrderStatus,
+  type PaymentMethod,
   type ServiceType,
 } from "@/src/domain/entities/Order";
 import { PRODUCT_KINDS, type ProductKind } from "@/src/domain/entities/Product";
@@ -75,14 +75,21 @@ export class PrismaAnalyticsRepository implements IAnalyticsRepository {
     return rows.map((row) => ({ day: row.day, orders: Number(row.orders), revenue: Number(row.revenue ?? 0) }));
   }
 
-  async hourlyOrders(range: DateRange): Promise<HourlyOrders[]> {
-    const rows = await prisma.$queryRaw<{ hour: number; orders: bigint }[]>`
-      SELECT EXTRACT(HOUR FROM ${localTime(Prisma.sql`placed_at`)})::int AS hour, COUNT(*) AS orders
+  async hourlySales(range: DateRange): Promise<HourlySales[]> {
+    const rows = await prisma.$queryRaw<{ hour: number; orders: bigint; revenue: bigint | null }[]>`
+      SELECT
+        EXTRACT(HOUR FROM ${localTime(Prisma.sql`placed_at`)})::int AS hour,
+        COUNT(*) AS orders,
+        SUM(total) AS revenue
       FROM orders
       WHERE status = 'completed' AND placed_at >= ${range.from} AND placed_at < ${range.to}
       GROUP BY 1
       ORDER BY 1`;
-    return rows.map((row) => ({ hour: Number(row.hour), orders: Number(row.orders) }));
+    return rows.map((row) => ({
+      hour: Number(row.hour),
+      orders: Number(row.orders),
+      revenue: Number(row.revenue ?? 0),
+    }));
   }
 
   async salesByKind(range: DateRange): Promise<KindSales[]> {
@@ -96,20 +103,6 @@ export class PrismaAnalyticsRepository implements IAnalyticsRepository {
       kind: toKind(row.kind),
       revenue: Number(row.revenue ?? 0),
       quantity: Number(row.quantity ?? 0),
-    }));
-  }
-
-  async salesByService(range: DateRange): Promise<ServiceSales[]> {
-    const rows = await prisma.$queryRaw<{ service_type: string; orders: bigint; revenue: bigint | null }[]>`
-      SELECT service_type, COUNT(*) AS orders, SUM(total) AS revenue
-      FROM orders
-      WHERE status = 'completed' AND placed_at >= ${range.from} AND placed_at < ${range.to}
-      GROUP BY service_type
-      ORDER BY revenue DESC`;
-    return rows.map((row) => ({
-      serviceType: toServiceType(row.service_type),
-      orders: Number(row.orders),
-      revenue: Number(row.revenue ?? 0),
     }));
   }
 
@@ -151,13 +144,28 @@ export class PrismaAnalyticsRepository implements IAnalyticsRepository {
         COUNT(*) FILTER (WHERE payment_status = 'unpaid') AS unpaid,
         SUM(total) FILTER (WHERE payment_status = 'unpaid') AS unpaid_value
       FROM orders
-      WHERE status <> 'cancelled' AND placed_at >= ${range.from} AND placed_at < ${range.to}`;
+      WHERE status = 'completed' AND placed_at >= ${range.from} AND placed_at < ${range.to}`;
     return {
       paidOrders: Number(row?.paid ?? 0),
       paidValue: Number(row?.paid_value ?? 0),
       unpaidOrders: Number(row?.unpaid ?? 0),
       unpaidValue: Number(row?.unpaid_value ?? 0),
     };
+  }
+
+  async paidByMethod(range: DateRange): Promise<MethodPayments[]> {
+    const rows = await prisma.$queryRaw<{ method: string; orders: bigint; value: bigint | null }[]>`
+      SELECT payment_method AS method, COUNT(*) AS orders, SUM(total) AS value
+      FROM orders
+      WHERE status = 'completed' AND payment_status = 'paid' AND payment_method IS NOT NULL
+        AND placed_at >= ${range.from} AND placed_at < ${range.to}
+      GROUP BY payment_method
+      ORDER BY value DESC`;
+    return rows.flatMap((row) =>
+      isPaymentMethod(row.method)
+        ? [{ method: row.method, orders: Number(row.orders), value: Number(row.value ?? 0) }]
+        : [],
+    );
   }
 
   async unpaidOrders(range: DateRange, limit: number): Promise<UnpaidOrder[]> {
@@ -169,13 +177,13 @@ export class PrismaAnalyticsRepository implements IAnalyticsRepository {
       },
       orderBy: { placedAt: "asc" },
       take: limit,
-      select: { id: true, orderNumber: true, customerName: true, status: true, total: true, placedAt: true },
+      select: { id: true, orderNumber: true, serviceType: true, tableLabel: true, total: true, placedAt: true },
     });
     return rows.map((row) => ({
       id: row.id,
       orderNumber: row.orderNumber,
-      customerName: row.customerName,
-      status: toStatus(row.status),
+      serviceType: toServiceType(row.serviceType),
+      ...(row.tableLabel ? { tableLabel: row.tableLabel } : {}),
       total: row.total,
       placedAt: row.placedAt.toISOString(),
     }));
@@ -256,15 +264,6 @@ export class PrismaAnalyticsRepository implements IAnalyticsRepository {
     };
   }
 
-  async eventStats(range: DateRange): Promise<GuestReport["events"]> {
-    const where = { isPublished: true, startsAt: { gte: range.from, lt: range.to } } satisfies Prisma.EventWhereInput;
-    const [held, seats] = await Promise.all([
-      prisma.event.count({ where }),
-      prisma.eventRegistration.aggregate({ where: { status: "registered", event: where }, _sum: { seats: true } }),
-    ]);
-    return { held, seatsTaken: seats._sum.seats ?? 0 };
-  }
-
   async activeOrderCount(): Promise<number> {
     return prisma.order.count({ where: { status: { in: [...ACTIVE_ORDER_STATUSES] } } });
   }
@@ -304,6 +303,6 @@ function toServiceType(value: string): ServiceType {
   return (SERVICE_TYPES as readonly string[]).includes(value) ? (value as ServiceType) : "takeaway";
 }
 
-function toStatus(value: string): OrderStatus {
-  return (ORDER_STATUSES as readonly string[]).includes(value) ? (value as OrderStatus) : "pending";
+function isPaymentMethod(value: string): value is PaymentMethod {
+  return (PAYMENT_METHODS as readonly string[]).includes(value);
 }

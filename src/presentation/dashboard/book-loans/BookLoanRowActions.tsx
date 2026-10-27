@@ -80,7 +80,7 @@ export function BookLoanRowActions({ loan, firstInLine }: BookLoanRowActionsProp
       <Button
         type="button"
         variant="secondary"
-        size="sm"
+        size="control-md"
         className="px-3"
         loading={pending}
         onClick={() => run({ status: "returned" })}

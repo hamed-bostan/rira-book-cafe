@@ -14,10 +14,10 @@ import { cafeDayOf, cafeDayRange, shiftCafeDay } from "../../entities/CafeTime";
 
 import type { IAnalyticsRepository } from "../../repositories/IAnalyticsRepository";
 
-/** Rows in the top-items table. */
-export const TOP_ITEMS_LIMIT = 10;
-/** Rows in the top-guests table. */
-export const TOP_GUESTS_LIMIT = 10;
+/** Best sellers ranked. */
+export const TOP_ITEMS_LIMIT = 6;
+/** Regulars ranked by spend. */
+export const TOP_GUESTS_LIMIT = 5;
 /** Most unpaid orders listed — enough to chase, not a ledger. */
 export const UNPAID_ORDERS_LIMIT = 50;
 
@@ -27,14 +27,12 @@ export class GetSalesReport {
 
   async execute(range: DateRange, sort: TopItemSort): Promise<SalesReport> {
     const previousRange = previousPeriod(range);
-    const [summary, previousSummary, daily, previousDaily, hourly, byKind, byService, topItems] = await Promise.all([
+    const [summary, previousSummary, daily, hourly, byKind, topItems] = await Promise.all([
       this.analytics.salesSummary(range),
       this.analytics.salesSummary(previousRange),
       this.analytics.dailySales(range),
-      this.analytics.dailySales(previousRange),
-      this.analytics.hourlyOrders(range),
+      this.analytics.hourlySales(range),
       this.analytics.salesByKind(range),
-      this.analytics.salesByService(range),
       this.analytics.topItems(range, sort, TOP_ITEMS_LIMIT),
     ]);
 
@@ -44,40 +42,40 @@ export class GetSalesReport {
       summary,
       previousSummary,
       daily: fillDailySeries(range, daily),
-      previousDaily: fillDailySeries(previousRange, previousDaily),
       hourly: fillHourlySeries(hourly),
       byKind,
-      byService,
       topItems,
     };
   }
 }
 
-/** Paid vs unpaid for a range, and the unpaid orders worth chasing. */
+/** Paid vs unpaid for a range, how the paid part came in, and the unpaid orders worth chasing. */
 export class GetPaymentReport {
   constructor(private readonly analytics: IAnalyticsRepository) {}
 
   async execute(range: DateRange): Promise<PaymentReport> {
-    const [summary, unpaid] = await Promise.all([
+    const [summary, byMethod, unpaid] = await Promise.all([
       this.analytics.paymentSummary(range),
+      this.analytics.paidByMethod(range),
       this.analytics.unpaidOrders(range, UNPAID_ORDERS_LIMIT),
     ]);
-    return { range, summary, unpaid };
+    return { range, summary, byMethod, unpaid };
   }
 }
 
-/** Guests, bookings and events for a range. */
+/** Guests and bookings for a range, with the guest count compared with the period before. */
 export class GetGuestReport {
   constructor(private readonly analytics: IAnalyticsRepository) {}
 
   async execute(range: DateRange): Promise<GuestReport> {
-    const [counts, topGuests, reservations, events] = await Promise.all([
+    const previousRange = previousPeriod(range);
+    const [counts, previousCounts, topGuests, reservations] = await Promise.all([
       this.analytics.guestCounts(range),
+      this.analytics.guestCounts(previousRange),
       this.analytics.topGuests(range, TOP_GUESTS_LIMIT),
       this.analytics.reservationStats(range),
-      this.analytics.eventStats(range),
     ]);
-    return { range, ...counts, topGuests, reservations, events };
+    return { range, previousRange, ...counts, previousGuests: previousCounts.guests, topGuests, reservations };
   }
 }
 

@@ -171,6 +171,7 @@ export function PromoCodeForm({ promo, takenCodes, today, onDone, onCancel }: Pr
     <label className="flex min-w-0 flex-col gap-1.5 text-body-small-emphasis text-foreground">
       {t("optionalField", { label: label(field) })}
       <Input
+        size="control-md"
         value={values[field]}
         onChange={(event) => set(field, event.target.value)}
         inputMode="numeric"
@@ -185,6 +186,7 @@ export function PromoCodeForm({ promo, takenCodes, today, onDone, onCancel }: Pr
     <label className="flex min-w-0 flex-col gap-1.5 text-body-small-emphasis text-foreground">
       {t("optionalField", { label: label(field) })}
       <Input
+        size="control-md"
         type="date"
         value={values[field]}
         onChange={(event) => set(field, event.target.value)}
@@ -202,6 +204,7 @@ export function PromoCodeForm({ promo, takenCodes, today, onDone, onCancel }: Pr
         <label className="col-span-2 flex min-w-0 flex-col gap-1.5 text-body-small-emphasis text-foreground">
           {label("code")}
           <Input
+            size="control-md"
             value={values.code}
             // Codes are stored upper-case without spaces — show them that way as they're typed.
             onChange={(event) => set("code", event.target.value.toUpperCase().replace(/\s/g, ""))}
@@ -234,6 +237,7 @@ export function PromoCodeForm({ promo, takenCodes, today, onDone, onCancel }: Pr
         <label className="flex min-w-0 flex-col gap-1.5 text-body-small-emphasis text-foreground">
           {label("value")}
           <Input
+            size="control-md"
             value={values.value}
             onChange={(event) => set("value", event.target.value)}
             inputMode="numeric"
@@ -256,6 +260,7 @@ export function PromoCodeForm({ promo, takenCodes, today, onDone, onCancel }: Pr
         <label className="col-span-2 flex min-w-0 flex-col gap-1.5 text-body-small-emphasis text-foreground">
           {t("optionalField", { label: label("description") })}
           <Input
+            size="control-md"
             value={values.description}
             onChange={(event) => set("description", event.target.value)}
             maxLength={MAX_PROMO_DESCRIPTION_LENGTH}
@@ -283,10 +288,10 @@ export function PromoCodeForm({ promo, takenCodes, today, onDone, onCancel }: Pr
       {error ? <FormMessage>{error}</FormMessage> : null}
 
       <div className="flex flex-wrap justify-end gap-2">
-        <Button type="button" variant="secondary" size="sm" className="px-4" onClick={onCancel}>
+        <Button type="button" variant="secondary" size="control-md" className="px-4" onClick={onCancel}>
           {t("back")}
         </Button>
-        <Button type="submit" size="sm" className="px-4" loading={pending} disabled={blocked}>
+        <Button type="submit" size="control-md" className="px-4" loading={pending} disabled={blocked}>
           {promo ? t("saveChanges") : t("create")}
         </Button>
       </div>

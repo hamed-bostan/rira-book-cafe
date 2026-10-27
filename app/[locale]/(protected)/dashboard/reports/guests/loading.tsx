@@ -1,20 +1,13 @@
-import { ReportHeaderSkeleton } from "@/src/presentation/dashboard/reports/ReportHeaderSkeleton";
-import { ReportSectionSkeleton } from "@/src/presentation/dashboard/reports/ReportSectionSkeleton";
-import { DashboardStatGridSkeleton } from "@/src/presentation/dashboard/skeletons";
-import { LoadingRegion } from "@/src/presentation/design-system/components/Skeleton/LoadingRegion";
+import { MetricGridSkeleton } from "@/src/presentation/dashboard/reports/MetricGridSkeleton";
+import { ReportPanelSkeleton } from "@/src/presentation/dashboard/reports/ReportPanelSkeleton";
+import { ReportsFrameSkeleton } from "@/src/presentation/dashboard/reports/ReportsFrameSkeleton";
 
+/** Mirrors the Guests tab: four figures, then the top guests. */
 export default function GuestReportLoading() {
   return (
-    <LoadingRegion className="flex min-w-0 flex-col gap-6">
-      <ReportHeaderSkeleton />
-
-      <DashboardStatGridSkeleton count={4} />
-
-      {/* Top guests beside the events tile. */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <ReportSectionSkeleton rows={8} />
-        <DashboardStatGridSkeleton count={1} className="sm:grid-cols-1 xl:grid-cols-1" />
-      </div>
-    </LoadingRegion>
+    <ReportsFrameSkeleton>
+      <MetricGridSkeleton count={4} className="sm:grid-cols-2 xl:grid-cols-4" />
+      <ReportPanelSkeleton body="rows" count={5} />
+    </ReportsFrameSkeleton>
   );
 }

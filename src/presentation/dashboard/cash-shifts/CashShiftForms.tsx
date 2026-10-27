@@ -3,11 +3,12 @@
 import { useLocale, useTranslations } from "next-intl";
 import * as React from "react";
 
-import { MAX_SHIFT_NOTE_LENGTH } from "@/src/domain/entities/CashShift";
+import { MAX_SHIFT_NOTE_LENGTH, type CashShift } from "@/src/domain/entities/CashShift";
 import { useRouter } from "@/src/i18n/navigation";
 import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatMoney } from "@/src/lib/formatMoney";
+import { formatNumber } from "@/src/lib/formatNumber";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
 import { cn } from "@/src/lib/utils";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
@@ -16,6 +17,9 @@ import { Input } from "@/src/presentation/design-system/components/form/Input/In
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { cashShiftsApi } from "./cash-shift-api";
+import { shiftResult } from "./shiftResult";
+
+import type { ReactNode } from "react";
 
 /** Digits typed in either script → a whole number, or `null` when it isn't one. */
 function parseAmount(text: string): number | null {
@@ -23,6 +27,12 @@ function parseAmount(text: string): number | null {
   return /^\d+$/.test(latin) ? Number(latin) : null;
 }
 
+/**
+ * Sends a shift write and says how it went: a toast naming the shift on success
+ * (worded from what the server saved), the field's or the request's error inline
+ * on failure. Neither write has an undo — opening is a form, and closing books
+ * the over or short.
+ */
 function useShiftSubmit() {
   const t = useTranslations("dashCashShifts");
   const tApiErrors = useTranslations("apiErrors");
@@ -32,12 +42,12 @@ function useShiftSubmit() {
   const [pending, startTransition] = React.useTransition();
   const [error, setError] = React.useState<string | null>(null);
 
-  function run(action: () => Promise<unknown>, success: string): void {
+  function run(action: () => Promise<CashShift>, success: (shift: CashShift) => string): void {
     setError(null);
     startTransition(async () => {
       try {
-        await action();
-        toast({ tone: "success", title: success });
+        const shift = await action();
+        toast({ tone: "success", title: success(shift) });
         router.refresh();
       } catch (err) {
         const field = err instanceof ApiError ? Object.values(err.fieldErrors ?? {})[0] : undefined;
@@ -51,45 +61,120 @@ function useShiftSubmit() {
   return { pending, error, setError, run, t };
 }
 
-/** Start a shift: how much cash went into the drawer. */
-export function OpenShiftForm() {
-  const { pending, error, setError, run, t } = useShiftSubmit();
-  const [float, setFloat] = React.useState("");
-  const [note, setNote] = React.useState("");
+type AmountFieldProps = {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  hint?: string;
+};
 
-  function submit(event: React.FormEvent): void {
-    event.preventDefault();
-    const openingFloat = parseAmount(float);
-    if (openingFloat === null) {
-      setError(t("amountInvalid"));
-      return;
-    }
-    run(() => cashShiftsApi.open({ openingFloat, note }), t("opened"));
-  }
-
+function AmountField({ label, value, onChange, hint }: AmountFieldProps) {
   return (
-    <form onSubmit={submit} className="flex flex-col gap-4">
-      <label className="flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
-        {t("openingFloat")}
-        <Input
-          value={float}
-          onChange={(event) => setFloat(event.target.value)}
-          inputMode="numeric"
-          dir="ltr"
-          required
-          placeholder="0"
-        />
-        <span className="text-body-caption font-normal text-muted-foreground">{t("openingFloatHint")}</span>
-      </label>
-      <label className="flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
-        {t("note")}
-        <Input value={note} onChange={(event) => setNote(event.target.value)} maxLength={MAX_SHIFT_NOTE_LENGTH} />
-      </label>
+    <label className="flex min-w-0 flex-col gap-1.5 text-body-small-emphasis text-foreground">
+      {label}
+      <Input
+        size="control-md"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        inputMode="numeric"
+        dir="ltr"
+        autoComplete="off"
+        placeholder="0"
+      />
+      {hint ? (
+        <span className="text-body-small font-normal text-muted-foreground sm:text-body-caption">{hint}</span>
+      ) : null}
+    </label>
+  );
+}
+
+type NoteFieldProps = {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+};
+
+function NoteField({ label, value, onChange, placeholder }: NoteFieldProps) {
+  return (
+    <label className="flex min-w-0 flex-col gap-1.5 text-body-small-emphasis text-foreground">
+      {label}
+      <Input
+        size="control-md"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        maxLength={MAX_SHIFT_NOTE_LENGTH}
+        autoComplete="off"
+        placeholder={placeholder}
+      />
+    </label>
+  );
+}
+
+type ShiftFormProps = {
+  onSubmit: () => void;
+  /** Nothing to save yet, or what's typed isn't an amount — the button waits. */
+  blocked: boolean;
+  pending: boolean;
+  error: string | null;
+  submitLabel: string;
+  children: ReactNode;
+};
+
+/** The column both shift forms share: the fields, any error, then the one button. */
+function ShiftForm({ onSubmit, blocked, pending, error, submitLabel, children }: ShiftFormProps) {
+  return (
+    <form
+      noValidate
+      className="flex max-w-md flex-col gap-4"
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (!blocked && !pending) onSubmit();
+      }}
+    >
+      {children}
       {error ? <FormMessage>{error}</FormMessage> : null}
-      <Button type="submit" className="self-start" loading={pending}>
-        {t("open")}
+      <Button type="submit" size="control-md" className="self-start px-4" loading={pending} disabled={blocked}>
+        {submitLabel}
       </Button>
     </form>
+  );
+}
+
+/** Start a shift: how much cash went into the drawer. The button names the shift it opens. */
+export function OpenShiftForm({ nextNumber }: { nextNumber: number }) {
+  const { pending, error, setError, run, t } = useShiftSubmit();
+  const locale = useLocale();
+  const [float, setFloat] = React.useState("");
+  const [note, setNote] = React.useState("");
+  const openingFloat = parseAmount(float);
+  const typedError = float.trim() !== "" && openingFloat === null ? t("amountInvalid") : null;
+
+  return (
+    <ShiftForm
+      blocked={openingFloat === null}
+      pending={pending}
+      error={typedError ?? error}
+      submitLabel={t("openNumbered", { number: formatNumber(nextNumber, locale) })}
+      onSubmit={() => {
+        if (openingFloat === null) return;
+        run(
+          () => cashShiftsApi.open({ openingFloat, note }),
+          (shift) => t("opened", { number: formatNumber(shift.number, locale) }),
+        );
+      }}
+    >
+      <AmountField
+        label={t("openingFloat")}
+        hint={t("openingFloatHint")}
+        value={float}
+        onChange={(value) => {
+          setFloat(value);
+          setError(null);
+        }}
+      />
+      <NoteField label={t("note")} value={note} onChange={setNote} />
+    </ShiftForm>
   );
 }
 
@@ -101,55 +186,55 @@ export function CloseShiftForm({ shiftId, expectedCash }: { shiftId: string; exp
   const [note, setNote] = React.useState("");
   const countedCash = parseAmount(counted);
   const difference = countedCash === null ? null : countedCash - expectedCash;
-
-  function submit(event: React.FormEvent): void {
-    event.preventDefault();
-    if (countedCash === null) {
-      setError(t("amountInvalid"));
-      return;
-    }
-    run(() => cashShiftsApi.close(shiftId, { countedCash, note }), t("closed"));
-  }
+  const typedError = counted.trim() !== "" && countedCash === null ? t("amountInvalid") : null;
 
   return (
-    <form onSubmit={submit} className="flex flex-col gap-4">
-      <label className="flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
-        {t("countedCash")}
-        <Input
-          value={counted}
-          onChange={(event) => setCounted(event.target.value)}
-          inputMode="numeric"
-          dir="ltr"
-          required
-        />
-      </label>
+    <ShiftForm
+      blocked={countedCash === null}
+      pending={pending}
+      error={typedError ?? error}
+      submitLabel={t("close")}
+      onSubmit={() => {
+        if (countedCash === null) return;
+        run(
+          () => cashShiftsApi.close(shiftId, { countedCash, note }),
+          (shift) => {
+            const result = shiftResult(shift.difference ?? 0);
+            return t("closed", {
+              number: formatNumber(shift.number, locale),
+              result:
+                result.kind === "exact"
+                  ? t("result.exact")
+                  : t(`result.${result.kind}`, { amount: formatMoney(result.amount, locale) }),
+            });
+          },
+        );
+      }}
+    >
+      <AmountField
+        label={t("countedCash")}
+        value={counted}
+        onChange={(value) => {
+          setCounted(value);
+          setError(null);
+        }}
+      />
       {difference !== null ? (
         <p
+          aria-live="polite"
           className={cn(
-            "rounded-card-md px-3 py-2 text-body-small",
+            "rounded-button px-4 py-3 text-body-default text-pretty sm:text-body-small",
             difference === 0 ? "bg-success text-success-foreground" : "bg-warning text-warning-foreground",
           )}
         >
           {difference === 0
-            ? t("exact")
+            ? t("preview.exact")
             : difference > 0
-              ? t("over", { amount: formatMoney(difference, locale) })
-              : t("short", { amount: formatMoney(-difference, locale) })}
+              ? t("preview.over", { amount: formatMoney(difference, locale) })
+              : t("preview.short", { amount: formatMoney(-difference, locale) })}
         </p>
       ) : null}
-      <label className="flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
-        {t("note")}
-        <Input
-          value={note}
-          onChange={(event) => setNote(event.target.value)}
-          maxLength={MAX_SHIFT_NOTE_LENGTH}
-          placeholder={t("closeNotePlaceholder")}
-        />
-      </label>
-      {error ? <FormMessage>{error}</FormMessage> : null}
-      <Button type="submit" className="self-start" loading={pending}>
-        {t("close")}
-      </Button>
-    </form>
+      <NoteField label={t("note")} value={note} onChange={setNote} placeholder={t("closeNotePlaceholder")} />
+    </ShiftForm>
   );
 }

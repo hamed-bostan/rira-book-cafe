@@ -93,14 +93,14 @@ export function BookHoldActions({ entry, title, nextInLine, today }: BookHoldAct
           <Button
             type="button"
             variant="ghost"
-            size="sm"
+            size="control-md"
             disabled={pending}
             onClick={() => setConfirming(true)}
             className="px-3 font-medium text-muted-foreground hover:bg-muted hover:text-error-foreground"
           >
             {t("skip")}
           </Button>
-          <Button type="button" variant="secondary" size="sm" className="px-3" loading={pending} onClick={lend}>
+          <Button type="button" variant="secondary" size="control-md" className="px-3" loading={pending} onClick={lend}>
             {t("lendNow")}
           </Button>
         </>
@@ -108,7 +108,7 @@ export function BookHoldActions({ entry, title, nextInLine, today }: BookHoldAct
         <Button
           type="button"
           variant="ghost"
-          size="sm"
+          size="control-md"
           iconOnly
           disabled={pending}
           aria-label={t("removeAria", { name: entry.guestName })}

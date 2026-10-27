@@ -3,7 +3,7 @@
 import { cn } from "@/src/lib/utils";
 import { PopoverClose } from "@/src/presentation/design-system/components/Popover/Popover";
 
-import { ListFilterPopover } from "./ListFilterPopover";
+import { ListFilterPopover, type ListFilterSize } from "./ListFilterPopover";
 import { useListParams } from "./useListParams";
 
 export type ListFilterOption = {
@@ -19,6 +19,8 @@ type ListFilterSelectProps = {
   label: string;
   options: ListFilterOption[];
   className?: string;
+  /** The trigger's size — `control-md` unless the list hasn't been redesigned yet. */
+  size?: ListFilterSize;
 };
 
 /**
@@ -29,7 +31,7 @@ type ListFilterSelectProps = {
  * parsers drop blank values, but a URL that carries dead params is harder to read
  * and to share.
  */
-export function ListFilterSelect({ paramName, label, options, className }: ListFilterSelectProps) {
+export function ListFilterSelect({ paramName, label, options, className, size }: ListFilterSelectProps) {
   const { searchParams, setFilter } = useListParams();
   const current = searchParams.get(paramName) ?? "";
   const selectedLabel = options.find((option) => option.value === current)?.label ?? options[0]?.label ?? label;
@@ -40,6 +42,7 @@ export function ListFilterSelect({ paramName, label, options, className }: ListF
       isActive={current !== ""}
       contentClassName="w-[var(--radix-popover-trigger-width)] min-w-56"
       triggerClassName={className ?? "w-auto"}
+      size={size}
     >
       <div role="radiogroup" aria-label={label} className="flex flex-col gap-1 p-1">
         {options.map((option) => {

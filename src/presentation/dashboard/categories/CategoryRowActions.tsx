@@ -28,9 +28,6 @@ type CategoryRowActionsProps = {
   isLast: boolean;
 };
 
-/** The bordered square the row's controls share: 44px on a phone, 36px from `sm`. */
-const SQUARE = "size-11 sm:size-9";
-
 /**
  * A category's controls: move it up or down the menu, and behind "⋯" Edit, Hide
  * from menu (or Show on menu) and Delete. Each writes over the REST API and then
@@ -80,10 +77,10 @@ export function CategoryRowActions({ category, isFirst, isLast }: CategoryRowAct
   return (
     <div className="ms-auto flex shrink-0 items-center gap-2">
       <Button
+        size="control-md"
         type="button"
         variant="secondary"
         iconOnly
-        className={SQUARE}
         aria-label={t("moveUp", { name: category.name })}
         disabled={isFirst || pending}
         onClick={() => move("up")}
@@ -91,10 +88,10 @@ export function CategoryRowActions({ category, isFirst, isLast }: CategoryRowAct
         <Icon icon={ChevronUp} size="sm" className="sm:size-4" />
       </Button>
       <Button
+        size="control-md"
         type="button"
         variant="secondary"
         iconOnly
-        className={SQUARE}
         aria-label={t("moveDown", { name: category.name })}
         disabled={isLast || pending}
         onClick={() => move("down")}

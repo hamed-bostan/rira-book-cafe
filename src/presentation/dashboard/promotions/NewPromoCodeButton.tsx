@@ -22,7 +22,7 @@ export function NewPromoCodeButton({ takenCodes, today }: NewPromoCodeButtonProp
 
   return (
     <>
-      <Button type="button" className="gap-2 px-4" onClick={() => setOpen(true)}>
+      <Button size="control-md" type="button" className="gap-2 px-4" onClick={() => setOpen(true)}>
         <Icon icon={Plus} size="sm" />
         {t("newCode")}
       </Button>

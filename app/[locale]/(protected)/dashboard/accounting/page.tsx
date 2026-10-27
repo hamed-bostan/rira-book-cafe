@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { cafeDayOf } from "@/src/domain/entities/CafeTime";
-import { parseDaySpan } from "@/src/lib/api/accounting-params";
+import { parseResultsPeriod, resultsPeriodSpan } from "@/src/lib/api/accounting-period-params";
 import { toSearchParams } from "@/src/lib/api/searchParams";
 import { requirePermission, sessionHas } from "@/src/lib/require-permission";
 import { accountsServerApi, statementsServerApi } from "@/src/presentation/dashboard/accounting/accounting-server-api";
@@ -13,12 +13,14 @@ type AccountingPageProps = { searchParams: Promise<Record<string, string | strin
 
 export default async function AccountingPage({ searchParams }: AccountingPageProps) {
   await requirePermission("accounting.view");
-  const { fromDay, toDay } = parseDaySpan(toSearchParams(await searchParams));
+  const period = parseResultsPeriod(toSearchParams(await searchParams));
+  const { fromDay, toDay } = resultsPeriodSpan(period);
 
-  const [trialBalance, profitAndLoss, settings, canWrite] = await Promise.all([
+  const [trialBalance, profitAndLoss, settings, accounts, canWrite] = await Promise.all([
     statementsServerApi.trialBalance({}),
     statementsServerApi.profitAndLoss({ from: fromDay, to: toDay }),
     accountsServerApi.getSettings(),
+    accountsServerApi.list(),
     auth().then((session) => sessionHas(session, "accounting.write")),
   ]);
 
@@ -26,8 +28,10 @@ export default async function AccountingPage({ searchParams }: AccountingPagePro
     <AccountingOverviewScreen
       trialBalance={trialBalance}
       profitAndLoss={profitAndLoss}
+      period={period}
       settings={settings}
-      canWrite={canWrite}
+      // The chart of accounts is for the writer's "New manual entry" only.
+      accounts={canWrite ? accounts : null}
       today={cafeDayOf(new Date())}
     />
   );

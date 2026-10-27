@@ -1,136 +1,190 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocale, useTranslations } from "next-intl";
-import { useForm, useWatch } from "react-hook-form";
+import * as React from "react";
 
-import { gatewaySettlementSchema, type GatewaySettlementInput } from "@/src/contracts/payment-schema";
+import { moneyField, optionalMoneyField } from "@/src/contracts/money-fields";
 import { useRouter } from "@/src/i18n/navigation";
 import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
-import { formatCafeDayMedium } from "@/src/lib/formatCafeDay";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
 import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
 import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
-import { TextField } from "@/src/presentation/design-system/components/form/TextField/TextField";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { settlementsApi } from "./accounting-api";
+import { normalizeAmount } from "./accounting-format";
 
-const FORM_FIELDS = [
-  "date",
-  "deposited",
-  "fee",
-  "reference",
-] as const satisfies readonly (keyof GatewaySettlementInput)[];
+type GatewaySettlementFormProps = {
+  /** The cafe day today — the payout's default date and the latest it may be. */
+  today: string;
+  /** What the gateway holds for the cafe today, which a payout can't clear more than. */
+  gatewayBalance: number;
+};
 
-const wholeToman = (value: string): number => (/^\d+$/.test(value.trim()) ? Number(value) : 0);
+const FIELD = "flex min-w-0 flex-col gap-1.5 text-body-small-emphasis text-foreground";
+const HINT = "text-body-small font-normal text-muted-foreground sm:text-body-caption";
 
 /**
- * Record a payout from the online gateway as the bank statement shows it: the
- * deposit and the fee the gateway kept. The server books Dr Bank + Dr fees /
- * Cr Gateway clearing, and refuses to clear more than the gateway holds.
+ * Record a payout from the online gateway as the bank shows it: what reached the
+ * bank and the fee the gateway kept. As you type it says how much that clears
+ * from the gateway and what's left; the server books Dr Bank + Dr fees / Cr
+ * Gateway clearing, and refuses to clear more than the gateway held that day.
  */
-export function GatewaySettlementForm({ today }: { today: string }) {
+export function GatewaySettlementForm({ today, gatewayBalance }: GatewaySettlementFormProps) {
   const t = useTranslations("dashAccounting");
   const tApiErrors = useTranslations("apiErrors");
   const tFormErrors = useTranslations("formErrors");
-  const fieldError = (message?: string): string | undefined => formErrorMessage(tFormErrors, message);
   const locale = useLocale();
   const router = useRouter();
   const { toast } = useToast();
 
-  const empty: GatewaySettlementInput = { date: today, deposited: "", fee: "", reference: "" };
-  const {
-    register,
-    handleSubmit,
-    control,
-    setError,
-    reset,
-    formState: { errors, isSubmitting },
-  } = useForm<GatewaySettlementInput>({
-    resolver: zodResolver(gatewaySettlementSchema, undefined, { raw: true }),
-    defaultValues: empty,
-  });
-  const [date, deposited, fee] = useWatch({ control, name: ["date", "deposited", "fee"] });
-  const clears = wholeToman(deposited) + wholeToman(fee);
+  const [date, setDate] = React.useState(today);
+  const [reference, setReference] = React.useState("");
+  const [deposited, setDeposited] = React.useState("");
+  const [fee, setFee] = React.useState("");
+  const [error, setError] = React.useState<string | null>(null);
+  const [pending, startTransition] = React.useTransition();
 
-  const onSubmit = handleSubmit(async (values) => {
-    try {
-      await settlementsApi.create(values);
-      reset(empty);
-      toast({ tone: "success", title: t("overview.settlement.saved") });
-      router.refresh();
-    } catch (error) {
-      let applied = false;
-      if (error instanceof ApiError) {
-        for (const field of FORM_FIELDS) {
-          const message = error.fieldErrors?.[field];
-          if (message) {
-            setError(field, { message });
-            applied = true;
-          }
-        }
+  const depositedValue = normalizeAmount(deposited);
+  const feeValue = normalizeAmount(fee);
+  const parsedDeposit = moneyField.safeParse(depositedValue);
+  const parsedFee = optionalMoneyField.safeParse(feeValue);
+  const clears = parsedDeposit.success && parsedFee.success ? parsedDeposit.data + parsedFee.data : null;
+
+  const fieldError =
+    depositedValue !== "" && !parsedDeposit.success
+      ? formErrorMessage(tFormErrors, parsedDeposit.error.issues[0]?.message)
+      : !parsedFee.success
+        ? formErrorMessage(tFormErrors, parsedFee.error.issues[0]?.message)
+        : clears !== null && clears > gatewayBalance
+          ? t("overview.settlement.exceeds", { amount: formatMoney(gatewayBalance, locale) })
+          : undefined;
+  const ready = fieldError === undefined && clears !== null && date !== "";
+
+  function submit(): void {
+    setError(null);
+    startTransition(async () => {
+      try {
+        const entry = await settlementsApi.create({ date, deposited: depositedValue, fee: feeValue, reference });
+        toast({ tone: "success", title: t("overview.settlement.saved", { number: entry.number }) });
+        setDate(today);
+        setReference("");
+        setDeposited("");
+        setFee("");
+        router.refresh();
+      } catch (err) {
+        // A field the server refused (the gateway held less on that day, a closed
+        // period) carries its own message; anything else is the general one.
+        const fieldMessage =
+          err instanceof ApiError
+            ? (err.fieldErrors?.deposited ?? err.fieldErrors?.date ?? err.fieldErrors?.fee)
+            : undefined;
+        setError(
+          fieldMessage
+            ? (formErrorMessage(tFormErrors, fieldMessage) ?? fieldMessage)
+            : localizeApiError(err, tApiErrors, t("overview.settlement.error")),
+        );
       }
-      if (!applied) setError("root", { message: localizeApiError(error, tApiErrors, t("overview.settlement.error")) });
-    }
-  });
+    });
+  }
+
+  const message = fieldError ?? error;
 
   return (
-    <form
-      onSubmit={onSubmit}
-      className="flex flex-col gap-4 rounded-card-lg border border-border bg-background p-4 md:p-6"
-      noValidate
+    <section
+      aria-labelledby="gateway-payout-heading"
+      className="flex min-w-0 flex-col gap-4 rounded-card-lg border border-border bg-background p-5 shadow-xs"
     >
-      <div className="flex flex-col gap-1">
-        <h2 className="text-body-lead text-foreground">{t("overview.settlement.heading")}</h2>
-        <p className="text-body-small text-muted-foreground">{t("overview.settlement.hint")}</p>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <TextField
-          label={t("overview.settlement.date")}
-          required
-          description={date ? formatCafeDayMedium(date, locale) : undefined}
-          error={fieldError(errors.date?.message)}
-        >
-          {(field) => <Input {...field} {...register("date")} type="date" max={today} dir="ltr" />}
-        </TextField>
-        <TextField label={t("overview.settlement.reference")} error={fieldError(errors.reference?.message)}>
-          {(field) => (
-            <Input
-              {...field}
-              {...register("reference")}
-              dir="ltr"
-              placeholder={t("overview.settlement.referencePlaceholder")}
-            />
-          )}
-        </TextField>
-        <TextField label={t("overview.settlement.deposited")} required error={fieldError(errors.deposited?.message)}>
-          {(field) => <Input {...field} {...register("deposited")} inputMode="numeric" dir="ltr" />}
-        </TextField>
-        <TextField
-          label={t("overview.settlement.fee")}
-          description={t("overview.settlement.feeHint")}
-          error={fieldError(errors.fee?.message)}
-        >
-          {(field) => <Input {...field} {...register("fee")} inputMode="numeric" dir="ltr" />}
-        </TextField>
-      </div>
-      {clears > 0 ? (
-        <p className="-mt-1 text-body-caption text-muted-foreground">
-          {t("overview.settlement.clears", { amount: formatMoney(clears, locale) })}
+      <div className="flex min-w-0 flex-col gap-1">
+        <h2 id="gateway-payout-heading" className="text-body-strong text-foreground">
+          {t("overview.settlement.heading")}
+        </h2>
+        <p className="text-body-default text-pretty text-muted-foreground sm:text-body-small">
+          {t("overview.settlement.hint")}
         </p>
-      ) : null}
-
-      {errors.root?.message ? <FormMessage size="md">{errors.root.message}</FormMessage> : null}
-      <div>
-        <Button type="submit" size="sm" loading={isSubmitting}>
-          {t("overview.settlement.submit")}
-        </Button>
       </div>
-    </form>
+
+      <form
+        noValidate
+        className="flex flex-col gap-4"
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (ready && !pending) submit();
+        }}
+      >
+        <div className="grid max-w-3xl grid-cols-1 items-start gap-4 md:grid-cols-2">
+          <label className={FIELD}>
+            {t("overview.settlement.date")}
+            <Input
+              size="control-md"
+              type="date"
+              value={date}
+              max={today}
+              onChange={(event) => setDate(event.target.value)}
+              dir="ltr"
+            />
+          </label>
+          <label className={FIELD}>
+            {t("overview.settlement.reference")}
+            <Input
+              size="control-md"
+              value={reference}
+              onChange={(event) => setReference(event.target.value)}
+              autoComplete="off"
+              maxLength={80}
+              placeholder={t("overview.settlement.referencePlaceholder")}
+              dir="ltr"
+            />
+          </label>
+          <label className={FIELD}>
+            {t("overview.settlement.deposited")}
+            <Input
+              size="control-md"
+              value={deposited}
+              onChange={(event) => setDeposited(event.target.value)}
+              inputMode="numeric"
+              autoComplete="off"
+              placeholder="0"
+              dir="ltr"
+            />
+          </label>
+          <label className={FIELD}>
+            {t("overview.settlement.fee")}
+            <Input
+              size="control-md"
+              value={fee}
+              onChange={(event) => setFee(event.target.value)}
+              inputMode="numeric"
+              autoComplete="off"
+              placeholder="0"
+              dir="ltr"
+            />
+            <span className={HINT}>{t("overview.settlement.feeHint")}</span>
+          </label>
+        </div>
+
+        {ready && clears !== null ? (
+          <p
+            aria-live="polite"
+            className="rounded-button bg-muted px-4 py-3 text-body-default text-pretty text-foreground/80 sm:text-body-small"
+          >
+            {t("overview.settlement.clears", {
+              amount: formatMoney(clears, locale),
+              left: formatMoney(gatewayBalance - clears, locale),
+            })}
+          </p>
+        ) : null}
+        {message ? <FormMessage>{message}</FormMessage> : null}
+
+        <div>
+          <Button size="control-md" type="submit" className="px-4" loading={pending} disabled={!ready}>
+            {t("overview.settlement.submit")}
+          </Button>
+        </div>
+      </form>
+    </section>
   );
 }

@@ -8,6 +8,7 @@ import { DEFAULT_PAGE_SIZE, TABLE_PAGE_SIZE_OPTIONS, pageCount, type Page } from
 import { useRouter } from "@/src/i18n/navigation";
 import { mergePageParams } from "@/src/lib/api/pagination-params";
 import { formatNumber } from "@/src/lib/formatNumber";
+import { cn } from "@/src/lib/utils";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
 import { Select } from "@/src/presentation/design-system/components/form/Select/Select";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
@@ -16,8 +17,10 @@ import { adoptLegacyPageSize, writePageSizeCookie } from "./pageSizeCookie";
 import { useListParams } from "./useListParams";
 
 /** Previous/next: square, quiet outline — a pager is navigation, not a call to action. */
-const PAGE_BUTTON =
-  "size-11 border-border bg-background px-0 text-foreground hover:border-border-strong hover:bg-background sm:size-9";
+const PAGE_BUTTON = "border-border bg-background px-0 text-foreground hover:border-border-strong hover:bg-background";
+
+/** How big the pager's controls are from `sm`: the redesign's 36px, or the 40px of lists not redesigned yet. */
+export type ListPagerSize = "md" | "control-md";
 
 type ListPagerProps = {
   /** The page currently rendered — supplies the counts, so they can't disagree with the rows. */
@@ -26,6 +29,8 @@ type ListPagerProps = {
   pageSizeOptions?: readonly number[];
   /** Borderless, space-efficient treatment used by compact responsive tables. */
   compact?: boolean;
+  /** `control-md` unless the list hasn't been redesigned yet. */
+  size?: ListPagerSize;
 };
 
 /**
@@ -43,6 +48,7 @@ export function ListPager({
   defaultPageSize = DEFAULT_PAGE_SIZE,
   pageSizeOptions = TABLE_PAGE_SIZE_OPTIONS,
   compact = false,
+  size = "control-md",
 }: ListPagerProps) {
   const { searchParams, setParams } = useListParams();
   const router = useRouter();
@@ -131,22 +137,24 @@ export function ListPager({
             for a glyph that has a direction of its own. */}
         <div className="flex gap-1">
           <Button
-            variant="outline"
-            size="sm"
+            variant={size === "md" ? "outline" : "secondary"}
+            size={size === "md" ? "sm" : "control-md"}
+            iconOnly={size !== "md"}
             onClick={() => goTo(page.page - 1)}
             disabled={page.page <= 1}
             aria-label={t("previous")}
-            className={PAGE_BUTTON}
+            className={cn(PAGE_BUTTON, size === "md" ? "size-11 sm:size-9" : "[&_svg]:text-foreground")}
           >
             <Icon icon={ChevronLeft} size="sm" className="rtl:rotate-180" />
           </Button>
           <Button
-            variant="outline"
-            size="sm"
+            variant={size === "md" ? "outline" : "secondary"}
+            size={size === "md" ? "sm" : "control-md"}
+            iconOnly={size !== "md"}
             onClick={() => goTo(page.page + 1)}
             disabled={page.page >= totalPages}
             aria-label={t("next")}
-            className={PAGE_BUTTON}
+            className={cn(PAGE_BUTTON, size === "md" ? "size-11 sm:size-9" : "[&_svg]:text-foreground")}
           >
             <Icon icon={ChevronRight} size="sm" className="rtl:rotate-180" />
           </Button>

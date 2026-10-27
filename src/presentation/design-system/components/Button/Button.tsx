@@ -47,6 +47,11 @@ const buttonVariants = cva(
         sm: "min-h-10 py-2 text-button-compact",
         md: "min-h-11 py-2.5",
         lg: "min-h-12 py-3",
+        // The redesigned dashboard's controls: a full 44px tap target on a phone,
+        // the design's compact 36px (`control-md`) or 32px (`control-sm`) from
+        // `sm`, with the text stepping from 16px to 14px alongside the body copy.
+        "control-md": "min-h-11 py-1.5 text-body-default font-semibold sm:min-h-9 sm:text-body-small",
+        "control-sm": "min-h-11 py-1 text-body-default font-semibold sm:min-h-8 sm:text-body-small",
       },
 
       iconOnly: {
@@ -62,6 +67,29 @@ const buttonVariants = cva(
       { iconOnly: true, size: "sm", className: "size-10" },
       { iconOnly: true, size: "md", className: "size-11" },
       { iconOnly: true, size: "lg", className: "size-12" },
+      { iconOnly: true, size: "control-md", className: "size-11 sm:size-9" },
+      { iconOnly: true, size: "control-sm", className: "size-11 sm:size-8" },
+      // A quiet button in the redesign is a medium weight beside the primary's semibold.
+      { variant: "secondary", size: ["control-md", "control-sm"], className: "font-medium" },
+      // The redesign dims a button it's holding back instead of greying it out: the
+      // action keeps its own colour at 40%, so it still says what it will do once
+      // the form is ready. A loading button is disabled too, but stays at full
+      // strength while it works.
+      {
+        variant: "primary",
+        size: ["control-md", "control-sm"],
+        className: "disabled:bg-primary disabled:text-primary-foreground disabled:not-aria-busy:opacity-40",
+      },
+      {
+        variant: "destructive",
+        size: ["control-md", "control-sm"],
+        className: "disabled:bg-destructive disabled:text-destructive-foreground disabled:not-aria-busy:opacity-40",
+      },
+      {
+        variant: "secondary",
+        size: ["control-md", "control-sm"],
+        className: "disabled:text-foreground disabled:not-aria-busy:opacity-40",
+      },
     ],
 
     defaultVariants: {

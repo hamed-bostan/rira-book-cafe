@@ -182,7 +182,7 @@ export async function ReservationsScreen({
             description={status ? t("noMatchesBody") : t("emptyBody")}
             action={
               status ? (
-                <Button asChild variant="secondary" size="sm" className="px-4">
+                <Button asChild variant="secondary" size="control-md" className="px-4">
                   <Link href={hrefFor(undefined)}>{t("showAll")}</Link>
                 </Button>
               ) : undefined

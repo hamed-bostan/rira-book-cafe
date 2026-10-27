@@ -1,15 +1,15 @@
-import { AccountingTabsSkeleton } from "@/src/presentation/dashboard/accounting/AccountingTabsSkeleton";
+import { AccountingHeaderSkeleton } from "@/src/presentation/dashboard/accounting/AccountingHeaderSkeleton";
 import { LoadingRegion } from "@/src/presentation/design-system/components/Skeleton/LoadingRegion";
 import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
 /** One card per statement on offer (P&L, balance sheet, trial balance, VAT, margins). */
 const STATEMENT_COUNT = 5;
 
-/** Mirrors `StatementsScreen`: tabs, then the two-up grid of statement link cards. */
+/** Mirrors `StatementsScreen`: the Accounting header, then the two-up grid of statement link cards. */
 export default function StatementsLoading() {
   return (
     <LoadingRegion className="flex min-w-0 flex-col gap-6">
-      <AccountingTabsSkeleton />
+      <AccountingHeaderSkeleton intro />
       <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
         {Array.from({ length: STATEMENT_COUNT }, (_, index) => (
           <li

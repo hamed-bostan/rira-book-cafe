@@ -33,6 +33,9 @@ export const baseFieldStyles = cva(
         sm: "min-h-9 py-1.5 text-body-default sm:text-body-small",
         md: "min-h-10 py-2 text-body-default",
         lg: "min-h-12 py-3 text-body-default",
+        // The redesigned dashboard's fields, matching its buttons: 44px on a phone,
+        // 36px from `sm`, with 16px text stepping down to 14px.
+        "control-md": "min-h-11 py-2 text-body-default sm:min-h-9 sm:py-1.5 sm:text-body-small",
       },
     },
     defaultVariants: {

@@ -48,10 +48,10 @@ describe("series", () => {
   });
 
   it("fills all 24 hours", () => {
-    const hours = fillHourlySeries([{ hour: 9, orders: 4 }]);
+    const hours = fillHourlySeries([{ hour: 9, orders: 4, revenue: 480000 }]);
     expect(hours).toHaveLength(24);
-    expect(hours[9]).toEqual({ hour: 9, orders: 4 });
-    expect(hours[10].orders).toBe(0);
+    expect(hours[9]).toEqual({ hour: 9, orders: 4, revenue: 480000 });
+    expect(hours[10]).toEqual({ hour: 10, orders: 0, revenue: 0 });
   });
 });
 

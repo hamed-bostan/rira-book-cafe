@@ -119,7 +119,13 @@ export function HoldTablesButton({ eventId, title, subtitle, capacity, hasTables
 
   return (
     <Modal open={open} onOpenChange={openChange}>
-      <Button type="button" variant="secondary" size="sm" onClick={() => openChange(true)} className="gap-2 px-3">
+      <Button
+        type="button"
+        variant="secondary"
+        size="control-md"
+        onClick={() => openChange(true)}
+        className="gap-2 px-3"
+      >
         <Icon icon={Armchair} size="sm" />
         {hasTables ? t("changeTables") : t("holdTables")}
       </Button>
@@ -134,7 +140,7 @@ export function HoldTablesButton({ eventId, title, subtitle, capacity, hasTables
         {loadFailed ? (
           <div className="flex flex-col items-start gap-3">
             <FormMessage>{t("tablesLoadError")}</FormMessage>
-            <Button type="button" variant="secondary" size="sm" className="px-3" onClick={() => void load()}>
+            <Button type="button" variant="secondary" size="control-md" className="px-3" onClick={() => void load()}>
               {t("tryAgain")}
             </Button>
           </div>
@@ -207,10 +213,10 @@ export function HoldTablesButton({ eventId, title, subtitle, capacity, hasTables
         {error ? <FormMessage>{error}</FormMessage> : null}
 
         <div className="flex flex-wrap justify-end gap-2">
-          <Button type="button" variant="secondary" size="sm" className="px-3" onClick={() => setOpen(false)}>
+          <Button type="button" variant="secondary" size="control-md" className="px-3" onClick={() => setOpen(false)}>
             {t("back")}
           </Button>
-          <Button type="button" size="sm" className="px-4" disabled={!options || pending} onClick={save}>
+          <Button type="button" size="control-md" className="px-4" disabled={!options || pending} onClick={save}>
             {t("saveTables")}
           </Button>
         </div>

@@ -7,7 +7,8 @@ import { cn } from "@/src/lib/utils";
 export type DashboardLinkTab = {
   key: string;
   label: string;
-  count: number;
+  /** How many rows the tab holds. Omitted for a tab that's a page of its own rather than a filter. */
+  count?: number;
   href: string;
 };
 
@@ -51,14 +52,16 @@ export async function DashboardLinkTabs({ tabs, current, label, className }: Das
             )}
           >
             {tab.label}
-            <span
-              className={cn(
-                "inline-flex h-5 min-w-6 items-center justify-center rounded-badge-md px-1.5 text-body-caption-bold tabular-nums",
-                selected ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground",
-              )}
-            >
-              {formatNumber(tab.count, locale)}
-            </span>
+            {tab.count !== undefined ? (
+              <span
+                className={cn(
+                  "inline-flex h-5 min-w-6 items-center justify-center rounded-badge-md px-1.5 text-body-caption-bold tabular-nums",
+                  selected ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground",
+                )}
+              >
+                {formatNumber(tab.count, locale)}
+              </span>
+            ) : null}
           </Link>
         );
       })}

@@ -1,10 +1,11 @@
 import { ChevronRight, Percent, Scale, Sigma, TrendingUp, Wallet } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
+import type { Account } from "@/src/domain/entities/Ledger";
 import { Link } from "@/src/i18n/navigation";
 
 import { STATEMENTS } from "./accounting-format";
-import { AccountingTabs } from "./AccountingTabs";
+import { AccountingHeader } from "./AccountingHeader";
 
 const ICONS = {
   "profit-and-loss": TrendingUp,
@@ -15,12 +16,17 @@ const ICONS = {
 } as const;
 
 /** The financial statements on offer, each built from the ledger on demand. */
-export async function StatementsScreen() {
+export async function StatementsScreen({
+  writer,
+}: {
+  /** What the header's "New manual entry" needs, for a viewer who can write to the books. */
+  writer: { accounts: Account[]; today: string } | null;
+}) {
   const t = await getTranslations("dashAccounting");
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
-      <AccountingTabs active="statements" title={t("statements.heading")} subtitle={t("statements.subtitle")} />
+      <AccountingHeader active="statements" intro={t("statements.subtitle")} writer={writer} />
       <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
         {STATEMENTS.map((slug) => {
           const Icon = ICONS[slug];

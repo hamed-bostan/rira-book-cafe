@@ -156,7 +156,7 @@ export async function DashboardOverviewScreen({
               value={formatNumber(today.revenue, locale)}
               unit={moneyUnit(locale)}
               hint={t("weekRevenue", { value: `${formatNumber(week.summary.revenue, locale)} ${moneyUnit(locale)}` })}
-              href="/dashboard/reports/sales?range=7d"
+              href="/dashboard/reports?range=7d"
               className={moneySpan}
             />
             <OverviewStat
@@ -167,7 +167,7 @@ export async function DashboardOverviewScreen({
                 count: week.summary.orders,
                 formatted: formatNumber(week.summary.orders, locale),
               })}
-              href="/dashboard/reports/sales?range=7d"
+              href="/dashboard/reports?range=7d"
               className={moneySpan}
             />
           </>

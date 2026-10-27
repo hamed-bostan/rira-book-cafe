@@ -157,7 +157,7 @@ export function NewBookingDialog({ day, dayLabel, now, bookings, events }: NewBo
 
   return (
     <>
-      <Button type="button" className="gap-2 px-4" onClick={openDialog}>
+      <Button size="control-md" type="button" className="gap-2 px-4" onClick={openDialog}>
         <Icon icon={Plus} size="sm" />
         {t("newBooking")}
       </Button>
@@ -176,6 +176,7 @@ export function NewBookingDialog({ day, dayLabel, now, bookings, events }: NewBo
               <label className="col-span-2 flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
                 {t("guestName")}
                 <Input
+                  size="control-md"
                   value={guestName}
                   onChange={(event) => setGuestName(event.target.value)}
                   maxLength={MAX_GUEST_NAME_LENGTH}
@@ -187,6 +188,7 @@ export function NewBookingDialog({ day, dayLabel, now, bookings, events }: NewBo
               <label className="col-span-2 flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
                 {t("guestPhone")}
                 <Input
+                  size="control-md"
                   type="tel"
                   inputMode="tel"
                   value={guestPhone}
@@ -200,6 +202,7 @@ export function NewBookingDialog({ day, dayLabel, now, bookings, events }: NewBo
               <label className="flex min-w-0 flex-col gap-1.5 text-body-small-emphasis text-foreground">
                 {t("time")}
                 <Select
+                  size="control-md"
                   value={time}
                   onChange={(event) => {
                     setTime(event.target.value);
@@ -216,6 +219,7 @@ export function NewBookingDialog({ day, dayLabel, now, bookings, events }: NewBo
               <label className="flex min-w-0 flex-col gap-1.5 text-body-small-emphasis text-foreground">
                 {t("party")}
                 <Select
+                  size="control-md"
                   value={String(partySize)}
                   onChange={(event) => {
                     const size = Number(event.target.value);
@@ -238,6 +242,7 @@ export function NewBookingDialog({ day, dayLabel, now, bookings, events }: NewBo
               <label className="col-span-2 flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
                 {t("noteOptional")}
                 <Input
+                  size="control-md"
                   value={note}
                   onChange={(event) => setNote(event.target.value)}
                   maxLength={MAX_RESERVATION_NOTE_LENGTH}
@@ -257,10 +262,16 @@ export function NewBookingDialog({ day, dayLabel, now, bookings, events }: NewBo
             {error ? <FormMessage>{error}</FormMessage> : null}
 
             <div className="flex flex-wrap justify-end gap-2">
-              <Button type="button" variant="secondary" size="sm" className="px-4" onClick={() => setOpen(false)}>
+              <Button
+                type="button"
+                variant="secondary"
+                size="control-md"
+                className="px-4"
+                onClick={() => setOpen(false)}
+              >
                 {t("dialogCancel")}
               </Button>
-              <Button type="submit" size="sm" className="px-4" loading={pending} disabled={blocked}>
+              <Button type="submit" size="control-md" className="px-4" loading={pending} disabled={blocked}>
                 {pick ? t("confirmBooking") : t("saveAsRequest")}
               </Button>
             </div>

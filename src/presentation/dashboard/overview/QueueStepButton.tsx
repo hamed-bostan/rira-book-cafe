@@ -47,11 +47,11 @@ export function QueueStepButton({ orderId, orderNumber, status }: QueueStepButto
   return (
     <Button
       type="button"
-      variant="outline"
-      size="sm"
+      variant="secondary"
+      size="control-md"
       loading={pending}
       onClick={() => advance(next)}
-      className="ms-auto h-11 shrink-0 border-border px-3 text-foreground hover:bg-muted sm:h-9"
+      className="ms-auto shrink-0 px-3"
     >
       {t(`advance.${next}`)}
     </Button>

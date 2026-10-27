@@ -1,12 +1,12 @@
-import { AccountingTabsSkeleton } from "@/src/presentation/dashboard/accounting/AccountingTabsSkeleton";
+import { AccountingHeaderSkeleton } from "@/src/presentation/dashboard/accounting/AccountingHeaderSkeleton";
 import { LoadingRegion } from "@/src/presentation/design-system/components/Skeleton/LoadingRegion";
 import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
-/** Mirrors the accounting settings page: tabs, the VAT / books-closed form card, the fiscal-year close panel. */
+/** Mirrors the accounting settings page: the Accounting header, the VAT / books-closed form card, the fiscal-year close panel. */
 export default function AccountingSettingsLoading() {
   return (
     <LoadingRegion className="flex min-w-0 flex-col gap-6">
-      <AccountingTabsSkeleton />
+      <AccountingHeaderSkeleton intro />
 
       {/* AccountingSettingsForm: two short fields with their hints, then save. */}
       <div className="flex max-w-xl flex-col gap-5 rounded-card-lg border border-border bg-background p-4 md:p-6">

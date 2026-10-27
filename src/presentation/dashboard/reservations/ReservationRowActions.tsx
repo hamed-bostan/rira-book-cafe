@@ -125,7 +125,7 @@ export function ReservationRowActions({ reservation, bookings, events }: Reserva
         <Button
           type="button"
           variant="ghost"
-          size="sm"
+          size="control-md"
           disabled={pending}
           onClick={() => setConfirming("cancelled")}
           className="px-3 font-medium text-muted-foreground hover:bg-muted hover:text-error-foreground"
@@ -136,7 +136,7 @@ export function ReservationRowActions({ reservation, bookings, events }: Reserva
       <Button
         type="button"
         variant="secondary"
-        size="sm"
+        size="control-md"
         className="px-3"
         loading={pending && !tableMode}
         onClick={primary.run}
@@ -188,12 +188,18 @@ export function ReservationRowActions({ reservation, bookings, events }: Reserva
           <TableChoiceGrid choices={choices} value={pick} onChange={setPick} />
           {error ? <FormMessage>{error}</FormMessage> : null}
           <div className="flex flex-wrap justify-end gap-2">
-            <Button type="button" variant="secondary" size="sm" className="px-4" onClick={() => setTableMode(null)}>
+            <Button
+              type="button"
+              variant="secondary"
+              size="control-md"
+              className="px-4"
+              onClick={() => setTableMode(null)}
+            >
               {t("dialogCancel")}
             </Button>
             <Button
               type="button"
-              size="sm"
+              size="control-md"
               className="px-4"
               loading={pending}
               disabled={blocked}

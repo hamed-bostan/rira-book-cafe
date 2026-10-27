@@ -82,7 +82,7 @@ export function SuiteStayActions({ booking, today, clashReference, checkInLabel 
         <Button
           type="button"
           variant="ghost"
-          size="sm"
+          size="control-md"
           disabled={pending}
           onClick={() => setConfirming("cancelled")}
           className="px-3 font-medium text-muted-foreground hover:bg-muted hover:text-error-foreground"
@@ -95,7 +95,7 @@ export function SuiteStayActions({ booking, today, clashReference, checkInLabel 
         <Button
           type="button"
           variant="secondary"
-          size="sm"
+          size="control-md"
           className="px-3"
           loading={pending}
           disabled={primary.blockedBy !== null}

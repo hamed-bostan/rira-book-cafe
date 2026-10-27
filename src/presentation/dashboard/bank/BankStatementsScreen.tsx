@@ -2,11 +2,12 @@ import { Landmark } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import type { BankStatementSummary } from "@/src/domain/entities/BankReconciliation";
+import type { Account } from "@/src/domain/entities/Ledger";
 import { Link } from "@/src/i18n/navigation";
 import { formatCafeDayMedium } from "@/src/lib/formatCafeDay";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
-import { AccountingTabs } from "@/src/presentation/dashboard/accounting/AccountingTabs";
+import { AccountingHeader } from "@/src/presentation/dashboard/accounting/AccountingHeader";
 import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
 import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
@@ -15,17 +16,19 @@ import { EmptyState } from "@/src/presentation/design-system/components/EmptySta
 export async function BankStatementsScreen({
   statements,
   canWrite,
+  writer,
 }: {
   statements: BankStatementSummary[];
   canWrite: boolean;
+  /** What the header's "New manual entry" needs, for a viewer who can write to the books. */
+  writer: { accounts: Account[]; today: string } | null;
 }) {
   const t = await getTranslations("dashBank");
-  const tAccounting = await getTranslations("dashAccounting");
   const locale = await getLocale();
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
-      <AccountingTabs active="bank" title={tAccounting("heading")} subtitle={t("subtitle")} />
+      <AccountingHeader active="bank" intro={t("subtitle")} writer={writer} />
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-body-lead text-foreground">{t("heading")}</h2>

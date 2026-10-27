@@ -95,7 +95,7 @@ export function AddHoldDialog({ books }: AddHoldDialogProps) {
 
   return (
     <>
-      <Button type="button" className="gap-2 px-4" onClick={openDialog} disabled={books.length === 0}>
+      <Button size="control-md" type="button" className="gap-2 px-4" onClick={openDialog} disabled={books.length === 0}>
         <Icon icon={Plus} size="sm" />
         {t("addHold")}
       </Button>
@@ -110,7 +110,12 @@ export function AddHoldDialog({ books }: AddHoldDialogProps) {
           <form onSubmit={submit} className="mt-5 flex flex-col gap-4">
             <label className="flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
               {t("book")}
-              <Select value={productId} onChange={(event) => setProductId(event.target.value)} required>
+              <Select
+                size="control-md"
+                value={productId}
+                onChange={(event) => setProductId(event.target.value)}
+                required
+              >
                 {books.map((option) => (
                   <option key={option.id} value={option.id} disabled={onShelf(option)}>
                     {option.title} ·{" "}
@@ -124,6 +129,7 @@ export function AddHoldDialog({ books }: AddHoldDialogProps) {
             <label className="flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
               {t("guestName")}
               <Input
+                size="control-md"
                 value={guestName}
                 onChange={(event) => setGuestName(event.target.value)}
                 maxLength={MAX_BORROWER_NAME_LENGTH}
@@ -135,6 +141,7 @@ export function AddHoldDialog({ books }: AddHoldDialogProps) {
             <label className="flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
               {t("guestPhone")}
               <Input
+                size="control-md"
                 type="tel"
                 inputMode="tel"
                 value={guestPhone}
@@ -153,10 +160,16 @@ export function AddHoldDialog({ books }: AddHoldDialogProps) {
             {error ? <FormMessage>{error}</FormMessage> : null}
 
             <div className="mt-1 flex flex-wrap justify-end gap-2">
-              <Button type="button" variant="secondary" size="sm" className="px-4" onClick={() => setOpen(false)}>
+              <Button
+                type="button"
+                variant="secondary"
+                size="control-md"
+                className="px-4"
+                onClick={() => setOpen(false)}
+              >
                 {t("back")}
               </Button>
-              <Button type="submit" size="sm" className="px-4" loading={pending} disabled={blocked}>
+              <Button type="submit" size="control-md" className="px-4" loading={pending} disabled={blocked}>
                 {t("addToLine")}
               </Button>
             </div>

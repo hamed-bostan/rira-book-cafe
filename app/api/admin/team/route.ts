@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import type { TeamMember } from "@/src/contracts/team-response-schema";
+import { TEAM_ROLES, type TeamMember } from "@/src/contracts/team-response-schema";
 import { grantAdminSchema } from "@/src/contracts/team-schema";
 import type { User } from "@/src/domain/entities/User";
 import { GrantAdmin } from "@/src/domain/use-cases/team/GrantAdmin";
@@ -49,7 +49,9 @@ function toTeamMembers(members: User[], viewerId: string): TeamMember[] {
       name: user.name,
       phone: user.phone,
       avatarUrl: user.avatarUrl,
-      role: user.role === "owner" ? ("owner" as const) : ("admin" as const),
+      // A break-glass account may hold no role in the database at all; what its
+      // environment access gives it is admin, so that's the role it shows.
+      role: TEAM_ROLES.find((role) => role === user.role) ?? ("admin" as const),
       isSelf,
       breakGlass,
       revokeBlocked,

@@ -21,7 +21,7 @@ export function StockItemSelect({ items, value, onChange }: StockItemSelectProps
   return (
     <label className="flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
       {t("quick.itemLabel")}
-      <Select value={value} onChange={(event) => onChange(event.target.value)} required>
+      <Select size="control-md" value={value} onChange={(event) => onChange(event.target.value)} required>
         {items.map((item) => (
           <option key={item.id} value={item.id}>
             {t("quick.itemOption", {

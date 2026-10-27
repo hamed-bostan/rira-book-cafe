@@ -67,6 +67,7 @@ export function ListSearchInput({ paramName = "q", placeholder, label, className
   return (
     <Input
       type="search"
+      size="control-md"
       value={value}
       onChange={(event) => setValue(event.target.value)}
       placeholder={placeholder}

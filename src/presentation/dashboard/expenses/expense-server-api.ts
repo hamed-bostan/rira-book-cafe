@@ -1,4 +1,4 @@
-import type { Supplier } from "@/src/domain/entities/Expense";
+import type { ExpenseSummary, Supplier } from "@/src/domain/entities/Expense";
 import { ApiError } from "@/src/lib/api/ApiError";
 import { serverApiGet } from "@/src/lib/api/server-client";
 import {
@@ -9,10 +9,17 @@ import {
   type ExpensePageWire,
 } from "@/src/presentation/dashboard/accounting/accounting-response-schema";
 
+import { expenseSummaryResponseSchema } from "./expense-response-schema";
+
 /** Server-side expense and supplier reads for the dashboard (BFF). */
 export const expensesServerApi = {
   list(params: Record<string, string>): Promise<ExpensePageWire> {
     return serverApiGet("/admin/expenses", expensePageResponseSchema, { params });
+  },
+
+  /** What's owed now, what was recorded this month, and each status's count. */
+  getSummary(): Promise<ExpenseSummary> {
+    return serverApiGet("/admin/expenses/summary", expenseSummaryResponseSchema);
   },
 
   /** An expense with the entries it posted; `null` on 404. */

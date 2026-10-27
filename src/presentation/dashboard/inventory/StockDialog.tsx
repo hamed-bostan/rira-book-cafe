@@ -90,10 +90,16 @@ export function StockDialog({
           ) : null}
 
           <div className="mt-1 flex flex-wrap justify-end gap-2">
-            <Button type="button" variant="secondary" size="sm" className="px-4" onClick={() => onOpenChange(false)}>
+            <Button
+              type="button"
+              variant="secondary"
+              size="control-md"
+              className="px-4"
+              onClick={() => onOpenChange(false)}
+            >
               {t("quick.back")}
             </Button>
-            <Button type="submit" size="sm" className="px-4" loading={pending} disabled={blocked}>
+            <Button type="submit" size="control-md" className="px-4" loading={pending} disabled={blocked}>
               {submitLabel}
             </Button>
           </div>

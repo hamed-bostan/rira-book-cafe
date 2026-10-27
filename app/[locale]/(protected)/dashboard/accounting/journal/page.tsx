@@ -1,8 +1,12 @@
 import { auth } from "@/auth";
-import { buildJournalParams, parseDaySpan, parseJournalFilters } from "@/src/lib/api/accounting-params";
+import { cafeDayOf } from "@/src/domain/entities/CafeTime";
+import { buildJournalParams, parseJournalFilters } from "@/src/lib/api/accounting-params";
 import { toSearchParams } from "@/src/lib/api/searchParams";
 import { requirePermission, sessionHas } from "@/src/lib/require-permission";
-import { journalEntriesServerApi } from "@/src/presentation/dashboard/accounting/accounting-server-api";
+import {
+  accountsServerApi,
+  journalEntriesServerApi,
+} from "@/src/presentation/dashboard/accounting/accounting-server-api";
 import { JournalScreen } from "@/src/presentation/dashboard/accounting/JournalScreen";
 import { withRememberedPageSize } from "@/src/presentation/dashboard/list/withRememberedPageSize";
 
@@ -13,21 +17,28 @@ type JournalPageProps = { searchParams: Promise<Record<string, string | string[]
 export default async function JournalPage({ searchParams }: JournalPageProps) {
   await requirePermission("accounting.view");
   const params = await withRememberedPageSize(toSearchParams(await searchParams));
-  const { fromDay, toDay } = parseDaySpan(params);
-  const filters = { ...parseJournalFilters(params), fromDay, toDay };
-
-  // The other filters ride along when the period changes; the period itself is the picker's.
-  const keep = Object.fromEntries(buildJournalParams({ ...filters, fromDay: undefined, toDay: undefined }));
-  const query: Record<string, string> = { ...Object.fromEntries(buildJournalParams(filters)) };
+  // Newest first across the whole book; "Posted by" narrows it. A link from
+  // elsewhere may still carry a span or an account, which the API honours.
+  const filters = parseJournalFilters(params);
+  const query = Object.fromEntries(buildJournalParams(filters));
   for (const key of ["page", "pageSize"]) {
     const value = params.get(key);
     if (value) query[key] = value;
   }
 
-  const [page, canWrite] = await Promise.all([
+  const [page, accounts, canWrite] = await Promise.all([
     journalEntriesServerApi.list(query),
+    accountsServerApi.list(),
     auth().then((session) => sessionHas(session, "accounting.write")),
   ]);
 
-  return <JournalScreen page={page} fromDay={fromDay} toDay={toDay} keep={keep} canWrite={canWrite} />;
+  return (
+    <JournalScreen
+      page={page}
+      accounts={accounts}
+      filtered={filters.source !== undefined}
+      canWrite={canWrite}
+      today={cafeDayOf(new Date())}
+    />
+  );
 }

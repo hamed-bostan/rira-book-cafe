@@ -98,7 +98,7 @@ export async function ProductsScreen({
           </p>
         </div>
         {canWrite ? (
-          <Button asChild className="gap-2 px-4">
+          <Button size="control-md" asChild className="gap-2 px-4">
             <Link href="/dashboard/products/create">
               <Icon icon={Plus} size="sm" />
               {t("newProduct")}
@@ -177,7 +177,7 @@ export async function ProductsScreen({
             title={t("noMatchesTitle")}
             description={query ? t("noMatchesSearch") : t("noMatchesView")}
             action={
-              <Button asChild size="sm" variant="secondary" className="px-3">
+              <Button asChild size="control-md" variant="secondary" className="px-3">
                 <Link href={hrefFor({ categoryId })}>{t("showEverything")}</Link>
               </Button>
             }
@@ -190,7 +190,7 @@ export async function ProductsScreen({
             description={t("listEmptyBody")}
             action={
               canWrite ? (
-                <Button asChild size="sm">
+                <Button asChild size="control-md">
                   <Link href="/dashboard/products/create">
                     <Icon icon={Plus} size="sm" className="me-1.5" />
                     {t("newProduct")}

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { ORDER_STATUSES, SERVICE_TYPES } from "@/src/domain/entities/Order";
+import { PAYMENT_METHODS, SERVICE_TYPES } from "@/src/domain/entities/Order";
 import { PRODUCT_KINDS } from "@/src/domain/entities/Product";
 
 /**
@@ -11,6 +11,8 @@ import { PRODUCT_KINDS } from "@/src/domain/entities/Product";
 
 const rangeSchema = z.object({ fromDay: z.string(), toDay: z.string(), from: z.string(), to: z.string() });
 
+export type ReportRangeWire = z.infer<typeof rangeSchema>;
+
 const salesSummarySchema = z.object({
   revenue: z.number(),
   orders: z.number(),
@@ -19,8 +21,6 @@ const salesSummarySchema = z.object({
   cancelledOrders: z.number(),
   cancelledValue: z.number(),
 });
-
-const dailySchema = z.array(z.object({ day: z.string(), revenue: z.number(), orders: z.number() }));
 
 const topItemSchema = z.object({
   productId: z.string(),
@@ -35,11 +35,9 @@ export const salesReportResponseSchema = z.object({
   previousRange: rangeSchema,
   summary: salesSummarySchema,
   previousSummary: salesSummarySchema,
-  daily: dailySchema,
-  previousDaily: dailySchema,
-  hourly: z.array(z.object({ hour: z.number(), orders: z.number() })),
+  daily: z.array(z.object({ day: z.string(), revenue: z.number(), orders: z.number() })),
+  hourly: z.array(z.object({ hour: z.number(), orders: z.number(), revenue: z.number() })),
   byKind: z.array(z.object({ kind: z.enum(PRODUCT_KINDS), revenue: z.number(), quantity: z.number() })),
-  byService: z.array(z.object({ serviceType: z.enum(SERVICE_TYPES), revenue: z.number(), orders: z.number() })),
   topItems: z.array(topItemSchema),
 });
 
@@ -54,12 +52,13 @@ export const paymentReportResponseSchema = z.object({
     unpaidOrders: z.number(),
     unpaidValue: z.number(),
   }),
+  byMethod: z.array(z.object({ method: z.enum(PAYMENT_METHODS), orders: z.number(), value: z.number() })),
   unpaid: z.array(
     z.object({
       id: z.string(),
       orderNumber: z.number(),
-      customerName: z.string(),
-      status: z.enum(ORDER_STATUSES),
+      serviceType: z.enum(SERVICE_TYPES),
+      tableLabel: z.string().optional(),
       total: z.number(),
       placedAt: z.string(),
     }),
@@ -70,7 +69,9 @@ export type PaymentReportWire = z.infer<typeof paymentReportResponseSchema>;
 
 export const guestReportResponseSchema = z.object({
   range: rangeSchema,
+  previousRange: rangeSchema,
   guests: z.number(),
+  previousGuests: z.number(),
   newGuests: z.number(),
   returningGuests: z.number(),
   repeatRate: z.number(),
@@ -78,7 +79,6 @@ export const guestReportResponseSchema = z.object({
     z.object({ userId: z.string(), name: z.string(), phone: z.string(), orders: z.number(), revenue: z.number() }),
   ),
   reservations: z.object({ total: z.number(), covers: z.number(), noShows: z.number(), noShowRate: z.number() }),
-  events: z.object({ held: z.number(), seatsTaken: z.number() }),
 });
 
 export type GuestReportWire = z.infer<typeof guestReportResponseSchema>;

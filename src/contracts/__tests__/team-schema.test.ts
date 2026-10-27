@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { teamMemberListResponseSchema, teamMemberResponseSchema, type TeamMember } from "../team-response-schema";
-import { grantAdminSchema, type GrantAdminInput } from "../team-schema";
+import { changeRoleSchema, grantAdminSchema, type GrantAdminInput } from "../team-schema";
 
 const GRANT: GrantAdminInput = { phone: " +98 912 345 6789 ", email: "", role: "staff" };
 
@@ -52,6 +52,17 @@ describe("grantAdminSchema", () => {
   });
 });
 
+describe("changeRoleSchema", () => {
+  it("takes the roles a grant can give, and nothing else", () => {
+    for (const role of ["support", "staff", "admin"]) {
+      expect(changeRoleSchema.safeParse({ role }).success).toBe(true);
+    }
+    for (const role of ["owner", "customer", ""]) {
+      expect(changeRoleSchema.safeParse({ role }).success).toBe(false);
+    }
+  });
+});
+
 describe("teamMemberResponseSchema", () => {
   const MEMBER: TeamMember = {
     id: "u1",
@@ -78,7 +89,9 @@ describe("teamMemberResponseSchema", () => {
   });
 
   it("rejects a row the API doesn't promise", () => {
-    expect(teamMemberResponseSchema.safeParse({ ...MEMBER, role: "staff" }).error?.issues[0]?.path).toEqual(["role"]);
+    expect(teamMemberResponseSchema.safeParse({ ...MEMBER, role: "customer" }).error?.issues[0]?.path).toEqual([
+      "role",
+    ]);
     expect(teamMemberResponseSchema.safeParse({ ...MEMBER, revokeBlocked: "admin" }).error?.issues[0]?.path).toEqual([
       "revokeBlocked",
     ]);

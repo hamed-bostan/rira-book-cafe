@@ -9,8 +9,8 @@ import { getSessionWith } from "@/src/lib/require-permission";
 export const dynamic = "force-dynamic";
 
 /**
- * GET /api/admin/reports/sales — revenue, orders, busy hours, sales by kind and
- * service, and best sellers for a range, against the period before it.
+ * GET /api/admin/reports/sales — revenue, orders, sales by day and by hour, by kind,
+ * and best sellers for a range, against the period before it.
  * `?range=` preset or `?from=&to=` cafe days; `?sort=revenue|quantity` for the
  * top items. Requires `reports.view`.
  */

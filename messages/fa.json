@@ -290,64 +290,80 @@
     "emailHint": "اختیاری — دعوت‌نامه را با ایمیل هم برایشان می‌فرستیم.",
     "emailPlaceholder": "name@example.com",
     "grantSubmit": "اعطای دسترسی",
-    "granting": "در حال اعطا…",
     "grantError": "اعطای دسترسی انجام نشد. دوباره تلاش کنید.",
+    "alreadyMember": "این شماره از قبل به داشبورد دسترسی دارد.",
     "colMember": "عضو",
     "colPhone": "تلفن",
     "colAccess": "دسترسی",
-    "colActions": "عملیات",
     "youSuffix": "(شما)",
     "managedInEnv": "تنظیم‌شده در پیکربندی سرور",
-    "revokeBlocked": {
-      "breakGlass": "در پیکربندی سرور تنظیم شده — به‌جای این، از ADMIN_USER_IDS حذفش کنید.",
-      "owner": "مالک را نمی‌توان حذف کرد — ابتدا مالکیت را واگذار کنید.",
-      "self": "نمی‌توانید دسترسی خودتان را حذف کنید."
+    "moreActionsAria": "کارهای بیشتر برای {name}",
+    "back": "بازگشت",
+    "changeRole": {
+      "menu": "تغییر نقش",
+      "title": "تغییر نقش {name}",
+      "message": "از بار بعدی که صفحه‌ای از داشبورد را باز کند اعمال می‌شود.",
+      "confirm": "ذخیرهٔ نقش",
+      "done": "{name} اکنون {role} است.",
+      "error": "تغییر نقش انجام نشد. دوباره تلاش کنید.",
+      "blocked": {
+        "self": "نمی‌توانید نقش خودتان را تغییر دهید.",
+        "owner": "نقش مالک فقط با واگذاری مالکیت تغییر می‌کند.",
+        "breakGlass": "دسترسی او در پیکربندی سرور تنظیم شده — به‌جای این، ADMIN_USER_IDS را تغییر دهید."
+      }
     },
     "ownership": {
       "transfer": {
-        "aria": "واگذاری مالکیت به {name}",
+        "menu": "مالک کردن",
         "title": "مالکیت واگذار شود؟",
         "message": "{name} مالک می‌شود و می‌تواند تیم را مدیریت کند. شما مدیر می‌مانید و همچنان کافه را اداره می‌کنید، اما دیگر نمی‌توانید کسی را اضافه یا حذف کنید.",
         "confirm": "واگذاری مالکیت"
       },
       "claim": {
-        "aria": "مالک شدن",
+        "menu": "مالک شدن",
         "title": "مالک شوید؟",
         "message": "هنوز کسی مالک این کافه نیست. نقش مالک در پایگاه داده ثبت می‌شود، نه فقط از طریق پیکربندی سرور؛ بنابراین بدون ADMIN_USER_IDS هم می‌توانید تیم را مدیریت کنید.",
         "confirm": "مالک شدن"
       },
       "takeOver": {
-        "aria": "به‌دست گرفتن مالکیت کافه",
+        "menu": "به‌دست گرفتن مالکیت",
         "title": "مالکیت را به‌دست می‌گیرید؟",
         "message": "فرد دیگری مالک این کافه است. چون دسترسی شما در پیکربندی سرور تنظیم شده می‌توانید مالکیت را به‌دست بگیرید — این مسیر بازیابی برای حساب مالکِ ازدست‌رفته است، نه یک تغییر معمول. مالک فعلی به مدیر تبدیل می‌شود.",
         "confirm": "به‌دست گرفتن مالکیت"
       },
       "transferred": "{name} اکنون مالک است.",
-      "claimed": "اکنون شما مالک هستید."
+      "claimed": "اکنون شما مالک هستید.",
+      "error": "واگذاری مالکیت انجام نشد. دوباره تلاش کنید."
+    },
+    "remove": {
+      "menu": "حذف دسترسی",
+      "title": "دسترسی {name} حذف شود؟",
+      "message": "دسترسی‌اش به داشبورد از بین می‌رود. حساب کاربری و تاریخچهٔ سفارش‌هایش دست‌نخورده می‌ماند.",
+      "confirm": "حذف دسترسی",
+      "done": "دسترسی {name} حذف شد.",
+      "error": "حذف دسترسی انجام نشد. دوباره تلاش کنید."
     },
     "activityHeading": "تاریخچهٔ دسترسی",
     "activityDescription": "هر تغییری در اینکه چه کسی به داشبورد دسترسی دارد. برای همیشه نگهداری می‌شود.",
     "activityEmpty": "هنوز تغییری ثبت نشده است.",
     "activity": {
-      "granted": "{actor} به {user} دسترسی مدیریت داد",
+      "granted": "{actor} به {user} دسترسی {role} داد",
+      "changed": "{actor} نقش {user} را از {from} به {to} تغییر داد",
       "revoked": "{actor} دسترسی {user} را حذف کرد",
       "ownershipTransferred": "{actor}، {user} را مالک کرد",
       "ownershipClaimed": "{user} مالکیت را به‌دست گرفت",
       "steppedDown": "{user} دیگر مالک نیست",
-      "unknown": "{actor} دسترسی {user} را تغییر داد"
+      "unknown": "{actor} دسترسی {user} را تغییر داد",
+      "you": "شما",
+      "youObject": "شما"
     },
-    "transferErrorTitle": "واگذاری مالکیت انجام نشد",
-    "transferError": "واگذاری مالکیت انجام نشد. دوباره تلاش کنید.",
-    "transferTryAgain": "تلاش دوباره",
-    "revokeAria": "حذف دسترسی مدیریتی {name}",
-    "revokeTitle": "دسترسی مدیریتی حذف شود؟",
-    "revokeMessage": "{name} دسترسی خود به داشبورد را از دست می‌دهد. حساب کاربری و تاریخچهٔ سفارش‌هایش دست‌نخورده می‌ماند.",
-    "revokeConfirm": "حذف دسترسی",
-    "revokeErrorTitle": "حذف دسترسی انجام نشد",
-    "revokeError": "حذف دسترسی انجام نشد. دوباره تلاش کنید.",
-    "revokeTryAgain": "تلاش دوباره",
     "roleLabel": "نقش",
     "roleHint": "کارهایی که می‌تواند انجام دهد.",
+    "roleOption": {
+      "support": "پشتیبانی — فقط مشاهده",
+      "staff": "کارمند — ادارهٔ سالن",
+      "admin": "مدیر — ادارهٔ کافه"
+    },
     "role": {
       "support": "پشتیبانی",
       "staff": "کارمند",
@@ -355,8 +371,7 @@
       "owner": "مالک",
       "customer": "بدون دسترسی"
     },
-    "granted": "به {phone} دسترسی داده شد.",
-    "revoked": "دسترسی {name} حذف شد."
+    "granted": "به {phone} دسترسی داده شد."
   },
   "dashProducts": {
     "heading": "آیتم‌های منو",
@@ -712,11 +727,20 @@
     "summary": "هر تغییری که از داشبورد انجام شده، از جدیدترین. برای همیشه نگه داشته می‌شود.",
     "empty": "هنوز فعالیتی نیست",
     "emptyBody": "تغییرهایی که از داشبورد انجام شود اینجا می‌آید.",
-    "filterActor": "فیلتر بر اساس انجام‌دهنده",
-    "filterEntity": "فیلتر بر اساس نوع تغییر",
+    "noMatchesTitle": "موردی پیدا نشد",
+    "noMatchesBody": "هیچ تغییری با این فیلترها جور نیست.",
+    "clearFilters": "پاک کردن فیلترها",
+    "listLabel": "گزارش فعالیت‌ها",
+    "filterActor": "تغییر توسط",
+    "filterEntity": "بخش",
     "allActors": "همه",
-    "allEntities": "همه موارد",
+    "allEntities": "همه بخش‌ها",
+    "day": {
+      "today": "امروز",
+      "yesterday": "دیروز"
+    },
     "open": "باز کردن",
+    "openAria": "باز کردن {entity}",
     "panelHeading": "فعالیت‌ها",
     "panelDescription": "هر تغییری که از داشبورد روی این مورد انجام شده.",
     "panelEmpty": "هنوز تغییری ثبت نشده.",
@@ -737,75 +761,75 @@
     },
     "action": {
       "product": {
-        "created": "{actor} آیتم {entity} را ساخت",
-        "updated": "{actor} آیتم {entity} را ویرایش کرد",
-        "deleted": "{actor} آیتم {entity} را حذف کرد"
+        "created": "<b>{actor}</b> آیتم {entity} را ساخت",
+        "updated": "<b>{actor}</b> آیتم {entity} را ویرایش کرد",
+        "deleted": "<b>{actor}</b> آیتم {entity} را حذف کرد"
       },
       "order": {
-        "stageChanged": "{actor} وضعیت سفارش {entity} را تغییر داد",
-        "customerNotified": "{actor} دربارهٔ سفارش {entity} به مهمان پیام داد",
-        "placed": "{actor} سفارش {entity} را ثبت کرد",
-        "paymentChanged": "{actor} وضعیت پرداخت سفارش {entity} را تغییر داد"
+        "stageChanged": "<b>{actor}</b> وضعیت سفارش {entity} را تغییر داد",
+        "customerNotified": "<b>{actor}</b> دربارهٔ سفارش {entity} به مهمان پیام داد",
+        "placed": "<b>{actor}</b> سفارش {entity} را ثبت کرد",
+        "paymentChanged": "<b>{actor}</b> وضعیت پرداخت سفارش {entity} را تغییر داد"
       },
       "review": {
-        "moderated": "{actor} نظر {entity} را بررسی کرد",
-        "submitted": "{actor} نظر جدیدی ثبت کرد"
+        "moderated": "<b>{actor}</b> نظر {entity} را بررسی کرد",
+        "submitted": "<b>{actor}</b> نظر جدیدی ثبت کرد"
       },
       "promoCode": {
-        "created": "{actor} کد تخفیف {entity} را ساخت",
-        "updated": "{actor} کد تخفیف {entity} را ویرایش کرد",
-        "activeChanged": "{actor} کد تخفیف {entity} را روشن یا خاموش کرد",
-        "deleted": "{actor} کد تخفیف {entity} را حذف کرد"
+        "created": "<b>{actor}</b> کد تخفیف {entity} را ساخت",
+        "updated": "<b>{actor}</b> کد تخفیف {entity} را ویرایش کرد",
+        "activeChanged": "<b>{actor}</b> کد تخفیف {entity} را روشن یا خاموش کرد",
+        "deleted": "<b>{actor}</b> کد تخفیف {entity} را حذف کرد"
       },
-      "unknown": "{actor} مورد {entity} را تغییر داد",
+      "unknown": "<b>{actor}</b> مورد {entity} را تغییر داد",
       "category": {
-        "created": "{actor} دسته‌بندی {entity} را ساخت",
-        "updated": "{actor} دسته‌بندی {entity} را ویرایش کرد",
-        "deleted": "{actor} دسته‌بندی {entity} را حذف کرد"
+        "created": "<b>{actor}</b> دسته‌بندی {entity} را ساخت",
+        "updated": "<b>{actor}</b> دسته‌بندی {entity} را ویرایش کرد",
+        "deleted": "<b>{actor}</b> دسته‌بندی {entity} را حذف کرد"
       },
       "reservation": {
-        "changed": "{actor} رزرو {entity} را به‌روزرسانی کرد",
-        "booked": "{actor} رزرو میز {entity} را ثبت کرد"
+        "changed": "<b>{actor}</b> رزرو {entity} را به‌روزرسانی کرد",
+        "booked": "<b>{actor}</b> رزرو میز {entity} را ثبت کرد"
       },
       "event": {
-        "created": "{actor} رویداد {entity} را ایجاد کرد",
-        "updated": "{actor} رویداد {entity} را ویرایش کرد",
-        "deleted": "{actor} رویداد {entity} را حذف کرد",
-        "registrationCancelled": "{actor} یک ثبت‌نام در {entity} را لغو کرد"
+        "created": "<b>{actor}</b> رویداد {entity} را ایجاد کرد",
+        "updated": "<b>{actor}</b> رویداد {entity} را ویرایش کرد",
+        "deleted": "<b>{actor}</b> رویداد {entity} را حذف کرد",
+        "registrationCancelled": "<b>{actor}</b> یک ثبت‌نام در {entity} را لغو کرد"
       },
       "ledger": {
-        "entryPosted": "{actor} سند {entity} را ثبت کرد",
-        "entryReversed": "{actor} سند {entity} را برگشت زد",
-        "accountChanged": "{actor} حساب {entity} را تغییر داد",
-        "settingsChanged": "{actor} تنظیمات حسابداری را تغییر داد",
-        "bankStatementChanged": "{actor} {entity} را به‌روز کرد",
-        "bankMatched": "{actor} ردیف‌هایی از {entity} را تطبیق داد",
-        "bankUnmatched": "{actor} تطبیق ردیف‌هایی از {entity} را برداشت",
-        "bankReconciled": "{actor} {entity} را مغایرت‌گیری کرد"
+        "entryPosted": "<b>{actor}</b> سند {entity} را ثبت کرد",
+        "entryReversed": "<b>{actor}</b> سند {entity} را برگشت زد",
+        "accountChanged": "<b>{actor}</b> حساب {entity} را تغییر داد",
+        "settingsChanged": "<b>{actor}</b> تنظیمات حسابداری را تغییر داد",
+        "bankStatementChanged": "<b>{actor}</b> {entity} را به‌روز کرد",
+        "bankMatched": "<b>{actor}</b> ردیف‌هایی از {entity} را تطبیق داد",
+        "bankUnmatched": "<b>{actor}</b> تطبیق ردیف‌هایی از {entity} را برداشت",
+        "bankReconciled": "<b>{actor}</b> {entity} را مغایرت‌گیری کرد"
       },
       "expense": {
-        "recorded": "{actor} هزینهٔ {entity} را ثبت کرد",
-        "paid": "{actor} هزینهٔ {entity} را پرداخت کرد",
-        "voided": "{actor} هزینهٔ {entity} را باطل کرد"
+        "recorded": "<b>{actor}</b> هزینهٔ {entity} را ثبت کرد",
+        "paid": "<b>{actor}</b> هزینهٔ {entity} را پرداخت کرد",
+        "voided": "<b>{actor}</b> هزینهٔ {entity} را باطل کرد"
       },
       "suiteBooking": {
-        "changed": "{actor} رزرو سوئیت {entity} را به‌روز کرد",
-        "booked": "{actor} اقامت سوئیت {entity} را ثبت کرد"
+        "changed": "<b>{actor}</b> رزرو سوئیت {entity} را به‌روز کرد",
+        "booked": "<b>{actor}</b> اقامت سوئیت {entity} را ثبت کرد"
       },
       "bookLoan": {
-        "lent": "{actor} کتابی به امانت داد ({entity})",
-        "returned": "{actor} امانت {entity} را بازگشته ثبت کرد",
-        "lost": "{actor} امانت {entity} را گم‌شده ثبت کرد",
-        "extended": "{actor} امانت {entity} را تمدید کرد"
+        "lent": "<b>{actor}</b> کتابی به امانت داد ({entity})",
+        "returned": "<b>{actor}</b> امانت {entity} را بازگشته ثبت کرد",
+        "lost": "<b>{actor}</b> امانت {entity} را گم‌شده ثبت کرد",
+        "extended": "<b>{actor}</b> امانت {entity} را تمدید کرد"
       }
     },
     "role": {
-      "granted": "{actor} به {user} دسترسی مدیریت داد",
-      "revoked": "{actor} دسترسی {user} را گرفت",
-      "ownershipTransferred": "{actor}، {user} را مالک کرد",
-      "ownershipClaimed": "{user} مالکیت را به دست گرفت",
-      "steppedDown": "{user} دیگر مالک نیست",
-      "unknown": "{actor} دسترسی {user} را تغییر داد"
+      "granted": "<b>{actor}</b> به {user} دسترسی مدیریت داد",
+      "revoked": "<b>{actor}</b> دسترسی {user} را گرفت",
+      "ownershipTransferred": "<b>{actor}</b>، {user} را مالک کرد",
+      "ownershipClaimed": "<b>{user}</b> مالکیت را به دست گرفت",
+      "steppedDown": "<b>{user}</b> دیگر مالک نیست",
+      "unknown": "<b>{actor}</b> دسترسی {user} را تغییر داد"
     },
     "field": {
       "name": "نام",
@@ -862,17 +886,8 @@
       "dueAt": "موعد",
       "position": "ترتیب در منو"
     },
-    "filterField": "فیلتر بر اساس نوع تغییر",
-    "allFields": "همه تغییرها",
-    "fieldOption": {
-      "price": "تغییر قیمت",
-      "stockQuantity": "تغییر موجودی",
-      "isPublished": "انتشار / لغو انتشار",
-      "isActive": "روشن/خاموش کردن دسته",
-      "status": "تغییر وضعیت سفارش",
-      "paymentStatus": "تغییر پرداخت",
-      "role": "تغییر دسترسی"
-    }
+    "filterField": "فیلد",
+    "allFields": "همه فیلدها"
   },
   "dashReservations": {
     "heading": "رزرو میز",
@@ -1105,8 +1120,6 @@
   "dashReports": {
     "heading": "گزارش‌ها",
     "summary": "فروش، پرداخت‌ها و مهمان‌ها در هر بازهٔ زمانی. درآمد از سفارش‌های تحویل‌شده حساب می‌شود.",
-    "openReport": "باز کردن {title}",
-    "breadcrumbLabel": "مسیر",
     "rangeLabel": "بازهٔ زمانی",
     "preset": {
       "today": "امروز",
@@ -1114,60 +1127,91 @@
       "30d": "۳۰ روز",
       "90d": "۹۰ روز"
     },
-    "presetCustom": "دلخواه",
-    "rangeFrom": "از",
-    "rangeTo": "تا",
-    "apply": "اعمال",
-    "rangeCaption": "{from} تا {to}",
-    "comparedWith": "در مقایسه با {from} تا {to}",
-    "vsPrevious": "نسبت به دورهٔ قبل",
-    "thisPeriod": "این دوره",
-    "previousPeriod": "دورهٔ قبل",
+    "tabsLabel": "گزارش‌ها",
+    "tab": {
+      "sales": "فروش",
+      "payments": "پرداخت‌ها",
+      "guests": "مهمان‌ها"
+    },
+    "rangeToday": "امروز، {day}",
+    "rangeSpan": "{from} تا {to}",
+    "comparedWithYesterday": "در مقایسه با دیروز",
+    "comparedWith": "در مقایسه با {span}",
+    "changeUp": "+{value} نسبت به دورهٔ قبل",
+    "changeDown": "−{value} نسبت به دورهٔ قبل",
+    "noBaseline": "در دورهٔ قبل چیزی نبود",
     "noSales": "در این بازه سفارش تحویل‌شده‌ای نیست.",
     "orderCount": "{count, plural, other {{formatted} سفارش}}",
     "unitsSold": "{count, plural, other {{formatted} فروش}}",
-    "topItemsHeading": "پرفروش‌ها",
-    "topItemsSort": {
-      "revenue": "بر اساس درآمد",
-      "quantity": "بر اساس تعداد"
-    },
     "sales": {
-      "title": "فروش",
-      "subtitle": "درآمد، سفارش‌ها، ساعت‌های شلوغ و پرفروش‌ها.",
       "revenue": "درآمد",
       "orders": "سفارش‌ها",
       "averageOrder": "میانگین سفارش",
       "cancelled": "سفارش‌های لغوشده",
       "cancelledValue": "{value} دریافت نشد",
-      "dailyHeading": "فروش روزانه",
-      "hourlyHeading": "ساعت‌های شلوغ",
-      "hourlyDescription": "سفارش‌های تحویل‌شده بر اساس ساعت ثبت (به وقت کافه).",
+      "chart": {
+        "hourly": "ساعت‌های شلوغ",
+        "daily": "فروش روزانه",
+        "weekly": "فروش هفتگی"
+      },
+      "chartHourlyDescription": "سفارش‌های تحویل‌شده بر اساس ساعت ثبت (به وقت کافه).",
+      "chartRevenueDescription": "درآمد سفارش‌های تحویل‌شده.",
+      "chartOrdersDescription": "سفارش‌های تحویل‌شده.",
+      "chartMetric": "معیار نمودار",
+      "chartSummary": "{heading}: {points}",
+      "weekOf": "هفتهٔ {day}",
+      "bestSellers": "پرفروش‌ها",
+      "bestSellersSort": "مرتب‌سازی پرفروش‌ها",
+      "sort": {
+        "revenue": "بر اساس درآمد",
+        "quantity": "بر اساس تعداد"
+      },
       "byKindHeading": "نوشیدنی، غذا و کتاب",
-      "byServiceHeading": "سرو در کافه یا بیرون‌بر"
+      "byKindDescription": "سهم هر کدام از درآمد.",
+      "kind": {
+        "drink": "نوشیدنی",
+        "food": "غذا",
+        "book": "کتاب"
+      }
     },
     "payments": {
-      "title": "پرداخت‌ها",
-      "subtitle": "آنچه در صندوق پرداخت شده و آنچه نشده.",
       "paid": "پرداخت‌شده",
+      "paidShare": "{percent} از درآمد",
       "unpaid": "پرداخت‌نشده",
-      "splitHeading": "پرداخت‌شده و پرداخت‌نشده",
+      "waiting": "{count, plural, other {{formatted} سفارش در انتظار}}",
+      "nothingWaiting": "چیزی در انتظار نیست",
+      "paidByHeading": "روش پرداخت",
+      "paidByDescription": "سفارش‌های پرداخت‌شده چطور تسویه شدند.",
+      "method": {
+        "bank": "کارت و کارت‌به‌کارت",
+        "cash": "نقدی",
+        "online": "آنلاین"
+      },
+      "nothingPaid": "در این بازه هنوز پرداختی ثبت نشده.",
       "unpaidHeading": "تحویل‌شده ولی پرداخت‌نشده",
-      "unpaidDescription": "سفارش‌های آماده یا تحویل‌شده که هنوز پرداخت ثبت نشده، قدیمی‌ترین اول.",
-      "allPaid": "همهٔ سفارش‌های تحویل‌شدهٔ این بازه پرداخت شده‌اند."
+      "unpaidDescription": "سفارش‌های تحویل‌شده‌ای که هنوز پرداختشان ثبت نشده، قدیمی‌ترین اول.",
+      "allPaid": "همهٔ سفارش‌های تحویل‌شدهٔ این بازه پرداخت شده‌اند.",
+      "orderTitle": "سفارش #{number} · {where}",
+      "todayAt": "امروز، {time}",
+      "yesterdayAt": "دیروز، {time}",
+      "dayAt": "{day}، {time}",
+      "markPaid": "ثبت پرداخت",
+      "markedPaid": "پرداخت سفارش #{number} ثبت شد",
+      "markedUnpaid": "سفارش #{number} دوباره پرداخت‌نشده شد",
+      "markPaidError": "پرداخت سفارش ثبت نشد."
     },
     "guests": {
-      "title": "مهمان‌ها",
-      "subtitle": "چه کسانی آمدند، چند بار، و رزروها و رویدادها چطور پیش رفت.",
       "guests": "مهمان‌ها",
       "newGuests": "مهمان‌های جدید",
       "returning": "{count, plural, other {{formatted} مهمان قدیمی}}",
       "repeatRate": "بازگشت",
-      "repeatRateHint": "مهمان‌هایی با دو سفارش یا بیشتر در این بازه",
+      "repeatRateHint": "دو سفارش یا بیشتر در این بازه",
       "bookings": "رزروها",
       "bookingsHint": "{covers} مهمان · {noShowRate} نیامدند",
       "topGuestsHeading": "مهمان‌های برتر",
-      "events": "رویدادهای برگزارشده",
-      "eventsHint": "{seats} جا رزرو شد"
+      "topGuestsDescription": "مشتریان همیشگی بر اساس خریدشان در این بازه.",
+      "visits": "{count, plural, other {{formatted} بار آمده}}",
+      "pickLonger": "برای دیدن مشتریان همیشگی، بازه‌ای یک‌هفته‌ای یا بیشتر انتخاب کنید."
     }
   },
   "site": {
@@ -1555,6 +1599,7 @@
     "tabsLabel": "بخش‌های حسابداری",
     "breadcrumbLabel": "مسیر صفحه",
     "cancel": "انصراف",
+    "back": "بازگشت",
     "tab": {
       "overview": "نمای کلی",
       "journal": "دفتر روزنامه",
@@ -1578,6 +1623,12 @@
         "vat": "مالیات بر ارزش افزودهٔ پرداختنی"
       },
       "resultsHeading": "نتیجهٔ دوره",
+      "periodLabel": "دوره",
+      "period": {
+        "month": "این ماه",
+        "last": "ماه گذشته",
+        "year": "امسال"
+      },
       "revenue": "درآمد (بدون مالیات)",
       "grossProfit": "سود ناخالص",
       "expenses": "هزینه‌های عملیاتی",
@@ -1588,17 +1639,17 @@
         "heading": "ثبت تسویهٔ درگاه",
         "hint": "وقتی زرین‌پال تسویه کرد، مبلغ واریزشده به بانک و کارمزد کسرشده را وارد کنید. مجموع آن‌ها از موجودی درگاه کم می‌شود.",
         "date": "تاریخ تسویه",
-        "deposited": "واریز به بانک",
-        "fee": "کارمزد درگاه",
+        "deposited": "واریز به بانک (تومان)",
+        "fee": "کارمزد درگاه (تومان)",
         "feeHint": "اگر کارمزدی نبود، خالی بگذارید.",
         "reference": "شمارهٔ پیگیری تسویه",
         "referencePlaceholder": "مثلاً شمارهٔ تسویه",
-        "clears": "{amount} از موجودی درگاه کم می‌شود.",
+        "clears": "{amount} از موجودی درگاه کم می‌شود و {left} باقی می‌ماند.",
+        "exceeds": "این مبلغ از موجودی درگاه ({amount}) بیشتر است.",
         "submit": "ثبت تسویه",
-        "saved": "تسویه ثبت شد.",
+        "saved": "تسویه ثبت شد · JE-{number}",
         "error": "ثبت تسویه ممکن نشد. لطفاً دوباره تلاش کنید."
-      },
-      "reconcileBank": "مغایرت‌گیری بانک"
+      }
     },
     "journal": {
       "heading": "دفتر روزنامه",
@@ -1607,12 +1658,32 @@
       "filterSource": "منبع ثبت",
       "allSources": "همه",
       "colNumber": "شماره",
+      "colEntry": "سند",
       "colDate": "تاریخ",
       "colDescription": "شرح",
       "colSource": "منبع",
       "colAmount": "مبلغ",
+      "lines": "JE-{number} · بدهکار {debits} · بستانکار {credits}",
       "reversed": "برگشت‌خورده",
-      "empty": "در این دوره سندی ثبت نشده."
+      "emptyTitle": "سندی نیست",
+      "emptyBody": "هنوز سندی ثبت نشده.",
+      "emptyFiltered": "هنوز سندی از این منبع ثبت نشده.",
+      "moreActionsAria": "کارهای بیشتر برای سند JE-{number}",
+      "reverse": "برگشت سند",
+      "reverseTitle": "سند JE-{number} برگشت بخورد؟",
+      "reverseSub": "سندی تازه با ردیف‌های قرینه امروز ثبت می‌شود. سند اصلی در دفتر روزنامه می‌ماند و برگشت‌خورده علامت می‌خورد.",
+      "reverseReasonPlaceholder": "مثلاً به حساب اشتباه ثبت شده بود",
+      "reverseReasonHint": "همراه سند برگشتی می‌ماند تا هر کس بعداً دفاتر را خواند بداند چرا."
+    },
+    "quickEntry": {
+      "title": "سند دستی جدید",
+      "sub": "برای چیزهایی که بخش دیگری ثبتشان نمی‌کند — افزایش سرمایهٔ مالک، یک اصلاح. بعداً ویرایش نمی‌شود، فقط برگشت می‌خورد.",
+      "amountLabel": "مبلغ (تومان)",
+      "descriptionPlaceholder": "مثلاً افزایش سرمایهٔ مالک",
+      "sameAccount": "حساب بدهکار و بستانکار باید متفاوت باشند.",
+      "preview": "{amount} به بدهکار {debit} و بستانکار {credit} ثبت می‌شود.",
+      "fullFormPrompt": "بیش از دو حساب درگیر است؟",
+      "fullFormLink": "فرم کامل را باز کنید"
     },
     "source": {
       "orderSale": "فروش",
@@ -1735,7 +1806,6 @@
       }
     },
     "settings": {
-      "heading": "تنظیمات حسابداری",
       "subtitle": "نرخ مالیات بر ارزش افزوده در قیمت‌های منو، و دوره‌های بسته‌شده.",
       "vatRateLabel": "نرخ مالیات بر ارزش افزوده (٪)",
       "vatRateHint": "قیمت‌های منو شامل مالیات است؛ این نرخ سهم مالیات را از هر فروش جدا می‌کند. اقلام معاف (کتاب) مالیات ندارند.",
@@ -1844,18 +1914,32 @@
     "breadcrumbLabel": "مسیر صفحه",
     "cancel": "انصراف",
     "new": "ثبت هزینه",
+    "back": "بازگشت",
     "owed": "بدهی فعلی به تأمین‌کنندگان",
-    "filterStatus": "وضعیت",
-    "allStatuses": "همه",
+    "owedHint": "{count, plural, other {{formatted} صورت‌حساب}} برای پرداخت",
+    "owedNone": "بدهی‌ای نیست",
+    "monthLabel": "ثبت‌شده در {month}",
+    "monthHint": "{count, plural, other {{formatted} هزینه}}، با مالیات",
+    "listLabel": "هزینه‌ها",
+    "tabsLabel": "فیلتر بر اساس وضعیت",
+    "tabAll": "همه",
+    "searchLabel": "جست‌وجوی هزینه‌ها",
+    "searchPlaceholder": "شرح، شماره یا تأمین‌کننده",
     "filterSupplier": "تأمین‌کننده",
     "allSuppliers": "همهٔ تأمین‌کنندگان",
-    "empty": "در این دوره هزینه‌ای ثبت نشده.",
-    "colNumber": "شماره",
-    "colDate": "تاریخ",
-    "colDescription": "شرح",
-    "colAccount": "حساب",
-    "colStatus": "وضعیت",
-    "colAmount": "مبلغ کل",
+    "col": {
+      "expense": "هزینه",
+      "date": "تاریخ",
+      "account": "حساب",
+      "status": "وضعیت",
+      "total": "مبلغ کل"
+    },
+    "rowLabel": "EX-{number}، {description}",
+    "moreActionsAria": "کارهای بیشتر برای EX-{number}",
+    "noMatchesTitle": "موردی پیدا نشد",
+    "noMatchesBody": "هیچ هزینه‌ای با این فیلترها جور نیست.",
+    "emptyTitle": "هنوز هزینه‌ای ثبت نشده",
+    "emptyBody": "برای شروع، یک صورت‌حساب یا خرید ثبت کنید.",
     "status": {
       "unpaid": "پرداخت‌نشده",
       "paid": "پرداخت‌شده",
@@ -1868,13 +1952,14 @@
       "supplierLabel": "تأمین‌کننده",
       "noSupplier": "بدون تأمین‌کننده",
       "accountLabel": "حساب",
-      "accountHint": "یک حساب هزینه — یا موجودی کالا برای خرید اقلام فروشی، یا تجهیزات برای وسایلی که کافه نگه می‌دارد.",
+      "accountHint": "یک حساب هزینه — یا تجهیزات برای وسایلی که کافه نگه می‌دارد. کالای فروشی با «دریافت کالا» در انبار وارد می‌شود.",
       "accountPlaceholder": "یک حساب انتخاب کنید",
       "descriptionLabel": "شرح",
       "descriptionPlaceholder": "مثلاً قبض برق مهر",
       "amountLabel": "مبلغ کل (با مالیات)",
       "vatLabel": "مالیات بر ارزش افزودهٔ فاکتور",
-      "vatHint": "اگر فاکتور مالیات ندارد خالی بگذارید.",
+      "vatHint": "اگر ندارد، خالی بگذارید.",
+      "vatTooHigh": "مالیات نمی‌تواند کل مبلغ باشد.",
       "breakdown": "{net} خالص + {vat} مالیات = {total}",
       "paymentLabel": "پرداخت",
       "payment": {
@@ -1901,7 +1986,12 @@
       "entriesHeading": "اسناد حسابداری",
       "pay": "پرداخت",
       "payTitle": "پرداخت EX-{number}",
+      "paySub": "{description} · {amount}",
       "paySource": "پرداخت از",
+      "from": {
+        "cash": "صندوق",
+        "bank": "بانک"
+      },
       "paidOn": "تاریخ پرداخت",
       "payConfirm": "ثبت پرداخت",
       "payError": "ثبت پرداخت انجام نشد. دوباره تلاش کنید.",
@@ -2577,9 +2667,11 @@
     "openingFloat": "تنخواه اول شیفت (تومان)",
     "openingFloatHint": "پول خرد داخل صندوق پیش از اولین فروش.",
     "note": "یادداشت (اختیاری)",
-    "open": "باز کردن شیفت",
+    "openNumbered": "باز کردن شیفت Z-{number}",
     "openShift": "شیفت Z-{number} باز است",
+    "openBadge": "باز",
     "openedBy": "باز شده توسط {name}، {date}",
+    "when": "{day}، {time}",
     "float": "تنخواه",
     "expected": "نقد مورد انتظار در صندوق",
     "bank": "کارت و کارت‌به‌کارت",
@@ -2590,17 +2682,25 @@
     "countedCash": "نقد شمرده‌شده (تومان)",
     "closeNotePlaceholder": "مثلاً دلیل کسری",
     "close": "بستن شیفت",
-    "exact": "دقیق — صندوق با دفاتر می‌خواند.",
-    "over": "{amount} اضافی",
-    "short": "{amount} کسری",
+    "preview": {
+      "exact": "دقیق — صندوق با دفاتر می‌خواند.",
+      "over": "{amount} اضافی. به‌عنوان اضافی صندوق ثبت می‌شود.",
+      "short": "{amount} کسری. به‌عنوان کسری صندوق ثبت می‌شود."
+    },
+    "result": {
+      "exact": "دقیق",
+      "over": "{amount} اضافی",
+      "short": "{amount} کسری"
+    },
     "amountInvalid": "مبلغ را به تومان و عدد صحیح وارد کنید.",
     "saveError": "ذخیره ممکن نشد. دوباره تلاش کنید.",
     "historyHeading": "شیفت‌های گذشته",
     "historyEmpty": "هنوز شیفت بسته‌شده‌ای نیست.",
+    "historyTitle": "Z-{number} · {when}",
     "by": "باز: {opened}، بسته: {closed}",
     "expectedCounted": "مورد انتظار {expected} · شمرده‌شده {counted}",
-    "opened": "شیفت باز شد",
-    "closed": "شیفت بسته شد"
+    "opened": "شیفت Z-{number} باز شد",
+    "closed": "شیفت Z-{number} بسته شد · {result}"
   },
   "dashKitchen": {
     "heading": "نمایشگر بار",

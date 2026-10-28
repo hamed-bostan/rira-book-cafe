@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { ACCOUNT_TYPES, MAX_VAT_RATE_BPS } from "@/src/domain/entities/Ledger";
 
+import { fieldsParsed } from "./fields-parsed";
 import { dayField, optionalMoneyField, optionalTextField } from "./money-fields";
 
 /** The most lines one manual entry may have — a payroll split fits comfortably. */
@@ -25,18 +26,21 @@ export const manualEntrySchema = z
     description: z.string().trim().min(1, "descriptionRequired").max(200, "textTooLong"),
     lines: z.array(entryLineSchema).min(2, "linesTooFew").max(MAX_ENTRY_LINES, "linesTooMany"),
   })
-  .superRefine((value, ctx) => {
-    value.lines.forEach((line, index) => {
-      if (line.debit > 0 === line.credit > 0) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["lines", index, "debit"], message: "lineOneSide" });
+  .superRefine(
+    (value, ctx) => {
+      value.lines.forEach((line, index) => {
+        if (line.debit > 0 === line.credit > 0) {
+          ctx.addIssue({ code: "custom", path: ["lines", index, "debit"], message: "lineOneSide" });
+        }
+      });
+      const debits = value.lines.reduce((sum, line) => sum + line.debit, 0);
+      const credits = value.lines.reduce((sum, line) => sum + line.credit, 0);
+      if (debits !== credits) {
+        ctx.addIssue({ code: "custom", path: ["lines"], message: "entryUnbalanced" });
       }
-    });
-    const debits = value.lines.reduce((sum, line) => sum + line.debit, 0);
-    const credits = value.lines.reduce((sum, line) => sum + line.credit, 0);
-    if (debits !== credits) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["lines"], message: "entryUnbalanced" });
-    }
-  });
+    },
+    { when: fieldsParsed("lines.*.debit", "lines.*.credit", "lines.*.memo") },
+  );
 
 export type ManualEntryFormInput = z.input<typeof manualEntrySchema>;
 export type ManualEntryValues = z.output<typeof manualEntrySchema>;
@@ -57,7 +61,7 @@ export const ledgerAccountSchema = z.object({
     .regex(/^\d{4}$/, "accountCodeInvalid"),
   name: z.string().trim().min(1, "nameRequired").max(80, "textTooLong"),
   nameFa: z.string().trim().min(1, "nameRequired").max(80, "textTooLong"),
-  type: z.enum(ACCOUNT_TYPES, { message: "accountTypeInvalid" }),
+  type: z.enum(ACCOUNT_TYPES, { error: "accountTypeInvalid" }),
 });
 
 export type LedgerAccountInput = z.input<typeof ledgerAccountSchema>;

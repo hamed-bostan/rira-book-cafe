@@ -3,6 +3,7 @@ import { z } from "zod";
 import { MAX_EXPENSE_DESCRIPTION_LENGTH } from "@/src/domain/entities/Expense";
 
 import { EXPENSE_PAYMENT_CHOICES } from "./expense-schema";
+import { fieldsParsed } from "./fields-parsed";
 import { countField, dayField, optionalMoneyField, optionalTextField, quantityField } from "./money-fields";
 
 /** The most lines one delivery, count or opening document may carry. */
@@ -26,9 +27,13 @@ export const stockReceiptSchema = z
     description: z.string().trim().min(1, "descriptionRequired").max(MAX_EXPENSE_DESCRIPTION_LENGTH, "textTooLong"),
     lines: z.array(pricedLine).min(1, "linesTooFew").max(MAX_LINES, "linesTooMany"),
     vatAmount: optionalMoneyField,
-    payment: z.enum(EXPENSE_PAYMENT_CHOICES, { message: "paymentInvalid" }),
+    payment: z.enum(EXPENSE_PAYMENT_CHOICES, { error: "paymentInvalid" }),
   })
-  .refine((value) => value.lines.some((line) => line.cost > 0), { path: ["lines"], message: "deliveryTotalRequired" })
+  .refine((value) => value.lines.some((line) => line.cost > 0), {
+    path: ["lines"],
+    error: "deliveryTotalRequired",
+    when: fieldsParsed("lines.*.quantity", "lines.*.cost", "vatAmount"),
+  })
   .transform(({ payment, ...rest }) => ({ ...rest, paidFrom: payment === "unpaid" ? undefined : payment }));
 
 export type StockReceiptFormInput = z.input<typeof stockReceiptSchema>;
@@ -50,7 +55,10 @@ export const stockCountSchema = z.object({
     .array(z.object({ ingredientId: z.string().trim().min(1), counted: countField }))
     .min(1, "linesTooFew")
     .max(MAX_LINES, "linesTooMany")
-    .refine((lines) => new Set(lines.map((line) => line.ingredientId)).size === lines.length, "ingredientRepeated"),
+    .refine((lines) => new Set(lines.map((line) => line.ingredientId)).size === lines.length, {
+      error: "ingredientRepeated",
+      when: fieldsParsed("*.counted"),
+    }),
   note: optionalTextField(200),
 });
 

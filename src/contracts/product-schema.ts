@@ -3,6 +3,7 @@ import { z } from "zod";
 import { BOOK_AVAILABILITIES, MAX_BOOK_COPIES, PRODUCT_KINDS } from "@/src/domain/entities/Product";
 import { DIETARY_TAGS } from "@/src/domain/entities/ProductFilters";
 
+import { fieldsParsed } from "./fields-parsed";
 import { imageUrlField } from "./image-url";
 
 const DIETARY_SET = new Set<string>(DIETARY_TAGS);
@@ -78,9 +79,11 @@ const dietaryField = z
   .default([])
   .refine((tags) => tags.every((tag) => DIETARY_SET.has(tag)), "dietaryUnknown");
 
+const productFieldsParsed = fieldsParsed("price", "originalPrice", "costPrice", "bookCopies");
+
 export const productFormSchema = z
   .object({
-    kind: z.enum(PRODUCT_KINDS, { message: "kindInvalid" }),
+    kind: z.enum(PRODUCT_KINDS, { error: "kindInvalid" }),
     name: z.string().trim().min(1, "nameRequired").max(120, "nameTooLong"),
     categoryId: z.string().min(1, "categoryRequired"),
     price: priceField,
@@ -105,7 +108,7 @@ export const productFormSchema = z
     // required only when `kind` is "book" — see the refinements below.
     bookAuthor: optionalText,
     bookIsbn: isbnField,
-    bookAvailability: z.enum(BOOK_AVAILABILITIES, { message: "availabilityInvalid" }),
+    bookAvailability: z.enum(BOOK_AVAILABILITIES, { error: "availabilityInvalid" }),
     bookCopies: copiesField,
     // Persian (fa) content overrides — optional. A blank fa name means "no fa
     // translation" for this item (the public site falls back to the base row).
@@ -117,20 +120,25 @@ export const productFormSchema = z
   })
   .refine((data) => data.originalPrice === undefined || data.originalPrice > data.price, {
     path: ["originalPrice"],
-    message: "originalPriceHigher",
+    error: "originalPriceHigher",
+    when: productFieldsParsed,
   })
   .refine((data) => data.kind !== "book" || data.bookAuthor !== undefined, {
     path: ["bookAuthor"],
-    message: "authorRequired",
+    error: "authorRequired",
+    when: productFieldsParsed,
   })
-  .superRefine((data, ctx) => {
-    if (data.madeToOrder) return;
-    if (data.stockQuantity.length === 0) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["stockQuantity"], message: "stockRequired" });
-    } else if (!STOCK_PATTERN.test(data.stockQuantity)) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["stockQuantity"], message: "stockWhole" });
-    }
-  })
+  .superRefine(
+    (data, ctx) => {
+      if (data.madeToOrder) return;
+      if (data.stockQuantity.length === 0) {
+        ctx.addIssue({ code: "custom", path: ["stockQuantity"], message: "stockRequired" });
+      } else if (!STOCK_PATTERN.test(data.stockQuantity)) {
+        ctx.addIssue({ code: "custom", path: ["stockQuantity"], message: "stockWhole" });
+      }
+    },
+    { when: productFieldsParsed },
+  )
   .transform(
     ({
       faName,

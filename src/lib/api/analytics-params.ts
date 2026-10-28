@@ -27,11 +27,11 @@ const rangeQuerySchema = z
     to: z.string().refine(isCafeDay, "Expected YYYY-MM-DD.").optional(),
   })
   .refine((value) => (value.from === undefined) === (value.to === undefined), {
-    message: "`from` and `to` go together.",
+    error: "`from` and `to` go together.",
     path: ["to"],
   })
   .refine((value) => !value.from || !value.to || value.from <= value.to, {
-    message: "`to` must be on or after `from`.",
+    error: "`to` must be on or after `from`.",
     path: ["to"],
   });
 

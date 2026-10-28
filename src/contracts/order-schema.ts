@@ -10,6 +10,8 @@ import {
   SETTABLE_PAYMENT_STATUSES,
 } from "@/src/domain/entities/Order";
 
+import { fieldsParsed } from "./fields-parsed";
+
 /**
  * Order contracts shared by the route handlers and their clients (defensive
  * re-validation — never trust the client). Framework-free, so they stay importable
@@ -57,14 +59,15 @@ const discountFields = {
 export const placeOrderSchema = z
   .object({
     items: orderLines,
-    serviceType: z.enum(SERVICE_TYPES, { message: "serviceTypeInvalid" }),
+    serviceType: z.enum(SERVICE_TYPES, { error: "serviceTypeInvalid" }),
     tableLabel: optionalText(MAX_TABLE_LABEL_LENGTH),
     note: optionalText(MAX_ORDER_NOTE_TEXT_LENGTH),
     ...discountFields,
   })
   .refine((data) => data.serviceType !== "dineIn" || data.tableLabel !== undefined, {
     path: ["tableLabel"],
-    message: "tableRequired",
+    error: "tableRequired",
+    when: fieldsParsed("items.*.note", "tableLabel", "note", "promoCode"),
   });
 
 export type PlaceOrderInput = z.input<typeof placeOrderSchema>;
@@ -76,14 +79,14 @@ export type QuoteOrderInput = z.input<typeof quoteOrderSchema>;
 
 /** Staff moving an order along the workflow. The current status is read server-side. */
 export const orderStatusChangeSchema = z.object({
-  status: z.enum(ORDER_STATUSES, { message: "statusInvalid" }),
+  status: z.enum(ORDER_STATUSES, { error: "statusInvalid" }),
 });
 
 export type OrderStatusChangeInput = z.infer<typeof orderStatusChangeSchema>;
 
 /** Staff ticking one line of an order off as served, or taking the tick back. */
 export const orderItemServedSchema = z.object({
-  served: z.boolean({ message: "statusInvalid" }),
+  served: z.boolean({ error: "statusInvalid" }),
 });
 
 export type OrderItemServedInput = z.infer<typeof orderItemServedSchema>;
@@ -95,11 +98,11 @@ export type OrderItemServedInput = z.infer<typeof orderItemServedSchema>;
  */
 export const orderPaymentSchema = z
   .object({
-    paymentStatus: z.enum(SETTABLE_PAYMENT_STATUSES, { message: "statusInvalid" }),
-    paymentMethod: z.enum(PAYMENT_METHODS, { message: "methodInvalid" }).optional(),
+    paymentStatus: z.enum(SETTABLE_PAYMENT_STATUSES, { error: "statusInvalid" }),
+    paymentMethod: z.enum(PAYMENT_METHODS, { error: "methodInvalid" }).optional(),
   })
   .refine((value) => value.paymentStatus !== "paid" || value.paymentMethod !== undefined, {
-    message: "methodRequired",
+    error: "methodRequired",
     path: ["paymentMethod"],
   });
 

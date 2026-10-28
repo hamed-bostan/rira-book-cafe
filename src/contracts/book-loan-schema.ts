@@ -37,18 +37,18 @@ export type LendBookInput = z.input<typeof lendBookSchema>;
  */
 export const bookLoanUpdateSchema = z
   .object({
-    status: z.enum(BOOK_LOAN_STATUSES, { message: "statusInvalid" }).optional(),
+    status: z.enum(BOOK_LOAN_STATUSES, { error: "statusInvalid" }).optional(),
     extendDays: z.number().int("extendInvalid").min(1, "extendInvalid").max(MAX_LOAN_DAYS, "extendInvalid").optional(),
     undoExtend: z
       .object({
-        dueAt: z.string().datetime({ message: "dateInvalid" }),
-        extendedDueAt: z.string().datetime({ message: "dateInvalid" }),
+        dueAt: z.string().datetime({ error: "dateInvalid" }),
+        extendedDueAt: z.string().datetime({ error: "dateInvalid" }),
       })
       .optional(),
   })
   // One change at a time: close the loan, extend it, or take an extension back.
   .refine((data) => [data.status, data.extendDays, data.undoExtend].filter((v) => v !== undefined).length === 1, {
-    message: "nothingToChange",
+    error: "nothingToChange",
   });
 
 export type BookLoanUpdateInput = z.input<typeof bookLoanUpdateSchema>;

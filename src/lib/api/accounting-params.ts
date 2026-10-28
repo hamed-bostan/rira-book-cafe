@@ -26,7 +26,7 @@ const spanSchema = z
     to: z.string().refine(isCafeDay, "Expected YYYY-MM-DD.").optional(),
   })
   .refine((value) => !value.from || !value.to || value.from <= value.to, {
-    message: "`to` must be on or after `from`.",
+    error: "`to` must be on or after `from`.",
     path: ["to"],
   });
 

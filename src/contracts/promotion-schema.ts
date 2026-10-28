@@ -10,6 +10,8 @@ import {
   normalizePromoCode,
 } from "@/src/domain/entities/Promotion";
 
+import { fieldsParsed } from "./fields-parsed";
+
 /**
  * Promotion and loyalty contracts shared by the dashboard forms and the route
  * handlers. The forms author strings (what their inputs emit); the schemas'
@@ -31,6 +33,17 @@ const optionalDay = z
   .refine((value) => value === "" || isCafeDay(value), "dateInvalid")
   .transform((value) => (value === "" ? undefined : value));
 
+const promoFieldsParsed = fieldsParsed(
+  "description",
+  "value",
+  "maxDiscount",
+  "minSubtotal",
+  "startsOn",
+  "endsOn",
+  "usageLimit",
+  "perGuestLimit",
+);
+
 export const promoCodeFormSchema = z
   .object({
     code: z
@@ -42,7 +55,7 @@ export const promoCodeFormSchema = z
       .trim()
       .max(MAX_PROMO_DESCRIPTION_LENGTH, "descriptionTooLong")
       .transform((value) => (value ? value : undefined)),
-    kind: z.enum(PROMO_KINDS, { message: "kindInvalid" }),
+    kind: z.enum(PROMO_KINDS, { error: "kindInvalid" }),
     value: z
       .string()
       .trim()
@@ -57,22 +70,30 @@ export const promoCodeFormSchema = z
     perGuestLimit: optionalWhole("limitInvalid"),
     isActive: z.boolean(),
   })
-  .refine((data) => data.kind !== "percent" || data.value <= 100, { path: ["value"], message: "percentTooHigh" })
+  .refine((data) => data.kind !== "percent" || data.value <= 100, {
+    path: ["value"],
+    error: "percentTooHigh",
+    when: promoFieldsParsed,
+  })
   .refine((data) => !data.startsOn || !data.endsOn || data.endsOn >= data.startsOn, {
     path: ["endsOn"],
-    message: "endBeforeStart",
+    error: "endBeforeStart",
+    when: promoFieldsParsed,
   })
   .refine((data) => data.usageLimit === undefined || data.usageLimit > 0, {
     path: ["usageLimit"],
-    message: "limitInvalid",
+    error: "limitInvalid",
+    when: promoFieldsParsed,
   })
   .refine((data) => data.perGuestLimit === undefined || data.perGuestLimit > 0, {
     path: ["perGuestLimit"],
-    message: "limitInvalid",
+    error: "limitInvalid",
+    when: promoFieldsParsed,
   })
   .refine((data) => data.maxDiscount === undefined || data.maxDiscount > 0, {
     path: ["maxDiscount"],
-    message: "amountInvalid",
+    error: "amountInvalid",
+    when: promoFieldsParsed,
   })
   .transform(({ startsOn, endsOn, maxDiscount, ...rest }) => ({
     ...rest,

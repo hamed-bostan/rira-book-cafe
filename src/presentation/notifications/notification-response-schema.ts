@@ -7,7 +7,7 @@ export const notificationResponseSchema = z.object({
   id: z.string(),
   userId: z.string(),
   kind: z.enum(NOTIFICATION_KINDS),
-  params: z.record(z.union([z.string(), z.number()])),
+  params: z.record(z.string(), z.union([z.string(), z.number()])),
   link: z.string().optional(),
   readAt: z.string().optional(),
   createdAt: z.string(),

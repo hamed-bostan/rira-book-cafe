@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { ZodError } from "zod";
+import { ZodError, flattenError } from "zod";
 
 import { AdminRevokeError } from "@/src/domain/errors/AdminRevokeError";
 import { ConflictError } from "@/src/domain/errors/ConflictError";
@@ -155,7 +155,9 @@ export async function parseJsonBody(request: Request): Promise<{ ok: true; data:
 /** Collapse a Zod error into one message per field for the `fieldErrors` envelope. */
 export function firstFieldErrors(error: ZodError): Record<string, string> {
   const result: Record<string, string> = {};
-  for (const [field, messages] of Object.entries(error.flatten().fieldErrors)) {
+  // An untyped `ZodError` flattens to `{}`; every key it can hold is a field name.
+  const fieldErrors: Partial<Record<string, string[]>> = flattenError(error).fieldErrors;
+  for (const [field, messages] of Object.entries(fieldErrors)) {
     if (messages && messages.length > 0) result[field] = messages[0];
   }
   return result;

@@ -83,12 +83,12 @@ export type Env = z.output<typeof baseSchema>;
  */
 function crossFieldRules(env: Env, ctx: z.RefinementCtx, strict: boolean): void {
   if (strict && !env.DATABASE_URL) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["DATABASE_URL"], message: "DATABASE_URL is required." });
+    ctx.addIssue({ code: "custom", path: ["DATABASE_URL"], message: "DATABASE_URL is required." });
   }
 
   if (env.SMS_IR_API_KEY && !env.SMS_IR_TEMPLATE_ID && !env.OTP_MOCK) {
     ctx.addIssue({
-      code: z.ZodIssueCode.custom,
+      code: "custom",
       path: ["SMS_IR_TEMPLATE_ID"],
       message: "SMS_IR_TEMPLATE_ID is required when SMS_IR_API_KEY is set (or set OTP_MOCK=true).",
     });
@@ -98,7 +98,7 @@ function crossFieldRules(env: Env, ctx: z.RefinementCtx, strict: boolean): void 
 
   if (!env.AUTH_SECRET || env.AUTH_SECRET.length < MIN_AUTH_SECRET_LENGTH) {
     ctx.addIssue({
-      code: z.ZodIssueCode.custom,
+      code: "custom",
       path: ["AUTH_SECRET"],
       message: `AUTH_SECRET is required in production (at least ${MIN_AUTH_SECRET_LENGTH} characters — \`npx auth secret\`).`,
     });

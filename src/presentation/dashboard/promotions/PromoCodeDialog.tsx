@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import * as React from "react";
+import { flattenError } from "zod";
 
 import { promoCodeFormSchema, type PromoCodeFormInput } from "@/src/contracts/promotion-schema";
 import { cafeDayOf } from "@/src/domain/entities/CafeTime";
@@ -120,7 +121,7 @@ export function PromoCodeDialog({ open, onOpenChange, promo, takenCodes, today }
 
   function firstProblem(): string | null {
     const parsed = promoCodeFormSchema.safeParse(values);
-    const errors: Partial<Record<string, string[]>> = parsed.success ? {} : parsed.error.flatten().fieldErrors;
+    const errors: Partial<Record<string, string[]>> = parsed.success ? {} : flattenError(parsed.error).fieldErrors;
     for (const field of FIELDS) {
       const message = errors[field]?.[0];
       const blankRequired = (field === "code" && code === "") || (field === "value" && values.value.trim() === "");

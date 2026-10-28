@@ -85,7 +85,7 @@ export const orderBulkActionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("serve") }),
   z.object({
     type: z.literal("markPaid"),
-    paymentMethod: z.enum(PAYMENT_METHODS, { message: "methodInvalid" }),
+    paymentMethod: z.enum(PAYMENT_METHODS, { error: "methodInvalid" }),
   }),
   z.object({ type: z.literal("cancel") }),
 ]);

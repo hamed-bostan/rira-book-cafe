@@ -17,12 +17,7 @@ import { execSync } from "node:child_process";
 const BLOCKING = new Set(["high", "critical"]);
 
 /** Advisory URL → why it is accepted. */
-const ACCEPTED = {
-  // ReDoS-style stack exhaustion on deeply nested brace patterns. No fixed release
-  // (3.0.3 is the latest); reached only via eslint-config-next → fast-glob →
-  // micromatch, which globs the repo's own source paths during lint.
-  "https://github.com/advisories/GHSA-vfj7-8cjw-p6xm": "lint-time globbing of our own paths, no fix released",
-};
+const ACCEPTED = {};
 
 function runAudit() {
   try {

@@ -40,7 +40,7 @@ export type RequestReservationInput = z.input<typeof requestReservationSchema>;
 export const staffReservationSchema = requestReservationSchema.extend({
   guestName: z.string().trim().min(1, "nameRequired").max(MAX_GUEST_NAME_LENGTH, "nameTooLong"),
   guestPhone: z.string().trim().refine(isPlausiblePhone, "phoneInvalid"),
-  tableLabel: z.enum(CAFE_TABLE_LABELS, { message: "tableInvalid" }).optional(),
+  tableLabel: z.enum(CAFE_TABLE_LABELS, { error: "tableInvalid" }).optional(),
 });
 
 export type StaffReservationInput = z.input<typeof staffReservationSchema>;
@@ -52,15 +52,15 @@ export type StaffReservationInput = z.input<typeof staffReservationSchema>;
  */
 export const reservationUpdateSchema = z
   .object({
-    status: z.enum(RESERVATION_STATUSES, { message: "statusInvalid" }).optional(),
+    status: z.enum(RESERVATION_STATUSES, { error: "statusInvalid" }).optional(),
     tableLabel: z.string().trim().max(MAX_TABLE_LABEL_LENGTH, "tableTooLong").nullable().optional(),
     undo: z.literal(true).optional(),
   })
   .refine((data) => data.status !== undefined || data.tableLabel !== undefined, {
-    message: "nothingToChange",
+    error: "nothingToChange",
   })
   .refine((data) => !data.undo || (data.status !== undefined && data.tableLabel === undefined), {
-    message: "statusInvalid",
+    error: "statusInvalid",
     path: ["status"],
   });
 

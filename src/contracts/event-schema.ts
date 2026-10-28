@@ -9,6 +9,7 @@ import {
 import { CAFE_TABLE_LABELS } from "@/src/domain/entities/CafeTable";
 import { isWallTime, wallTimeToDate } from "@/src/domain/entities/CafeTime";
 
+import { fieldsParsed } from "./fields-parsed";
 import { isImageUrl } from "./image-url";
 
 /**
@@ -29,7 +30,7 @@ const wallTime = z.string().refine(isWallTime, "dateTimeInvalid");
 
 export const eventFormSchema = z
   .object({
-    kind: z.enum(EVENT_KINDS, { message: "kindInvalid" }),
+    kind: z.enum(EVENT_KINDS, { error: "kindInvalid" }),
     title: z.string().trim().min(1, "titleRequired").max(MAX_EVENT_TITLE_LENGTH, "titleTooLong"),
     description: optionalText(MAX_EVENT_DESCRIPTION_LENGTH),
     titleFa: optionalText(MAX_EVENT_TITLE_LENGTH),
@@ -59,7 +60,8 @@ export const eventFormSchema = z
   })
   .refine((data) => !isWallTime(data.startsAt) || !isWallTime(data.endsAt) || data.endsAt > data.startsAt, {
     path: ["endsAt"],
-    message: "endBeforeStart",
+    error: "endBeforeStart",
+    when: fieldsParsed("description", "titleFa", "descriptionFa", "capacity", "price"),
   })
   .transform(({ startsAt, endsAt, ...rest }) => ({
     ...rest,
@@ -73,7 +75,7 @@ export type EventFormValues = z.output<typeof eventFormSchema>;
 /** Staff choosing the tables an event holds; an empty list releases them all. */
 export const eventTablesSchema = z.object({
   tableLabels: z
-    .array(z.enum(CAFE_TABLE_LABELS, { message: "tableInvalid" }))
+    .array(z.enum(CAFE_TABLE_LABELS, { error: "tableInvalid" }))
     .max(CAFE_TABLE_LABELS.length, "tableInvalid"),
 });
 

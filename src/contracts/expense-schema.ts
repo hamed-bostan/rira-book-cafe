@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { MAX_EXPENSE_DESCRIPTION_LENGTH, PAYMENT_SOURCES } from "@/src/domain/entities/Expense";
 
+import { fieldsParsed } from "./fields-parsed";
 import { dayField, moneyField, optionalMoneyField, optionalTextField } from "./money-fields";
 
 /** How an expense was settled when it was recorded: on account, or paid now. */
@@ -22,16 +23,20 @@ export const expenseSchema = z
     description: z.string().trim().min(1, "descriptionRequired").max(MAX_EXPENSE_DESCRIPTION_LENGTH, "textTooLong"),
     amount: moneyField,
     vatAmount: optionalMoneyField,
-    payment: z.enum(EXPENSE_PAYMENT_CHOICES, { message: "paymentInvalid" }),
+    payment: z.enum(EXPENSE_PAYMENT_CHOICES, { error: "paymentInvalid" }),
   })
-  .refine((value) => value.vatAmount < value.amount, { path: ["vatAmount"], message: "vatTooHigh" })
+  .refine((value) => value.vatAmount < value.amount, {
+    path: ["vatAmount"],
+    error: "vatTooHigh",
+    when: fieldsParsed("amount", "vatAmount"),
+  })
   .transform(({ payment, ...rest }) => ({ ...rest, paidFrom: payment === "unpaid" ? undefined : payment }));
 
 export type ExpenseFormInput = z.input<typeof expenseSchema>;
 
 /** Paying an owed expense. */
 export const payExpenseSchema = z.object({
-  source: z.enum(PAYMENT_SOURCES, { message: "paymentInvalid" }),
+  source: z.enum(PAYMENT_SOURCES, { error: "paymentInvalid" }),
   paidOn: dayField,
 });
 

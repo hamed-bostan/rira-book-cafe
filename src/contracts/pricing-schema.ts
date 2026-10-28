@@ -10,6 +10,7 @@ import {
   OVERHEAD_SOURCES,
 } from "@/src/domain/entities/Pricing";
 
+import { fieldsParsed } from "./fields-parsed";
 import { moneyField } from "./money-fields";
 
 /** A positive quantity as typed: "18", "0.5", "1000". */
@@ -37,7 +38,7 @@ const optionalWholeNumber = z
 /** An ingredient as bought: e.g. 1,200,000 Toman for 1000 g. */
 export const ingredientSchema = z.object({
   name: z.string().trim().min(1, "nameRequired").max(80, "textTooLong"),
-  unit: z.enum(INGREDIENT_UNITS, { message: "unitInvalid" }),
+  unit: z.enum(INGREDIENT_UNITS, { error: "unitInvalid" }),
   purchasePrice: moneyField,
   purchaseQuantity: quantityField,
   isActive: z.boolean(),
@@ -50,7 +51,10 @@ export const recipeSchema = z.object({
   lines: z
     .array(z.object({ ingredientId: z.string().trim().min(1, "ingredientRequired"), quantity: quantityField }))
     .max(MAX_RECIPE_LINES, "linesTooMany")
-    .refine((lines) => new Set(lines.map((line) => line.ingredientId)).size === lines.length, "ingredientRepeated"),
+    .refine((lines) => new Set(lines.map((line) => line.ingredientId)).size === lines.length, {
+      error: "ingredientRepeated",
+      when: fieldsParsed("*.quantity"),
+    }),
 });
 
 export type RecipeFormInput = z.input<typeof recipeSchema>;
@@ -65,7 +69,7 @@ export const pricingSettingsSchema = z
       .regex(/^\d+$/, "numberInvalid")
       .transform(Number)
       .refine((n) => n >= 1 && n <= 1_000_000, "numberInvalid"),
-    overheadSource: z.enum(OVERHEAD_SOURCES, { message: "overheadSourceInvalid" }),
+    overheadSource: z.enum(OVERHEAD_SOURCES, { error: "overheadSourceInvalid" }),
     manualMonthlyOverhead: optionalWholeNumber,
     expectedMonthlyUnits: optionalWholeNumber.refine((n) => n === undefined || n > 0, "numberInvalid"),
     overheadMonths: z
@@ -90,7 +94,16 @@ export const pricingSettingsSchema = z
   })
   .refine((value) => value.overheadSource !== "manual" || value.manualMonthlyOverhead !== undefined, {
     path: ["manualMonthlyOverhead"],
-    message: "overheadRequired",
+    error: "overheadRequired",
+    when: fieldsParsed(
+      "defaultMarkup",
+      "roundingStep",
+      "manualMonthlyOverhead",
+      "expectedMonthlyUnits",
+      "overheadMonths",
+      "monthlyInflation",
+      "priceHorizonMonths",
+    ),
   });
 
 export type PricingSettingsInput = z.input<typeof pricingSettingsSchema>;

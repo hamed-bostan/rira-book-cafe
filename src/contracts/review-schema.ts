@@ -31,7 +31,7 @@ export type SubmitReviewInput = z.input<typeof submitReviewSchema>;
 
 /** Staff approving or rejecting a review. */
 export const moderateReviewSchema = z.object({
-  status: z.enum(MODERATION_STATUSES, { message: "statusInvalid" }),
+  status: z.enum(MODERATION_STATUSES, { error: "statusInvalid" }),
 });
 
 export type ModerateReviewInput = z.input<typeof moderateReviewSchema>;

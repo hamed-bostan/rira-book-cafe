@@ -10,6 +10,8 @@ import {
   SUITE_BOOKING_STATUSES,
 } from "@/src/domain/entities/SuiteBooking";
 
+import { fieldsParsed } from "./fields-parsed";
+
 /**
  * Suite-booking contracts shared by the route handlers and their clients. Days
  * travel as cafe days (`YYYY-MM-DD`, what a `date` input holds). Messages are
@@ -34,7 +36,7 @@ const stayFields = z.object({
 
 const checkOutAfterCheckIn = {
   check: (data: { checkIn: string; checkOut: string }): boolean => data.checkOut > data.checkIn,
-  issue: { message: "checkOutBeforeCheckIn", path: ["checkOut"] },
+  issue: { error: "checkOutBeforeCheckIn", path: ["checkOut"], when: fieldsParsed("note") },
 };
 
 /** A guest asking for the suite. */
@@ -57,7 +59,7 @@ export type StaffSuiteBookingInput = z.input<typeof staffSuiteBookingSchema>;
  * toast (the use-case allows only `checkedIn → confirmed`).
  */
 export const suiteBookingUpdateSchema = z.object({
-  status: z.enum(SUITE_BOOKING_STATUSES, { message: "statusInvalid" }),
+  status: z.enum(SUITE_BOOKING_STATUSES, { error: "statusInvalid" }),
   undo: z.literal(true).optional(),
 });
 

@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { BANK_LINE_POSTINGS } from "@/src/domain/entities/BankReconciliation";
 
+import { fieldsParsed } from "./fields-parsed";
 import { balanceField, dayField, optionalMoneyField, optionalTextField, signedAmountField } from "./money-fields";
 
 /** The most lines one statement or import may carry. */
@@ -19,6 +20,8 @@ export const statementLineSchema = z.object({
 
 export type StatementLineFormInput = z.input<typeof statementLineSchema>;
 
+const statementFieldsParsed = fieldsParsed("openingBalance", "closingBalance", "lines.*.reference", "lines.*.amount");
+
 /**
  * A bank statement for a period (usually a Persian month): its balances and its
  * lines, typed or imported. Lines must fall inside the period. The server also
@@ -32,10 +35,15 @@ export const bankStatementSchema = z
     closingBalance: balanceField,
     lines: z.array(statementLineSchema).max(MAX_STATEMENT_LINES, "linesTooMany"),
   })
-  .refine((value) => value.fromDay <= value.toDay, { path: ["toDay"], message: "periodEndsBeforeStart" })
+  .refine((value) => value.fromDay <= value.toDay, {
+    path: ["toDay"],
+    error: "periodEndsBeforeStart",
+    when: statementFieldsParsed,
+  })
   .refine((value) => value.lines.every((line) => line.date >= value.fromDay && line.date <= value.toDay), {
     path: ["lines"],
-    message: "lineOutsidePeriod",
+    error: "lineOutsidePeriod",
+    when: statementFieldsParsed,
   });
 
 export type BankStatementFormInput = z.input<typeof bankStatementSchema>;
@@ -56,7 +64,7 @@ export type BankMatchInput = z.input<typeof bankMatchSchema>;
 
 /** Book what a statement line shows the bank did: a fee, interest, or a gateway payout (with its fee). */
 export const recordStatementLineSchema = z.object({
-  kind: z.enum(BANK_LINE_POSTINGS, { message: "postingKindInvalid" }),
+  kind: z.enum(BANK_LINE_POSTINGS, { error: "postingKindInvalid" }),
   fee: optionalMoneyField,
 });
 

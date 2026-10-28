@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import * as React from "react";
+import { flattenError } from "zod";
 
 import { grantAdminSchema } from "@/src/contracts/team-schema";
 import { normalizePhone, phoneDigits, teamPhoneDigitsWhenComplete } from "@/src/domain/entities/Phone";
@@ -53,7 +54,7 @@ export function GrantAccessForm({ memberIds }: GrantAccessFormProps) {
   const [pending, startTransition] = React.useTransition();
 
   const parsed = grantAdminSchema.safeParse({ phone, email, role });
-  const issues = parsed.success ? {} : parsed.error.flatten().fieldErrors;
+  const issues = parsed.success ? {} : flattenError(parsed.error).fieldErrors;
   const taken = parsed.success && memberIds.includes(normalizePhone(parsed.data.phone));
   // Once it has all the digits a number typed that way needs (11 for 0912…, 12 for
   // +98 912…), a wrong number is pointed out while typing; before that, on leaving.

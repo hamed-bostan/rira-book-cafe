@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/mini";
 
 import { BOOK_AVAILABILITIES, PRODUCT_KINDS, type Product } from "@/src/domain/entities/Product";
 
@@ -17,10 +17,10 @@ export const productResponseSchema = z.object({
   kind: z.enum(PRODUCT_KINDS),
   name: z.string(),
   price: z.number(),
-  originalPrice: z.number().optional(),
+  originalPrice: z.optional(z.number()),
   // Only the dashboard's endpoints return it.
-  costPrice: z.number().optional(),
-  discountPercent: z.number().optional(),
+  costPrice: z.optional(z.number()),
+  discountPercent: z.optional(z.number()),
   rating: z.number(),
   ratingCount: z.number(),
   stockQuantity: z.number(),
@@ -29,21 +29,21 @@ export const productResponseSchema = z.object({
   categoryId: z.string(),
   isFeatured: z.boolean(),
   isPublished: z.boolean(),
-  badge: z.string().optional(),
-  images: z.array(z.string()).optional(),
-  unit: z.string().optional(),
-  description: z.string().optional(),
-  nutrition: z.string().optional(),
-  origin: z.string().optional(),
-  dietary: z.array(z.string()).optional(),
+  badge: z.optional(z.string()),
+  images: z.optional(z.array(z.string())),
+  unit: z.optional(z.string()),
+  description: z.optional(z.string()),
+  nutrition: z.optional(z.string()),
+  origin: z.optional(z.string()),
+  dietary: z.optional(z.array(z.string())),
   taxExempt: z.boolean(),
-  book: z
-    .object({
+  book: z.optional(
+    z.object({
       author: z.string(),
-      isbn: z.string().optional(),
+      isbn: z.optional(z.string()),
       availability: z.enum(BOOK_AVAILABILITIES),
-    })
-    .optional(),
-}) satisfies z.ZodType<Product>;
+    }),
+  ),
+}) satisfies z.ZodMiniType<Product>;
 
 export const productListResponseSchema = z.array(productResponseSchema);

@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/mini";
 
 import type { OrderQuote } from "@/src/domain/entities/Checkout";
 import {
@@ -17,59 +17,59 @@ export const loyaltySettingsResponseSchema = z.object({
   tomanPerPoint: z.number(),
   pointValue: z.number(),
   minRedeemPoints: z.number(),
-}) satisfies z.ZodType<LoyaltySettings>;
+}) satisfies z.ZodMiniType<LoyaltySettings>;
 
 export const loyaltyTransactionResponseSchema = z.object({
   id: z.string(),
   userId: z.string(),
   delta: z.number(),
   reason: z.enum(LOYALTY_REASONS),
-  orderId: z.string().optional(),
-  orderNumber: z.number().optional(),
-  note: z.string().optional(),
-  createdByName: z.string().optional(),
+  orderId: z.optional(z.string()),
+  orderNumber: z.optional(z.number()),
+  note: z.optional(z.string()),
+  createdByName: z.optional(z.string()),
   createdAt: z.string(),
-}) satisfies z.ZodType<LoyaltyTransaction>;
+}) satisfies z.ZodMiniType<LoyaltyTransaction>;
 
 export const guestLoyaltyOverviewResponseSchema = z.object({
   balance: z.number(),
   history: z.array(loyaltyTransactionResponseSchema),
   settings: loyaltySettingsResponseSchema,
-}) satisfies z.ZodType<GuestLoyaltyOverview>;
+}) satisfies z.ZodMiniType<GuestLoyaltyOverview>;
 
 export const guestLoyaltyLookupResponseSchema = z.object({
   userId: z.string(),
-  name: z.string().optional(),
+  name: z.optional(z.string()),
   balance: z.number(),
   history: z.array(loyaltyTransactionResponseSchema),
-}) satisfies z.ZodType<GuestLoyaltyLookup>;
+}) satisfies z.ZodMiniType<GuestLoyaltyLookup>;
 
 const promoCodeShape = {
   id: z.string(),
   code: z.string(),
-  description: z.string().optional(),
+  description: z.optional(z.string()),
   kind: z.enum(PROMO_KINDS),
   value: z.number(),
-  maxDiscount: z.number().optional(),
+  maxDiscount: z.optional(z.number()),
   minSubtotal: z.number(),
-  startsAt: z.string().optional(),
-  endsAt: z.string().optional(),
-  usageLimit: z.number().optional(),
-  perGuestLimit: z.number().optional(),
+  startsAt: z.optional(z.string()),
+  endsAt: z.optional(z.string()),
+  usageLimit: z.optional(z.number()),
+  perGuestLimit: z.optional(z.number()),
   isActive: z.boolean(),
   createdAt: z.string(),
   updatedAt: z.string(),
 };
 
-export const promoCodeResponseSchema = z.object(promoCodeShape) satisfies z.ZodType<PromoCode>;
+export const promoCodeResponseSchema = z.object(promoCodeShape) satisfies z.ZodMiniType<PromoCode>;
 
 export const promoCodeListResponseSchema = z.array(
-  z.object({ ...promoCodeShape, uses: z.number() }) satisfies z.ZodType<PromoCodeWithUses>,
+  z.object({ ...promoCodeShape, uses: z.number() }) satisfies z.ZodMiniType<PromoCodeWithUses>,
 );
 
 export const orderQuoteResponseSchema = z.object({
   subtotal: z.number(),
-  promoCode: z.string().optional(),
+  promoCode: z.optional(z.string()),
   promoDiscount: z.number(),
   pointsRedeemed: z.number(),
   pointsDiscount: z.number(),
@@ -80,4 +80,4 @@ export const orderQuoteResponseSchema = z.object({
   loyaltyEnabled: z.boolean(),
   pointValue: z.number(),
   minRedeemPoints: z.number(),
-}) satisfies z.ZodType<OrderQuote>;
+}) satisfies z.ZodMiniType<OrderQuote>;

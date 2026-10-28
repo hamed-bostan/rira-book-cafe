@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/mini";
 
 import { PAYMENT_METHODS, SERVICE_TYPES } from "@/src/domain/entities/Order";
 import { PRODUCT_KINDS } from "@/src/domain/entities/Product";
@@ -27,7 +27,7 @@ const topItemSchema = z.object({
   name: z.string(),
   kind: z.enum(PRODUCT_KINDS),
   /** Its menu category, in the reader's language; `null` once the item is deleted. */
-  categoryName: z.string().nullable(),
+  categoryName: z.nullable(z.string()),
   quantity: z.number(),
   revenue: z.number(),
 });
@@ -63,7 +63,7 @@ export const paymentReportResponseSchema = z.object({
       id: z.string(),
       orderNumber: z.number(),
       serviceType: z.enum(SERVICE_TYPES),
-      tableLabel: z.string().optional(),
+      tableLabel: z.optional(z.string()),
       total: z.number(),
       placedAt: z.string(),
     }),

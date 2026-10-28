@@ -1,6 +1,6 @@
-import { ApiError } from "./ApiError";
+import { safeParse, type $ZodType } from "zod/v4/core";
 
-import type { ZodType } from "zod";
+import { ApiError } from "./ApiError";
 
 /**
  * Response-shape validation — the seam both REST clients share, so a body that
@@ -16,6 +16,10 @@ import type { ZodType } from "zod";
  * every caller is written against.
  *
  * Both are normalized here into an `ApiError` carrying `BAD_RESPONSE_CODE`.
+ *
+ * Typed against zod 4's core rather than either of its builds, so both are accepted:
+ * the response schemas use `zod/mini`, which every page can afford to carry, while
+ * the shared form contracts stay on classic `zod`.
  */
 
 /** `code` on every `ApiError` raised for a malformed or shape-mismatched body. */
@@ -24,8 +28,8 @@ export const BAD_RESPONSE_CODE = "EBADRESPONSE";
 const BAD_RESPONSE_MESSAGE = "The server returned a malformed response. Please try again.";
 
 /** Validate a response body against the schema the typed service declares. */
-export function parseApiResponse<T>(schema: ZodType<T>, data: unknown, status: number | null): T {
-  const result = schema.safeParse(data);
+export function parseApiResponse<T>(schema: $ZodType<T>, data: unknown, status: number | null): T {
+  const result = safeParse(schema, data);
   if (result.success) return result.data;
 
   // The user-facing message stays generic; the mismatch itself is only useful to

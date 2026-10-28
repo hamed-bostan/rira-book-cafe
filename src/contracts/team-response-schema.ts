@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/mini";
 
 import { GRANTABLE_ROLES } from "@/src/domain/entities/User";
 
@@ -22,7 +22,7 @@ export const teamMemberResponseSchema = z.object({
   id: z.string(),
   name: z.string(),
   phone: z.string(),
-  avatarUrl: z.string().nullable(),
+  avatarUrl: z.nullable(z.string()),
   /**
    * Dashboard role — `owner` manages the team, `admin` runs the cafe, `staff` runs
    * the floor, `support` reads. A break-glass account with no role in the
@@ -47,7 +47,7 @@ export const teamMemberResponseSchema = z.object({
    * absence instead of silently dropping the button, which left an admin with no
    * way to find out why they couldn't remove someone.
    */
-  revokeBlocked: z.enum(["self", "breakGlass", "owner"]).nullable(),
+  revokeBlocked: z.nullable(z.enum(["self", "breakGlass", "owner"])),
 });
 
 export const teamMemberListResponseSchema = z.array(teamMemberResponseSchema);

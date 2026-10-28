@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import {
   MAX_LINE_QUANTITY,
+  MAX_ORDER_LINES,
   MAX_ORDER_NOTE_TEXT_LENGTH,
   MAX_TABLE_LABEL_LENGTH,
   ORDER_STATUSES,
@@ -17,9 +18,6 @@ import { fieldsParsed } from "./fields-parsed";
  * re-validation — never trust the client). Framework-free, so they stay importable
  * from both halves of the BFF. Validation messages are `formErrors` message keys.
  */
-
-/** Most distinct lines in one order — a generous table, not a catering job. */
-export const MAX_ORDER_LINES = 30;
 
 /** Optional free text: trimmed, blank → `undefined`. */
 function optionalText(max: number) {

@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/mini";
 
 import {
   REVIEW_STATUSES,
@@ -16,13 +16,13 @@ export const reviewResponseSchema = z.object({
   userId: z.string(),
   authorName: z.string(),
   rating: z.number(),
-  comment: z.string().optional(),
+  comment: z.optional(z.string()),
   status: z.enum(REVIEW_STATUSES),
-  moderatedByName: z.string().optional(),
-  moderatedAt: z.string().optional(),
+  moderatedByName: z.optional(z.string()),
+  moderatedAt: z.optional(z.string()),
   createdAt: z.string(),
   updatedAt: z.string(),
-}) satisfies z.ZodType<ProductReview>;
+}) satisfies z.ZodMiniType<ProductReview>;
 
 export const reviewListResponseSchema = z.array(reviewResponseSchema);
 
@@ -31,18 +31,18 @@ export const publicReviewListResponseSchema = z.array(
     id: z.string(),
     authorName: z.string(),
     rating: z.number(),
-    comment: z.string().optional(),
+    comment: z.optional(z.string()),
     createdAt: z.string(),
-  }) satisfies z.ZodType<PublicReview>,
+  }) satisfies z.ZodMiniType<PublicReview>,
 );
 
 export const reviewEligibilityResponseSchema = z.object({
   canReview: z.boolean(),
-  review: reviewResponseSchema.nullable(),
-}) satisfies z.ZodType<ReviewEligibility>;
+  review: z.nullable(reviewResponseSchema),
+}) satisfies z.ZodMiniType<ReviewEligibility>;
 
 export const reviewCountsResponseSchema = z.object({
   pending: z.number(),
   approved: z.number(),
   rejected: z.number(),
-}) satisfies z.ZodType<Record<ReviewStatus, number>>;
+}) satisfies z.ZodMiniType<Record<ReviewStatus, number>>;

@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/mini";
 
 import type { BookLoanCounts } from "@/src/domain/repositories/IBookLoanRepository";
 
@@ -9,4 +9,4 @@ export const bookLoanCountsResponseSchema = z.object({
   returned: z.number(),
   lost: z.number(),
   all: z.number(),
-}) satisfies z.ZodType<BookLoanCounts>;
+}) satisfies z.ZodMiniType<BookLoanCounts>;

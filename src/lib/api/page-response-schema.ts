@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/mini";
 
 import type { Page } from "@/src/domain/entities/Pagination";
 
@@ -11,7 +11,7 @@ import type { Page } from "@/src/domain/entities/Pagination";
  * gets a schema whose `items` are its own entity, still checked at the typed-
  * service boundary like every other response.
  */
-export function pageResponseSchema<T>(itemSchema: z.ZodType<T>): z.ZodType<Page<T>> {
+export function pageResponseSchema<T>(itemSchema: z.ZodMiniType<T>): z.ZodMiniType<Page<T>> {
   return z.object({
     items: z.array(itemSchema),
     total: z.number(),

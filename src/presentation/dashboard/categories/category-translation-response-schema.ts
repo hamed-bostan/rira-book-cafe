@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/mini";
 
 import type { CategoryTranslationInput } from "@/src/domain/repositories/ICategoryRepository";
 
@@ -11,6 +11,6 @@ import type { CategoryTranslationInput } from "@/src/domain/repositories/ICatego
 export const categoryTranslationResponseSchema = z.object({
   locale: z.string(),
   name: z.string(),
-}) satisfies z.ZodType<CategoryTranslationInput>;
+}) satisfies z.ZodMiniType<CategoryTranslationInput>;
 
 export const categoryTranslationListResponseSchema = z.array(categoryTranslationResponseSchema);

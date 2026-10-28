@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { profileResponseSchema, profileUpdateSchema } from "../profile-schema";
+import { profileResponseSchema } from "../profile-response-schema";
+import { profileUpdateSchema } from "../profile-schema";
 
 describe("profileUpdateSchema", () => {
   it("trims the name and email", () => {

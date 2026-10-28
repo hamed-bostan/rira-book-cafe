@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/mini";
 
 import type { ProductTranslationInput } from "@/src/domain/repositories/IProductRepository";
 
@@ -11,10 +11,10 @@ import type { ProductTranslationInput } from "@/src/domain/repositories/IProduct
 export const productTranslationResponseSchema = z.object({
   locale: z.string(),
   name: z.string(),
-  unit: z.string().optional(),
-  description: z.string().optional(),
-  nutrition: z.string().optional(),
-  origin: z.string().optional(),
-}) satisfies z.ZodType<ProductTranslationInput>;
+  unit: z.optional(z.string()),
+  description: z.optional(z.string()),
+  nutrition: z.optional(z.string()),
+  origin: z.optional(z.string()),
+}) satisfies z.ZodMiniType<ProductTranslationInput>;
 
 export const productTranslationListResponseSchema = z.array(productTranslationResponseSchema);

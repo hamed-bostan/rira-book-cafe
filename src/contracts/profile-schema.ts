@@ -13,13 +13,3 @@ export const profileUpdateSchema = z.object({
 });
 
 export type ProfileUpdateInput = z.input<typeof profileUpdateSchema>;
-
-/** What `GET/PUT /api/profile` returns. */
-export const profileResponseSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  phone: z.string(),
-  email: z.string().nullable(),
-});
-
-export type ProfileWire = z.infer<typeof profileResponseSchema>;

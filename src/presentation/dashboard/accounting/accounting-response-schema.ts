@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/mini";
 
 import type {
   AccountBalance,
@@ -23,7 +23,7 @@ import { pageResponseSchema } from "@/src/lib/api/page-response-schema";
 
 /** What the accounting and expense endpoints return, checked at the BFF boundary. */
 
-export const accountResponseSchema: z.ZodType<Account> = z.object({
+export const accountResponseSchema: z.ZodMiniType<Account> = z.object({
   code: z.string(),
   name: z.string(),
   nameFa: z.string(),
@@ -33,38 +33,39 @@ export const accountResponseSchema: z.ZodType<Account> = z.object({
 });
 export const accountListResponseSchema = z.array(accountResponseSchema);
 
-export const journalEntryResponseSchema: z.ZodType<JournalEntry> = z.object({
+export const journalEntryResponseSchema: z.ZodMiniType<JournalEntry> = z.object({
   id: z.string(),
   number: z.number(),
   date: z.string(),
   description: z.string(),
   source: z.enum(JOURNAL_SOURCES),
-  sourceId: z.string().optional(),
+  sourceId: z.optional(z.string()),
   lines: z.array(
-    z.object({ accountCode: z.string(), debit: z.number(), credit: z.number(), memo: z.string().optional() }),
+    z.object({ accountCode: z.string(), debit: z.number(), credit: z.number(), memo: z.optional(z.string()) }),
   ),
   createdById: z.string(),
   createdByName: z.string(),
   createdAt: z.string(),
-  reversedById: z.string().optional(),
-  reversesId: z.string().optional(),
+  reversedById: z.optional(z.string()),
+  reversesId: z.optional(z.string()),
 });
-export const journalPageResponseSchema: z.ZodType<Page<JournalEntry>> = pageResponseSchema(journalEntryResponseSchema);
+export const journalPageResponseSchema: z.ZodMiniType<Page<JournalEntry>> =
+  pageResponseSchema(journalEntryResponseSchema);
 
-export const accountingSettingsResponseSchema: z.ZodType<AccountingSettings> = z.object({
+export const accountingSettingsResponseSchema: z.ZodMiniType<AccountingSettings> = z.object({
   vatRateBps: z.number(),
-  booksClosedThrough: z.string().optional(),
+  booksClosedThrough: z.optional(z.string()),
 });
 
-const balanceSchema: z.ZodType<AccountBalance> = z.object({
+const balanceSchema: z.ZodMiniType<AccountBalance> = z.object({
   account: accountResponseSchema,
   debit: z.number(),
   credit: z.number(),
   balance: z.number(),
 });
-const sectionSchema: z.ZodType<StatementSection> = z.object({ rows: z.array(balanceSchema), total: z.number() });
+const sectionSchema: z.ZodMiniType<StatementSection> = z.object({ rows: z.array(balanceSchema), total: z.number() });
 
-export const trialBalanceResponseSchema: z.ZodType<TrialBalance> = z.object({
+export const trialBalanceResponseSchema: z.ZodMiniType<TrialBalance> = z.object({
   asOfDay: z.string(),
   rows: z.array(balanceSchema),
   totalDebit: z.number(),
@@ -72,7 +73,7 @@ export const trialBalanceResponseSchema: z.ZodType<TrialBalance> = z.object({
   balanced: z.boolean(),
 });
 
-export const profitAndLossResponseSchema: z.ZodType<ProfitAndLoss> = z.object({
+export const profitAndLossResponseSchema: z.ZodMiniType<ProfitAndLoss> = z.object({
   fromDay: z.string(),
   toDay: z.string(),
   revenue: sectionSchema,
@@ -82,7 +83,7 @@ export const profitAndLossResponseSchema: z.ZodType<ProfitAndLoss> = z.object({
   netProfit: z.number(),
 });
 
-export const balanceSheetResponseSchema: z.ZodType<BalanceSheet> = z.object({
+export const balanceSheetResponseSchema: z.ZodMiniType<BalanceSheet> = z.object({
   asOfDay: z.string(),
   assets: sectionSchema,
   liabilities: sectionSchema,
@@ -92,7 +93,7 @@ export const balanceSheetResponseSchema: z.ZodType<BalanceSheet> = z.object({
   balanced: z.boolean(),
 });
 
-export const vatReportResponseSchema: z.ZodType<VatReport> = z.object({
+export const vatReportResponseSchema: z.ZodMiniType<VatReport> = z.object({
   fromDay: z.string(),
   toDay: z.string(),
   outputVat: z.number(),
@@ -102,7 +103,7 @@ export const vatReportResponseSchema: z.ZodType<VatReport> = z.object({
   closingBalance: z.number(),
 });
 
-export const marginReportResponseSchema: z.ZodType<MarginReport> = z.object({
+export const marginReportResponseSchema: z.ZodMiniType<MarginReport> = z.object({
   fromDay: z.string(),
   toDay: z.string(),
   rows: z.array(
@@ -113,7 +114,7 @@ export const marginReportResponseSchema: z.ZodType<MarginReport> = z.object({
       netRevenue: z.number(),
       cost: z.number(),
       grossProfit: z.number(),
-      marginRate: z.number().nullable(),
+      marginRate: z.nullable(z.number()),
     }),
   ),
   totalNetRevenue: z.number(),
@@ -122,7 +123,7 @@ export const marginReportResponseSchema: z.ZodType<MarginReport> = z.object({
   revenueWithoutCost: z.number(),
 });
 
-export const accountLedgerResponseSchema: z.ZodType<AccountLedger> = z.object({
+export const accountLedgerResponseSchema: z.ZodMiniType<AccountLedger> = z.object({
   account: accountResponseSchema,
   fromDay: z.string(),
   toDay: z.string(),
@@ -136,44 +137,44 @@ export const accountLedgerResponseSchema: z.ZodType<AccountLedger> = z.object({
       source: z.enum(JOURNAL_SOURCES),
       debit: z.number(),
       credit: z.number(),
-      memo: z.string().optional(),
+      memo: z.optional(z.string()),
       runningBalance: z.number(),
     }),
   ),
   closingBalance: z.number(),
 });
 
-export const supplierResponseSchema: z.ZodType<Supplier> = z.object({
+export const supplierResponseSchema: z.ZodMiniType<Supplier> = z.object({
   id: z.string(),
   name: z.string(),
-  phone: z.string().optional(),
-  note: z.string().optional(),
+  phone: z.optional(z.string()),
+  note: z.optional(z.string()),
   isActive: z.boolean(),
   createdAt: z.string(),
 });
 export const supplierListResponseSchema = z.array(supplierResponseSchema);
 
-export const expenseResponseSchema: z.ZodType<Expense> = z.object({
+export const expenseResponseSchema: z.ZodMiniType<Expense> = z.object({
   id: z.string(),
   number: z.number(),
   date: z.string(),
-  supplierId: z.string().optional(),
-  supplierName: z.string().optional(),
+  supplierId: z.optional(z.string()),
+  supplierName: z.optional(z.string()),
   accountCode: z.string(),
   description: z.string(),
   amount: z.number(),
   vatAmount: z.number(),
   status: z.enum(EXPENSE_STATUSES),
-  paidFrom: z.enum(PAYMENT_SOURCES).optional(),
-  paidOn: z.string().optional(),
-  receiptUrl: z.string().optional(),
+  paidFrom: z.optional(z.enum(PAYMENT_SOURCES)),
+  paidOn: z.optional(z.string()),
+  receiptUrl: z.optional(z.string()),
   createdById: z.string(),
   createdByName: z.string(),
   createdAt: z.string(),
 });
 
 export type ExpensePageWire = Page<Expense> & { totalUnpaid: number };
-export const expensePageResponseSchema: z.ZodType<ExpensePageWire> = z.object({
+export const expensePageResponseSchema: z.ZodMiniType<ExpensePageWire> = z.object({
   items: z.array(expenseResponseSchema),
   total: z.number(),
   page: z.number(),
@@ -182,7 +183,7 @@ export const expensePageResponseSchema: z.ZodType<ExpensePageWire> = z.object({
 });
 
 export type ExpenseDetailWire = { expense: Expense; entries: JournalEntry[] };
-export const expenseDetailResponseSchema: z.ZodType<ExpenseDetailWire> = z.object({
+export const expenseDetailResponseSchema: z.ZodMiniType<ExpenseDetailWire> = z.object({
   expense: expenseResponseSchema,
   entries: z.array(journalEntryResponseSchema),
 });

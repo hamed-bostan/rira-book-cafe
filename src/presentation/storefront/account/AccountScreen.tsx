@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
-import type { ProfileWire } from "@/src/contracts/profile-schema";
+import type { ProfileWire } from "@/src/contracts/profile-response-schema";
 import type { CafeEvent, EventRegistration } from "@/src/domain/entities/CafeEvent";
 import { Link } from "@/src/i18n/navigation";
 import { formatNumber } from "@/src/lib/formatNumber";

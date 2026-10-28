@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/mini";
 
 import type { Category } from "@/src/domain/entities/Category";
 
@@ -27,7 +27,7 @@ export const categoryResponseSchema = z.object({
   hiddenProductCount: z.number(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
-}) satisfies z.ZodType<Category>;
+}) satisfies z.ZodMiniType<Category>;
 
 /** Collection endpoints (`GET /categories`, `?slug=` included) always return an array. */
 export const categoryListResponseSchema = z.array(categoryResponseSchema);

@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/mini";
 
 import { isImageUrl } from "@/src/contracts/image-url";
 
@@ -12,5 +12,5 @@ import { isImageUrl } from "@/src/contracts/image-url";
  * as a root-relative `/uploads/...` path, which `z.string().url()` would refuse.
  */
 export const imageUploadResponseSchema = z.object({
-  image: z.object({ url: z.string().refine(isImageUrl) }),
+  image: z.object({ url: z.string().check(z.refine(isImageUrl)) }),
 });

@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/mini";
 
 import { ACTIVITY_ACTIONS, ACTIVITY_ENTITY_TYPES, type ActivityEntry } from "@/src/domain/entities/ActivityEntry";
 
@@ -13,8 +13,8 @@ export type ActivityEntryWire = Omit<ActivityEntry, "at"> & { at: string };
 
 const activityChangeSchema = z.object({
   field: z.string(),
-  before: z.string().nullable(),
-  after: z.string().nullable(),
+  before: z.nullable(z.string()),
+  after: z.nullable(z.string()),
 });
 
 /**
@@ -32,10 +32,10 @@ export const activityEntryResponseSchema = z.object({
   action: z.enum([...ACTIVITY_ACTIONS, "unknown"]),
   entityType: z.enum([...ACTIVITY_ENTITY_TYPES, "unknown"]),
   entityId: z.string(),
-  entityLabel: z.string().optional(),
+  entityLabel: z.optional(z.string()),
   changes: z.array(activityChangeSchema),
   at: z.string(),
-}) satisfies z.ZodType<ActivityEntryWire>;
+}) satisfies z.ZodMiniType<ActivityEntryWire>;
 
 export const activityEntryListResponseSchema = z.array(activityEntryResponseSchema);
 

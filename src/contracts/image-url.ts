@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "@/src/lib/zod";
 
 /**
  * What an image field accepts: an absolute http(s) URL (an external image) or a
@@ -17,4 +17,4 @@ export function isImageUrl(value: string): boolean {
 
 /** A required image field; messages are `formErrors` keys. */
 export const imageUrlField = (requiredKey: string) =>
-  z.string().trim().min(1, requiredKey).refine(isImageUrl, "imageInvalid");
+  z.string().check(z.trim(), z.minLength(1, requiredKey), z.refine(isImageUrl, "imageInvalid"));

@@ -1,6 +1,7 @@
 import type { EventRegistrationInput } from "@/src/contracts/event-schema";
 import type { PlaceOrderInput, QuoteOrderInput } from "@/src/contracts/order-schema";
-import { profileResponseSchema, type ProfileUpdateInput, type ProfileWire } from "@/src/contracts/profile-schema";
+import { profileResponseSchema, type ProfileWire } from "@/src/contracts/profile-response-schema";
+import type { ProfileUpdateInput } from "@/src/contracts/profile-schema";
 import type { RequestReservationInput } from "@/src/contracts/reservation-schema";
 import type { SubmitReviewInput } from "@/src/contracts/review-schema";
 import type { RequestSuiteBookingInput } from "@/src/contracts/suite-booking-schema";

@@ -1,25 +1,23 @@
 import { describe, expect, it } from "vitest";
-import { z } from "zod";
+import { z } from "zod/mini";
 
 import { fieldsParsed } from "../fields-parsed";
 
 import { messagesAt } from "./zod-issues";
 
 const amount = z
-  .string()
-  .regex(/^\d+$/, "amountInvalid")
-  .transform(Number)
-  .refine((n) => n > 0, "amountPositive");
-const note = z
-  .string()
-  .max(3, "noteTooLong")
-  .transform((value) => value || undefined);
+  .pipe(z.string().check(z.regex(/^\d+$/, "amountInvalid")), z.transform(Number))
+  .check(z.refine((n) => n > 0, "amountPositive"));
+const note = z.pipe(
+  z.string().check(z.maxLength(3, "noteTooLong")),
+  z.transform((value) => value || undefined),
+);
 const whenParsed = fieldsParsed("amount", "vat", "note");
 
-const schema = z
-  .object({ amount, vat: amount, note, name: z.string().min(1, "nameRequired") })
-  .refine((value) => value.note !== "ab", { path: ["note"], error: "noteTaken", when: whenParsed })
-  .refine((value) => value.vat < value.amount, { path: ["vat"], error: "vatTooHigh", when: whenParsed });
+const schema = z.object({ amount, vat: amount, note, name: z.string().check(z.minLength(1, "nameRequired")) }).check(
+  z.refine((value) => value.note !== "ab", { path: ["note"], error: "noteTaken", when: whenParsed }),
+  z.refine((value) => value.vat < value.amount, { path: ["vat"], error: "vatTooHigh", when: whenParsed }),
+);
 
 const VALID = { amount: "10", vat: "5", note: "", name: "n" };
 
@@ -52,7 +50,9 @@ describe("fieldsParsed", () => {
   it("matches every array index with *", () => {
     const lines = z
       .array(z.object({ cost: amount }))
-      .refine((rows) => rows.some((row) => row.cost > 100), { error: "totalTooLow", when: fieldsParsed("*.cost") });
+      .check(
+        z.refine((rows) => rows.some((row) => row.cost > 100), { error: "totalTooLow", when: fieldsParsed("*.cost") }),
+      );
     expect(messagesAt(lines.safeParse([{ cost: "5" }, { cost: "x" }]), "")).toEqual([]);
     expect(messagesAt(lines.safeParse([{ cost: "5" }, { cost: "0" }]), "")).toEqual(["totalTooLow"]);
   });

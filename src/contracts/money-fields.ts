@@ -1,6 +1,5 @@
-import { z } from "zod";
-
 import { isCafeDay } from "@/src/domain/entities/CafeTime";
+import * as z from "@/src/lib/zod";
 
 /**
  * Field types shared by the accounting and expense forms. Inputs arrive as the
@@ -14,59 +13,53 @@ const DIGITS = /^\d+$/;
 
 /** A required amount in whole Toman, more than zero. */
 export const moneyField = z
-  .string()
-  .trim()
-  .min(1, "amountRequired")
-  .regex(DIGITS, "amountInvalid")
-  .transform(Number)
-  .refine((n) => n > 0 && n <= MAX_MONEY_AMOUNT, "amountInvalid");
+  .pipe(
+    z.string().check(z.trim(), z.minLength(1, "amountRequired"), z.regex(DIGITS, "amountInvalid")),
+    z.transform(Number),
+  )
+  .check(z.refine((n) => n > 0 && n <= MAX_MONEY_AMOUNT, "amountInvalid"));
 
 /** An optional amount: blank means zero. */
 export const optionalMoneyField = z
-  .string()
-  .trim()
-  .refine((value) => value === "" || DIGITS.test(value), "amountInvalid")
-  .transform((value) => (value === "" ? 0 : Number(value)))
-  .refine((n) => n <= MAX_MONEY_AMOUNT, "amountInvalid");
+  .pipe(
+    z.string().check(
+      z.trim(),
+      z.refine((value) => value === "" || DIGITS.test(value), "amountInvalid"),
+    ),
+    z.transform((value) => (value === "" ? 0 : Number(value))),
+  )
+  .check(z.refine((n) => n <= MAX_MONEY_AMOUNT, "amountInvalid"));
 
 const SIGNED_DIGITS = /^-?\d+$/;
 
 /** A required signed amount — a balance, which can be overdrawn. "-" is money out. */
 export const balanceField = z
-  .string()
-  .trim()
-  .min(1, "amountRequired")
-  .regex(SIGNED_DIGITS, "amountInvalid")
-  .transform(Number)
-  .refine((n) => Math.abs(n) <= MAX_MONEY_AMOUNT, "amountInvalid");
+  .pipe(
+    z.string().check(z.trim(), z.minLength(1, "amountRequired"), z.regex(SIGNED_DIGITS, "amountInvalid")),
+    z.transform(Number),
+  )
+  .check(z.refine((n) => Math.abs(n) <= MAX_MONEY_AMOUNT, "amountInvalid"));
 
 /** A signed movement: positive in, negative out, never zero. */
-export const signedAmountField = balanceField.refine((n) => n !== 0, "amountInvalid");
+export const signedAmountField = balanceField.check(z.refine((n) => n !== 0, "amountInvalid"));
 
 /** A cafe day, `YYYY-MM-DD` (what a date input emits). */
-export const dayField = z.string().trim().min(1, "dateRequired").refine(isCafeDay, "dateInvalid");
+export const dayField = z.string().check(z.trim(), z.minLength(1, "dateRequired"), z.refine(isCafeDay, "dateInvalid"));
 
 /** Optional free text: trimmed, blank becomes `undefined`. */
 export function optionalTextField(max: number) {
-  return z
-    .string()
-    .trim()
-    .max(max, "textTooLong")
-    .transform((value) => (value.length > 0 ? value : undefined));
+  return z.pipe(
+    z.string().check(z.trim(), z.maxLength(max, "textTooLong")),
+    z.transform((value) => (value.length > 0 ? value : undefined)),
+  );
 }
 
 /** A quantity above zero as typed: "18", "0.5", "1000" (up to 3 decimals). */
 export const quantityField = z
-  .string()
-  .trim()
-  .regex(/^\d+(\.\d{1,3})?$/, "quantityInvalid")
-  .transform(Number)
-  .refine((n) => n > 0 && n <= 10_000_000, "quantityInvalid");
+  .pipe(z.string().check(z.trim(), z.regex(/^\d+(\.\d{1,3})?$/, "quantityInvalid")), z.transform(Number))
+  .check(z.refine((n) => n > 0 && n <= 10_000_000, "quantityInvalid"));
 
 /** A counted quantity: zero or more. */
 export const countField = z
-  .string()
-  .trim()
-  .regex(/^\d+(\.\d{1,3})?$/, "quantityInvalid")
-  .transform(Number)
-  .refine((n) => n <= 10_000_000, "quantityInvalid");
+  .pipe(z.string().check(z.trim(), z.regex(/^\d+(\.\d{1,3})?$/, "quantityInvalid")), z.transform(Number))
+  .check(z.refine((n) => n <= 10_000_000, "quantityInvalid"));

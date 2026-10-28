@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { profileUpdateSchema, type ProfileWire } from "@/src/contracts/profile-schema";
+import type { ProfileWire } from "@/src/contracts/profile-response-schema";
+import { profileUpdateSchema } from "@/src/contracts/profile-schema";
 import type { User } from "@/src/domain/entities/User";
 import { GetOrCreateUser } from "@/src/domain/use-cases/profile/GetOrCreateUser";
 import { UpdateOwnProfile } from "@/src/domain/use-cases/profile/UpdateOwnProfile";

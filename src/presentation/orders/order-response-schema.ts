@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/mini";
 
 import type { OrderStatusCounts } from "@/src/domain/entities/AdminOrderFilters";
 import {
@@ -24,10 +24,10 @@ export const orderResponseSchema = z.object({
   customerPhone: z.string(),
   status: z.enum(ORDER_STATUSES),
   serviceType: z.enum(SERVICE_TYPES),
-  tableLabel: z.string().optional(),
-  note: z.string().optional(),
+  tableLabel: z.optional(z.string()),
+  note: z.optional(z.string()),
   paymentStatus: z.enum(PAYMENT_STATUSES),
-  paymentMethod: z.enum(PAYMENT_METHODS).optional(),
+  paymentMethod: z.optional(z.enum(PAYMENT_METHODS)),
   items: z.array(
     z.object({
       id: z.string(),
@@ -37,17 +37,17 @@ export const orderResponseSchema = z.object({
       imageUrl: z.string(),
       unitPrice: z.number(),
       // Staff endpoints only; guest endpoints strip it.
-      unitCost: z.number().optional(),
-      taxExempt: z.boolean().optional(),
-      stockTracked: z.boolean().optional(),
+      unitCost: z.optional(z.number()),
+      taxExempt: z.optional(z.boolean()),
+      stockTracked: z.optional(z.boolean()),
       quantity: z.number(),
-      note: z.string().optional(),
-      servedAt: z.string().optional(),
+      note: z.optional(z.string()),
+      servedAt: z.optional(z.string()),
     }),
   ),
   subtotal: z.number(),
-  promoCode: z.string().optional(),
-  promoCodeId: z.string().optional(),
+  promoCode: z.optional(z.string()),
+  promoCodeId: z.optional(z.string()),
   promoDiscount: z.number(),
   pointsRedeemed: z.number(),
   pointsDiscount: z.number(),
@@ -55,7 +55,7 @@ export const orderResponseSchema = z.object({
   total: z.number(),
   placedAt: z.string(),
   updatedAt: z.string(),
-}) satisfies z.ZodType<Order>;
+}) satisfies z.ZodMiniType<Order>;
 
 export const orderListResponseSchema = z.array(orderResponseSchema);
 
@@ -63,12 +63,12 @@ export const orderStatusEventListResponseSchema = z.array(
   z.object({
     id: z.string(),
     orderId: z.string(),
-    from: z.enum(ORDER_STATUSES).nullable(),
+    from: z.nullable(z.enum(ORDER_STATUSES)),
     to: z.enum(ORDER_STATUSES),
     actorId: z.string(),
     actorName: z.string(),
     at: z.string(),
-  }) satisfies z.ZodType<OrderStatusEvent>,
+  }) satisfies z.ZodMiniType<OrderStatusEvent>,
 );
 
 export const orderStatusCountsResponseSchema = z.object({
@@ -77,4 +77,4 @@ export const orderStatusCountsResponseSchema = z.object({
   preparing: z.number(),
   completed: z.number(),
   cancelled: z.number(),
-}) satisfies z.ZodType<OrderStatusCounts>;
+}) satisfies z.ZodMiniType<OrderStatusCounts>;

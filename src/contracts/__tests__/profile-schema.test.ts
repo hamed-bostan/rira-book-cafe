@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { profileResponseSchema, profileUpdateSchema } from "../profile-schema";
+import { profileResponseSchema } from "../profile-response-schema";
+import { profileUpdateSchema } from "../profile-schema";
+
+import { flattened } from "./zod-issues";
 
 describe("profileUpdateSchema", () => {
   it("trims the name and email", () => {
@@ -15,16 +18,16 @@ describe("profileUpdateSchema", () => {
   });
 
   it("maps each invalid field to its message key", () => {
-    const fieldErrors = profileUpdateSchema
-      .safeParse({ name: " ", email: "not-an-email" })
-      .error?.flatten().fieldErrors;
+    const fieldErrors = flattened(
+      profileUpdateSchema.safeParse({ name: " ", email: "not-an-email" }).error,
+    )?.fieldErrors;
     expect(fieldErrors).toEqual({ name: ["nameRequired"], email: ["emailInvalid"] });
   });
 
   it("caps the name and the email", () => {
-    const fieldErrors = profileUpdateSchema
-      .safeParse({ name: "n".repeat(81), email: `${"a".repeat(115)}@example.com` })
-      .error?.flatten().fieldErrors;
+    const fieldErrors = flattened(
+      profileUpdateSchema.safeParse({ name: "n".repeat(81), email: `${"a".repeat(115)}@example.com` }).error,
+    )?.fieldErrors;
     expect(fieldErrors).toEqual({ name: ["nameTooLong"], email: ["emailTooLong"] });
   });
 });

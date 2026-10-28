@@ -1,7 +1,6 @@
-import { z } from "zod";
-
 import { BOOK_AVAILABILITIES, MAX_BOOK_COPIES, PRODUCT_KINDS } from "@/src/domain/entities/Product";
 import { DIETARY_TAGS } from "@/src/domain/entities/ProductFilters";
+import * as z from "@/src/lib/zod";
 
 import { fieldsParsed } from "./fields-parsed";
 import { imageUrlField } from "./image-url";
@@ -30,116 +29,123 @@ export const ISBN_PATTERN = /^(?:\d{9}[\dX]|\d{13})$/;
 
 /** Required price: a string the form emits, validated and coerced to a positive whole number. */
 const priceField = z
-  .string()
-  .trim()
-  .min(1, "priceRequired")
-  .regex(PRICE_PATTERN, "priceInvalid")
-  .transform(Number)
-  .refine((n) => n > 0, "pricePositive");
+  .pipe(
+    z.string().check(z.trim(), z.minLength(1, "priceRequired"), z.regex(PRICE_PATTERN, "priceInvalid")),
+    z.transform(Number),
+  )
+  .check(z.refine((n) => n > 0, "pricePositive"));
 
 /** Optional price: blank → `undefined`; otherwise the same rules as `priceField`. */
-const optionalPriceField = z
-  .string()
-  .trim()
-  .transform((value) => (value.length > 0 ? value : undefined))
-  .refine((value) => value === undefined || PRICE_PATTERN.test(value), "priceInvalid")
-  .transform((value) => (value === undefined ? undefined : Number(value)));
+const optionalPriceField = z.pipe(
+  z
+    .pipe(
+      z.string().check(z.trim()),
+      z.transform((value) => (value.length > 0 ? value : undefined)),
+    )
+    .check(z.refine((value) => value === undefined || PRICE_PATTERN.test(value), "priceInvalid")),
+  z.transform((value) => (value === undefined ? undefined : Number(value))),
+);
 
 /** A stock count: a non-negative whole number. */
 const STOCK_PATTERN = /^\d+$/;
 
 /** Optional free text: trimmed, blank → `undefined` so it isn't stored as "". */
-const optionalText = z
-  .string()
-  .trim()
-  .transform((value) => (value.length > 0 ? value : undefined));
+const optionalText = z.pipe(
+  z.string().check(z.trim()),
+  z.transform((value) => (value.length > 0 ? value : undefined)),
+);
 
 /** Optional ISBN: separators stripped, upper-cased, blank → `undefined`. */
 const isbnField = z
-  .string()
-  .transform((value) => value.replace(/[\s-]/g, "").toUpperCase())
-  .transform((value) => (value.length > 0 ? value : undefined))
-  .refine((value) => value === undefined || ISBN_PATTERN.test(value), "isbnInvalid");
+  .pipe(
+    z.pipe(
+      z.string(),
+      z.transform((value) => value.replace(/[\s-]/g, "").toUpperCase()),
+    ),
+    z.transform((value) => (value.length > 0 ? value : undefined)),
+  )
+  .check(z.refine((value) => value === undefined || ISBN_PATTERN.test(value), "isbnInvalid"));
 
 /**
  * Copies the lending shelf has, 1–MAX_BOOK_COPIES. Optional on the wire (a client
  * that predates the field sends none); blank or absent reads as one.
  */
 const copiesField = z
-  .string()
-  .trim()
-  .optional()
-  .refine((value) => !value || /^\d+$/.test(value), "copiesWhole")
-  .transform((value) => (value ? Number(value) : undefined))
-  .refine((value) => value === undefined || (value >= 1 && value <= MAX_BOOK_COPIES), "copiesRange");
+  .pipe(
+    z.optional(z.string().check(z.trim())).check(z.refine((value) => !value || /^\d+$/.test(value), "copiesWhole")),
+    z.transform((value) => (value ? Number(value) : undefined)),
+  )
+  .check(z.refine((value) => value === undefined || (value >= 1 && value <= MAX_BOOK_COPIES), "copiesRange"));
 
 /** Dietary tags: a set of known tags (blank list allowed); the public filter reads these. */
 const dietaryField = z
-  .array(z.string())
-  .default([])
-  .refine((tags) => tags.every((tag) => DIETARY_SET.has(tag)), "dietaryUnknown");
+  ._default(z.array(z.string()), [])
+  .check(z.refine((tags) => tags.every((tag) => DIETARY_SET.has(tag)), "dietaryUnknown"));
 
 const productFieldsParsed = fieldsParsed("price", "originalPrice", "costPrice", "bookCopies");
 
-export const productFormSchema = z
-  .object({
-    kind: z.enum(PRODUCT_KINDS, { error: "kindInvalid" }),
-    name: z.string().trim().min(1, "nameRequired").max(120, "nameTooLong"),
-    categoryId: z.string().min(1, "categoryRequired"),
-    price: priceField,
-    originalPrice: optionalPriceField,
-    // What one unit costs the cafe — optional; feeds cost of sales and margins.
-    costPrice: optionalPriceField,
-    imageUrl: imageUrlField("imageRequired"),
-    // Required and validated only for a counted item — see the refinement below. A
-    // made-to-order item isn't counted, so whatever the (hidden) field holds is ignored.
-    stockQuantity: z.string().trim(),
-    madeToOrder: z.boolean(),
-    isFeatured: z.boolean(),
-    isPublished: z.boolean(),
-    badge: optionalText,
-    unit: optionalText,
-    description: optionalText,
-    nutrition: optionalText,
-    origin: optionalText,
-    dietary: dietaryField,
-    taxExempt: z.boolean(),
-    // Book-only fields. Always present in the form (blank for drinks/food) and
-    // required only when `kind` is "book" — see the refinements below.
-    bookAuthor: optionalText,
-    bookIsbn: isbnField,
-    bookAvailability: z.enum(BOOK_AVAILABILITIES, { error: "availabilityInvalid" }),
-    bookCopies: copiesField,
-    // Persian (fa) content overrides — optional. A blank fa name means "no fa
-    // translation" for this item (the public site falls back to the base row).
-    faName: optionalText,
-    faUnit: optionalText,
-    faDescription: optionalText,
-    faNutrition: optionalText,
-    faOrigin: optionalText,
-  })
-  .refine((data) => data.originalPrice === undefined || data.originalPrice > data.price, {
-    path: ["originalPrice"],
-    error: "originalPriceHigher",
-    when: productFieldsParsed,
-  })
-  .refine((data) => data.kind !== "book" || data.bookAuthor !== undefined, {
-    path: ["bookAuthor"],
-    error: "authorRequired",
-    when: productFieldsParsed,
-  })
-  .superRefine(
-    (data, ctx) => {
-      if (data.madeToOrder) return;
-      if (data.stockQuantity.length === 0) {
-        ctx.addIssue({ code: "custom", path: ["stockQuantity"], message: "stockRequired" });
-      } else if (!STOCK_PATTERN.test(data.stockQuantity)) {
-        ctx.addIssue({ code: "custom", path: ["stockQuantity"], message: "stockWhole" });
-      }
-    },
-    { when: productFieldsParsed },
-  )
-  .transform(
+export const productFormSchema = z.pipe(
+  z
+    .object({
+      kind: z.enum(PRODUCT_KINDS, { error: "kindInvalid" }),
+      name: z.string().check(z.trim(), z.minLength(1, "nameRequired"), z.maxLength(120, "nameTooLong")),
+      categoryId: z.string().check(z.minLength(1, "categoryRequired")),
+      price: priceField,
+      originalPrice: optionalPriceField,
+      // What one unit costs the cafe — optional; feeds cost of sales and margins.
+      costPrice: optionalPriceField,
+      imageUrl: imageUrlField("imageRequired"),
+      // Required and validated only for a counted item — see the refinement below. A
+      // made-to-order item isn't counted, so whatever the (hidden) field holds is ignored.
+      stockQuantity: z.string().check(z.trim()),
+      madeToOrder: z.boolean(),
+      isFeatured: z.boolean(),
+      isPublished: z.boolean(),
+      badge: optionalText,
+      unit: optionalText,
+      description: optionalText,
+      nutrition: optionalText,
+      origin: optionalText,
+      dietary: dietaryField,
+      taxExempt: z.boolean(),
+      // Book-only fields. Always present in the form (blank for drinks/food) and
+      // required only when `kind` is "book" — see the refinements below.
+      bookAuthor: optionalText,
+      bookIsbn: isbnField,
+      bookAvailability: z.enum(BOOK_AVAILABILITIES, { error: "availabilityInvalid" }),
+      bookCopies: copiesField,
+      // Persian (fa) content overrides — optional. A blank fa name means "no fa
+      // translation" for this item (the public site falls back to the base row).
+      faName: optionalText,
+      faUnit: optionalText,
+      faDescription: optionalText,
+      faNutrition: optionalText,
+      faOrigin: optionalText,
+    })
+    .check(
+      z.refine((data) => data.originalPrice === undefined || data.originalPrice > data.price, {
+        path: ["originalPrice"],
+        error: "originalPriceHigher",
+        when: productFieldsParsed,
+      }),
+      z.refine((data) => data.kind !== "book" || data.bookAuthor !== undefined, {
+        path: ["bookAuthor"],
+        error: "authorRequired",
+        when: productFieldsParsed,
+      }),
+      z.superRefine(
+        (data, ctx) => {
+          if (data.madeToOrder) return;
+          if (data.stockQuantity.length === 0) {
+            ctx.addIssue({ code: "custom", path: ["stockQuantity"], message: "stockRequired" });
+          } else if (!STOCK_PATTERN.test(data.stockQuantity)) {
+            ctx.addIssue({ code: "custom", path: ["stockQuantity"], message: "stockWhole" });
+          }
+        },
+        { when: productFieldsParsed },
+      ),
+    ),
+  z.transform(
     ({
       faName,
       faUnit,
@@ -177,7 +183,8 @@ export const productFormSchema = z
           ]
         : [],
     }),
-  );
+  ),
+);
 
 /** Form value shape (what the controls hold). */
 export type ProductFormInput = z.input<typeof productFormSchema>;

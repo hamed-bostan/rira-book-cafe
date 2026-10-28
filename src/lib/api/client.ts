@@ -3,7 +3,7 @@ import axios, { type AxiosError, type AxiosInstance, type AxiosRequestConfig } f
 import { normalizeAxiosError } from "./normalizeAxiosError";
 import { parseApiResponse } from "./parseApiResponse";
 
-import type { ZodType } from "zod";
+import type { $ZodType } from "zod/v4/core";
 
 const DEFAULT_TIMEOUT_MS = 15_000;
 
@@ -54,28 +54,28 @@ apiClient.interceptors.response.use(
  * schema on a mutation whose body the caller ignores: nothing is parsed, and the
  * call resolves with `void`.
  */
-export async function apiGet<T>(path: string, schema: ZodType<T>, config?: AxiosRequestConfig): Promise<T> {
+export async function apiGet<T>(path: string, schema: $ZodType<T>, config?: AxiosRequestConfig): Promise<T> {
   const { data, status } = await apiClient.get<unknown>(path, config);
   return parseApiResponse(schema, data, status);
 }
 
-export function apiPost<T>(path: string, body: unknown, schema: ZodType<T>): Promise<T>;
+export function apiPost<T>(path: string, body: unknown, schema: $ZodType<T>): Promise<T>;
 export function apiPost(path: string, body?: unknown): Promise<void>;
-export async function apiPost<T>(path: string, body?: unknown, schema?: ZodType<T>): Promise<T | void> {
+export async function apiPost<T>(path: string, body?: unknown, schema?: $ZodType<T>): Promise<T | void> {
   const { data, status } = await apiClient.post<unknown>(path, body);
   if (schema) return parseApiResponse(schema, data, status);
 }
 
-export function apiPut<T>(path: string, body: unknown, schema: ZodType<T>): Promise<T>;
+export function apiPut<T>(path: string, body: unknown, schema: $ZodType<T>): Promise<T>;
 export function apiPut(path: string, body?: unknown): Promise<void>;
-export async function apiPut<T>(path: string, body?: unknown, schema?: ZodType<T>): Promise<T | void> {
+export async function apiPut<T>(path: string, body?: unknown, schema?: $ZodType<T>): Promise<T | void> {
   const { data, status } = await apiClient.put<unknown>(path, body);
   if (schema) return parseApiResponse(schema, data, status);
 }
 
-export function apiPatch<T>(path: string, body: unknown, schema: ZodType<T>): Promise<T>;
+export function apiPatch<T>(path: string, body: unknown, schema: $ZodType<T>): Promise<T>;
 export function apiPatch(path: string, body?: unknown): Promise<void>;
-export async function apiPatch<T>(path: string, body?: unknown, schema?: ZodType<T>): Promise<T | void> {
+export async function apiPatch<T>(path: string, body?: unknown, schema?: $ZodType<T>): Promise<T | void> {
   const { data, status } = await apiClient.patch<unknown>(path, body);
   if (schema) return parseApiResponse(schema, data, status);
 }

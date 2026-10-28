@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  bulkResultSchema,
   categoryBulkRequestSchema,
   orderBulkRequestSchema,
   productBulkRequestSchema,
@@ -122,12 +121,5 @@ describe("orderBulkRequestSchema", () => {
     expect(messagesAt(orderBulkRequestSchema.safeParse({ ids: [], action: { type: "cancel" } }), "ids")).toEqual([
       "selectionRequired",
     ]);
-  });
-});
-
-describe("bulkResultSchema", () => {
-  it("reads the count of changed rows", () => {
-    expect(bulkResultSchema.parse({ updated: 12 })).toEqual({ updated: 12 });
-    expect(bulkResultSchema.safeParse({ updated: "12" }).success).toBe(false);
   });
 });

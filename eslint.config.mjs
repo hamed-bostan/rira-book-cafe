@@ -17,6 +17,23 @@ const RAW_COLOR_MESSAGE =
 const RAW_COLOR_REGEX =
   "#[0-9a-fA-F]{3,8}\\b|rgba?\\(|\\b(?:bg|text|border|ring|from|via|to|fill|stroke|shadow|outline|decoration|caret|divide|accent)-(?:white|black|gray-\\d+|slate-\\d+|zinc-\\d+|neutral-\\d+|stone-\\d+)\\b";
 
+// The design system's barrel — see the import-restriction block below.
+const DESIGN_SYSTEM_BARREL_IMPORT = {
+  name: "@/src/presentation/design-system",
+  message:
+    "Import the component from its own module (e.g. @/src/presentation/design-system/components/Button/Button) — the barrel ships every client component to the browser.",
+};
+
+// Classic `zod` — banned in favor of `zod/mini` everywhere. Classic costs every page
+// with a form about 17 kB, and while any browser code imports it, zod's shared core
+// stays twice the size on every page that validates (bundlers tree-shake per build,
+// not per page), so one stray import undoes the saving.
+const CLASSIC_ZOD_IMPORTS = ["zod", "zod/v4", "zod/v3"].map((name) => ({
+  name,
+  message:
+    'Use zod/mini: `import * as z from "@/src/lib/zod"` where messages reach people (contracts, params, env), `import { z } from "zod/mini"` in *-response-schema.ts. Classic zod costs every page with a form ~17 kB.',
+}));
+
 // jsx-a11y's recommended set, downgraded to warnings while the existing
 // violations are worked through (options kept, "off" rules stay off). Promote
 // back to errors once `npm run lint` is warning-free for them.
@@ -165,19 +182,35 @@ const eslintConfig = defineConfig([
   // Design-system components are imported from their own module, never through a
   // barrel: a Server Component importing a barrel registers every "use client"
   // component it re-exports, so the whole design system shipped on every page.
-  // (Later blocks that restrict imports for `src/domain` and `app/api` replace this
-  // rule for their files — both already forbid `presentation` outright.)
+  // (Later blocks that restrict imports for `src/domain`, `src/contracts` and `app/api`
+  // replace this rule for their files, so each repeats the classic-zod ban; domain and
+  // app/api already forbid `presentation` outright.)
   {
-    files: ["app/**/*.{ts,tsx}", "src/**/*.{ts,tsx}", "e2e/**/*.ts", "tests/**/*.ts"],
+    files: ["**/*.{ts,tsx,mts,mjs}"],
+    rules: {
+      "no-restricted-imports": ["error", { paths: [DESIGN_SYSTEM_BARREL_IMPORT, ...CLASSIC_ZOD_IMPORTS] }],
+    },
+  },
+
+  // Contracts take zod from `@/src/lib/zod`, which installs zod's English messages
+  // (classic zod did that implicitly, mini doesn't) — so an issue without a message
+  // key of its own still reads the same in a form and in the API's `fieldErrors`.
+  // Response schemas are exempt, like their `presentation` siblings: their issues are
+  // only logged, and storefront pages read the profile without any form.
+  {
+    files: ["src/contracts/**/*.ts"],
+    ignores: ["**/__tests__/**", "src/contracts/*-response-schema.ts"],
     rules: {
       "no-restricted-imports": [
         "error",
         {
           paths: [
+            DESIGN_SYSTEM_BARREL_IMPORT,
+            ...CLASSIC_ZOD_IMPORTS,
             {
-              name: "@/src/presentation/design-system",
+              name: "zod/mini",
               message:
-                "Import the component from its own module (e.g. @/src/presentation/design-system/components/Button/Button) — the barrel ships every client component to the browser.",
+                'Use `import * as z from "@/src/lib/zod"` — it installs the English messages contracts\' errors rely on.',
             },
           ],
         },
@@ -194,6 +227,7 @@ const eslintConfig = defineConfig([
       "no-restricted-imports": [
         "error",
         {
+          paths: CLASSIC_ZOD_IMPORTS,
           patterns: [
             {
               group: ["**/infrastructure/**", "**/presentation/**", "next", "next/**"],
@@ -201,6 +235,24 @@ const eslintConfig = defineConfig([
                 "src/domain is framework-free (CLAUDE.md) — it cannot depend on infrastructure, presentation, or Next.js.",
             },
           ],
+        },
+      ],
+    },
+  },
+
+  // `src/lib/zod.ts` re-exports zod/mini with its English messages installed. Taken as a
+  // namespace (`import * as z`) the bundler still sees which members are used; a named
+  // `{ z }` import of mini's `z` object through it compiles too, but ships all of
+  // zod/mini (~55 kB gzip on every page that validates). The regex matches
+  // `@/src/lib/zod`, `../zod` and `./zod` (`.` stands for the `/`, which would end it).
+  {
+    files: ["src/contracts/**/*.ts", "src/lib/**/*.ts"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: 'ImportDeclaration[source.value=/^(@.src.lib|\\.\\.?).zod$/] ImportSpecifier[imported.name="z"]',
+          message: 'Use `import * as z from "@/src/lib/zod"` — importing its `z` object ships all of zod/mini.',
         },
       ],
     },
@@ -213,6 +265,7 @@ const eslintConfig = defineConfig([
       "no-restricted-imports": [
         "error",
         {
+          paths: CLASSIC_ZOD_IMPORTS,
           patterns: [
             {
               group: ["**/presentation/**"],

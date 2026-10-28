@@ -9,6 +9,8 @@ import {
 
 import { requestReservationSchema, reservationUpdateSchema } from "../reservation-schema";
 
+import { flattened } from "./zod-issues";
+
 describe("requestReservationSchema", () => {
   it("trims the note and turns blank or absent into undefined", () => {
     expect(
@@ -29,7 +31,7 @@ describe("requestReservationSchema", () => {
     }
     for (const partySize of [MIN_PARTY_SIZE - 1, MAX_PARTY_SIZE + 1, 2.5]) {
       expect(
-        requestReservationSchema.safeParse({ startsAt: "2026-10-21T19:30", partySize }).error?.flatten().fieldErrors
+        flattened(requestReservationSchema.safeParse({ startsAt: "2026-10-21T19:30", partySize }).error)?.fieldErrors
           .partySize,
       ).toEqual(["partySizeInvalid"]);
     }
@@ -41,7 +43,7 @@ describe("requestReservationSchema", () => {
       partySize: 2,
       note: "n".repeat(MAX_RESERVATION_NOTE_LENGTH + 1),
     });
-    expect(result.error?.flatten().fieldErrors).toEqual({ startsAt: ["dateTimeInvalid"], note: ["noteTooLong"] });
+    expect(flattened(result.error)?.fieldErrors).toEqual({ startsAt: ["dateTimeInvalid"], note: ["noteTooLong"] });
   });
 });
 
@@ -56,9 +58,9 @@ describe("reservationUpdateSchema", () => {
   });
 
   it("reports an empty change on the form, not a field", () => {
-    const flattened = reservationUpdateSchema.safeParse({}).error?.flatten();
-    expect(flattened?.formErrors).toEqual(["nothingToChange"]);
-    expect(flattened?.fieldErrors).toEqual({});
+    const errors = flattened(reservationUpdateSchema.safeParse({}).error);
+    expect(errors?.formErrors).toEqual(["nothingToChange"]);
+    expect(errors?.fieldErrors).toEqual({});
   });
 
   it("takes an undo with just the status to go back to", () => {
@@ -70,18 +72,18 @@ describe("reservationUpdateSchema", () => {
       { undo: true, tableLabel: "T4" },
       { status: "confirmed", tableLabel: "T4", undo: true },
     ]) {
-      expect(reservationUpdateSchema.safeParse(body).error?.flatten().fieldErrors.status).toEqual(["statusInvalid"]);
+      expect(flattened(reservationUpdateSchema.safeParse(body).error)?.fieldErrors.status).toEqual(["statusInvalid"]);
     }
     expect(reservationUpdateSchema.safeParse({ status: "confirmed", undo: false }).success).toBe(false);
   });
 
   it("refuses an unknown status and an oversized table label", () => {
-    expect(reservationUpdateSchema.safeParse({ status: "late" }).error?.flatten().fieldErrors.status).toEqual([
+    expect(flattened(reservationUpdateSchema.safeParse({ status: "late" }).error)?.fieldErrors.status).toEqual([
       "statusInvalid",
     ]);
     expect(
-      reservationUpdateSchema.safeParse({ tableLabel: "t".repeat(MAX_TABLE_LABEL_LENGTH + 1) }).error?.flatten()
-        .fieldErrors.tableLabel,
+      flattened(reservationUpdateSchema.safeParse({ tableLabel: "t".repeat(MAX_TABLE_LABEL_LENGTH + 1) }).error)
+        ?.fieldErrors.tableLabel,
     ).toEqual(["tableTooLong"]);
   });
 });

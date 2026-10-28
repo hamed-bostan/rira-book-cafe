@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { z } from "zod";
+import { z } from "zod/mini";
 
 import { NotFoundError } from "@/src/domain/errors/NotFoundError";
 import { PaymentGatewayError } from "@/src/domain/errors/PaymentGatewayError";

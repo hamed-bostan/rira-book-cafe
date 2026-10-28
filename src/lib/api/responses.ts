@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { ZodError, flattenError } from "zod";
+import { $ZodError, flattenError } from "zod/v4/core";
 
 import { AdminRevokeError } from "@/src/domain/errors/AdminRevokeError";
 import { ConflictError } from "@/src/domain/errors/ConflictError";
@@ -60,8 +60,8 @@ export function tooManyRequestsResponse(retryAfterSeconds: number): NextResponse
 export function errorResponseFromException(error: unknown, context: string, log: ILogger = logger): NextResponse {
   // A query-param or body schema rejected the request — the client's fault, not
   // an unexpected failure, so it's a 400 with per-field detail rather than a
-  // logged 500.
-  if (error instanceof ZodError) {
+  // logged 500. Checked against zod core's error, which every zod build's errors are.
+  if (error instanceof $ZodError) {
     return errorResponse(400, {
       message: "One or more query parameters are invalid.",
       code: "VALIDATION",
@@ -153,9 +153,9 @@ export async function parseJsonBody(request: Request): Promise<{ ok: true; data:
 }
 
 /** Collapse a Zod error into one message per field for the `fieldErrors` envelope. */
-export function firstFieldErrors(error: ZodError): Record<string, string> {
+export function firstFieldErrors(error: $ZodError): Record<string, string> {
   const result: Record<string, string> = {};
-  // An untyped `ZodError` flattens to `{}`; every key it can hold is a field name.
+  // An untyped `$ZodError` flattens to `{}`; every key it can hold is a field name.
   const fieldErrors: Partial<Record<string, string[]>> = flattenError(error).fieldErrors;
   for (const [field, messages] of Object.entries(fieldErrors)) {
     if (messages && messages.length > 0) result[field] = messages[0];

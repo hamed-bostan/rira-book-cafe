@@ -10,7 +10,7 @@ import {
   type ManualEntryFormInput,
 } from "../accounting-schema";
 
-import { messagesAt } from "./zod-issues";
+import { messagesAt, flattened } from "./zod-issues";
 
 type EntryLine = ManualEntryFormInput["lines"][number];
 
@@ -75,7 +75,7 @@ describe("manualEntrySchema", () => {
       lines: [{ ...debitLine("10"), accountCode: " " }, creditLine("10")],
     });
     expect(messagesAt(result, "lines.0.accountCode")).toEqual(["accountRequired"]);
-    expect(result.error?.flatten().fieldErrors.description).toEqual(["descriptionRequired"]);
+    expect(flattened(result.error)?.fieldErrors.description).toEqual(["descriptionRequired"]);
   });
 
   it("caps the description and line memos", () => {
@@ -84,12 +84,12 @@ describe("manualEntrySchema", () => {
       description: "x".repeat(201),
       lines: [{ ...debitLine("10"), memo: "m".repeat(201) }, creditLine("10")],
     });
-    expect(result.error?.flatten().fieldErrors.description).toEqual(["textTooLong"]);
+    expect(flattened(result.error)?.fieldErrors.description).toEqual(["textTooLong"]);
     expect(messagesAt(result, "lines.0.memo")).toEqual(["textTooLong"]);
   });
 
   it("refuses a malformed date", () => {
-    expect(manualEntrySchema.safeParse({ ...ENTRY, date: "yesterday" }).error?.flatten().fieldErrors.date).toEqual([
+    expect(flattened(manualEntrySchema.safeParse({ ...ENTRY, date: "yesterday" }).error)?.fieldErrors.date).toEqual([
       "dateInvalid",
     ]);
   });
@@ -105,10 +105,11 @@ describe("reverseEntrySchema", () => {
 
   it("requires a reason, within 200 characters", () => {
     expect(
-      reverseEntrySchema.safeParse({ date: "2026-10-18", reason: " " }).error?.flatten().fieldErrors.reason,
+      flattened(reverseEntrySchema.safeParse({ date: "2026-10-18", reason: " " }).error)?.fieldErrors.reason,
     ).toEqual(["reasonRequired"]);
     expect(
-      reverseEntrySchema.safeParse({ date: "2026-10-18", reason: "r".repeat(201) }).error?.flatten().fieldErrors.reason,
+      flattened(reverseEntrySchema.safeParse({ date: "2026-10-18", reason: "r".repeat(201) }).error)?.fieldErrors
+        .reason,
     ).toEqual(["textTooLong"]);
   });
 });
@@ -127,22 +128,22 @@ describe("ledgerAccountSchema", () => {
 
   it("refuses a code that isn't four digits", () => {
     for (const code of ["615", "61500", "61a0"]) {
-      expect(ledgerAccountSchema.safeParse({ ...ACCOUNT, code }).error?.flatten().fieldErrors.code).toEqual([
+      expect(flattened(ledgerAccountSchema.safeParse({ ...ACCOUNT, code }).error)?.fieldErrors.code).toEqual([
         "accountCodeInvalid",
       ]);
     }
   });
 
   it("refuses an unknown account type", () => {
-    expect(ledgerAccountSchema.safeParse({ ...ACCOUNT, type: "income" }).error?.flatten().fieldErrors.type).toEqual([
+    expect(flattened(ledgerAccountSchema.safeParse({ ...ACCOUNT, type: "income" }).error)?.fieldErrors.type).toEqual([
       "accountTypeInvalid",
     ]);
   });
 
   it("requires both names, each within 80 characters", () => {
-    const fieldErrors = ledgerAccountSchema
-      .safeParse({ ...ACCOUNT, name: "", nameFa: "n".repeat(81) })
-      .error?.flatten().fieldErrors;
+    const fieldErrors = flattened(
+      ledgerAccountSchema.safeParse({ ...ACCOUNT, name: "", nameFa: "n".repeat(81) }).error,
+    )?.fieldErrors;
     expect(fieldErrors?.name).toEqual(["nameRequired"]);
     expect(fieldErrors?.nameFa).toEqual(["textTooLong"]);
   });
@@ -171,14 +172,14 @@ describe("accountingSettingsSchema", () => {
     expect(accountingSettingsSchema.parse({ vatRate: "50", booksClosedThrough: "" }).vatRate).toBe(5000);
     for (const vatRate of ["50.01", "100", "9.555", "-1", ""]) {
       expect(
-        accountingSettingsSchema.safeParse({ vatRate, booksClosedThrough: "" }).error?.flatten().fieldErrors.vatRate,
+        flattened(accountingSettingsSchema.safeParse({ vatRate, booksClosedThrough: "" }).error)?.fieldErrors.vatRate,
       ).toEqual(["vatRateInvalid"]);
     }
   });
 
   it("refuses a malformed close date", () => {
     expect(
-      accountingSettingsSchema.safeParse({ vatRate: "9", booksClosedThrough: "March" }).error?.flatten().fieldErrors
+      flattened(accountingSettingsSchema.safeParse({ vatRate: "9", booksClosedThrough: "March" }).error)?.fieldErrors
         .booksClosedThrough,
     ).toEqual(["dateInvalid"]);
   });

@@ -1,5 +1,4 @@
-import { MAX_ORDER_LINES } from "@/src/contracts/order-schema";
-import { MAX_LINE_QUANTITY, MAX_ORDER_NOTE_TEXT_LENGTH } from "@/src/domain/entities/Order";
+import { MAX_LINE_QUANTITY, MAX_ORDER_LINES, MAX_ORDER_NOTE_TEXT_LENGTH } from "@/src/domain/entities/Order";
 import type { Product } from "@/src/domain/entities/Product";
 
 /**

@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/mini";
 
 import { CASH_SHIFT_STATUSES, type CashShift, type CashShiftReport } from "@/src/domain/entities/CashShift";
 
@@ -11,22 +11,22 @@ export const cashShiftResponseSchema = z.object({
   openedById: z.string(),
   openedByName: z.string(),
   openingFloat: z.number(),
-  closedAt: z.string().optional(),
-  closedByName: z.string().optional(),
-  expectedCash: z.number().optional(),
-  countedCash: z.number().optional(),
-  difference: z.number().optional(),
-  note: z.string().optional(),
-}) satisfies z.ZodType<CashShift>;
+  closedAt: z.optional(z.string()),
+  closedByName: z.optional(z.string()),
+  expectedCash: z.optional(z.number()),
+  countedCash: z.optional(z.number()),
+  difference: z.optional(z.number()),
+  note: z.optional(z.string()),
+}) satisfies z.ZodMiniType<CashShift>;
 
 export const cashShiftOverviewResponseSchema = z.object({
-  current: z
-    .object({
+  current: z.nullable(
+    z.object({
       shift: cashShiftResponseSchema,
       movements: z.object({ cash: z.number(), bank: z.number(), online: z.number(), payments: z.number() }),
       expectedCash: z.number(),
-    })
-    .nullable() satisfies z.ZodType<CashShiftReport | null>,
+    }),
+  ) satisfies z.ZodMiniType<CashShiftReport | null>,
   recent: z.array(cashShiftResponseSchema),
 });
 

@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/mini";
 
 import type { RatingSummary } from "@/src/domain/entities/ProductReview";
 
@@ -6,4 +6,4 @@ import type { RatingSummary } from "@/src/domain/entities/ProductReview";
 export const reviewRatingResponseSchema = z.object({
   rating: z.number(),
   ratingCount: z.number(),
-}) satisfies z.ZodType<RatingSummary>;
+}) satisfies z.ZodMiniType<RatingSummary>;

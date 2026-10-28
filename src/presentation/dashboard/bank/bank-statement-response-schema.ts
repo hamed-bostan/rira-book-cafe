@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/mini";
 
 import {
   BANK_STATEMENT_STATUSES,
@@ -22,41 +22,41 @@ const statementFields = {
   status: z.enum(BANK_STATEMENT_STATUSES),
   createdByName: z.string(),
   createdAt: z.string(),
-  reconciledByName: z.string().optional(),
-  reconciledAt: z.string().optional(),
+  reconciledByName: z.optional(z.string()),
+  reconciledAt: z.optional(z.string()),
 };
 
-export const bankStatementResponseSchema: z.ZodType<BankStatement> = z.object({
+export const bankStatementResponseSchema: z.ZodMiniType<BankStatement> = z.object({
   ...statementFields,
   lines: z.array(
     z.object({
       id: z.string(),
       date: z.string(),
       description: z.string(),
-      reference: z.string().optional(),
+      reference: z.optional(z.string()),
       amount: z.number(),
-      matchId: z.string().optional(),
+      matchId: z.optional(z.string()),
     }),
   ),
 });
 
-export const bankStatementListResponseSchema: z.ZodType<BankStatementSummary[]> = z.array(
+export const bankStatementListResponseSchema: z.ZodMiniType<BankStatementSummary[]> = z.array(
   z.object({ ...statementFields, lineCount: z.number(), unmatchedCount: z.number() }),
 );
 
-const candidateSchema: z.ZodType<LedgerCandidate> = z.object({
+const candidateSchema: z.ZodMiniType<LedgerCandidate> = z.object({
   lineId: z.string(),
   entryId: z.string(),
   entryNumber: z.number(),
   date: z.string(),
   description: z.string(),
   source: z.enum(JOURNAL_SOURCES),
-  memo: z.string().optional(),
+  memo: z.optional(z.string()),
   amount: z.number(),
-  matchId: z.string().optional(),
+  matchId: z.optional(z.string()),
 });
 
-const summarySchema: z.ZodType<ReconciliationSummary> = z.object({
+const summarySchema: z.ZodMiniType<ReconciliationSummary> = z.object({
   bookBalance: z.number(),
   outstanding: z.number(),
   outstandingCount: z.number(),
@@ -69,7 +69,7 @@ const summarySchema: z.ZodType<ReconciliationSummary> = z.object({
   canReconcile: z.boolean(),
 });
 
-export const bankReconciliationResponseSchema: z.ZodType<BankReconciliationView> = z.object({
+export const bankReconciliationResponseSchema: z.ZodMiniType<BankReconciliationView> = z.object({
   statement: bankStatementResponseSchema,
   candidates: z.array(candidateSchema),
   summary: summarySchema,

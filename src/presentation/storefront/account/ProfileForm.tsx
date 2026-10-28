@@ -4,7 +4,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
 
-import { profileUpdateSchema, type ProfileUpdateInput, type ProfileWire } from "@/src/contracts/profile-schema";
+import type { ProfileWire } from "@/src/contracts/profile-response-schema";
+import { profileUpdateSchema, type ProfileUpdateInput } from "@/src/contracts/profile-schema";
 import { PLACEHOLDER_USER_NAME } from "@/src/domain/entities/User";
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";

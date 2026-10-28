@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/mini";
 
 import {
   EVENT_KINDS,
@@ -13,20 +13,20 @@ export const eventResponseSchema = z.object({
   id: z.string(),
   kind: z.enum(EVENT_KINDS),
   title: z.string(),
-  description: z.string().optional(),
-  titleFa: z.string().optional(),
-  descriptionFa: z.string().optional(),
-  imageUrl: z.string().optional(),
+  description: z.optional(z.string()),
+  titleFa: z.optional(z.string()),
+  descriptionFa: z.optional(z.string()),
+  imageUrl: z.optional(z.string()),
   startsAt: z.string(),
   endsAt: z.string(),
-  capacity: z.number().optional(),
+  capacity: z.optional(z.number()),
   price: z.number(),
   isPublished: z.boolean(),
   seatsTaken: z.number(),
   tableLabels: z.array(z.string()),
   createdAt: z.string(),
   updatedAt: z.string(),
-}) satisfies z.ZodType<CafeEvent>;
+}) satisfies z.ZodMiniType<CafeEvent>;
 
 export const eventListResponseSchema = z.array(eventResponseSchema);
 
@@ -36,13 +36,13 @@ export const eventTableOptionListResponseSchema = z.array(
     label: z.string(),
     seats: z.number(),
     held: z.boolean(),
-    clash: z
-      .discriminatedUnion("kind", [
+    clash: z.optional(
+      z.discriminatedUnion("kind", [
         z.object({ kind: z.literal("booking"), reference: z.number(), startsAt: z.string() }),
         z.object({ kind: z.literal("event"), eventId: z.string(), title: z.string() }),
-      ])
-      .optional(),
-  }) satisfies z.ZodType<EventTableOption>,
+      ]),
+    ),
+  }) satisfies z.ZodMiniType<EventTableOption>,
 );
 
 export const eventRegistrationResponseSchema = z.object({
@@ -54,6 +54,6 @@ export const eventRegistrationResponseSchema = z.object({
   seats: z.number(),
   status: z.enum(REGISTRATION_STATUSES),
   createdAt: z.string(),
-}) satisfies z.ZodType<EventRegistration>;
+}) satisfies z.ZodMiniType<EventRegistration>;
 
 export const eventRegistrationListResponseSchema = z.array(eventRegistrationResponseSchema);

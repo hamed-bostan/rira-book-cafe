@@ -10,7 +10,7 @@ import {
   type StockReceiptFormInput,
 } from "../inventory-schema";
 
-import { messagesAt } from "./zod-issues";
+import { messagesAt, flattened } from "./zod-issues";
 
 type PricedLine = StockReceiptFormInput["lines"][number];
 
@@ -95,9 +95,9 @@ describe("wasteSchema", () => {
   });
 
   it("maps each invalid field to its message key", () => {
-    const fieldErrors = wasteSchema
-      .safeParse({ date: "", ingredientId: " ", quantity: "-1", note: "n".repeat(201) })
-      .error?.flatten().fieldErrors;
+    const fieldErrors = flattened(
+      wasteSchema.safeParse({ date: "", ingredientId: " ", quantity: "-1", note: "n".repeat(201) }).error,
+    )?.fieldErrors;
     expect(fieldErrors?.date).toContain("dateRequired");
     expect(fieldErrors?.ingredientId).toEqual(["ingredientRequired"]);
     expect(fieldErrors?.quantity).toEqual(["quantityInvalid"]);
@@ -152,9 +152,9 @@ describe("openingStockSchema", () => {
   });
 
   it("needs at least one line", () => {
-    expect(openingStockSchema.safeParse({ date: "2026-03-21", lines: [] }).error?.flatten().fieldErrors.lines).toEqual([
-      "linesTooFew",
-    ]);
+    expect(flattened(openingStockSchema.safeParse({ date: "2026-03-21", lines: [] }).error)?.fieldErrors.lines).toEqual(
+      ["linesTooFew"],
+    );
   });
 });
 
@@ -166,7 +166,7 @@ describe("reorderLevelSchema", () => {
   });
 
   it("refuses a negative level", () => {
-    expect(reorderLevelSchema.safeParse({ reorderLevel: "-1" }).error?.flatten().fieldErrors.reorderLevel).toEqual([
+    expect(flattened(reorderLevelSchema.safeParse({ reorderLevel: "-1" }).error)?.fieldErrors.reorderLevel).toEqual([
       "quantityInvalid",
     ]);
   });

@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/mini";
 
 import { USER_ROLES } from "@/src/domain/entities/User";
 
@@ -11,8 +11,8 @@ import { USER_ROLES } from "@/src/domain/entities/User";
 export const viewerResponseSchema = z.object({
   id: z.string(),
   name: z.string(),
-  email: z.string().nullable(),
-  imageUrl: z.string().nullable(),
+  email: z.nullable(z.string()),
+  imageUrl: z.nullable(z.string()),
   role: z.enum(USER_ROLES),
 });
 

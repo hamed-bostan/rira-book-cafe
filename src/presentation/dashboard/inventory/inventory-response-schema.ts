@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/mini";
 
 import { STOCK_MOVEMENT_KINDS, type InventorySummary, type StockMovement } from "@/src/domain/entities/Inventory";
 import type { Page } from "@/src/domain/entities/Pagination";
@@ -8,7 +8,7 @@ import { pageResponseSchema } from "@/src/lib/api/page-response-schema";
 
 /** What the inventory endpoints return, checked at the BFF boundary. */
 
-export const inventorySummaryResponseSchema: z.ZodType<InventorySummary> = z.object({
+export const inventorySummaryResponseSchema: z.ZodMiniType<InventorySummary> = z.object({
   items: z.array(
     z.object({
       id: z.string(),
@@ -17,7 +17,7 @@ export const inventorySummaryResponseSchema: z.ZodType<InventorySummary> = z.obj
       onHand: z.number(),
       averageCost: z.number(),
       value: z.number(),
-      reorderLevel: z.number().optional(),
+      reorderLevel: z.optional(z.number()),
       isActive: z.boolean(),
       level: z.enum(["out", "low", "ok"]),
     }),
@@ -30,7 +30,7 @@ export const inventorySummaryResponseSchema: z.ZodType<InventorySummary> = z.obj
   costsVisible: z.boolean(),
 });
 
-export const stockMovementResponseSchema: z.ZodType<StockMovement> = z.object({
+export const stockMovementResponseSchema: z.ZodMiniType<StockMovement> = z.object({
   id: z.string(),
   ingredientId: z.string(),
   ingredientName: z.string(),
@@ -38,15 +38,15 @@ export const stockMovementResponseSchema: z.ZodType<StockMovement> = z.object({
   quantity: z.number(),
   value: z.number(),
   date: z.string(),
-  referenceId: z.string().optional(),
-  note: z.string().optional(),
+  referenceId: z.optional(z.string()),
+  note: z.optional(z.string()),
   createdByName: z.string(),
   createdAt: z.string(),
 });
-export const stockMovementPageResponseSchema: z.ZodType<Page<StockMovement>> =
+export const stockMovementPageResponseSchema: z.ZodMiniType<Page<StockMovement>> =
   pageResponseSchema(stockMovementResponseSchema);
 
-export const fiscalYearListResponseSchema: z.ZodType<FiscalYearStatus[]> = z.array(
+export const fiscalYearListResponseSchema: z.ZodMiniType<FiscalYearStatus[]> = z.array(
   z.object({ year: z.number(), fromDay: z.string(), toDay: z.string(), ended: z.boolean(), closed: z.boolean() }),
 );
 

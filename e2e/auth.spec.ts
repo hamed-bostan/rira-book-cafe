@@ -1,14 +1,20 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 import en from "../messages/en.json";
 import { TEST_USERS } from "../tests/fixtures/users";
 
 import { storageStatePath } from "./fixtures/sessions";
 
+// The sign-in fields are found by role, not label: role queries skip hidden elements.
+// When the page hydrates before its streamed HTML lands, React renders the form on the
+// client and the server's copy waits in a hidden `<div id="S:0">` for a moment — a
+// label query matches both and fails strict mode.
+const phoneField = (page: Page): Locator => page.getByRole("textbox", { name: "Phone number" });
+
 test.describe("signing in", () => {
   test("a guest signs in with a one-time code", async ({ page }) => {
     await page.goto("/login");
-    await page.getByLabel("Phone number").fill(TEST_USERS.customer.phone);
+    await phoneField(page).fill(TEST_USERS.customer.phone);
     await page.getByRole("button", { name: "Continue" }).click();
 
     await expect(page).toHaveURL(/\/login\/verify/);
@@ -22,14 +28,14 @@ test.describe("signing in", () => {
 
   test("a wrong code is refused", async ({ page }) => {
     await page.goto("/login");
-    await page.getByLabel("Phone number").fill(TEST_USERS.staff.phone);
+    await phoneField(page).fill(TEST_USERS.staff.phone);
     await page.getByRole("button", { name: "Continue" }).click();
     await expect(page).toHaveURL(/\/login\/verify/);
 
     const devCode = (await page.getByRole("button", { name: /Dev code:/ }).textContent()) ?? "";
     const real = devCode.match(/\d{4}/)?.[0] ?? "0000";
     const wrong = real === "1234" ? "4321" : "1234";
-    await page.getByLabel("Verification code").pressSequentially(wrong);
+    await page.getByRole("group", { name: "Verification code" }).pressSequentially(wrong);
     await page.getByRole("button", { name: "Verify Code" }).click();
 
     await expect(page.getByText(en.auth.incorrectCode)).toBeVisible();

@@ -1,4 +1,3 @@
-import { orderNoteListResponseSchema } from "@/src/contracts/order-note-schema";
 import type { OrderStatusCounts } from "@/src/domain/entities/AdminOrderFilters";
 import type { Order } from "@/src/domain/entities/Order";
 import type { OrderNote } from "@/src/domain/entities/OrderNote";
@@ -7,6 +6,7 @@ import type { Page } from "@/src/domain/entities/Pagination";
 import { ApiError } from "@/src/lib/api/ApiError";
 import { pageResponseSchema } from "@/src/lib/api/page-response-schema";
 import { serverApiGet } from "@/src/lib/api/server-client";
+import { orderNoteListResponseSchema } from "@/src/presentation/dashboard/orders/order-note-response-schema";
 import {
   orderResponseSchema,
   orderStatusCountsResponseSchema,

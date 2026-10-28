@@ -13,6 +13,8 @@ import {
   type PromoCodeFormInput,
 } from "../promotion-schema";
 
+import { flattened } from "./zod-issues";
+
 const PROMO: PromoCodeFormInput = {
   code: " summer25 ",
   description: "",
@@ -28,7 +30,7 @@ const PROMO: PromoCodeFormInput = {
 };
 
 const promoErrors = (input: unknown): Record<string, string[] | undefined> | undefined =>
-  promoCodeFormSchema.safeParse(input).error?.flatten().fieldErrors;
+  flattened(promoCodeFormSchema.safeParse(input).error)?.fieldErrors;
 
 describe("promoCodeFormSchema", () => {
   it("normalizes the code and turns the cafe-day window into UTC instants", () => {
@@ -154,16 +156,16 @@ describe("loyaltySettingsSchema", () => {
 
   it("maps each invalid field to its message key", () => {
     expect(
-      loyaltySettingsSchema
-        .safeParse({ ...SETTINGS, tomanPerPoint: 0, pointValue: 1.5, minRedeemPoints: -1 })
-        .error?.flatten().fieldErrors,
+      flattened(
+        loyaltySettingsSchema.safeParse({ ...SETTINGS, tomanPerPoint: 0, pointValue: 1.5, minRedeemPoints: -1 }).error,
+      )?.fieldErrors,
     ).toEqual({
       tomanPerPoint: ["amountInvalid"],
       pointValue: ["amountInvalid"],
       minRedeemPoints: ["limitInvalid"],
     });
     expect(
-      loyaltySettingsSchema.safeParse({ ...SETTINGS, minRedeemPoints: 2.5 }).error?.flatten().fieldErrors
+      flattened(loyaltySettingsSchema.safeParse({ ...SETTINGS, minRedeemPoints: 2.5 }).error)?.fieldErrors
         .minRedeemPoints,
     ).toEqual(["limitInvalid"]);
   });
@@ -187,7 +189,7 @@ describe("pointsAdjustmentSchema", () => {
 
   it("refuses a zero, fractional or oversized delta", () => {
     for (const delta of [0, 1.5, MAX_POINTS_ADJUSTMENT + 1, -MAX_POINTS_ADJUSTMENT - 1]) {
-      expect(pointsAdjustmentSchema.safeParse({ ...ADJUSTMENT, delta }).error?.flatten().fieldErrors.delta).toContain(
+      expect(flattened(pointsAdjustmentSchema.safeParse({ ...ADJUSTMENT, delta }).error)?.fieldErrors.delta).toContain(
         "pointsInvalid",
       );
     }
@@ -195,15 +197,15 @@ describe("pointsAdjustmentSchema", () => {
 
   it("maps a bad phone and note to their message keys", () => {
     expect(
-      pointsAdjustmentSchema.safeParse({ ...ADJUSTMENT, phone: "12", note: " " }).error?.flatten().fieldErrors,
+      flattened(pointsAdjustmentSchema.safeParse({ ...ADJUSTMENT, phone: "12", note: " " }).error)?.fieldErrors,
     ).toEqual({
       phone: ["phoneInvalid"],
       note: ["noteRequired"],
     });
     expect(
-      pointsAdjustmentSchema
-        .safeParse({ ...ADJUSTMENT, note: "n".repeat(MAX_LOYALTY_NOTE_LENGTH + 1) })
-        .error?.flatten().fieldErrors.note,
+      flattened(
+        pointsAdjustmentSchema.safeParse({ ...ADJUSTMENT, note: "n".repeat(MAX_LOYALTY_NOTE_LENGTH + 1) }).error,
+      )?.fieldErrors.note,
     ).toEqual(["noteTooLong"]);
   });
 });

@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/mini";
 
 import { NOTIFICATION_KINDS, type Notification } from "@/src/domain/entities/Notification";
 
@@ -8,10 +8,10 @@ export const notificationResponseSchema = z.object({
   userId: z.string(),
   kind: z.enum(NOTIFICATION_KINDS),
   params: z.record(z.string(), z.union([z.string(), z.number()])),
-  link: z.string().optional(),
-  readAt: z.string().optional(),
+  link: z.optional(z.string()),
+  readAt: z.optional(z.string()),
   createdAt: z.string(),
-}) satisfies z.ZodType<Notification>;
+}) satisfies z.ZodMiniType<Notification>;
 
 export const notificationListResponseSchema = z.array(notificationResponseSchema);
 

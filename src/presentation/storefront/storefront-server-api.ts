@@ -1,6 +1,6 @@
 import { cache } from "react";
 
-import { profileResponseSchema, type ProfileWire } from "@/src/contracts/profile-schema";
+import { profileResponseSchema, type ProfileWire } from "@/src/contracts/profile-response-schema";
 import type { BookLoan } from "@/src/domain/entities/BookLoan";
 import type { BookWaitlistEntry, BookWaitlistStatus } from "@/src/domain/entities/BookWaitlist";
 import type { CafeEvent, EventRegistration } from "@/src/domain/entities/CafeEvent";

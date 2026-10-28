@@ -1,6 +1,5 @@
-import { z } from "zod";
-
 import { MAX_BULK_ORDERS, PAYMENT_METHODS } from "@/src/domain/entities/Order";
+import * as z from "@/src/lib/zod";
 
 /**
  * The single source of truth for the dashboard's bulk actions, shared by the
@@ -16,7 +15,9 @@ import { MAX_BULK_ORDERS, PAYMENT_METHODS } from "@/src/domain/entities/Order";
  */
 
 /** Ids a bulk action applies to. Bounded here too — the use-cases enforce the same cap. */
-const idsField = z.array(z.string().min(1)).min(1, "selectionRequired").max(200, "selectionTooLarge");
+const idsField = z
+  .array(z.string().check(z.minLength(1)))
+  .check(z.minLength(1, "selectionRequired"), z.maxLength(200, "selectionTooLarge"));
 
 /**
  * What to do to the selected products.
@@ -32,7 +33,7 @@ export const productBulkActionSchema = z.discriminatedUnion("type", [
   // The menu list's "Feature on the menu" / "Remove from featured", sent for one row.
   z.object({ type: z.literal("feature") }),
   z.object({ type: z.literal("unfeature") }),
-  z.object({ type: z.literal("assignCategory"), categoryId: z.string().min(1, "categoryRequired") }),
+  z.object({ type: z.literal("assignCategory"), categoryId: z.string().check(z.minLength(1, "categoryRequired")) }),
 ]);
 
 export const productBulkRequestSchema = z.object({
@@ -91,23 +92,11 @@ export const orderBulkActionSchema = z.discriminatedUnion("type", [
 ]);
 
 export const orderBulkRequestSchema = z.object({
-  ids: z.array(z.string().min(1)).min(1, "selectionRequired").max(MAX_BULK_ORDERS, "selectionTooLarge"),
+  ids: z
+    .array(z.string().check(z.minLength(1)))
+    .check(z.minLength(1, "selectionRequired"), z.maxLength(MAX_BULK_ORDERS, "selectionTooLarge")),
   action: orderBulkActionSchema,
 });
 
 export type OrderBulkAction = z.infer<typeof orderBulkActionSchema>;
 export type OrderBulkRequest = z.infer<typeof orderBulkRequestSchema>;
-
-/**
- * What a bulk endpoint answers with: how many rows the action actually changed.
- *
- * `updated` is not necessarily `ids.length` — ids that no longer exist and rows
- * already holding the target value are skipped — and the screen reports this number
- * rather than the selection size, so "12 of 20 updated" is something the admin can
- * see rather than a silent discrepancy.
- */
-export const bulkResultSchema = z.object({
-  updated: z.number(),
-});
-
-export type BulkResult = z.infer<typeof bulkResultSchema>;

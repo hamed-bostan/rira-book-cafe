@@ -1,11 +1,11 @@
-import { z } from "zod";
-
 import { cafeDayOf, isCafeDay } from "@/src/domain/entities/CafeTime";
 import { EXPENSE_STATUSES, type ExpenseStatus } from "@/src/domain/entities/Expense";
 import { jalaliMonthDays, jalaliToday } from "@/src/domain/entities/JalaliCalendar";
 import { JOURNAL_SOURCES, type JournalSource } from "@/src/domain/entities/Ledger";
 import type { ExpenseFilters } from "@/src/domain/repositories/IExpenseRepository";
 import type { JournalFilters } from "@/src/domain/repositories/ILedgerRepository";
+
+import * as z from "../zod";
 
 /**
  * The wire contract for the accounting screens' query params, shared by the routes
@@ -22,21 +22,23 @@ export function currentJalaliMonth(now: Date = new Date()): DaySpan {
 
 const spanSchema = z
   .object({
-    from: z.string().refine(isCafeDay, "Expected YYYY-MM-DD.").optional(),
-    to: z.string().refine(isCafeDay, "Expected YYYY-MM-DD.").optional(),
+    from: z.optional(z.string().check(z.refine(isCafeDay, "Expected YYYY-MM-DD."))),
+    to: z.optional(z.string().check(z.refine(isCafeDay, "Expected YYYY-MM-DD."))),
   })
-  .refine((value) => !value.from || !value.to || value.from <= value.to, {
-    error: "`to` must be on or after `from`.",
-    path: ["to"],
-  });
+  .check(
+    z.refine((value) => !value.from || !value.to || value.from <= value.to, {
+      error: "`to` must be on or after `from`.",
+      path: ["to"],
+    }),
+  );
 
-/** `?from=&to=` as a span; either missing falls back to the current Persian month's bound. Malformed → `ZodError` (400). */
+/** `?from=&to=` as a span; either missing falls back to the current Persian month's bound. Malformed → `$ZodError` (400). */
 export function parseDaySpan(params: URLSearchParams, now: Date = new Date()): DaySpan {
   const query = spanSchema.parse({ from: params.get("from") ?? undefined, to: params.get("to") ?? undefined });
   const month = currentJalaliMonth(now);
   const span = { fromDay: query.from ?? month.fromDay, toDay: query.to ?? month.toDay };
   if (span.fromDay > span.toDay)
-    throw new z.ZodError([{ code: "custom", path: ["to"], message: "`to` must be on or after `from`." }]);
+    throw new z.core.$ZodError([{ code: "custom", path: ["to"], message: "`to` must be on or after `from`." }]);
   return span;
 }
 
@@ -44,7 +46,7 @@ export function parseDaySpan(params: URLSearchParams, now: Date = new Date()): D
 export function parseAsOfDay(params: URLSearchParams, now: Date = new Date()): string {
   return z
     .string()
-    .refine(isCafeDay, "Expected YYYY-MM-DD.")
+    .check(z.refine(isCafeDay, "Expected YYYY-MM-DD."))
     .parse(params.get("asOf") ?? cafeDayOf(now));
 }
 

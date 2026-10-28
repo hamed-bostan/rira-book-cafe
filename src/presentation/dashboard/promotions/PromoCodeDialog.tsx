@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import * as React from "react";
-import { flattenError } from "zod";
+import { flattenError } from "zod/mini";
 
 import { promoCodeFormSchema, type PromoCodeFormInput } from "@/src/contracts/promotion-schema";
 import { cafeDayOf } from "@/src/domain/entities/CafeTime";

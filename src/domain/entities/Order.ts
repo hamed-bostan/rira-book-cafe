@@ -64,6 +64,8 @@ export const MAX_TABLE_LABEL_LENGTH = 20;
 export const MAX_ORDER_NOTE_TEXT_LENGTH = 300;
 /** Most units of one item in a single order line. */
 export const MAX_LINE_QUANTITY = 50;
+/** Most distinct lines in one order — a generous table, not a catering job. */
+export const MAX_ORDER_LINES = 30;
 
 /**
  * One line of an order. Name, kind, image and price are snapshotted at placement,

@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { MAX_ORDER_LINES } from "@/src/contracts/order-schema";
-import { MAX_LINE_QUANTITY } from "@/src/domain/entities/Order";
+import { MAX_LINE_QUANTITY, MAX_ORDER_LINES } from "@/src/domain/entities/Order";
 
 import {
   EMPTY_BASKET,

@@ -1,7 +1,6 @@
-import { z } from "zod";
-
 import { isTeamPhone } from "@/src/domain/entities/Phone";
 import { GRANTABLE_ROLES } from "@/src/domain/entities/User";
+import * as z from "@/src/lib/zod";
 
 /**
  * The single source of truth for granting dashboard access, shared by the client form
@@ -17,15 +16,18 @@ import { GRANTABLE_ROLES } from "@/src/domain/entities/User";
  * there costs an undelivered note, not a stranger with admin rights.
  */
 export const grantAdminSchema = z.object({
-  phone: z
-    .string()
-    .trim()
-    .min(1, "phoneRequired")
+  phone: z.string().check(
+    z.trim(),
+    z.minLength(1, "phoneRequired"),
     // A complete Iranian mobile however it's typed (09…, +98…, 98…, spaced, in
     // Persian digits), or a foreign number with its "+" — see `isTeamPhone`.
     // Normalization to canonical digits happens in the domain (`normalizePhone`).
-    .refine(isTeamPhone, "teamPhoneInvalid"),
-  email: z.string().trim().email("emailInvalid").max(254, "emailTooLong").optional().or(z.literal("")),
+    z.refine(isTeamPhone, "teamPhoneInvalid"),
+  ),
+  email: z.union([
+    z.optional(z.string().check(z.trim(), z.email("emailInvalid"), z.maxLength(254, "emailTooLong"))),
+    z.literal(""),
+  ]),
   /**
    * Which job they're being given. `owner` isn't offered: there is exactly one,
    * and it moves by transfer rather than by grant — see `TransferOwnership`.

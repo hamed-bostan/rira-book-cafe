@@ -1,4 +1,4 @@
-import type { z } from "zod";
+import type * as z from "@/src/lib/zod";
 
 /**
  * The `when` of an object's (or array's) `.refine()`/`.superRefine()`, keeping Zod 3's

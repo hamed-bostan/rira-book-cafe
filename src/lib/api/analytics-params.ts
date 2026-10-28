@@ -1,5 +1,3 @@
-import { z } from "zod";
-
 import {
   ANALYTICS_RANGE_PRESETS,
   DEFAULT_ANALYTICS_PRESET,
@@ -14,26 +12,30 @@ import {
 } from "@/src/domain/entities/Analytics";
 import { isCafeDay } from "@/src/domain/entities/CafeTime";
 
+import * as z from "../zod";
+
 /**
  * The single wire contract for a report's range — the screens write these query
  * params and the report routes parse them back. Either a preset (`?range=7d`) or a
  * custom span of cafe days (`?from=2026-10-01&to=2026-10-15`, both inclusive).
- * Anything malformed is a `ZodError`, which the route answers with a 400.
+ * Anything malformed is a `$ZodError`, which the route answers with a 400.
  */
 const rangeQuerySchema = z
   .object({
-    range: z.enum(ANALYTICS_RANGE_PRESETS).optional(),
-    from: z.string().refine(isCafeDay, "Expected YYYY-MM-DD.").optional(),
-    to: z.string().refine(isCafeDay, "Expected YYYY-MM-DD.").optional(),
+    range: z.optional(z.enum(ANALYTICS_RANGE_PRESETS)),
+    from: z.optional(z.string().check(z.refine(isCafeDay, "Expected YYYY-MM-DD."))),
+    to: z.optional(z.string().check(z.refine(isCafeDay, "Expected YYYY-MM-DD."))),
   })
-  .refine((value) => (value.from === undefined) === (value.to === undefined), {
-    error: "`from` and `to` go together.",
-    path: ["to"],
-  })
-  .refine((value) => !value.from || !value.to || value.from <= value.to, {
-    error: "`to` must be on or after `from`.",
-    path: ["to"],
-  });
+  .check(
+    z.refine((value) => (value.from === undefined) === (value.to === undefined), {
+      error: "`from` and `to` go together.",
+      path: ["to"],
+    }),
+    z.refine((value) => !value.from || !value.to || value.from <= value.to, {
+      error: "`to` must be on or after `from`.",
+      path: ["to"],
+    }),
+  );
 
 /** Parse a report range from a query string; a preset when no custom span is given. */
 export function parseAnalyticsRange(params: URLSearchParams, now: Date = new Date()): DateRange {
@@ -45,7 +47,7 @@ export function parseAnalyticsRange(params: URLSearchParams, now: Date = new Dat
   if (query.from && query.to) {
     const range = dayRange(query.from, query.to);
     if (rangeDays(range) > MAX_RANGE_DAYS) {
-      throw new z.ZodError([{ code: "custom", path: ["from"], message: `At most ${MAX_RANGE_DAYS} days.` }]);
+      throw new z.core.$ZodError([{ code: "custom", path: ["from"], message: `At most ${MAX_RANGE_DAYS} days.` }]);
     }
     return range;
   }

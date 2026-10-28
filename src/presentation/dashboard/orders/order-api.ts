@@ -1,10 +1,11 @@
-import { bulkResultSchema, type BulkResult, type OrderBulkAction } from "@/src/contracts/bulk-action-schema";
+import type { OrderBulkAction } from "@/src/contracts/bulk-action-schema";
 import type { OrderNoteInput } from "@/src/contracts/order-note-schema";
-import { orderNoteResponseSchema } from "@/src/contracts/order-note-schema";
 import type { OrderItemServedInput, OrderPaymentInput, OrderStatusChangeInput } from "@/src/contracts/order-schema";
 import type { Order } from "@/src/domain/entities/Order";
 import type { OrderNote } from "@/src/domain/entities/OrderNote";
 import { apiPatch, apiPost } from "@/src/lib/api/client";
+import { bulkResultSchema, type BulkResult } from "@/src/presentation/dashboard/bulk/bulk-result-response-schema";
+import { orderNoteResponseSchema } from "@/src/presentation/dashboard/orders/order-note-response-schema";
 import { orderResponseSchema } from "@/src/presentation/orders/order-response-schema";
 
 /**

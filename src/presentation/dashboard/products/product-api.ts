@@ -1,7 +1,8 @@
-import { bulkResultSchema, type BulkResult, type ProductBulkAction } from "@/src/contracts/bulk-action-schema";
+import type { ProductBulkAction } from "@/src/contracts/bulk-action-schema";
 import type { ProductFormInput } from "@/src/contracts/product-schema";
 import type { Product } from "@/src/domain/entities/Product";
 import { apiDelete, apiPatch, apiPost, apiPut } from "@/src/lib/api/client";
+import { bulkResultSchema, type BulkResult } from "@/src/presentation/dashboard/bulk/bulk-result-response-schema";
 import { productResponseSchema } from "@/src/presentation/product/product-response-schema";
 
 /**

@@ -37,6 +37,7 @@ Next.js (App Router) · TypeScript · Tailwind v4 · Radix UI · Prisma + Postgr
 - `infrastructure/container.ts` is the sole composition root: it binds repository interfaces to concrete impls (Prisma / local disk / mocks). Everything else depends on the interfaces
 - Server Components default, `"use client"` only when needed
 - No business logic in components — REST route handlers (`app/api/<resource>/route.ts`) are thin controllers: authenticate → validate (Zod) → delegate to a use-case → map domain errors to HTTP. Components never call use-cases or the DB directly; they talk to the API through a typed Axios service
+- **Zod is `zod/mini` only** — classic `zod` is lint-banned: it adds ~17 kB to every page with a form. Contracts, query-param schemas and the env check use `import * as z from "@/src/lib/zod"` (it installs zod's English messages; a named `{ z }` import from it ships all of zod/mini); `*-response-schema.ts` use `import { z } from "zod/mini"`. Functional API: `z.optional(x)`, `z.nullable(x)`, `.check(z.trim(), z.minLength(1, "key"))`, `z.pipe(x, z.transform(fn))`, `z._default(x, v)`
 
 ### API & Data Fetching
 

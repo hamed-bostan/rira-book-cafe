@@ -8,7 +8,7 @@ import { ApiError } from "./ApiError";
 import { defaultMessageForStatus, type ErrorEnvelope } from "./normalizeAxiosError";
 import { badResponseError, parseApiResponse } from "./parseApiResponse";
 
-import type { ZodType } from "zod";
+import type { $ZodType } from "zod/v4/core";
 
 /**
  * Server-side REST client for React Server Components (the BFF pattern): the
@@ -57,7 +57,7 @@ type ServerGetConfig = {
  * the server actually sent rather than a cast taken on faith. Callers that only want
  * one field still validate the whole envelope and destructure from the result.
  */
-export async function serverApiGet<T>(path: string, schema: ZodType<T>, config?: ServerGetConfig): Promise<T> {
+export async function serverApiGet<T>(path: string, schema: $ZodType<T>, config?: ServerGetConfig): Promise<T> {
   const requestHeaders = await headers();
   // A shared cache entry must not depend on who asked — so cached reads go anonymous.
   const cookie = config?.cache ? undefined : (requestHeaders.get("cookie") ?? undefined);

@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "../zod";
 
 /**
  * Free text — trimmed, with a blank value treated as absent. Never fails
@@ -6,8 +6,7 @@ import { z } from "zod";
  * (a search box, a free-text id list) could violate, so "the user cleared the
  * field" and "the field was never set" collapse to the same `undefined`.
  */
-export const trimmedTextParamSchema = z
-  .string()
-  .trim()
-  .optional()
-  .transform((value) => value || undefined);
+export const trimmedTextParamSchema = z.pipe(
+  z.optional(z.string().check(z.trim())),
+  z.transform((value) => value || undefined),
+);

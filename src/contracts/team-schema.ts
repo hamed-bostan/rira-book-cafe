@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { isTeamPhone } from "@/src/domain/entities/Phone";
 import { GRANTABLE_ROLES } from "@/src/domain/entities/User";
 
 /**
@@ -20,10 +21,10 @@ export const grantAdminSchema = z.object({
     .string()
     .trim()
     .min(1, "phoneRequired")
-    // Digits, spaces and the usual separators — normalization to canonical digits
-    // happens in the domain (see `normalizePhone`), so the form stays permissive
-    // about how the number is typed (+98…, 98…, 09…).
-    .regex(/^[+\d][\d\s()-]{7,19}$/, "phoneInvalid"),
+    // A complete Iranian mobile however it's typed (09…, +98…, 98…, spaced, in
+    // Persian digits), or a foreign number with its "+" — see `isTeamPhone`.
+    // Normalization to canonical digits happens in the domain (`normalizePhone`).
+    .refine(isTeamPhone, "teamPhoneInvalid"),
   email: z.string().trim().email("emailInvalid").max(254, "emailTooLong").optional().or(z.literal("")),
   /**
    * Which job they're being given. `owner` isn't offered: there is exactly one,

@@ -24,6 +24,7 @@ export const productResponseSchema = z.object({
   rating: z.number(),
   ratingCount: z.number(),
   stockQuantity: z.number(),
+  madeToOrder: z.boolean(),
   imageUrl: z.string(),
   categoryId: z.string(),
   isFeatured: z.boolean(),

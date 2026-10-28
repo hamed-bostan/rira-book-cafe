@@ -44,8 +44,8 @@ const optionalPriceField = z
   .refine((value) => value === undefined || PRICE_PATTERN.test(value), "priceInvalid")
   .transform((value) => (value === undefined ? undefined : Number(value)));
 
-/** Required stock: a string the form emits, validated as a non-negative whole number. */
-const stockField = z.string().trim().min(1, "stockRequired").regex(/^\d+$/, "stockWhole").transform(Number);
+/** A stock count: a non-negative whole number. */
+const STOCK_PATTERN = /^\d+$/;
 
 /** Optional free text: trimmed, blank → `undefined` so it isn't stored as "". */
 const optionalText = z
@@ -88,7 +88,10 @@ export const productFormSchema = z
     // What one unit costs the cafe — optional; feeds cost of sales and margins.
     costPrice: optionalPriceField,
     imageUrl: imageUrlField("imageRequired"),
-    stockQuantity: stockField,
+    // Required and validated only for a counted item — see the refinement below. A
+    // made-to-order item isn't counted, so whatever the (hidden) field holds is ignored.
+    stockQuantity: z.string().trim(),
+    madeToOrder: z.boolean(),
     isFeatured: z.boolean(),
     isPublished: z.boolean(),
     badge: optionalText,
@@ -120,6 +123,14 @@ export const productFormSchema = z
     path: ["bookAuthor"],
     message: "authorRequired",
   })
+  .superRefine((data, ctx) => {
+    if (data.madeToOrder) return;
+    if (data.stockQuantity.length === 0) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["stockQuantity"], message: "stockRequired" });
+    } else if (!STOCK_PATTERN.test(data.stockQuantity)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["stockQuantity"], message: "stockWhole" });
+    }
+  })
   .transform(
     ({
       faName,
@@ -131,9 +142,12 @@ export const productFormSchema = z
       bookIsbn,
       bookAvailability,
       bookCopies,
+      stockQuantity,
       ...base
     }) => ({
       ...base,
+      // A made-to-order item sends no count, so saving it leaves the stored one alone.
+      stockQuantity: base.madeToOrder ? undefined : Number(stockQuantity),
       // Book details only travel with books; for drinks and food they're dropped
       // even if the form still holds stale values from a kind switch.
       book:

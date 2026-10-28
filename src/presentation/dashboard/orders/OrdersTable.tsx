@@ -18,7 +18,7 @@ import type { ReactNode } from "react";
 
 type OrdersTableProps = {
   orders: Order[];
-  /** Draws the selection and row-menu columns. */
+  /** Draws the selection and row-menu columns, and the cards' row menus (cards have no selection). */
   canFulfill: boolean;
   /** The status tabs along the frame's top edge, above the toolbar. */
   tabs?: ReactNode;
@@ -54,7 +54,7 @@ export async function OrdersTable({ orders, canFulfill, tabs, toolbar, emptyStat
         <>
           <div className="grid min-w-0 grid-cols-1 gap-3 p-3 @min-[38rem]:grid-cols-2 @min-[56rem]:hidden">
             {orders.map((order) => (
-              <OrderCard key={order.id} order={order} />
+              <OrderCard key={order.id} order={order} canFulfill={canFulfill} />
             ))}
           </div>
           <div className="hidden overflow-x-auto @min-[56rem]:block">

@@ -81,6 +81,9 @@ model Product {
   rating           Float        @default(0)
   ratingCount      Int          @default(0) @map("rating_count")
   stockQuantity    Int          @default(0) @map("stock_quantity")
+  // Made when ordered (drinks, breakfast): never counted, so ordering neither
+  // checks nor takes `stockQuantity`, and its warnings come from its recipe.
+  madeToOrder      Boolean      @default(false) @map("made_to_order")
   imageUrl         String       @map("image_url")
   categoryId       String       @map("category_id")
   isFeatured       Boolean      @default(false) @map("is_featured")

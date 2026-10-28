@@ -39,6 +39,7 @@ const FORM_FIELDS = [
   "originalPrice",
   "costPrice",
   "stockQuantity",
+  "madeToOrder",
   "imageUrl",
   "badge",
   "unit",
@@ -69,6 +70,8 @@ function toDefaults(product?: Product, translations?: ProductTranslationInput[])
     originalPrice: product?.originalPrice != null ? String(product.originalPrice) : "",
     costPrice: product?.costPrice != null ? String(product.costPrice) : "",
     stockQuantity: product != null ? String(product.stockQuantity) : "",
+    // Counted unless staff say otherwise, matching the column.
+    madeToOrder: product?.madeToOrder ?? false,
     imageUrl: product?.imageUrl ?? "",
     isFeatured: product?.isFeatured ?? false,
     // A new product is live by default, matching the column — an operator who wants
@@ -131,6 +134,7 @@ export function ProductForm(props: ProductFormProps) {
 
   const imageUrl = useWatch({ control, name: "imageUrl" });
   const kind = useWatch({ control, name: "kind" });
+  const madeToOrder = useWatch({ control, name: "madeToOrder" });
 
   const onSubmit = handleSubmit(async (values) => {
     try {
@@ -416,16 +420,46 @@ export function ProductForm(props: ProductFormProps) {
         )}
       </TextField>
 
-      <TextField
-        label={t("stockLabel")}
-        required
-        description={t("stockDescription")}
-        error={fieldError(errors.stockQuantity?.message)}
-      >
-        {(control) => (
-          <Input {...control} {...register("stockQuantity")} inputMode="numeric" placeholder={t("stockPlaceholder")} />
+      <Controller
+        control={control}
+        name="madeToOrder"
+        render={({ field }) => (
+          <div className="flex items-center justify-between rounded-card-md border border-border px-4 py-3">
+            <div>
+              <label htmlFor="madeToOrder" className="text-body-small-emphasis text-input-foreground">
+                {t("madeToOrderLabel")}
+              </label>
+              <p className="text-body-caption text-muted-foreground">{t("madeToOrderDescription")}</p>
+            </div>
+            <Switch
+              id="madeToOrder"
+              checked={field.value}
+              onCheckedChange={field.onChange}
+              aria-label={t("madeToOrderAria")}
+            />
+          </div>
         )}
-      </TextField>
+      />
+
+      {/* A made-to-order item isn't counted: no stock to enter, and the saved count
+          is left as it is. The value stays in the form, so switching back restores it. */}
+      {madeToOrder ? null : (
+        <TextField
+          label={t("stockLabel")}
+          required
+          description={t("stockDescription")}
+          error={fieldError(errors.stockQuantity?.message)}
+        >
+          {(control) => (
+            <Input
+              {...control}
+              {...register("stockQuantity")}
+              inputMode="numeric"
+              placeholder={t("stockPlaceholder")}
+            />
+          )}
+        </TextField>
+      )}
 
       <Field error={fieldError(errors.imageUrl?.message)}>
         {({ id, ariaDescribedBy, ariaInvalid }) => (

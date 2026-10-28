@@ -16,8 +16,9 @@ type RouteContext = { params: Promise<{ id: string }> };
 
 /**
  * PATCH /api/admin/suite-bookings/:id — confirm, check in, check out, cancel or
- * mark a no-show. Requires `reservations.manage`. 409 for a transition the
- * workflow refuses, or `SUITE_TAKEN` when another stay already holds those nights.
+ * mark a no-show; with `undo`, take back a Check in. Requires
+ * `reservations.manage`. 409 for a transition the workflow (or the undo rule)
+ * refuses, or `SUITE_TAKEN` when another stay already holds those nights.
  */
 export async function PATCH(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   const session = await getSessionWith("reservations.manage");
@@ -40,10 +41,8 @@ export async function PATCH(request: NextRequest, { params }: RouteContext): Pro
     const booking = await new ChangeSuiteBooking(suiteBookingRepository, customerNotifier).execute(
       id,
       parsed.data.status,
-      {
-        id: session.user.id,
-        name: session.user.name ?? session.user.id,
-      },
+      { id: session.user.id, name: session.user.name ?? session.user.id },
+      { undo: parsed.data.undo },
     );
     return NextResponse.json(booking);
   } catch (error) {

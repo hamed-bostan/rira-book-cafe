@@ -23,6 +23,7 @@ export function productSnapshot(product: Product | NewProduct): Record<string, u
     originalPrice: product.originalPrice,
     costPrice: product.costPrice,
     stockQuantity: product.stockQuantity,
+    madeToOrder: product.madeToOrder,
     categoryId: product.categoryId,
     isFeatured: product.isFeatured,
     isPublished: product.isPublished,

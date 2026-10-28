@@ -1,5 +1,6 @@
 import {
   PROMO_KINDS,
+  promoCodeKey,
   type PromoCode,
   type PromoCodeWithUses,
   type PromoKind,
@@ -45,8 +46,27 @@ export class PrismaPromotionRepository implements IPromotionRepository {
   }
 
   async getByCode(code: string): Promise<PromoCode | null> {
-    const row = await this.db.promoCode.findUnique({ where: { code } });
-    return row ? toPromo(row) : null;
+    const key = promoCodeKey(code);
+    if (key === "") return null;
+    // One query: every code whose letters and numbers are the typed ones, the one
+    // saved exactly as typed first, then the plain letters-and-numbers one. Two
+    // rows are enough to tell a clear winner from a tie. Columns are aliased to the
+    // model's field names so a row reads like Prisma's own.
+    const [best, next] = await this.db.$queryRaw<PromoRow[]>`
+      SELECT id, code, description, kind, value,
+        max_discount AS "maxDiscount", min_subtotal AS "minSubtotal",
+        starts_at AS "startsAt", ends_at AS "endsAt",
+        usage_limit AS "usageLimit", per_guest_limit AS "perGuestLimit",
+        is_active AS "isActive", created_at AS "createdAt", updated_at AS "updatedAt"
+      FROM promo_codes
+      WHERE regexp_replace(upper(code), '[[:space:]_-]', '', 'g') = ${key}
+      ORDER BY (code = ${code}) DESC, (code = ${key}) DESC, created_at
+      LIMIT 2`;
+    if (!best) return null;
+    // Old codes that differ only in separators ("AUTUMN-15", "AUTUMN_15"), typed
+    // as neither: no telling which was meant.
+    if (next && best.code !== code && best.code !== key) return null;
+    return toPromo(best);
   }
 
   async usage(promoId: string, userId: string): Promise<PromoUsage> {

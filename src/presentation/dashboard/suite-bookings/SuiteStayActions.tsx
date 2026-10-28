@@ -4,7 +4,11 @@ import { MoreHorizontal } from "lucide-react";
 import { useTranslations } from "next-intl";
 import * as React from "react";
 
-import type { SuiteBooking, SuiteBookingStatus } from "@/src/domain/entities/SuiteBooking";
+import {
+  canUndoSuiteBookingStatus,
+  type SuiteBooking,
+  type SuiteBookingStatus,
+} from "@/src/domain/entities/SuiteBooking";
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
@@ -39,8 +43,9 @@ type Ending = "cancelled" | "noShow";
  * The desk's controls for one stay: Confirm a request (off while it clashes with a
  * held stay), Check in from the arrival day on, Check out, and behind "⋯" Mark
  * no-show (once the guest was due) or Cancel booking — both asking first, naming
- * the guest and nights. Each writes over the REST API and `router.refresh()`es; a
- * failure shows in the confirmation when one is open, else as a toast.
+ * the guest and nights. Check in offers Undo in its toast. Each writes over the
+ * REST API and `router.refresh()`es; a failure shows in the confirmation when one
+ * is open, else as a toast.
  */
 export function SuiteStayActions({ booking, today, clashReference, checkInLabel, rangeLabel }: SuiteStayActionsProps) {
   const t = useTranslations("dashSuite");
@@ -58,15 +63,34 @@ export function SuiteStayActions({ booking, today, clashReference, checkInLabel,
 
   function save(next: SuiteBookingStatus): void {
     setError(null);
+    // Only Check in can be taken back.
+    const undoTo = canUndoSuiteBookingStatus(next, status) ? status : null;
     startTransition(async () => {
       try {
         await suiteBookingsApi.update(booking.id, { status: next });
         setConfirming(false);
-        toast({ tone: "success", title: t("statusChanged", { reference, status: t(`status.${next}`) }) });
+        toast({
+          tone: "success",
+          title: t("statusChanged", { reference, status: t(`status.${next}`) }),
+          onUndo: undoTo ? () => undo(undoTo) : undefined,
+        });
       } catch (err) {
         const message = localizeApiError(err, tApiErrors, t("updateError"));
         if (confirming) setError(message);
         else toast({ tone: "error", title: message });
+      }
+      router.refresh();
+    });
+  }
+
+  /** The toast's Undo: steps the stay back, with no undo of its own. */
+  function undo(to: SuiteBookingStatus): void {
+    startTransition(async () => {
+      try {
+        await suiteBookingsApi.update(booking.id, { status: to, undo: true });
+        toast({ tone: "success", title: t("undoneToast", { reference, status: t(`status.${to}`) }) });
+      } catch (err) {
+        toast({ tone: "error", title: localizeApiError(err, tApiErrors, t("updateError")) });
       }
       router.refresh();
     });

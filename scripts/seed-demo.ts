@@ -46,6 +46,8 @@ import { RequestSuiteBooking } from "@/src/domain/use-cases/suite-bookings/Reque
 import * as c from "@/src/infrastructure/container";
 import { prisma } from "@/src/infrastructure/prisma/client";
 
+import { MADE_TO_ORDER_ITEM_IDS } from "./seed-sample-data";
+
 // ── Clock ────────────────────────────────────────────────────────────────────
 // `new Date()` and `Date.now()` read a movable clock; dates built from a value
 // are untouched. `instanceof Date` still holds for every date in the process.
@@ -735,9 +737,13 @@ async function prepare(): Promise<ActivityActor> {
     create: { id: STAFF.id, phone: STAFF_PHONE, name: STAFF.name, role: "staff" },
     update: {},
   });
-  // Enough on the shelf for a month of orders (books keep their real copy count).
+  // Drinks and the breakfast dishes are made when ordered, so they keep no count —
+  // the sample seed marks them; this keeps a database seeded before the flag in step.
+  await prisma.product.updateMany({ where: { id: { in: [...MADE_TO_ORDER_ITEM_IDS] } }, data: { madeToOrder: true } });
+  // Enough of what is counted — the cakes — on the shelf for a month of orders
+  // (books keep their real copy count).
   await prisma.product.updateMany({
-    where: { id: { startsWith: "seed-" }, kind: { not: "book" } },
+    where: { id: { startsWith: "seed-" }, kind: { not: "book" }, madeToOrder: false },
     data: { stockQuantity: 1000 },
   });
   await prisma.product.update({ where: { id: "seed-book-blind-owl" }, data: { stockQuantity: 12 } });

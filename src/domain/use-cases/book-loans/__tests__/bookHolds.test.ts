@@ -1,8 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { NotFoundError } from "../../../errors/NotFoundError";
 import { ValidationError } from "../../../errors/ValidationError";
 import { AddToBookWaitlist, JoinBookWaitlist, RemoveFromBookWaitlist } from "../BookWaitlist";
-import { ExtendBookLoan } from "../ChangeBookLoan";
+import { ExtendBookLoan, UndoBookLoanExtension } from "../ChangeBookLoan";
 
 import type { BookLoan } from "../../../entities/BookLoan";
 import type { BookWaitlistEntry } from "../../../entities/BookWaitlist";
@@ -148,5 +149,83 @@ describe("ExtendBookLoan", () => {
     await expect(
       new ExtendBookLoan(loans(loan("2026-10-30T20:29:59.999Z")).repo).execute("l1", 0, STAFF, NOW),
     ).rejects.toBeInstanceOf(ValidationError);
+  });
+});
+
+describe("UndoBookLoanExtension", () => {
+  const LENT = "2026-10-16T08:00:00.000Z";
+  const BEFORE = "2026-10-30T20:29:59.999Z";
+  const EXTENDED = "2026-11-06T20:29:59.999Z";
+
+  function loan(dueAt: string, status: BookLoan["status"] = "out"): BookLoan {
+    return { id: "l1", reference: 2, status, dueAt, lentAt: LENT } as BookLoan;
+  }
+
+  function loans(current: BookLoan) {
+    const extend = vi.fn<IBookLoanRepository["extend"]>(async (_id, dueAt) => ({ ...current, dueAt }));
+    return { repo: { getById: vi.fn(async () => current), extend } as unknown as IBookLoanRepository, extend };
+  }
+
+  it("puts the due date back and logs it like the extension", async () => {
+    const { repo, extend } = loans(loan(EXTENDED));
+    const saved = await new UndoBookLoanExtension(repo).execute(
+      "l1",
+      { dueAt: BEFORE, extendedDueAt: EXTENDED },
+      STAFF,
+    );
+
+    expect(saved.dueAt).toBe(BEFORE);
+    expect(extend.mock.calls[0].slice(0, 2)).toEqual(["l1", BEFORE]);
+    const entry = extend.mock.calls[0][2]?.(loan(BEFORE)) as {
+      action: string;
+      entityLabel: string;
+      changes: unknown[];
+    };
+    expect(entry).toMatchObject({ action: "bookLoan.extensionUndone", entityLabel: "L-2" });
+    expect(entry.changes).toEqual([{ field: "dueAt", before: EXTENDED, after: BEFORE }]);
+  });
+
+  it("puts back a due date that's already past, so the loan is overdue again", async () => {
+    // Was due Oct 19, three days before NOW; the extension counted from today.
+    const lateBefore = "2026-10-19T20:29:59.999Z";
+    const { repo, extend } = loans(loan("2026-10-29T20:29:59.999Z"));
+    await new UndoBookLoanExtension(repo).execute(
+      "l1",
+      { dueAt: lateBefore, extendedDueAt: "2026-10-29T20:29:59.999Z" },
+      STAFF,
+    );
+    expect(extend.mock.calls[0][1]).toBe(lateBefore);
+  });
+
+  it("refuses a closed loan, and a due date that has moved since the extension", async () => {
+    for (const status of ["returned", "lost"] as const) {
+      const { repo, extend } = loans(loan(EXTENDED, status));
+      await expect(
+        new UndoBookLoanExtension(repo).execute("l1", { dueAt: BEFORE, extendedDueAt: EXTENDED }, STAFF),
+      ).rejects.toMatchObject({ code: "INVALID_TRANSITION" });
+      expect(extend).not.toHaveBeenCalled();
+    }
+    const { repo, extend } = loans(loan("2026-11-13T20:29:59.999Z"));
+    await expect(
+      new UndoBookLoanExtension(repo).execute("l1", { dueAt: BEFORE, extendedDueAt: EXTENDED }, STAFF),
+    ).rejects.toMatchObject({ code: "INVALID_TRANSITION" });
+    expect(extend).not.toHaveBeenCalled();
+  });
+
+  it("only moves the due date earlier, never before the loan began", async () => {
+    for (const dueAt of [EXTENDED, "2026-11-20T20:29:59.999Z", "2026-10-15T20:29:59.999Z", "not a time"]) {
+      const { repo, extend } = loans(loan(EXTENDED));
+      await expect(
+        new UndoBookLoanExtension(repo).execute("l1", { dueAt, extendedDueAt: EXTENDED }, STAFF),
+      ).rejects.toBeInstanceOf(ValidationError);
+      expect(extend).not.toHaveBeenCalled();
+    }
+  });
+
+  it("reads a missing loan as not found", async () => {
+    const repo = { getById: vi.fn(async () => null) } as unknown as IBookLoanRepository;
+    await expect(
+      new UndoBookLoanExtension(repo).execute("nope", { dueAt: BEFORE, extendedDueAt: EXTENDED }, STAFF),
+    ).rejects.toBeInstanceOf(NotFoundError);
   });
 });

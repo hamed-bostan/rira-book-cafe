@@ -114,7 +114,10 @@ describe("CreatePromoCode", () => {
 
   it.each<[string, Partial<PromoCodeInput>, string]>([
     ["a code with spaces", { code: "TWO WORDS" }, "code"],
+    ["a code with a dash", { code: "AUTUMN-15" }, "code"],
+    ["a code with an underscore", { code: "AUTUMN_15" }, "code"],
     ["a code that's too short", { code: "ab" }, "code"],
+    ["a code that's too long", { code: "X".repeat(17) }, "code"],
     ["a zero value", { value: 0 }, "value"],
     ["a fractional value", { value: 2.5 }, "value"],
     ["a percentage over 100", { value: 101 }, "value"],
@@ -181,6 +184,15 @@ describe("UpdatePromoCode", () => {
       ValidationError,
     );
   });
+
+  it("keeps a code saved with a dash before the rule while it's unchanged, but won't take a new one", async () => {
+    const { repo, update } = promoRepo(promo({ code: "AUTUMN-15" }));
+    await new UpdatePromoCode(repo).execute("p1", { ...INPUT, code: "autumn-15", value: 15 }, STAFF);
+    expect(update.mock.calls[0][1].code).toBe("AUTUMN-15");
+    await expect(new UpdatePromoCode(repo).execute("p1", { ...INPUT, code: "AUTUMN-16" }, STAFF)).rejects.toMatchObject(
+      { name: "ValidationError", field: "code" },
+    );
+  });
 });
 
 describe("SetPromoCodeActive", () => {
@@ -205,6 +217,12 @@ describe("SetPromoCodeActive", () => {
     expect(sent).not.toHaveProperty("createdAt");
     expect(sent).toMatchObject({ code: "WELCOME10", value: 10, maxDiscount: 50_000, isActive: false });
     expect(entries[0]?.action).toBe("promoCode.activeChanged");
+  });
+
+  it("switches a code saved with a dash before codes were letters and numbers only", async () => {
+    const { repo } = promoRepo(promo({ code: "AUTUMN-15", isActive: true }));
+    const saved = await new SetPromoCodeActive(repo).execute("p1", false, STAFF);
+    expect(saved).toMatchObject({ code: "AUTUMN-15", isActive: false });
   });
 });
 

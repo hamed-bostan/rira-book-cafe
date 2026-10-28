@@ -10,7 +10,7 @@ export const reservationsApi = {
     return apiPost("/admin/reservations", values, reservationResponseSchema);
   },
 
-  /** Change status and/or table. 409 for a refused transition or a table already held. */
+  /** Change status and/or table, or take back a Seat or Complete (`undo`). 409 for a refused transition or a table already held. */
   update(id: string, values: ReservationUpdateInput): Promise<Reservation> {
     return apiPatch(`/admin/reservations/${id}`, values, reservationResponseSchema);
   },

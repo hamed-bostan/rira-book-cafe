@@ -1,3 +1,5 @@
+import type { IngredientAlert } from "./Inventory";
+
 /**
  * What a menu item is. The cafe sells drinks and food over the counter and keeps a
  * shelf of books, so one catalog holds all three — they share price, image,
@@ -50,8 +52,17 @@ export type Product = {
   discountPercent?: number;
   rating: number;
   ratingCount: number;
-  /** Units on hand. 0 = sold out; the storefront blocks ordering it. */
+  /**
+   * Units on hand. 0 = sold out; the storefront blocks ordering it. Meaningless for
+   * a {@link Product.madeToOrder} item, which keeps whatever it last held.
+   */
   stockQuantity: number;
+  /**
+   * Made when ordered — a drink, a breakfast plate — rather than taken off a shelf.
+   * Never counted: ordering neither checks nor takes `stockQuantity`, it never sells
+   * out by count, and the dashboard warns from its recipe's ingredients instead.
+   */
+  madeToOrder: boolean;
   imageUrl: string;
   categoryId: string;
   isFeatured: boolean;
@@ -80,7 +91,13 @@ export type Product = {
   book?: BookDetails;
 };
 
-/** True for items that can be sold to take home — everything except a reading-only book. */
+/**
+ * One row of the dashboard's menu list: the item, plus — for a made-to-order item
+ * whose recipe has an ingredient out or running low — the one that most needs
+ * attention. Absent for counted items and for made-to-order items that are fine.
+ */
+export type ProductListItem = Product & { ingredientAlert?: IngredientAlert };
+
 /**
  * The product as guests may see it: without its cost price, which is the cafe's
  * business (margins) and only ever returned by the dashboard's endpoints.
@@ -90,6 +107,7 @@ export function withoutCost(product: Product): Product {
   return rest;
 }
 
+/** True for items that can be sold to take home — everything except a reading-only book. */
 export function isSellable(product: Pick<Product, "kind" | "book">): boolean {
   return product.kind !== "book" || product.book?.availability !== "reading";
 }

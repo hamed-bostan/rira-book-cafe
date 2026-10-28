@@ -10,7 +10,7 @@ export const suiteBookingsApi = {
     return apiPost("/admin/suite-bookings", values, suiteBookingResponseSchema);
   },
 
-  /** Move a stay along. 409 for a refused transition, or `SUITE_TAKEN` for nights already held. */
+  /** Move a stay along, or take back a Check in (`undo`). 409 for a refused transition, or `SUITE_TAKEN` for nights already held. */
   update(id: string, values: SuiteBookingUpdateInput): Promise<SuiteBooking> {
     return apiPatch(`/admin/suite-bookings/${id}`, values, suiteBookingResponseSchema);
   },

@@ -1,6 +1,7 @@
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { isSellable, type Product } from "@/src/domain/entities/Product";
+import { isSoldOut } from "@/src/domain/entities/stock";
 import { Link } from "@/src/i18n/navigation";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { cn } from "@/src/lib/utils";
@@ -26,7 +27,8 @@ type MenuItemCardProps = {
 export async function MenuItemCard({ item, preload = false }: MenuItemCardProps) {
   const t = await getTranslations("site");
   const locale = await getLocale();
-  const soldOut = item.stockQuantity <= 0;
+  // A made-to-order item never sells out by count.
+  const soldOut = isSoldOut(item);
   const sellable = isSellable(item);
 
   return (

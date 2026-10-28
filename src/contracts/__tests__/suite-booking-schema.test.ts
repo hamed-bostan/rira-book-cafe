@@ -58,6 +58,10 @@ describe("requestSuiteBookingSchema", () => {
 describe("suiteBookingUpdateSchema", () => {
   it("accepts a known status and refuses others", () => {
     expect(suiteBookingUpdateSchema.parse({ status: "checkedIn" })).toEqual({ status: "checkedIn" });
+    expect(suiteBookingUpdateSchema.parse({ status: "confirmed", undo: true })).toEqual({
+      status: "confirmed",
+      undo: true,
+    });
     expect(suiteBookingUpdateSchema.safeParse({ status: "departed" }).error?.flatten().fieldErrors.status).toEqual([
       "statusInvalid",
     ]);

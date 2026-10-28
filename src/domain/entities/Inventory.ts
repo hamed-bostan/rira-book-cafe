@@ -41,6 +41,38 @@ export function stockLevel(item: { onHand: number; reorderLevel?: number }): Sto
   return "ok";
 }
 
+/**
+ * A made-to-order item's warning: the recipe ingredient that most needs attention,
+ * and whether it's out or running low.
+ */
+export type IngredientAlert = { level: "out" | "low"; ingredient: string };
+
+/**
+ * The warning a made-to-order item carries, from its recipe's ingredients (as
+ * {@link stockLevel} reads each one). The worst wins — any ingredient out beats
+ * any running low — and among equals the first by name, so the row names the same
+ * ingredient every time. `undefined` when every ingredient is fine, or there's no
+ * recipe.
+ */
+export function ingredientAlertFor(
+  ingredients: readonly { name: string; onHand: number; reorderLevel?: number }[],
+): IngredientAlert | undefined {
+  let alert: IngredientAlert | undefined;
+  for (const ingredient of ingredients) {
+    const level = stockLevel(ingredient);
+    if (level === "ok") continue;
+    const candidate: IngredientAlert = { level, ingredient: ingredient.name };
+    if (!alert || comesFirst(candidate, alert)) alert = candidate;
+  }
+  return alert;
+}
+
+/** Whether `a` is the warning to show over `b`: out before low, then by name. */
+function comesFirst(a: IngredientAlert, b: IngredientAlert): boolean {
+  if (a.level !== b.level) return a.level === "out";
+  return a.ingredient.localeCompare(b.ingredient) < 0;
+}
+
 /** Quantities are kept to 3 decimals (grams, millilitres) so float dust never accumulates. */
 export function roundQuantity(quantity: number): number {
   return Math.round(quantity * 1000) / 1000;

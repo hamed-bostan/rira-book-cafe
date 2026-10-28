@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  SUITE_BOOKING_STATUSES,
+  canUndoSuiteBookingStatus,
   isGuestCancellableSuiteBooking,
   staysOverlap,
   suiteNights,
@@ -104,6 +106,62 @@ describe("ChangeSuiteBooking", () => {
         name: "Ali",
       }),
     ).rejects.toThrow(ConflictError);
+  });
+
+  it("takes back a Check in, logging it and telling the guest nothing", async () => {
+    const { repo, applyStatus } = repoWith(booking("checkedIn"));
+    const notifier = { notify: vi.fn() };
+    const saved = await new ChangeSuiteBooking(repo, notifier).execute(
+      "s1",
+      "confirmed",
+      { id: "st", name: "Ali" },
+      { undo: true },
+    );
+
+    expect(saved.status).toBe("confirmed");
+    expect(applyStatus.mock.calls[0].slice(0, 3)).toEqual(["s1", "checkedIn", "confirmed"]);
+    const entry = applyStatus.mock.calls[0][3]?.(booking("confirmed")) as { action: string; changes: unknown[] };
+    expect(entry.action).toBe("suiteBooking.changed");
+    expect(entry.changes).toEqual([{ field: "status", before: "checkedIn", after: "confirmed" }]);
+    // Back at `confirmed`, but the guest isn't told their stay was confirmed again.
+    expect(notifier.notify).not.toHaveBeenCalled();
+  });
+
+  it("refuses an undo of anything else, and never steps back without the flag", async () => {
+    for (const [from, to] of [
+      ["confirmed", "requested"],
+      ["checkedOut", "checkedIn"],
+      ["cancelled", "confirmed"],
+      ["noShow", "confirmed"],
+      ["confirmed", "confirmed"],
+    ] as const) {
+      const { repo, applyStatus } = repoWith(booking(from));
+      await expect(
+        new ChangeSuiteBooking(repo).execute("s1", to, { id: "st", name: "Ali" }, { undo: true }),
+      ).rejects.toThrow(ConflictError);
+      expect(applyStatus).not.toHaveBeenCalled();
+    }
+    await expect(
+      new ChangeSuiteBooking(repoWith(booking("checkedIn")).repo).execute("s1", "confirmed", { id: "st", name: "Ali" }),
+    ).rejects.toThrow(ConflictError);
+  });
+
+  it("still tells the guest when a request is confirmed", async () => {
+    const notifier = { notify: vi.fn() };
+    await new ChangeSuiteBooking(repoWith(booking("requested")).repo, notifier).execute("s1", "confirmed", {
+      id: "st",
+      name: "Ali",
+    });
+    expect(notifier.notify).toHaveBeenCalledWith(expect.objectContaining({ kind: "suiteConfirmed" }));
+  });
+});
+
+describe("canUndoSuiteBookingStatus", () => {
+  it("allows exactly checkedIn → confirmed", () => {
+    const allowed = SUITE_BOOKING_STATUSES.flatMap((from) =>
+      SUITE_BOOKING_STATUSES.filter((to) => canUndoSuiteBookingStatus(from, to)).map((to) => `${from}→${to}`),
+    );
+    expect(allowed).toEqual(["checkedIn→confirmed"]);
   });
 });
 

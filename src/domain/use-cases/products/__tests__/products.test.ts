@@ -36,6 +36,7 @@ function product(overrides: Partial<Product> = {}): Product {
     rating: 4,
     ratingCount: 2,
     stockQuantity: 10,
+    madeToOrder: false,
     imageUrl: "https://cdn/latte.png",
     categoryId: "c1",
     isFeatured: false,
@@ -50,6 +51,7 @@ const INPUT: NewProduct = {
   name: "  Mocha ",
   price: 180_000,
   stockQuantity: 5,
+  madeToOrder: false,
   imageUrl: "https://cdn/mocha.png",
   categoryId: "c1",
   isFeatured: false,
@@ -74,8 +76,9 @@ function repoWith(rows: Product[]): Fake {
   const byId = new Map(rows.map((row) => [row.id, row]));
   const entries: (NewActivityEntry | null)[] = [];
   const persist = (id: string, input: NewProduct): Product => {
-    const { translations: _translations, ...fields } = input;
-    return { ...product({ id }), ...fields, id };
+    const { translations: _translations, stockQuantity, ...fields } = input;
+    // Like the real repository, an absent count leaves the stored one (0 when new).
+    return { ...product({ id }), ...fields, id, stockQuantity: stockQuantity ?? byId.get(id)?.stockQuantity ?? 0 };
   };
 
   const create = vi.fn<IProductRepository["create"]>(async (input, audit) => {
@@ -173,6 +176,18 @@ describe("CreateProduct", () => {
     });
   });
 
+  it("records a made-to-order item as such rather than a count", async () => {
+    const { repo, create, entries } = repoWith([]);
+    await new CreateProduct(repo).execute({ ...INPUT, madeToOrder: true, stockQuantity: undefined }, ACTOR);
+
+    expect(create.mock.calls[0][0]).toMatchObject({ madeToOrder: true, stockQuantity: undefined });
+    expect(entries[0]?.changes).toEqual([
+      { field: "kind", before: null, after: "drink" },
+      { field: "price", before: null, after: "180000" },
+      { field: "madeToOrder", before: null, after: "true" },
+    ]);
+  });
+
   it("drops book details from a drink", async () => {
     const { repo, create } = repoWith([]);
     await new CreateProduct(repo).execute({ ...INPUT, book: { author: "X", availability: "sale" } }, ACTOR);
@@ -196,6 +211,26 @@ describe("UpdateProduct", () => {
     );
     expect(entries[0]).toMatchObject({ action: "product.updated", entityId: "p1", entityLabel: "Latte" });
     expect(entries[0]?.changes).toEqual([{ field: "price", before: "150000", after: "160000" }]);
+  });
+
+  it("logs switching to made to order, leaving the stored count alone", async () => {
+    const { repo, update, entries } = repoWith([product()]);
+    const saved = await new UpdateProduct(repo).execute(
+      "p1",
+      {
+        ...INPUT,
+        name: "Latte",
+        price: 150_000,
+        imageUrl: product().imageUrl,
+        madeToOrder: true,
+        stockQuantity: undefined,
+      },
+      ACTOR,
+    );
+
+    expect(update.mock.calls[0][1].stockQuantity).toBeUndefined();
+    expect(saved.stockQuantity).toBe(10);
+    expect(entries[0]?.changes).toEqual([{ field: "madeToOrder", before: "false", after: "true" }]);
   });
 
   it("writes no entry for a save that changed nothing", async () => {

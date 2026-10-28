@@ -32,7 +32,11 @@ export function OrdersTableSkeleton() {
         ))}
       </div>
 
-      {/* Cards, below the table breakpoint. */}
+      {/*
+        Cards, below the table breakpoint. The "⋯" is left out, like the table's
+        selection and menu columns: only viewers who may fulfil get it, and it adds
+        no height to the card.
+      */}
       <div className="grid min-w-0 grid-cols-1 gap-3 p-3 @min-[38rem]:grid-cols-2 @min-[56rem]:hidden">
         {Array.from({ length: CARD_COUNT }, (_, card) => (
           <div key={card} className="flex flex-col gap-3 rounded-card-md border border-border bg-background p-4">

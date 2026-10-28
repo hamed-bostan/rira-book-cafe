@@ -28,6 +28,11 @@ async function placeAs(user: "customer" | "staff", body: unknown = takeaway): Pr
   return readJson<Order>(response);
 }
 
+/** An item's stored count. */
+async function stockOf(productId: string): Promise<number> {
+  return (await prisma.product.findUniqueOrThrow({ where: { id: productId } })).stockQuantity;
+}
+
 async function moveTo(orderId: string, status: string): Promise<Response> {
   return changeStatus(
     jsonRequest("PATCH", `/api/admin/orders/${orderId}/status`, { status }),
@@ -53,7 +58,7 @@ describe("placing an order", () => {
     });
   });
 
-  it("prices every line from the menu, not the request, and takes the stock", async () => {
+  it("prices every line from the menu, not the request", async () => {
     const order = await placeAs("customer", {
       ...takeaway,
       // A client-supplied price must be ignored.
@@ -69,8 +74,21 @@ describe("placing an order", () => {
       total: 2 * 95000,
     });
     expect(order.items[0]).not.toHaveProperty("unitCost");
-    const espresso = await prisma.product.findUniqueOrThrow({ where: { id: "seed-espresso" } });
-    expect(espresso.stockQuantity).toBe(198);
+  });
+
+  it("takes a counted line's stock, but neither checks nor takes a made-to-order line's", async () => {
+    // Espresso is made to order: a count of one doesn't stop an order for three.
+    await prisma.product.update({ where: { id: "seed-espresso" }, data: { stockQuantity: 1 } });
+    await placeAs("customer", {
+      ...takeaway,
+      items: [
+        { productId: "seed-espresso", quantity: 3 },
+        { productId: "seed-carrot-cake", quantity: 2 },
+      ],
+    });
+
+    expect(await stockOf("seed-espresso")).toBe(1);
+    expect(await stockOf("seed-carrot-cake")).toBe(16);
   });
 
   it("caps a line's quantity with 400", async () => {
@@ -88,17 +106,24 @@ describe("placing an order", () => {
   });
 
   it("refuses an item that sold out with 409", async () => {
-    await prisma.product.update({ where: { id: "seed-espresso" }, data: { stockQuantity: 1 } });
+    await prisma.product.update({ where: { id: "seed-carrot-cake" }, data: { stockQuantity: 1 } });
     signInAs("customer");
     const response = await placeOrder(
       jsonRequest("POST", "/api/orders", {
-        items: [{ productId: "seed-espresso", quantity: 2 }],
+        items: [
+          { productId: "seed-espresso", quantity: 2 },
+          { productId: "seed-carrot-cake", quantity: 2 },
+        ],
         serviceType: "takeaway",
       }),
     );
 
     expect(response.status).toBe(409);
-    expect((await readError(response)).code).toBe("INSUFFICIENT_STOCK");
+    const error = await readError(response);
+    expect(error.code).toBe("INSUFFICIENT_STOCK");
+    // Nothing was taken: the whole order rolled back.
+    expect(await stockOf("seed-carrot-cake")).toBe(1);
+    expect(await prisma.order.count()).toBe(0);
   });
 
   it("quotes the basket without placing anything", async () => {
@@ -126,8 +151,15 @@ describe("a guest's own orders", () => {
     expect(other.status).toBe(404);
   });
 
-  it("lets the guest cancel a pending order and puts the stock back", async () => {
-    const order = await placeAs("customer");
+  it("lets the guest cancel a pending order and puts the counted stock back", async () => {
+    const order = await placeAs("customer", {
+      ...takeaway,
+      items: [
+        { productId: "seed-espresso", quantity: 2 },
+        { productId: "seed-carrot-cake", quantity: 2 },
+      ],
+    });
+    expect(await stockOf("seed-carrot-cake")).toBe(16);
 
     const response = await cancelOrder(
       jsonRequest("POST", `/api/orders/${order.id}/cancel`),
@@ -136,8 +168,9 @@ describe("a guest's own orders", () => {
 
     expect(response.status).toBe(200);
     expect((await readJson<Order>(response)).status).toBe("cancelled");
-    const espresso = await prisma.product.findUniqueOrThrow({ where: { id: "seed-espresso" } });
-    expect(espresso.stockQuantity).toBe(200);
+    expect(await stockOf("seed-carrot-cake")).toBe(18);
+    // The made-to-order espresso took nothing, so gets nothing back.
+    expect(await stockOf("seed-espresso")).toBe(0);
   });
 
   it("won't let the guest cancel once staff are preparing it (409)", async () => {

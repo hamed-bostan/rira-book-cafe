@@ -11,6 +11,7 @@ const BASE: ProductFormInput = {
   costPrice: "",
   imageUrl: "https://example.supabase.co/storage/v1/object/public/images/latte.png",
   stockQuantity: "12",
+  madeToOrder: false,
   isFeatured: false,
   isPublished: true,
   badge: "",
@@ -57,6 +58,22 @@ describe("productFormSchema", () => {
   it("rejects a malformed ISBN", () => {
     const result = productFormSchema.safeParse({ ...BASE, kind: "book", bookAuthor: "A", bookIsbn: "12345" });
     expect(result.error?.issues.map((issue) => issue.message)).toContain("isbnInvalid");
+  });
+
+  it("requires a whole-number stock for a counted item", () => {
+    const messages = (stockQuantity: string) =>
+      productFormSchema.safeParse({ ...BASE, stockQuantity }).error?.issues.map((issue) => issue.message);
+    expect(messages("")).toEqual(["stockRequired"]);
+    expect(messages("2.5")).toEqual(["stockWhole"]);
+    expect(productFormSchema.parse(BASE).stockQuantity).toBe(12);
+  });
+
+  it("ignores the stock of a made-to-order item, so saving leaves the stored count", () => {
+    for (const stockQuantity of ["", "abc", "12"]) {
+      const parsed = productFormSchema.parse({ ...BASE, madeToOrder: true, stockQuantity });
+      expect(parsed.madeToOrder).toBe(true);
+      expect(parsed.stockQuantity).toBeUndefined();
+    }
   });
 
   it("only accepts whole-Toman prices", () => {

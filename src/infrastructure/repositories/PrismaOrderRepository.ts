@@ -57,18 +57,21 @@ export class PrismaOrderRepository implements IOrderRepository {
       // Take the units first, each with a guarded decrement: the guard and the
       // write are one statement, so two orders can't both take the last slice.
       // Lines are merged per item and sorted by id so concurrent orders lock rows
-      // in the same order and can't deadlock each other.
+      // in the same order and can't deadlock each other. Made-to-order items aren't
+      // counted, so they're neither checked nor taken — the guard leaves them out,
+      // and the flag is re-read here, in the transaction, to tell one from a shortfall.
       const shortfalls: StockShortfall[] = [];
       for (const line of mergeLines(input.items)) {
         const result = await tx.product.updateMany({
-          where: { id: line.productId, stockQuantity: { gte: line.quantity } },
+          where: { id: line.productId, madeToOrder: false, stockQuantity: { gte: line.quantity } },
           data: { stockQuantity: { decrement: line.quantity } },
         });
         if (result.count === 0) {
           const current = await tx.product.findUnique({
             where: { id: line.productId },
-            select: { stockQuantity: true },
+            select: { stockQuantity: true, madeToOrder: true },
           });
+          if (current?.madeToOrder) continue;
           shortfalls.push({
             productId: line.productId,
             name: line.name,
@@ -210,11 +213,12 @@ export class PrismaOrderRepository implements IOrderRepository {
       if (to === "completed") row.pointsEarned = (await earnPoints(tx, row)) || row.pointsEarned;
       if (to === "cancelled") await refundPoints(tx, row);
 
-      // A cancelled order's units go back on the shelf, in the same transaction.
+      // A cancelled order's units go back on the shelf, in the same transaction —
+      // counted items only: a made-to-order item took nothing, so gets nothing back.
       if (to === "cancelled") {
         for (const line of mergeLines(row.items)) {
           await tx.product.updateMany({
-            where: { id: line.productId },
+            where: { id: line.productId, madeToOrder: false },
             data: { stockQuantity: { increment: line.quantity } },
           });
         }

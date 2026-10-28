@@ -9,7 +9,7 @@ import type { IPromotionRepository } from "../../repositories/IPromotionReposito
 export type CheckoutRequest = {
   /** The lines at menu prices, in Toman. */
   subtotal: number;
-  /** As the guest typed it; blank = none. */
+  /** As the guest typed it; blank = none. Case, spaces, dashes and underscores don't matter. */
   promoCode?: string;
   /** Spend as many points as the order allows. */
   redeemPoints?: boolean;

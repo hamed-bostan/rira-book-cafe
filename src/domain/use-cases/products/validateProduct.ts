@@ -22,7 +22,12 @@ export function validateProduct(input: NewProduct): NewProduct {
     throw new ValidationError("originalPrice", "Original price must be higher than the price.");
   }
   if (!input.imageUrl) throw new ValidationError("imageUrl", "An image is required.");
-  if (!Number.isInteger(input.stockQuantity) || input.stockQuantity < 0) {
+  // A made-to-order item isn't counted, so it may leave its count out; a count
+  // that is given must still be a real one.
+  if (input.stockQuantity === undefined && !input.madeToOrder) {
+    throw new ValidationError("stockQuantity", "A counted item needs its stock.");
+  }
+  if (input.stockQuantity !== undefined && (!Number.isInteger(input.stockQuantity) || input.stockQuantity < 0)) {
     throw new ValidationError("stockQuantity", "Stock must be a whole number of 0 or more.");
   }
   if (input.kind === "book" && !input.book?.author.trim()) {

@@ -2,6 +2,7 @@ import { activityValue, type ActivityActor, type ActivityChange } from "../../en
 import {
   MAX_TABLE_LABEL_LENGTH,
   canTransitionReservation,
+  canUndoReservationStatus,
   isGuestCancellableReservation,
   type Reservation,
   type ReservationStatus,
@@ -19,13 +20,20 @@ export type ReservationUpdate = {
   status?: ReservationStatus;
   /** The table to hold; `null` clears it; omit to keep it. */
   tableLabel?: string | null;
+  /**
+   * Take back a Seat or Complete from its toast (`canUndoReservationStatus`)
+   * instead of moving the workflow on: names the `status` to go back to, keeps the
+   * table, and tells the guest nothing.
+   */
+  undo?: boolean;
 };
 
 /**
  * Staff act on a reservation: confirm (with a table), seat, complete, mark a
- * no-show, cancel — or just move it to another table. The workflow table in
- * `Reservation.ts` is the whole rule; the repository refuses a table another
- * overlapping booking already holds.
+ * no-show, cancel — or just move it to another table — and take back a Seat or
+ * Complete from its toast. The workflow table in `Reservation.ts` is the whole
+ * rule, with `canUndoReservationStatus` its one way back; the repository refuses a
+ * table another overlapping booking already holds.
  */
 export class ChangeReservation {
   constructor(
@@ -39,7 +47,17 @@ export class ChangeReservation {
     if (!current) throw new NotFoundError("reservation", id);
 
     const status = update.status ?? current.status;
-    if (status !== current.status && !canTransitionReservation(current.status, status)) {
+    if (update.undo) {
+      if (update.status === undefined || update.tableLabel !== undefined) {
+        throw new ValidationError("status", "An undo names the status to go back to, and nothing else.");
+      }
+      if (!canUndoReservationStatus(current.status, status)) {
+        throw new ConflictError(
+          "INVALID_TRANSITION",
+          `A reservation can't go back from "${current.status}" to "${status}".`,
+        );
+      }
+    } else if (status !== current.status && !canTransitionReservation(current.status, status)) {
       throw new ConflictError(
         "INVALID_TRANSITION",
         `A reservation can't move from "${current.status}" to "${status}".`,
@@ -81,7 +99,8 @@ export class ChangeReservation {
       };
     });
 
-    if (saved.status !== current.status && this.notifier) {
+    // An undo isn't news to the guest: stepping back to `confirmed` mustn't tell them again.
+    if (!update.undo && saved.status !== current.status && this.notifier) {
       const notification = reservationNotification(saved);
       if (notification) await this.notifier.notify(notification);
     }

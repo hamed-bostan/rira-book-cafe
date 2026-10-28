@@ -1,7 +1,7 @@
 import type { AuditHook } from "./AuditHook";
 import type { AdminProductFilters, AdminProductSort } from "../entities/AdminProductFilters";
 import type { Page, PageRequest } from "../entities/Pagination";
-import type { Product } from "../entities/Product";
+import type { Product, ProductListItem } from "../entities/Product";
 import type { ProductFilters } from "../entities/ProductFilters";
 
 /**
@@ -25,8 +25,16 @@ export type ProductTranslationInput = {
  * `translations` carries the per-locale content to persist alongside the base row:
  * `undefined` leaves any existing translations untouched, while a list *replaces*
  * them (locales absent from it are removed, so `[]` clears all).
+ *
+ * `stockQuantity` may be left out for a made-to-order item, whose count nobody
+ * keeps: the stored one is then left as it is (0 for a new item). A counted item
+ * always carries it.
  */
-export type NewProduct = Omit<Product, "id" | "discountPercent" | "rating" | "ratingCount" | "images"> & {
+export type NewProduct = Omit<
+  Product,
+  "id" | "discountPercent" | "rating" | "ratingCount" | "images" | "stockQuantity"
+> & {
+  stockQuantity?: number;
   translations?: ProductTranslationInput[];
 };
 
@@ -75,8 +83,16 @@ export type IProductRepository = {
   getFeatured(locale?: string): Promise<Product[]>;
   /** Menu search. At least one criterion is always set. Published only. */
   search(filters: ProductFilters, locale?: string): Promise<Product[]>;
-  /** One page of the management list, plus the total matching the filters. An empty filter means the whole menu, paged. */
-  listPage(filters: AdminProductFilters, page: PageRequest<AdminProductSort>, locale?: string): Promise<Page<Product>>;
+  /**
+   * One page of the management list, plus the total matching the filters. An empty
+   * filter means the whole menu, paged. A made-to-order row carries its recipe's
+   * worst ingredient when one is out or running low.
+   */
+  listPage(
+    filters: AdminProductFilters,
+    page: PageRequest<AdminProductSort>,
+    locale?: string,
+  ): Promise<Page<ProductListItem>>;
   create(input: NewProduct, audit?: AuditHook<Product>): Promise<Product>;
   update(id: string, input: NewProduct, audit?: AuditHook<Product>): Promise<Product>;
   /** `audit` records the deletion inside the same transaction — the entry is the only record the item ever existed. */

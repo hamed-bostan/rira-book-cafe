@@ -38,7 +38,6 @@ type SeedItem = {
   fa: { name: string; unit?: string; description?: string };
   price: number;
   originalPrice?: number;
-  stock: number;
   image: string;
   featured?: boolean;
   badge?: string;
@@ -48,7 +47,10 @@ type SeedItem = {
   nutrition?: string;
   dietary?: string[];
   book?: { author: string; isbn?: string; availability: "sale" | "reading" | "both" };
-};
+} & (
+  | /** Counted — cakes by the slice, books — with its units on hand. */ { stock: number; madeToOrder?: never }
+  | /** Made when ordered — drinks, breakfast — so there's no count to keep. */ { madeToOrder: true; stock?: never }
+);
 
 const ITEMS: SeedItem[] = [
   {
@@ -58,7 +60,7 @@ const ITEMS: SeedItem[] = [
     name: "Espresso",
     fa: { name: "اسپرسو", unit: "دبل", description: "دبل شات از بلند خانه، غلیظ و شکلاتی." },
     price: 95000,
-    stock: 200,
+    madeToOrder: true,
     image: img("espresso"),
     unit: "Double shot",
     description: "A double shot of our house blend — dense, chocolatey, short.",
@@ -72,7 +74,7 @@ const ITEMS: SeedItem[] = [
     name: "Cappuccino",
     fa: { name: "کاپوچینو", unit: "۲۴۰ میلی‌لیتر", description: "دبل اسپرسو با شیر بخارداده و فوم ضخیم." },
     price: 145000,
-    stock: 200,
+    madeToOrder: true,
     image: img("cappuccino"),
     featured: true,
     unit: "240 ml",
@@ -87,7 +89,7 @@ const ITEMS: SeedItem[] = [
     name: "Saffron Latte",
     fa: { name: "لاته زعفرانی", unit: "۳۰۰ میلی‌لیتر", description: "لاته با شربت زعفران و گلاب خانگی." },
     price: 175000,
-    stock: 120,
+    madeToOrder: true,
     image: img("saffron-latte"),
     featured: true,
     badge: "New",
@@ -103,7 +105,7 @@ const ITEMS: SeedItem[] = [
     name: "Persian Tea Pot",
     fa: { name: "قوری چای ایرانی", unit: "برای دو نفر", description: "چای لاهیجان دم‌کرده، با نبات زعفرانی." },
     price: 120000,
-    stock: 150,
+    madeToOrder: true,
     image: img("persian-tea"),
     unit: "Serves two",
     description: "Brewed Lahijan black tea with saffron rock candy on the side.",
@@ -117,7 +119,7 @@ const ITEMS: SeedItem[] = [
     name: "Iced Spanish Latte",
     fa: { name: "لاته اسپانیایی سرد", unit: "۳۵۰ میلی‌لیتر", description: "دبل اسپرسو روی شیر عسلی و یخ." },
     price: 185000,
-    stock: 120,
+    madeToOrder: true,
     image: img("iced-spanish-latte"),
     featured: true,
     unit: "350 ml",
@@ -132,7 +134,7 @@ const ITEMS: SeedItem[] = [
     name: "Mint Lemonade",
     fa: { name: "لیموناد نعنا", unit: "۴۰۰ میلی‌لیتر", description: "لیموی تازه، نعنای تازه و کمی عسل." },
     price: 130000,
-    stock: 100,
+    madeToOrder: true,
     image: img("mint-lemonade"),
     unit: "400 ml",
     description: "Fresh lemon, fresh mint, a little honey.",
@@ -176,7 +178,7 @@ const ITEMS: SeedItem[] = [
     name: "Herb Omelette",
     fa: { name: "املت سبزیجات", description: "سه تخم‌مرغ با سبزی تازه، نان سنگک و گوجه." },
     price: 210000,
-    stock: 30,
+    madeToOrder: true,
     image: img("omelette"),
     description: "Three eggs with fresh herbs, served with sangak bread and tomatoes.",
     nutrition: "Contains eggs and wheat.",
@@ -189,7 +191,7 @@ const ITEMS: SeedItem[] = [
     name: "Persian Breakfast Plate",
     fa: { name: "صبحانهٔ ایرانی", description: "پنیر، گردو، سبزی، خرما، عسل و کره با نان تازه." },
     price: 260000,
-    stock: 30,
+    madeToOrder: true,
     image: img("breakfast-plate"),
     featured: true,
     description: "Feta, walnuts, fresh herbs, dates, honey and butter with fresh bread.",
@@ -238,6 +240,9 @@ const ITEMS: SeedItem[] = [
   },
 ];
 
+/** The sample items made when ordered — the drinks and the breakfast dishes. */
+export const MADE_TO_ORDER_ITEM_IDS: readonly string[] = ITEMS.flatMap((item) => (item.madeToOrder ? [item.id] : []));
+
 /** The next given weekday (0 = Sunday … 6 = Saturday) at least `minDays` ahead, on the cafe calendar. */
 function nextWeekday(weekday: number, minDays: number): string {
   let day = shiftCafeDay(cafeDayOf(new Date()), minDays);
@@ -278,7 +283,9 @@ async function seedItems(categoryIds: Map<string, string>): Promise<void> {
       originalPrice: item.originalPrice ?? null,
       costPrice: Math.round((item.price * COST_RATIO[item.kind]) / 1000) * 1000,
       taxExempt: item.kind === "book",
-      stockQuantity: item.stock,
+      // A made-to-order item keeps no count; its warnings come from its recipe.
+      stockQuantity: item.stock ?? 0,
+      madeToOrder: item.madeToOrder ?? false,
       imageUrl: item.image,
       categoryId,
       isFeatured: item.featured ?? false,

@@ -1,6 +1,6 @@
 import { getLocale, getTranslations } from "next-intl/server";
 
-import type { Product } from "@/src/domain/entities/Product";
+import type { ProductListItem } from "@/src/domain/entities/Product";
 import { getStockStatus } from "@/src/domain/entities/stock";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { cn } from "@/src/lib/utils";
@@ -17,22 +17,32 @@ import { ProductRowActions } from "./ProductRowActions";
 export const PRODUCT_ROW_GRID = "gap-x-4 md:grid-cols-[minmax(0,1fr)_8rem_10rem_7rem_2.5rem]";
 
 type ProductRowProps = {
-  product: Product;
+  product: ProductListItem;
   /** Shown under the name on the "All" tab; omitted on a category's own tab. */
   categoryName: string | undefined;
   canWrite: boolean;
 };
 
+/** "Peach syrup" → "peach syrup", for the middle of a sentence. Scripts without case pass through. */
+function lowerFirst(text: string, locale: string): string {
+  return text.charAt(0).toLocaleLowerCase(locale) + text.slice(1);
+}
+
 /**
  * One menu item. From `md` up it's a row of the list's columns; below that the
  * price, stock and switch wrap under the name, lined up with it, and the ⋯ menu
  * stays beside the name.
+ *
+ * A counted item's stock column is its count; a made-to-order item's is its
+ * recipe's worst ingredient when one is out or running low, otherwise just
+ * "Made to order".
  */
 export async function ProductRow({ product, categoryName, canWrite }: ProductRowProps) {
   const t = await getTranslations("dashProducts");
   const locale = await getLocale();
 
-  const stock = getStockStatus(product.stockQuantity);
+  const stock = getStockStatus(product);
+  const alert = product.ingredientAlert;
   const sub = [categoryName, product.book?.author, product.unit].filter(Boolean).join(" · ");
 
   return (
@@ -76,7 +86,19 @@ export async function ProductRow({ product, categoryName, canWrite }: ProductRow
           ) : null}
         </div>
         <div className="flex min-w-0 items-center">
-          {stock.level === "out" ? (
+          {stock.level === "madeToOrder" ? (
+            alert?.level === "out" ? (
+              <Badge variant="error" appearance="outline" size="compact" dot>
+                {t("ingredientOut", { ingredient: lowerFirst(alert.ingredient, locale) })}
+              </Badge>
+            ) : alert?.level === "low" ? (
+              <Badge variant="warning" appearance="outline" size="compact" dot>
+                {t("ingredientLow", { ingredient: alert.ingredient })}
+              </Badge>
+            ) : (
+              <span className="text-body-default text-muted-foreground sm:text-body-small">{t("madeToOrder")}</span>
+            )
+          ) : stock.level === "out" ? (
             <Badge variant="error" appearance="outline" size="compact" dot>
               {t("stockOut")}
             </Badge>

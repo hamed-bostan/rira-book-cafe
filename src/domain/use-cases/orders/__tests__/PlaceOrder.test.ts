@@ -17,6 +17,7 @@ function product(overrides: Partial<Product>): Product {
     rating: 0,
     ratingCount: 0,
     stockQuantity: 10,
+    madeToOrder: false,
     imageUrl: "https://example.com/latte.png",
     categoryId: "c1",
     isFeatured: false,

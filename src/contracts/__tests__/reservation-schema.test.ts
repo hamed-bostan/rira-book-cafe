@@ -61,6 +61,20 @@ describe("reservationUpdateSchema", () => {
     expect(flattened?.fieldErrors).toEqual({});
   });
 
+  it("takes an undo with just the status to go back to", () => {
+    expect(reservationUpdateSchema.parse({ status: "confirmed", undo: true })).toEqual({
+      status: "confirmed",
+      undo: true,
+    });
+    for (const body of [
+      { undo: true, tableLabel: "T4" },
+      { status: "confirmed", tableLabel: "T4", undo: true },
+    ]) {
+      expect(reservationUpdateSchema.safeParse(body).error?.flatten().fieldErrors.status).toEqual(["statusInvalid"]);
+    }
+    expect(reservationUpdateSchema.safeParse({ status: "confirmed", undo: false }).success).toBe(false);
+  });
+
   it("refuses an unknown status and an oversized table label", () => {
     expect(reservationUpdateSchema.safeParse({ status: "late" }).error?.flatten().fieldErrors.status).toEqual([
       "statusInvalid",

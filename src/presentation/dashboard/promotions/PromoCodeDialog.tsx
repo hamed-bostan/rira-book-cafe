@@ -6,6 +6,7 @@ import * as React from "react";
 import { promoCodeFormSchema, type PromoCodeFormInput } from "@/src/contracts/promotion-schema";
 import { cafeDayOf } from "@/src/domain/entities/CafeTime";
 import {
+  MAX_PROMO_CODE_LENGTH,
   MAX_PROMO_DESCRIPTION_LENGTH,
   normalizePromoCode,
   PROMO_KINDS,
@@ -217,7 +218,7 @@ export function PromoCodeDialog({ open, onOpenChange, promo, takenCodes, today }
             autoComplete="off"
             autoCapitalize="characters"
             spellCheck={false}
-            maxLength={20}
+            maxLength={MAX_PROMO_CODE_LENGTH}
             placeholder={t("codePlaceholder")}
             required
           />

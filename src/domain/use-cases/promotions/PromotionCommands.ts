@@ -40,10 +40,17 @@ const PROMO_FIELDS = [
   "isActive",
 ] as const satisfies readonly (keyof PromoCodeInput)[];
 
-/** The domain's last word on a code, behind the form's schema — so a direct caller can't bypass it. */
-function validatePromo(input: PromoCodeInput): PromoCodeInput {
+/**
+ * The domain's last word on a code, behind the form's schema — so a direct caller
+ * can't bypass it. `storedCode` is the code as saved when editing: one saved before
+ * codes were letters and numbers only ("AUTUMN-15") is kept as long as it isn't
+ * changed, so switching it on or off from the list still works.
+ */
+function validatePromo(input: PromoCodeInput, storedCode?: string): PromoCodeInput {
   const code = normalizePromoCode(input.code);
-  if (!PROMO_CODE_PATTERN.test(code)) throw new ValidationError("code", "Use 3–20 letters, digits, - or _.");
+  if (code !== storedCode && !PROMO_CODE_PATTERN.test(code)) {
+    throw new ValidationError("code", "Codes use letters and numbers only, 3 to 16 of them.");
+  }
   if (!Number.isInteger(input.value) || input.value <= 0)
     throw new ValidationError("value", "Enter how much it takes off.");
   if (input.kind === "percent" && input.value > 100)
@@ -89,7 +96,7 @@ export class UpdatePromoCode {
   async execute(id: string, input: PromoCodeInput, staff: ActivityActor): Promise<PromoCode> {
     const current = await this.promoRepo.getById(id);
     if (!current) throw new NotFoundError("promo code", id);
-    return this.promoRepo.update(id, validatePromo(input), (saved) => {
+    return this.promoRepo.update(id, validatePromo(input, current.code), (saved) => {
       const changes = promoChanges(current, saved);
       if (changes.length === 0) return null;
       const onlyActive = changes.length === 1 && changes[0].field === "isActive";

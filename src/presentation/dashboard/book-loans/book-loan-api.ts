@@ -12,7 +12,7 @@ export const bookLoansApi = {
     return apiPost("/admin/book-loans", values, bookLoanResponseSchema);
   },
 
-  /** Mark returned or lost, or extend by `extendDays`. 409 for a refused transition. */
+  /** Mark returned or lost, extend by `extendDays`, or take that back (`undoExtend`). 409 for a refused transition. */
   update(id: string, values: BookLoanUpdateInput): Promise<BookLoan> {
     return apiPatch(`/admin/book-loans/${id}`, values, bookLoanResponseSchema);
   },

@@ -1,4 +1,4 @@
-import { isPlausiblePhone, normalizePhone } from "../../entities/Phone";
+import { isTeamPhone, normalizePhone } from "../../entities/Phone";
 import { PLACEHOLDER_USER_NAME, type GrantableRole, type User } from "../../entities/User";
 import { ValidationError } from "../../errors/ValidationError";
 
@@ -48,8 +48,13 @@ export class GrantAdmin {
   async execute(input: GrantAdminCommand, actorId: string, signInUrl?: string): Promise<User> {
     const id = normalizePhone(input.phone);
 
-    if (!isPlausiblePhone(input.phone)) {
-      throw new ValidationError("phone", "Enter a valid phone number.");
+    // Stricter than the guest-facing paths' `isPlausiblePhone`: the number is the
+    // sign-in, so it has to be one that can receive the code.
+    if (!isTeamPhone(input.phone)) {
+      throw new ValidationError(
+        "phone",
+        "Enter an 11-digit mobile number starting with 09, or a foreign number starting with +.",
+      );
     }
 
     const email = input.email?.trim() || null;

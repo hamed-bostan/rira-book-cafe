@@ -4,6 +4,8 @@ import { MAX_BORROWER_NAME_LENGTH, MAX_LOAN_NOTE_LENGTH } from "@/src/domain/ent
 
 import { bookLoanUpdateSchema, lendBookSchema, type LendBookInput } from "../book-loan-schema";
 
+import { messagesAt } from "./zod-issues";
+
 const LOAN: LendBookInput = {
   productId: "book-1",
   borrowerName: " Sara Ahmadi ",
@@ -58,5 +60,19 @@ describe("bookLoanUpdateSchema", () => {
     expect(bookLoanUpdateSchema.safeParse({ status: "stolen" }).error?.flatten().fieldErrors.status).toEqual([
       "statusInvalid",
     ]);
+  });
+
+  it("takes back an extension with two ISO instants, one change at a time", () => {
+    const undoExtend = { dueAt: "2026-10-30T20:29:59.999Z", extendedDueAt: "2026-11-06T20:29:59.999Z" };
+    expect(bookLoanUpdateSchema.parse({ undoExtend })).toEqual({ undoExtend });
+    expect(
+      messagesAt(
+        bookLoanUpdateSchema.safeParse({ undoExtend: { ...undoExtend, dueAt: "2026-10-30" } }),
+        "undoExtend.dueAt",
+      ),
+    ).toEqual(["dateInvalid"]);
+    for (const body of [{}, { undoExtend, extendDays: 7 }, { undoExtend, status: "returned" }]) {
+      expect(bookLoanUpdateSchema.safeParse(body).error?.flatten().formErrors).toEqual(["nothingToChange"]);
+    }
   });
 });

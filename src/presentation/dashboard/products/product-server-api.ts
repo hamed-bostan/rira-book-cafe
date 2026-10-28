@@ -1,15 +1,12 @@
 import type { Page } from "@/src/domain/entities/Pagination";
-import type { Product } from "@/src/domain/entities/Product";
+import type { Product, ProductListItem } from "@/src/domain/entities/Product";
 import type { ProductTranslationInput } from "@/src/domain/repositories/IProductRepository";
 import { ApiError } from "@/src/lib/api/ApiError";
-import { pageResponseSchema } from "@/src/lib/api/page-response-schema";
 import { serverApiGet } from "@/src/lib/api/server-client";
 import { productListResponseSchema, productResponseSchema } from "@/src/presentation/product/product-response-schema";
 
+import { productPageResponseSchema } from "./product-list-item-response-schema";
 import { productTranslationListResponseSchema } from "./product-translation-response-schema";
-
-/** What `GET /api/admin/products` promises: a page of products plus the total behind it. */
-const productPageResponseSchema = pageResponseSchema(productResponseSchema);
 
 /**
  * Server-side product reads for the dashboard (BFF). Fetched during server render
@@ -26,7 +23,8 @@ export const productsServerApi = {
 
   /**
    * One page of the catalog-management list, with the filters and ordering the
-   * caller's query string carries.
+   * caller's query string carries. A made-to-order row comes with its recipe's
+   * ingredient warning, when it has one.
    *
    * `params` is forwarded verbatim so the screen never has to know the param
    * names — it hands over the URL it was rendered with and the route parses it
@@ -34,7 +32,7 @@ export const productsServerApi = {
    * lossless here because none of the management-list params repeat (unlike the
    * public search's `dietary`).
    */
-  listPage(params: URLSearchParams): Promise<Page<Product>> {
+  listPage(params: URLSearchParams): Promise<Page<ProductListItem>> {
     return serverApiGet("/admin/products", productPageResponseSchema, {
       params: Object.fromEntries(params),
     });

@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 import * as React from "react";
 
 import { grantAdminSchema } from "@/src/contracts/team-schema";
-import { normalizePhone } from "@/src/domain/entities/Phone";
+import { normalizePhone, phoneDigits, teamPhoneDigitsWhenComplete } from "@/src/domain/entities/Phone";
 import { GRANTABLE_ROLES, type GrantableRole } from "@/src/domain/entities/User";
 import { useRouter } from "@/src/i18n/navigation";
 import { ApiError } from "@/src/lib/api/ApiError";
@@ -19,9 +19,6 @@ import { Select } from "@/src/presentation/design-system/components/form/Select/
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { teamApi } from "./team-api";
-
-/** Digits in a complete local mobile number — past this a malformed number is worth pointing out while typing. */
-const MOBILE_DIGITS = 11;
 
 type GrantAccessFormProps = {
   /** Who already has access, by id — their normalized phone. */
@@ -58,10 +55,10 @@ export function GrantAccessForm({ memberIds }: GrantAccessFormProps) {
   const parsed = grantAdminSchema.safeParse({ phone, email, role });
   const issues = parsed.success ? {} : parsed.error.flatten().fieldErrors;
   const taken = parsed.success && memberIds.includes(normalizePhone(parsed.data.phone));
-  const phoneIssue =
-    phone.trim() !== "" && (touched.phone || normalizePhone(phone).length >= MOBILE_DIGITS)
-      ? issues.phone?.[0]
-      : undefined;
+  // Once it has all the digits a number typed that way needs (11 for 0912…, 12 for
+  // +98 912…), a wrong number is pointed out while typing; before that, on leaving.
+  const typedInFull = phoneDigits(phone).length >= teamPhoneDigitsWhenComplete(phone);
+  const phoneIssue = phone.trim() !== "" && (touched.phone || typedInFull) ? issues.phone?.[0] : undefined;
   const emailIssue = email.trim() !== "" && touched.email ? issues.email?.[0] : undefined;
 
   const message = phoneIssue

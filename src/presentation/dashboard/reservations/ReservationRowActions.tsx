@@ -5,7 +5,12 @@ import { useLocale, useTranslations } from "next-intl";
 import * as React from "react";
 
 import { tableChoicesFor, type FloorBooking, type FloorEvent } from "@/src/domain/entities/FloorAvailability";
-import { reservationEndsAt, type Reservation, type ReservationStatus } from "@/src/domain/entities/Reservation";
+import {
+  canUndoReservationStatus,
+  reservationEndsAt,
+  type Reservation,
+  type ReservationStatus,
+} from "@/src/domain/entities/Reservation";
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatEventTime } from "@/src/lib/formatEventWhen";
@@ -46,9 +51,10 @@ type Ending = "cancelled" | "noShow";
  * One booking's controls on the day view, as the design lays them out: the next
  * step as a button (Confirm opens the table picker; Seat and Complete act at
  * once), Cancel beside a request, and a "⋯" menu with Change table, Mark no-show
- * and Cancel booking. Cancelling and no-shows ask first. Each writes over the REST
- * API and `router.refresh()`es; a failure (a 409 when the table was just taken)
- * shows in the open dialog, else as a toast.
+ * and Cancel booking. Cancelling and no-shows ask first; a one-click Seat or
+ * Complete offers Undo in its toast. Each writes over the REST API and
+ * `router.refresh()`es; a failure (a 409 when the table was just taken) shows in
+ * the open dialog, else as a toast.
  */
 export function ReservationRowActions({ reservation, bookings, events }: ReservationRowActionsProps) {
   const t = useTranslations("dashReservations");
@@ -72,6 +78,12 @@ export function ReservationRowActions({ reservation, bookings, events }: Reserva
 
   function save(change: { status?: ReservationStatus; tableLabel?: string }): void {
     setError(null);
+    // A one-click Seat or Complete can be taken back; a Seat that also picked a
+    // table can't (the undo keeps the table, so it wouldn't undo all of it).
+    const undoTo =
+      change.status && change.tableLabel === undefined && canUndoReservationStatus(change.status, status)
+        ? status
+        : null;
     startTransition(async () => {
       try {
         await reservationsApi.update(reservation.id, change);
@@ -83,11 +95,25 @@ export function ReservationRowActions({ reservation, bookings, events }: Reserva
             ? t("statusChanged", { reference, status: t(`status.${change.status}`) }) +
               (change.tableLabel ? ` · ${tableName(change.tableLabel)}` : "")
             : t("tableSaved", { reference, table: tableName(change.tableLabel ?? "") }),
+          onUndo: undoTo ? () => undo(undoTo) : undefined,
         });
       } catch (err) {
         const message = localizeApiError(err, tApiErrors, t("updateError"));
         if (dialogOpen) setError(message);
         else toast({ tone: "error", title: message });
+      }
+      router.refresh();
+    });
+  }
+
+  /** The toast's Undo: steps the booking back, keeping its table, with no undo of its own. */
+  function undo(to: ReservationStatus): void {
+    startTransition(async () => {
+      try {
+        await reservationsApi.update(reservation.id, { status: to, undo: true });
+        toast({ tone: "success", title: t("undoneToast", { reference, status: t(`status.${to}`) }) });
+      } catch (err) {
+        toast({ tone: "error", title: localizeApiError(err, tApiErrors, t("updateError")) });
       }
       router.refresh();
     });

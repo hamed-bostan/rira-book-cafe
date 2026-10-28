@@ -28,15 +28,16 @@ import { bookLoansApi } from "./book-loan-api";
 const EXTEND_DAYS = 7;
 
 type BookLoanRowActionsProps = {
-  loan: Pick<BookLoan, "id" | "reference" | "status" | "bookTitle" | "borrowerName">;
+  loan: Pick<BookLoan, "id" | "reference" | "status" | "bookTitle" | "borrowerName" | "dueAt">;
   /** Told the copy is theirs when it comes back — named in the toast. */
   firstInLine: string | undefined;
 };
 
 /**
  * A loan's controls: "Returned" (for a book that's out, or turned up after being
- * written off), and behind "⋯" for one that's out, "Extend 7 days" and "Mark lost"
- * (which asks first, in red). Each writes over the REST API and `router.refresh()`es.
+ * written off), and behind "⋯" for one that's out, "Extend 7 days" (its toast
+ * offers Undo) and "Mark lost" (which asks first, in red). Each writes over the
+ * REST API and `router.refresh()`es.
  */
 export function BookLoanRowActions({ loan, firstInLine }: BookLoanRowActionsProps) {
   const t = useTranslations("dashBookLoans");
@@ -48,17 +49,19 @@ export function BookLoanRowActions({ loan, firstInLine }: BookLoanRowActionsProp
   const [confirmLost, setConfirmLost] = React.useState(false);
   const [lostError, setLostError] = React.useState<string | null>(null);
 
+  const dueDay = (dueAt: string): string => formatCafeDayShort(cafeDayOf(new Date(dueAt)), locale);
+
   function run(change: { status: BookLoanStatus } | { extendDays: number }): void {
+    // What an extension's Undo goes back to.
+    const previousDueAt = loan.dueAt;
     startTransition(async () => {
       try {
         const saved = await bookLoansApi.update(loan.id, change);
         if ("extendDays" in change) {
           toast({
             tone: "success",
-            title: t("extendedToast", {
-              reference: loan.reference,
-              date: formatCafeDayShort(cafeDayOf(new Date(saved.dueAt)), locale),
-            }),
+            title: t("extendedToast", { reference: loan.reference, date: dueDay(saved.dueAt) }),
+            onUndo: () => undoExtend({ dueAt: previousDueAt, extendedDueAt: saved.dueAt }),
           });
         } else {
           toast({
@@ -70,6 +73,22 @@ export function BookLoanRowActions({ loan, firstInLine }: BookLoanRowActionsProp
                 : undefined,
           });
         }
+      } catch (err) {
+        toast({ tone: "error", title: localizeApiError(err, tApiErrors, t("updateError")) });
+      }
+      router.refresh();
+    });
+  }
+
+  /** The toast's Undo: the due date goes back, unless it has moved on since; no undo of its own. */
+  function undoExtend(undo: { dueAt: string; extendedDueAt: string }): void {
+    startTransition(async () => {
+      try {
+        const saved = await bookLoansApi.update(loan.id, { undoExtend: undo });
+        toast({
+          tone: "success",
+          title: t("extendUndoneToast", { reference: loan.reference, date: dueDay(saved.dueAt) }),
+        });
       } catch (err) {
         toast({ tone: "error", title: localizeApiError(err, tApiErrors, t("updateError")) });
       }

@@ -8,7 +8,13 @@ export type IPromotionRepository = {
   /** Every code, newest first, with its live uses. */
   list(): Promise<PromoCodeWithUses[]>;
   getById(id: string): Promise<PromoCode | null>;
-  /** By its (normalized) code. */
+  /**
+   * The code a guest typed (normalized — see `normalizePromoCode`), matched on its
+   * letters and numbers alone (`promoCodeKey`), so separators and case don't
+   * matter. A code saved exactly as typed wins over one that only matches without
+   * its separators; when several match only that way and none is the plain
+   * letters-and-numbers code, there's no telling which was meant — `null`.
+   */
   getByCode(code: string): Promise<PromoCode | null>;
   /** How many live (not cancelled) orders carry the code — in all, and the guest's. */
   usage(promoId: string, userId: string): Promise<PromoUsage>;

@@ -1,6 +1,7 @@
 import { seatsLeft, type CafeEvent } from "@/src/domain/entities/CafeEvent";
 import { CAFE_UTC_OFFSET, dateToWallTime } from "@/src/domain/entities/CafeTime";
 import { isSellable, type Product } from "@/src/domain/entities/Product";
+import { isSoldOut } from "@/src/domain/entities/stock";
 import type { CafeLocation } from "@/src/lib/cafeLocation";
 
 /** A JSON-LD node: plain JSON, so it serializes into a `<script>` as is. */
@@ -96,7 +97,8 @@ export function productJsonLd({ product, url, image }: ProductJsonLdInput): Json
             url,
             price: product.price * RIAL_PER_TOMAN,
             priceCurrency: PRICE_CURRENCY,
-            availability: `${SCHEMA_CONTEXT}/${product.stockQuantity > 0 ? "InStock" : "OutOfStock"}`,
+            // A made-to-order item is never out of stock by count.
+            availability: `${SCHEMA_CONTEXT}/${isSoldOut(product) ? "OutOfStock" : "InStock"}`,
           },
         }
       : {}),

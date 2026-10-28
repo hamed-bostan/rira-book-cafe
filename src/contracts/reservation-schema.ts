@@ -45,14 +45,23 @@ export const staffReservationSchema = requestReservationSchema.extend({
 
 export type StaffReservationInput = z.input<typeof staffReservationSchema>;
 
-/** Staff acting on a reservation: a new status, a table, or both. */
+/**
+ * Staff acting on a reservation: a new status, a table, or both — or, with
+ * `undo`, taking back a Seat or Complete from its toast: just the `status` to go
+ * back to (the use-case allows only `seated → confirmed` and `completed → seated`).
+ */
 export const reservationUpdateSchema = z
   .object({
     status: z.enum(RESERVATION_STATUSES, { message: "statusInvalid" }).optional(),
     tableLabel: z.string().trim().max(MAX_TABLE_LABEL_LENGTH, "tableTooLong").nullable().optional(),
+    undo: z.literal(true).optional(),
   })
   .refine((data) => data.status !== undefined || data.tableLabel !== undefined, {
     message: "nothingToChange",
+  })
+  .refine((data) => !data.undo || (data.status !== undefined && data.tableLabel === undefined), {
+    message: "statusInvalid",
+    path: ["status"],
   });
 
 export type ReservationUpdateInput = z.input<typeof reservationUpdateSchema>;

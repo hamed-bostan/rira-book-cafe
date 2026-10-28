@@ -98,6 +98,8 @@ export const ACTIVITY_ACTIONS = [
   "bookLoan.returned",
   "bookLoan.lost",
   "bookLoan.extended",
+  // An extension taken back from its toast: the due date returns to what it was.
+  "bookLoan.extensionUndone",
   "event.created",
   "event.updated",
   "event.deleted",

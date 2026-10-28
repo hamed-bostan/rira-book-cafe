@@ -1,7 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { bookLoanUpdateSchema } from "@/src/contracts/book-loan-schema";
-import { ChangeBookLoan, ExtendBookLoan } from "@/src/domain/use-cases/book-loans/ChangeBookLoan";
+import {
+  ChangeBookLoan,
+  ExtendBookLoan,
+  UndoBookLoanExtension,
+} from "@/src/domain/use-cases/book-loans/ChangeBookLoan";
 import { bookLoanRepository, bookWaitlistRepository, customerNotifier } from "@/src/infrastructure/container";
 import { invalidatesCatalog } from "@/src/lib/api/invalidatesCatalog";
 import {
@@ -17,9 +21,10 @@ import { getSessionWith } from "@/src/lib/require-permission";
 type RouteContext = { params: Promise<{ id: string }> };
 
 /**
- * PATCH /api/admin/book-loans/:id — mark a loan returned or lost (`status`), or give
- * the borrower more time (`extendDays`). Requires `loans.manage`. 409 for a
- * transition the workflow refuses, or extending a loan that's closed.
+ * PATCH /api/admin/book-loans/:id — mark a loan returned or lost (`status`), give
+ * the borrower more time (`extendDays`), or take that back (`undoExtend`).
+ * Requires `loans.manage`. 409 for a transition the workflow refuses, extending a
+ * loan that's closed, or undoing an extension once the due date has moved on.
  */
 async function handlePatch(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   const session = await getSessionWith("loans.manage");
@@ -48,8 +53,10 @@ async function handlePatch(request: NextRequest, { params }: RouteContext): Prom
             staff,
             new Date(),
           )
-        : // The schema guarantees one of the two; a missing count fails the use-case's check.
-          await new ExtendBookLoan(bookLoanRepository).execute(id, parsed.data.extendDays ?? 0, staff, new Date());
+        : parsed.data.undoExtend !== undefined
+          ? await new UndoBookLoanExtension(bookLoanRepository).execute(id, parsed.data.undoExtend, staff)
+          : // The schema guarantees exactly one of the three; a missing count fails the use-case's check.
+            await new ExtendBookLoan(bookLoanRepository).execute(id, parsed.data.extendDays ?? 0, staff, new Date());
     return NextResponse.json(loan);
   } catch (error) {
     return errorResponseFromException(error, `PATCH /api/admin/book-loans/${id} failed`);

@@ -4,8 +4,9 @@ import { Minus, Plus } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import * as React from "react";
 
-import { MAX_LINE_QUANTITY, MAX_ORDER_NOTE_TEXT_LENGTH } from "@/src/domain/entities/Order";
+import { MAX_ORDER_NOTE_TEXT_LENGTH } from "@/src/domain/entities/Order";
 import type { Product } from "@/src/domain/entities/Product";
+import { maxLineQuantity } from "@/src/domain/entities/stock";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
@@ -18,13 +19,13 @@ import { AddToBasketButton } from "./AddToBasketButton";
 export function AddToBasketForm({
   item,
 }: {
-  item: Pick<Product, "id" | "name" | "imageUrl" | "kind" | "price" | "stockQuantity">;
+  item: Pick<Product, "id" | "name" | "imageUrl" | "kind" | "price" | "stockQuantity" | "madeToOrder">;
 }) {
   const t = useTranslations("site");
   const locale = useLocale();
   const [quantity, setQuantity] = React.useState(1);
   const [note, setNote] = React.useState("");
-  const max = Math.min(MAX_LINE_QUANTITY, Math.max(item.stockQuantity, 1));
+  const max = maxLineQuantity(item);
 
   return (
     <div className="flex flex-col gap-4 rounded-card-lg border border-border p-4">

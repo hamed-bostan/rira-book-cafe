@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  RESERVATION_STATUSES,
+  canUndoReservationStatus,
   isGuestCancellableReservation,
   rangesOverlap,
   type Reservation,
@@ -126,6 +128,85 @@ describe("ChangeReservation", () => {
       current,
     );
     expect(applyChange).not.toHaveBeenCalled();
+  });
+
+  it("takes back a Seat, keeping the table, logging it, and telling the guest nothing", async () => {
+    const { repo, applyChange } = repoWith(reservation("seated", { tableLabel: "4" }));
+    const notifier = { notify: vi.fn() };
+    const saved = await new ChangeReservation(repo, notifier).execute(
+      "r1",
+      { status: "confirmed", undo: true },
+      { id: "s", name: "Ali" },
+    );
+
+    expect(saved).toMatchObject({ status: "confirmed", tableLabel: "4" });
+    expect(applyChange.mock.calls[0].slice(0, 3)).toEqual(["r1", "seated", { status: "confirmed", tableLabel: "4" }]);
+    const entry = applyChange.mock.calls[0][4]?.(reservation("confirmed", { tableLabel: "4" })) as {
+      action: string;
+      changes: unknown[];
+    };
+    expect(entry.action).toBe("reservation.changed");
+    expect(entry.changes).toEqual([{ field: "status", before: "seated", after: "confirmed" }]);
+    // Back at `confirmed`, but the guest isn't told their table was confirmed again.
+    expect(notifier.notify).not.toHaveBeenCalled();
+  });
+
+  it("takes back a Complete", async () => {
+    const { repo, applyChange } = repoWith(reservation("completed", { tableLabel: "4" }));
+    await new ChangeReservation(repo).execute("r1", { status: "seated", undo: true }, { id: "s", name: "Ali" });
+    expect(applyChange.mock.calls[0].slice(1, 3)).toEqual(["completed", { status: "seated", tableLabel: "4" }]);
+  });
+
+  it("refuses an undo of anything else, or one that also moves the table", async () => {
+    for (const [from, to] of [
+      ["confirmed", "requested"],
+      ["cancelled", "confirmed"],
+      ["noShow", "confirmed"],
+      ["completed", "confirmed"],
+      ["seated", "seated"],
+    ] as const) {
+      const { repo, applyChange } = repoWith(reservation(from, { tableLabel: "4" }));
+      await expect(
+        new ChangeReservation(repo).execute("r1", { status: to, undo: true }, { id: "s", name: "Ali" }),
+      ).rejects.toThrow(ConflictError);
+      expect(applyChange).not.toHaveBeenCalled();
+    }
+    await expect(
+      new ChangeReservation(repoWith(reservation("seated", { tableLabel: "4" })).repo).execute(
+        "r1",
+        { status: "confirmed", tableLabel: "5", undo: true },
+        { id: "s", name: "Ali" },
+      ),
+    ).rejects.toThrow(ValidationError);
+  });
+
+  it("never steps back without the undo flag", async () => {
+    await expect(
+      new ChangeReservation(repoWith(reservation("seated", { tableLabel: "4" })).repo).execute(
+        "r1",
+        { status: "confirmed" },
+        { id: "s", name: "Ali" },
+      ),
+    ).rejects.toThrow(ConflictError);
+  });
+
+  it("still tells the guest when a request is confirmed", async () => {
+    const notifier = { notify: vi.fn() };
+    await new ChangeReservation(repoWith(reservation("requested")).repo, notifier).execute(
+      "r1",
+      { status: "confirmed", tableLabel: "4" },
+      { id: "s", name: "Ali" },
+    );
+    expect(notifier.notify).toHaveBeenCalledWith(expect.objectContaining({ kind: "reservationConfirmed" }));
+  });
+});
+
+describe("canUndoReservationStatus", () => {
+  it("allows exactly seated → confirmed and completed → seated", () => {
+    const allowed = RESERVATION_STATUSES.flatMap((from) =>
+      RESERVATION_STATUSES.filter((to) => canUndoReservationStatus(from, to)).map((to) => `${from}→${to}`),
+    );
+    expect(allowed).toEqual(["seated→confirmed", "completed→seated"]);
   });
 });
 

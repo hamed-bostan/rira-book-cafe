@@ -52,9 +52,13 @@ export const staffSuiteBookingSchema = stayFields
 
 export type StaffSuiteBookingInput = z.input<typeof staffSuiteBookingSchema>;
 
-/** Staff moving a stay along. */
+/**
+ * Staff moving a stay along — or, with `undo`, taking back a Check in from its
+ * toast (the use-case allows only `checkedIn → confirmed`).
+ */
 export const suiteBookingUpdateSchema = z.object({
   status: z.enum(SUITE_BOOKING_STATUSES, { message: "statusInvalid" }),
+  undo: z.literal(true).optional(),
 });
 
 export type SuiteBookingUpdateInput = z.input<typeof suiteBookingUpdateSchema>;

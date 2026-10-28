@@ -27,11 +27,14 @@ export class CreateProduct {
       entityType: "product",
       entityId: created.id,
       entityLabel: created.name,
-      // A creation has no "before", so the diff records the values it started at.
+      // A creation has no "before", so the diff records the values it started at —
+      // the count for a counted item, the fact that it isn't for a made-to-order one.
       changes: [
         { field: "kind", before: null, after: activityValue(created.kind) },
         { field: "price", before: null, after: activityValue(created.price) },
-        { field: "stockQuantity", before: null, after: activityValue(created.stockQuantity) },
+        created.madeToOrder
+          ? { field: "madeToOrder", before: null, after: activityValue(true) }
+          : { field: "stockQuantity", before: null, after: activityValue(created.stockQuantity) },
       ],
     }));
   }

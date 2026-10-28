@@ -18,8 +18,15 @@ describe("grantAdminSchema", () => {
     expect(grantAdminSchema.parse({ ...GRANT, email: " ops@example.com " }).email).toBe("ops@example.com");
   });
 
-  it("accepts the usual ways of typing a number", () => {
-    for (const phone of ["+989123456789", "0912 345 6789", "0912 (345) 6789", "98-912-345-6789"]) {
+  it("accepts the usual ways of typing a mobile, and a foreign number with its +", () => {
+    for (const phone of [
+      "+989123456789",
+      "0912 345 6789",
+      "0912 (345) 6789",
+      "98-912-345-6789",
+      "۰۹۱۲ ۳۴۵ ۶۷۸۹",
+      "+44 20 7946 0958",
+    ]) {
       expect(grantAdminSchema.safeParse({ ...GRANT, phone }).success).toBe(true);
     }
   });
@@ -28,9 +35,17 @@ describe("grantAdminSchema", () => {
     expect(grantAdminSchema.safeParse({ ...GRANT, phone: " " }).error?.flatten().fieldErrors.phone).toContain(
       "phoneRequired",
     );
-    for (const phone of ["0912", "phone 0912345", "-09123456789", "0".repeat(21)]) {
+    for (const phone of [
+      "0912",
+      "0912345678",
+      "02112345678",
+      "44 20 7946 0958",
+      "phone 0912345",
+      "-09123456789",
+      "0".repeat(21),
+    ]) {
       expect(grantAdminSchema.safeParse({ ...GRANT, phone }).error?.flatten().fieldErrors.phone).toEqual([
-        "phoneInvalid",
+        "teamPhoneInvalid",
       ]);
     }
   });

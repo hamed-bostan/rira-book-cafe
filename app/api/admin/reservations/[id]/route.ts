@@ -16,8 +16,9 @@ type RouteContext = { params: Promise<{ id: string }> };
 
 /**
  * PATCH /api/admin/reservations/:id — confirm, seat, complete, cancel or mark a
- * no-show, and/or assign a table. Requires `reservations.manage`. 409 for a
- * transition the workflow refuses or a table another booking holds.
+ * no-show, and/or assign a table; with `undo`, take back a Seat or Complete.
+ * Requires `reservations.manage`. 409 for a transition the workflow (or the undo
+ * rule) refuses or a table another booking holds.
  */
 export async function PATCH(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   const session = await getSessionWith("reservations.manage");

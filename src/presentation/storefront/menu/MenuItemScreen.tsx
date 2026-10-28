@@ -4,6 +4,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import type { BookWaitlistStatus } from "@/src/domain/entities/BookWaitlist";
 import { isSellable, type Product } from "@/src/domain/entities/Product";
 import type { PublicReview, ReviewEligibility } from "@/src/domain/entities/ProductReview";
+import { isSoldOut } from "@/src/domain/entities/stock";
 import { Link } from "@/src/i18n/navigation";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { FadeInImage } from "@/src/presentation/components/FadeInImage";
@@ -34,7 +35,8 @@ export async function MenuItemScreen({ item, reviews, reviewEligibility, waitlis
   const tDietary = await getTranslations("dietary");
   const locale = await getLocale();
   const sellable = isSellable(item);
-  const soldOut = item.stockQuantity <= 0;
+  // A made-to-order item never sells out by count.
+  const soldOut = isSoldOut(item);
 
   return (
     <div className="flex flex-col gap-6">

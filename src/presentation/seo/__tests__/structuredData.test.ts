@@ -20,6 +20,7 @@ function product(overrides: Partial<Product> = {}): Product {
     rating: 0,
     ratingCount: 0,
     stockQuantity: 5,
+    madeToOrder: false,
     imageUrl: "/uploads/products/p1.webp",
     categoryId: "c1",
     isFeatured: false,
@@ -93,6 +94,12 @@ describe("productJsonLd", () => {
       availability: "https://schema.org/OutOfStock",
     });
     expect(data).not.toHaveProperty("aggregateRating");
+  });
+
+  it("keeps a made-to-order item in stock whatever its count says", () => {
+    const data = productJsonLd({ product: product({ madeToOrder: true, stockQuantity: 0 }), url, image });
+
+    expect(data.offers).toMatchObject({ availability: "https://schema.org/InStock" });
   });
 
   it("gives a reading-only book no offer, and types it as a Book", () => {

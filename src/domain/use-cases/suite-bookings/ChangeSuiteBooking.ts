@@ -1,6 +1,7 @@
 import { cafeDayOf } from "../../entities/CafeTime";
 import {
   canTransitionSuiteBooking,
+  canUndoSuiteBookingStatus,
   isGuestCancellableSuiteBooking,
   type SuiteBooking,
   type SuiteBookingStatus,
@@ -14,9 +15,10 @@ import type { ICustomerNotifier } from "../../repositories/INotificationReposito
 import type { ISuiteBookingRepository } from "../../repositories/ISuiteBookingRepository";
 
 /**
- * Staff act on a stay: confirm, check in, check out, cancel, or mark a no-show.
- * The workflow table in `SuiteBooking.ts` is the whole rule; the repository
- * refuses to confirm nights another stay already holds.
+ * Staff act on a stay: confirm, check in, check out, cancel, or mark a no-show —
+ * and take back a Check in from its toast. The workflow table in `SuiteBooking.ts`
+ * is the whole rule, with `canUndoSuiteBookingStatus` its one way back; the
+ * repository refuses to confirm nights another stay already holds.
  */
 export class ChangeSuiteBooking {
   constructor(
@@ -25,15 +27,33 @@ export class ChangeSuiteBooking {
     private readonly notifier?: ICustomerNotifier,
   ) {}
 
-  async execute(id: string, status: SuiteBookingStatus, staff: ActivityActor): Promise<SuiteBooking> {
+  /**
+   * `undo` takes back a Check in from its toast (`canUndoSuiteBookingStatus`)
+   * instead of moving the workflow on, and tells the guest nothing.
+   */
+  async execute(
+    id: string,
+    status: SuiteBookingStatus,
+    staff: ActivityActor,
+    { undo = false }: { undo?: boolean } = {},
+  ): Promise<SuiteBooking> {
     const current = await this.suiteRepo.getById(id);
     if (!current) throw new NotFoundError("suite booking", id);
-    if (status === current.status) return current;
-    if (!canTransitionSuiteBooking(current.status, status)) {
-      throw new ConflictError(
-        "INVALID_TRANSITION",
-        `A suite booking can't move from "${current.status}" to "${status}".`,
-      );
+    if (undo) {
+      if (!canUndoSuiteBookingStatus(current.status, status)) {
+        throw new ConflictError(
+          "INVALID_TRANSITION",
+          `A suite booking can't go back from "${current.status}" to "${status}".`,
+        );
+      }
+    } else {
+      if (status === current.status) return current;
+      if (!canTransitionSuiteBooking(current.status, status)) {
+        throw new ConflictError(
+          "INVALID_TRANSITION",
+          `A suite booking can't move from "${current.status}" to "${status}".`,
+        );
+      }
     }
 
     const saved = await this.suiteRepo.applyStatus(id, current.status, status, (saved) => ({
@@ -46,7 +66,8 @@ export class ChangeSuiteBooking {
       changes: [{ field: "status", before: current.status, after: saved.status }],
     }));
 
-    const notification = suiteNotification(saved);
+    // An undo isn't news to the guest: stepping back to `confirmed` mustn't tell them again.
+    const notification = undo ? null : suiteNotification(saved);
     if (notification && this.notifier) await this.notifier.notify(notification);
     return saved;
   }

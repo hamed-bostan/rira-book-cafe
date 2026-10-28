@@ -3,7 +3,9 @@ import { describe, expect, it } from "vitest";
 import {
   isPromoCodeFinished,
   normalizePromoCode,
+  PROMO_CODE_PATTERN,
   PROMO_CODE_STATES,
+  promoCodeKey,
   promoCodeState,
   promoDiscount,
   promoProblem,
@@ -69,6 +71,35 @@ describe("promoProblem", () => {
 describe("normalizePromoCode", () => {
   it("trims and upper-cases what the guest typed", () => {
     expect(normalizePromoCode("  welcome10 ")).toBe("WELCOME10");
+  });
+});
+
+describe("PROMO_CODE_PATTERN", () => {
+  it("takes letters and numbers, 3 to 16 of them", () => {
+    for (const code of ["AB1", "AUTUMN15", "X".repeat(16)]) expect(PROMO_CODE_PATTERN.test(code)).toBe(true);
+  });
+
+  it("refuses separators, other characters and the wrong length", () => {
+    for (const code of ["AB", "X".repeat(17), "AUTUMN-15", "AUTUMN_15", "AUTUMN 15", "50%OFF", "autumn15"]) {
+      expect(PROMO_CODE_PATTERN.test(code)).toBe(false);
+    }
+  });
+});
+
+describe("promoCodeKey", () => {
+  it("ignores case, spaces, dashes and underscores", () => {
+    for (const typed of ["autumn-15", "Autumn 15", "AUTUMN15", " autumn_15 ", "AU-TUMN 1_5", "autumn\t15"]) {
+      expect(promoCodeKey(typed)).toBe("AUTUMN15");
+    }
+  });
+
+  it("keys a code saved with separators the same as its plain form", () => {
+    expect(promoCodeKey("AUTUMN-15")).toBe(promoCodeKey("AUTUMN15"));
+  });
+
+  it("keeps every other character, so they still don't match", () => {
+    expect(promoCodeKey("50%off")).toBe("50%OFF");
+    expect(promoCodeKey("- _")).toBe("");
   });
 });
 

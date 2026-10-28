@@ -76,6 +76,21 @@ export function nextSuiteBookingStatuses(status: SuiteBookingStatus): readonly S
   return TRANSITIONS[status];
 }
 
+/**
+ * The one-click step staff can take back from its toast: checking a guest in. It
+ * touches only the stay — the guest isn't told, and the suite stays held — so
+ * stepping back is safe. The workflow above never moves backwards; this is the
+ * only way back.
+ */
+const UNDO_STEPS: Partial<Record<SuiteBookingStatus, SuiteBookingStatus>> = {
+  checkedIn: "confirmed",
+};
+
+/** Whether `from → to` takes back a Check in (an undo), rather than moving the workflow on. */
+export function canUndoSuiteBookingStatus(from: SuiteBookingStatus, to: SuiteBookingStatus): boolean {
+  return UNDO_STEPS[from] === to;
+}
+
 /** Nights between two cafe days. */
 export function suiteNights(checkIn: string, checkOut: string): number {
   return Math.round(

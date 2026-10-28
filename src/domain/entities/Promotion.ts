@@ -11,8 +11,13 @@ import type { ConflictCode } from "../errors/ConflictError";
 export const PROMO_KINDS = ["percent", "fixed"] as const;
 export type PromoKind = (typeof PROMO_KINDS)[number];
 
-/** Letters, digits, `-` and `_`; stored upper-case so guests can type it in any case. */
-export const PROMO_CODE_PATTERN = /^[A-Z0-9_-]{3,20}$/;
+/**
+ * Letters and numbers only, stored upper-case so guests can type it in any case.
+ * Codes saved before this rule may still carry `-` or `_`; checkout finds them
+ * either way (see {@link promoCodeKey}).
+ */
+export const PROMO_CODE_PATTERN = /^[A-Z0-9]{3,16}$/;
+export const MAX_PROMO_CODE_LENGTH = 16;
 export const MAX_PROMO_DESCRIPTION_LENGTH = 120;
 
 export type PromoCode = {
@@ -72,6 +77,19 @@ export function isPromoCodeFinished(state: PromoCodeState): boolean {
 /** A typed code as stored: trimmed and upper-cased. */
 export function normalizePromoCode(code: string): string {
   return code.trim().toUpperCase();
+}
+
+/** What a guest may type between a code's letters and numbers without changing which code it is. */
+const PROMO_CODE_SEPARATORS = /[\s_-]/g;
+
+/**
+ * A code reduced to what identifies it at checkout: its letters and numbers,
+ * upper-cased. "autumn-15", "Autumn 15" and "AUTUMN15" all key to `AUTUMN15` —
+ * and so does a code saved as "AUTUMN-15" before codes were letters and numbers
+ * only, so it keeps working.
+ */
+export function promoCodeKey(code: string): string {
+  return code.toUpperCase().replace(PROMO_CODE_SEPARATORS, "");
 }
 
 /** What the code takes off an order of `subtotal` Toman (never more than the order). */

@@ -92,3 +92,55 @@ export class ExtendBookLoan {
     }));
   }
 }
+
+/** Taking back an extension: the due time to go back to, and the one the extension set. */
+export type BookLoanExtensionUndo = {
+  /** ISO 8601 (UTC): the due time before the extension. */
+  dueAt: string;
+  /** ISO 8601 (UTC): the due time the extension set — refused once it has moved on since. */
+  extendedDueAt: string;
+};
+
+/**
+ * Staff take back an "Extend" from its toast: the due time goes back to what it
+ * was. Only while the book is still out (on loan or overdue), only while the due
+ * time is still the one the extension set (nobody has moved it since), only to an
+ * earlier time, and never before the loan began. Logged like the extension, with
+ * the due time's before and after.
+ */
+export class UndoBookLoanExtension {
+  constructor(private readonly loanRepo: IBookLoanRepository) {}
+
+  async execute(id: string, undo: BookLoanExtensionUndo, staff: ActivityActor): Promise<BookLoan> {
+    const restore = Date.parse(undo.dueAt);
+    const extended = Date.parse(undo.extendedDueAt);
+    if (Number.isNaN(restore) || Number.isNaN(extended)) {
+      throw new ValidationError("dueAt", "That isn't a due time.");
+    }
+    const current = await this.loanRepo.getById(id);
+    if (!current) throw new NotFoundError("book loan", id);
+    if (current.status !== "out") {
+      throw new ConflictError("INVALID_TRANSITION", "Only a book that's still out can have its extension taken back.");
+    }
+    const due = Date.parse(current.dueAt);
+    if (due !== extended) {
+      throw new ConflictError("INVALID_TRANSITION", "The due date has changed since it was extended.");
+    }
+    if (restore >= due) {
+      throw new ValidationError("dueAt", "Taking back an extension moves the due date earlier.");
+    }
+    if (restore < Date.parse(current.lentAt)) {
+      throw new ValidationError("dueAt", "A loan can't be due before it began.");
+    }
+
+    return this.loanRepo.extend(id, new Date(restore).toISOString(), (saved) => ({
+      actorId: staff.id,
+      actorName: staff.name,
+      action: "bookLoan.extensionUndone",
+      entityType: "bookLoan",
+      entityId: saved.id,
+      entityLabel: `L-${saved.reference}`,
+      changes: [{ field: "dueAt", before: current.dueAt, after: saved.dueAt }],
+    }));
+  }
+}

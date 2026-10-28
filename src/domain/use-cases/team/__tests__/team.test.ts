@@ -55,6 +55,17 @@ describe("GrantAdmin", () => {
     expect(byId.get("09120000000")?.role).toBe("staff");
   });
 
+  it("refuses a number that can't be a sign-in — a landline or a mobile a digit short", async () => {
+    const { repo, batches } = repoWith([user("owner", "owner")]);
+    for (const phone of ["021 1234 5678", "0912 000 000"]) {
+      await expect(new GrantAdmin(repo).execute({ phone, role: "staff" }, "owner")).rejects.toMatchObject({
+        name: "ValidationError",
+        field: "phone",
+      });
+    }
+    expect(batches).toEqual([]);
+  });
+
   it("records nothing and sends nothing when the role doesn't change", async () => {
     const { repo, batches } = repoWith([user("owner", "owner"), user("09120000000", "staff")]);
     const notify = notifier();

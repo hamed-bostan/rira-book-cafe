@@ -14,7 +14,7 @@ import {
 } from "../promotion-schema";
 
 const PROMO: PromoCodeFormInput = {
-  code: " summer-25 ",
+  code: " summer25 ",
   description: "",
   kind: "percent",
   value: "20",
@@ -33,7 +33,7 @@ const promoErrors = (input: unknown): Record<string, string[] | undefined> | und
 describe("promoCodeFormSchema", () => {
   it("normalizes the code and turns the cafe-day window into UTC instants", () => {
     expect(promoCodeFormSchema.parse(PROMO)).toEqual({
-      code: "SUMMER-25",
+      code: "SUMMER25",
       description: undefined,
       kind: "percent",
       value: 20,
@@ -79,8 +79,14 @@ describe("promoCodeFormSchema", () => {
     });
   });
 
+  it("takes letters and numbers, 3 to 16 of them", () => {
+    for (const code of ["ab1", "x".repeat(16)]) {
+      expect(promoErrors({ ...PROMO, code })?.code).toBeUndefined();
+    }
+  });
+
   it("refuses a malformed code", () => {
-    for (const code of ["ab", "summer 25", "x".repeat(21), "50%off"]) {
+    for (const code of ["ab", "summer 25", "summer-25", "SUMMER_25", "x".repeat(17), "50%off"]) {
       expect(promoErrors({ ...PROMO, code })?.code).toEqual(["promoCodeInvalid"]);
     }
   });

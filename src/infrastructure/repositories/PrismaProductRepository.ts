@@ -1,5 +1,6 @@
 import type { AdminProductFilters, AdminProductSort } from "@/src/domain/entities/AdminProductFilters";
 import { DEFAULT_ADMIN_PRODUCT_DIRECTION } from "@/src/domain/entities/AdminProductFilters";
+import { ingredientAlertFor } from "@/src/domain/entities/Inventory";
 import { createPage, toSkipTake, type Page, type PageRequest } from "@/src/domain/entities/Pagination";
 import {
   BOOK_AVAILABILITIES,
@@ -8,6 +9,7 @@ import {
   type BookDetails,
   type Product,
   type ProductKind,
+  type ProductListItem,
 } from "@/src/domain/entities/Product";
 import type { ProductFilters, ProductSort } from "@/src/domain/entities/ProductFilters";
 import { LOW_STOCK_THRESHOLD } from "@/src/domain/entities/stock";
@@ -31,6 +33,14 @@ import { recordAudit } from "./writeActivityEntry";
  * can quietly forget it.
  */
 const PUBLISHED = { isPublished: true } satisfies Prisma.ProductWhereInput;
+
+/**
+ * The management list's rows come with their recipe's ingredients — just what a
+ * made-to-order item's warning is read from — in the same query as the page.
+ */
+const WITH_RECIPE_STOCK = {
+  recipeLines: { select: { ingredient: { select: { name: true, onHand: true, reorderLevel: true } } } },
+} satisfies Prisma.ProductInclude;
 
 /**
  * Menu items backed by PostgreSQL via Prisma. Server-side only (it opens a DB
@@ -118,19 +128,19 @@ export class PrismaProductRepository implements IProductRepository {
     filters: AdminProductFilters,
     page: PageRequest<AdminProductSort>,
     locale?: string,
-  ): Promise<Page<Product>> {
+  ): Promise<Page<ProductListItem>> {
     const where = await adminWhere(this.db, filters, locale);
     const { skip, take } = toSkipTake(page);
 
     // One transaction so the rows and the count are read from the same snapshot.
     const [rows, total] = await inTransaction(this.db, (tx) =>
       Promise.all([
-        tx.product.findMany({ where, orderBy: adminOrderBy(page), skip, take }),
+        tx.product.findMany({ where, orderBy: adminOrderBy(page), skip, take, include: WITH_RECIPE_STOCK }),
         tx.product.count({ where }),
       ]),
     );
 
-    return createPage(await localizeProducts(rows.map(toProduct), locale), total, page);
+    return createPage(await localizeProducts(rows.map(toListItem), locale), total, page);
   }
 
   async create(input: NewProduct, audit?: AuditHook<Product>): Promise<Product> {
@@ -290,16 +300,38 @@ async function adminWhere(
   if (filters.categoryId) and.push({ categoryId: filters.categoryId });
   if (filters.kind) and.push({ kind: filters.kind });
 
-  // Bounds mirror `getStockStatus` exactly, so "low" means the same row everywhere.
-  if (filters.stock === "out") and.push({ stockQuantity: { lte: 0 } });
-  if (filters.stock === "low") and.push({ stockQuantity: { gt: 0, lte: LOW_STOCK_THRESHOLD } });
-  if (filters.stock === "in") and.push({ stockQuantity: { gt: LOW_STOCK_THRESHOLD } });
-  if (filters.stock === "needsRestock") and.push({ stockQuantity: { lte: LOW_STOCK_THRESHOLD } });
+  // Bounds mirror `getStockStatus` exactly, so "low" means the same row everywhere —
+  // and, as there, a made-to-order item is never out, low or in by count.
+  if (filters.stock === "out") and.push({ ...COUNTED, stockQuantity: { lte: 0 } });
+  if (filters.stock === "low") and.push({ ...COUNTED, stockQuantity: { gt: 0, lte: LOW_STOCK_THRESHOLD } });
+  if (filters.stock === "in") and.push({ ...COUNTED, stockQuantity: { gt: LOW_STOCK_THRESHOLD } });
+  // Low or out: by count for a counted item; for a made-to-order one, by an
+  // ingredient of its recipe — the rows that come back with an `ingredientAlert`.
+  if (filters.stock === "needsRestock") {
+    and.push({
+      OR: [
+        { ...COUNTED, stockQuantity: { lte: LOW_STOCK_THRESHOLD } },
+        { madeToOrder: true, recipeLines: { some: { ingredient: ingredientNeedsRestock(db) } } },
+      ],
+    });
+  }
 
   // No clause when absent: the list deliberately shows both visibility states together.
   if (filters.visibility) and.push({ isPublished: filters.visibility === "published" });
 
   return and.length ? { AND: and } : {};
+}
+
+/** Items whose count is kept — everything but made-to-order. */
+const COUNTED = { madeToOrder: false } satisfies Prisma.ProductWhereInput;
+
+/**
+ * An ingredient out or running low, with the bounds of `stockLevel`: out at zero
+ * or below, low at or below its reorder level (never, without one — comparing to
+ * a null level matches nothing).
+ */
+function ingredientNeedsRestock(db: PrismaDb): Prisma.IngredientWhereInput {
+  return { OR: [{ onHand: { lte: 0 } }, { onHand: { lte: db.ingredient.fields.reorderLevel } }] };
 }
 
 /** `ORDER BY` for the management list, on canonical columns. */
@@ -333,7 +365,8 @@ function orderByFor(sort: ProductSort | undefined): Prisma.ProductOrderByWithRel
 /**
  * The writable columns for an item. Book columns are written only for books and
  * cleared otherwise, so switching an item away from "book" can't leave a stale
- * author behind.
+ * author behind. An absent `stockQuantity` (a made-to-order item) is left out of
+ * the write, so the stored count stays as it was — the column default on create.
  */
 function toRowData(product: Omit<NewProduct, "translations">) {
   const { book, ...rest } = product;
@@ -366,6 +399,7 @@ type ProductRow = {
   rating: number;
   ratingCount: number;
   stockQuantity: number;
+  madeToOrder: boolean;
   imageUrl: string;
   categoryId: string;
   isFeatured: boolean;
@@ -419,6 +453,7 @@ function toProduct(row: ProductRow): Product {
     rating: row.rating,
     ratingCount: row.ratingCount,
     stockQuantity: row.stockQuantity,
+    madeToOrder: row.madeToOrder,
     imageUrl: row.imageUrl,
     categoryId: row.categoryId,
     isFeatured: row.isFeatured,
@@ -432,6 +467,20 @@ function toProduct(row: ProductRow): Product {
     taxExempt: row.taxExempt,
     book: toBook(row),
   };
+}
+
+/** A management-list row: the item, and for a made-to-order one its recipe's warning. */
+function toListItem(row: Prisma.ProductGetPayload<{ include: typeof WITH_RECIPE_STOCK }>): ProductListItem {
+  const product = toProduct(row);
+  if (!row.madeToOrder) return product;
+  const ingredientAlert = ingredientAlertFor(
+    row.recipeLines.map(({ ingredient }) => ({
+      name: ingredient.name,
+      onHand: ingredient.onHand,
+      reorderLevel: ingredient.reorderLevel ?? undefined,
+    })),
+  );
+  return ingredientAlert ? { ...product, ingredientAlert } : product;
 }
 
 /**
@@ -472,7 +521,7 @@ async function replaceProductTranslations(
  * `locale` passed) the base rows are returned as-is; otherwise translated fields
  * replace the canonical text, falling back field-by-field to the base row.
  */
-async function localizeProducts(products: Product[], locale?: string): Promise<Product[]> {
+async function localizeProducts<T extends Product>(products: T[], locale?: string): Promise<T[]> {
   if (!locale || products.length === 0) return products;
 
   const translations = await prisma.productTranslation.findMany({

@@ -3,7 +3,7 @@ import { getTranslations } from "next-intl/server";
 
 import type { Category } from "@/src/domain/entities/Category";
 import type { Page } from "@/src/domain/entities/Pagination";
-import type { Product } from "@/src/domain/entities/Product";
+import type { ProductListItem } from "@/src/domain/entities/Product";
 import { Link } from "@/src/i18n/navigation";
 import { cn } from "@/src/lib/utils";
 import { ListChoiceFilter, ListPager, ListSearchInput } from "@/src/presentation/dashboard/list";
@@ -19,7 +19,7 @@ import { PRODUCT_ROW_GRID, ProductRow } from "./ProductRow";
 
 type ProductsScreenProps = {
   /** One page of items plus the total behind it. */
-  products: Page<Product>;
+  products: Page<ProductListItem>;
   /** Every category, each with its item count — the tabs. */
   categories: Category[];
   /** The category tab on screen; `undefined` is "All". */
@@ -27,7 +27,10 @@ type ProductsScreenProps = {
   show: MenuItemShow | undefined;
   /** The search, when one is applied — to tell "nothing here" from "no matches". */
   query: string | undefined;
-  /** Items low or out of stock across the whole menu, for the "need attention" link. */
+  /**
+   * Items low or out of stock across the whole menu — a made-to-order one by an
+   * ingredient of its recipe — for the "need attention" link.
+   */
   attention: number;
   /**
    * Whether the viewer may change the catalog. Decides which controls are drawn —

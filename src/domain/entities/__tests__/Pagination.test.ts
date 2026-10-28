@@ -10,7 +10,6 @@ import {
   paginateArray,
   toSkipTake,
 } from "../Pagination";
-import { getStockStatus, LOW_STOCK_THRESHOLD } from "../stock";
 
 describe("paging", () => {
   it("never reports zero pages", () => {
@@ -63,18 +62,5 @@ describe("paging", () => {
       page: 2,
       pageSize: 2,
     });
-  });
-});
-
-describe("getStockStatus", () => {
-  it.each<[number, ReturnType<typeof getStockStatus>]>([
-    [0, { level: "out" }],
-    [-3, { level: "out" }],
-    [Number.NaN, { level: "out" }],
-    [1, { level: "low", quantity: 1 }],
-    [LOW_STOCK_THRESHOLD, { level: "low", quantity: LOW_STOCK_THRESHOLD }],
-    [LOW_STOCK_THRESHOLD + 1, { level: "in", quantity: LOW_STOCK_THRESHOLD + 1 }],
-  ])("classifies %s units", (quantity, expected) => {
-    expect(getStockStatus(quantity)).toEqual(expected);
   });
 });

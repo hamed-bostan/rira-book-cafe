@@ -75,6 +75,23 @@ export function nextReservationStatuses(status: ReservationStatus): readonly Res
   return TRANSITIONS[status];
 }
 
+/**
+ * The one-click steps staff can take back from their toast: seating a party and
+ * completing a booking. Each touches only the booking itself — the guest isn't
+ * told — so stepping back is safe; going back to `seated` still needs the table
+ * free (the repository's usual check). The workflow above never moves backwards;
+ * this is the only way back, and only one step.
+ */
+const UNDO_STEPS: Partial<Record<ReservationStatus, ReservationStatus>> = {
+  seated: "confirmed",
+  completed: "seated",
+};
+
+/** Whether `from → to` takes back a Seat or Complete (an undo), rather than moving the workflow on. */
+export function canUndoReservationStatus(from: ReservationStatus, to: ReservationStatus): boolean {
+  return UNDO_STEPS[from] === to;
+}
+
 /** Whether the guest may still cancel: before staff seat them, and before it starts. */
 export function isGuestCancellableReservation(
   reservation: Pick<Reservation, "status" | "startsAt">,

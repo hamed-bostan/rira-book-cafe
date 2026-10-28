@@ -25,19 +25,22 @@ export const DEFAULT_ADMIN_PRODUCT_DIRECTION = "desc";
 /**
  * Stock levels the list can be narrowed to.
  *
- * The first three are the storefront's own states, reused rather than restated so
- * "low" always means the same thing here as it does in `getStockStatus`.
+ * `in`, `low` and `out` are the storefront's own counted states, reused rather
+ * than restated so "low" always means the same thing here as it does in
+ * `getStockStatus` — which is also why none of them ever matches a made-to-order
+ * item: it isn't counted.
  *
  * `needsRestock` is the operator's question rather than the shopper's: *low or
- * out*, everything not comfortably in stock. It exists because it's what the
- * overview's "needs restocking" tile counts, and a tile whose number doesn't
- * match the list it opens is worse than one that doesn't link at all. Expressing
- * it as a filter value keeps that link a plain `?stock=needsRestock` instead of a
- * bespoke screen — and it's the view an operator actually wants on a restocking
- * round, where "out" and "one left" are the same job.
+ * out*, everything not comfortably in stock — for a made-to-order item, one of
+ * its recipe's ingredients out or running low. It exists because it's what the
+ * menu list's "need attention" link counts, and a link whose number doesn't match
+ * the list it opens is worse than one that doesn't link at all. Expressing it as a
+ * filter value keeps that link a plain `?stock=needsRestock` instead of a bespoke
+ * screen — and it's the view an operator actually wants on a restocking round,
+ * where "out" and "one left" are the same job.
  */
 export const ADMIN_STOCK_FILTERS = ["needsRestock", "in", "low", "out"] as const;
-export type AdminStockFilter = StockStatus["level"] | "needsRestock";
+export type AdminStockFilter = Exclude<StockStatus["level"], "madeToOrder"> | "needsRestock";
 
 /**
  * Visibility states the management list can be narrowed to.

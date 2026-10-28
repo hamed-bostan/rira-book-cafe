@@ -5,7 +5,6 @@ import { cn } from "@/src/lib/utils";
 import { BulkSelectAllCheckbox } from "@/src/presentation/dashboard/bulk";
 import {
   DataTable,
-  DataTableToolbar,
   Table,
   TableBody,
   TableHead,
@@ -23,7 +22,11 @@ type OrdersTableProps = {
   canFulfill: boolean;
   /** The status tabs along the frame's top edge, above the toolbar. */
   tabs?: ReactNode;
-  /** Search, filters and sorting, under the tabs. */
+  /**
+   * The strip under the tabs — search, filters and sorting, or the bulk actions
+   * while rows are selected. Drawn as given: the caller frames it (`DataTableToolbar`
+   * or `BulkActionBar`).
+   */
   toolbar?: ReactNode;
   /** Shown inside the frame when the current query has no rows. */
   emptyState?: ReactNode;
@@ -32,7 +35,7 @@ type OrdersTableProps = {
 };
 
 /** Column headings: small caps-style labels, so the rows carry the weight. */
-const HEAD = "h-10 py-0 text-start text-body-caption-bold tracking-wider whitespace-nowrap uppercase";
+const HEAD = "h-10 py-0 text-start text-body-caption font-semibold tracking-wider whitespace-nowrap uppercase";
 
 /**
  * The dashboard order list: cards on narrow content widths, a real table on wide
@@ -46,7 +49,7 @@ export async function OrdersTable({ orders, canFulfill, tabs, toolbar, emptyStat
   return (
     <DataTable className="min-w-0 bg-background" footer={orders.length > 0 ? footer : undefined}>
       {tabs}
-      {toolbar ? <DataTableToolbar>{toolbar}</DataTableToolbar> : null}
+      {toolbar}
       {orders.length > 0 ? (
         <>
           <div className="grid min-w-0 grid-cols-1 gap-3 p-3 @min-[38rem]:grid-cols-2 @min-[56rem]:hidden">
@@ -55,7 +58,7 @@ export async function OrdersTable({ orders, canFulfill, tabs, toolbar, emptyStat
             ))}
           </div>
           <div className="hidden overflow-x-auto @min-[56rem]:block">
-            <Table className="min-w-[60rem]">
+            <Table className="min-w-[62.5rem]">
               <caption className="sr-only">{t("heading")}</caption>
               <TableHeader>
                 <tr>

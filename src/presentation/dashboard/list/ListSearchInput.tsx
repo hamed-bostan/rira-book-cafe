@@ -72,7 +72,7 @@ export function ListSearchInput({ paramName = "q", placeholder, label, className
       onChange={(event) => setValue(event.target.value)}
       placeholder={placeholder}
       aria-label={label}
-      className={cn("w-full sm:max-w-xs", className)}
+      className={cn("w-full sm:max-w-md", className)}
       // The browser's own clear glyph is hidden so there's one ✕, styled like the rest.
       inputClassName="[&::-webkit-search-cancel-button]:appearance-none"
       leftElement={<Icon icon={Search} size="sm" className="text-muted-foreground" />}

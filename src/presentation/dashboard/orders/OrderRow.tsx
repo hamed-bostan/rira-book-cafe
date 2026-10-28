@@ -23,14 +23,15 @@ type OrderRowProps = {
  * One order in the desktop table. The whole row opens the order: the order number
  * is the link, stretched over the row, so it stays one keyboard stop and a real
  * link (open in a new tab, copy address) rather than a click handler on a `<tr>`.
- * The checkbox and the menu sit above the stretched area.
+ * The checkbox and the menu sit above the stretched area. A selected row is tinted
+ * — read off its checkbox's state, so the row itself stays server-rendered.
  */
 export function OrderRow({ order, canFulfill }: OrderRowProps) {
   const t = useTranslations("dashOrders");
   const locale = useLocale();
 
   return (
-    <TableRow className="relative hover:bg-muted">
+    <TableRow className="relative hover:bg-muted has-[[role=checkbox][data-state=checked]]:bg-accent">
       {canFulfill ? (
         <TableCell className="relative z-10 w-10 py-0 ps-2 pe-0">
           <label className="flex size-8 cursor-pointer items-center justify-center">
@@ -74,9 +75,9 @@ export function OrderRow({ order, canFulfill }: OrderRowProps) {
 
       <TableCell>
         <div className="flex flex-nowrap items-center gap-1.5">
-          <OrderStatusBadge status={order.status} />
+          <OrderStatusBadge status={order.status} size="compact" />
           {order.paymentStatus === "paid" ? (
-            <Badge variant="success" appearance="outline" dot className="whitespace-nowrap">
+            <Badge variant="success" appearance="outline" dot size="compact">
               {t("payment.paid")}
             </Badge>
           ) : null}
@@ -97,7 +98,7 @@ export function OrderRow({ order, canFulfill }: OrderRowProps) {
       </TableCell>
 
       {canFulfill ? (
-        <TableCell className="relative z-10 w-12 py-0 ps-0 text-end">
+        <TableCell className="relative z-10 w-12 py-0 ps-0 pe-2 text-end">
           {/* Only what the menu reads — the rest of the order stays on the server. */}
           <OrderRowActions
             order={{

@@ -80,7 +80,7 @@ export async function PromoCodeRow({ promo, state, now, takenCodes, today }: Pro
           </span>
           <span className="text-body-default font-medium text-foreground/80 sm:text-body-small">{value}</span>
           {badge && (state === "scheduled" || state === "ended" || state === "usedUp") ? (
-            <Badge variant={badge} appearance="outline" dot>
+            <Badge variant={badge} appearance="outline" size="compact" dot>
               {t(`badge.${state}`)}
             </Badge>
           ) : null}

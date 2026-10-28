@@ -4,6 +4,7 @@ import type { Permission } from "@/src/domain/entities/Permission";
 import { cn } from "@/src/lib/utils";
 
 import { DashboardNav } from "./DashboardNav";
+import { HIDDEN_IN_FULL_SCREEN } from "./fullScreen";
 import { SidebarBrand } from "./SidebarBrand";
 import { SidebarCollapseToggle } from "./SidebarCollapseToggle";
 import { ViewStoreLink } from "./ViewStoreLink";
@@ -39,6 +40,7 @@ export function DashboardSidebar({ permissions, collapsed, onToggleCollapsed, ba
       className={cn(
         "sticky top-0 hidden h-dvh w-20 shrink-0 flex-col border-e border-border bg-background xl:flex dashboard-landscape:flex",
         collapsed ? "xl:w-20" : "xl:w-64",
+        HIDDEN_IN_FULL_SCREEN,
       )}
     >
       {/* The `md`–`xl` tier: always the icon-only rail, no toggle — there's nowhere to put one. */}

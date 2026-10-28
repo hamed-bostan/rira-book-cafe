@@ -99,7 +99,7 @@ export async function SuiteAvailability({
             aria-label={t("earlier")}
             className={cn(segment, "w-11 rounded-s-button sm:w-9")}
           >
-            <Icon icon={ChevronLeft} size="sm" className="rtl:-scale-x-100" />
+            <Icon icon={ChevronLeft} size="icon-md" className="rtl:-scale-x-100" />
           </Link>
           <Link
             href={hrefForWindow(home)}
@@ -117,7 +117,7 @@ export async function SuiteAvailability({
             aria-label={t("later")}
             className={cn(segment, "w-11 rounded-e-button sm:w-9")}
           >
-            <Icon icon={ChevronRight} size="sm" className="rtl:-scale-x-100" />
+            <Icon icon={ChevronRight} size="icon-md" className="rtl:-scale-x-100" />
           </Link>
         </nav>
       </div>
@@ -138,7 +138,7 @@ export async function SuiteAvailability({
                 </span>
                 <span
                   className={cn(
-                    "text-body-small font-semibold tabular-nums sm:text-body-caption-bold",
+                    "text-body-small font-semibold tabular-nums sm:text-body-caption",
                     isToday ? "text-accent-foreground" : "text-foreground",
                   )}
                 >
@@ -191,7 +191,7 @@ export async function SuiteAvailability({
                   gridColumn: `${suiteNights(windowStart, start) + FIRST_DAY_COLUMN} / span ${suiteNights(start, end)}`,
                 }}
                 className={cn(
-                  "z-10 mx-0.5 flex h-8 min-w-0 items-center self-center overflow-hidden rounded-button border px-2 text-body-caption-bold whitespace-nowrap transition-colors",
+                  "z-10 mx-0.5 flex h-11 min-w-0 items-center self-center overflow-hidden rounded-button border px-2 text-label-compact whitespace-nowrap transition-colors sm:h-8",
                   TONE[booking.status],
                   booking.id === focusId && FOCUSED[booking.status],
                   focusRing,

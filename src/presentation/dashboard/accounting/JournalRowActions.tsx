@@ -16,8 +16,10 @@ import { Input } from "@/src/presentation/design-system/components/form/Input/In
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
+import { DashboardDialog } from "../DashboardDialog";
+import { DashboardField } from "../DashboardField";
+
 import { journalEntriesApi } from "./accounting-api";
-import { AccountingDialog } from "./AccountingDialog";
 
 type JournalRowActionsProps = {
   entryId: string;
@@ -60,13 +62,13 @@ export function JournalRowActions({ entryId, number, today }: JournalRowActionsP
     <>
       <DropdownMenu>
         <DropdownMenuIconTrigger appearance="secondary" aria-label={t("journal.moreActionsAria", { number })}>
-          <Icon icon={MoreHorizontal} size="sm" className="sm:size-4" />
+          <Icon icon={MoreHorizontal} size="icon-md" />
         </DropdownMenuIconTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem onSelect={() => setOpen(true)}>{t("journal.reverse")}</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <AccountingDialog
+      <DashboardDialog
         open={open}
         onOpenChange={(next) => {
           setOpen(next);
@@ -80,8 +82,7 @@ export function JournalRowActions({ entryId, number, today }: JournalRowActionsP
         onSubmit={reverse}
         error={error}
       >
-        <label className="flex min-w-0 flex-col gap-1.5 text-body-small-emphasis text-foreground">
-          {t("entry.reverseReason")}
+        <DashboardField label={t("entry.reverseReason")} hint={t("journal.reverseReasonHint")}>
           <Input
             size="control-md"
             value={reason}
@@ -91,11 +92,8 @@ export function JournalRowActions({ entryId, number, today }: JournalRowActionsP
             placeholder={t("journal.reverseReasonPlaceholder")}
             dir="auto"
           />
-          <span className="text-body-small font-normal text-muted-foreground sm:text-body-caption">
-            {t("journal.reverseReasonHint")}
-          </span>
-        </label>
-      </AccountingDialog>
+        </DashboardField>
+      </DashboardDialog>
     </>
   );
 }

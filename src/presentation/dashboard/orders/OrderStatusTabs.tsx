@@ -62,7 +62,7 @@ export async function OrderStatusTabs({ current, counts, params }: OrderStatusTa
             className={cn(
               // Equal top and bottom borders keep the label centred while only the
               // bottom one is ever coloured.
-              "flex h-12 shrink-0 items-center gap-2 border-y-2 border-t-transparent text-body-small whitespace-nowrap transition-colors",
+              "flex h-12 shrink-0 items-center gap-2 border-y-2 border-t-transparent text-body-default whitespace-nowrap transition-colors sm:text-body-small",
               "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-inset",
               selected
                 ? "border-b-primary font-semibold text-foreground"
@@ -72,7 +72,7 @@ export async function OrderStatusTabs({ current, counts, params }: OrderStatusTa
             {tab.label}
             <span
               className={cn(
-                "inline-flex h-5 min-w-6 items-center justify-center rounded-badge-md px-1.5 text-body-caption-bold tabular-nums",
+                "inline-flex h-5 min-w-6 items-center justify-center rounded-badge-md px-1.5 text-body-caption font-semibold tabular-nums",
                 selected ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground",
               )}
             >

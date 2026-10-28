@@ -1,6 +1,22 @@
 import { describe, expect, it } from "vitest";
 
-import { formatStockQuantity, formatUnitCost } from "../stockFormat";
+import { formatStockQuantity, formatUnitCost, typedNumber } from "../stockFormat";
+
+describe("typedNumber", () => {
+  it("reads plain numbers, signs and decimals included", () => {
+    expect(typedNumber("18")).toBe(18);
+    expect(typedNumber(" 0.5 ")).toBe(0.5);
+    expect(typedNumber("-2")).toBe(-2);
+    expect(typedNumber("0")).toBe(0);
+  });
+
+  it("is undefined for blanks and words", () => {
+    expect(typedNumber("")).toBeUndefined();
+    expect(typedNumber("   ")).toBeUndefined();
+    expect(typedNumber("two")).toBeUndefined();
+    expect(typedNumber("1,5")).toBeUndefined();
+  });
+});
 
 describe("formatStockQuantity", () => {
   it("shows whole quantities without decimals", () => {

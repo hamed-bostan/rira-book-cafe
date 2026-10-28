@@ -1,8 +1,29 @@
 import { percentChange } from "@/src/domain/entities/Analytics";
+import { CAFE_TIME_ZONE, cafeDayRange } from "@/src/domain/entities/CafeTime";
 import type { Locale } from "@/src/i18n/routing";
 import { formatNumber } from "@/src/lib/formatNumber";
 
 const NUMBER_TAG: Record<Locale, string> = { en: "en-US", fa: "fa-IR" };
+/** Dates follow the Jalali calendar in Persian, like every other date. */
+const DATE_TAG: Record<Locale, string> = { en: "en-US", fa: "fa-IR-u-ca-persian" };
+
+const dayTipFormatters = new Map<Locale, Intl.DateTimeFormat>();
+
+/** A day's bar tooltip heading: "Thu, Oct 22" / «پنجشنبه ۳۰ مهر». */
+export function formatDayTip(day: string, locale: Locale): string {
+  let formatter = dayTipFormatters.get(locale);
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat(DATE_TAG[locale], {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      timeZone: CAFE_TIME_ZONE,
+    });
+    dayTipFormatters.set(locale, formatter);
+  }
+  // Noon, so the zone conversion can never tip the day into a neighbour.
+  return formatter.format(new Date(cafeDayRange(day).from.getTime() + 12 * 60 * 60 * 1000));
+}
 
 const changeFormatters = new Map<Locale, Intl.NumberFormat>();
 

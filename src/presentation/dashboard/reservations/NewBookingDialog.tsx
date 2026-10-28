@@ -24,13 +24,13 @@ import { formatEventTime } from "@/src/lib/formatEventWhen";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
-import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
 import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
 import { Select } from "@/src/presentation/design-system/components/form/Select/Select";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
-import { Modal, ModalContent } from "@/src/presentation/design-system/components/Modal/Modal";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
+import { DashboardDialog } from "../DashboardDialog";
+import { DashboardField } from "../DashboardField";
 import { tableNameValues } from "../floor/tableName";
 
 import { reservationsApi } from "./reservation-api";
@@ -111,9 +111,7 @@ export function NewBookingDialog({ day, dayLabel, now, bookings, events }: NewBo
   );
   const blocked = !guestName.trim() || !guestPhone.trim();
 
-  function submit(event: React.FormEvent): void {
-    event.preventDefault();
-    if (blocked) return;
+  function submit(): void {
     setError(null);
     startTransition(async () => {
       try {
@@ -158,126 +156,103 @@ export function NewBookingDialog({ day, dayLabel, now, bookings, events }: NewBo
   return (
     <>
       <Button size="control-md" type="button" className="gap-2 px-4" onClick={openDialog}>
-        <Icon icon={Plus} size="sm" />
+        <Icon icon={Plus} size="icon-md" />
         {t("newBooking")}
       </Button>
 
-      <Modal open={open} onOpenChange={setOpen}>
-        <ModalContent
-          title={t("newBooking")}
-          className="flex max-h-[calc(100dvh-2rem)] max-w-md flex-col overflow-y-auto"
-          titleClassName="text-start text-body-lead"
-        >
-          <p className="mt-1 text-body-default text-muted-foreground sm:text-body-small">
-            {t("newBookingSub", { day: dayLabel })}
-          </p>
-          <form onSubmit={submit} className="mt-5 flex flex-col gap-5">
-            <div className="grid grid-cols-2 gap-4">
-              <label className="col-span-2 flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
-                {t("guestName")}
-                <Input
-                  size="control-md"
-                  value={guestName}
-                  onChange={(event) => setGuestName(event.target.value)}
-                  maxLength={MAX_GUEST_NAME_LENGTH}
-                  placeholder={t("guestNamePlaceholder")}
-                  autoComplete="off"
-                  required
-                />
-              </label>
-              <label className="col-span-2 flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
-                {t("guestPhone")}
-                <Input
-                  size="control-md"
-                  type="tel"
-                  inputMode="tel"
-                  value={guestPhone}
-                  onChange={(event) => setGuestPhone(event.target.value)}
-                  placeholder="0912 345 6789"
-                  autoComplete="off"
-                  dir="ltr"
-                  required
-                />
-              </label>
-              <label className="flex min-w-0 flex-col gap-1.5 text-body-small-emphasis text-foreground">
-                {t("time")}
-                <Select
-                  size="control-md"
-                  value={time}
-                  onChange={(event) => {
-                    setTime(event.target.value);
-                    setPick(null);
-                  }}
-                >
-                  {SLOTS.map((slot) => (
-                    <option key={slot} value={slot} disabled={isPast(slot)}>
-                      {formatEventTime(startOf(slot).toISOString(), locale)}
-                    </option>
-                  ))}
-                </Select>
-              </label>
-              <label className="flex min-w-0 flex-col gap-1.5 text-body-small-emphasis text-foreground">
-                {t("party")}
-                <Select
-                  size="control-md"
-                  value={String(partySize)}
-                  onChange={(event) => {
-                    const size = Number(event.target.value);
-                    setPartySize(size);
-                    // A table too small for the new party is let go.
-                    const picked = choices.find((choice) => choice.label === pick);
-                    if (picked && picked.seats < size) setPick(null);
-                  }}
-                >
-                  {Array.from(
-                    { length: MAX_PARTY_SIZE - MIN_PARTY_SIZE + 1 },
-                    (_, index) => index + MIN_PARTY_SIZE,
-                  ).map((size) => (
+      <DashboardDialog
+        open={open}
+        onOpenChange={setOpen}
+        title={t("newBooking")}
+        subtitle={t("newBookingSub", { day: dayLabel })}
+        submitLabel={pick ? t("confirmBooking") : t("saveAsRequest")}
+        blocked={blocked}
+        pending={pending}
+        onSubmit={submit}
+        error={error}
+      >
+        {/* The design spaces the fields, the table heading and the floor a block apart. */}
+        <div className="flex flex-col gap-5">
+          <div className="grid grid-cols-2 gap-4">
+            <DashboardField label={t("guestName")} className="col-span-2">
+              <Input
+                size="control-md"
+                value={guestName}
+                onChange={(event) => setGuestName(event.target.value)}
+                maxLength={MAX_GUEST_NAME_LENGTH}
+                placeholder={t("guestNamePlaceholder")}
+                autoComplete="off"
+                required
+              />
+            </DashboardField>
+            <DashboardField label={t("guestPhone")} className="col-span-2">
+              <Input
+                size="control-md"
+                type="tel"
+                inputMode="tel"
+                value={guestPhone}
+                onChange={(event) => setGuestPhone(event.target.value)}
+                placeholder="0912 345 6789"
+                autoComplete="off"
+                dir="ltr"
+                required
+              />
+            </DashboardField>
+            <DashboardField label={t("time")}>
+              <Select
+                size="control-md"
+                value={time}
+                onChange={(event) => {
+                  setTime(event.target.value);
+                  setPick(null);
+                }}
+              >
+                {SLOTS.map((slot) => (
+                  <option key={slot} value={slot} disabled={isPast(slot)}>
+                    {formatEventTime(startOf(slot).toISOString(), locale)}
+                  </option>
+                ))}
+              </Select>
+            </DashboardField>
+            <DashboardField label={t("party")}>
+              <Select
+                size="control-md"
+                value={String(partySize)}
+                onChange={(event) => {
+                  const size = Number(event.target.value);
+                  setPartySize(size);
+                  // A table too small for the new party is let go.
+                  const picked = choices.find((choice) => choice.label === pick);
+                  if (picked && picked.seats < size) setPick(null);
+                }}
+              >
+                {Array.from({ length: MAX_PARTY_SIZE - MIN_PARTY_SIZE + 1 }, (_, index) => index + MIN_PARTY_SIZE).map(
+                  (size) => (
                     <option key={size} value={size}>
                       {t("partySize", { count: size, formatted: formatNumber(size, locale) })}
                     </option>
-                  ))}
-                </Select>
-              </label>
-              <label className="col-span-2 flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
-                {t("noteOptional")}
-                <Input
-                  size="control-md"
-                  value={note}
-                  onChange={(event) => setNote(event.target.value)}
-                  maxLength={MAX_RESERVATION_NOTE_LENGTH}
-                  placeholder={t("notePlaceholder")}
-                  autoComplete="off"
-                />
-              </label>
-            </div>
-
-            <div className="flex flex-col gap-3">
-              <p className="text-body-caption-bold tracking-wider text-muted-foreground uppercase">
-                {t("tableOptional")}
-              </p>
-              <TableChoiceGrid choices={choices} value={pick} onChange={setPick} clearable />
-            </div>
-
-            {error ? <FormMessage>{error}</FormMessage> : null}
-
-            <div className="flex flex-wrap justify-end gap-2">
-              <Button
-                type="button"
-                variant="secondary"
+                  ),
+                )}
+              </Select>
+            </DashboardField>
+            <DashboardField label={t("noteOptional")} className="col-span-2">
+              <Input
                 size="control-md"
-                className="px-4"
-                onClick={() => setOpen(false)}
-              >
-                {t("dialogCancel")}
-              </Button>
-              <Button type="submit" size="control-md" className="px-4" loading={pending} disabled={blocked}>
-                {pick ? t("confirmBooking") : t("saveAsRequest")}
-              </Button>
-            </div>
-          </form>
-        </ModalContent>
-      </Modal>
+                value={note}
+                onChange={(event) => setNote(event.target.value)}
+                maxLength={MAX_RESERVATION_NOTE_LENGTH}
+                placeholder={t("notePlaceholder")}
+                autoComplete="off"
+              />
+            </DashboardField>
+          </div>
+
+          <p className="text-body-caption font-semibold tracking-wider text-muted-foreground uppercase">
+            {t("tableOptional")}
+          </p>
+          <TableChoiceGrid choices={choices} value={pick} onChange={setPick} clearable />
+        </div>
+      </DashboardDialog>
     </>
   );
 }

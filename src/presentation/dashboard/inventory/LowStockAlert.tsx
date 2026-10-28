@@ -31,7 +31,7 @@ export async function LowStockAlert({ items }: { items: StockItem[] }) {
       className="flex flex-col gap-3 rounded-card-lg border border-error-border bg-error px-5 py-4"
     >
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        <Icon icon={AlertTriangle} size="md" className="text-error-foreground sm:size-5" />
+        <Icon icon={AlertTriangle} size="icon-lg" className="text-error-foreground" />
         <h2 id="low-stock-alert" className="text-body-strong text-foreground sm:text-body-small-strong">
           {t("alert.title", { count: alerts.length })}
         </h2>
@@ -39,7 +39,7 @@ export async function LowStockAlert({ items }: { items: StockItem[] }) {
           href="/dashboard/inventory?level=low"
           // 44px tall to the touch on a phone, without moving the line.
           className={cn(
-            "-my-3 ms-auto py-3 text-body-small-emphasis whitespace-nowrap text-foreground underline underline-offset-4 transition-colors hover:text-error-foreground sm:my-0 sm:py-0",
+            "-my-3 ms-auto py-3 text-body-default font-medium whitespace-nowrap text-foreground underline underline-offset-4 transition-colors hover:text-error-foreground sm:my-0 sm:py-0 sm:text-body-small",
             focusRing,
           )}
         >
@@ -62,7 +62,7 @@ export async function LowStockAlert({ items }: { items: StockItem[] }) {
             <span dir="auto">{item.name}</span> ·{" "}
             {item.level === "out"
               ? t("level.out")
-              : `${formatNumber(item.onHand, locale, 3)} ${t(`unit.${item.unit}`)}`}
+              : t("alert.left", { amount: `${formatNumber(item.onHand, locale, 3)} ${t(`unit.${item.unit}`)}` })}
           </li>
         ))}
         {alerts.length > SHOWN ? (

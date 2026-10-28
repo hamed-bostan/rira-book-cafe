@@ -7,6 +7,7 @@ import { Link } from "@/src/i18n/navigation";
 import { formatEventTime } from "@/src/lib/formatEventWhen";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { cn } from "@/src/lib/utils";
+import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 
@@ -41,7 +42,9 @@ export async function EventBookingRow({ event }: EventBookingRowProps) {
       className="flex flex-wrap items-start gap-x-5 gap-y-3 bg-info px-5 py-4"
     >
       <div className="flex w-24 shrink-0 flex-col whitespace-nowrap tabular-nums">
-        <span className="text-body-lead font-semibold text-foreground">{formatEventTime(event.startsAt, locale)}</span>
+        <span className="text-body-lead font-semibold text-foreground lg:text-heading-subsection">
+          {formatEventTime(event.startsAt, locale)}
+        </span>
         <span className="text-body-small text-muted-foreground sm:text-body-caption">
           {t("until", { time: formatEventTime(event.endsAt, locale) })}
         </span>
@@ -49,19 +52,19 @@ export async function EventBookingRow({ event }: EventBookingRowProps) {
 
       <div className="flex min-w-0 flex-[1_1_15rem] flex-col gap-1.5">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="text-body-strong text-foreground sm:text-body-small-strong">{event.title}</span>
-          <span className="inline-flex h-6 items-center gap-1.5 rounded-badge-md border border-info-border bg-background px-2 text-body-caption-bold whitespace-nowrap text-info-foreground">
+          <span className="text-body-strong text-foreground">{event.title}</span>
+          <Badge variant="info" appearance="outline" size="compact" className="gap-1.5 bg-background">
             <Icon icon={CalendarDays} size="xs" />
             {t("eventBadge", { kind: tEvents(`kind.${event.kind}`) })}
-          </span>
+          </Badge>
         </div>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-body-default text-foreground/80 sm:text-body-small">
           <span className="flex items-center gap-1.5 font-medium">
-            <Icon icon={Armchair} size="sm" className="text-info-foreground" />
+            <Icon icon={Armchair} size="icon-md" className="text-info-foreground" />
             {tables}
           </span>
           <span className="flex items-center gap-1.5 whitespace-nowrap">
-            <Icon icon={Users} size="sm" className="text-muted-foreground" />
+            <Icon icon={Users} size="icon-md" className="text-muted-foreground" />
             {event.capacity === undefined
               ? t("eventSeatsUnlimited", { taken })
               : t("eventSeats", { taken, capacity: formatNumber(event.capacity, locale) })}

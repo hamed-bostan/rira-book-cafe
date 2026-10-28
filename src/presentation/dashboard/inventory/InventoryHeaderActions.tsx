@@ -43,7 +43,7 @@ export function InventoryHeaderActions({ countItemId, receiveItemId }: Inventory
           if (receiveItemId !== undefined) openDialog("receive", receiveItemId);
         }}
       >
-        <Icon icon={Plus} size="sm" />
+        <Icon icon={Plus} size="icon-md" />
         {t("receive.heading")}
       </Button>
     </>

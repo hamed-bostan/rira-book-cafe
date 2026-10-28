@@ -9,8 +9,10 @@ import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
+import { DashboardField } from "@/src/presentation/dashboard/DashboardField";
+import { FIELD_HINT, FIELD_LABEL } from "@/src/presentation/dashboard/fieldStyles";
+import { FormAlert } from "@/src/presentation/dashboard/FormAlert";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
-import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
 import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
 import { Switch } from "@/src/presentation/design-system/components/Switch/Switch";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
@@ -115,17 +117,14 @@ export function LoyaltySettingsForm({ settings }: { settings: LoyaltySettings })
       <label htmlFor={switchId} className="flex min-h-11 cursor-pointer items-center gap-3 sm:min-h-8">
         <Switch id={switchId} size="sm" checked={form.enabled} onCheckedChange={(checked) => set("enabled", checked)} />
         <span className="flex flex-col">
-          <span className="text-body-small-emphasis text-foreground">{t("clubOn")}</span>
-          <span className="text-body-small text-muted-foreground sm:text-body-caption">
-            {form.enabled ? t("clubOnHint") : t("clubOffHint")}
-          </span>
+          <span className={FIELD_LABEL}>{t("clubOn")}</span>
+          <span className={FIELD_HINT}>{form.enabled ? t("clubOnHint") : t("clubOffHint")}</span>
         </span>
       </label>
 
       <div className="grid grid-cols-[repeat(auto-fit,minmax(10rem,1fr))] gap-4">
         {NUMBER_FIELDS.map((field) => (
-          <label key={field} className="flex min-w-0 flex-col gap-1.5 text-body-small-emphasis text-foreground">
-            {t(`club.${field}`)}
+          <DashboardField key={field} label={t(`club.${field}`)} hint={t(`clubHint.${field}`)}>
             <Input
               size="control-md"
               value={form[field]}
@@ -135,10 +134,7 @@ export function LoyaltySettingsForm({ settings }: { settings: LoyaltySettings })
               autoComplete="off"
               placeholder={PLACEHOLDER[field]}
             />
-            <span className="text-body-small font-normal text-muted-foreground sm:text-body-caption">
-              {t(`clubHint.${field}`)}
-            </span>
-          </label>
+          </DashboardField>
         ))}
       </div>
 
@@ -146,7 +142,7 @@ export function LoyaltySettingsForm({ settings }: { settings: LoyaltySettings })
         {example()}
       </p>
 
-      {error ? <FormMessage>{error}</FormMessage> : null}
+      {error ? <FormAlert>{error}</FormAlert> : null}
 
       <div className="flex flex-wrap justify-end gap-2">
         {dirty ? (
@@ -154,7 +150,7 @@ export function LoyaltySettingsForm({ settings }: { settings: LoyaltySettings })
             type="button"
             variant="secondary"
             size="control-md"
-            className="px-4"
+            className="px-3"
             disabled={pending}
             onClick={() => {
               setForm(saved);

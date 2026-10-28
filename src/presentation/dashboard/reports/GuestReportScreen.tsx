@@ -19,6 +19,17 @@ import type { GuestReportWire } from "./report-response-schema";
 
 const DAYS_PER_WEEK = 7;
 
+/** Two leading initials, e.g. "Maryam Kazemi" → "MK". */
+function initialsOf(name: string): string {
+  return name
+    .split(" ")
+    .map((part) => part[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+}
+
 type GuestReportScreenProps = {
   report: GuestReportWire;
   selected: AnalyticsRangePreset | "custom";
@@ -93,9 +104,11 @@ export async function GuestReportScreen({ report, selected, rangeQuery }: GuestR
         className="gap-2"
       >
         {!regularsShown ? (
-          <p className="text-body-default text-muted-foreground sm:text-body-small">{t("guests.pickLonger")}</p>
+          <p className="text-body-default text-pretty text-muted-foreground sm:text-body-small">
+            {t("guests.pickLonger")}
+          </p>
         ) : report.topGuests.length === 0 ? (
-          <p className="text-body-default text-muted-foreground sm:text-body-small">{t("noSales")}</p>
+          <p className="text-body-default text-pretty text-muted-foreground sm:text-body-small">{t("noSales")}</p>
         ) : (
           <ol>
             {report.topGuests.map((guest, index) => (
@@ -103,7 +116,16 @@ export async function GuestReportScreen({ report, selected, rangeQuery }: GuestR
                 key={guest.userId}
                 className={cn("flex items-center gap-3 py-3", index > 0 && "border-t border-border")}
               >
-                <Avatar name={guest.name} className="size-10 text-body-small font-bold" />
+                <Avatar
+                  // The initials at body size — 16px on a phone, 14px from `sm` — which
+                  // Avatar's own initials (14px throughout) don't follow.
+                  fallback={
+                    <span aria-hidden className="text-body-default font-bold sm:text-body-small">
+                      {initialsOf(guest.name)}
+                    </span>
+                  }
+                  className="size-10"
+                />
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span
                     dir="auto"

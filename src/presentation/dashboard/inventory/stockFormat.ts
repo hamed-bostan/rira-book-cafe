@@ -19,6 +19,18 @@ export function formatStockQuantity(value: number, locale: Locale): string {
   return formatNumber(rounded, locale, decimalsOf(rounded, QUANTITY_DECIMALS));
 }
 
+/**
+ * The number a field holds when it reads as one at all — "-2", "0", "1.5" — else
+ * `undefined`. Lets a dialog say which rule a refused value broke ("can't be
+ * negative") instead of only that it was refused.
+ */
+export function typedNumber(value: string): number | undefined {
+  const text = value.trim();
+  if (text === "") return undefined;
+  const number = Number(text);
+  return Number.isFinite(number) ? number : undefined;
+}
+
 /** What one unit costs, in Toman — whole for most items, to two places for a gram of saffron. */
 export function formatUnitCost(value: number, locale: Locale): string {
   return formatNumber(value, locale, value >= 100 ? 0 : decimalsOf(value, UNIT_COST_DECIMALS));

@@ -4,6 +4,7 @@ import { orderItemCount, type Order } from "@/src/domain/entities/Order";
 import { Link } from "@/src/i18n/navigation";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { cn } from "@/src/lib/utils";
+import { DashboardEmptyState } from "@/src/presentation/dashboard/DashboardEmptyState";
 import { OrderStatusBadge } from "@/src/presentation/dashboard/orders/OrderStatusBadge";
 
 import { OverviewPanel, OverviewPanelRow } from "./OverviewPanel";
@@ -39,10 +40,11 @@ export async function OrderQueuePanel({ orders, total, now, canFulfill }: OrderQ
       action={{ href: "/dashboard/orders?status=active", label: t("viewAll") }}
     >
       {orders.length === 0 ? (
-        <div className="flex flex-col items-center gap-1 border-t border-border px-5 py-10 text-center">
-          <p className="text-body-strong text-foreground sm:text-body-small-strong">{t("queueEmptyTitle")}</p>
-          <p className="text-body-default text-muted-foreground sm:text-body-small">{t("queueEmptyBody")}</p>
-        </div>
+        <DashboardEmptyState
+          title={t("queueEmptyTitle")}
+          body={t("queueEmptyBody")}
+          className="border-t border-border py-10"
+        />
       ) : (
         orders.map((order) => {
           const minutes = minutesWaiting(order.placedAt, now);
@@ -79,7 +81,7 @@ export async function OrderQueuePanel({ orders, total, now, canFulfill }: OrderQ
                       ? tOrders("table", { table: order.tableLabel ?? "?" })
                       : tOrders("service.takeaway")}
                   </span>
-                  <OrderStatusBadge status={order.status} />
+                  <OrderStatusBadge status={order.status} size="compact" />
                 </span>
                 <span className="truncate text-body-small text-muted-foreground sm:text-body-caption">
                   {order.customerName} · {tOrders("itemCount", { count: orderItemCount(order) })}

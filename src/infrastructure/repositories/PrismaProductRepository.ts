@@ -119,7 +119,7 @@ export class PrismaProductRepository implements IProductRepository {
     page: PageRequest<AdminProductSort>,
     locale?: string,
   ): Promise<Page<Product>> {
-    const where = adminWhere(filters);
+    const where = await adminWhere(this.db, filters, locale);
     const { skip, take } = toSkipTake(page);
 
     // One transaction so the rows and the count are read from the same snapshot.
@@ -244,14 +244,49 @@ function textMatch(query: string): Prisma.ProductWhereInput[] {
 }
 
 /**
- * `WHERE` for the management list. Unlike the public search, an empty filter is
- * legitimate and matches everything. The text term matches canonical columns only —
- * an operator searching here is looking for the row they'd edit.
+ * Ids of the categories whose name holds `query` — the canonical name, or the
+ * active locale's, which is the one the dashboard's tabs show. Categories have no
+ * Prisma relation to products, so they're resolved first and matched by id.
  */
-function adminWhere(filters: AdminProductFilters): Prisma.ProductWhereInput {
+async function categoryIdsNamed(db: PrismaDb, query: string, locale?: string): Promise<string[]> {
+  const nameHolds = { contains: query, mode: "insensitive" } satisfies Prisma.StringFilter;
+  const [canonical, translated] = await Promise.all([
+    db.category.findMany({ where: { name: nameHolds }, select: { id: true } }),
+    locale
+      ? db.categoryTranslation.findMany({ where: { locale, name: nameHolds }, select: { categoryId: true } })
+      : Promise.resolve([]),
+  ]);
+  return [...new Set([...canonical.map((row) => row.id), ...translated.map((row) => row.categoryId)])];
+}
+
+/**
+ * The management list's text match: what a row shows — the item's name, its
+ * author and size (the line under the name), its description — and the name of
+ * its category, so "cakes" finds every cake.
+ */
+async function adminTextMatch(db: PrismaDb, query: string, locale?: string): Promise<Prisma.ProductWhereInput[]> {
+  const categoryIds = await categoryIdsNamed(db, query, locale);
+  return [
+    ...textMatch(query),
+    { unit: { contains: query, mode: "insensitive" } },
+    ...(categoryIds.length > 0 ? [{ categoryId: { in: categoryIds } }] : []),
+  ];
+}
+
+/**
+ * `WHERE` for the management list. Unlike the public search, an empty filter is
+ * legitimate and matches everything. The text term matches the item's canonical
+ * columns — an operator searching here is looking for the row they'd edit — and
+ * its category's name.
+ */
+async function adminWhere(
+  db: PrismaDb,
+  filters: AdminProductFilters,
+  locale?: string,
+): Promise<Prisma.ProductWhereInput> {
   const and: Prisma.ProductWhereInput[] = [];
 
-  if (filters.query) and.push({ OR: textMatch(filters.query) });
+  if (filters.query) and.push({ OR: await adminTextMatch(db, filters.query, locale) });
   if (filters.categoryId) and.push({ categoryId: filters.categoryId });
   if (filters.kind) and.push({ kind: filters.kind });
 

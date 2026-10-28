@@ -3,7 +3,8 @@
 import { cn } from "@/src/lib/utils";
 import { PopoverClose } from "@/src/presentation/design-system/components/Popover/Popover";
 
-import { ListFilterPopover } from "./ListFilterPopover";
+import { ListFilterPopover, type ListFilterSize } from "./ListFilterPopover";
+import { LIST_OPTIONS, ListRadioOption } from "./ListOption";
 
 import type { ListFilterOption } from "./ListFilterSelect";
 
@@ -25,6 +26,11 @@ type ControlledChoicePickerProps = {
    * first"). Without it the trigger shows the value alone.
    */
   triggerLabel?: string;
+  /**
+   * `md` (the 40px trigger of the forms not redesigned yet) by default; a
+   * redesigned toolbar passes `control-md`.
+   */
+  size?: ListFilterSize;
 };
 
 /** A styled single-choice picker for client-side table filters. */
@@ -42,6 +48,7 @@ export function ControlledChoicePicker({
   ariaInvalid,
   triggerClassName,
   triggerLabel,
+  size = "md",
 }: ControlledChoicePickerProps) {
   const selectedLabel =
     options.find((option) => option.value === value)?.label ?? placeholder ?? options[0]?.label ?? label;
@@ -57,10 +64,24 @@ export function ControlledChoicePicker({
       triggerAriaInvalid={ariaInvalid}
       contentClassName="w-[var(--radix-popover-trigger-width)] min-w-48"
       triggerClassName={triggerClassName}
+      size={size}
     >
-      <div role="radiogroup" aria-label={label} className="flex flex-col gap-1 p-1">
+      <div role="radiogroup" aria-label={label} className={size === "md" ? "flex flex-col gap-1 p-1" : LIST_OPTIONS}>
         {options.map((option) => {
           const isSelected = option.value === value;
+          if (size !== "md") {
+            return (
+              <PopoverClose asChild key={option.value}>
+                <ListRadioOption
+                  name={`controlled-choice-${label}`}
+                  value={option.value}
+                  label={option.label}
+                  selected={isSelected}
+                  onSelect={() => onValueChange(option.value)}
+                />
+              </PopoverClose>
+            );
+          }
           return (
             <PopoverClose asChild key={option.value}>
               <label

@@ -1,4 +1,4 @@
-import { BookOpen, MessageSquare, Phone, Users } from "lucide-react";
+import { BookOpen, Bookmark, MessageSquare, Phone } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { isBookLoanOverdue, type BookLoan } from "@/src/domain/entities/BookLoan";
@@ -6,6 +6,7 @@ import { cafeDayOf, cafeDaysBetween } from "@/src/domain/entities/CafeTime";
 import { formatCafeDayShort } from "@/src/lib/formatCafeDay";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { cn } from "@/src/lib/utils";
+import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 
@@ -64,17 +65,17 @@ export async function BookLoanRow({ loan, now, waiting, firstInLine, canManage }
     >
       <div className="flex min-w-0 flex-[1_1_15rem] flex-col gap-1.5">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <Icon icon={BookOpen} size="sm" className="text-muted-foreground" />
-          <span className="text-body-strong text-foreground sm:text-body-small-strong">{loan.bookTitle}</span>
+          <Icon icon={BookOpen} size="icon-md" className="text-icon-accent" />
+          <span className="text-body-strong text-foreground">{loan.bookTitle}</span>
           {loan.bookAuthor ? (
             <span className="text-body-default text-muted-foreground sm:text-body-small">{loan.bookAuthor}</span>
           ) : null}
           <BookLoanStatusBadge status={loan.status} overdue={overdue} outlined />
           {loan.status === "out" && waiting > 0 ? (
-            <span className="inline-flex h-6 items-center gap-1.5 rounded-badge-md border border-info-border bg-info px-2 text-body-caption-bold whitespace-nowrap text-info-foreground">
-              <Icon icon={Users} size="xs" />
+            <Badge variant="info" appearance="outline" size="compact" className="gap-1.5">
+              <Icon icon={Bookmark} size="xs" />
               {t("peopleWaiting", { count: waiting, formatted: formatNumber(waiting, locale) })}
-            </span>
+            </Badge>
           ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-body-default sm:text-body-small">
@@ -88,7 +89,7 @@ export async function BookLoanRow({ loan, now, waiting, firstInLine, canManage }
               focusRing,
             )}
           >
-            <Icon icon={Phone} size="sm" className="text-muted-foreground" />
+            <Icon icon={Phone} size="icon-md" className="text-muted-foreground" />
             {loan.borrowerPhone}
           </a>
         </div>
@@ -102,7 +103,7 @@ export async function BookLoanRow({ loan, now, waiting, firstInLine, canManage }
         </p>
         {loan.note ? (
           <p className="flex items-start gap-1.5 text-body-default text-pretty text-muted-foreground sm:text-body-small">
-            <Icon icon={MessageSquare} size="sm" className="mt-0.5 shrink-0" />
+            <Icon icon={MessageSquare} size="icon-md" className="mt-0.5 shrink-0" />
             {loan.note}
           </p>
         ) : null}

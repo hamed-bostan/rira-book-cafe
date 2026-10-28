@@ -15,6 +15,7 @@ import {
 } from "@/src/domain/entities/Order";
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
+import { DashboardDialog } from "@/src/presentation/dashboard/DashboardDialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,7 +27,6 @@ import {
   DropdownMenuSubTrigger,
 } from "@/src/presentation/design-system/components/DropdownMenu/DropdownMenu";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
-import { ConfirmSheet } from "@/src/presentation/design-system/components/Sheet/ConfirmSheet";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { ordersApi } from "./order-api";
@@ -37,12 +37,13 @@ type OrderRowActionsProps = {
 
 /**
  * One order's commands behind a "⋯" trigger: open it, take the next step, record
- * the payment, or cancel it. Only what the order's state allows is listed — the
- * same rules the detail screen and the API use.
+ * the payment, or cancel it (after a confirmation — it can't be undone). Only what
+ * the order's state allows is listed — the same rules the detail screen and the
+ * API use.
  *
  * Each action writes over the REST API, then `router.refresh()` re-runs the server
- * render. A 409 (someone else moved it first) shows as a toast and the refresh
- * brings the real state.
+ * render. A 409 (someone else moved it first) shows as a toast — or in the cancel
+ * dialog — and the refresh brings the real state.
  */
 export function OrderRowActions({ order }: OrderRowActionsProps) {
   const t = useTranslations("dashOrders");
@@ -50,25 +51,34 @@ export function OrderRowActions({ order }: OrderRowActionsProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [confirmCancel, setConfirmCancel] = React.useState(false);
+  const [cancelError, setCancelError] = React.useState<string | null>(null);
   const [pending, startTransition] = React.useTransition();
 
   const next = nextOrderStatus(order.status);
   const payable = canMarkPaid(order);
   const cancellable = isStaffCancellable(order.status);
 
-  function moveTo(to: OrderStatus): void {
+  function advance(to: OrderStatus): void {
     startTransition(async () => {
       try {
         await ordersApi.changeStatus(order.id, { status: to });
-        toast({
-          tone: "success",
-          title:
-            to === "cancelled"
-              ? t("cancelledToast", { number: order.orderNumber })
-              : t("statusChanged", { number: order.orderNumber, status: t(`status.${to}`) }),
-        });
+        toast({ tone: "success", title: t("movedToast", { number: order.orderNumber, status: to }) });
       } catch (err) {
         toast({ tone: "error", title: localizeApiError(err, tApiErrors, t("statusError")) });
+      }
+      router.refresh();
+    });
+  }
+
+  function cancel(): void {
+    setCancelError(null);
+    startTransition(async () => {
+      try {
+        await ordersApi.changeStatus(order.id, { status: "cancelled" });
+        toast({ tone: "success", title: t("cancelledToast", { number: order.orderNumber }) });
+        setConfirmCancel(false);
+      } catch (err) {
+        setCancelError(localizeApiError(err, tApiErrors, t("statusError")));
       }
       router.refresh();
     });
@@ -91,20 +101,21 @@ export function OrderRowActions({ order }: OrderRowActionsProps) {
       <DropdownMenu>
         <DropdownMenuIconTrigger
           disabled={pending}
-          // The dense table's borderless "⋯": 44px to the touch on a phone, 32px from `sm`.
+          // The dense table's borderless "⋯", as the Orders design draws it: 44px to
+          // the touch on a phone, 32px from `sm`.
           className="size-11 text-muted-foreground hover:bg-muted hover:text-foreground sm:size-8"
           aria-label={t("rowActionsAria", { number: order.orderNumber })}
         >
-          <Icon icon={MoreHorizontal} size="xs" />
+          <Icon icon={MoreHorizontal} size="icon-md" />
         </DropdownMenuIconTrigger>
         <DropdownMenuContent>
           <DropdownMenuItem onSelect={() => router.push(`/dashboard/orders/${order.id}`)}>
-            <Icon icon={Eye} size="sm" />
+            <Icon icon={Eye} size="icon-md" />
             {t("viewDetails")}
           </DropdownMenuItem>
           {next ? (
-            <DropdownMenuItem onSelect={() => moveTo(next)}>
-              <Icon icon={next === "preparing" ? Play : CircleCheck} size="sm" />
+            <DropdownMenuItem onSelect={() => advance(next)}>
+              <Icon icon={next === "preparing" ? Play : CircleCheck} size="icon-md" />
               {t(`advance.${next}`)}
             </DropdownMenuItem>
           ) : null}
@@ -113,8 +124,8 @@ export function OrderRowActions({ order }: OrderRowActionsProps) {
             // paid is a choice of method rather than a bare toggle.
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>
-                <Icon icon={CreditCard} size="sm" />
-                {t("markPaid")}
+                <Icon icon={CreditCard} size="icon-md" />
+                {t("markAsPaid")}
               </DropdownMenuSubTrigger>
               <DropdownMenuSubContent>
                 {PAYMENT_METHODS.map((method) => (
@@ -128,8 +139,14 @@ export function OrderRowActions({ order }: OrderRowActionsProps) {
           {cancellable ? (
             <>
               <DropdownMenuSeparator />
-              <DropdownMenuItem destructive onSelect={() => setConfirmCancel(true)}>
-                <Icon icon={CircleX} size="sm" />
+              <DropdownMenuItem
+                destructive
+                onSelect={() => {
+                  setCancelError(null);
+                  setConfirmCancel(true);
+                }}
+              >
+                <Icon icon={CircleX} size="icon-md" />
                 {t("cancelOrder")}
               </DropdownMenuItem>
             </>
@@ -137,17 +154,16 @@ export function OrderRowActions({ order }: OrderRowActionsProps) {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <ConfirmSheet
+      <DashboardDialog
         open={confirmCancel}
         onOpenChange={setConfirmCancel}
         title={t("cancelTitle", { number: order.orderNumber })}
-        message={t("cancelMessage")}
-        confirmLabel={t("cancelConfirm")}
-        cancelLabel={t("cancelKeep")}
-        onConfirm={() => {
-          setConfirmCancel(false);
-          moveTo("cancelled");
-        }}
+        subtitle={t("cancelMessage")}
+        submitLabel={t("cancelConfirm")}
+        pending={pending}
+        onSubmit={cancel}
+        error={cancelError}
+        danger
       />
     </>
   );

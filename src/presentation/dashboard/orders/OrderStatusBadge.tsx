@@ -14,11 +14,17 @@ const VARIANT: Record<OrderStatus, NonNullable<BadgeProps["variant"]>> = {
   cancelled: "error",
 };
 
+type OrderStatusBadgeProps = {
+  status: OrderStatus;
+  /** `compact` is the redesigned dashboard's 24px pill; the storefront keeps the default. */
+  size?: BadgeProps["size"];
+};
+
 /** An order's status as an outlined pill with a leading dot. */
-export function OrderStatusBadge({ status }: { status: OrderStatus }) {
+export function OrderStatusBadge({ status, size }: OrderStatusBadgeProps) {
   const t = useTranslations("dashOrders");
   return (
-    <Badge variant={VARIANT[status]} appearance="outline" dot className="whitespace-nowrap">
+    <Badge variant={VARIANT[status]} appearance="outline" dot size={size} className="whitespace-nowrap">
       {t(`status.${status}`)}
     </Badge>
   );

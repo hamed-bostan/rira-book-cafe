@@ -5,10 +5,10 @@ import * as React from "react";
 
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
+import { DashboardDialog } from "@/src/presentation/dashboard/DashboardDialog";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { teamApi } from "./team-api";
-import { TeamMemberDialog } from "./TeamMemberDialog";
 
 /**
  * Which direction ownership is moving, which decides the copy:
@@ -64,11 +64,11 @@ export function TransferOwnershipDialog({ open, onOpenChange, id, name, intent }
   }
 
   return (
-    <TeamMemberDialog
+    <DashboardDialog
       open={open}
       onOpenChange={onOpenChange}
       title={t(`ownership.${intent}.title`)}
-      message={t(`ownership.${intent}.message`, { name })}
+      subtitle={t(`ownership.${intent}.message`, { name })}
       submitLabel={t(`ownership.${intent}.confirm`)}
       pending={pending}
       onSubmit={submit}

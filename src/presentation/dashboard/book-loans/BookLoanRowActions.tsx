@@ -18,8 +18,9 @@ import {
   DropdownMenuItem,
 } from "@/src/presentation/design-system/components/DropdownMenu/DropdownMenu";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
-import { ConfirmSheet } from "@/src/presentation/design-system/components/Sheet/ConfirmSheet";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
+
+import { DashboardDialog } from "../DashboardDialog";
 
 import { bookLoansApi } from "./book-loan-api";
 
@@ -35,7 +36,7 @@ type BookLoanRowActionsProps = {
 /**
  * A loan's controls: "Returned" (for a book that's out, or turned up after being
  * written off), and behind "⋯" for one that's out, "Extend 7 days" and "Mark lost"
- * (which asks first). Each writes over the REST API and `router.refresh()`es.
+ * (which asks first, in red). Each writes over the REST API and `router.refresh()`es.
  */
 export function BookLoanRowActions({ loan, firstInLine }: BookLoanRowActionsProps) {
   const t = useTranslations("dashBookLoans");
@@ -45,6 +46,7 @@ export function BookLoanRowActions({ loan, firstInLine }: BookLoanRowActionsProp
   const { toast } = useToast();
   const [pending, startTransition] = React.useTransition();
   const [confirmLost, setConfirmLost] = React.useState(false);
+  const [lostError, setLostError] = React.useState<string | null>(null);
 
   function run(change: { status: BookLoanStatus } | { extendDays: number }): void {
     startTransition(async () => {
@@ -75,6 +77,21 @@ export function BookLoanRowActions({ loan, firstInLine }: BookLoanRowActionsProp
     });
   }
 
+  // Asked first; a failure stays in the dialog so it can be tried again.
+  function markLost(): void {
+    setLostError(null);
+    startTransition(async () => {
+      try {
+        await bookLoansApi.update(loan.id, { status: "lost" });
+        toast({ tone: "success", title: t("updated.lost", { reference: loan.reference }) });
+        setConfirmLost(false);
+      } catch (err) {
+        setLostError(localizeApiError(err, tApiErrors, t("updateError")));
+      }
+      router.refresh();
+    });
+  }
+
   return (
     <div className="ms-auto flex shrink-0 items-center gap-2">
       <Button
@@ -100,24 +117,29 @@ export function BookLoanRowActions({ loan, firstInLine }: BookLoanRowActionsProp
             <DropdownMenuItem onSelect={() => run({ extendDays: EXTEND_DAYS })}>
               {t("extend", { days: EXTEND_DAYS, formatted: formatNumber(EXTEND_DAYS, locale) })}
             </DropdownMenuItem>
-            <DropdownMenuItem destructive onSelect={() => setConfirmLost(true)}>
+            <DropdownMenuItem
+              destructive
+              onSelect={() => {
+                setLostError(null);
+                setConfirmLost(true);
+              }}
+            >
               {t("markLost")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       ) : null}
 
-      <ConfirmSheet
+      <DashboardDialog
         open={confirmLost}
         onOpenChange={setConfirmLost}
         title={t("confirmLostTitle", { reference: loan.reference })}
-        message={t("confirmLostBody", { title: loan.bookTitle, name: loan.borrowerName })}
-        confirmLabel={t("markLost")}
-        cancelLabel={t("dialogCancel")}
-        onConfirm={() => {
-          setConfirmLost(false);
-          run({ status: "lost" });
-        }}
+        subtitle={t("confirmLostBody", { title: loan.bookTitle, name: loan.borrowerName })}
+        submitLabel={t("markLost")}
+        pending={pending}
+        onSubmit={markLost}
+        error={lostError}
+        danger
       />
     </div>
   );

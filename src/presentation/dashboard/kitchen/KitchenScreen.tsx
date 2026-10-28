@@ -1,19 +1,15 @@
-import { Clock, Inbox, StickyNote } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
-import { KITCHEN_LANES, KITCHEN_LATE_MINUTES, kitchenLanes, minutesWaiting } from "@/src/domain/entities/Kitchen";
-import { canServeItems, type Order } from "@/src/domain/entities/Order";
-import { Link } from "@/src/i18n/navigation";
+import { KITCHEN_LANES, kitchenLanes, lateOrderCount } from "@/src/domain/entities/Kitchen";
+import type { Order } from "@/src/domain/entities/Order";
 import { formatNumber } from "@/src/lib/formatNumber";
-import { cn } from "@/src/lib/utils";
+import { formatOrderTime } from "@/src/lib/formatOrderDate";
 import { AutoRefresh } from "@/src/presentation/components/AutoRefresh";
-import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
-import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 
-import { OrderItemServeToggle } from "../orders/OrderItemServeToggle";
-import { OrderServiceLabel } from "../orders/OrderServiceLabel";
-
-import { KitchenAdvanceButton } from "./KitchenAdvanceButton";
+import { KitchenFullScreenToggle } from "./KitchenFullScreenToggle";
+import { KitchenLane } from "./KitchenLane";
+import { KitchenLaneTabs } from "./KitchenLaneTabs";
+import { KitchenNewOrderToasts } from "./KitchenNewOrderToasts";
 
 type KitchenScreenProps = {
   /** Every active order. */
@@ -28,117 +24,64 @@ const REFRESH_SECONDS = 15;
 
 /**
  * The bar's wall screen: what's new and what's being made, oldest first, with
- * every line of each order. Lines are ticked off as they go out and each order
- * moves on with one tap — taken, then served. Presentational — the page
- * fetches over the REST API, and the board refreshes itself.
+ * every line of each order. A new order is started with one tap; while it's made
+ * its lines are ticked off, and it's marked served. The board refreshes itself
+ * (the "Live" time is that of the last refresh), announces orders that arrived
+ * since, and can take the whole screen. Presentational — the page fetches over
+ * the REST API.
  */
 export async function KitchenScreen({ orders, now, canFulfill }: KitchenScreenProps) {
   const t = await getTranslations("dashKitchen");
+  const tOrders = await getTranslations("dashOrders");
   const locale = await getLocale();
   const nowDate = new Date(now);
   const lanes = kitchenLanes(orders);
 
+  function serviceOf(order: Order): string {
+    return order.serviceType === "dineIn"
+      ? tOrders("table", { table: order.tableLabel ?? "?" })
+      : tOrders("service.takeaway");
+  }
+
   return (
-    <div className="@container flex min-w-0 flex-col gap-4">
+    <div className="flex min-w-0 flex-col gap-6">
       <AutoRefresh intervalSeconds={REFRESH_SECONDS} />
-      <div className="space-y-1">
-        <h1 className="dashboard-page-title">{t("heading")}</h1>
-        <p className="text-body-small text-muted-foreground">{t("subtitle")}</p>
-      </div>
+      <KitchenNewOrderToasts
+        notices={lanes.new.map((order) => ({
+          id: order.id,
+          text: t("newOrderToast", { number: formatNumber(order.orderNumber, locale), service: serviceOf(order) }),
+        }))}
+      />
 
-      <div className="grid grid-cols-1 gap-4 @min-[40rem]:grid-cols-2">
-        {KITCHEN_LANES.map((lane) => (
-          <section
-            key={lane}
-            aria-labelledby={`lane-${lane}`}
-            className="flex min-w-0 flex-col gap-3 rounded-card-lg bg-muted p-3"
+      <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+        <div className="flex min-w-0 flex-col gap-1">
+          <h1 className="dashboard-page-title">{t("heading")}</h1>
+          <p className="text-body-default text-pretty text-muted-foreground sm:text-body-small">{t("subtitle")}</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+          <p
+            role="status"
+            className="flex items-center gap-2 text-body-small whitespace-nowrap text-muted-foreground tabular-nums sm:text-body-caption"
           >
-            <h2 id={`lane-${lane}`} className="flex items-center justify-between px-1 text-body-strong text-foreground">
-              {t(`lane.${lane}`)}
-              <span className="rounded-full bg-background px-2.5 py-0.5 text-body-small-strong tabular-nums">
-                {formatNumber(lanes[lane].length, locale)}
-              </span>
-            </h2>
-            {lanes[lane].length === 0 ? (
-              <EmptyState icon={Inbox} title={t("laneEmpty")} className="px-1 py-6" />
-            ) : (
-              <ul className="flex flex-col gap-3">
-                {lanes[lane].map((order) => {
-                  const waited = minutesWaiting(order, nowDate);
-                  const late = waited >= KITCHEN_LATE_MINUTES;
-                  return (
-                    <li
-                      key={order.id}
-                      className={cn(
-                        "flex flex-col gap-3 rounded-card-md border bg-background p-3",
-                        late ? "border-warning-foreground" : "border-border",
-                      )}
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <Link
-                            href={`/dashboard/orders/${order.id}`}
-                            className="text-heading-subsection text-foreground hover:underline"
-                          >
-                            #{formatNumber(order.orderNumber, locale)}
-                          </Link>
-                          <OrderServiceLabel order={order} />
-                        </div>
-                        <span
-                          className={cn(
-                            "flex items-center gap-1 rounded-full px-2 py-0.5 text-body-small-strong tabular-nums",
-                            late ? "bg-warning text-warning-foreground" : "bg-muted text-muted-foreground",
-                          )}
-                        >
-                          <Icon icon={Clock} size="xs" />
-                          {t("minutes", { minutes: formatNumber(waited, locale) })}
-                        </span>
-                      </div>
-
-                      <ul className="flex flex-col gap-2">
-                        {order.items.map((item) => (
-                          <li key={item.id} className="flex items-start justify-between gap-2">
-                            <div
-                              className={cn(
-                                "min-w-0",
-                                item.servedAt ? "text-muted-foreground line-through" : "text-foreground",
-                              )}
-                            >
-                              <p className="text-body-strong">
-                                <span className="tabular-nums">{formatNumber(item.quantity, locale)}×</span> {item.name}
-                              </p>
-                              {item.note ? (
-                                <p className="text-body-small text-warning-foreground">{item.note}</p>
-                              ) : null}
-                            </div>
-                            {canFulfill && canServeItems(order.status) ? (
-                              <OrderItemServeToggle
-                                orderId={order.id}
-                                itemId={item.id}
-                                itemName={item.name}
-                                served={Boolean(item.servedAt)}
-                              />
-                            ) : null}
-                          </li>
-                        ))}
-                      </ul>
-
-                      {order.note ? (
-                        <p className="flex items-start gap-1.5 rounded-card-md bg-warning px-2 py-1.5 text-body-small text-warning-foreground">
-                          <Icon icon={StickyNote} size="xs" className="mt-0.5 shrink-0" />
-                          {order.note}
-                        </p>
-                      ) : null}
-
-                      {canFulfill ? <KitchenAdvanceButton orderId={order.id} status={order.status} /> : null}
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </section>
-        ))}
+            <span aria-hidden className="size-2 shrink-0 rounded-full bg-primary ring-4 ring-accent" />
+            {t("live", { time: formatOrderTime(now, locale) })}
+          </p>
+          <KitchenFullScreenToggle />
+        </div>
       </div>
+
+      <KitchenLaneTabs
+        label={t("lanesLabel")}
+        lanes={KITCHEN_LANES.map((lane) => ({
+          lane,
+          label: t(`lane.${lane}`),
+          count: formatNumber(lanes[lane].length, locale),
+          hasLate: lateOrderCount(lanes[lane], nowDate) > 0,
+          content: (
+            <KitchenLane lane={lane} orders={lanes[lane]} now={nowDate} serviceOf={serviceOf} canFulfill={canFulfill} />
+          ),
+        }))}
+      />
     </div>
   );
 }

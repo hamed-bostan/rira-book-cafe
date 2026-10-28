@@ -12,10 +12,10 @@ import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatCafeDayShort } from "@/src/lib/formatCafeDay";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
-import { ConfirmSheet } from "@/src/presentation/design-system/components/Sheet/ConfirmSheet";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { bookLoansApi } from "../book-loans/book-loan-api";
+import { DashboardDialog } from "../DashboardDialog";
 
 type BookHoldActionsProps = {
   entry: Pick<BookWaitlistEntry, "id" | "productId" | "status" | "guestName" | "guestPhone">;
@@ -31,7 +31,7 @@ type BookHoldActionsProps = {
  * One hold's controls. The guest who was told the book is back: "Lend now" records
  * the loan for them (the standard length), "Skip" passes the copy to the next in
  * line. A guest still waiting can be taken off the line. Skipping and removing ask
- * first. Each writes over the REST API and `router.refresh()`es.
+ * first, in red. Each writes over the REST API and `router.refresh()`es.
  */
 export function BookHoldActions({ entry, title, nextInLine, today }: BookHoldActionsProps) {
   const t = useTranslations("dashBookHolds");
@@ -41,9 +41,15 @@ export function BookHoldActions({ entry, title, nextInLine, today }: BookHoldAct
   const { toast } = useToast();
   const [pending, startTransition] = React.useTransition();
   const [confirming, setConfirming] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
 
   const ready = entry.status === "notified";
   if (!ready && entry.status !== "waiting") return null;
+
+  function ask(): void {
+    setError(null);
+    setConfirming(true);
+  }
 
   function lend(): void {
     startTransition(async () => {
@@ -70,7 +76,9 @@ export function BookHoldActions({ entry, title, nextInLine, today }: BookHoldAct
     });
   }
 
+  // Asked first; a failure stays in the dialog so it can be tried again.
   function drop(): void {
+    setError(null);
     startTransition(async () => {
       try {
         await bookLoansApi.removeFromWaitlist(entry.id);
@@ -79,8 +87,9 @@ export function BookHoldActions({ entry, title, nextInLine, today }: BookHoldAct
           title: t("removedToast", { name: entry.guestName, title }),
           description: ready && nextInLine ? t("nextToldToast", { name: nextInLine }) : undefined,
         });
+        setConfirming(false);
       } catch (err) {
-        toast({ tone: "error", title: localizeApiError(err, tApiErrors, t("actionError")) });
+        setError(localizeApiError(err, tApiErrors, t("actionError")));
       }
       router.refresh();
     });
@@ -95,7 +104,7 @@ export function BookHoldActions({ entry, title, nextInLine, today }: BookHoldAct
             variant="ghost"
             size="control-md"
             disabled={pending}
-            onClick={() => setConfirming(true)}
+            onClick={ask}
             className="px-3 font-medium text-muted-foreground hover:bg-muted hover:text-error-foreground"
           >
             {t("skip")}
@@ -113,30 +122,29 @@ export function BookHoldActions({ entry, title, nextInLine, today }: BookHoldAct
           disabled={pending}
           aria-label={t("removeAria", { name: entry.guestName })}
           title={t("removeAria", { name: entry.guestName })}
-          onClick={() => setConfirming(true)}
+          onClick={ask}
           className="text-muted-foreground hover:bg-muted hover:text-error-foreground"
         >
-          <Icon icon={X} size="sm" />
+          <Icon icon={X} size="icon-md" />
         </Button>
       )}
 
-      <ConfirmSheet
+      <DashboardDialog
         open={confirming}
         onOpenChange={setConfirming}
         title={ready ? t("skipTitle", { name: entry.guestName }) : t("removeTitle", { name: entry.guestName })}
-        message={
+        subtitle={
           ready
             ? nextInLine
               ? t("skipNext", { name: nextInLine, title })
               : t("skipNobody", { title })
             : t("removeBody", { title })
         }
-        confirmLabel={ready ? t("skip") : t("remove")}
-        cancelLabel={t("back")}
-        onConfirm={() => {
-          setConfirming(false);
-          drop();
-        }}
+        submitLabel={ready ? t("skip") : t("remove")}
+        pending={pending}
+        onSubmit={drop}
+        error={error}
+        danger
       />
     </span>
   );

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   dayRange,
   daysOf,
+  endsBeforeDayEnd,
   fillDailySeries,
   fillHourlySeries,
   percentChange,
@@ -23,10 +24,27 @@ describe("ranges", () => {
   });
 
   it("compares with the same number of days right before", () => {
-    expect(previousPeriod(dayRange("2026-10-15", "2026-10-21"))).toMatchObject({
-      fromDay: "2026-10-08",
-      toDay: "2026-10-14",
-    });
+    const previous = previousPeriod(dayRange("2026-10-15", "2026-10-21"), NOW);
+    expect(previous).toMatchObject({ fromDay: "2026-10-08", toDay: "2026-10-14" });
+    expect(previous.to).toEqual(dayRange("2026-10-14", "2026-10-14").to);
+    expect(endsBeforeDayEnd(previous)).toBe(false);
+  });
+
+  it("compares today with yesterday at this time on the cafe clock", () => {
+    // 12:30 UTC is 16:00 in Tehran.
+    const now = new Date("2026-10-21T12:30:00Z");
+    const previous = previousPeriod(presetRange("today", now), now);
+    expect(previous).toMatchObject({ fromDay: "2026-10-20", toDay: "2026-10-20" });
+    expect(previous.from.toISOString()).toBe("2026-10-19T20:30:00.000Z");
+    expect(previous.to.toISOString()).toBe("2026-10-20T12:30:00.000Z");
+    expect(endsBeforeDayEnd(previous)).toBe(true);
+  });
+
+  it("compares a single day that's over with the whole day before", () => {
+    const now = new Date("2026-10-21T12:30:00Z");
+    const previous = previousPeriod(dayRange("2026-10-19", "2026-10-19"), now);
+    expect(previous).toMatchObject({ fromDay: "2026-10-18", toDay: "2026-10-18" });
+    expect(endsBeforeDayEnd(previous)).toBe(false);
   });
 
   it("covers whole cafe days in UTC", () => {

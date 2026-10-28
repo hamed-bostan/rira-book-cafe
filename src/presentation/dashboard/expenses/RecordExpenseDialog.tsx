@@ -16,10 +16,11 @@ import { Input } from "@/src/presentation/design-system/components/form/Input/In
 import { Select } from "@/src/presentation/design-system/components/form/Select/Select";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
+import { DashboardDialog } from "../DashboardDialog";
+import { DashboardField } from "../DashboardField";
+
 import { expensesApi } from "./expense-api";
 import { expenseApiErrorMessage } from "./expenseApiErrorMessage";
-import { ExpenseDialog } from "./ExpenseDialog";
-import { ExpenseField } from "./ExpenseField";
 import { normalizeAmount } from "./expenseFormat";
 
 type RecordExpenseDialogProps = {
@@ -102,7 +103,7 @@ export function RecordExpenseDialog({ open, onOpenChange, accounts, suppliers, t
   }
 
   return (
-    <ExpenseDialog
+    <DashboardDialog
       open={open}
       onOpenChange={onOpenChange}
       title={t("form.title")}
@@ -115,7 +116,7 @@ export function RecordExpenseDialog({ open, onOpenChange, accounts, suppliers, t
       error={fieldError ?? error}
     >
       <div className="grid grid-cols-2 gap-4">
-        <ExpenseField label={t("form.dateLabel")}>
+        <DashboardField label={t("form.dateLabel")}>
           <Input
             size="control-md"
             type="date"
@@ -124,8 +125,8 @@ export function RecordExpenseDialog({ open, onOpenChange, accounts, suppliers, t
             onChange={(event) => setDate(event.target.value)}
             dir="ltr"
           />
-        </ExpenseField>
-        <ExpenseField label={t("form.supplierLabel")}>
+        </DashboardField>
+        <DashboardField label={t("form.supplierLabel")}>
           <Select size="control-md" value={supplierId} onChange={(event) => setSupplierId(event.target.value)}>
             <option value="">{t("form.noSupplier")}</option>
             {suppliers.map((supplier) => (
@@ -134,10 +135,10 @@ export function RecordExpenseDialog({ open, onOpenChange, accounts, suppliers, t
               </option>
             ))}
           </Select>
-        </ExpenseField>
+        </DashboardField>
       </div>
 
-      <ExpenseField label={t("form.descriptionLabel")}>
+      <DashboardField label={t("form.descriptionLabel")}>
         <Input
           size="control-md"
           value={description}
@@ -146,9 +147,9 @@ export function RecordExpenseDialog({ open, onOpenChange, accounts, suppliers, t
           dir="auto"
           placeholder={t("form.descriptionPlaceholder")}
         />
-      </ExpenseField>
+      </DashboardField>
 
-      <ExpenseField label={t("form.accountLabel")} hint={t("form.accountHint")}>
+      <DashboardField label={t("form.accountLabel")} hint={t("form.accountHint")}>
         <Select size="control-md" value={accountCode} onChange={(event) => setAccountCode(event.target.value)}>
           <option value="">{t("form.accountPlaceholder")}</option>
           {accounts.map((account) => (
@@ -157,10 +158,10 @@ export function RecordExpenseDialog({ open, onOpenChange, accounts, suppliers, t
             </option>
           ))}
         </Select>
-      </ExpenseField>
+      </DashboardField>
 
       <div className="grid grid-cols-2 gap-4">
-        <ExpenseField label={t("form.amountLabel")}>
+        <DashboardField label={t("form.amountLabel")}>
           <Input
             size="control-md"
             value={amount}
@@ -170,8 +171,8 @@ export function RecordExpenseDialog({ open, onOpenChange, accounts, suppliers, t
             placeholder="0"
             dir="ltr"
           />
-        </ExpenseField>
-        <ExpenseField label={t("form.vatLabel")} hint={t("form.vatHint")}>
+        </DashboardField>
+        <DashboardField label={t("form.vatLabel")} hint={t("form.vatHint")}>
           <Input
             size="control-md"
             value={vatAmount}
@@ -181,10 +182,10 @@ export function RecordExpenseDialog({ open, onOpenChange, accounts, suppliers, t
             placeholder="0"
             dir="ltr"
           />
-        </ExpenseField>
+        </DashboardField>
       </div>
 
-      <ExpenseField label={t("form.paymentLabel")}>
+      <DashboardField label={t("form.paymentLabel")}>
         <Select size="control-md" value={payment} onChange={(event) => setPayment(event.target.value as Payment)}>
           {EXPENSE_PAYMENT_CHOICES.map((choice) => (
             <option key={choice} value={choice}>
@@ -192,7 +193,7 @@ export function RecordExpenseDialog({ open, onOpenChange, accounts, suppliers, t
             </option>
           ))}
         </Select>
-      </ExpenseField>
-    </ExpenseDialog>
+      </DashboardField>
+    </DashboardDialog>
   );
 }

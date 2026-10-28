@@ -26,7 +26,7 @@ type MarkPaidButtonProps = {
 };
 
 /**
- * "Mark paid" on a served-but-unpaid order: the menu asks how it was paid — the
+ * "Mark paid" on a served-but-unpaid order (ready or completed): the menu asks how it was paid — the
  * method decides which account the money lands in — and the toast offers to take
  * it back, which marks it unpaid again and reverses it on the books. Writes over
  * the orders API, then refreshes the report.
@@ -76,7 +76,7 @@ export function MarkPaidButton({ orderId, orderNumber, describedBy }: MarkPaidBu
           aria-describedby={describedBy}
         >
           {t("markPaid")}
-          <Icon icon={ChevronDown} size="sm" className="ms-1.5" />
+          <Icon icon={ChevronDown} size="icon-md" className="ms-1.5" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" aria-label={tOrders("paymentMethodLabel")}>

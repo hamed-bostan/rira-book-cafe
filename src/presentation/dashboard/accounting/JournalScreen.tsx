@@ -1,11 +1,11 @@
-import { NotebookText, SearchX } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
 import { isReversibleSource, JOURNAL_SOURCES, type Account, type JournalEntry } from "@/src/domain/entities/Ledger";
 import type { Page } from "@/src/domain/entities/Pagination";
 import { cn } from "@/src/lib/utils";
 import { ListChoiceFilter, ListPager } from "@/src/presentation/dashboard/list";
-import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
+
+import { DashboardEmptyState } from "../DashboardEmptyState";
 
 import { AccountingHeader } from "./AccountingHeader";
 import { JOURNAL_COLUMNS, JournalRow } from "./JournalRow";
@@ -53,7 +53,7 @@ export async function JournalScreen({ page, accounts, filtered, canWrite, today 
             <div
               aria-hidden
               className={cn(
-                "hidden h-10 items-center gap-x-4 border-b border-border bg-muted px-5 text-body-caption-bold tracking-wider whitespace-nowrap text-muted-foreground uppercase @4xl/journal:grid",
+                "hidden h-10 items-center gap-x-4 border-b border-border bg-muted px-5 text-body-caption font-semibold tracking-wider whitespace-nowrap text-muted-foreground uppercase @4xl/journal:grid",
                 JOURNAL_COLUMNS,
               )}
             >
@@ -79,19 +79,10 @@ export async function JournalScreen({ page, accounts, filtered, canWrite, today 
               <ListPager page={page} />
             </div>
           </>
-        ) : filtered ? (
-          <EmptyState
-            icon={SearchX}
-            title={t("journal.emptyTitle")}
-            description={t("journal.emptyFiltered")}
-            className="py-12"
-          />
         ) : (
-          <EmptyState
-            icon={NotebookText}
+          <DashboardEmptyState
             title={t("journal.emptyTitle")}
-            description={t("journal.emptyBody")}
-            className="py-12"
+            body={filtered ? t("journal.emptyFiltered") : t("journal.emptyBody")}
           />
         )}
       </section>

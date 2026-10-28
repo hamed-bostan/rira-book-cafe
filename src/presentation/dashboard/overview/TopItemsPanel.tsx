@@ -6,6 +6,7 @@ import { Link } from "@/src/i18n/navigation";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { cn } from "@/src/lib/utils";
+import { DashboardEmptyState } from "@/src/presentation/dashboard/DashboardEmptyState";
 import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 
 /** How many best sellers the card lists. */
@@ -14,7 +15,15 @@ const SHOWN = 5;
 /** The overview's query param for the ranking; absent means by revenue. */
 export const TOP_ITEMS_PARAM = "top";
 
-type TopItem = { productId: string; name: string; kind: ProductKind; quantity: number; revenue: number };
+type TopItem = {
+  productId: string;
+  name: string;
+  kind: ProductKind;
+  /** Its menu category; `null` for an item since deleted, which falls back to its kind. */
+  categoryName: string | null;
+  quantity: number;
+  revenue: number;
+};
 
 type TopItemsPanelProps = {
   /** The week's best sellers, already ranked by `sort` on the server. */
@@ -57,7 +66,7 @@ export async function TopItemsPanel({ items, sort }: TopItemsPanelProps) {
                 scroll={false}
                 aria-current={selected ? "true" : undefined}
                 className={cn(
-                  "flex h-11 items-center rounded-button px-3 text-body-small whitespace-nowrap transition-colors sm:h-8",
+                  "flex h-11 items-center rounded-button px-3 text-body-default whitespace-nowrap transition-colors sm:h-8 sm:text-body-small",
                   focusRing,
                   selected
                     ? "bg-background font-semibold text-foreground shadow-xs"
@@ -72,9 +81,11 @@ export async function TopItemsPanel({ items, sort }: TopItemsPanelProps) {
       </div>
 
       {items.length === 0 ? (
-        <p className="mt-2 border-t border-border pt-4 text-body-default text-muted-foreground sm:text-body-small">
-          {t("topEmpty")}
-        </p>
+        <DashboardEmptyState
+          title={t("topEmptyTitle")}
+          body={t("topEmptyBody")}
+          className="mt-2 border-t border-border px-0 py-10"
+        />
       ) : (
         <ol className="mt-2 flex flex-col">
           {items.slice(0, SHOWN).map((item, index) => {
@@ -89,7 +100,9 @@ export async function TopItemsPanel({ items, sort }: TopItemsPanelProps) {
                   <span dir="auto" className="truncate text-body-emphasis text-foreground sm:text-body-small-emphasis">
                     {item.name}
                   </span>
-                  <span className="text-body-small text-muted-foreground sm:text-body-caption">{tKind(item.kind)}</span>
+                  <span dir="auto" className="text-body-small text-muted-foreground sm:text-body-caption">
+                    {item.categoryName ?? tKind(item.kind)}
+                  </span>
                 </span>
                 <span className="flex flex-col items-end whitespace-nowrap tabular-nums">
                   <span className="text-body-strong text-foreground sm:text-body-small-strong">

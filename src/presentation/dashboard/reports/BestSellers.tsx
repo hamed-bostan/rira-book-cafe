@@ -47,7 +47,7 @@ export async function BestSellers({ items, sort, sortHref }: BestSellersProps) {
       }
     >
       {items.length === 0 ? (
-        <p className="text-body-default text-muted-foreground sm:text-body-small">{t("noSales")}</p>
+        <p className="text-body-default text-pretty text-muted-foreground sm:text-body-small">{t("noSales")}</p>
       ) : (
         <ol className="flex flex-col gap-4">
           {items.map((item, index) => (

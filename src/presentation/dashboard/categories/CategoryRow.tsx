@@ -64,7 +64,7 @@ export async function CategoryRow({ category, position, isFirst, isLast }: Categ
             {category.name}
           </Link>
           {category.isActive ? null : (
-            <Badge variant="neutral" appearance="outline" dot className="whitespace-nowrap">
+            <Badge variant="neutral" appearance="outline" size="compact" dot>
               {t("hiddenBadge")}
             </Badge>
           )}

@@ -61,7 +61,7 @@ export function TeamMemberActions({ member, name, hasOwner }: TeamMemberActionsP
     <>
       <DropdownMenu>
         <DropdownMenuIconTrigger appearance="secondary" aria-label={t("moreActionsAria", { name })}>
-          <Icon icon={MoreHorizontal} size="sm" className="sm:size-4" />
+          <Icon icon={MoreHorizontal} size="icon-md" />
         </DropdownMenuIconTrigger>
         <DropdownMenuContent align="end">
           {canChangeRole ? (

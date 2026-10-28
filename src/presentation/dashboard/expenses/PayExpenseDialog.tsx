@@ -11,10 +11,11 @@ import { Input } from "@/src/presentation/design-system/components/form/Input/In
 import { Select } from "@/src/presentation/design-system/components/form/Select/Select";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
+import { DashboardDialog } from "../DashboardDialog";
+import { DashboardField } from "../DashboardField";
+
 import { expensesApi } from "./expense-api";
 import { expenseApiErrorMessage } from "./expenseApiErrorMessage";
-import { ExpenseDialog } from "./ExpenseDialog";
-import { ExpenseField } from "./ExpenseField";
 
 export type PayableExpense = Pick<Expense, "id" | "number" | "date" | "description" | "amount">;
 
@@ -57,7 +58,7 @@ export function PayExpenseDialog({ open, onOpenChange, expense, today }: PayExpe
   }
 
   return (
-    <ExpenseDialog
+    <DashboardDialog
       open={open}
       onOpenChange={onOpenChange}
       title={t("detail.payTitle", { number: expense.number })}
@@ -69,7 +70,7 @@ export function PayExpenseDialog({ open, onOpenChange, expense, today }: PayExpe
       error={error}
     >
       <div className="grid grid-cols-2 gap-4">
-        <ExpenseField label={t("detail.paySource")}>
+        <DashboardField label={t("detail.paySource")}>
           <Select size="control-md" value={source} onChange={(event) => setSource(event.target.value as PaymentSource)}>
             {PAYMENT_SOURCES.map((option) => (
               <option key={option} value={option}>
@@ -77,8 +78,8 @@ export function PayExpenseDialog({ open, onOpenChange, expense, today }: PayExpe
               </option>
             ))}
           </Select>
-        </ExpenseField>
-        <ExpenseField label={t("detail.paidOn")}>
+        </DashboardField>
+        <DashboardField label={t("detail.paidOn")}>
           <Input
             size="control-md"
             type="date"
@@ -88,8 +89,8 @@ export function PayExpenseDialog({ open, onOpenChange, expense, today }: PayExpe
             onChange={(event) => setPaidOn(event.target.value)}
             dir="ltr"
           />
-        </ExpenseField>
+        </DashboardField>
       </div>
-    </ExpenseDialog>
+    </DashboardDialog>
   );
 }

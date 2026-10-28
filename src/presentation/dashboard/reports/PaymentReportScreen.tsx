@@ -44,8 +44,9 @@ type PaymentReportScreenProps = {
 
 /**
  * The Payments tab: how much of the range's revenue came in and how much is
- * still owed, how the paid part was settled, and the served-but-unpaid orders to
- * chase — each with "Mark paid". Presentational — the page fetches over the BFF.
+ * still owed, how the paid part was settled, and the served-but-unpaid orders —
+ * ready or completed — to chase, each with "Mark paid". Presentational — the page
+ * fetches over the BFF.
  */
 export async function PaymentReportScreen({
   report,
@@ -59,7 +60,9 @@ export async function PaymentReportScreen({
   const locale = await getLocale();
   const { summary } = report;
   const unit = moneyUnit(locale);
-  const revenue = summary.paidValue + summary.unpaidValue;
+  // Paid is a share of revenue (completed orders), as on the Sales tab. Unpaid also
+  // counts ready orders — served, not yet revenue — so the two needn't add up to it.
+  const { revenue } = summary;
 
   const methodValue = (methods: readonly PaymentMethod[]): number =>
     report.byMethod.filter((row) => methods.includes(row.method)).reduce((sum, row) => sum + row.value, 0);
@@ -74,7 +77,13 @@ export async function PaymentReportScreen({
   };
 
   return (
-    <ReportsFrame tab="payments" selected={selected} rangeQuery={rangeQuery} range={report.range}>
+    <ReportsFrame
+      tab="payments"
+      selected={selected}
+      rangeQuery={rangeQuery}
+      range={report.range}
+      previousRange={report.previousRange}
+    >
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <MetricCard
           label={t("payments.paid")}
@@ -108,7 +117,9 @@ export async function PaymentReportScreen({
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
         <ReportPanel title={t("payments.paidByHeading")} description={t("payments.paidByDescription")}>
           {paidTotal === 0 ? (
-            <p className="text-body-default text-muted-foreground sm:text-body-small">{t("payments.nothingPaid")}</p>
+            <p className="text-body-default text-pretty text-muted-foreground sm:text-body-small">
+              {t("payments.nothingPaid")}
+            </p>
           ) : (
             <ShareBars
               rows={METHOD_GROUPS.map((group) => {
@@ -131,7 +142,9 @@ export async function PaymentReportScreen({
           className="gap-2"
         >
           {report.unpaid.length === 0 ? (
-            <p className="text-body-default text-muted-foreground sm:text-body-small">{t("payments.allPaid")}</p>
+            <p className="text-body-default text-pretty text-muted-foreground sm:text-body-small">
+              {t("payments.allPaid")}
+            </p>
           ) : (
             <ul>
               {report.unpaid.map((order, index) => {

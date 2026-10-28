@@ -18,6 +18,7 @@ import type { ExpensePageWire } from "@/src/presentation/dashboard/accounting/ac
 import { ListFilterSelect, ListPager, ListSearchInput } from "@/src/presentation/dashboard/list";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
 
+import { DashboardEmptyState } from "../DashboardEmptyState";
 import { DashboardLinkTabs } from "../DashboardLinkTabs";
 import { MetricCard } from "../MetricCard";
 
@@ -205,14 +206,10 @@ export async function ExpensesScreen({
               ) : null}
             </>
           ) : (
-            <div className="flex flex-col items-center gap-1 px-5 py-12 text-center">
-              <p className="text-body-strong text-foreground sm:text-body-small-strong">
-                {hasExpenses ? t("noMatchesTitle") : t("emptyTitle")}
-              </p>
-              <p className="text-body-default text-muted-foreground sm:text-body-small">
-                {hasExpenses ? t("noMatchesBody") : t("emptyBody")}
-              </p>
-            </div>
+            <DashboardEmptyState
+              title={hasExpenses ? t("noMatchesTitle") : t("emptyTitle")}
+              body={hasExpenses ? t("noMatchesBody") : t("emptyBody")}
+            />
           )}
         </section>
       </div>

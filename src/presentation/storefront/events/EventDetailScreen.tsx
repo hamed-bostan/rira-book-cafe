@@ -29,7 +29,6 @@ type EventDetailScreenProps = {
 /** One event: what, when, price, seats, and signing up. */
 export async function EventDetailScreen({ event, signedIn, registration, now }: EventDetailScreenProps) {
   const t = await getTranslations("site");
-  const tEvents = await getTranslations("dashEvents");
   const locale = await getLocale();
   const left = seatsLeft(event);
   const description = eventDescription(event, locale);
@@ -59,7 +58,7 @@ export async function EventDetailScreen({ event, signedIn, registration, now }: 
 
       <div className="flex flex-col gap-3">
         <Badge variant="primary" className="self-start">
-          {tEvents(`kind.${event.kind}`)}
+          {t(`eventKind.${event.kind}`)}
         </Badge>
         <h1 className="text-heading-page text-foreground">{eventTitle(event, locale)}</h1>
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-body-small text-muted-foreground">

@@ -15,12 +15,14 @@ import { formatNumber } from "@/src/lib/formatNumber";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
 import { OverviewSegmented } from "@/src/presentation/dashboard/overview/OverviewSegmented";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
-import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
 import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
 import { Select } from "@/src/presentation/design-system/components/form/Select/Select";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
-import { Modal, ModalContent } from "@/src/presentation/design-system/components/Modal/Modal";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
+
+import { DashboardDialog } from "../DashboardDialog";
+import { DashboardField } from "../DashboardField";
+import { FIELD_HINT, FIELD_LABEL } from "../fieldStyles";
 
 import { bookLoansApi } from "./book-loan-api";
 
@@ -37,12 +39,15 @@ const FIELDS = ["productId", "borrowerName", "borrowerPhone", "dueOn", "note"] a
 const LENGTHS = ["7", "14", "21"] as const;
 type Length = (typeof LENGTHS)[number];
 const DEFAULT_LENGTH: Length = "14";
+/** Where a recorded loan shows: the On loan tab, with no search hiding it. */
+const LOANS_HREF = "/dashboard/book-loans";
 
 /**
- * Record a book going out: which book (one with every copy out can't be picked —
- * that guest joins its line instead), who took it (they needn't have an account),
- * for how long, and an optional note. Lending a copy that's held for the guest at
- * the front of its line warns first. Writes over the REST API, then refreshes.
+ * Record a book going out: which book (one with every copy out can't be lent —
+ * that guest joins its line instead, and the dialog says so), who took it (they
+ * needn't have an account), for how long, and an optional note. Lending a copy
+ * that's held for the guest at the front of its line warns first. Writes over the
+ * REST API, then shows the On loan tab.
  */
 export function LendBookDialog({ books, heldFor, today }: LendBookDialogProps) {
   const t = useTranslations("dashBookLoans");
@@ -53,10 +58,12 @@ export function LendBookDialog({ books, heldFor, today }: LendBookDialogProps) {
   const { toast } = useToast();
 
   const free = (book: LendableBook): number => Math.max(book.copies - book.onLoan, 0);
-  const firstFree = books.find((book) => free(book) > 0)?.id ?? "";
+  // The first book with a copy on the shelf — or, with every copy of every book
+  // out, the first book anyway, so the dialog says why nothing can be lent.
+  const firstBook = (books.find((book) => free(book) > 0) ?? books[0])?.id ?? "";
 
   const [open, setOpen] = React.useState(false);
-  const [productId, setProductId] = React.useState(firstFree);
+  const [productId, setProductId] = React.useState(firstBook);
   const [borrowerName, setBorrowerName] = React.useState("");
   const [borrowerPhone, setBorrowerPhone] = React.useState("");
   const [length, setLength] = React.useState<Length>(DEFAULT_LENGTH);
@@ -65,7 +72,7 @@ export function LendBookDialog({ books, heldFor, today }: LendBookDialogProps) {
   const [pending, startTransition] = React.useTransition();
 
   function openDialog(): void {
-    setProductId(firstFree);
+    setProductId(firstBook);
     setBorrowerName("");
     setBorrowerPhone("");
     setLength(DEFAULT_LENGTH);
@@ -84,9 +91,7 @@ export function LendBookDialog({ books, heldFor, today }: LendBookDialogProps) {
       : null;
   const blocked = !book || allOut || !borrowerName.trim() || !borrowerPhone.trim();
 
-  function submit(event: React.FormEvent): void {
-    event.preventDefault();
-    if (blocked) return;
+  function submit(): void {
     setError(null);
     startTransition(async () => {
       try {
@@ -100,6 +105,7 @@ export function LendBookDialog({ books, heldFor, today }: LendBookDialogProps) {
           }),
         });
         setOpen(false);
+        router.push(LOANS_HREF);
         router.refresh();
       } catch (err) {
         if (err instanceof ApiError) {
@@ -122,119 +128,89 @@ export function LendBookDialog({ books, heldFor, today }: LendBookDialogProps) {
   return (
     <>
       <Button size="control-md" type="button" className="gap-2 px-4" onClick={openDialog} disabled={books.length === 0}>
-        <Icon icon={Plus} size="sm" />
+        <Icon icon={Plus} size="icon-md" />
         {t("lend")}
       </Button>
 
-      <Modal open={open} onOpenChange={setOpen}>
-        <ModalContent
-          title={t("lendTitle")}
-          className="flex max-h-[calc(100dvh-2rem)] max-w-md flex-col overflow-y-auto"
-          titleClassName="text-start text-body-lead"
-        >
-          <p className="mt-1 text-body-default text-muted-foreground sm:text-body-small">{t("lendSub")}</p>
-          <form onSubmit={submit} className="mt-5 flex flex-col gap-4">
-            <label className="flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
-              {t("book")}
-              <Select
-                size="control-md"
-                value={productId}
-                onChange={(event) => setProductId(event.target.value)}
-                required
-              >
-                {books.map((option) => {
-                  const count = free(option);
-                  return (
-                    <option key={option.id} value={option.id} disabled={count < 1}>
-                      {option.title} ·{" "}
-                      {count > 0 ? t("onShelf", { count, formatted: formatNumber(count, locale) }) : t("allOut")}
-                    </option>
-                  );
-                })}
-              </Select>
-            </label>
-            <label className="flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
-              {t("borrowerName")}
-              <Input
-                size="control-md"
-                value={borrowerName}
-                onChange={(event) => setBorrowerName(event.target.value)}
-                maxLength={MAX_BORROWER_NAME_LENGTH}
-                placeholder={t("namePlaceholder")}
-                autoComplete="off"
-                required
-              />
-            </label>
-            <label className="flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
-              {t("borrowerPhone")}
-              <Input
-                size="control-md"
-                type="tel"
-                inputMode="tel"
-                value={borrowerPhone}
-                onChange={(event) => setBorrowerPhone(event.target.value)}
-                placeholder="0912 345 6789"
-                autoComplete="off"
-                dir="ltr"
-                required
-              />
-              <span className="text-body-small font-normal text-muted-foreground sm:text-body-caption">
-                {t("phoneHint")}
-              </span>
-            </label>
-            <div className="flex flex-col gap-1.5">
-              <span className="text-body-small-emphasis text-foreground">{t("dueBack")}</span>
-              <OverviewSegmented
-                label={t("loanLength")}
-                value={length}
-                onChange={setLength}
-                options={LENGTHS.map((value) => ({
-                  value,
-                  label: t("days", { count: Number(value), formatted: formatNumber(Number(value), locale) }),
-                }))}
-              />
-              <span className="text-body-small text-muted-foreground sm:text-body-caption">
-                {t("dueOnDay", { date: formatCafeDayLong(dueOn, locale) })}
-              </span>
-            </div>
-            <label className="flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
-              {t("note")}
-              <Input
-                size="control-md"
-                value={note}
-                onChange={(event) => setNote(event.target.value)}
-                maxLength={MAX_LOAN_NOTE_LENGTH}
-                placeholder={t("notePlaceholder")}
-                autoComplete="off"
-              />
-            </label>
-
-            {allOut ? <FormMessage>{t("allOutError")}</FormMessage> : null}
-            {warning ? (
-              <p className="flex items-start gap-1.5 text-body-default font-medium text-pretty text-warning-foreground sm:text-body-small">
-                <Icon icon={CircleAlert} size="sm" className="mt-0.5 shrink-0" />
-                {warning}
-              </p>
-            ) : null}
-            {error ? <FormMessage>{error}</FormMessage> : null}
-
-            <div className="mt-1 flex flex-wrap justify-end gap-2">
-              <Button
-                type="button"
-                variant="secondary"
-                size="control-md"
-                className="px-4"
-                onClick={() => setOpen(false)}
-              >
-                {t("dialogCancel")}
-              </Button>
-              <Button type="submit" size="control-md" className="px-4" loading={pending} disabled={blocked}>
-                {t("lendSubmit")}
-              </Button>
-            </div>
-          </form>
-        </ModalContent>
-      </Modal>
+      <DashboardDialog
+        open={open}
+        onOpenChange={setOpen}
+        title={t("lendTitle")}
+        subtitle={t("lendSub")}
+        submitLabel={t("lendSubmit")}
+        blocked={blocked}
+        pending={pending}
+        onSubmit={submit}
+        error={allOut ? t("allOutError") : error}
+        aside={
+          warning ? (
+            <p className="flex items-start gap-1.5 text-body-default font-medium text-pretty text-warning-foreground sm:text-body-small">
+              <Icon icon={CircleAlert} size="icon-md" className="mt-0.5 shrink-0" />
+              {warning}
+            </p>
+          ) : null
+        }
+      >
+        <DashboardField label={t("book")}>
+          <Select size="control-md" value={productId} onChange={(event) => setProductId(event.target.value)}>
+            {books.map((option) => {
+              const count = free(option);
+              return (
+                <option key={option.id} value={option.id} disabled={count < 1}>
+                  {option.title} ·{" "}
+                  {count > 0 ? t("onShelf", { count, formatted: formatNumber(count, locale) }) : t("allOut")}
+                </option>
+              );
+            })}
+          </Select>
+        </DashboardField>
+        <DashboardField label={t("borrowerName")}>
+          <Input
+            size="control-md"
+            value={borrowerName}
+            onChange={(event) => setBorrowerName(event.target.value)}
+            maxLength={MAX_BORROWER_NAME_LENGTH}
+            placeholder={t("namePlaceholder")}
+            autoComplete="off"
+          />
+        </DashboardField>
+        <DashboardField label={t("borrowerPhone")} hint={t("phoneHint")}>
+          <Input
+            size="control-md"
+            type="tel"
+            inputMode="tel"
+            value={borrowerPhone}
+            onChange={(event) => setBorrowerPhone(event.target.value)}
+            placeholder="0912 345 6789"
+            autoComplete="off"
+            dir="ltr"
+          />
+        </DashboardField>
+        <div className="flex flex-col gap-1.5">
+          <span className={FIELD_LABEL}>{t("dueBack")}</span>
+          <OverviewSegmented
+            label={t("loanLength")}
+            value={length}
+            onChange={setLength}
+            fill
+            options={LENGTHS.map((value) => ({
+              value,
+              label: t("days", { count: Number(value), formatted: formatNumber(Number(value), locale) }),
+            }))}
+          />
+          <span className={FIELD_HINT}>{t("dueOnDay", { date: formatCafeDayLong(dueOn, locale) })}</span>
+        </div>
+        <DashboardField label={t("note")}>
+          <Input
+            size="control-md"
+            value={note}
+            onChange={(event) => setNote(event.target.value)}
+            maxLength={MAX_LOAN_NOTE_LENGTH}
+            placeholder={t("notePlaceholder")}
+            autoComplete="off"
+          />
+        </DashboardField>
+      </DashboardDialog>
     </>
   );
 }

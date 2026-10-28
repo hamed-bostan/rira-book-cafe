@@ -24,13 +24,18 @@ export type IAnalyticsRepository = {
   dailySales(range: DateRange): Promise<DailySales[]>;
   hourlySales(range: DateRange): Promise<HourlySales[]>;
   salesByKind(range: DateRange): Promise<KindSales[]>;
-  topItems(range: DateRange, sort: TopItemSort, limit: number): Promise<TopItem[]>;
+  /** Best sellers, each with its category named in `locale` (the default language when omitted). */
+  topItems(range: DateRange, sort: TopItemSort, limit: number, locale?: string): Promise<TopItem[]>;
 
-  /** Paid vs unpaid across the completed orders placed in the range. */
+  /**
+   * Revenue and the paid part of it (completed orders), and what's unpaid across
+   * the orders served in the range: completed, or ready — a `preparing` order with
+   * every line served, so only the close-out is left.
+   */
   paymentSummary(range: DateRange): Promise<PaymentSummary>;
   /** The paid, completed orders placed in the range, totalled per payment method. */
   paidByMethod(range: DateRange): Promise<MethodPayments[]>;
-  /** Completed orders placed in the range and still unpaid, oldest first. */
+  /** Ready or completed orders placed in the range and still unpaid, oldest first. */
   unpaidOrders(range: DateRange, limit: number): Promise<UnpaidOrder[]>;
 
   /** Guest counts for the range: total, new (first completed order ever), returning, repeat. */

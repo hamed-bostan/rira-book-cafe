@@ -5,8 +5,9 @@ import * as React from "react";
 
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
-import { ConfirmSheet } from "@/src/presentation/design-system/components/Sheet/ConfirmSheet";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
+
+import { DashboardDialog } from "../DashboardDialog";
 
 import { productsApi } from "./product-api";
 
@@ -18,8 +19,10 @@ type DeleteProductConfirmProps = {
 };
 
 /**
- * The confirm step behind a row's "Delete": the DS ConfirmSheet, then a delete
- * over the API. Opened from the row's ⋯ menu, which owns `open`.
+ * The confirm step behind a row's "Delete": the dashboard's dialog with no
+ * fields — Back, or a red Delete — then a delete over the API. Opened from the
+ * row's ⋯ menu, which owns `open`. A failure stays in the dialog, so the reason
+ * reads in context and Delete can be pressed again.
  */
 export function DeleteProductConfirm({ id, name, open, onOpenChange }: DeleteProductConfirmProps) {
   const t = useTranslations("dashProducts");
@@ -27,7 +30,7 @@ export function DeleteProductConfirm({ id, name, open, onOpenChange }: DeletePro
   const router = useRouter();
   const { toast } = useToast();
   const [error, setError] = React.useState<string | null>(null);
-  const [, startTransition] = React.useTransition();
+  const [pending, startTransition] = React.useTransition();
 
   function handleConfirm(): void {
     setError(null);
@@ -40,27 +43,27 @@ export function DeleteProductConfirm({ id, name, open, onOpenChange }: DeletePro
         // stays the source of truth instead of patching local state.
         router.refresh();
       } catch (err) {
-        // Re-open the sheet in a failure state so the error reads in context and
-        // the user can retry — instead of a disruptive window.alert.
         setError(localizeApiError(err, tApiErrors, t("deleteError")));
-        onOpenChange(true);
       }
     });
   }
 
   function handleOpenChange(next: boolean): void {
     onOpenChange(next);
-    if (!next) setError(null); // Drop a stale error once the sheet is dismissed.
+    if (!next) setError(null); // Drop a stale error once the dialog is dismissed.
   }
 
   return (
-    <ConfirmSheet
+    <DashboardDialog
       open={open}
       onOpenChange={handleOpenChange}
-      title={error ? t("deleteErrorTitle") : t("deleteTitle", { name })}
-      message={error ?? t("deleteMessage")}
-      confirmLabel={error ? t("deleteTryAgain") : t("deleteConfirm")}
-      onConfirm={handleConfirm}
+      title={t("deleteTitle", { name })}
+      subtitle={t("deleteMessage")}
+      submitLabel={t("deleteConfirm")}
+      pending={pending}
+      onSubmit={handleConfirm}
+      error={error}
+      danger
     />
   );
 }

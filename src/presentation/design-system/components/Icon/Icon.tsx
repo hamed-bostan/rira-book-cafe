@@ -12,6 +12,10 @@ const iconVariants = cva("shrink-0", {
       md: "size-6",
       lg: "size-7",
       xl: "size-8",
+      // The redesigned dashboard's icons step down with the text from `sm`:
+      // 20 → 16px beside body copy (`icon-md`), 24 → 20px for larger marks (`icon-lg`).
+      "icon-md": "size-5 sm:size-4",
+      "icon-lg": "size-6 sm:size-5",
     },
   },
   defaultVariants: { size: "md" },

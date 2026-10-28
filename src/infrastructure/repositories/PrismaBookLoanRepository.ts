@@ -4,6 +4,7 @@ import { ConflictError } from "@/src/domain/errors/ConflictError";
 import { NotFoundError } from "@/src/domain/errors/NotFoundError";
 import type { AuditHook } from "@/src/domain/repositories/AuditHook";
 import type {
+  BookLoanCounts,
   BookLoanFilters,
   IBookLoanRepository,
   LendableBook,
@@ -107,6 +108,22 @@ export class PrismaBookLoanRepository implements IBookLoanRepository {
 
     const rows = await this.db.bookLoan.findMany({ where, orderBy, take: LIST_LIMIT });
     return rows.map(toBookLoan);
+  }
+
+  async countByView(now: Date): Promise<BookLoanCounts> {
+    const [byStatus, overdue] = await Promise.all([
+      this.db.bookLoan.groupBy({ by: ["status"], _count: { _all: true } }),
+      this.db.bookLoan.count({ where: { status: "out", dueAt: { lt: now } } }),
+    ]);
+    const counted = (status: BookLoanStatus): number =>
+      byStatus.find((group) => group.status === status)?._count._all ?? 0;
+    return {
+      open: counted("out"),
+      overdue,
+      returned: counted("returned"),
+      lost: counted("lost"),
+      all: byStatus.reduce((total, group) => total + group._count._all, 0),
+    };
   }
 
   async listForUser(userId: string): Promise<BookLoan[]> {

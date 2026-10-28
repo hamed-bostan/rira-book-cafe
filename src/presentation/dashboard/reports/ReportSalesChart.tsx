@@ -9,13 +9,13 @@ import { cn } from "@/src/lib/utils";
 
 import { OverviewSegmented } from "../overview/OverviewSegmented";
 
-import type { SalesChartKind } from "./salesChart";
+import { chartTickStep, Y_TICKS, type SalesChartKind } from "./salesChart";
 
 /** One bar, labelled on the server so dates and hours follow the cafe's calendar and clock. */
 export type ReportChartBar = {
   /** Under the bar — empty on a dense chart where only every few bars are labelled. */
   label: string;
-  /** The tooltip's heading: "Thursday, Oct 15", "Week of Oct 6", "3:00 PM – 4:00 PM". */
+  /** The tooltip's heading: "Thu, Oct 15", "Week of Oct 6", "3:00 PM – 4:00 PM". */
   title: string;
   revenue: number;
   orders: number;
@@ -25,18 +25,8 @@ export type ReportChartBar = {
 
 type Metric = "revenue" | "orders";
 
-/** Gridlines above the baseline. */
-const Y_TICKS = 3;
-/** Multipliers a tick step snaps to, so the axis reads 0 · 4M · 8M · 12M rather than 0 · 3.7M · … */
-const NICE_STEPS = [1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10];
 /** Past this many bars they sit closer together. */
 const DENSE_BARS = 14;
-
-function niceStep(max: number): number {
-  const raw = max / Y_TICKS || 1;
-  const magnitude = 10 ** Math.floor(Math.log10(raw));
-  return (NICE_STEPS.find((multiple) => multiple * magnitude >= raw) ?? 10) * magnitude;
-}
 
 type ReportSalesChartProps = {
   kind: SalesChartKind;
@@ -57,7 +47,7 @@ export function ReportSalesChart({ kind, bars }: ReportSalesChartProps) {
   const [hovered, setHovered] = React.useState<number | null>(null);
 
   const revenue = metric === "revenue";
-  const step = niceStep(Math.max(0, ...bars.map((bar) => bar[metric])));
+  const step = chartTickStep(Math.max(0, ...bars.map((bar) => bar[metric])));
   const max = step * Y_TICKS;
   const dense = bars.length > DENSE_BARS;
   const formatValue = (value: number): string =>

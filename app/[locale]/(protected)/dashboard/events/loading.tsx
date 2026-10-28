@@ -49,7 +49,7 @@ export default function EventsLoading() {
             <div className="flex flex-col gap-3 border-t border-border pt-4">
               <div className="flex min-h-11 items-center justify-between gap-3 sm:min-h-9">
                 <Skeleton className="h-4 w-24 rounded-pill" />
-                <Skeleton className="h-10 w-32 rounded-button" />
+                <Skeleton className="h-11 w-32 rounded-button sm:h-9" />
               </div>
               <Skeleton className="h-4 w-48 max-w-full rounded-pill" />
             </div>

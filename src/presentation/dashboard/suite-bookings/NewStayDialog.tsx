@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleAlert, CircleCheck, Plus } from "lucide-react";
+import { CircleCheck, Plus } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import * as React from "react";
 
@@ -25,8 +25,10 @@ import { Button } from "@/src/presentation/design-system/components/Button/Butto
 import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
 import { Select } from "@/src/presentation/design-system/components/form/Select/Select";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
-import { Modal, ModalContent } from "@/src/presentation/design-system/components/Modal/Modal";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
+
+import { DashboardDialog } from "../DashboardDialog";
+import { DashboardField } from "../DashboardField";
 
 import { suiteBookingsApi } from "./suite-booking-api";
 import { WINDOW_LEAD_DAYS } from "./suiteCalendar";
@@ -95,9 +97,7 @@ export function NewStayDialog({ held, today, firstFree }: NewStayDialogProps) {
               : null;
   const blocked = problem !== null || nights < 1 || !guestName.trim() || !guestPhone.trim();
 
-  function submit(event: React.FormEvent): void {
-    event.preventDefault();
-    if (blocked) return;
+  function submit(): void {
     setServerError(null);
     startTransition(async () => {
       try {
@@ -138,135 +138,110 @@ export function NewStayDialog({ held, today, firstFree }: NewStayDialogProps) {
   return (
     <>
       <Button size="control-md" type="button" className="gap-2 px-4" onClick={openDialog}>
-        <Icon icon={Plus} size="sm" />
+        <Icon icon={Plus} size="icon-md" />
         {t("newStay")}
       </Button>
 
-      <Modal open={open} onOpenChange={setOpen}>
-        <ModalContent
-          title={t("newStay")}
-          className="flex max-h-[calc(100dvh-2rem)] max-w-md flex-col overflow-y-auto"
-          titleClassName="text-start text-body-lead"
-        >
-          <p className="mt-1 text-body-default text-pretty text-muted-foreground sm:text-body-small">
-            {t("newStaySub")}
-          </p>
-          <form onSubmit={submit} className="mt-5 flex flex-col gap-5">
-            <div className="grid grid-cols-2 gap-4">
-              <label className="col-span-2 flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
-                {t("guestName")}
-                <Input
-                  size="control-md"
-                  value={guestName}
-                  onChange={(event) => setGuestName(event.target.value)}
-                  maxLength={MAX_SUITE_GUEST_NAME_LENGTH}
-                  placeholder={t("guestNamePlaceholder")}
-                  autoComplete="off"
-                  required
-                />
-              </label>
-              <label className="col-span-2 flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
-                {t("guestPhone")}
-                <Input
-                  size="control-md"
-                  type="tel"
-                  inputMode="tel"
-                  value={guestPhone}
-                  onChange={(event) => setGuestPhone(event.target.value)}
-                  placeholder="0912 345 6789"
-                  autoComplete="off"
-                  dir="ltr"
-                  required
-                />
-              </label>
-              <label className="flex min-w-0 flex-col gap-1.5 text-body-small-emphasis text-foreground">
-                {t("checkIn")}
-                <Input
-                  size="control-md"
-                  type="date"
-                  value={checkIn}
-                  min={today}
-                  dir="ltr"
-                  onChange={(event) => {
-                    const next = event.target.value || checkIn;
-                    setCheckIn(next);
-                    // Keep check-out after check-in as the arrival moves.
-                    if (!checkOut || checkOut <= next) setCheckOut(shiftCafeDay(next, 1));
-                  }}
-                />
-              </label>
-              <label className="flex min-w-0 flex-col gap-1.5 text-body-small-emphasis text-foreground">
-                {t("checkOut")}
-                <Input
-                  size="control-md"
-                  type="date"
-                  value={checkOut}
-                  min={shiftCafeDay(checkIn || today, 1)}
-                  dir="ltr"
-                  onChange={(event) => setCheckOut(event.target.value || checkOut)}
-                />
-              </label>
-              <label className="col-span-2 flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
-                {t("guestsLabel")}
-                <Select
-                  size="control-md"
-                  value={String(guests)}
-                  onChange={(event) => setGuests(Number(event.target.value))}
-                >
-                  {Array.from({ length: MAX_SUITE_GUESTS - MIN_SUITE_GUESTS + 1 }, (_, i) => i + MIN_SUITE_GUESTS).map(
-                    (count) => (
-                      <option key={count} value={count}>
-                        {t("guests", { count, formatted: formatNumber(count, locale) })}
-                      </option>
-                    ),
-                  )}
-                </Select>
-              </label>
-              <label className="col-span-2 flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
-                {t("noteOptional")}
-                <Input
-                  size="control-md"
-                  value={note}
-                  onChange={(event) => setNote(event.target.value)}
-                  maxLength={MAX_SUITE_NOTE_LENGTH}
-                  placeholder={t("notePlaceholder")}
-                  autoComplete="off"
-                />
-              </label>
-            </div>
-
-            {message ? (
-              <p className="flex items-start gap-1.5 text-body-default font-medium text-pretty text-error-foreground sm:text-body-small">
-                <Icon icon={CircleAlert} size="sm" className="mt-0.5 shrink-0" />
-                {message}
-              </p>
-            ) : nights > 0 ? (
-              <p className="flex items-start gap-1.5 text-body-default font-medium text-success-foreground sm:text-body-small">
-                <Icon icon={CircleCheck} size="sm" className="mt-0.5 shrink-0" />
-                {t("staySummary", {
-                  nights: t("nights", { count: nights, formatted: formatNumber(nights, locale) }),
-                  range: range(checkIn, checkOut),
-                })}
-              </p>
-            ) : null}
-
-            <div className="flex flex-wrap justify-end gap-2">
-              <Button
-                type="button"
-                variant="secondary"
-                size="control-md"
-                className="px-4"
-                onClick={() => setOpen(false)}
-              >
-                {t("dialogCancel")}
-              </Button>
-              <Button type="submit" size="control-md" className="px-4" loading={pending} disabled={blocked}>
-                {t("confirmStay")}
-              </Button>
-            </div>
-          </form>
-        </ModalContent>
-      </Modal>
+      <DashboardDialog
+        open={open}
+        onOpenChange={setOpen}
+        title={t("newStay")}
+        subtitle={t("newStaySub")}
+        submitLabel={t("confirmStay")}
+        blocked={blocked}
+        pending={pending}
+        onSubmit={submit}
+        error={message}
+        aside={
+          // The dates work: said in green, where a problem would otherwise show.
+          !message && nights > 0 ? (
+            <p className="flex items-start gap-1.5 text-body-default font-medium text-pretty text-success-foreground sm:text-body-small">
+              <Icon icon={CircleCheck} size="icon-md" className="mt-0.5 shrink-0" />
+              {t("staySummary", {
+                nights: t("nights", { count: nights, formatted: formatNumber(nights, locale) }),
+                range: range(checkIn, checkOut),
+              })}
+            </p>
+          ) : null
+        }
+      >
+        <div className="grid grid-cols-2 gap-4">
+          <DashboardField label={t("guestName")} className="col-span-2">
+            <Input
+              size="control-md"
+              value={guestName}
+              onChange={(event) => setGuestName(event.target.value)}
+              maxLength={MAX_SUITE_GUEST_NAME_LENGTH}
+              placeholder={t("guestNamePlaceholder")}
+              autoComplete="off"
+              required
+            />
+          </DashboardField>
+          <DashboardField label={t("guestPhone")} className="col-span-2">
+            <Input
+              size="control-md"
+              type="tel"
+              inputMode="tel"
+              value={guestPhone}
+              onChange={(event) => setGuestPhone(event.target.value)}
+              placeholder="0912 345 6789"
+              autoComplete="off"
+              dir="ltr"
+              required
+            />
+          </DashboardField>
+          <DashboardField label={t("checkIn")}>
+            <Input
+              size="control-md"
+              type="date"
+              value={checkIn}
+              min={today}
+              dir="ltr"
+              onChange={(event) => {
+                const next = event.target.value || checkIn;
+                setCheckIn(next);
+                // Keep check-out after check-in as the arrival moves.
+                if (!checkOut || checkOut <= next) setCheckOut(shiftCafeDay(next, 1));
+              }}
+            />
+          </DashboardField>
+          <DashboardField label={t("checkOut")}>
+            <Input
+              size="control-md"
+              type="date"
+              value={checkOut}
+              min={shiftCafeDay(checkIn || today, 1)}
+              dir="ltr"
+              onChange={(event) => setCheckOut(event.target.value || checkOut)}
+            />
+          </DashboardField>
+          <DashboardField label={t("guestsLabel")} className="col-span-2">
+            <Select
+              size="control-md"
+              value={String(guests)}
+              onChange={(event) => setGuests(Number(event.target.value))}
+            >
+              {Array.from({ length: MAX_SUITE_GUESTS - MIN_SUITE_GUESTS + 1 }, (_, i) => i + MIN_SUITE_GUESTS).map(
+                (count) => (
+                  <option key={count} value={count}>
+                    {t("guests", { count, formatted: formatNumber(count, locale) })}
+                  </option>
+                ),
+              )}
+            </Select>
+          </DashboardField>
+          <DashboardField label={t("noteOptional")} className="col-span-2">
+            <Input
+              size="control-md"
+              value={note}
+              onChange={(event) => setNote(event.target.value)}
+              maxLength={MAX_SUITE_NOTE_LENGTH}
+              placeholder={t("notePlaceholder")}
+              autoComplete="off"
+            />
+          </DashboardField>
+        </div>
+      </DashboardDialog>
     </>
   );
 }

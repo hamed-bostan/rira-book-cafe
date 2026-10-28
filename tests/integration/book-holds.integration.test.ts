@@ -1,12 +1,14 @@
 import { describe, expect, it } from "vitest";
 
 import { PATCH as changeLoan } from "@/app/api/admin/book-loans/[id]/route";
+import { GET as countLoans } from "@/app/api/admin/book-loans/counts/route";
 import { POST as lend } from "@/app/api/admin/book-loans/route";
 import { DELETE as removeHold } from "@/app/api/admin/book-waitlist/[id]/route";
 import { GET as listHolds, POST as addHold } from "@/app/api/admin/book-waitlist/route";
 import type { BookLoan } from "@/src/domain/entities/BookLoan";
 import type { BookWaitlistEntry } from "@/src/domain/entities/BookWaitlist";
 import { cafeDayOf, shiftCafeDay } from "@/src/domain/entities/CafeTime";
+import type { BookLoanCounts } from "@/src/domain/repositories/IBookLoanRepository";
 
 import { getRequest, jsonRequest, readError, readJson, routeParams } from "./helpers/http";
 import { signInAs } from "./helpers/session";
@@ -37,6 +39,15 @@ async function openLine(productId: string): Promise<BookWaitlistEntry[]> {
 }
 
 describe("book copies and holds", () => {
+  it("counts every loan in each view", async () => {
+    signInAs("admin");
+    const before = await readJson<BookLoanCounts>(await countLoans());
+    expect((await lendTo(SAVUSHUN, "Shirin", "09121110009")).status).toBe(201);
+
+    const after = await readJson<BookLoanCounts>(await countLoans());
+    expect(after).toEqual({ ...before, open: before.open + 1, all: before.all + 1 });
+  });
+
   it("refuses a loan once every copy is out", async () => {
     signInAs("admin");
     expect((await lendTo(BLIND_OWL, "Niloofar", "09121110005")).status).toBe(201);

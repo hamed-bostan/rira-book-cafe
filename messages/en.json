@@ -223,6 +223,7 @@
     "description": "Coffee, food and books at Rira Book Cafe."
   },
   "dashboard": {
+    "dialogBack": "Back",
     "account": "Account menu",
     "admin": "Admin",
     "bottomNav": {
@@ -283,14 +284,14 @@
     "heading": "Team",
     "summary": "{count, plural, one {# person has} other {# people have}} dashboard access",
     "grantHeading": "Add a team member",
-    "grantDescription": "Enter the phone number they sign in with. They'll get dashboard access the next time they sign in — only the holder of that number can use it.",
+    "grantDescription": "Enter the phone number they sign in with. They’ll get dashboard access the next time they sign in — only the holder of that number can use it.",
     "phoneLabel": "Phone number",
     "phonePlaceholder": "09xxxxxxxxx",
     "emailLabel": "Email",
-    "emailHint": "Optional — we'll email them the invitation too.",
+    "emailHint": "Optional — we’ll email them the invitation too.",
     "emailPlaceholder": "name@example.com",
     "grantSubmit": "Grant access",
-    "grantError": "Couldn't grant access. Please try again.",
+    "grantError": "Couldn’t grant access. Please try again.",
     "alreadyMember": "That number already has dashboard access.",
     "colMember": "Member",
     "colPhone": "Phone",
@@ -298,17 +299,16 @@
     "youSuffix": "(you)",
     "managedInEnv": "Set in server config",
     "moreActionsAria": "More actions for {name}",
-    "back": "Back",
     "changeRole": {
       "menu": "Change role",
-      "title": "Change {name}'s role",
+      "title": "Change {name}’s role",
       "message": "It applies the next time they load a dashboard page.",
       "confirm": "Save role",
-      "done": "{name} is now {role}.",
-      "error": "Couldn't change the role. Please try again.",
+      "done": "{name} is now {role}",
+      "error": "Couldn’t change the role. Please try again.",
       "blocked": {
-        "self": "You can't change your own role.",
-        "owner": "The owner's role only changes by transferring ownership.",
+        "self": "You can’t change your own role.",
+        "owner": "The owner’s role only changes by transferring ownership.",
         "breakGlass": "Their access is set in the server config — change ADMIN_USER_IDS instead."
       }
     },
@@ -316,13 +316,13 @@
       "transfer": {
         "menu": "Make owner",
         "title": "Transfer ownership?",
-        "message": "{name} becomes the owner and can manage the team. You stay an admin and keep running the cafe, but you'll no longer be able to add or remove people.",
+        "message": "{name} becomes the owner and can manage the team. You stay an admin and keep running the cafe, but you’ll no longer be able to add or remove people.",
         "confirm": "Transfer ownership"
       },
       "claim": {
         "menu": "Become the owner",
         "title": "Become the owner?",
-        "message": "Nobody owns this cafe yet. You'll hold the owner role in the database rather than only through the server config, so you can manage the team without ADMIN_USER_IDS.",
+        "message": "Nobody owns this cafe yet. You’ll hold the owner role in the database rather than only through the server config, so you can manage the team without ADMIN_USER_IDS.",
         "confirm": "Become owner"
       },
       "takeOver": {
@@ -331,29 +331,30 @@
         "message": "Someone else owns this cafe. You can take it because your access is set in the server config — this is the recovery path for a lost owner account, not a routine change. The current owner becomes an admin.",
         "confirm": "Take ownership"
       },
-      "transferred": "{name} is now the owner.",
-      "claimed": "You're now the owner.",
-      "error": "Couldn't transfer ownership. Please try again."
+      "transferred": "{name} is now the owner",
+      "claimed": "You’re now the owner",
+      "error": "Couldn’t transfer ownership. Please try again."
     },
     "remove": {
       "menu": "Remove access",
-      "title": "Remove {name}'s access?",
-      "message": "They'll lose access to the dashboard. Their account and order history stay untouched.",
+      "title": "Remove {name}’s access?",
+      "message": "They’ll lose access to the dashboard. Their account and order history stay untouched.",
       "confirm": "Remove access",
-      "done": "{name} no longer has access.",
-      "error": "Couldn't remove access. Please try again."
+      "done": "{name} no longer has access",
+      "error": "Couldn’t remove access. Please try again."
     },
     "activityHeading": "Access history",
     "activityDescription": "Every change to who can reach the dashboard. Kept permanently.",
-    "activityEmpty": "No changes recorded yet.",
+    "activityEmpty": "No changes recorded yet",
+    "activityEmptyBody": "Access you grant, change or remove will appear here.",
     "activity": {
       "granted": "{actor} gave {user} {role} access",
       "changed": "{actor} changed {user} from {from} to {to}",
-      "revoked": "{actor} removed {user}'s access",
+      "revoked": "{actor} removed {user}’s access",
       "ownershipTransferred": "{actor} made {user} the owner",
       "ownershipClaimed": "{user} took ownership",
       "steppedDown": "{user} stopped being the owner",
-      "unknown": "{actor} changed {user}'s access",
+      "unknown": "{actor} changed {user}’s access",
       "you": "You",
       "youObject": "you"
     },
@@ -371,7 +372,7 @@
       "owner": "Owner",
       "customer": "No access"
     },
-    "granted": "Access granted to {phone}."
+    "granted": "Access granted to {phone}"
   },
   "dashProducts": {
     "heading": "Menu items",
@@ -382,7 +383,7 @@
     "categoryTabsLabel": "Filter by category",
     "tabAll": "All",
     "searchLabel": "Search menu items",
-    "searchPlaceholder": "Name, description or author",
+    "searchPlaceholder": "Name, note or category",
     "showLabel": "Show",
     "show": {
       "all": "Everything",
@@ -396,7 +397,6 @@
     "noMatchesTitle": "No matches",
     "noMatchesSearch": "No items match that search.",
     "noMatchesView": "Nothing in this view right now.",
-    "showEverything": "Show everything",
     "colProduct": "Item",
     "colPrice": "Price",
     "colStock": "Stock",
@@ -419,10 +419,8 @@
     "delete": "Delete",
     "rowActionsAria": "More actions for {name}",
     "deleteTitle": "Delete {name}?",
-    "deleteErrorTitle": "Couldn't delete item",
     "deleteMessage": "It comes off the menu for good. Past orders keep their record. If it's only off for a while, hide it instead.",
     "deleteConfirm": "Delete",
-    "deleteTryAgain": "Try again",
     "deleteError": "Couldn't delete the item. Please try again.",
     "formError": "Something went wrong. Please try again.",
     "nameLabel": "Name",
@@ -509,7 +507,7 @@
     },
     "created": "“{name}” added to the menu.",
     "saved": "“{name}” saved.",
-    "deleted": "“{name}” deleted.",
+    "deleted": "{name} deleted",
     "bookCopiesLabel": "Copies to lend",
     "bookCopiesDescription": "How many copies the lending shelf has. Leave blank for one."
   },
@@ -538,12 +536,13 @@
     "delete": "Delete",
     "rowActionsAria": "More actions for {name}",
     "deleteTitle": "Delete {name}?",
-    "deleteErrorTitle": "Couldn't delete category",
     "deleteMessage": "It comes off the list for good.",
-    "deleteBlocked": "{name} still has {count, plural, one {{formatted} item} other {{formatted} items}} on the menu. Move or delete them first, or hide the category instead.",
+    "deleteBlockedSub": "{name} still has items on the menu.",
+    "deleteBlocked": "Move or delete its {count, plural, one {{formatted} item} other {{formatted} items}} first, or hide the category instead.",
+    "deleteBlockedHidden": "Move or delete its {count, plural, one {{formatted} item} other {{formatted} items}} first.",
+    "hideInstead": "Hide from menu instead",
     "seeItems": "See its items",
     "deleteConfirm": "Delete",
-    "deleteTryAgain": "Try again",
     "deleteError": "Couldn't delete the category. Please try again.",
     "nameLabel": "Name",
     "namePlaceholder": "Hot drinks",
@@ -577,11 +576,11 @@
     "uploadHint": "PNG, JPG, WebP or AVIF · up to 5 MB",
     "savedToast": "Category saved",
     "createdToast": "Category created",
-    "deleted": "\"{name}\" deleted"
+    "deleted": "{name} deleted"
   },
   "dashBulk": {
+    "label": "Bulk actions",
     "selected": "{count} selected",
-    "selectedOf": "{selected} of {total} selected",
     "clear": "Clear selection"
   },
   "dashList": {
@@ -589,8 +588,6 @@
     "previous": "Previous page",
     "next": "Next page",
     "rowsPerPage": "Rows per page",
-    "noResultsTitle": "No matches",
-    "noResultsBody": "No rows match the current search and filters.",
     "clearFilters": "Clear filters",
     "clearSearch": "Clear search"
   },
@@ -604,7 +601,7 @@
   },
   "dashOrders": {
     "heading": "Orders",
-    "activeSummary": "{count, plural, =0 {Nothing in the queue} one {# order in the queue} other {# orders in the queue}}",
+    "activeSummary": "{count, plural, =0 {No orders in the queue} one {# order in the queue} other {# orders in the queue}}",
     "tabsLabel": "Order status",
     "tabAll": "All",
     "tabActive": "In queue",
@@ -622,6 +619,10 @@
     },
     "service": {
       "dineIn": "Dine-in",
+      "takeaway": "Takeaway"
+    },
+    "serviceFilter": {
+      "dineIn": "Table",
       "takeaway": "Takeaway"
     },
     "payment": {
@@ -650,6 +651,9 @@
     "clearAll": "Clear all",
     "emptyTitle": "No orders yet",
     "emptyBody": "Orders guests place will show up here.",
+    "noMatchesTitle": "No orders found",
+    "noMatchesBody": "Try a different search or clear the filters.",
+    "noStatusMatchesBody": "No orders have this status right now.",
     "colOrder": "Order",
     "colGuest": "Guest",
     "colService": "Service",
@@ -677,6 +681,7 @@
     "unmarkPaid": "Unmark",
     "refundedNote": "Refunded — the order was cancelled after payment.",
     "markPaid": "Mark paid",
+    "markAsPaid": "Mark as paid",
     "paymentError": "Couldn't update the payment. Please try again.",
     "statusError": "Couldn't update the order. Please try again.",
     "cancelOrder": "Cancel order",
@@ -705,12 +710,16 @@
     "pointsDiscount": "{points} points",
     "pointsEarned": "Earned {points} loyalty points",
     "statusChanged": "Updated order #{number}: {status}",
-    "cancelledToast": "Order #{number} cancelled.",
-    "paidToast": "Order #{number} marked paid.",
+    "movedToast": "{status, select, preparing {Order #{number} moved to preparing} completed {Order #{number} marked as served} other {Order #{number} updated}}",
+    "cancelledToast": "Order #{number} cancelled",
+    "paidToast": "Order #{number} marked as paid",
     "bulkServe": "Mark served",
     "bulkCancel": "Cancel orders",
     "bulkActionCount": "{action} ({count, number})",
-    "bulkDone": "{count, plural, =0 {No orders changed — they had already moved on.} one {# order updated.} other {# orders updated.}}",
+    "bulkNone": "No orders changed — they had already moved on",
+    "bulkServedToast": "{count, plural, one {# order marked as served} other {# orders marked as served}}",
+    "bulkPaidToast": "{count, plural, one {# order marked as paid} other {# orders marked as paid}}",
+    "bulkCancelledToast": "{count, plural, one {# order cancelled} other {# orders cancelled}}",
     "bulkError": "Couldn't update the orders. Please try again.",
     "bulkCancelTitle": "{count, plural, one {Cancel # order?} other {Cancel # orders?}}",
     "bulkCancelMessage": "Their items go back into stock. This can't be undone."
@@ -772,13 +781,13 @@
         "paymentChanged": "<b>{actor}</b> changed the payment of order {entity}"
       },
       "review": {
-        "moderated": "<b>{actor}</b> moderated {entity}'s review",
+        "moderated": "<b>{actor}</b> moderated {entity}’s review",
         "submitted": "<b>{actor}</b> submitted a new review"
       },
       "promoCode": {
         "created": "<b>{actor}</b> created promo code {entity}",
         "updated": "<b>{actor}</b> edited promo code {entity}",
-        "activeChanged": "<b>{actor}</b> switched promo code {entity} on or off",
+        "activeChanged": "<b>{actor}</b> switched promo code {entity} {state, select, on {on} off {off} other {on or off}}",
         "deleted": "<b>{actor}</b> deleted promo code {entity}"
       },
       "unknown": "<b>{actor}</b> changed {entity}",
@@ -824,12 +833,24 @@
       }
     },
     "role": {
-      "granted": "<b>{actor}</b> gave {user} admin access",
-      "revoked": "<b>{actor}</b> removed {user}'s access",
+      "granted": "<b>{actor}</b> gave {user} {role} access",
+      "changed": "<b>{actor}</b> changed {user} from {from} to {to}",
+      "revoked": "<b>{actor}</b> removed {user}’s access",
       "ownershipTransferred": "<b>{actor}</b> made {user} the owner",
       "ownershipClaimed": "<b>{user}</b> took ownership",
       "steppedDown": "<b>{user}</b> stopped being the owner",
-      "unknown": "<b>{actor}</b> changed {user}'s access"
+      "unknown": "<b>{actor}</b> changed {user}’s access"
+    },
+    "roleName": {
+      "customer": "No access",
+      "support": "Support",
+      "staff": "Staff",
+      "admin": "Admin",
+      "owner": "Owner"
+    },
+    "value": {
+      "yes": "Yes",
+      "no": "No"
     },
     "field": {
       "name": "Name",
@@ -917,7 +938,6 @@
     "noTable": "No table yet",
     "tableDialogTitle": "Table for R-{reference}",
     "saveTable": "Save table",
-    "dialogCancel": "Back",
     "confirmTitle": {
       "cancelled": "Cancel R-{reference}?",
       "noShow": "Mark R-{reference} as a no-show?"
@@ -972,7 +992,7 @@
   },
   "dashEvents": {
     "heading": "Events",
-    "summary": "{count, plural, =0 {Nothing coming up} one {# upcoming event} other {# upcoming events}}",
+    "summary": "{count, plural, one {# upcoming event} other {# upcoming events}}",
     "newEvent": "New event",
     "createSubtitle": "Plan a book club, a reading or a workshop.",
     "editHeading": "Edit event",
@@ -982,7 +1002,7 @@
       "bookClub": "Book club",
       "reading": "Reading",
       "workshop": "Workshop",
-      "other": "Event"
+      "other": "Other"
     },
     "published": "Published",
     "draft": "Draft",
@@ -1058,7 +1078,6 @@
     "clearAll": "Clear all",
     "tableBooked": "Booked · R-{reference} {time}",
     "tableHeldBy": "Held · {title}",
-    "back": "Back",
     "saveTables": "Save tables",
     "tablesSaved": "Tables saved for {title}",
     "tablesReleased": "Tables released for {title}",
@@ -1097,9 +1116,10 @@
     "waitHours": "{hours, number} h {minutes, number} min",
     "queueEmptyTitle": "No orders in the queue",
     "queueEmptyBody": "New orders appear here as they come in.",
-    "reservationsEmpty": "No bookings for the rest of today.",
+    "reservationsEmptyTitle": "No more bookings today",
+    "reservationsEmptyBody": "Today's bookings appear here as they come in.",
     "unconfirmed": "Unconfirmed",
-    "reservationConfirmed": "Reservation for {name} confirmed.",
+    "reservationConfirmed": "Reservation for {name} confirmed",
     "reservationError": "Couldn't confirm the reservation. Please try again.",
     "confirmReservationAria": "Confirm reservation #{reference} for {name}",
     "chartMetric": "Chart metric",
@@ -1115,7 +1135,8 @@
     "topHeading": "Top items",
     "rankBy": "Rank top items by",
     "sold": "{count, number} sold",
-    "topEmpty": "No sales in the last 7 days."
+    "topEmptyTitle": "No sales in the last 7 days",
+    "topEmptyBody": "Best sellers appear here as orders come in."
   },
   "dashReports": {
     "heading": "Reports",
@@ -1135,8 +1156,9 @@
     },
     "rangeToday": "Today, {day}",
     "rangeSpan": "{from} – {to}",
-    "comparedWithYesterday": "compared with yesterday",
+    "comparedWithYesterday": "compared with yesterday at this time",
     "comparedWith": "compared with {span}",
+    "comparedWithAtThisTime": "compared with {span} at this time",
     "changeUp": "+{value} vs previous period",
     "changeDown": "−{value} vs previous period",
     "noBaseline": "Nothing the period before",
@@ -1189,7 +1211,7 @@
       },
       "nothingPaid": "Nothing paid in this range yet.",
       "unpaidHeading": "Served but unpaid",
-      "unpaidDescription": "Completed orders not yet marked paid, oldest first.",
+      "unpaidDescription": "Ready or completed orders not yet marked paid, oldest first.",
       "allPaid": "Everything served in this range is paid.",
       "orderTitle": "Order #{number} · {where}",
       "todayAt": "Today, {time}",
@@ -1215,6 +1237,12 @@
     }
   },
   "site": {
+    "eventKind": {
+      "bookClub": "Book club",
+      "reading": "Reading",
+      "workshop": "Workshop",
+      "other": "Event"
+    },
     "brand": "Rira Book Cafe",
     "navLabel": "Main navigation",
     "nav": {
@@ -1599,7 +1627,6 @@
     "tabsLabel": "Accounting sections",
     "breadcrumbLabel": "Breadcrumb",
     "cancel": "Cancel",
-    "back": "Back",
     "tab": {
       "overview": "Overview",
       "journal": "Journal",
@@ -1747,7 +1774,7 @@
       "difference": "Off by {amount}",
       "post": "Post entry",
       "error": "Couldn't post the entry. Please try again.",
-      "posted": "Entry JE-{number} posted"
+      "posted": "Posted JE-{number}"
     },
     "accounts": {
       "heading": "Chart of accounts",
@@ -1914,7 +1941,6 @@
     "breadcrumbLabel": "Breadcrumb",
     "cancel": "Cancel",
     "new": "Record expense",
-    "back": "Back",
     "owed": "Owed to suppliers now",
     "owedHint": "{count, plural, one {{formatted} bill} other {{formatted} bills}} to pay",
     "owedNone": "Nothing owed",
@@ -2189,7 +2215,7 @@
     "averageCostLine": "Avg {cost} / {unit}",
     "summary": {
       "low": "Running low",
-      "lowHint": "At or below their reorder level",
+      "lowHint": "At or below reorder level",
       "out": "Out of stock",
       "outHint": "Nothing left · order now",
       "outNone": "Nothing has run out",
@@ -2206,7 +2232,7 @@
     },
     "empty": "No stock items yet.",
     "emptyTitle": "No stock yet",
-    "emptyBody": "Add ingredients and resale goods, then receive a delivery to start tracking stock.",
+    "emptyBody": "Receive a delivery to start tracking stock.",
     "noMatchesTitle": "No matches",
     "noMatchesBody": "No items match that search.",
     "allGoodTitle": "All good",
@@ -2219,6 +2245,7 @@
     "alert": {
       "title": "{count, plural, one {# item low or out of stock} other {# items low or out of stock}}",
       "open": "Open inventory",
+      "left": "{amount} left",
       "more": "and {count} more"
     },
     "lines": {
@@ -2290,15 +2317,16 @@
       "empty": "No stock movements yet."
     },
     "quick": {
-      "back": "Back",
       "itemLabel": "Item",
       "itemOption": "{name} · {quantity} {unit}",
       "quantity": "{quantity} {unit}",
       "onHandChange": "On hand goes from {from} to {to}.",
       "receiveSub": "Add what arrived. The average cost updates from what you paid.",
       "quantityLabel": "Quantity ({unit})",
-      "costLabel": "Total cost (Toman)",
+      "quantityPositive": "Quantity must be more than 0.",
+      "costLabel": "Total paid (Toman)",
       "costHint": "For the whole delivery, not per unit.",
+      "costPositive": "The amount paid must be more than 0.",
       "receivePreviewWithCost": "On hand goes from {from} to {to}. Average cost becomes {cost} / {unit}.",
       "receiveSubmit": "Add to stock",
       "receiveDescription": "Delivery: {name}",
@@ -2307,6 +2335,7 @@
       "receiveFullLink": "Use the full delivery form",
       "countSub": "Enter what's actually on the shelf. Any difference is recorded.",
       "countedLabel": "Counted ({unit})",
+      "countNegative": "The count can't be negative.",
       "expected": "We expect {quantity}.",
       "countMatches": "Matches what we expected.",
       "countLess": "{quantity} less than expected. It's recorded as missing.",
@@ -2322,6 +2351,7 @@
       "levelLabel": "Reorder at ({unit})",
       "levelHint": "Leave blank to flag it only once it runs out.",
       "levelInvalid": "Enter a number, e.g. 500 or 2.5.",
+      "levelNegative": "The reorder level can't be negative.",
       "levelNow": "With {quantity} on hand, it will show as running low straight away.",
       "levelAt": "It will show as running low at {quantity} or less.",
       "levelNone": "With no reorder level, it's only flagged once it runs out.",
@@ -2344,7 +2374,6 @@
     "phoneHint": "If the phone matches a guest account, they'll see this loan on their account page.",
     "lendSubmit": "Record loan",
     "lendError": "Couldn't record the loan. Please try again.",
-    "dialogCancel": "Back",
     "searchLabel": "Search loans",
     "searchPlaceholder": "Name, phone or book",
     "viewLabel": "Filter loans",
@@ -2426,12 +2455,11 @@
     },
     "nights": "{count, plural, one {{formatted} night} other {{formatted} nights}}",
     "guests": "{count, plural, one {{formatted} guest} other {{formatted} guests}}",
-    "dialogCancel": "Back",
     "confirmTitle": {
       "cancelled": "Cancel S-{reference}?",
       "noShow": "Mark S-{reference} as a no-show?"
     },
-    "confirmMessage": "This frees the suite for those nights and can't be undone.",
+    "confirmMessage": "{name} · {range}. This frees the suite and can't be undone.",
     "updateError": "Couldn't update the booking. Please try again.",
     "statusChanged": "Updated S-{reference}: {status}",
     "requestsWaiting": "{count, plural, one {# request waiting} other {# requests waiting}}",
@@ -2596,7 +2624,6 @@
     "activeHintOff": "Saved but switched off.",
     "codeTaken": "{code} is already in use.",
     "endInPast": "The end date can’t be in the past.",
-    "back": "Back",
     "create": "Create code",
     "saveChanges": "Save changes",
     "created": "{code} created",
@@ -2663,7 +2690,7 @@
     "heading": "Cash shifts",
     "subtitle": "Open the till with a float, count the drawer at the end. Any difference is booked as cash over or short.",
     "openHeading": "Open a shift",
-    "openDescription": "Count the cash you're putting in the drawer to start.",
+    "openDescription": "Count the cash you’re putting in the drawer to start.",
     "openingFloat": "Opening float (Toman)",
     "openingFloatHint": "The change in the drawer before the first sale.",
     "note": "Note (optional)",
@@ -2680,12 +2707,12 @@
     "closeHeading": "Close the shift",
     "closeDescription": "Count the cash in the drawer. The books expect the float plus every cash payment, less cash refunds and cash paid out.",
     "countedCash": "Cash counted (Toman)",
-    "closeNotePlaceholder": "e.g. why it's short",
+    "closeNotePlaceholder": "e.g. why it’s short",
     "close": "Close shift",
     "preview": {
       "exact": "Exact — the drawer matches the books.",
-      "over": "{amount} over. It's booked as cash over.",
-      "short": "{amount} short. It's booked as cash short."
+      "over": "{amount} over. It’s booked as cash over.",
+      "short": "{amount} short. It’s booked as cash short."
     },
     "result": {
       "exact": "Exact",
@@ -2693,7 +2720,7 @@
       "short": "{amount} short"
     },
     "amountInvalid": "Enter a whole number of Toman.",
-    "saveError": "Couldn't save. Please try again.",
+    "saveError": "Couldn’t save. Please try again.",
     "historyHeading": "Past shifts",
     "historyEmpty": "No closed shifts yet.",
     "historyTitle": "Z-{number} · {when}",
@@ -2705,12 +2732,37 @@
   "dashKitchen": {
     "heading": "Bar display",
     "subtitle": "The live queue for the bar: drinks, cakes and ready-made food. Refreshes on its own.",
+    "live": "Live · {time}",
+    "fullScreen": "Full screen",
+    "exitFullScreen": "Exit full screen",
+    "lanesLabel": "Lanes",
     "lane": {
       "new": "New",
       "making": "Being made"
     },
     "laneEmpty": "Nothing here.",
-    "minutes": "{minutes} min"
+    "laneEmptyHint": {
+      "new": "New orders land here.",
+      "making": "Start an order to move it here."
+    },
+    "lateCount": "{count} late",
+    "ticketAria": "Order {number}, {service}",
+    "guest": "· {name}",
+    "wait": {
+      "justNow": "Just now",
+      "minutes": "{minutes} min",
+      "hours": "{hours} h {minutes} min",
+      "late": "{wait} · Late"
+    },
+    "placed": "Placed {time}",
+    "itemsLabel": "Items",
+    "itemsReady": "{ready} of {total} ready",
+    "allReady": "All items ready",
+    "startMaking": "Start making",
+    "markServed": "Mark served",
+    "movedToast": "#{number} moved to Being made",
+    "servedToast": "#{number} served",
+    "newOrderToast": "New order #{number} · {service}"
   },
   "dashBank": {
     "heading": "Bank statements",
@@ -2863,7 +2915,6 @@
     "guestPhone": "Phone",
     "placeInLine": "They'll be number {position} in line.",
     "addToLine": "Add to line",
-    "back": "Back",
     "addedToast": "{name} added to the line for {title}.",
     "actionError": "Couldn't update the line. Please try again.",
     "holdsLabel": "Holds",

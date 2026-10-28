@@ -8,8 +8,8 @@ type BookLoanStatusBadgeProps = {
   /** Still out and past due — shown in place of the plain "out" badge. */
   overdue?: boolean;
   /**
-   * The dashboard's look: a tinted pill with a border and a leading dot, a lost
-   * book red rather than solid. The guest's own list keeps the plain pill.
+   * The dashboard's look: a compact tinted pill with a border and a leading dot,
+   * a lost book red rather than solid. The guest's own list keeps the plain pill.
    */
   outlined?: boolean;
 };
@@ -27,7 +27,7 @@ export function BookLoanStatusBadge({ status, overdue = false, outlined = false 
   if (outlined) {
     const variant = overdue ? "warning" : status === "lost" ? "error" : VARIANT[status];
     return (
-      <Badge variant={variant} appearance="outline" dot>
+      <Badge variant={variant} appearance="outline" size="compact" dot>
         {label}
       </Badge>
     );

@@ -48,14 +48,11 @@ export async function ReviewRow({ review }: ReviewRowProps) {
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <Link
             href={`/menu/${review.productId}`}
-            className={cn(
-              "text-body-strong text-foreground transition-colors hover:text-primary sm:text-body-small-strong",
-              focusRing,
-            )}
+            className={cn("text-body-strong text-foreground transition-colors hover:text-primary", focusRing)}
           >
             {review.productName}
           </Link>
-          <Badge variant={STATUS_VARIANT[review.status]} appearance="outline" dot>
+          <Badge variant={STATUS_VARIANT[review.status]} appearance="outline" size="compact" dot>
             {t(`status.${review.status}`)}
           </Badge>
         </div>

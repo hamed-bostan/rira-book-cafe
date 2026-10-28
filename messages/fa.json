@@ -223,6 +223,7 @@
     "description": "قهوه، غذا و کتاب در کافه کتاب ریرا."
   },
   "dashboard": {
+    "dialogBack": "بازگشت",
     "account": "منوی حساب کاربری",
     "admin": "مدیریت",
     "bottomNav": {
@@ -298,13 +299,12 @@
     "youSuffix": "(شما)",
     "managedInEnv": "تنظیم‌شده در پیکربندی سرور",
     "moreActionsAria": "کارهای بیشتر برای {name}",
-    "back": "بازگشت",
     "changeRole": {
       "menu": "تغییر نقش",
       "title": "تغییر نقش {name}",
       "message": "از بار بعدی که صفحه‌ای از داشبورد را باز کند اعمال می‌شود.",
       "confirm": "ذخیرهٔ نقش",
-      "done": "{name} اکنون {role} است.",
+      "done": "{name} اکنون {role} است",
       "error": "تغییر نقش انجام نشد. دوباره تلاش کنید.",
       "blocked": {
         "self": "نمی‌توانید نقش خودتان را تغییر دهید.",
@@ -331,8 +331,8 @@
         "message": "فرد دیگری مالک این کافه است. چون دسترسی شما در پیکربندی سرور تنظیم شده می‌توانید مالکیت را به‌دست بگیرید — این مسیر بازیابی برای حساب مالکِ ازدست‌رفته است، نه یک تغییر معمول. مالک فعلی به مدیر تبدیل می‌شود.",
         "confirm": "به‌دست گرفتن مالکیت"
       },
-      "transferred": "{name} اکنون مالک است.",
-      "claimed": "اکنون شما مالک هستید.",
+      "transferred": "{name} اکنون مالک است",
+      "claimed": "اکنون شما مالک هستید",
       "error": "واگذاری مالکیت انجام نشد. دوباره تلاش کنید."
     },
     "remove": {
@@ -340,12 +340,13 @@
       "title": "دسترسی {name} حذف شود؟",
       "message": "دسترسی‌اش به داشبورد از بین می‌رود. حساب کاربری و تاریخچهٔ سفارش‌هایش دست‌نخورده می‌ماند.",
       "confirm": "حذف دسترسی",
-      "done": "دسترسی {name} حذف شد.",
+      "done": "دسترسی {name} حذف شد",
       "error": "حذف دسترسی انجام نشد. دوباره تلاش کنید."
     },
     "activityHeading": "تاریخچهٔ دسترسی",
     "activityDescription": "هر تغییری در اینکه چه کسی به داشبورد دسترسی دارد. برای همیشه نگهداری می‌شود.",
-    "activityEmpty": "هنوز تغییری ثبت نشده است.",
+    "activityEmpty": "هنوز تغییری ثبت نشده است",
+    "activityEmptyBody": "دسترسی‌هایی که می‌دهید، تغییر می‌دهید یا حذف می‌کنید اینجا نشان داده می‌شوند.",
     "activity": {
       "granted": "{actor} به {user} دسترسی {role} داد",
       "changed": "{actor} نقش {user} را از {from} به {to} تغییر داد",
@@ -371,7 +372,7 @@
       "owner": "مالک",
       "customer": "بدون دسترسی"
     },
-    "granted": "به {phone} دسترسی داده شد."
+    "granted": "به {phone} دسترسی داده شد"
   },
   "dashProducts": {
     "heading": "آیتم‌های منو",
@@ -382,7 +383,7 @@
     "categoryTabsLabel": "فیلتر بر اساس دسته‌بندی",
     "tabAll": "همه",
     "searchLabel": "جستجوی آیتم‌های منو",
-    "searchPlaceholder": "نام، توضیح یا نویسنده",
+    "searchPlaceholder": "نام، یادداشت یا دسته‌بندی",
     "showLabel": "نمایش",
     "show": {
       "all": "همه چیز",
@@ -396,7 +397,6 @@
     "noMatchesTitle": "نتیجه‌ای نیست",
     "noMatchesSearch": "هیچ آیتمی با این جستجو پیدا نشد.",
     "noMatchesView": "فعلاً چیزی در این نما نیست.",
-    "showEverything": "نمایش همه",
     "colProduct": "آیتم",
     "colPrice": "قیمت",
     "colStock": "موجودی",
@@ -419,10 +419,8 @@
     "delete": "حذف",
     "rowActionsAria": "کارهای بیشتر برای {name}",
     "deleteTitle": "{name} حذف شود؟",
-    "deleteErrorTitle": "حذف آیتم ممکن نشد",
     "deleteMessage": "برای همیشه از منو برداشته می‌شود و سفارش‌های گذشته سابقه‌اش را نگه می‌دارند. اگر فقط مدتی نیست، به‌جای حذف پنهانش کنید.",
     "deleteConfirm": "حذف",
-    "deleteTryAgain": "تلاش مجدد",
     "deleteError": "حذف آیتم ممکن نشد. دوباره تلاش کنید.",
     "formError": "مشکلی پیش آمد. لطفاً دوباره تلاش کنید.",
     "nameLabel": "نام",
@@ -509,7 +507,7 @@
     },
     "created": "«{name}» به منو اضافه شد.",
     "saved": "«{name}» ذخیره شد.",
-    "deleted": "«{name}» حذف شد.",
+    "deleted": "{name} حذف شد",
     "bookCopiesLabel": "نسخه‌های امانتی",
     "bookCopiesDescription": "قفسهٔ امانت چند نسخه از این کتاب دارد. برای یک نسخه خالی بگذارید."
   },
@@ -538,12 +536,13 @@
     "delete": "حذف",
     "rowActionsAria": "کارهای بیشتر برای {name}",
     "deleteTitle": "{name} حذف شود؟",
-    "deleteErrorTitle": "حذف دسته‌بندی ممکن نشد",
     "deleteMessage": "برای همیشه از فهرست برداشته می‌شود.",
-    "deleteBlocked": "{name} هنوز {count, plural, other {{formatted} آیتم}} در منو دارد. اول آن‌ها را جابه‌جا یا حذف کنید، یا به‌جای حذف، دسته را پنهان کنید.",
+    "deleteBlockedSub": "{name} هنوز در منو آیتم دارد.",
+    "deleteBlocked": "اول {count, plural, other {{formatted} آیتمش}} را جابه‌جا یا حذف کنید، یا به‌جای حذف، دسته را پنهان کنید.",
+    "deleteBlockedHidden": "اول {count, plural, other {{formatted} آیتمش}} را جابه‌جا یا حذف کنید.",
+    "hideInstead": "به‌جای حذف، پنهان کردن از منو",
     "seeItems": "دیدن آیتم‌هایش",
     "deleteConfirm": "حذف",
-    "deleteTryAgain": "تلاش مجدد",
     "deleteError": "حذف دسته‌بندی ممکن نشد. لطفاً دوباره تلاش کنید.",
     "nameLabel": "نام",
     "namePlaceholder": "Hot drinks",
@@ -577,11 +576,11 @@
     "uploadHint": "PNG، JPG، WebP یا AVIF · تا ۵ مگابایت",
     "savedToast": "دسته‌بندی ذخیره شد",
     "createdToast": "دسته‌بندی ساخته شد",
-    "deleted": "«{name}» حذف شد"
+    "deleted": "{name} حذف شد"
   },
   "dashBulk": {
+    "label": "عملیات گروهی",
     "selected": "{count} مورد انتخاب‌شده",
-    "selectedOf": "{selected} از {total} انتخاب‌شده",
     "clear": "پاک کردن انتخاب"
   },
   "dashList": {
@@ -589,8 +588,6 @@
     "previous": "صفحه قبل",
     "next": "صفحه بعد",
     "rowsPerPage": "تعداد ردیف در صفحه",
-    "noResultsTitle": "نتیجه‌ای نیست",
-    "noResultsBody": "هیچ ردیفی با جست‌وجو و فیلترهای فعلی مطابقت ندارد.",
     "clearFilters": "پاک کردن فیلترها",
     "clearSearch": "پاک کردن جست‌وجو"
   },
@@ -604,7 +601,7 @@
   },
   "dashOrders": {
     "heading": "سفارش‌ها",
-    "activeSummary": "{count, plural, =0 {صفی وجود ندارد} other {# سفارش در صف}}",
+    "activeSummary": "{count, plural, =0 {سفارشی در صف نیست} other {# سفارش در صف}}",
     "tabsLabel": "وضعیت سفارش",
     "tabAll": "همه",
     "tabActive": "در صف",
@@ -622,6 +619,10 @@
     },
     "service": {
       "dineIn": "سرو در کافه",
+      "takeaway": "بیرون‌بر"
+    },
+    "serviceFilter": {
+      "dineIn": "میز",
       "takeaway": "بیرون‌بر"
     },
     "payment": {
@@ -650,6 +651,9 @@
     "clearAll": "پاک کردن همه",
     "emptyTitle": "هنوز سفارشی ثبت نشده",
     "emptyBody": "سفارش‌های مهمان‌ها اینجا نمایش داده می‌شوند.",
+    "noMatchesTitle": "سفارشی پیدا نشد",
+    "noMatchesBody": "جست‌وجوی دیگری را امتحان کنید یا فیلترها را پاک کنید.",
+    "noStatusMatchesBody": "فعلاً سفارشی با این وضعیت نیست.",
     "colOrder": "سفارش",
     "colGuest": "مهمان",
     "colService": "سرویس",
@@ -677,6 +681,7 @@
     "unmarkPaid": "لغو پرداخت",
     "refundedNote": "بازپرداخت شد — سفارش پس از پرداخت لغو شد.",
     "markPaid": "ثبت پرداخت",
+    "markAsPaid": "ثبت پرداخت",
     "paymentError": "به‌روزرسانی پرداخت ممکن نشد. دوباره تلاش کنید.",
     "statusError": "به‌روزرسانی سفارش ممکن نشد. دوباره تلاش کنید.",
     "cancelOrder": "لغو سفارش",
@@ -705,12 +710,16 @@
     "pointsDiscount": "{points} امتیاز",
     "pointsEarned": "{points} امتیاز باشگاه گرفت",
     "statusChanged": "وضعیت سفارش #{number}: {status}",
-    "cancelledToast": "سفارش #{number} لغو شد.",
-    "paidToast": "پرداخت سفارش #{number} ثبت شد.",
+    "movedToast": "{status, select, preparing {سفارش #{number} به آماده‌سازی رفت} completed {سفارش #{number} سرو شد} other {سفارش #{number} به‌روزرسانی شد}}",
+    "cancelledToast": "سفارش #{number} لغو شد",
+    "paidToast": "پرداخت سفارش #{number} ثبت شد",
     "bulkServe": "سرو شد",
     "bulkCancel": "لغو سفارش‌ها",
     "bulkActionCount": "{action} ({count, number})",
-    "bulkDone": "{count, plural, =0 {سفارشی تغییر نکرد؛ وضعیتشان پیش‌تر عوض شده بود.} other {# سفارش به‌روزرسانی شد.}}",
+    "bulkNone": "سفارشی تغییر نکرد؛ وضعیتشان پیش‌تر عوض شده بود",
+    "bulkServedToast": "{count, plural, other {# سفارش سرو شد}}",
+    "bulkPaidToast": "{count, plural, other {پرداخت # سفارش ثبت شد}}",
+    "bulkCancelledToast": "{count, plural, other {# سفارش لغو شد}}",
     "bulkError": "به‌روزرسانی سفارش‌ها ممکن نشد. دوباره تلاش کنید.",
     "bulkCancelTitle": "{count, plural, other {# سفارش لغو شود؟}}",
     "bulkCancelMessage": "آیتم‌های این سفارش‌ها به موجودی برمی‌گردند. این کار قابل بازگشت نیست."
@@ -778,7 +787,7 @@
       "promoCode": {
         "created": "<b>{actor}</b> کد تخفیف {entity} را ساخت",
         "updated": "<b>{actor}</b> کد تخفیف {entity} را ویرایش کرد",
-        "activeChanged": "<b>{actor}</b> کد تخفیف {entity} را روشن یا خاموش کرد",
+        "activeChanged": "<b>{actor}</b> کد تخفیف {entity} را {state, select, on {روشن} off {خاموش} other {روشن یا خاموش}} کرد",
         "deleted": "<b>{actor}</b> کد تخفیف {entity} را حذف کرد"
       },
       "unknown": "<b>{actor}</b> مورد {entity} را تغییر داد",
@@ -824,12 +833,24 @@
       }
     },
     "role": {
-      "granted": "<b>{actor}</b> به {user} دسترسی مدیریت داد",
+      "granted": "<b>{actor}</b> به {user} دسترسی {role} داد",
+      "changed": "<b>{actor}</b> نقش {user} را از {from} به {to} تغییر داد",
       "revoked": "<b>{actor}</b> دسترسی {user} را گرفت",
       "ownershipTransferred": "<b>{actor}</b>، {user} را مالک کرد",
       "ownershipClaimed": "<b>{user}</b> مالکیت را به دست گرفت",
       "steppedDown": "<b>{user}</b> دیگر مالک نیست",
       "unknown": "<b>{actor}</b> دسترسی {user} را تغییر داد"
+    },
+    "roleName": {
+      "customer": "بدون دسترسی",
+      "support": "پشتیبانی",
+      "staff": "کارمند",
+      "admin": "مدیر",
+      "owner": "مالک"
+    },
+    "value": {
+      "yes": "بله",
+      "no": "خیر"
     },
     "field": {
       "name": "نام",
@@ -917,7 +938,6 @@
     "noTable": "هنوز میزی تعیین نشده",
     "tableDialogTitle": "میز برای R-{reference}",
     "saveTable": "ذخیرهٔ میز",
-    "dialogCancel": "بازگشت",
     "confirmTitle": {
       "cancelled": "R-{reference} لغو شود؟",
       "noShow": "R-{reference} به‌عنوان «نیامد» ثبت شود؟"
@@ -972,7 +992,7 @@
   },
   "dashEvents": {
     "heading": "رویدادها",
-    "summary": "{count, plural, =0 {رویداد پیش‌رویی نیست} other {# رویداد پیش‌رو}}",
+    "summary": "{count, plural, other {# رویداد پیش‌رو}}",
     "newEvent": "رویداد جدید",
     "createSubtitle": "یک جلسهٔ کتاب‌خوانی، کتاب‌خوانی با نویسنده یا کارگاه برنامه‌ریزی کنید.",
     "editHeading": "ویرایش رویداد",
@@ -982,7 +1002,7 @@
       "bookClub": "باشگاه کتاب",
       "reading": "کتاب‌خوانی",
       "workshop": "کارگاه",
-      "other": "رویداد"
+      "other": "سایر"
     },
     "published": "منتشرشده",
     "draft": "پیش‌نویس",
@@ -1058,7 +1078,6 @@
     "clearAll": "پاک کردن همه",
     "tableBooked": "رزرو · R-{reference} {time}",
     "tableHeldBy": "نگه‌داشته · {title}",
-    "back": "بازگشت",
     "saveTables": "ذخیرهٔ میزها",
     "tablesSaved": "میزهای {title} ذخیره شد",
     "tablesReleased": "میزهای {title} آزاد شد",
@@ -1097,9 +1116,10 @@
     "waitHours": "{hours, number} ساعت و {minutes, number} دقیقه",
     "queueEmptyTitle": "سفارشی در صف نیست",
     "queueEmptyBody": "سفارش‌های تازه همین‌جا نمایش داده می‌شوند.",
-    "reservationsEmpty": "برای باقی امروز رزروی نیست.",
+    "reservationsEmptyTitle": "امروز رزرو دیگری نیست",
+    "reservationsEmptyBody": "رزروهای امروز با ثبت شدن همین‌جا نمایش داده می‌شوند.",
     "unconfirmed": "تأییدنشده",
-    "reservationConfirmed": "رزرو {name} تأیید شد.",
+    "reservationConfirmed": "رزرو {name} تأیید شد",
     "reservationError": "تأیید رزرو ممکن نشد. دوباره تلاش کنید.",
     "confirmReservationAria": "تأیید رزرو #{reference} برای {name}",
     "chartMetric": "شاخص نمودار",
@@ -1115,7 +1135,8 @@
     "topHeading": "پرفروش‌ترین‌ها",
     "rankBy": "مرتب‌سازی پرفروش‌ترین‌ها بر اساس",
     "sold": "{count, number} فروخته‌شده",
-    "topEmpty": "در ۷ روز گذشته فروشی ثبت نشده."
+    "topEmptyTitle": "در ۷ روز گذشته فروشی ثبت نشده",
+    "topEmptyBody": "پرفروش‌ها با رسیدن سفارش‌ها همین‌جا نمایش داده می‌شوند."
   },
   "dashReports": {
     "heading": "گزارش‌ها",
@@ -1135,8 +1156,9 @@
     },
     "rangeToday": "امروز، {day}",
     "rangeSpan": "{from} تا {to}",
-    "comparedWithYesterday": "در مقایسه با دیروز",
+    "comparedWithYesterday": "در مقایسه با دیروز تا همین ساعت",
     "comparedWith": "در مقایسه با {span}",
+    "comparedWithAtThisTime": "در مقایسه با {span} تا همین ساعت",
     "changeUp": "+{value} نسبت به دورهٔ قبل",
     "changeDown": "−{value} نسبت به دورهٔ قبل",
     "noBaseline": "در دورهٔ قبل چیزی نبود",
@@ -1189,7 +1211,7 @@
       },
       "nothingPaid": "در این بازه هنوز پرداختی ثبت نشده.",
       "unpaidHeading": "تحویل‌شده ولی پرداخت‌نشده",
-      "unpaidDescription": "سفارش‌های تحویل‌شده‌ای که هنوز پرداختشان ثبت نشده، قدیمی‌ترین اول.",
+      "unpaidDescription": "سفارش‌های آماده یا تحویل‌شده‌ای که هنوز پرداختشان ثبت نشده، قدیمی‌ترین اول.",
       "allPaid": "همهٔ سفارش‌های تحویل‌شدهٔ این بازه پرداخت شده‌اند.",
       "orderTitle": "سفارش #{number} · {where}",
       "todayAt": "امروز، {time}",
@@ -1215,6 +1237,12 @@
     }
   },
   "site": {
+    "eventKind": {
+      "bookClub": "باشگاه کتاب",
+      "reading": "کتاب‌خوانی",
+      "workshop": "کارگاه",
+      "other": "رویداد"
+    },
     "brand": "کافه کتاب ریرا",
     "navLabel": "ناوبری اصلی",
     "nav": {
@@ -1599,7 +1627,6 @@
     "tabsLabel": "بخش‌های حسابداری",
     "breadcrumbLabel": "مسیر صفحه",
     "cancel": "انصراف",
-    "back": "بازگشت",
     "tab": {
       "overview": "نمای کلی",
       "journal": "دفتر روزنامه",
@@ -1747,7 +1774,7 @@
       "difference": "اختلاف {amount}",
       "post": "ثبت سند",
       "error": "ثبت سند انجام نشد. دوباره تلاش کنید.",
-      "posted": "سند JE-{number} ثبت شد"
+      "posted": "JE-{number} ثبت شد"
     },
     "accounts": {
       "heading": "سرفصل حساب‌ها",
@@ -1914,7 +1941,6 @@
     "breadcrumbLabel": "مسیر صفحه",
     "cancel": "انصراف",
     "new": "ثبت هزینه",
-    "back": "بازگشت",
     "owed": "بدهی فعلی به تأمین‌کنندگان",
     "owedHint": "{count, plural, other {{formatted} صورت‌حساب}} برای پرداخت",
     "owedNone": "بدهی‌ای نیست",
@@ -2206,7 +2232,7 @@
     },
     "empty": "هنوز قلمی در انبار تعریف نشده.",
     "emptyTitle": "هنوز موجودی‌ای نیست",
-    "emptyBody": "مواد اولیه و کالاهای فروشی را تعریف کنید، سپس با ثبت دریافت کالا پیگیری موجودی را شروع کنید.",
+    "emptyBody": "برای شروع پیگیری موجودی، یک دریافت کالا ثبت کنید.",
     "noMatchesTitle": "موردی پیدا نشد",
     "noMatchesBody": "هیچ قلمی با این جست‌وجو جور نیست.",
     "allGoodTitle": "همه‌چیز رو به راه است",
@@ -2219,6 +2245,7 @@
     "alert": {
       "title": "{count, plural, other {# قلم رو به اتمام یا ناموجود}}",
       "open": "باز کردن انبار",
+      "left": "{amount} مانده",
       "more": "و {count} مورد دیگر"
     },
     "lines": {
@@ -2290,15 +2317,16 @@
       "empty": "هنوز گردشی ثبت نشده."
     },
     "quick": {
-      "back": "بازگشت",
       "itemLabel": "قلم",
       "itemOption": "{name} · {quantity} {unit}",
       "quantity": "{quantity} {unit}",
       "onHandChange": "موجودی از {from} به {to} می‌رسد.",
       "receiveSub": "آنچه رسیده را وارد کنید. بهای میانگین بر اساس مبلغ پرداختی به‌روز می‌شود.",
       "quantityLabel": "مقدار ({unit})",
-      "costLabel": "مبلغ کل (تومان)",
+      "quantityPositive": "مقدار باید بیشتر از ۰ باشد.",
+      "costLabel": "کل مبلغ پرداختی (تومان)",
       "costHint": "برای کل محموله، نه هر واحد.",
+      "costPositive": "مبلغ پرداختی باید بیشتر از ۰ باشد.",
       "receivePreviewWithCost": "موجودی از {from} به {to} می‌رسد. بهای میانگین {cost} / {unit} می‌شود.",
       "receiveSubmit": "افزودن به موجودی",
       "receiveDescription": "دریافت کالا: {name}",
@@ -2307,6 +2335,7 @@
       "receiveFullLink": "از فرم کامل دریافت کالا استفاده کنید",
       "countSub": "موجودی واقعی قفسه را وارد کنید. هر اختلافی ثبت می‌شود.",
       "countedLabel": "شمارش‌شده ({unit})",
+      "countNegative": "شمارش نمی‌تواند منفی باشد.",
       "expected": "طبق سیستم {quantity} باید باشد.",
       "countMatches": "با موجودی سیستم برابر است.",
       "countLess": "{quantity} کمتر از انتظار. به عنوان کسری ثبت می‌شود.",
@@ -2322,6 +2351,7 @@
       "levelLabel": "حد سفارش ({unit})",
       "levelHint": "خالی بگذارید تا فقط هنگام تمام شدن هشدار بدهد.",
       "levelInvalid": "یک عدد وارد کنید، مثلاً ۵۰۰ یا ۲٫۵.",
+      "levelNegative": "حد سفارش نمی‌تواند منفی باشد.",
       "levelNow": "با {quantity} موجودی، از همین حالا «رو به اتمام» نشان داده می‌شود.",
       "levelAt": "در {quantity} یا کمتر «رو به اتمام» نشان داده می‌شود.",
       "levelNone": "بدون حد سفارش، فقط هنگام تمام شدن هشدار داده می‌شود.",
@@ -2344,7 +2374,6 @@
     "phoneHint": "اگر این شماره حساب کاربری داشته باشد، مهمان این امانت را در صفحهٔ حسابش می‌بیند.",
     "lendSubmit": "ثبت امانت",
     "lendError": "ثبت امانت ممکن نشد. دوباره تلاش کنید.",
-    "dialogCancel": "بازگشت",
     "searchLabel": "جست‌وجوی امانت‌ها",
     "searchPlaceholder": "نام، تلفن یا کتاب",
     "viewLabel": "فیلتر امانت‌ها",
@@ -2426,12 +2455,11 @@
     },
     "nights": "{count, plural, other {{formatted} شب}}",
     "guests": "{count, plural, other {{formatted} نفر}}",
-    "dialogCancel": "بازگشت",
     "confirmTitle": {
       "cancelled": "S-{reference} لغو شود؟",
       "noShow": "S-{reference} «نیامد» ثبت شود؟"
     },
-    "confirmMessage": "سوئیت برای آن شب‌ها آزاد می‌شود و این کار برگشت‌پذیر نیست.",
+    "confirmMessage": "{name} · {range}. سوئیت آزاد می‌شود و این کار برگشت‌پذیر نیست.",
     "updateError": "به‌روزرسانی رزرو ممکن نشد. دوباره تلاش کنید.",
     "statusChanged": "وضعیت S-{reference}: {status}",
     "requestsWaiting": "{count, plural, other {# درخواست در انتظار}}",
@@ -2596,7 +2624,6 @@
     "activeHintOff": "ذخیره می‌شود ولی خاموش می‌ماند.",
     "codeTaken": "کد {code} قبلاً استفاده شده است.",
     "endInPast": "تاریخ پایان نمی‌تواند گذشته باشد.",
-    "back": "بازگشت",
     "create": "ساختن کد",
     "saveChanges": "ذخیرهٔ تغییرها",
     "created": "{code} ساخته شد",
@@ -2705,12 +2732,37 @@
   "dashKitchen": {
     "heading": "نمایشگر بار",
     "subtitle": "صف زنده‌ی بار: نوشیدنی‌ها، کیک‌ها و غذاهای آماده. خودش به‌روز می‌شود.",
+    "live": "زنده · {time}",
+    "fullScreen": "تمام‌صفحه",
+    "exitFullScreen": "خروج از تمام‌صفحه",
+    "lanesLabel": "ستون‌ها",
     "lane": {
       "new": "جدید",
       "making": "در حال آماده‌سازی"
     },
     "laneEmpty": "چیزی نیست.",
-    "minutes": "{minutes} دقیقه"
+    "laneEmptyHint": {
+      "new": "سفارش‌های جدید اینجا می‌آیند.",
+      "making": "سفارشی را شروع کنید تا به اینجا بیاید."
+    },
+    "lateCount": "{count} با تأخیر",
+    "ticketAria": "سفارش {number}، {service}",
+    "guest": "· {name}",
+    "wait": {
+      "justNow": "همین حالا",
+      "minutes": "{minutes} دقیقه",
+      "hours": "{hours} ساعت و {minutes} دقیقه",
+      "late": "{wait} · با تأخیر"
+    },
+    "placed": "ثبت در {time}",
+    "itemsLabel": "اقلام",
+    "itemsReady": "{ready} از {total} آماده",
+    "allReady": "همه‌ی اقلام آماده است",
+    "startMaking": "شروع آماده‌سازی",
+    "markServed": "سرو شد",
+    "movedToast": "#{number} به «در حال آماده‌سازی» رفت",
+    "servedToast": "#{number} سرو شد",
+    "newOrderToast": "سفارش جدید #{number} · {service}"
   },
   "dashBank": {
     "heading": "صورت‌حساب‌های بانکی",
@@ -2863,7 +2915,6 @@
     "guestPhone": "تلفن",
     "placeInLine": "نفر {position} صف خواهد بود.",
     "addToLine": "افزودن به صف",
-    "back": "بازگشت",
     "addedToast": "{name} به صف {title} اضافه شد.",
     "actionError": "به‌روزرسانی صف ممکن نشد. دوباره تلاش کنید.",
     "holdsLabel": "رزروها",

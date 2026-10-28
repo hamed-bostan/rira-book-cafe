@@ -10,9 +10,11 @@ import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
-import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
 import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
+
+import { DashboardField } from "../DashboardField";
+import { FormAlert } from "../FormAlert";
 
 import { settlementsApi } from "./accounting-api";
 import { normalizeAmount } from "./accounting-format";
@@ -23,9 +25,6 @@ type GatewaySettlementFormProps = {
   /** What the gateway holds for the cafe today, which a payout can't clear more than. */
   gatewayBalance: number;
 };
-
-const FIELD = "flex min-w-0 flex-col gap-1.5 text-body-small-emphasis text-foreground";
-const HINT = "text-body-small font-normal text-muted-foreground sm:text-body-caption";
 
 /**
  * Record a payout from the online gateway as the bank shows it: what reached the
@@ -116,8 +115,7 @@ export function GatewaySettlementForm({ today, gatewayBalance }: GatewaySettleme
         }}
       >
         <div className="grid max-w-3xl grid-cols-1 items-start gap-4 md:grid-cols-2">
-          <label className={FIELD}>
-            {t("overview.settlement.date")}
+          <DashboardField label={t("overview.settlement.date")}>
             <Input
               size="control-md"
               type="date"
@@ -126,9 +124,8 @@ export function GatewaySettlementForm({ today, gatewayBalance }: GatewaySettleme
               onChange={(event) => setDate(event.target.value)}
               dir="ltr"
             />
-          </label>
-          <label className={FIELD}>
-            {t("overview.settlement.reference")}
+          </DashboardField>
+          <DashboardField label={t("overview.settlement.reference")}>
             <Input
               size="control-md"
               value={reference}
@@ -138,9 +135,8 @@ export function GatewaySettlementForm({ today, gatewayBalance }: GatewaySettleme
               placeholder={t("overview.settlement.referencePlaceholder")}
               dir="ltr"
             />
-          </label>
-          <label className={FIELD}>
-            {t("overview.settlement.deposited")}
+          </DashboardField>
+          <DashboardField label={t("overview.settlement.deposited")}>
             <Input
               size="control-md"
               value={deposited}
@@ -150,9 +146,8 @@ export function GatewaySettlementForm({ today, gatewayBalance }: GatewaySettleme
               placeholder="0"
               dir="ltr"
             />
-          </label>
-          <label className={FIELD}>
-            {t("overview.settlement.fee")}
+          </DashboardField>
+          <DashboardField label={t("overview.settlement.fee")} hint={t("overview.settlement.feeHint")}>
             <Input
               size="control-md"
               value={fee}
@@ -162,8 +157,7 @@ export function GatewaySettlementForm({ today, gatewayBalance }: GatewaySettleme
               placeholder="0"
               dir="ltr"
             />
-            <span className={HINT}>{t("overview.settlement.feeHint")}</span>
-          </label>
+          </DashboardField>
         </div>
 
         {ready && clears !== null ? (
@@ -177,7 +171,7 @@ export function GatewaySettlementForm({ today, gatewayBalance }: GatewaySettleme
             })}
           </p>
         ) : null}
-        {message ? <FormMessage>{message}</FormMessage> : null}
+        {message ? <FormAlert>{message}</FormAlert> : null}
 
         <div>
           <Button size="control-md" type="submit" className="px-4" loading={pending} disabled={!ready}>

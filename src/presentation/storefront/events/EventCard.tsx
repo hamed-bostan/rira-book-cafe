@@ -18,7 +18,6 @@ import { eventTitle } from "../eventCopy";
 /** An event teaser: cover, kind, when, price, and how many seats are left. The whole card links to it. */
 export async function EventCard({ event }: { event: CafeEvent }) {
   const t = await getTranslations("site");
-  const tEvents = await getTranslations("dashEvents");
   const locale = await getLocale();
   const left = seatsLeft(event);
 
@@ -44,7 +43,7 @@ export async function EventCard({ event }: { event: CafeEvent }) {
       ) : null}
       <div className="flex flex-1 flex-col gap-2 p-4">
         <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="primary">{tEvents(`kind.${event.kind}`)}</Badge>
+          <Badge variant="primary">{t(`eventKind.${event.kind}`)}</Badge>
           {left === 0 ? <Badge variant="warning">{t("events.full")}</Badge> : null}
         </div>
         <p className="text-body-strong text-foreground">{eventTitle(event, locale)}</p>

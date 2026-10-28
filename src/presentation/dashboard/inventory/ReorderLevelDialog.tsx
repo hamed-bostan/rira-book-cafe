@@ -9,10 +9,12 @@ import { useRouter } from "@/src/i18n/navigation";
 import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
+import { DashboardField } from "../DashboardField";
+
 import { inventoryApi } from "./inventory-api";
 import { stockApiErrorMessage } from "./stockApiErrorMessage";
 import { StockDialog } from "./StockDialog";
-import { formatStockQuantity } from "./stockFormat";
+import { formatStockQuantity, typedNumber } from "./stockFormat";
 import { StockItemSelect } from "./StockItemSelect";
 
 type ReorderLevelDialogProps = {
@@ -51,7 +53,15 @@ export function ReorderLevelDialog({ open, onOpenChange, items, initialItemId }:
 
   const cleared = level.trim() === "";
   const parsed = countField.safeParse(level);
-  const fieldError = !cleared && !parsed.success ? t("quick.levelInvalid") : undefined;
+  const typed = typedNumber(level);
+  // A negative number broke the "zero or more" rule, and says so; anything else
+  // that isn't a level gets the format's copy.
+  const fieldError =
+    !cleared && !parsed.success
+      ? typed !== undefined && typed < 0
+        ? t("quick.levelNegative")
+        : t("quick.levelInvalid")
+      : undefined;
   const unchanged =
     item !== undefined && (cleared ? item.reorderLevel === undefined : parsed.data === item.reorderLevel);
   const ready = item !== undefined && (cleared || parsed.success) && !unchanged;
@@ -106,21 +116,17 @@ export function ReorderLevelDialog({ open, onOpenChange, items, initialItemId }:
       error={fieldError ?? error}
     >
       <StockItemSelect items={items} value={itemId} onChange={pick} />
-      <label className="flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
-        {t("quick.levelLabel", { unit })}
+      <DashboardField label={t("quick.levelLabel", { unit })} hint={t("quick.levelHint")}>
         <Input
           size="control-md"
           value={level}
           onChange={(event) => setLevel(event.target.value)}
           inputMode="decimal"
           autoComplete="off"
-          placeholder="—"
+          placeholder="0"
           dir="ltr"
         />
-        <span className="text-body-small font-normal text-muted-foreground sm:text-body-caption">
-          {t("quick.levelHint")}
-        </span>
-      </label>
+      </DashboardField>
     </StockDialog>
   );
 }

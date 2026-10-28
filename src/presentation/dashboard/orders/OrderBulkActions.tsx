@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, CircleCheck, CircleX, CreditCard } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { useTranslations } from "next-intl";
 import * as React from "react";
 
@@ -14,6 +14,7 @@ import {
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { useBulkSelection } from "@/src/presentation/dashboard/bulk";
+import { DashboardDialog } from "@/src/presentation/dashboard/DashboardDialog";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
 import {
   DropdownMenu,
@@ -22,22 +23,24 @@ import {
   DropdownMenuTrigger,
 } from "@/src/presentation/design-system/components/DropdownMenu/DropdownMenu";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
-import { ConfirmSheet } from "@/src/presentation/design-system/components/Sheet/ConfirmSheet";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { ordersApi } from "./order-api";
 
+/** The bar's buttons: the redesign's quiet bordered button, 40px tall from `sm` like the toolbar it replaces. */
+const ACTION = "px-4 sm:min-h-10";
+
 type OrderBulkActionsProps = {
   /** The page's orders — enough of each to tell which actions fit the selection. */
-  orders: Pick<Order, "id" | "status" | "paymentStatus">[];
+  orders: Pick<Order, "id" | "orderNumber" | "status" | "paymentStatus">[];
 };
 
 /**
  * The order list's bulk actions: serve, mark paid (with how the guests paid), and
- * cancel. A selection is usually mixed, so each action applies to the orders it
- * fits — the label says how many when that isn't all of them, and an action that
- * fits none is disabled. The server re-checks every order and reports how many it
- * actually changed.
+ * cancel (after a confirmation — it can't be undone). A selection is usually mixed,
+ * so each action applies to the orders it fits — the label says how many when that
+ * isn't all of them, and an action that fits none is disabled. The server re-checks
+ * every order and reports how many it actually changed.
  *
  * Writes over the API, then `router.refresh()`es, so the rows come back from the
  * server rather than being patched locally. Reads the selection from context (see
@@ -53,11 +56,12 @@ export function OrderBulkActions({ orders }: OrderBulkActionsProps) {
   /** The action in flight — only its button shows the spinner; the rest just disable. */
   const [active, setActive] = React.useState<BulkOrderActionType | null>(null);
   const [confirmCancel, setConfirmCancel] = React.useState(false);
+  const [cancelError, setCancelError] = React.useState<string | null>(null);
 
   const selectedOrders = orders.filter((order) => selected.includes(order.id));
 
-  function fitting(type: BulkOrderActionType): number {
-    return selectedOrders.filter((order) => canApplyBulkOrderAction(order, type)).length;
+  function fittingOrders(type: BulkOrderActionType): typeof orders {
+    return selectedOrders.filter((order) => canApplyBulkOrderAction(order, type));
   }
 
   /** "Mark served" when it fits every selected order, "Mark served (2)" when it fits some. */
@@ -65,43 +69,69 @@ export function OrderBulkActions({ orders }: OrderBulkActionsProps) {
     return count > 0 && count < selectedOrders.length ? t("bulkActionCount", { action: label, count }) : label;
   }
 
+  /**
+   * "3 orders marked as served" — or, when the one order it fitted is the one that
+   * changed, that order by number, as a row action would say it.
+   */
+  function doneMessage(type: BulkOrderActionType, updated: number): string {
+    if (updated === 0) return t("bulkNone");
+    const fitted = fittingOrders(type);
+    const number = updated === 1 && fitted.length === 1 ? fitted[0].orderNumber : null;
+    switch (type) {
+      case "serve":
+        return number === null
+          ? t("bulkServedToast", { count: updated })
+          : t("movedToast", { number, status: "completed" });
+      case "markPaid":
+        return number === null ? t("bulkPaidToast", { count: updated }) : t("paidToast", { number });
+      case "cancel":
+        return number === null ? t("bulkCancelledToast", { count: updated }) : t("cancelledToast", { number });
+    }
+  }
+
   function apply(action: OrderBulkAction): void {
     setActive(action.type);
+    setCancelError(null);
     startTransition(async () => {
       try {
         const { updated } = await ordersApi.bulkUpdate(selected, action);
-        toast({ tone: "success", title: t("bulkDone", { count: updated }) });
+        toast({ tone: "success", title: doneMessage(action.type, updated) });
+        setConfirmCancel(false);
         router.refresh();
         clear();
       } catch (err) {
-        toast({ tone: "error", title: localizeApiError(err, tApiErrors, t("bulkError")) });
+        const message = localizeApiError(err, tApiErrors, t("bulkError"));
+        // A cancel is confirmed in a dialog, so its failure is said there.
+        if (action.type === "cancel") setCancelError(message);
+        else toast({ tone: "error", title: message });
       }
     });
   }
 
-  const serveCount = fitting("serve");
-  const payCount = fitting("markPaid");
-  const cancelCount = fitting("cancel");
+  const serveCount = fittingOrders("serve").length;
+  const payCount = fittingOrders("markPaid").length;
+  const cancelCount = fittingOrders("cancel").length;
 
   return (
     <>
       <Button
-        variant="outline"
+        variant="secondary"
         size="control-md"
+        className={ACTION}
         loading={pending && active === "serve"}
         disabled={pending || serveCount === 0}
         onClick={() => apply({ type: "serve" })}
       >
-        <Icon icon={CircleCheck} size="sm" className="me-1.5" />
         {labelFor(t("bulkServe"), serveCount)}
       </Button>
 
+      {/* How the guests paid decides which account the money lands in, so this
+          one opens a choice of method rather than acting straight away. */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild disabled={pending || payCount === 0}>
-          <Button variant="outline" size="control-md" loading={pending && active === "markPaid"}>
-            <Icon icon={CreditCard} size="sm" className="me-1.5" />
+          <Button variant="secondary" size="control-md" className={ACTION} loading={pending && active === "markPaid"}>
             {labelFor(t("markPaid"), payCount)}
-            <Icon icon={ChevronDown} size="sm" className="ms-1.5" />
+            <Icon icon={ChevronDown} size="icon-md" className="ms-1.5" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" aria-label={t("paymentMethodLabel")}>
@@ -114,28 +144,28 @@ export function OrderBulkActions({ orders }: OrderBulkActionsProps) {
       </DropdownMenu>
 
       <Button
-        variant="outline"
+        variant="secondary"
         size="control-md"
-        className="border-error-foreground text-error-foreground hover:bg-error"
-        loading={pending && active === "cancel"}
+        className={`${ACTION} border-error-border text-error-foreground hover:bg-error active:bg-error disabled:text-error-foreground`}
         disabled={pending || cancelCount === 0}
-        onClick={() => setConfirmCancel(true)}
+        onClick={() => {
+          setCancelError(null);
+          setConfirmCancel(true);
+        }}
       >
-        <Icon icon={CircleX} size="sm" className="me-1.5" />
         {labelFor(t("bulkCancel"), cancelCount)}
       </Button>
 
-      <ConfirmSheet
+      <DashboardDialog
         open={confirmCancel}
         onOpenChange={setConfirmCancel}
         title={t("bulkCancelTitle", { count: cancelCount })}
-        message={t("bulkCancelMessage")}
-        confirmLabel={t("bulkCancel")}
-        cancelLabel={t("cancelKeep")}
-        onConfirm={() => {
-          setConfirmCancel(false);
-          apply({ type: "cancel" });
-        }}
+        subtitle={t("bulkCancelMessage")}
+        submitLabel={t("bulkCancel")}
+        pending={pending && active === "cancel"}
+        onSubmit={() => apply({ type: "cancel" })}
+        error={cancelError}
+        danger
       />
     </>
   );

@@ -11,8 +11,9 @@ import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
 import { cn } from "@/src/lib/utils";
+import { DashboardField } from "@/src/presentation/dashboard/DashboardField";
+import { FormAlert } from "@/src/presentation/dashboard/FormAlert";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
-import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
 import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
@@ -70,8 +71,7 @@ type AmountFieldProps = {
 
 function AmountField({ label, value, onChange, hint }: AmountFieldProps) {
   return (
-    <label className="flex min-w-0 flex-col gap-1.5 text-body-small-emphasis text-foreground">
-      {label}
+    <DashboardField label={label} hint={hint}>
       <Input
         size="control-md"
         value={value}
@@ -81,10 +81,7 @@ function AmountField({ label, value, onChange, hint }: AmountFieldProps) {
         autoComplete="off"
         placeholder="0"
       />
-      {hint ? (
-        <span className="text-body-small font-normal text-muted-foreground sm:text-body-caption">{hint}</span>
-      ) : null}
-    </label>
+    </DashboardField>
   );
 }
 
@@ -97,8 +94,7 @@ type NoteFieldProps = {
 
 function NoteField({ label, value, onChange, placeholder }: NoteFieldProps) {
   return (
-    <label className="flex min-w-0 flex-col gap-1.5 text-body-small-emphasis text-foreground">
-      {label}
+    <DashboardField label={label}>
       <Input
         size="control-md"
         value={value}
@@ -107,7 +103,7 @@ function NoteField({ label, value, onChange, placeholder }: NoteFieldProps) {
         autoComplete="off"
         placeholder={placeholder}
       />
-    </label>
+    </DashboardField>
   );
 }
 
@@ -133,7 +129,7 @@ function ShiftForm({ onSubmit, blocked, pending, error, submitLabel, children }:
       }}
     >
       {children}
-      {error ? <FormMessage>{error}</FormMessage> : null}
+      {error ? <FormAlert>{error}</FormAlert> : null}
       <Button type="submit" size="control-md" className="self-start px-4" loading={pending} disabled={blocked}>
         {submitLabel}
       </Button>

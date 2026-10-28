@@ -8,6 +8,7 @@ import { cn } from "@/src/lib/utils";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 
+import { HIDDEN_IN_FULL_SCREEN } from "./fullScreen";
 import { isSectionActive } from "./sections";
 
 import type { LucideIcon } from "lucide-react";
@@ -56,6 +57,7 @@ export function BottomNav({ onOpenMore }: BottomNavProps) {
       className={cn(
         "fixed inset-x-0 bottom-0 z-40 mx-auto flex w-full max-w-[40.75rem] items-stretch justify-around border-x border-t border-border bg-background xl:hidden dashboard-landscape:hidden dashboard-short:hidden",
         "pb-[env(safe-area-inset-bottom)]",
+        HIDDEN_IN_FULL_SCREEN,
       )}
     >
       {ITEMS.map((item) => {

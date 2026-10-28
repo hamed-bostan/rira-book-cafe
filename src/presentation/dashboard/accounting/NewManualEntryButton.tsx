@@ -5,7 +5,7 @@ import * as React from "react";
 
 import { moneyField } from "@/src/contracts/money-fields";
 import type { Account } from "@/src/domain/entities/Ledger";
-import { useRouter } from "@/src/i18n/navigation";
+import { Link, useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
@@ -14,9 +14,11 @@ import { Input } from "@/src/presentation/design-system/components/form/Input/In
 import { Select } from "@/src/presentation/design-system/components/form/Select/Select";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
+import { DashboardDialog } from "../DashboardDialog";
+import { DashboardField } from "../DashboardField";
+
 import { journalEntriesApi } from "./accounting-api";
 import { accountLabel, accountName, normalizeAmount } from "./accounting-format";
-import { AccountingDialog } from "./AccountingDialog";
 
 type NewManualEntryButtonProps = {
   /** The chart of accounts; only the active ones are offered. */
@@ -24,8 +26,6 @@ type NewManualEntryButtonProps = {
   /** Today on the cafe calendar — the entry's default date and the latest it may be. */
   today: string;
 };
-
-const FIELD = "flex min-w-0 flex-col gap-1.5 text-body-small-emphasis text-foreground";
 
 /**
  * "New manual entry": one amount from one account to another — an owner top-up,
@@ -110,7 +110,7 @@ export function NewManualEntryButton({ accounts, today }: NewManualEntryButtonPr
       <Button size="control-md" type="button" variant="secondary" className="px-3" onClick={() => setOpen(true)}>
         {t("journal.newEntry")}
       </Button>
-      <AccountingDialog
+      <DashboardDialog
         open={open}
         onOpenChange={(next) => {
           setOpen(next);
@@ -132,15 +132,20 @@ export function NewManualEntryButton({ accounts, today }: NewManualEntryButtonPr
             : undefined
         }
         error={fieldError ?? error}
-        fullForm={{
-          prompt: t("quickEntry.fullFormPrompt"),
-          label: t("quickEntry.fullFormLink"),
-          href: "/dashboard/accounting/journal/new",
-        }}
+        aside={
+          <p className="text-body-small text-pretty text-muted-foreground sm:text-body-caption">
+            {t("quickEntry.fullFormPrompt")}{" "}
+            <Link
+              href="/dashboard/accounting/journal/new"
+              className="font-medium text-primary underline underline-offset-4 hover:text-primary-hover"
+            >
+              {t("quickEntry.fullFormLink")}
+            </Link>
+          </p>
+        }
       >
         <div className="grid grid-cols-2 gap-4">
-          <label className={FIELD}>
-            {t("form.dateLabel")}
+          <DashboardField label={t("form.dateLabel")}>
             <Input
               size="control-md"
               type="date"
@@ -149,9 +154,8 @@ export function NewManualEntryButton({ accounts, today }: NewManualEntryButtonPr
               onChange={(event) => setDate(event.target.value)}
               dir="ltr"
             />
-          </label>
-          <label className={FIELD}>
-            {t("quickEntry.amountLabel")}
+          </DashboardField>
+          <DashboardField label={t("quickEntry.amountLabel")}>
             <Input
               size="control-md"
               value={amount}
@@ -161,10 +165,9 @@ export function NewManualEntryButton({ accounts, today }: NewManualEntryButtonPr
               placeholder="0"
               dir="ltr"
             />
-          </label>
+          </DashboardField>
         </div>
-        <label className={FIELD}>
-          {t("form.descriptionLabel")}
+        <DashboardField label={t("form.descriptionLabel")}>
           <Input
             size="control-md"
             value={description}
@@ -174,9 +177,8 @@ export function NewManualEntryButton({ accounts, today }: NewManualEntryButtonPr
             placeholder={t("quickEntry.descriptionPlaceholder")}
             dir="auto"
           />
-        </label>
-        <label className={FIELD}>
-          {t("form.debitLabel")}
+        </DashboardField>
+        <DashboardField label={t("form.debitLabel")}>
           <Select size="control-md" value={debit} onChange={(event) => setDebit(event.target.value)}>
             <option value="">{t("form.accountPlaceholder")}</option>
             {active.map((account) => (
@@ -185,9 +187,8 @@ export function NewManualEntryButton({ accounts, today }: NewManualEntryButtonPr
               </option>
             ))}
           </Select>
-        </label>
-        <label className={FIELD}>
-          {t("form.creditLabel")}
+        </DashboardField>
+        <DashboardField label={t("form.creditLabel")}>
           <Select size="control-md" value={credit} onChange={(event) => setCredit(event.target.value)}>
             <option value="">{t("form.accountPlaceholder")}</option>
             {active.map((account) => (
@@ -196,8 +197,8 @@ export function NewManualEntryButton({ accounts, today }: NewManualEntryButtonPr
               </option>
             ))}
           </Select>
-        </label>
-      </AccountingDialog>
+        </DashboardField>
+      </DashboardDialog>
     </>
   );
 }

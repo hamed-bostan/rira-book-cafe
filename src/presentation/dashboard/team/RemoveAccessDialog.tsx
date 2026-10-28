@@ -5,10 +5,10 @@ import * as React from "react";
 
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
+import { DashboardDialog } from "@/src/presentation/dashboard/DashboardDialog";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { teamApi } from "./team-api";
-import { TeamMemberDialog } from "./TeamMemberDialog";
 
 type RemoveAccessDialogProps = {
   open: boolean;
@@ -45,13 +45,13 @@ export function RemoveAccessDialog({ open, onOpenChange, id, name }: RemoveAcces
   }
 
   return (
-    <TeamMemberDialog
+    <DashboardDialog
       open={open}
       onOpenChange={onOpenChange}
       title={t("remove.title", { name })}
-      message={t("remove.message")}
+      subtitle={t("remove.message")}
       submitLabel={t("remove.confirm")}
-      destructive
+      danger
       pending={pending}
       onSubmit={submit}
       error={error}

@@ -1,4 +1,4 @@
-import { Coffee, Plus, SearchX } from "lucide-react";
+import { Plus } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
 import type { Category } from "@/src/domain/entities/Category";
@@ -8,10 +8,10 @@ import { Link } from "@/src/i18n/navigation";
 import { cn } from "@/src/lib/utils";
 import { ListChoiceFilter, ListPager, ListSearchInput } from "@/src/presentation/dashboard/list";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
-import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 
+import { DashboardEmptyState } from "../DashboardEmptyState";
 import { DashboardLinkTabs } from "../DashboardLinkTabs";
 
 import { MENU_ITEM_SHOWS, type MenuItemShow } from "./menu-item-show";
@@ -80,7 +80,7 @@ export async function ProductsScreen({
           <h1 className="dashboard-page-title">{t("heading")}</h1>
           <p className="flex flex-wrap items-center gap-x-2 text-body-default text-muted-foreground sm:text-body-small">
             <span>{t("subtitle")}</span>
-            {attention > 0 && show !== "attention" ? (
+            {attention > 0 ? (
               <>
                 <span aria-hidden>·</span>
                 <Link
@@ -100,7 +100,7 @@ export async function ProductsScreen({
         {canWrite ? (
           <Button size="control-md" asChild className="gap-2 px-4">
             <Link href="/dashboard/products/create">
-              <Icon icon={Plus} size="sm" />
+              <Icon icon={Plus} size="icon-md" />
               {t("newProduct")}
             </Link>
           </Button>
@@ -129,7 +129,7 @@ export async function ProductsScreen({
           <ListSearchInput
             label={t("searchLabel")}
             placeholder={t("searchPlaceholder")}
-            className="min-w-0 flex-[1_1_15rem] sm:max-w-md"
+            className="max-w-md min-w-0 flex-[1_1_15rem]"
           />
           <ListChoiceFilter
             paramName="show"
@@ -145,7 +145,7 @@ export async function ProductsScreen({
             <div
               aria-hidden
               className={cn(
-                "hidden h-10 items-center border-b border-border bg-muted px-5 text-body-caption-bold tracking-wider text-muted-foreground uppercase md:grid",
+                "hidden h-10 items-center border-b border-border bg-muted px-5 text-body-caption font-semibold tracking-wider text-muted-foreground uppercase md:grid",
                 PRODUCT_ROW_GRID,
               )}
             >
@@ -172,34 +172,9 @@ export async function ProductsScreen({
             </div>
           </>
         ) : isFiltered ? (
-          <EmptyState
-            icon={SearchX}
-            title={t("noMatchesTitle")}
-            description={query ? t("noMatchesSearch") : t("noMatchesView")}
-            action={
-              <Button asChild size="control-md" variant="secondary" className="px-3">
-                <Link href={hrefFor({ categoryId })}>{t("showEverything")}</Link>
-              </Button>
-            }
-            className="py-12"
-          />
+          <DashboardEmptyState title={t("noMatchesTitle")} body={query ? t("noMatchesSearch") : t("noMatchesView")} />
         ) : (
-          <EmptyState
-            icon={Coffee}
-            title={t("listEmptyTitle")}
-            description={t("listEmptyBody")}
-            action={
-              canWrite ? (
-                <Button asChild size="control-md">
-                  <Link href="/dashboard/products/create">
-                    <Icon icon={Plus} size="sm" className="me-1.5" />
-                    {t("newProduct")}
-                  </Link>
-                </Button>
-              ) : undefined
-            }
-            className="py-12"
-          />
+          <DashboardEmptyState title={t("listEmptyTitle")} body={t("listEmptyBody")} />
         )}
       </section>
     </div>

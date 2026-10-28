@@ -75,6 +75,7 @@ describe("reading role changes back", () => {
 
   it.each<[string | null, string | null, string, string]>([
     ["customer", "staff", "u", "granted"],
+    ["support", "staff", "someone-else", "changed"],
     ["admin", "customer", "u", "revoked"],
     ["admin", "owner", "u", "ownershipClaimed"],
     ["admin", "owner", "someone-else", "ownershipTransferred"],

@@ -16,7 +16,7 @@ const VARIANT: Record<SuiteBookingStatus, NonNullable<BadgeProps["variant"]>> = 
 type SuiteBookingStatusBadgeProps = {
   status: SuiteBookingStatus;
   /**
-   * The dashboard's look: a tinted pill with a border and a leading dot, a
+   * The dashboard's look: a 24px tinted pill with a border and a leading dot, a
    * cancellation as quiet as a finished stay. The guest's own page keeps the
    * plain pill.
    */
@@ -26,7 +26,7 @@ type SuiteBookingStatusBadgeProps = {
 export function SuiteBookingStatusBadge({ status, outlined = false }: SuiteBookingStatusBadgeProps) {
   const t = useTranslations("dashSuite");
   return outlined ? (
-    <Badge variant={status === "cancelled" ? "neutral" : VARIANT[status]} appearance="outline" dot>
+    <Badge variant={status === "cancelled" ? "neutral" : VARIANT[status]} appearance="outline" size="compact" dot>
       {t(`status.${status}`)}
     </Badge>
   ) : (

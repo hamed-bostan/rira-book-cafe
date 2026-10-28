@@ -1,39 +1,56 @@
 "use client";
 
-import { CircleAlert } from "lucide-react";
 import { useTranslations } from "next-intl";
 
+import { cn } from "@/src/lib/utils";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
-import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 import { Modal, ModalContent } from "@/src/presentation/design-system/components/Modal/Modal";
+
+import { DIALOG_TITLE } from "./fieldStyles";
+import { FormAlert } from "./FormAlert";
 
 import type { ReactNode } from "react";
 
-type ExpenseDialogProps = {
+/** The tint a preview takes when it says something: settled, worth a look, or a problem. */
+export type DashboardDialogTone = "neutral" | "success" | "warning" | "danger";
+
+const PREVIEW_TONE: Record<DashboardDialogTone, string> = {
+  neutral: "bg-muted text-foreground/80",
+  success: "bg-success text-success-foreground",
+  warning: "bg-warning text-warning-foreground",
+  danger: "bg-error text-error-foreground",
+};
+
+type DashboardDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
-  /** One line under the title: what saving does, or which bill this is. */
-  subtitle: string;
+  /** One line under the title: what saving does, or what's about to change. */
+  subtitle: ReactNode;
   submitLabel: string;
-  /** Nothing to save yet, or something's wrong — the save button waits. */
+  /** Nothing to save yet, or something's wrong — the save button waits, dimmed. */
   blocked?: boolean;
   pending: boolean;
   onSubmit: () => void;
-  /** What saving will book, worked out as you type. */
+  /** What saving will do, worked out as the fields are filled in. */
   preview?: string;
+  previewTone?: DashboardDialogTone;
   error?: string | null;
-  /** The save can't be taken back (voiding): the button is drawn in the danger colour. */
+  /** The action can't be taken back (cancel, delete, void): the button is drawn in the danger colour. */
   danger?: boolean;
+  /** A line above the buttons — a way to a fuller form, say. */
+  aside?: ReactNode;
+  /** The fields. A confirmation has none. */
   children?: ReactNode;
 };
 
 /**
- * The frame every Expenses dialog shares: a title and what saving does, the
- * fields, a preview of what will be booked, any error, and Back / save — so
- * recording, paying and voiding read the same.
+ * Every dialog on the redesigned dashboard: a title and what saving does, the
+ * fields, a preview of the result, what's wrong, then Back and the action —
+ * red when it can't be undone. Confirmations use it too, with no fields, so
+ * asking "Cancel this booking?" reads the same as filling in a form.
  */
-export function ExpenseDialog({
+export function DashboardDialog({
   open,
   onOpenChange,
   title,
@@ -43,20 +60,22 @@ export function ExpenseDialog({
   pending,
   onSubmit,
   preview,
+  previewTone = "neutral",
   error,
   danger = false,
+  aside,
   children,
-}: ExpenseDialogProps) {
-  const t = useTranslations("dashExpenses");
+}: DashboardDialogProps) {
+  const t = useTranslations("dashboard");
 
   return (
     <Modal open={open} onOpenChange={(next) => !pending && onOpenChange(next)}>
       <ModalContent
         title={title}
         className="flex max-h-[calc(100dvh-2rem)] max-w-md flex-col overflow-y-auto"
-        titleClassName="text-start text-body-lead tracking-tight lg:text-heading-subsection"
+        titleClassName={DIALOG_TITLE}
       >
-        <p className="mt-1 text-body-default text-pretty text-muted-foreground sm:text-body-small">{subtitle}</p>
+        <div className="mt-1 text-body-default text-pretty text-muted-foreground sm:text-body-small">{subtitle}</div>
         <form
           noValidate
           className="mt-5 flex flex-col gap-5"
@@ -70,20 +89,16 @@ export function ExpenseDialog({
           {preview ? (
             <p
               aria-live="polite"
-              className="rounded-button bg-muted px-4 py-3 text-body-default text-pretty text-foreground/80 tabular-nums sm:text-body-small"
+              className={cn(
+                "rounded-button px-4 py-3 text-body-default text-pretty tabular-nums sm:text-body-small",
+                PREVIEW_TONE[previewTone],
+              )}
             >
               {preview}
             </p>
           ) : null}
-          {error ? (
-            <p
-              role="alert"
-              className="flex items-start gap-1.5 text-body-default font-medium text-pretty text-error-foreground sm:text-body-small"
-            >
-              <Icon icon={CircleAlert} size="sm" className="mt-0.5 shrink-0 sm:size-4" />
-              {error}
-            </p>
-          ) : null}
+          {error ? <FormAlert>{error}</FormAlert> : null}
+          {aside}
 
           <div className="flex flex-wrap justify-end gap-2">
             <Button
@@ -94,7 +109,7 @@ export function ExpenseDialog({
               disabled={pending}
               onClick={() => onOpenChange(false)}
             >
-              {t("back")}
+              {t("dialogBack")}
             </Button>
             <Button
               type="submit"

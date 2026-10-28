@@ -16,7 +16,7 @@ import { JournalRowActions } from "./JournalRowActions";
  * posted it, the amount and the "⋯". Shared by the heading row and every entry so
  * they line up.
  */
-export const JOURNAL_COLUMNS = "@4xl/journal:grid-cols-[minmax(0,1fr)_6rem_8rem_9rem_2.5rem]";
+export const JOURNAL_COLUMNS = "@4xl/journal:grid-cols-[minmax(0,1fr)_6rem_7rem_9rem_2.5rem]";
 
 type JournalRowProps = {
   entry: JournalEntry;
@@ -47,8 +47,9 @@ export async function JournalRow({ entry, accounts, reversible, today }: Journal
       })
       .join(locale === "fa" ? "، " : ", ");
 
-  const figure = "flex min-w-0 flex-col text-start";
+  const figure = "flex min-w-0 flex-col gap-0.5 text-start";
   const inlineLabel = "text-body-small text-muted-foreground sm:text-body-caption @4xl/journal:hidden";
+  const value = "text-body-default sm:text-body-small";
 
   return (
     <article
@@ -68,7 +69,7 @@ export async function JournalRow({ entry, accounts, reversible, today }: Journal
             {entry.description}
           </Link>
           {entry.reversedById ? (
-            <Badge variant="neutral" appearance="outline">
+            <Badge size="compact" variant="neutral" appearance="outline">
               {t("journal.reversed")}
             </Badge>
           ) : null}
@@ -83,17 +84,17 @@ export async function JournalRow({ entry, accounts, reversible, today }: Journal
       <div className="order-1 col-span-full flex flex-wrap gap-x-8 gap-y-2 @4xl/journal:contents">
         <div className={figure}>
           <span className={inlineLabel}>{t("journal.colDate")}</span>
-          <span className="whitespace-nowrap text-foreground/80 tabular-nums">
+          <span className={cn(value, "whitespace-nowrap text-foreground/80 tabular-nums")}>
             {formatCafeDayShort(entry.date, locale)}
           </span>
         </div>
         <div className={figure}>
           <span className={inlineLabel}>{t("journal.colSource")}</span>
-          <span className="text-foreground/80">{t(`source.${entry.source}`)}</span>
+          <span className={cn(value, "text-foreground/80")}>{t(`source.${entry.source}`)}</span>
         </div>
         <div className={cn(figure, "@4xl/journal:text-end")}>
           <span className={inlineLabel}>{t("journal.colAmount")}</span>
-          <span className="font-semibold whitespace-nowrap text-foreground tabular-nums">
+          <span className={cn(value, "font-semibold whitespace-nowrap text-foreground tabular-nums")}>
             {formatNumber(entryTotal(entry), locale)}
           </span>
         </div>

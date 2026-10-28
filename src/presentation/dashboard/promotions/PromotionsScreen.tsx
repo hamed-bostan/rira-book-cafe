@@ -1,11 +1,10 @@
-import { TicketPercent } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import type { LoyaltySettings } from "@/src/domain/entities/Loyalty";
 import { promoCodeState, type PromoCodeState, type PromoCodeWithUses } from "@/src/domain/entities/Promotion";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { cn } from "@/src/lib/utils";
-import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
+import { DashboardEmptyState } from "@/src/presentation/dashboard/DashboardEmptyState";
 
 import { GuestPointsPanel } from "./GuestPointsPanel";
 import { LoyaltySettingsForm } from "./LoyaltySettingsForm";
@@ -74,12 +73,7 @@ export async function PromotionsScreen({ promoCodes, loyaltySettings, now, today
             ))}
           </ul>
         ) : (
-          <EmptyState
-            icon={TicketPercent}
-            title={t("codesEmptyTitle")}
-            description={t("codesEmptyBody")}
-            className="py-12"
-          />
+          <DashboardEmptyState title={t("codesEmptyTitle")} body={t("codesEmptyBody")} />
         )}
       </section>
 

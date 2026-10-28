@@ -7,6 +7,7 @@ import * as React from "react";
 import type { PromoCode } from "@/src/domain/entities/Promotion";
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
+import { DashboardDialog } from "@/src/presentation/dashboard/DashboardDialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,7 +15,6 @@ import {
   DropdownMenuItem,
 } from "@/src/presentation/design-system/components/DropdownMenu/DropdownMenu";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
-import { ConfirmSheet } from "@/src/presentation/design-system/components/Sheet/ConfirmSheet";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { PromoActiveSwitch } from "./PromoActiveSwitch";
@@ -43,18 +43,22 @@ export function PromoCodeRowActions({ promo, finished, takenCodes, today }: Prom
   const router = useRouter();
   const { toast } = useToast();
   const [editing, setEditing] = React.useState(false);
+  // Bumped on every Edit, so the dialog starts from the code as saved.
+  const [opened, setOpened] = React.useState(0);
   const [confirmDelete, setConfirmDelete] = React.useState(false);
+  const [deleteError, setDeleteError] = React.useState<string | null>(null);
   const [deleting, startDelete] = React.useTransition();
 
   function remove(): void {
+    setDeleteError(null);
     startDelete(async () => {
       try {
         await promotionsApi.removePromoCode(promo.id);
         toast({ tone: "success", title: t("deleted", { code: promo.code }) });
+        setConfirmDelete(false);
       } catch (err) {
-        toast({ tone: "error", title: localizeApiError(err, tApiErrors, t("deleteError")) });
+        setDeleteError(localizeApiError(err, tApiErrors, t("deleteError")));
       }
-      setConfirmDelete(false);
       router.refresh();
     });
   }
@@ -68,26 +72,47 @@ export function PromoCodeRowActions({ promo, finished, takenCodes, today }: Prom
           disabled={deleting}
           aria-label={t("moreActionsAria", { code: promo.code })}
         >
-          <Icon icon={MoreHorizontal} size="sm" className="sm:size-4" />
+          <Icon icon={MoreHorizontal} size="icon-md" />
         </DropdownMenuIconTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem onSelect={() => setEditing(true)}>{finished ? t("editAgain") : t("edit")}</DropdownMenuItem>
-          <DropdownMenuItem destructive onSelect={() => setConfirmDelete(true)}>
+          <DropdownMenuItem
+            onSelect={() => {
+              setOpened((count) => count + 1);
+              setEditing(true);
+            }}
+          >
+            {finished ? t("editAgain") : t("edit")}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            destructive
+            onSelect={() => {
+              setDeleteError(null);
+              setConfirmDelete(true);
+            }}
+          >
             {t("delete")}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <PromoCodeDialog open={editing} onOpenChange={setEditing} promo={promo} takenCodes={takenCodes} today={today} />
-      <ConfirmSheet
+      <PromoCodeDialog
+        key={opened}
+        open={editing}
+        onOpenChange={setEditing}
+        promo={promo}
+        takenCodes={takenCodes}
+        today={today}
+      />
+      <DashboardDialog
         open={confirmDelete}
         onOpenChange={setConfirmDelete}
         title={t("deleteTitle", { code: promo.code })}
-        message={t("deleteBody")}
-        confirmLabel={t("delete")}
-        cancelLabel={t("back")}
+        subtitle={t("deleteBody")}
+        submitLabel={t("delete")}
         pending={deleting}
-        onConfirm={remove}
+        onSubmit={remove}
+        error={deleteError}
+        danger
       />
     </div>
   );

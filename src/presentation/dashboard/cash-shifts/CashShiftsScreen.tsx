@@ -81,7 +81,7 @@ export async function CashShiftsScreen({ overview }: { overview: CashShiftOvervi
               id="open-shift-heading"
               title={t("openShift", { number: number(current.shift.number) })}
               badge={
-                <Badge variant="success" appearance="outline" dot>
+                <Badge variant="success" appearance="outline" size="compact" dot>
                   {t("openBadge")}
                 </Badge>
               }
@@ -148,7 +148,7 @@ export async function CashShiftsScreen({ overview }: { overview: CashShiftOvervi
                         counted: number(shift.countedCash ?? 0),
                       })}
                     </span>
-                    <Badge variant={result.variant} appearance="outline" dot>
+                    <Badge variant={result.variant} appearance="outline" size="compact" dot>
                       {result.kind === "exact"
                         ? t("result.exact")
                         : t(`result.${result.kind}`, { amount: formatMoney(result.amount, locale) })}

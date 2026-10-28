@@ -34,7 +34,7 @@ export function StockRowActions({ id, name, canManage }: StockRowActionsProps) {
   return (
     <DropdownMenu>
       <DropdownMenuIconTrigger aria-label={t("moreActionsAria", { name })} appearance="secondary">
-        <Icon icon={MoreHorizontal} size="sm" className="sm:size-4" />
+        <Icon icon={MoreHorizontal} size="icon-md" />
       </DropdownMenuIconTrigger>
       <DropdownMenuContent align="end">
         {canManage ? (

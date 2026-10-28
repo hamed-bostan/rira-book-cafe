@@ -26,6 +26,8 @@ const topItemSchema = z.object({
   productId: z.string(),
   name: z.string(),
   kind: z.enum(PRODUCT_KINDS),
+  /** Its menu category, in the reader's language; `null` once the item is deleted. */
+  categoryName: z.string().nullable(),
   quantity: z.number(),
   revenue: z.number(),
 });
@@ -46,7 +48,10 @@ export type TopItemWire = z.infer<typeof topItemSchema>;
 
 export const paymentReportResponseSchema = z.object({
   range: rangeSchema,
+  previousRange: rangeSchema,
   summary: z.object({
+    /** Completed orders' total; `paidValue` is the part of it marked paid. */
+    revenue: z.number(),
     paidOrders: z.number(),
     paidValue: z.number(),
     unpaidOrders: z.number(),

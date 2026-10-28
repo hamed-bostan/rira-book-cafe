@@ -1,5 +1,10 @@
 import type { BookLoan } from "../../entities/BookLoan";
-import type { BookLoanFilters, IBookLoanRepository, LendableBook } from "../../repositories/IBookLoanRepository";
+import type {
+  BookLoanCounts,
+  BookLoanFilters,
+  IBookLoanRepository,
+  LendableBook,
+} from "../../repositories/IBookLoanRepository";
 
 /** The loan book for the dashboard. A cross-guest read: gate to staff. */
 export class ListBookLoans {
@@ -7,6 +12,18 @@ export class ListBookLoans {
 
   execute(filters: BookLoanFilters, now: Date): Promise<BookLoan[]> {
     return this.loanRepo.list({ view: filters.view, q: filters.q?.trim() || undefined }, now);
+  }
+}
+
+/**
+ * How many loans each tab of the loan book holds, whatever is being searched —
+ * so the counts stay put while the list narrows. A cross-guest read: gate to staff.
+ */
+export class CountBookLoans {
+  constructor(private readonly loanRepo: Pick<IBookLoanRepository, "countByView">) {}
+
+  execute(now: Date): Promise<BookLoanCounts> {
+    return this.loanRepo.countByView(now);
   }
 }
 

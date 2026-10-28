@@ -1,4 +1,4 @@
-import { BookOpen, Bookmark } from "lucide-react";
+import { BookOpen } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import type { BookLoan } from "@/src/domain/entities/BookLoan";
@@ -9,9 +9,9 @@ import { formatCafeDayShort } from "@/src/lib/formatCafeDay";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { cn } from "@/src/lib/utils";
 import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
-import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 
+import { DashboardEmptyState } from "../DashboardEmptyState";
 import { DashboardLinkTabs } from "../DashboardLinkTabs";
 
 import { AddHoldDialog } from "./AddHoldDialog";
@@ -135,10 +135,8 @@ export async function BookHoldsScreen({ open, closed, books, openLoans, tab, now
               <div key={productId} className={cn(groupIndex > 0 && "border-t border-border")}>
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-5 pt-4 pb-1">
                   <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-                    <Icon icon={BookOpen} size="sm" className="text-muted-foreground" />
-                    <span className="text-body-strong text-foreground sm:text-body-small-strong">
-                      {book?.title ?? entries[0].bookTitle}
-                    </span>
+                    <Icon icon={BookOpen} size="icon-md" className="text-icon-accent" />
+                    <span className="text-body-strong text-foreground">{book?.title ?? entries[0].bookTitle}</span>
                     {book?.author ? (
                       <span className="text-body-default text-muted-foreground sm:text-body-small">{book.author}</span>
                     ) : null}
@@ -166,7 +164,7 @@ export async function BookHoldsScreen({ open, closed, books, openLoans, tab, now
                           <span
                             title={t("positionTitle", { position: index + 1 })}
                             className={cn(
-                              "inline-flex size-8 shrink-0 items-center justify-center rounded-full text-body-small font-semibold tabular-nums sm:text-body-caption-bold",
+                              "inline-flex size-8 shrink-0 items-center justify-center rounded-full text-body-small font-semibold tabular-nums sm:text-body-caption",
                               told ? "bg-success text-success-foreground" : "bg-muted text-foreground/80",
                             )}
                           >
@@ -178,7 +176,7 @@ export async function BookHoldsScreen({ open, closed, books, openLoans, tab, now
                             <span className="text-body-default font-medium text-foreground sm:text-body-small">
                               {entry.guestName}
                             </span>
-                            <Badge variant={STATUS_VARIANT[entry.status]} appearance="outline" dot>
+                            <Badge variant={STATUS_VARIANT[entry.status]} appearance="outline" size="compact" dot>
                               {t(`status.${entry.status}`)}
                             </Badge>
                           </span>
@@ -213,11 +211,9 @@ export async function BookHoldsScreen({ open, closed, books, openLoans, tab, now
             );
           })
         ) : (
-          <EmptyState
-            icon={Bookmark}
+          <DashboardEmptyState
             title={tab === "open" ? t("emptyOpenTitle") : t("emptyClosedTitle")}
-            description={tab === "open" ? t("emptyOpenBody") : t("emptyClosedBody")}
-            className="py-12"
+            body={tab === "open" ? t("emptyOpenBody") : t("emptyClosedBody")}
           />
         )}
       </section>

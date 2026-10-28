@@ -3,6 +3,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import {
   ANALYTICS_RANGE_PRESETS,
   DEFAULT_ANALYTICS_PRESET,
+  endsBeforeDayEnd,
   type AnalyticsRangePreset,
 } from "@/src/domain/entities/Analytics";
 import { formatCafeDayShort } from "@/src/lib/formatCafeDay";
@@ -24,7 +25,7 @@ type ReportsFrameProps = {
   /** This tab's own params, kept when the range changes (the best-sellers ranking). */
   keep?: Record<string, string>;
   range: ReportRangeWire;
-  /** The period the tab's figures are compared with, when it compares. */
+  /** The period before the range — what the figures are compared with — named after it. */
   previousRange?: ReportRangeWire;
   children: ReactNode;
 };
@@ -53,11 +54,16 @@ export async function ReportsFrame({
       : t("rangeSpan", { from: day(value.fromDay), to: day(value.toDay) });
   const today = selected === "today";
   const shown = today ? t("rangeToday", { day: day(range.toDay) }) : span(range);
-  const compared = previousRange
-    ? today
+  // A day still in progress is compared with the day before up to the same time.
+  const atThisTime =
+    previousRange !== undefined && endsBeforeDayEnd({ toDay: previousRange.toDay, to: new Date(previousRange.to) });
+  const compared = !previousRange
+    ? null
+    : today
       ? t("comparedWithYesterday")
-      : t("comparedWith", { span: span(previousRange) })
-    : null;
+      : atThisTime
+        ? t("comparedWithAtThisTime", { span: span(previousRange) })
+        : t("comparedWith", { span: span(previousRange) });
 
   return (
     <div className="flex min-w-0 flex-col gap-6">

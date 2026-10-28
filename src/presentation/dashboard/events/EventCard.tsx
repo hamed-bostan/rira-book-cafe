@@ -19,10 +19,12 @@ import { TableFit } from "./TableFit";
 
 type EventCardProps = {
   event: CafeEvent;
-  /** Still to come (or running): its tables can change. Past cards are dimmed. */
+  /** On today's cafe day or later: it can be edited. Past cards are dimmed. */
   upcoming: boolean;
   /** Starts on today's cafe day. */
   today: boolean;
+  /** Already ended — its tables can't change any more, even on its own day. */
+  over: boolean;
   canManage: boolean;
 };
 
@@ -31,7 +33,7 @@ type EventCardProps = {
  * capacity with the ticket price, and the tables held for it — with how their
  * seats compare to the guests expected.
  */
-export async function EventCard({ event, upcoming, today, canManage }: EventCardProps) {
+export async function EventCard({ event, upcoming, today, over, canManage }: EventCardProps) {
   const t = await getTranslations("dashEvents");
   const tFloor = await getTranslations("floorTables");
   const locale = await getLocale();
@@ -52,23 +54,29 @@ export async function EventCard({ event, upcoming, today, canManage }: EventCard
       )}
     >
       <div className="flex flex-wrap items-center gap-1.5">
-        <Badge>{t(`kind.${event.kind}`)}</Badge>
-        <Badge variant={event.isPublished ? "success" : "neutral"} appearance="outline" dot>
+        <Badge size="compact" className="text-foreground/80">
+          {t(`kind.${event.kind}`)}
+        </Badge>
+        <Badge variant={event.isPublished ? "success" : "neutral"} appearance="outline" size="compact" dot>
           {event.isPublished ? t("published") : t("draft")}
         </Badge>
-        {today ? (
-          <Badge variant="info" appearance="outline">
+        {upcoming && today ? (
+          <Badge variant="info" appearance="outline" size="compact">
             {t("today")}
           </Badge>
         ) : null}
-        {left === 0 ? <Badge>{t("full")}</Badge> : null}
-        {canManage ? (
+        {left === 0 ? (
+          <Badge size="compact" className="text-foreground/80">
+            {t("full")}
+          </Badge>
+        ) : null}
+        {canManage && upcoming ? (
           <Link
             href={`/dashboard/events/${event.id}/edit`}
             aria-label={t("editAria", { title: event.title })}
             // 44px to the touch, pulled into the badge row's height so it doesn't push the card taller.
             className={cn(
-              "-my-2.5 ms-auto -me-2 flex min-h-11 items-center rounded-button px-3 text-body-default font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:min-h-9 sm:text-body-small",
+              "-my-2.5 ms-auto -me-2 flex min-h-11 items-center rounded-button px-3 text-body-default font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:-my-1.5 sm:min-h-9 sm:text-body-small",
               focusRing,
             )}
           >
@@ -78,9 +86,11 @@ export async function EventCard({ event, upcoming, today, canManage }: EventCard
       </div>
 
       <div className="flex flex-col gap-1">
-        <h2 className="text-body-lead font-semibold text-pretty text-foreground">{event.title}</h2>
+        <h2 className="text-body-lead font-semibold text-pretty text-foreground lg:text-heading-subsection">
+          {event.title}
+        </h2>
         <p className="flex items-center gap-1.5 text-body-default text-foreground/80 sm:text-body-small">
-          <Icon icon={CalendarDays} size="sm" className="text-muted-foreground" />
+          <Icon icon={CalendarDays} size="icon-md" className="text-muted-foreground" />
           {when}
         </p>
       </div>
@@ -112,10 +122,10 @@ export async function EventCard({ event, upcoming, today, canManage }: EventCard
 
       <div className="flex flex-col gap-3 border-t border-border pt-4">
         <div className="flex min-h-11 items-center justify-between gap-3 sm:min-h-9">
-          <span className="text-body-caption-bold tracking-wider text-muted-foreground uppercase">
+          <span className="text-body-caption font-semibold tracking-wider text-muted-foreground uppercase">
             {t("tablesHeld")}
           </span>
-          {canManage && upcoming ? (
+          {canManage && upcoming && !over ? (
             <HoldTablesButton
               eventId={event.id}
               title={event.title}
@@ -134,7 +144,7 @@ export async function EventCard({ event, upcoming, today, canManage }: EventCard
             <ul className="flex flex-wrap gap-1.5">
               {tableNames.map((name) => (
                 <li key={name}>
-                  <Badge variant="info" appearance="outline" className="font-semibold">
+                  <Badge variant="info" appearance="outline" size="compact">
                     {name}
                   </Badge>
                 </li>

@@ -7,11 +7,12 @@ import { GRANTABLE_ROLES, type GrantableRole } from "@/src/domain/entities/User"
 import { useRouter } from "@/src/i18n/navigation";
 import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
+import { DashboardDialog } from "@/src/presentation/dashboard/DashboardDialog";
+import { DashboardField } from "@/src/presentation/dashboard/DashboardField";
 import { Select } from "@/src/presentation/design-system/components/form/Select/Select";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { teamApi } from "./team-api";
-import { TeamMemberDialog } from "./TeamMemberDialog";
 
 /** Why the server refused a role change, keyed by the code it answered with. */
 const BLOCKED_REASON = {
@@ -70,19 +71,18 @@ export function ChangeRoleDialog({ open, onOpenChange, id, name, role }: ChangeR
   }
 
   return (
-    <TeamMemberDialog
+    <DashboardDialog
       open={open}
       onOpenChange={onOpenChange}
       title={t("changeRole.title", { name })}
-      message={t("changeRole.message")}
+      subtitle={t("changeRole.message")}
       submitLabel={t("changeRole.confirm")}
       blocked={next === role}
       pending={pending}
       onSubmit={submit}
       error={error}
     >
-      <label className="flex min-w-0 flex-col gap-1.5 text-body-small-emphasis text-foreground">
-        {t("roleLabel")}
+      <DashboardField label={t("roleLabel")} hint={t("roleHint")}>
         <Select
           size="control-md"
           value={next}
@@ -94,8 +94,7 @@ export function ChangeRoleDialog({ open, onOpenChange, id, name, role }: ChangeR
             </option>
           ))}
         </Select>
-        <span className="text-body-small font-normal text-muted-foreground sm:text-body-caption">{t("roleHint")}</span>
-      </label>
-    </TeamMemberDialog>
+      </DashboardField>
+    </DashboardDialog>
   );
 }

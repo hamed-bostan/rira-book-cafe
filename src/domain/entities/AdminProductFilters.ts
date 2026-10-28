@@ -52,7 +52,7 @@ export const ADMIN_VISIBILITY_FILTERS = ["published", "unpublished"] as const;
 export type AdminVisibilityFilter = (typeof ADMIN_VISIBILITY_FILTERS)[number];
 
 export type AdminProductFilters = {
-  /** Free-text term matched against name and description. */
+  /** Free-text term matched against the name, description, author, size and category name. */
   query?: string;
   categoryId?: string;
   /** Narrow to drinks, food or books; omitted means all kinds. */

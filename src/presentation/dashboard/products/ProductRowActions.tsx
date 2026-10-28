@@ -58,7 +58,7 @@ export function ProductRowActions({ id, name, isFeatured }: ProductRowActionsPro
     <>
       <DropdownMenu>
         <DropdownMenuIconTrigger appearance="secondary" disabled={pending} aria-label={t("rowActionsAria", { name })}>
-          <Icon icon={MoreHorizontal} size="sm" className="sm:size-4" />
+          <Icon icon={MoreHorizontal} size="icon-md" />
         </DropdownMenuIconTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem onSelect={() => router.push(`/dashboard/products/${id}/edit`)}>

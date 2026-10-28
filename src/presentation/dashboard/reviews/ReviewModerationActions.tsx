@@ -64,7 +64,7 @@ export function ReviewModerationActions({ review }: ReviewModerationActionsProps
           disabled={pending}
           onClick={() => save("approved")}
         >
-          <Icon icon={Check} size="xs" strokeWidth={2} />
+          <Icon icon={Check} size="icon-md" strokeWidth={2} />
           {t("action.approved")}
         </Button>
         <Button
@@ -91,7 +91,7 @@ export function ReviewModerationActions({ review }: ReviewModerationActionsProps
           disabled={pending}
           aria-label={t("moreActionsAria", { item: review.productName })}
         >
-          <Icon icon={MoreHorizontal} size="sm" className="sm:size-4" />
+          <Icon icon={MoreHorizontal} size="icon-md" />
         </DropdownMenuIconTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem onSelect={() => save(next)}>{t(`switchTo.${next}`)}</DropdownMenuItem>

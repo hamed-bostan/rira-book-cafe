@@ -25,6 +25,9 @@ export type BookLoanFilters = {
   q?: string;
 };
 
+/** How many loans each view holds — every loan, whatever the search. */
+export type BookLoanCounts = Record<BookLoanView, number>;
+
 export type IBookLoanRepository = {
   /**
    * Record a loan. Refuses a second open loan of the same book to the same phone
@@ -36,6 +39,8 @@ export type IBookLoanRepository = {
   getById(id: string): Promise<BookLoan | null>;
   /** Loans for the dashboard, newest first; `open`/`overdue` soonest-due first. */
   list(filters: BookLoanFilters, now: Date): Promise<BookLoan[]>;
+  /** How many loans each view holds, uncapped and unsearched — the tabs' counts. */
+  countByView(now: Date): Promise<BookLoanCounts>;
   /** One guest's loans (matched by account), newest first. */
   listForUser(userId: string): Promise<BookLoan[]>;
   /** Every book in the catalog, published or not, with how many copies are out. */

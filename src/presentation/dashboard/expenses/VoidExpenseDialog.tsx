@@ -8,10 +8,11 @@ import { useRouter } from "@/src/i18n/navigation";
 import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
+import { DashboardDialog } from "../DashboardDialog";
+import { DashboardField } from "../DashboardField";
+
 import { expensesApi } from "./expense-api";
 import { expenseApiErrorMessage } from "./expenseApiErrorMessage";
-import { ExpenseDialog } from "./ExpenseDialog";
-import { ExpenseField } from "./ExpenseField";
 
 /** The longest reason the reversing entries carry. */
 const MAX_VOID_REASON_LENGTH = 200;
@@ -53,7 +54,7 @@ export function VoidExpenseDialog({ open, onOpenChange, expense }: VoidExpenseDi
   }
 
   return (
-    <ExpenseDialog
+    <DashboardDialog
       open={open}
       onOpenChange={onOpenChange}
       title={t("detail.voidTitle", { number: expense.number })}
@@ -64,7 +65,7 @@ export function VoidExpenseDialog({ open, onOpenChange, expense }: VoidExpenseDi
       error={error}
       danger
     >
-      <ExpenseField label={t("detail.voidReason")}>
+      <DashboardField label={t("detail.voidReason")}>
         <Input
           size="control-md"
           value={reason}
@@ -73,7 +74,7 @@ export function VoidExpenseDialog({ open, onOpenChange, expense }: VoidExpenseDi
           autoComplete="off"
           dir="auto"
         />
-      </ExpenseField>
-    </ExpenseDialog>
+      </DashboardField>
+    </DashboardDialog>
   );
 }

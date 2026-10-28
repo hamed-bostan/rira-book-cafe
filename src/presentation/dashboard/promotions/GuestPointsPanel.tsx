@@ -16,10 +16,12 @@ import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { formatOrderDateShort } from "@/src/lib/formatOrderDate";
+import { formatPhone } from "@/src/lib/formatPhone";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
 import { cn } from "@/src/lib/utils";
+import { DashboardField } from "@/src/presentation/dashboard/DashboardField";
+import { FormAlert } from "@/src/presentation/dashboard/FormAlert";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
-import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
 import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
@@ -172,7 +174,7 @@ export function GuestPointsPanel({ pointValue }: GuestPointsPanelProps) {
           loading={pending && active === "lookup"}
           disabled={pending || !phone.trim()}
         >
-          <Icon icon={Search} size="sm" />
+          <Icon icon={Search} size="icon-md" />
           {t("lookup")}
         </Button>
       </form>
@@ -180,7 +182,7 @@ export function GuestPointsPanel({ pointValue }: GuestPointsPanelProps) {
       {notFound ? (
         <p className="text-body-default text-pretty text-muted-foreground sm:text-body-small">{t("guestNotFound")}</p>
       ) : null}
-      {lookupError ? <FormMessage>{lookupError}</FormMessage> : null}
+      {lookupError ? <FormAlert>{lookupError}</FormAlert> : null}
 
       {guest ? (
         <div className="flex flex-col gap-4">
@@ -190,7 +192,7 @@ export function GuestPointsPanel({ pointValue }: GuestPointsPanelProps) {
                 {guest.name ?? t("guestNoName")}
               </span>
               <span dir="ltr" className="text-body-small text-muted-foreground tabular-nums sm:text-body-caption">
-                {guest.userId}
+                {formatPhone(guest.userId)}
               </span>
             </div>
             <div className="flex flex-col items-end">
@@ -209,8 +211,7 @@ export function GuestPointsPanel({ pointValue }: GuestPointsPanelProps) {
           </div>
 
           <div className="grid grid-cols-[repeat(auto-fit,minmax(10rem,1fr))] gap-4">
-            <label className="flex min-w-0 flex-col gap-1.5 text-body-small-emphasis text-foreground">
-              {t("pointsField")}
+            <DashboardField label={t("pointsField")}>
               <Input
                 size="control-md"
                 value={amount}
@@ -223,9 +224,8 @@ export function GuestPointsPanel({ pointValue }: GuestPointsPanelProps) {
                 autoComplete="off"
                 placeholder={t("pointsPlaceholder")}
               />
-            </label>
-            <label className="flex min-w-0 flex-col gap-1.5 text-body-small-emphasis text-foreground">
-              {t("reasonField")}
+            </DashboardField>
+            <DashboardField label={t("reasonField")}>
               <Input
                 size="control-md"
                 value={reason}
@@ -237,9 +237,9 @@ export function GuestPointsPanel({ pointValue }: GuestPointsPanelProps) {
                 autoComplete="off"
                 placeholder={t("reasonPlaceholder")}
               />
-            </label>
+            </DashboardField>
           </div>
-          {adjustError ? <FormMessage>{adjustError}</FormMessage> : null}
+          {adjustError ? <FormAlert>{adjustError}</FormAlert> : null}
           <div className="flex flex-wrap justify-end gap-2">
             <Button
               type="button"
@@ -261,13 +261,15 @@ export function GuestPointsPanel({ pointValue }: GuestPointsPanelProps) {
               disabled={pending}
               onClick={() => adjust(guest, 1)}
             >
-              <Icon icon={Plus} size="sm" />
+              <Icon icon={Plus} size="icon-md" />
               {t("addPoints")}
             </Button>
           </div>
 
           <div className="flex flex-col gap-2">
-            <h3 className="text-body-caption-bold tracking-wider text-muted-foreground uppercase">{t("recent")}</h3>
+            <h3 className="text-body-caption font-semibold tracking-wider text-muted-foreground uppercase">
+              {t("recent")}
+            </h3>
             {history.length > 0 ? (
               <ul className="flex flex-col">
                 {history.map((entry, index) => (

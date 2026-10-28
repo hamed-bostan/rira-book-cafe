@@ -53,7 +53,7 @@ export async function ProductRow({ product, categoryName, canWrite }: ProductRow
               {product.name}
             </span>
             {product.isFeatured ? (
-              <Badge variant="info" appearance="outline" dot>
+              <Badge variant="info" appearance="outline" size="compact" dot>
                 {t("featuredBadge")}
               </Badge>
             ) : null}
@@ -77,15 +77,15 @@ export async function ProductRow({ product, categoryName, canWrite }: ProductRow
         </div>
         <div className="flex min-w-0 items-center">
           {stock.level === "out" ? (
-            <Badge variant="error" appearance="outline" dot>
+            <Badge variant="error" appearance="outline" size="compact" dot>
               {t("stockOut")}
             </Badge>
           ) : stock.level === "low" ? (
-            <Badge variant="warning" appearance="outline" dot>
+            <Badge variant="warning" appearance="outline" size="compact" dot>
               {t("stockLow", { count: stock.quantity })}
             </Badge>
           ) : (
-            <Badge variant="success" appearance="outline" dot>
+            <Badge variant="success" appearance="outline" size="compact" dot>
               {t("stockIn", { count: stock.quantity })}
             </Badge>
           )}

@@ -38,6 +38,8 @@ const badgeVariants = cva("inline-flex items-center", {
       // defines `badge.md` / `badge.lg`, so every size names one explicitly.
       sm: "rounded-badge-md px-2 py-1 text-label-compact",
       md: "rounded-badge-lg px-4 py-2 text-body-caption",
+      // The redesigned dashboard's status pill: a fixed 24px, 12px semibold text.
+      compact: "h-6 rounded-badge-md px-2 text-label-compact leading-4 whitespace-nowrap",
     },
   },
 

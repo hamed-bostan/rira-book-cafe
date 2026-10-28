@@ -1,6 +1,5 @@
 "use client";
 
-import { CircleAlert } from "lucide-react";
 import { useTranslations } from "next-intl";
 import * as React from "react";
 
@@ -10,16 +9,16 @@ import { GRANTABLE_ROLES, type GrantableRole } from "@/src/domain/entities/User"
 import { useRouter } from "@/src/i18n/navigation";
 import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
+import { formatPhone } from "@/src/lib/formatPhone";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
+import { DashboardField } from "@/src/presentation/dashboard/DashboardField";
+import { FormAlert } from "@/src/presentation/dashboard/FormAlert";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
-import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
 import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
 import { Select } from "@/src/presentation/design-system/components/form/Select/Select";
-import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { teamApi } from "./team-api";
-import { formatTeamPhone } from "./teamDisplay";
 
 /** Digits in a complete local mobile number — past this a malformed number is worth pointing out while typing. */
 const MOBILE_DIGITS = 11;
@@ -81,7 +80,7 @@ export function GrantAccessForm({ memberIds }: GrantAccessFormProps) {
     startTransition(async () => {
       try {
         await teamApi.grant(values);
-        toast({ tone: "success", title: t("granted", { phone: formatTeamPhone(values.phone) }) });
+        toast({ tone: "success", title: t("granted", { phone: formatPhone(values.phone) }) });
         setPhone("");
         setEmail("");
         setRole("support");
@@ -112,8 +111,7 @@ export function GrantAccessForm({ memberIds }: GrantAccessFormProps) {
 
       <form noValidate onSubmit={submit} className="flex flex-col gap-4">
         <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_15rem]">
-          <label className="flex min-w-0 flex-col gap-1.5 text-body-small-emphasis text-foreground">
-            {t("phoneLabel")}
+          <DashboardField label={t("phoneLabel")}>
             <Input
               size="control-md"
               value={phone}
@@ -128,9 +126,8 @@ export function GrantAccessForm({ memberIds }: GrantAccessFormProps) {
               placeholder={t("phonePlaceholder")}
               aria-invalid={phoneIssue || taken ? true : undefined}
             />
-          </label>
-          <label className="flex min-w-0 flex-col gap-1.5 text-body-small-emphasis text-foreground">
-            {t("emailLabel")}
+          </DashboardField>
+          <DashboardField label={t("emailLabel")} hint={t("emailHint")}>
             <Input
               size="control-md"
               value={email}
@@ -145,12 +142,8 @@ export function GrantAccessForm({ memberIds }: GrantAccessFormProps) {
               placeholder={t("emailPlaceholder")}
               aria-invalid={emailIssue ? true : undefined}
             />
-            <span className="text-body-small font-normal text-muted-foreground sm:text-body-caption">
-              {t("emailHint")}
-            </span>
-          </label>
-          <label className="flex min-w-0 flex-col gap-1.5 text-body-small-emphasis text-foreground">
-            {t("roleLabel")}
+          </DashboardField>
+          <DashboardField label={t("roleLabel")} hint={t("roleHint")}>
             <Select
               size="control-md"
               value={role}
@@ -164,18 +157,10 @@ export function GrantAccessForm({ memberIds }: GrantAccessFormProps) {
                 </option>
               ))}
             </Select>
-            <span className="text-body-small font-normal text-muted-foreground sm:text-body-caption">
-              {t("roleHint")}
-            </span>
-          </label>
+          </DashboardField>
         </div>
 
-        {message ? (
-          <FormMessage className="flex items-start gap-1.5 font-medium text-pretty">
-            <Icon icon={CircleAlert} size="sm" className="mt-0.5 shrink-0 sm:size-4" />
-            {message}
-          </FormMessage>
-        ) : null}
+        {message ? <FormAlert>{message}</FormAlert> : null}
 
         <Button
           type="submit"

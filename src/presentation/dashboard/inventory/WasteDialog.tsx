@@ -11,10 +11,12 @@ import { formErrorMessage } from "@/src/lib/formErrorMessage";
 import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
+import { DashboardField } from "../DashboardField";
+
 import { inventoryApi } from "./inventory-api";
 import { stockApiErrorMessage } from "./stockApiErrorMessage";
 import { StockDialog } from "./StockDialog";
-import { formatStockQuantity } from "./stockFormat";
+import { formatStockQuantity, typedNumber } from "./stockFormat";
 import { StockItemSelect } from "./StockItemSelect";
 
 /** The longest reason a waste entry keeps. */
@@ -55,9 +57,14 @@ export function WasteDialog({ open, onOpenChange, items, initialItemId, costsVis
   const amount = (value: number): string => t("quick.quantity", { quantity: formatStockQuantity(value, locale), unit });
 
   const parsed = quantityField.safeParse(quantity);
+  const typed = typedNumber(quantity);
+  // A number of zero or less broke the "more than 0" rule, and says so; anything
+  // else that isn't a quantity gets the format's copy.
   const fieldError =
     quantity.trim() !== "" && !parsed.success
-      ? formErrorMessage(tFormErrors, parsed.error.issues[0]?.message)
+      ? typed !== undefined && typed <= 0
+        ? t("quick.quantityPositive")
+        : formErrorMessage(tFormErrors, parsed.error.issues[0]?.message)
       : undefined;
   const ready = item !== undefined && parsed.success;
 
@@ -102,8 +109,7 @@ export function WasteDialog({ open, onOpenChange, items, initialItemId, costsVis
       error={fieldError ?? error}
     >
       <StockItemSelect items={items} value={itemId} onChange={setItemId} />
-      <label className="flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
-        {t("waste.quantityLabel", { unit })}
+      <DashboardField label={t("waste.quantityLabel", { unit })}>
         <Input
           size="control-md"
           value={quantity}
@@ -113,9 +119,8 @@ export function WasteDialog({ open, onOpenChange, items, initialItemId, costsVis
           placeholder="0"
           dir="ltr"
         />
-      </label>
-      <label className="flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
-        {t("waste.noteLabel")}
+      </DashboardField>
+      <DashboardField label={t("waste.noteLabel")}>
         <Input
           size="control-md"
           value={note}
@@ -125,7 +130,7 @@ export function WasteDialog({ open, onOpenChange, items, initialItemId, costsVis
           dir="auto"
           placeholder={t("waste.notePlaceholder")}
         />
-      </label>
+      </DashboardField>
     </StockDialog>
   );
 }

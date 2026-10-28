@@ -11,7 +11,9 @@ import type { ProductKind } from "./Product";
  * orders are the queue, not sales; cancelled orders are tracked separately so a
  * bad day of cancellations shows up instead of quietly shrinking revenue.
  *
- * Every range is a set of whole cafe days (Tehran calendar), `[from, to)`.
+ * Every range is a set of whole cafe days (Tehran calendar), `[from, to)` — save
+ * one: yesterday, compared with today while it's still going, stops at the time
+ * it is now.
  */
 
 export const ANALYTICS_RANGE_PRESETS = ["today", "7d", "30d", "90d"] as const;
@@ -27,7 +29,10 @@ export type DateRange = {
   toDay: string;
   /** Start of `fromDay`, inclusive. */
   from: Date;
-  /** Start of the day after `toDay`, exclusive. */
+  /**
+   * Exclusive: the start of the day after `toDay` — or, for a day compared with
+   * one still in progress, the same moment on that day's clock (see `previousPeriod`).
+   */
   to: Date;
 };
 
@@ -50,10 +55,24 @@ export function presetRange(preset: AnalyticsRangePreset, now: Date): DateRange 
   return dayRange(shiftCafeDay(today, -(days - 1)), today);
 }
 
-/** The same number of days immediately before `range` — what "vs previous period" compares against. */
-export function previousPeriod(range: DateRange): DateRange {
+/**
+ * The same number of days immediately before `range` — what "vs previous period"
+ * compares against. A single day that is still going (today, at `now`) is compared
+ * with the day before **up to the same time on the cafe clock** — "yesterday at
+ * this time" — so a morning isn't measured against a whole day. Longer ranges
+ * compare whole days.
+ */
+export function previousPeriod(range: DateRange, now: Date): DateRange {
   const days = rangeDays(range);
-  return dayRange(shiftCafeDay(range.fromDay, -days), shiftCafeDay(range.fromDay, -1));
+  const previous = dayRange(shiftCafeDay(range.fromDay, -days), shiftCafeDay(range.fromDay, -1));
+  if (days !== 1 || range.toDay !== cafeDayOf(now)) return previous;
+  const elapsed = now.getTime() - range.from.getTime();
+  return { ...previous, to: new Date(previous.from.getTime() + elapsed) };
+}
+
+/** Whether a range stops before the end of its last day — a day compared "at this time". */
+export function endsBeforeDayEnd(range: Pick<DateRange, "toDay" | "to">): boolean {
+  return range.to.getTime() < cafeDayRange(range.toDay).to.getTime();
 }
 
 /** Every cafe day in a range, in order — the x-axis of the daily series. */
@@ -88,7 +107,15 @@ export type HourlySales = { hour: number; orders: number; revenue: number };
 export type KindSales = { kind: ProductKind; revenue: number; quantity: number };
 
 /** One menu item's performance in the range. */
-export type TopItem = { productId: string; name: string; kind: ProductKind; quantity: number; revenue: number };
+export type TopItem = {
+  productId: string;
+  name: string;
+  kind: ProductKind;
+  /** The menu category it sits in now, in the reader's language; `null` once the item is deleted. */
+  categoryName: string | null;
+  quantity: number;
+  revenue: number;
+};
 
 export const TOP_ITEM_SORTS = ["revenue", "quantity"] as const;
 export type TopItemSort = (typeof TOP_ITEM_SORTS)[number];
@@ -105,10 +132,22 @@ export type SalesReport = {
   topItems: TopItem[];
 };
 
-/** Paid vs unpaid across the range's completed orders — its revenue, and how much of it came in. */
+/**
+ * How much of the range's money came in, and how much is still owed.
+ *
+ * `paidValue` is the part of `revenue` (completed orders) marked paid — the
+ * "Paid by" split adds up to it. `unpaidValue` is everything served and not yet
+ * paid: completed orders, and ready ones (every line out, the order not yet
+ * closed), which only count as revenue once completed. So `paidValue +
+ * unpaidValue` is `revenue` plus what the unpaid ready orders are worth.
+ */
 export type PaymentSummary = {
+  /** Completed orders' total — the sales report's revenue. */
+  revenue: number;
+  /** Completed orders marked paid. */
   paidOrders: number;
   paidValue: number;
+  /** Ready or completed orders not yet marked paid — the money to chase. */
   unpaidOrders: number;
   unpaidValue: number;
 };
@@ -116,7 +155,7 @@ export type PaymentSummary = {
 /** What the range's paid, completed orders came in as, by payment method. */
 export type MethodPayments = { method: PaymentMethod; orders: number; value: number };
 
-/** An order that was served but not marked paid — money to chase. */
+/** An order that was served — ready or completed — but not marked paid: money to chase. */
 export type UnpaidOrder = {
   id: string;
   orderNumber: number;
@@ -129,10 +168,12 @@ export type UnpaidOrder = {
 
 export type PaymentReport = {
   range: DateRange;
+  /** The period before, named beside the range as on the other reports; the payment figures themselves don't compare. */
+  previousRange: DateRange;
   summary: PaymentSummary;
   /** Paid completed orders by method; a method nobody paid with is left out. */
   byMethod: MethodPayments[];
-  /** Completed orders still unpaid, oldest first. */
+  /** Ready or completed orders still unpaid, oldest first. */
   unpaid: UnpaidOrder[];
 };
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { kitchenLanes, minutesWaiting } from "../Kitchen";
+import { isLateOrder, kitchenLanes, kitchenWaitTone, lateOrderCount, minutesWaiting } from "../Kitchen";
 
 import type { Order, OrderItem, OrderStatus } from "../Order";
 
@@ -61,5 +61,45 @@ describe("kitchenLanes", () => {
 describe("minutesWaiting", () => {
   it("counts whole minutes since the order was placed", () => {
     expect(minutesWaiting({ placedAt: "2026-10-20T09:00:00Z" }, new Date("2026-10-20T09:15:59Z"))).toBe(15);
+  });
+
+  it("never goes below zero when the clocks disagree", () => {
+    expect(minutesWaiting({ placedAt: "2026-10-20T09:01:00Z" }, new Date("2026-10-20T09:00:00Z"))).toBe(0);
+  });
+});
+
+describe("kitchenWaitTone", () => {
+  it("stays neutral under ten minutes", () => {
+    expect(kitchenWaitTone(0)).toBe("neutral");
+    expect(kitchenWaitTone(9)).toBe("neutral");
+  });
+
+  it("warns from ten minutes", () => {
+    expect(kitchenWaitTone(10)).toBe("warning");
+    expect(kitchenWaitTone(14)).toBe("warning");
+  });
+
+  it("is late from fifteen minutes", () => {
+    expect(kitchenWaitTone(15)).toBe("late");
+    expect(kitchenWaitTone(65)).toBe("late");
+  });
+});
+
+describe("late orders", () => {
+  const now = new Date("2026-10-20T09:30:00Z");
+
+  it("marks an order late once it has waited fifteen minutes", () => {
+    expect(isLateOrder({ placedAt: "2026-10-20T09:15:00Z" }, now)).toBe(true);
+    expect(isLateOrder({ placedAt: "2026-10-20T09:15:01Z" }, now)).toBe(false);
+  });
+
+  it("counts the late orders in a lane", () => {
+    const lane = [
+      { placedAt: "2026-10-20T08:00:00Z" },
+      { placedAt: "2026-10-20T09:10:00Z" },
+      { placedAt: "2026-10-20T09:25:00Z" },
+    ];
+    expect(lateOrderCount(lane, now)).toBe(2);
+    expect(lateOrderCount([], now)).toBe(0);
   });
 });

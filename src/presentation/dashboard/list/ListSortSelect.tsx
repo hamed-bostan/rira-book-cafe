@@ -69,6 +69,7 @@ export function ListSortSelect<TSort extends string>({
       isActive={false}
       triggerLabel={triggerLabel}
       triggerClassName="w-full min-w-0 justify-between rounded-input sm:w-auto"
+      size="control-md"
       options={options.map((option) => ({
         value: `${option.sort}:${option.direction}`,
         label: option.label,

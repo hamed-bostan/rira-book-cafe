@@ -1,12 +1,13 @@
-import { FolderTree, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
 import type { Category } from "@/src/domain/entities/Category";
 import { Link } from "@/src/i18n/navigation";
 import { cn } from "@/src/lib/utils";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
-import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+
+import { DashboardEmptyState } from "../DashboardEmptyState";
 
 import { CategoryRow } from "./CategoryRow";
 
@@ -34,7 +35,7 @@ export async function CategoriesScreen({ categories }: CategoriesScreenProps) {
         </div>
         <Button size="control-md" asChild className="gap-2 px-4">
           <Link href="/dashboard/categories/create">
-            <Icon icon={Plus} size="sm" />
+            <Icon icon={Plus} size="icon-md" />
             {t("newCategory")}
           </Link>
         </Button>
@@ -58,7 +59,7 @@ export async function CategoriesScreen({ categories }: CategoriesScreenProps) {
             ))}
           </ol>
         ) : (
-          <EmptyState icon={FolderTree} title={t("emptyTitle")} description={t("emptyBody")} className="py-12" />
+          <DashboardEmptyState title={t("emptyTitle")} body={t("emptyBody")} />
         )}
       </section>
     </div>

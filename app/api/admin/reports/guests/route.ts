@@ -8,13 +8,15 @@ import { getSessionWith } from "@/src/lib/require-permission";
 
 export const dynamic = "force-dynamic";
 
-/** GET /api/admin/reports/guests — guests against the period before, new vs returning, top spenders and bookings for a range. Requires `reports.view`. */
+/** GET /api/admin/reports/guests — guests against the period before (today: yesterday at this time), new vs returning, top spenders and bookings for a range. Requires `reports.view`. */
 export async function GET(request: NextRequest): Promise<NextResponse> {
   if (!(await getSessionWith("reports.view"))) return unauthorizedResponse();
 
   try {
+    const now = new Date();
     const report = await new GetGuestReport(analyticsRepository).execute(
-      parseAnalyticsRange(request.nextUrl.searchParams),
+      parseAnalyticsRange(request.nextUrl.searchParams, now),
+      now,
     );
     return NextResponse.json(report);
   } catch (error) {

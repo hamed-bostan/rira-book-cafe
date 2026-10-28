@@ -14,14 +14,14 @@ import { formatEventTime } from "@/src/lib/formatEventWhen";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { cn } from "@/src/lib/utils";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
-import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
-import { Modal, ModalContent } from "@/src/presentation/design-system/components/Modal/Modal";
 import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
+import { DashboardDialog } from "../DashboardDialog";
 import { tableNameValues } from "../floor/tableName";
+import { FormAlert } from "../FormAlert";
 
 import { eventsApi } from "./event-api";
 import { TableFit } from "./TableFit";
@@ -118,7 +118,7 @@ export function HoldTablesButton({ eventId, title, subtitle, capacity, hasTables
   }
 
   return (
-    <Modal open={open} onOpenChange={openChange}>
+    <>
       <Button
         type="button"
         variant="secondary"
@@ -126,20 +126,25 @@ export function HoldTablesButton({ eventId, title, subtitle, capacity, hasTables
         onClick={() => openChange(true)}
         className="gap-2 px-3"
       >
-        <Icon icon={Armchair} size="sm" />
+        <Icon icon={Armchair} size="icon-md" />
         {hasTables ? t("changeTables") : t("holdTables")}
       </Button>
 
-      <ModalContent
+      <DashboardDialog
+        open={open}
+        onOpenChange={openChange}
         title={t("holdTitle", { title })}
-        className="flex max-h-[calc(100dvh-2rem)] max-w-md flex-col gap-5 overflow-y-auto"
-        titleClassName="text-start text-body-lead"
+        subtitle={subtitle}
+        submitLabel={t("saveTables")}
+        // Nothing to save until the floor has loaded.
+        blocked={!options}
+        pending={pending}
+        onSubmit={save}
+        error={error}
       >
-        <p className="-mt-4 text-body-default text-muted-foreground sm:text-body-small">{subtitle}</p>
-
         {loadFailed ? (
           <div className="flex flex-col items-start gap-3">
-            <FormMessage>{t("tablesLoadError")}</FormMessage>
+            <FormAlert>{t("tablesLoadError")}</FormAlert>
             <Button type="button" variant="secondary" size="control-md" className="px-3" onClick={() => void load()}>
               {t("tryAgain")}
             </Button>
@@ -209,18 +214,7 @@ export function HoldTablesButton({ eventId, title, subtitle, capacity, hasTables
             </div>
           </div>
         )}
-
-        {error ? <FormMessage>{error}</FormMessage> : null}
-
-        <div className="flex flex-wrap justify-end gap-2">
-          <Button type="button" variant="secondary" size="control-md" className="px-3" onClick={() => setOpen(false)}>
-            {t("back")}
-          </Button>
-          <Button type="button" size="control-md" className="px-4" disabled={!options || pending} onClick={save}>
-            {t("saveTables")}
-          </Button>
-        </div>
-      </ModalContent>
-    </Modal>
+      </DashboardDialog>
+    </>
   );
 }

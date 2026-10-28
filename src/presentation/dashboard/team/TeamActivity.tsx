@@ -1,13 +1,11 @@
-import { History } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 
 import { cafeDayOf } from "@/src/domain/entities/CafeTime";
 import { roleChangeKind, roleMove } from "@/src/domain/entities/RoleChange";
-import { isDashboardRole } from "@/src/domain/entities/User";
 import { formatCafeDayShort } from "@/src/lib/formatCafeDay";
 import { cn } from "@/src/lib/utils";
 import type { ActivityEntryWire } from "@/src/presentation/dashboard/activity/activity-response-schema";
-import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
+import { DashboardEmptyState } from "@/src/presentation/dashboard/DashboardEmptyState";
 
 import { teamMemberName } from "./teamDisplay";
 
@@ -44,15 +42,14 @@ export function TeamActivity({ changes, viewerId }: TeamActivityProps) {
 
     switch (kind) {
       case "granted":
-        // A move between two dashboard roles is a change of job, not a new grant.
-        return move && isDashboardRole(move.fromRole)
-          ? t("activity.changed", {
-              actor,
-              user,
-              from: t(`role.${move.fromRole}`),
-              to: t(`role.${move.toRole}`),
-            })
-          : t("activity.granted", { actor, user, role: t(`role.${move?.toRole ?? "customer"}`) });
+        return t("activity.granted", { actor, user, role: t(`role.${move?.toRole ?? "customer"}`) });
+      case "changed":
+        return t("activity.changed", {
+          actor,
+          user,
+          from: t(`role.${move?.fromRole ?? "customer"}`),
+          to: t(`role.${move?.toRole ?? "customer"}`),
+        });
       case "ownershipClaimed":
       case "steppedDown":
         // The person is the subject of these sentences, so "You", not "you".
@@ -77,7 +74,7 @@ export function TeamActivity({ changes, viewerId }: TeamActivityProps) {
       </div>
 
       {changes.length === 0 ? (
-        <EmptyState icon={History} title={t("activityEmpty")} className="py-8" />
+        <DashboardEmptyState title={t("activityEmpty")} body={t("activityEmptyBody")} className="py-8" />
       ) : (
         <ol>
           {changes.map((change, index) => (

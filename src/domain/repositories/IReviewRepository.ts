@@ -28,7 +28,7 @@ export type IReviewRepository = {
   getOwn(productId: string, userId: string): Promise<ProductReview | null>;
   /** An item's approved reviews, newest first. */
   listApproved(productId: string, limit: number): Promise<ProductReview[]>;
-  /** The moderation queue: `pending` oldest first (first come, first served), the rest newest first. */
+  /** The moderation queue, newest first in every view — what just came in is what's read first. */
   list(filters: ReviewFilters): Promise<ProductReview[]>;
   countByStatus(): Promise<Record<ReviewStatus, number>>;
   /** Every approved review's stars added up, and how many there are — the cafe's rating as guests see it. */

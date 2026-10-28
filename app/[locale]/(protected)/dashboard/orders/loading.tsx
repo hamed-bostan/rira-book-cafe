@@ -4,7 +4,7 @@ import { LoadingRegion } from "@/src/presentation/design-system/components/Skele
 
 export default function OrdersLoading() {
   return (
-    <LoadingRegion className="@container flex min-w-0 flex-col gap-4 sm:gap-6">
+    <LoadingRegion className="@container flex min-w-0 flex-col gap-6">
       <DashboardHeaderSkeleton />
       <OrdersTableSkeleton />
     </LoadingRegion>

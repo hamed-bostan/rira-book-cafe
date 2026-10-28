@@ -1,11 +1,12 @@
 import { useTranslations } from "next-intl";
 
 import type { TeamMember } from "@/src/contracts/team-response-schema";
+import { formatPhone } from "@/src/lib/formatPhone";
 import { cn } from "@/src/lib/utils";
 import { Avatar } from "@/src/presentation/design-system/components/Avatar/Avatar";
 import { Badge, type BadgeProps } from "@/src/presentation/design-system/components/Badge/Badge";
 
-import { formatTeamPhone, teamMemberName } from "./teamDisplay";
+import { teamMemberInitials, teamMemberName } from "./teamDisplay";
 import { TeamMemberActions } from "./TeamMemberActions";
 
 type TeamMembersProps = {
@@ -41,14 +42,14 @@ export function TeamMembers({ members }: TeamMembersProps) {
         <h2 id="team-members-heading" className="text-body-strong text-foreground">
           {t("membersHeading")}
         </h2>
-        <Badge variant="neutral" appearance="outline" className="tabular-nums">
+        <Badge variant="neutral" appearance="outline" size="compact" className="tabular-nums">
           {members.length}
         </Badge>
       </div>
       <div
         aria-hidden
         className={cn(
-          "hidden h-10 items-center gap-x-4 border-b border-border bg-muted px-5 text-body-caption-bold tracking-wider whitespace-nowrap text-muted-foreground uppercase md:grid",
+          "hidden h-10 items-center gap-x-4 border-b border-border bg-muted px-5 text-body-caption font-semibold tracking-wider whitespace-nowrap text-muted-foreground uppercase md:grid",
           COLUMNS,
         )}
       >
@@ -59,7 +60,7 @@ export function TeamMembers({ members }: TeamMembersProps) {
       <ul>
         {members.map((member, index) => {
           const name = teamMemberName(member.name, member.phone);
-          const phone = formatTeamPhone(member.phone);
+          const phone = formatPhone(member.phone);
           return (
             <li
               key={member.id}
@@ -72,10 +73,13 @@ export function TeamMembers({ members }: TeamMembersProps) {
             >
               <div className="flex min-w-0 items-center gap-3">
                 <Avatar
-                  name={name}
-                  // A number standing in for a name has no initials to show.
-                  fallback={name === phone ? "#" : undefined}
-                  className="size-10 text-body-default font-bold sm:text-body-small"
+                  // Its own initials, at body size and bold: the avatar's default type is a fixed 14px.
+                  fallback={
+                    <span aria-hidden className="text-body-default font-bold sm:text-body-small">
+                      {teamMemberInitials(name, member.phone)}
+                    </span>
+                  }
+                  className="size-10"
                 />
                 <div className="flex min-w-0 flex-col gap-0.5">
                   <span className="text-body-default [overflow-wrap:anywhere] sm:text-body-small">
@@ -95,7 +99,7 @@ export function TeamMembers({ members }: TeamMembersProps) {
               </div>
               {/* Under the name until `md`, indented to line up with it; its own column after. */}
               <div className="order-1 col-span-full flex flex-col items-start gap-1 ps-13 md:order-none md:col-span-1 md:ps-0">
-                <Badge variant={ROLE_VARIANT[member.role]} appearance="outline" dot>
+                <Badge variant={ROLE_VARIANT[member.role]} appearance="outline" size="compact" dot>
                   {t(`role.${member.role}`)}
                 </Badge>
                 {member.breakGlass ? (

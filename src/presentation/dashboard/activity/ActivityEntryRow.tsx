@@ -1,7 +1,9 @@
 import { ArrowUpRight } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
-import { roleChangeKind } from "@/src/domain/entities/RoleChange";
+import type { ActivityChange } from "@/src/domain/entities/ActivityEntry";
+import { ROLE_CHANGE_FIELD, roleChangeKind, roleMove } from "@/src/domain/entities/RoleChange";
+import { USER_ROLES, type UserRole } from "@/src/domain/entities/User";
 import { Link } from "@/src/i18n/navigation";
 import { cn } from "@/src/lib/utils";
 import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
@@ -36,6 +38,15 @@ function initials(name: string): string {
 }
 
 /**
+ * Which way a promo code's switch went, read from its `isActive` diff — or
+ * `unknown` for an entry whose diff doesn't say.
+ */
+function switchedTo(changes: readonly ActivityChange[]): "on" | "off" | "unknown" {
+  const after = changes.find((change) => change.field === "isActive")?.after;
+  return after === "true" ? "on" : after === "false" ? "off" : "unknown";
+}
+
+/**
  * One entry of the log: who made the change (their initials, then their name
  * leading the sentence), the area and when, a way to the thing changed, and the
  * values that moved.
@@ -52,17 +63,30 @@ export async function ActivityEntryRow({ entry, time, showEntity = true }: Activ
   const label = entry.entityLabel ?? entry.entityId;
   const actor = (chunks: ReactNode) => <span className="font-semibold">{chunks}</span>;
 
-  // Role changes get the sentence the team page always used ("X gave Y admin
-  // access") rather than the generic "X changed Y", because the roles carry the
-  // meaning and a diff reading `customer → admin` makes the reader translate it.
+  // Role changes get the sentences the team page uses ("X gave Y Support access",
+  // "X changed Y from Support to Staff") rather than the generic "X changed Y",
+  // because the roles carry the meaning and a diff reading `customer → support`
+  // makes the reader translate it.
+  const move = roleMove(entry.changes);
+  const roleName = (role: UserRole | undefined): string => t(`roleName.${role ?? "customer"}`);
   const sentence =
     entry.action === "user.roleChanged"
       ? t.rich(`role.${roleChangeKind({ userId: entry.entityId, actorId: entry.actorId, changes: entry.changes })}`, {
           actor: entry.actorName,
           user: label,
+          role: roleName(move?.toRole),
+          from: roleName(move?.fromRole),
+          to: roleName(move?.toRole),
           b: actor,
         })
-      : t.rich(`action.${entry.action}`, { actor: entry.actorName, entity: label, b: actor });
+      : entry.action === "promoCode.activeChanged"
+        ? t.rich("action.promoCode.activeChanged", {
+            actor: entry.actorName,
+            entity: label,
+            state: switchedTo(entry.changes),
+            b: actor,
+          })
+        : t.rich(`action.${entry.action}`, { actor: entry.actorName, entity: label, b: actor });
 
   return (
     <div className="flex gap-4 px-5 py-4">
@@ -75,7 +99,7 @@ export async function ActivityEntryRow({ entry, time, showEntity = true }: Activ
       <div className="flex min-w-0 flex-1 flex-col gap-2">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           {showEntity ? (
-            <Badge variant="neutral" appearance="outline" className="rounded-button font-semibold whitespace-nowrap">
+            <Badge variant="neutral" appearance="outline" size="compact">
               {t(`entity.${entry.entityType}`)}
             </Badge>
           ) : null}
@@ -114,6 +138,12 @@ export async function ActivityEntryRow({ entry, time, showEntity = true }: Activ
           <ActivityDiff
             changes={entry.changes}
             fieldLabel={(field) => fieldLabel(t as unknown as LooseTranslator, field)}
+            valueLabel={(field, value) => {
+              if (value === "true") return t("value.yes");
+              if (value === "false") return t("value.no");
+              if (field === ROLE_CHANGE_FIELD && isUserRole(value)) return t(`roleName.${value}`);
+              return value;
+            }}
           />
         ) : null}
       </div>
@@ -135,9 +165,12 @@ export async function ActivityEntryRow({ entry, time, showEntity = true }: Activ
 function ActivityDiff({
   changes,
   fieldLabel,
+  valueLabel,
 }: {
   changes: ActivityEntryWire["changes"];
   fieldLabel: (field: string) => string;
+  /** A stored value as a person would say it: "Yes" for `true`, "No access" for the `customer` role. */
+  valueLabel: (field: string, value: string) => string;
 }) {
   return (
     <ul className="rounded-button border border-border bg-surface px-3 text-body-default sm:text-body-small">
@@ -151,13 +184,13 @@ function ActivityDiff({
         >
           <span className="w-full shrink-0 font-medium text-foreground sm:w-24">{fieldLabel(change.field)}</span>
           <span className={cn("text-muted-foreground", change.before !== null && "line-through")}>
-            {change.before ?? "—"}
+            {change.before === null ? "—" : valueLabel(change.field, change.before)}
           </span>
           <span aria-hidden className="text-muted-foreground rtl:-scale-x-100">
             →
           </span>
           <span className="rounded-button bg-accent px-1.5 font-medium text-accent-foreground">
-            {change.after ?? "—"}
+            {change.after === null ? "—" : valueLabel(change.field, change.after)}
           </span>
         </li>
       ))}
@@ -190,4 +223,9 @@ type LooseTranslator = {
 function fieldLabel(t: LooseTranslator, field: string): string {
   const key = `field.${field}`;
   return t.has(key) ? t(key) : field;
+}
+
+/** Whether a stored value is one of the roles, so it can be named rather than shown raw. */
+function isUserRole(value: string): value is UserRole {
+  return (USER_ROLES as readonly string[]).includes(value);
 }

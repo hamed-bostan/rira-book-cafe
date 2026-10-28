@@ -48,7 +48,7 @@ export async function ReservationRow({ reservation, now, canManage, bookings, ev
       className={cn("flex flex-wrap items-start gap-x-5 gap-y-3 px-5 py-4", finished && "opacity-70")}
     >
       <div className="flex w-24 shrink-0 flex-col whitespace-nowrap tabular-nums">
-        <span className="text-body-lead font-semibold text-foreground">{time}</span>
+        <span className="text-body-lead font-semibold text-foreground lg:text-heading-subsection">{time}</span>
         <span className="text-body-small text-muted-foreground sm:text-body-caption">
           {t("until", { time: formatEventTime(reservationEndsAt(reservation).toISOString(), locale) })}
         </span>
@@ -59,7 +59,7 @@ export async function ReservationRow({ reservation, now, canManage, bookings, ev
 
       <div className="flex min-w-0 flex-[1_1_15rem] flex-col gap-1.5">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="text-body-strong text-foreground sm:text-body-small-strong">{reservation.guestName}</span>
+          <span className="text-body-strong text-foreground">{reservation.guestName}</span>
           <ReservationStatusBadge status={reservation.status} outlined />
           {late ? (
             <span className="text-body-small font-semibold whitespace-nowrap text-error-foreground sm:text-body-caption">
@@ -69,7 +69,7 @@ export async function ReservationRow({ reservation, now, canManage, bookings, ev
         </div>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-body-default text-foreground/80 sm:text-body-small">
           <span className="flex items-center gap-1.5 whitespace-nowrap">
-            <Icon icon={Users} size="sm" className="text-muted-foreground" />
+            <Icon icon={Users} size="icon-md" className="text-muted-foreground" />
             {t("partySize", { count: reservation.partySize, formatted: formatNumber(reservation.partySize, locale) })}
           </span>
           <span
@@ -78,7 +78,7 @@ export async function ReservationRow({ reservation, now, canManage, bookings, ev
               !reservation.tableLabel && "font-medium text-warning-foreground",
             )}
           >
-            <Icon icon={Armchair} size="sm" />
+            <Icon icon={Armchair} size="icon-md" />
             {reservation.tableLabel
               ? tFloor("tableName", tableNameValues(reservation.tableLabel, locale))
               : t("noTable")}
@@ -92,13 +92,13 @@ export async function ReservationRow({ reservation, now, canManage, bookings, ev
               focusRing,
             )}
           >
-            <Icon icon={Phone} size="sm" className="text-muted-foreground" />
+            <Icon icon={Phone} size="icon-md" className="text-muted-foreground" />
             {reservation.guestPhone}
           </a>
         </div>
         {reservation.note ? (
           <p className="flex items-start gap-1.5 text-body-default text-pretty text-muted-foreground sm:text-body-small">
-            <Icon icon={MessageSquare} size="sm" className="mt-0.5 shrink-0" />“{reservation.note}”
+            <Icon icon={MessageSquare} size="icon-md" className="mt-0.5 shrink-0" />“{reservation.note}”
           </p>
         ) : null}
       </div>

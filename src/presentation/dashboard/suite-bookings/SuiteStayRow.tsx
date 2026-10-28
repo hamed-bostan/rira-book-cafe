@@ -55,7 +55,9 @@ export async function SuiteStayRow({ booking, clash, today, focused, canManage }
       )}
     >
       <div className="flex w-40 shrink-0 flex-col whitespace-nowrap tabular-nums">
-        <span className="text-body-lead font-semibold text-foreground">{range(booking)}</span>
+        <span className="text-body-lead font-semibold text-foreground lg:text-heading-subsection">
+          {range(booking)}
+        </span>
         <span className="text-body-small text-muted-foreground sm:text-body-caption">
           {t("nights", { count: nights, formatted: formatNumber(nights, locale) })} · S-{booking.reference}
         </span>
@@ -63,7 +65,7 @@ export async function SuiteStayRow({ booking, clash, today, focused, canManage }
 
       <div className="flex min-w-0 flex-[1_1_15rem] flex-col gap-1.5">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="text-body-strong text-foreground sm:text-body-small-strong">{booking.guestName}</span>
+          <span className="text-body-strong text-foreground">{booking.guestName}</span>
           <SuiteBookingStatusBadge status={booking.status} outlined />
           {hint ? (
             <span className={cn("text-body-small font-semibold whitespace-nowrap sm:text-body-caption", hint.tone)}>
@@ -73,7 +75,7 @@ export async function SuiteStayRow({ booking, clash, today, focused, canManage }
         </div>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-body-default text-foreground/80 sm:text-body-small">
           <span className="flex items-center gap-1.5 whitespace-nowrap">
-            <Icon icon={Users} size="sm" className="text-muted-foreground" />
+            <Icon icon={Users} size="icon-md" className="text-muted-foreground" />
             {t("guests", { count: booking.guests, formatted: formatNumber(booking.guests, locale) })}
           </span>
           <a
@@ -85,18 +87,18 @@ export async function SuiteStayRow({ booking, clash, today, focused, canManage }
               focusRing,
             )}
           >
-            <Icon icon={Phone} size="sm" className="text-muted-foreground" />
+            <Icon icon={Phone} size="icon-md" className="text-muted-foreground" />
             {booking.guestPhone}
           </a>
         </div>
         {booking.note ? (
           <p className="flex items-start gap-1.5 text-body-default text-pretty text-muted-foreground sm:text-body-small">
-            <Icon icon={MessageSquare} size="sm" className="mt-0.5 shrink-0" />“{booking.note}”
+            <Icon icon={MessageSquare} size="icon-md" className="mt-0.5 shrink-0" />“{booking.note}”
           </p>
         ) : null}
         {clash ? (
           <p className="flex items-center gap-1.5 text-body-default font-semibold text-error-foreground sm:text-body-small">
-            <Icon icon={CircleAlert} size="sm" className="shrink-0" />
+            <Icon icon={CircleAlert} size="icon-md" className="shrink-0" />
             {t("clashesWith", { reference: clash.reference, range: range(clash) })}
           </p>
         ) : null}
@@ -108,6 +110,7 @@ export async function SuiteStayRow({ booking, clash, today, focused, canManage }
           today={today}
           clashReference={clash?.reference}
           checkInLabel={formatCafeDayShort(booking.checkIn, locale)}
+          rangeLabel={range(booking)}
         />
       ) : null}
     </article>

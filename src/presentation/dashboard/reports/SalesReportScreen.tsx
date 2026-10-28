@@ -1,16 +1,16 @@
-import { Ban, Receipt, ShoppingBag, Wallet } from "lucide-react";
+import { CircleX, ClipboardList, Receipt, Wallet } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import type { AnalyticsRangePreset, TopItemSort } from "@/src/domain/entities/Analytics";
 import { PRODUCT_KINDS, type ProductKind } from "@/src/domain/entities/Product";
-import { formatCafeDayHeader, formatCafeDayLong, formatCafeDayShort, formatPercent } from "@/src/lib/formatCafeDay";
+import { formatCafeDayHeader, formatCafeDayShort, formatPercent } from "@/src/lib/formatCafeDay";
 import { formatMoney, moneyUnit } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
 
 import { MetricCard, type MetricCardTone } from "../MetricCard";
 
 import { BestSellers } from "./BestSellers";
-import { changeOf, formatChange, formatHourSpan, formatHourTick } from "./reportFormat";
+import { changeOf, formatChange, formatDayTip, formatHourSpan, formatHourTick } from "./reportFormat";
 import { reportHref } from "./reportLinks";
 import { ReportPanel } from "./ReportPanel";
 import { ReportSalesChart, type ReportChartBar } from "./ReportSalesChart";
@@ -75,7 +75,7 @@ export async function SalesReportScreen({ report, selected, sort, rangeQuery, no
       ? formatHourSpan(point.hour, locale)
       : chart.kind === "weekly"
         ? t("sales.weekOf", { day: formatCafeDayShort(point.day, locale) })
-        : formatCafeDayLong(point.day, locale);
+        : formatDayTip(point.day, locale);
   const bars: ReportChartBar[] = chart.points.map((point) => ({
     label: label(point),
     title: title(point),
@@ -106,20 +106,20 @@ export async function SalesReportScreen({ report, selected, sort, rangeQuery, no
         />
         <MetricCard
           label={t("sales.orders")}
-          icon={Receipt}
+          icon={ClipboardList}
           value={formatNumber(summary.orders, locale)}
           {...change(summary.orders, previousSummary.orders)}
         />
         <MetricCard
           label={t("sales.averageOrder")}
-          icon={ShoppingBag}
+          icon={Receipt}
           value={formatNumber(summary.averageOrderValue, locale)}
           unit={unit}
           {...change(summary.averageOrderValue, previousSummary.averageOrderValue)}
         />
         <MetricCard
           label={t("sales.cancelled")}
-          icon={Ban}
+          icon={CircleX}
           value={formatNumber(summary.cancelledOrders, locale)}
           hint={t("sales.cancelledValue", { value: formatMoney(summary.cancelledValue, locale) })}
         />
@@ -135,7 +135,7 @@ export async function SalesReportScreen({ report, selected, sort, rangeQuery, no
         />
         <ReportPanel title={t("sales.byKindHeading")} description={t("sales.byKindDescription")}>
           {kindTotal === 0 ? (
-            <p className="text-body-default text-muted-foreground sm:text-body-small">{t("noSales")}</p>
+            <p className="text-body-default text-pretty text-muted-foreground sm:text-body-small">{t("noSales")}</p>
           ) : (
             <ShareBars
               rows={PRODUCT_KINDS.map((kind) => {

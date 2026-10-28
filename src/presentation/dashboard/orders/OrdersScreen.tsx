@@ -1,10 +1,8 @@
-import { ClipboardList, SearchX } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
 import {
   DEFAULT_ADMIN_ORDER_DIRECTION,
   DEFAULT_ADMIN_ORDER_SORT,
-  hasAdminOrderFilters,
   type AdminOrderFilters,
   type AdminOrderSort,
   type OrderStatusCounts,
@@ -14,6 +12,7 @@ import type { Page } from "@/src/domain/entities/Pagination";
 import { Link } from "@/src/i18n/navigation";
 import { AutoRefresh } from "@/src/presentation/components/AutoRefresh";
 import { BulkActionBar, BulkSelectionProvider } from "@/src/presentation/dashboard/bulk";
+import { DashboardEmptyState } from "@/src/presentation/dashboard/DashboardEmptyState";
 import {
   ListChoiceFilter,
   ListFilterReset,
@@ -23,7 +22,7 @@ import {
   type ListSortOption,
 } from "@/src/presentation/dashboard/list";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
-import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
+import { DataTableToolbar } from "@/src/presentation/design-system/components/DataTable/DataTable";
 
 import { OrderBulkActions } from "./OrderBulkActions";
 import { OrdersTable } from "./OrdersTable";
@@ -40,7 +39,7 @@ type OrdersScreenProps = {
   counts: OrderStatusCounts;
   /** The filters this page was fetched with, to tell "no orders yet" from "no matches". */
   filters: AdminOrderFilters;
-  /** The page's query string, for the status tabs' links. */
+  /** The page's query string, for the status tabs' links and "Clear filters". */
   params: URLSearchParams;
   /**
    * Whether the viewer may move orders along (`orders.fulfill`). Decides whether the
@@ -48,6 +47,14 @@ type OrdersScreenProps = {
    */
   canFulfill: boolean;
 };
+
+/** This page without the toolbar's filters — the tab, sort and page size stay, as "Clear all" leaves them. */
+function withoutFilters(params: URLSearchParams): string {
+  const next = new URLSearchParams(params);
+  for (const name of [...FILTER_PARAMS, "page"]) next.delete(name);
+  const query = next.toString();
+  return query ? `/dashboard/orders?${query}` : "/dashboard/orders";
+}
 
 /**
  * Dashboard order list. Presentational: the page fetches one page and the status
@@ -58,7 +65,7 @@ type OrdersScreenProps = {
 export async function OrdersScreen({ orders, counts, filters, params, canFulfill }: OrdersScreenProps) {
   const t = await getTranslations("dashOrders");
   const tList = await getTranslations("dashList");
-  const isFiltered = hasAdminOrderFilters(filters);
+  const searched = filters.query != null || filters.serviceType != null || filters.paymentStatus != null;
 
   const sortOptions: ListSortOption<AdminOrderSort>[] = [
     { sort: "placedAt", direction: "desc", label: t("sortNewest") },
@@ -67,77 +74,92 @@ export async function OrdersScreen({ orders, counts, filters, params, canFulfill
     { sort: "total", direction: "asc", label: t("sortTotalLow") },
   ];
 
+  const toolbar = (
+    <section aria-label={t("searchLabel")} className="flex min-w-0 flex-wrap items-center gap-2">
+      <ListSearchInput
+        label={t("searchLabel")}
+        placeholder={t("searchPlaceholder")}
+        className="min-w-0 flex-[1_1_20rem] sm:max-w-none"
+      />
+      <ListChoiceFilter
+        paramName="service"
+        label={t("filterService")}
+        allLabel={t("filterAny")}
+        showAllValue
+        options={SERVICE_TYPES.map((service) => ({ value: service, label: t(`serviceFilter.${service}`) }))}
+      />
+      <ListChoiceFilter
+        paramName="payment"
+        label={t("filterPayment")}
+        allLabel={t("filterAny")}
+        showAllValue
+        options={PAYMENT_STATUSES.map((payment) => ({ value: payment, label: t(`payment.${payment}`) }))}
+      />
+      <ListSortSelect
+        label={t("sortLabel")}
+        triggerLabel={t("sortShort")}
+        options={sortOptions}
+        defaultSort={DEFAULT_ADMIN_ORDER_SORT}
+        defaultDirection={DEFAULT_ADMIN_ORDER_DIRECTION}
+      />
+      <ListFilterReset label={t("clearAll")} paramNames={FILTER_PARAMS} icon={false} className="h-11 px-2 sm:h-10" />
+    </section>
+  );
+
   return (
-    <div className="@container flex min-w-0 flex-col gap-4 sm:gap-6">
+    <div className="@container flex min-w-0 flex-col gap-6">
       <AutoRefresh intervalSeconds={REFRESH_SECONDS} />
 
       <div className="min-w-0 space-y-1">
         <h1 className="dashboard-page-title">{t("heading")}</h1>
-        <p className="text-body-small text-muted-foreground">{t("activeSummary", { count: counts.active })}</p>
+        <p className="text-body-default text-muted-foreground sm:text-body-small">
+          {t("activeSummary", { count: counts.active })}
+        </p>
       </div>
 
       <BulkSelectionProvider ids={orders.items.map((order) => order.id)}>
-        {canFulfill && orders.items.length > 0 ? (
-          <BulkActionBar>
-            <OrderBulkActions
-              orders={orders.items.map(({ id, status, paymentStatus }) => ({ id, status, paymentStatus }))}
-            />
-          </BulkActionBar>
-        ) : null}
-
         <OrdersTable
           orders={orders.items}
           canFulfill={canFulfill}
           tabs={<OrderStatusTabs current={filters.status} counts={counts} params={params} />}
           toolbar={
-            <section aria-label={t("searchLabel")} className="flex min-w-0 flex-wrap items-center gap-2">
-              <ListSearchInput
-                label={t("searchLabel")}
-                placeholder={t("searchPlaceholder")}
-                className="min-w-0 flex-[1_1_20rem] sm:max-w-none"
-              />
-              <ListChoiceFilter
-                paramName="service"
-                label={t("filterService")}
-                allLabel={t("filterAny")}
-                showAllValue
-                options={SERVICE_TYPES.map((service) => ({ value: service, label: t(`service.${service}`) }))}
-              />
-              <ListChoiceFilter
-                paramName="payment"
-                label={t("filterPayment")}
-                allLabel={t("filterAny")}
-                showAllValue
-                options={PAYMENT_STATUSES.map((payment) => ({ value: payment, label: t(`payment.${payment}`) }))}
-              />
-              <ListSortSelect
-                label={t("sortLabel")}
-                triggerLabel={t("sortShort")}
-                options={sortOptions}
-                defaultSort={DEFAULT_ADMIN_ORDER_SORT}
-                defaultDirection={DEFAULT_ADMIN_ORDER_DIRECTION}
-              />
-              <ListFilterReset
-                label={t("clearAll")}
-                paramNames={FILTER_PARAMS}
-                icon={false}
-                className="h-11 px-2 sm:h-10"
-              />
-            </section>
+            // While rows are selected, the bulk actions take the toolbar's place.
+            canFulfill && orders.items.length > 0 ? (
+              <BulkActionBar
+                actions={
+                  <OrderBulkActions
+                    orders={orders.items.map(({ id, orderNumber, status, paymentStatus }) => ({
+                      id,
+                      orderNumber,
+                      status,
+                      paymentStatus,
+                    }))}
+                  />
+                }
+              >
+                {toolbar}
+              </BulkActionBar>
+            ) : (
+              <DataTableToolbar>{toolbar}</DataTableToolbar>
+            )
           }
           emptyState={
-            <EmptyState
-              icon={isFiltered ? SearchX : ClipboardList}
-              title={isFiltered ? tList("noResultsTitle") : t("emptyTitle")}
-              description={isFiltered ? tList("noResultsBody") : t("emptyBody")}
-              action={
-                isFiltered ? (
-                  <Button asChild size="control-md" variant="outline">
-                    <Link href="/dashboard/orders">{tList("clearFilters")}</Link>
+            searched ? (
+              <DashboardEmptyState
+                title={t("noMatchesTitle")}
+                body={t("noMatchesBody")}
+                className="px-4 py-16"
+                action={
+                  <Button asChild variant="secondary" size="control-md" className="px-4 sm:min-h-10">
+                    <Link href={withoutFilters(params)}>{tList("clearFilters")}</Link>
                   </Button>
-                ) : undefined
-              }
-            />
+                }
+              />
+            ) : filters.status != null ? (
+              <DashboardEmptyState title={t("noMatchesTitle")} body={t("noStatusMatchesBody")} className="px-4 py-16" />
+            ) : (
+              <DashboardEmptyState title={t("emptyTitle")} body={t("emptyBody")} className="px-4 py-16" />
+            )
           }
           footer={<ListPager page={orders} />}
         />

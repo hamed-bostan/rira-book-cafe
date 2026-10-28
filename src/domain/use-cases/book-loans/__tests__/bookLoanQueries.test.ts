@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { nextBookLoanStatuses, type BookLoan } from "../../../entities/BookLoan";
 import { ConflictError } from "../../../errors/ConflictError";
 import { NotFoundError } from "../../../errors/NotFoundError";
-import { ListBookLoans, ListLendableBooks, ListOwnBookLoans } from "../BookLoanQueries";
+import { CountBookLoans, ListBookLoans, ListLendableBooks, ListOwnBookLoans } from "../BookLoanQueries";
 import {
   GetBookWaitlistStatus,
   JoinBookWaitlist,
@@ -46,6 +46,13 @@ describe("loan queries", () => {
     const repo = { list } as unknown as IBookLoanRepository;
     expect(await new ListBookLoans(repo).execute({ view: "overdue", q }, NOW)).toEqual([LOAN]);
     expect(list).toHaveBeenCalledWith({ view: "overdue", q: expected }, NOW);
+  });
+
+  it("counts each view over every loan, as of now", async () => {
+    const counts = { open: 4, overdue: 1, returned: 9, lost: 2, all: 15 };
+    const countByView = vi.fn<IBookLoanRepository["countByView"]>(async () => counts);
+    expect(await new CountBookLoans({ countByView }).execute(NOW)).toEqual(counts);
+    expect(countByView).toHaveBeenCalledWith(NOW);
   });
 
   it("delegates the guest's loans and the lendable shelf", async () => {

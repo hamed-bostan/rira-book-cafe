@@ -30,7 +30,7 @@ export default function ProductsLoading() {
           ))}
         </div>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-border px-4 py-3">
-          <Skeleton className="h-11 min-w-0 flex-[1_1_15rem] rounded-input sm:h-10 sm:max-w-md" />
+          <Skeleton className="h-11 max-w-md min-w-0 flex-[1_1_15rem] rounded-input sm:h-10" />
           <Skeleton className="h-11 w-36 rounded-button sm:h-10" />
         </div>
         <div className={cn("hidden h-10 items-center border-b border-border bg-muted px-5 md:grid", PRODUCT_ROW_GRID)}>

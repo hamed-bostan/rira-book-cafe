@@ -1,4 +1,4 @@
-import { toUserRole } from "./User";
+import { isDashboardRole, toUserRole } from "./User";
 
 import type { ActivityChange } from "./ActivityEntry";
 import type { UserRole } from "./User";
@@ -22,13 +22,15 @@ export const ROLE_CHANGE_FIELD = "role";
 /**
  * What a change amounted to.
  *
+ * `granted` is access given to someone who had none; `changed` is a move between
+ * two dashboard roles (Support → Staff) — a change of job, not a new grant.
  * `ownershipClaimed` and `ownershipTransferred` are both "someone became owner";
  * they differ only in whether the actor was the one promoted. `unknown` covers an
  * entry whose diff doesn't carry a readable role move — a malformed row, which the
  * UI still shows rather than hides.
  */
 export type RoleChangeKind =
-  "granted" | "revoked" | "ownershipTransferred" | "ownershipClaimed" | "steppedDown" | "unknown";
+  "granted" | "changed" | "revoked" | "ownershipTransferred" | "ownershipClaimed" | "steppedDown" | "unknown";
 
 /** The two sides of a role move, pulled out of an entry's diff. */
 export type RoleMove = {
@@ -64,5 +66,6 @@ export function roleChangeKind(input: {
     return input.userId === input.actorId ? "ownershipClaimed" : "ownershipTransferred";
   }
   if (move.fromRole === "owner") return "steppedDown";
-  return move.toRole === "customer" ? "revoked" : "granted";
+  if (move.toRole === "customer") return "revoked";
+  return isDashboardRole(move.fromRole) ? "changed" : "granted";
 }

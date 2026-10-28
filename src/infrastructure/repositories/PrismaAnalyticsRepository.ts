@@ -26,6 +26,21 @@ import { prisma } from "@/src/infrastructure/prisma/client";
 import { Prisma } from "@/src/infrastructure/prisma/generated/client";
 
 /**
+ * An order (aliased `o`) that has been served: completed, or ready — the flow
+ * has no step of that name, so it's an order still `preparing` whose every line
+ * the bar has ticked off as served, leaving only the close-out. Ready orders are
+ * money owed but not yet revenue.
+ */
+const SERVED_ORDER = Prisma.sql`(
+  o.status = 'completed'
+  OR (
+    o.status = 'preparing'
+    AND EXISTS (SELECT 1 FROM order_items line WHERE line.order_id = o.id)
+    AND NOT EXISTS (SELECT 1 FROM order_items line WHERE line.order_id = o.id AND line.served_at IS NULL)
+  )
+)`;
+
+/**
  * Store aggregates computed in PostgreSQL. Timestamps are stored as UTC
  * (`timestamp without time zone`); every day/hour bucket converts to the cafe's
  * clock first, so "Tuesday" and "8 am" mean what they mean at the counter.
@@ -106,46 +121,73 @@ export class PrismaAnalyticsRepository implements IAnalyticsRepository {
     }));
   }
 
-  async topItems(range: DateRange, sort: TopItemSort, limit: number): Promise<TopItem[]> {
+  async topItems(range: DateRange, sort: TopItemSort, limit: number, locale?: string): Promise<TopItem[]> {
     // Grouped by product, labelled with the most recent name it sold under — a
-    // renamed item stays one row.
+    // renamed item stays one row. The category is the item's current one, in the
+    // reader's language when it has a translation; a deleted item has none.
     const orderBy =
       sort === "quantity" ? Prisma.sql`quantity DESC, revenue DESC` : Prisma.sql`revenue DESC, quantity DESC`;
     const rows = await prisma.$queryRaw<
-      { product_id: string; name: string; kind: string; quantity: bigint | null; revenue: bigint | null }[]
+      {
+        product_id: string;
+        name: string;
+        kind: string;
+        category: string | null;
+        quantity: bigint | null;
+        revenue: bigint | null;
+      }[]
     >`
-      SELECT
-        oi.product_id,
-        (array_agg(oi.name ORDER BY o.placed_at DESC))[1] AS name,
-        (array_agg(oi.kind ORDER BY o.placed_at DESC))[1] AS kind,
-        SUM(oi.quantity) AS quantity,
-        SUM(oi.unit_price * oi.quantity) AS revenue
-      FROM order_items oi JOIN orders o ON o.id = oi.order_id
-      WHERE o.status = 'completed' AND o.placed_at >= ${range.from} AND o.placed_at < ${range.to}
-      GROUP BY oi.product_id
-      ORDER BY ${orderBy}
-      LIMIT ${limit}`;
+      WITH ranked AS (
+        SELECT
+          oi.product_id,
+          (array_agg(oi.name ORDER BY o.placed_at DESC))[1] AS name,
+          (array_agg(oi.kind ORDER BY o.placed_at DESC))[1] AS kind,
+          SUM(oi.quantity) AS quantity,
+          SUM(oi.unit_price * oi.quantity) AS revenue
+        FROM order_items oi JOIN orders o ON o.id = oi.order_id
+        WHERE o.status = 'completed' AND o.placed_at >= ${range.from} AND o.placed_at < ${range.to}
+        GROUP BY oi.product_id
+        ORDER BY ${orderBy}
+        LIMIT ${limit}
+      )
+      SELECT r.product_id, r.name, r.kind, r.quantity, r.revenue, COALESCE(ct.name, c.name) AS category
+      FROM ranked r
+      LEFT JOIN products p ON p.id = r.product_id
+      LEFT JOIN categories c ON c.id = p.category_id
+      LEFT JOIN category_translations ct ON ct.category_id = c.id AND ct.locale = ${locale ?? null}
+      ORDER BY ${orderBy}`;
     return rows.map((row) => ({
       productId: row.product_id,
       name: row.name,
       kind: toKind(row.kind),
+      categoryName: row.category,
       quantity: Number(row.quantity ?? 0),
       revenue: Number(row.revenue ?? 0),
     }));
   }
 
   async paymentSummary(range: DateRange): Promise<PaymentSummary> {
+    // Revenue and its paid part are completed orders, as on the sales report;
+    // what's unpaid also counts ready orders, which are served but not yet revenue.
     const [row] = await prisma.$queryRaw<
-      { paid: bigint; paid_value: bigint | null; unpaid: bigint; unpaid_value: bigint | null }[]
+      {
+        revenue: bigint | null;
+        paid: bigint;
+        paid_value: bigint | null;
+        unpaid: bigint;
+        unpaid_value: bigint | null;
+      }[]
     >`
       SELECT
-        COUNT(*) FILTER (WHERE payment_status = 'paid') AS paid,
-        SUM(total) FILTER (WHERE payment_status = 'paid') AS paid_value,
-        COUNT(*) FILTER (WHERE payment_status = 'unpaid') AS unpaid,
-        SUM(total) FILTER (WHERE payment_status = 'unpaid') AS unpaid_value
-      FROM orders
-      WHERE status = 'completed' AND placed_at >= ${range.from} AND placed_at < ${range.to}`;
+        SUM(o.total) FILTER (WHERE o.status = 'completed') AS revenue,
+        COUNT(*) FILTER (WHERE o.status = 'completed' AND o.payment_status = 'paid') AS paid,
+        SUM(o.total) FILTER (WHERE o.status = 'completed' AND o.payment_status = 'paid') AS paid_value,
+        COUNT(*) FILTER (WHERE o.payment_status = 'unpaid') AS unpaid,
+        SUM(o.total) FILTER (WHERE o.payment_status = 'unpaid') AS unpaid_value
+      FROM orders o
+      WHERE ${SERVED_ORDER} AND o.placed_at >= ${range.from} AND o.placed_at < ${range.to}`;
     return {
+      revenue: Number(row?.revenue ?? 0),
       paidOrders: Number(row?.paid ?? 0),
       paidValue: Number(row?.paid_value ?? 0),
       unpaidOrders: Number(row?.unpaid ?? 0),
@@ -172,8 +214,9 @@ export class PrismaAnalyticsRepository implements IAnalyticsRepository {
     const rows = await prisma.order.findMany({
       where: {
         paymentStatus: "unpaid",
-        status: "completed",
         placedAt: { gte: range.from, lt: range.to },
+        // Completed, or ready: still preparing, but every line is out (see `SERVED_ORDER`).
+        OR: [{ status: "completed" }, { status: "preparing", items: { some: {}, none: { servedAt: null } } }],
       },
       orderBy: { placedAt: "asc" },
       take: limit,

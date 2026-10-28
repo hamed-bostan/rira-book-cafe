@@ -1,11 +1,9 @@
 "use client";
 
-import { Check } from "lucide-react";
-
-import { cn } from "@/src/lib/utils";
 import { PopoverClose } from "@/src/presentation/design-system/components/Popover/Popover";
 
 import { ListFilterPopover } from "./ListFilterPopover";
+import { LIST_OPTIONS, ListOptionCheck, listOptionClass } from "./ListOption";
 import { useListParams } from "./useListParams";
 
 import type { ListFilterOption } from "./ListFilterSelect";
@@ -67,7 +65,7 @@ export function ListChoiceFilter({
       icon={icon}
       triggerClassName={triggerClassName}
     >
-      <div role="group" aria-label={label} className="flex flex-col">
+      <div role="group" aria-label={label} className={LIST_OPTIONS}>
         {entries.map((option) => {
           const isSelected = option.value === current;
           return (
@@ -81,22 +79,13 @@ export function ListChoiceFilter({
               // hears a list of buttons and nothing about which one is in effect.
               aria-pressed={isSelected}
               onClick={() => setFilter(paramName, option.value || null)}
-              className={cn(
-                "flex items-center gap-2 rounded-button px-2 py-2 text-start text-body-bold transition-colors",
-                "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-                isSelected ? "bg-accent font-medium text-primary" : "text-foreground hover:bg-muted",
-              )}
+              className={listOptionClass(isSelected)}
             >
-              <Check
-                aria-hidden
-                // Held in the layout rather than swapped in and out, so the labels
-                // don't shift sideways as the selection moves down the list.
-                className={cn("size-4 shrink-0", isSelected ? "opacity-100" : "opacity-0")}
-              />
-              <span className="flex-1 truncate">{option.label}</span>
+              <span className="min-w-0 flex-1 truncate">{option.label}</span>
               {counts?.[option.value] != null ? (
-                <span className="text-body-small text-muted-foreground">{counts[option.value]}</span>
+                <span className="font-normal text-muted-foreground tabular-nums">{counts[option.value]}</span>
               ) : null}
+              <ListOptionCheck selected={isSelected} />
             </PopoverClose>
           );
         })}

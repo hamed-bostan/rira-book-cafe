@@ -1,17 +1,19 @@
-import { CalendarDays, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
 import { type CafeEvent } from "@/src/domain/entities/CafeEvent";
 import { cafeDayOf } from "@/src/domain/entities/CafeTime";
 import { Link } from "@/src/i18n/navigation";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
-import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+
+import { DashboardEmptyState } from "../DashboardEmptyState";
 
 import { EventCard } from "./EventCard";
 import { EventTabs, type EventTab } from "./EventTabs";
 
 type EventsScreenProps = {
+  /** Every event, newest start first. */
   events: CafeEvent[];
   tab: EventTab;
   /** Whether the viewer may create and edit events and hold their tables. */
@@ -22,26 +24,19 @@ type EventsScreenProps = {
 
 /**
  * Dashboard events list: Upcoming (soonest first) and Past (latest first) tabs of
- * event cards, each with its seats and the tables held for it.
+ * event cards, each with its seats and the tables held for it. The split is by
+ * cafe day, as the design draws it — today's events stay under Upcoming all day.
  */
 export async function EventsScreen({ events, tab, canManage, now }: EventsScreenProps) {
   const t = await getTranslations("dashEvents");
   const nowDate = new Date(now);
   const todayDay = cafeDayOf(nowDate);
+  const dayOf = (event: CafeEvent): string => cafeDayOf(new Date(event.startsAt));
 
-  const upcoming = events.filter((event) => new Date(event.endsAt) > nowDate).reverse();
-  const past = events.filter((event) => new Date(event.endsAt) <= nowDate);
+  const upcoming = events.filter((event) => dayOf(event) >= todayDay).reverse();
+  const past = events.filter((event) => dayOf(event) < todayDay);
   const shown = tab === "upcoming" ? upcoming : past;
   const drafts = upcoming.filter((event) => !event.isPublished).length;
-
-  const createAction = canManage ? (
-    <Button asChild size="control-md">
-      <Link href="/dashboard/events/create">
-        <Icon icon={Plus} size="sm" className="me-1.5" />
-        {t("newEvent")}
-      </Link>
-    </Button>
-  ) : undefined;
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
@@ -56,7 +51,7 @@ export async function EventsScreen({ events, tab, canManage, now }: EventsScreen
         {canManage ? (
           <Button size="control-md" asChild className="gap-2 px-4">
             <Link href="/dashboard/events/create">
-              <Icon icon={Plus} size="sm" />
+              <Icon icon={Plus} size="icon-md" />
               {t("newEvent")}
             </Link>
           </Button>
@@ -66,12 +61,9 @@ export async function EventsScreen({ events, tab, canManage, now }: EventsScreen
       <EventTabs current={tab} counts={{ upcoming: upcoming.length, past: past.length }} />
 
       {shown.length === 0 ? (
-        <EmptyState
-          icon={CalendarDays}
+        <DashboardEmptyState
           title={tab === "upcoming" ? t("emptyUpcomingTitle") : t("emptyPastTitle")}
-          description={tab === "upcoming" ? t("emptyUpcomingBody") : t("emptyPastBody")}
-          action={tab === "upcoming" ? createAction : undefined}
-          className="py-12"
+          body={tab === "upcoming" ? t("emptyUpcomingBody") : t("emptyPastBody")}
         />
       ) : (
         <ul className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2 2xl:grid-cols-3">
@@ -80,7 +72,8 @@ export async function EventsScreen({ events, tab, canManage, now }: EventsScreen
               <EventCard
                 event={event}
                 upcoming={tab === "upcoming"}
-                today={cafeDayOf(new Date(event.startsAt)) === todayDay}
+                today={dayOf(event) === todayDay}
+                over={new Date(event.endsAt) <= nowDate}
                 canManage={canManage}
               />
             </li>

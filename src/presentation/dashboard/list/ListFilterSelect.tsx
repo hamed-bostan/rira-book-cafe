@@ -4,6 +4,7 @@ import { cn } from "@/src/lib/utils";
 import { PopoverClose } from "@/src/presentation/design-system/components/Popover/Popover";
 
 import { ListFilterPopover, type ListFilterSize } from "./ListFilterPopover";
+import { LIST_OPTIONS, ListRadioOption } from "./ListOption";
 import { useListParams } from "./useListParams";
 
 export type ListFilterOption = {
@@ -44,9 +45,22 @@ export function ListFilterSelect({ paramName, label, options, className, size }:
       triggerClassName={className ?? "w-auto"}
       size={size}
     >
-      <div role="radiogroup" aria-label={label} className="flex flex-col gap-1 p-1">
+      <div role="radiogroup" aria-label={label} className={size === "md" ? "flex flex-col gap-1 p-1" : LIST_OPTIONS}>
         {options.map((option) => {
           const isSelected = option.value === current;
+          if (size !== "md") {
+            return (
+              <PopoverClose asChild key={option.value || "all"}>
+                <ListRadioOption
+                  name={`list-filter-${paramName}`}
+                  value={option.value}
+                  label={option.label}
+                  selected={isSelected}
+                  onSelect={() => setFilter(paramName, option.value || null)}
+                />
+              </PopoverClose>
+            );
+          }
           return (
             <PopoverClose asChild key={option.value || "all"}>
               <label

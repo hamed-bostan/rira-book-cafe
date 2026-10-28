@@ -12,7 +12,7 @@ const VARIANT = { out: "error", low: "warning" } as const;
 export function StockLevelBadge({ level }: { level: Exclude<StockLevel, "ok"> }) {
   const t = useTranslations("dashInventory");
   return (
-    <Badge variant={VARIANT[level]} appearance="outline" dot>
+    <Badge variant={VARIANT[level]} appearance="outline" size="compact" dot>
       {t(`level.${level}`)}
     </Badge>
   );

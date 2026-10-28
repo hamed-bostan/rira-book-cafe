@@ -10,10 +10,12 @@ import { formatMoney } from "@/src/lib/formatMoney";
 import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
+import { DashboardField } from "../DashboardField";
+
 import { inventoryApi } from "./inventory-api";
 import { stockApiErrorMessage } from "./stockApiErrorMessage";
 import { StockDialog } from "./StockDialog";
-import { formatStockQuantity } from "./stockFormat";
+import { formatStockQuantity, typedNumber } from "./stockFormat";
 import { StockItemSelect } from "./StockItemSelect";
 
 type CountStockDialogProps = {
@@ -58,7 +60,15 @@ export function CountStockDialog({
   const amount = (value: number): string => t("quick.quantity", { quantity: formatStockQuantity(value, locale), unit });
 
   const parsed = countField.safeParse(counted);
-  const fieldError = counted.trim() !== "" && !parsed.success ? t("count.invalid") : undefined;
+  const typed = typedNumber(counted);
+  // A negative number broke the "zero or more" rule, and says so; anything else
+  // that isn't a count gets the format's copy.
+  const fieldError =
+    counted.trim() !== "" && !parsed.success
+      ? typed !== undefined && typed < 0
+        ? t("quick.countNegative")
+        : t("count.invalid")
+      : undefined;
   const ready = item !== undefined && parsed.success;
 
   let preview: string | undefined;
@@ -108,8 +118,10 @@ export function CountStockDialog({
       fullForm={{ prompt: t("quick.countFull"), label: t("quick.countFullLink"), href: "/dashboard/inventory/count" }}
     >
       <StockItemSelect items={items} value={itemId} onChange={setItemId} />
-      <label className="flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
-        {t("quick.countedLabel", { unit })}
+      <DashboardField
+        label={t("quick.countedLabel", { unit })}
+        hint={item ? t("quick.expected", { quantity: amount(item.onHand) }) : undefined}
+      >
         <Input
           size="control-md"
           value={counted}
@@ -119,12 +131,7 @@ export function CountStockDialog({
           placeholder="0"
           dir="ltr"
         />
-        {item ? (
-          <span className="text-body-small font-normal text-muted-foreground sm:text-body-caption">
-            {t("quick.expected", { quantity: amount(item.onHand) })}
-          </span>
-        ) : null}
-      </label>
+      </DashboardField>
     </StockDialog>
   );
 }

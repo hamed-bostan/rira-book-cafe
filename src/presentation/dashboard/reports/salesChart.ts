@@ -20,6 +20,18 @@ export type SalesChartPoint = {
 
 export type SalesChart = { kind: SalesChartKind; points: SalesChartPoint[] };
 
+/** Gridlines above the chart's baseline. */
+export const Y_TICKS = 3;
+/** Multipliers a tick step snaps to — 1, 2 or 5 × 10ⁿ — so the axis reads 0 · 5M · 10M · 15M rather than 0 · 3.7M · … */
+const NICE_STEPS = [1, 2, 5, 10];
+
+/** The y-axis step: the smallest 1, 2 or 5 × 10ⁿ whose top tick clears `max` — never under 1, so no half orders. */
+export function chartTickStep(max: number): number {
+  const raw = Math.max(1, max) / Y_TICKS;
+  const magnitude = 10 ** Math.floor(Math.log10(Math.max(1, raw)));
+  return (NICE_STEPS.find((multiple) => multiple * magnitude >= raw) ?? 10) * magnitude;
+}
+
 /** Longest range drawn a day per bar; longer ones go by the week. */
 export const DAILY_CHART_MAX_DAYS = 30;
 /** The hours a one-day chart always spans, busy or not — the cafe's usual day. */

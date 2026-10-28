@@ -1,4 +1,3 @@
-import { CalendarDays, SearchX } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import type { CafeEvent } from "@/src/domain/entities/CafeEvent";
@@ -10,9 +9,9 @@ import { formatNumber } from "@/src/lib/formatNumber";
 import { cn } from "@/src/lib/utils";
 import { AutoRefresh } from "@/src/presentation/components/AutoRefresh";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
-import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
 import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 
+import { DashboardEmptyState } from "../DashboardEmptyState";
 import { DashboardLinkTabs } from "../DashboardLinkTabs";
 
 import { EventBookingRow } from "./EventBookingRow";
@@ -176,10 +175,9 @@ export async function ReservationsScreen({
             ))}
           </ul>
         ) : (
-          <EmptyState
-            icon={status ? SearchX : CalendarDays}
+          <DashboardEmptyState
             title={status ? t("noMatchesTitle") : t("emptyTitle")}
-            description={status ? t("noMatchesBody") : t("emptyBody")}
+            body={status ? t("noMatchesBody") : t("emptyBody")}
             action={
               status ? (
                 <Button asChild variant="secondary" size="control-md" className="px-4">
@@ -187,7 +185,6 @@ export async function ReservationsScreen({
                 </Button>
               ) : undefined
             }
-            className="py-12"
           />
         )}
       </section>

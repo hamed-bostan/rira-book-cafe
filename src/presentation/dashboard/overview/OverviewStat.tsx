@@ -37,7 +37,7 @@ export function OverviewStat({ label, icon, value, unit, hint, alert = false, hr
     >
       <span className="flex items-center justify-between gap-3">
         <span className="text-body-default font-medium sm:text-body-small">{label}</span>
-        <Icon icon={icon} size="sm" className="text-muted-foreground sm:size-4" />
+        <Icon icon={icon} size="icon-md" className="text-muted-foreground" />
       </span>
       <span className="flex flex-col gap-1">
         <span className="flex flex-wrap items-baseline gap-x-1.5">

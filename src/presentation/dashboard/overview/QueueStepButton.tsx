@@ -36,7 +36,7 @@ export function QueueStepButton({ orderId, orderNumber, status }: QueueStepButto
     startTransition(async () => {
       try {
         await ordersApi.changeStatus(orderId, { status: to });
-        toast({ tone: "success", title: t("statusChanged", { number: orderNumber, status: t(`status.${to}`) }) });
+        toast({ tone: "success", title: t("movedToast", { number: orderNumber, status: to }) });
       } catch (err) {
         toast({ tone: "error", title: localizeApiError(err, tApiErrors, t("statusError")) });
       }

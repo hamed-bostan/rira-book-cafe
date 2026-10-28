@@ -4,6 +4,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import type { Reservation, ReservationStatus } from "@/src/domain/entities/Reservation";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { formatOrderTime } from "@/src/lib/formatOrderDate";
+import { DashboardEmptyState } from "@/src/presentation/dashboard/DashboardEmptyState";
 import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 
@@ -39,9 +40,11 @@ export async function ReservationsPanel({ reservations, canManage }: Reservation
       action={{ href: "/dashboard/reservations", label: t("viewAll") }}
     >
       {shown.length === 0 ? (
-        <p className="border-t border-border px-5 py-10 text-center text-body-default text-muted-foreground sm:text-body-small">
-          {t("reservationsEmpty")}
-        </p>
+        <DashboardEmptyState
+          title={t("reservationsEmptyTitle")}
+          body={t("reservationsEmptyBody")}
+          className="border-t border-border py-10"
+        />
       ) : (
         shown.map((reservation) => {
           const requested = reservation.status === "requested";
@@ -62,7 +65,7 @@ export async function ReservationsPanel({ reservations, canManage }: Reservation
                     {reservation.guestName}
                   </span>
                   {requested ? (
-                    <Badge variant="warning" appearance="outline" dot className="whitespace-nowrap">
+                    <Badge variant="warning" appearance="outline" dot size="compact">
                       {t("unconfirmed")}
                     </Badge>
                   ) : null}
@@ -85,7 +88,7 @@ export async function ReservationsPanel({ reservations, canManage }: Reservation
                 ) : null
               ) : (
                 <span className="ms-auto flex shrink-0 items-center gap-1.5 text-body-default whitespace-nowrap text-muted-foreground sm:text-body-small">
-                  <Icon icon={Check} size="sm" className="sm:size-4" />
+                  <Icon icon={Check} size="icon-md" />
                   {tRes(`status.${reservation.status}`)}
                 </span>
               )}

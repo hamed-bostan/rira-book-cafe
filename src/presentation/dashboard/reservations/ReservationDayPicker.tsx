@@ -43,7 +43,7 @@ export function ReservationDayPicker({ day, today }: ReservationDayPickerProps) 
           onClick={() => go(shiftCafeDay(day, -1))}
           className={cn(SEGMENT, "w-11 rounded-s-button sm:w-9")}
         >
-          <Icon icon={ChevronLeft} size="sm" className="rtl:-scale-x-100" />
+          <Icon icon={ChevronLeft} size="icon-md" className="rtl:-scale-x-100" />
         </button>
         <button
           type="button"
@@ -63,7 +63,7 @@ export function ReservationDayPicker({ day, today }: ReservationDayPickerProps) 
           onClick={() => go(shiftCafeDay(day, 1))}
           className={cn(SEGMENT, "w-11 rounded-e-button sm:w-9")}
         >
-          <Icon icon={ChevronRight} size="sm" className="rtl:-scale-x-100" />
+          <Icon icon={ChevronRight} size="icon-md" className="rtl:-scale-x-100" />
         </button>
       </div>
       <Input

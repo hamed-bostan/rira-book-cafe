@@ -18,7 +18,7 @@ import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { categoriesApi } from "./category-api";
-import { DeleteCategorySheet } from "./DeleteCategorySheet";
+import { DeleteCategoryDialog } from "./DeleteCategoryDialog";
 
 type CategoryRowActionsProps = {
   category: Pick<Category, "id" | "name" | "isActive" | "productCount">;
@@ -119,7 +119,7 @@ export function CategoryRowActions({ category, isFirst, isLast }: CategoryRowAct
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <DeleteCategorySheet
+      <DeleteCategoryDialog
         category={category}
         open={confirmDelete}
         onOpenChange={setConfirmDelete}

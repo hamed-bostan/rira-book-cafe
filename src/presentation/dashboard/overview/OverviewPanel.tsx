@@ -32,7 +32,7 @@ export function OverviewPanel({ id, title, count, action, children, className }:
           {title}
         </h2>
         {count !== undefined ? (
-          <span className="inline-flex h-5 min-w-6 items-center justify-center rounded-badge-md bg-muted px-1.5 text-body-caption-bold text-muted-foreground tabular-nums">
+          <span className="inline-flex h-5 min-w-6 items-center justify-center rounded-badge-md bg-muted px-1.5 text-body-caption font-semibold text-muted-foreground tabular-nums">
             {count}
           </span>
         ) : null}
@@ -41,7 +41,7 @@ export function OverviewPanel({ id, title, count, action, children, className }:
             href={action.href}
             // 44px tall to the touch on a phone, without moving the header's text.
             className={cn(
-              "-my-3 ms-auto py-3 text-body-small-emphasis whitespace-nowrap text-primary transition-colors hover:text-primary-hover sm:my-0 sm:py-0",
+              "-my-3 ms-auto py-3 text-body-default font-medium whitespace-nowrap text-primary transition-colors hover:text-primary-hover sm:my-0 sm:py-0 sm:text-body-small",
               focusRing,
             )}
           >

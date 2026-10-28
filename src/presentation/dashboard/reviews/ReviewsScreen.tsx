@@ -1,4 +1,4 @@
-import { SearchX, Star } from "lucide-react";
+import { Star } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import type { ProductReview, RatingSummary, ReviewStatus } from "@/src/domain/entities/ProductReview";
@@ -6,9 +6,9 @@ import { REVIEW_VIEWS, type ReviewView } from "@/src/domain/repositories/IReview
 import { formatNumber } from "@/src/lib/formatNumber";
 import { cn } from "@/src/lib/utils";
 import { ListSearchInput } from "@/src/presentation/dashboard/list";
-import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 
+import { DashboardEmptyState } from "../DashboardEmptyState";
 import { DashboardLinkTabs } from "../DashboardLinkTabs";
 
 import { ReviewRow } from "./ReviewRow";
@@ -52,10 +52,10 @@ export async function ReviewsScreen({ reviews, counts, rating, view, query }: Re
 
   // A view with nothing in it says why: a search that missed, an empty queue, or a tab with nothing yet.
   const empty = query
-    ? { icon: SearchX, title: t("noMatchesTitle"), body: t("noMatchesBody") }
+    ? { title: t("noMatchesTitle"), body: t("noMatchesBody") }
     : view === "pending"
-      ? { icon: Star, title: t("caughtUpTitle"), body: t("caughtUpBody") }
-      : { icon: Star, title: t("emptyTitle"), body: t("emptyBody") };
+      ? { title: t("caughtUpTitle"), body: t("caughtUpBody") }
+      : { title: t("emptyTitle"), body: t("emptyBody") };
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
@@ -107,7 +107,7 @@ export async function ReviewsScreen({ reviews, counts, rating, view, query }: Re
             ))}
           </ul>
         ) : (
-          <EmptyState icon={empty.icon} title={empty.title} description={empty.body} className="py-12" />
+          <DashboardEmptyState title={empty.title} body={empty.body} />
         )}
       </section>
     </div>

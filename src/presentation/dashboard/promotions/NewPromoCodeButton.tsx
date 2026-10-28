@@ -19,14 +19,24 @@ type NewPromoCodeButtonProps = {
 export function NewPromoCodeButton({ takenCodes, today }: NewPromoCodeButtonProps) {
   const t = useTranslations("dashPromotions");
   const [open, setOpen] = React.useState(false);
+  // Bumped on every open, so the dialog starts empty — nothing left from last time.
+  const [opened, setOpened] = React.useState(0);
 
   return (
     <>
-      <Button size="control-md" type="button" className="gap-2 px-4" onClick={() => setOpen(true)}>
-        <Icon icon={Plus} size="sm" />
+      <Button
+        size="control-md"
+        type="button"
+        className="gap-2 px-4"
+        onClick={() => {
+          setOpened((count) => count + 1);
+          setOpen(true);
+        }}
+      >
+        <Icon icon={Plus} size="icon-md" />
         {t("newCode")}
       </Button>
-      <PromoCodeDialog open={open} onOpenChange={setOpen} takenCodes={takenCodes} today={today} />
+      <PromoCodeDialog key={opened} open={open} onOpenChange={setOpen} takenCodes={takenCodes} today={today} />
     </>
   );
 }

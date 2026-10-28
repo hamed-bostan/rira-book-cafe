@@ -79,7 +79,7 @@ export class PrismaReviewRepository implements IReviewRepository {
     }
     const rows = await this.db.productReview.findMany({
       where,
-      orderBy: { createdAt: filters.view === "pending" ? "asc" : "desc" },
+      orderBy: { createdAt: "desc" },
       take: LIST_LIMIT,
     });
     return rows.map(toReview);

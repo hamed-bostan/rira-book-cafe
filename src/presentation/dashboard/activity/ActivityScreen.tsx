@@ -1,4 +1,3 @@
-import { History, SearchX } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { ACTIVITY_ENTITY_TYPES, FILTERABLE_ACTIVITY_FIELDS } from "@/src/domain/entities/ActivityEntry";
@@ -9,9 +8,9 @@ import { formatCafeDayMedium, formatCafeDayShort } from "@/src/lib/formatCafeDay
 import { formatOrderTime } from "@/src/lib/formatOrderDate";
 import { formatRelativeTime } from "@/src/lib/formatRelativeTime";
 import { cn } from "@/src/lib/utils";
+import { DashboardEmptyState } from "@/src/presentation/dashboard/DashboardEmptyState";
 import { ListPager } from "@/src/presentation/dashboard/list";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
-import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
 
 import { activityDayKind, groupByCafeDay } from "./activityDays";
 import { ActivityEntryRow } from "./ActivityEntryRow";
@@ -108,7 +107,7 @@ export async function ActivityScreen({ entries, actors, isFiltered }: ActivitySc
               <div key={group.day}>
                 <h2
                   className={cn(
-                    "border-b border-border bg-muted px-5 py-2 text-body-caption-bold tracking-wider text-muted-foreground uppercase",
+                    "border-b border-border bg-muted px-5 py-2 text-body-caption font-semibold tracking-wider text-muted-foreground uppercase",
                     index > 0 && "border-t",
                   )}
                 >
@@ -128,19 +127,17 @@ export async function ActivityScreen({ entries, actors, isFiltered }: ActivitySc
             </div>
           </>
         ) : isFiltered ? (
-          <EmptyState
-            icon={SearchX}
+          <DashboardEmptyState
             title={t("noMatchesTitle")}
-            description={t("noMatchesBody")}
+            body={t("noMatchesBody")}
             action={
               <Button asChild size="control-md" variant="secondary" className="px-3">
                 <Link href="/dashboard/activity">{t("clearFilters")}</Link>
               </Button>
             }
-            className="py-12"
           />
         ) : (
-          <EmptyState icon={History} title={t("empty")} description={t("emptyBody")} className="py-12" />
+          <DashboardEmptyState title={t("empty")} body={t("emptyBody")} />
         )}
       </section>
     </div>

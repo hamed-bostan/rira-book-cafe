@@ -18,9 +18,32 @@ const LANE_OF: Partial<Record<OrderStatus, KitchenLane>> = {
 /** An order is "late" once it has waited this long since it was placed. */
 export const KITCHEN_LATE_MINUTES = 15;
 
+/** From this long an order's wait shows as a warning: not late yet, but getting there. */
+export const KITCHEN_WARN_MINUTES = 10;
+
+/** How a wait reads on the board: fine, getting long, or late. */
+export type KitchenWaitTone = "neutral" | "warning" | "late";
+
 /** Whole minutes an order has waited at `now`. */
 export function minutesWaiting(order: Pick<Order, "placedAt">, now: Date): number {
   return Math.max(0, Math.floor((now.getTime() - new Date(order.placedAt).getTime()) / 60_000));
+}
+
+/** The tone of a wait of `minutes`: neutral, a warning from 10 minutes, late from 15. */
+export function kitchenWaitTone(minutes: number): KitchenWaitTone {
+  if (minutes >= KITCHEN_LATE_MINUTES) return "late";
+  if (minutes >= KITCHEN_WARN_MINUTES) return "warning";
+  return "neutral";
+}
+
+/** Whether the order has waited past the late mark at `now`. */
+export function isLateOrder(order: Pick<Order, "placedAt">, now: Date): boolean {
+  return minutesWaiting(order, now) >= KITCHEN_LATE_MINUTES;
+}
+
+/** How many of the orders are late at `now` — what a lane flags in red. */
+export function lateOrderCount(orders: readonly Pick<Order, "placedAt">[], now: Date): number {
+  return orders.filter((order) => isLateOrder(order, now)).length;
 }
 
 /** Sort active orders into the board's lanes, oldest first. */

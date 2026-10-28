@@ -1,25 +1,32 @@
-import { BookOpen, Bookmark, ChevronRight, SearchX } from "lucide-react";
+import { Bookmark, ChevronRight } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { isBookLoanOverdue, type BookLoan } from "@/src/domain/entities/BookLoan";
 import type { BookWaitlistEntry } from "@/src/domain/entities/BookWaitlist";
-import { BOOK_LOAN_VIEWS, type BookLoanView, type LendableBook } from "@/src/domain/repositories/IBookLoanRepository";
+import {
+  BOOK_LOAN_VIEWS,
+  type BookLoanCounts,
+  type BookLoanView,
+  type LendableBook,
+} from "@/src/domain/repositories/IBookLoanRepository";
 import { Link } from "@/src/i18n/navigation";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { cn } from "@/src/lib/utils";
 import { ListSearchInput } from "@/src/presentation/dashboard/list";
-import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 
+import { DashboardEmptyState } from "../DashboardEmptyState";
 import { DashboardLinkTabs } from "../DashboardLinkTabs";
 
 import { BookLoanRow } from "./BookLoanRow";
 import { LendBookDialog } from "./LendBookDialog";
 
 type BookLoansScreenProps = {
-  /** Every loan matching the search — the tabs filter and count from it. */
+  /** Every loan matching the search — the tabs filter from it. */
   loans: BookLoan[];
+  /** How many loans each tab holds, whatever the search. */
+  counts: BookLoanCounts;
   books: LendableBook[];
   /** Everyone in line for a book, front of each line first. */
   waitlist: BookWaitlistEntry[];
@@ -31,14 +38,19 @@ type BookLoansScreenProps = {
   canManage: boolean;
 };
 
+/** The Overdue tab with the search cleared — every late book. */
+const OVERDUE_HREF = "/dashboard/book-loans?view=overdue";
+
 /**
  * The lending book: who has which book and when it's due, in On loan / Overdue /
- * Returned / Lost / All tabs with a search, overdue loans first. A card leads to
- * Book holds with a one-line summary of the lines. Presentational: the page
- * fetches over the REST API (BFF); every action `router.refresh()`es.
+ * Returned / Lost / All tabs with a search, overdue loans first. The tabs count
+ * every loan whatever the search. A card leads to Book holds with a one-line
+ * summary of the lines. Presentational: the page fetches over the REST API (BFF);
+ * every action `router.refresh()`es.
  */
 export async function BookLoansScreen({
   loans,
+  counts,
   books,
   waitlist,
   view,
@@ -67,7 +79,6 @@ export async function BookLoansScreen({
         Number(overdue(b)) - Number(overdue(a)) ||
         (a.status === "out" && b.status === "out" ? a.dueAt.localeCompare(b.dueAt) : b.lentAt.localeCompare(a.lentAt)),
     );
-  const overdueCount = loans.filter(overdue).length;
 
   const lineFor = (productId: string): BookWaitlistEntry[] => waitlist.filter((entry) => entry.productId === productId);
   const ready = waitlist.filter((entry) => entry.status === "notified");
@@ -90,18 +101,18 @@ export async function BookLoansScreen({
           <h1 className="dashboard-page-title">{t("heading")}</h1>
           <p className="flex flex-wrap items-center gap-x-2 text-body-default text-muted-foreground sm:text-body-small">
             <span>{t("subtitle")}</span>
-            {overdueCount > 0 && view !== "overdue" ? (
+            {counts.overdue > 0 ? (
               <>
                 <span aria-hidden>·</span>
                 <Link
-                  href={hrefFor("overdue")}
+                  href={OVERDUE_HREF}
                   // 44px to the touch on a phone without moving the line.
                   className={cn(
                     "-my-3 py-3 font-semibold text-error-foreground underline underline-offset-4 sm:my-0 sm:py-0",
                     focusRing,
                   )}
                 >
-                  {t("overdueLink", { count: overdueCount })}
+                  {t("overdueLink", { count: counts.overdue })}
                 </Link>
               </>
             ) : null}
@@ -118,7 +129,7 @@ export async function BookLoansScreen({
         )}
       >
         <span className="flex size-10 shrink-0 items-center justify-center rounded-button bg-info text-info-foreground">
-          <Icon icon={Bookmark} size="sm" />
+          <Icon icon={Bookmark} size="icon-lg" />
         </span>
         <span className="flex min-w-0 flex-[1_1_12rem] flex-col">
           <span className="text-body-strong sm:text-body-small-strong">{t("holdsCardTitle")}</span>
@@ -138,7 +149,7 @@ export async function BookLoansScreen({
         </span>
         <span className="flex items-center gap-1 text-body-default font-medium whitespace-nowrap text-primary sm:text-body-small">
           {t("openHolds")}
-          <Icon icon={ChevronRight} size="sm" className="rtl:-scale-x-100" />
+          <Icon icon={ChevronRight} size="icon-md" className="rtl:-scale-x-100" />
         </span>
       </Link>
 
@@ -153,7 +164,7 @@ export async function BookLoansScreen({
           tabs={BOOK_LOAN_VIEWS.map((tab) => ({
             key: tab,
             label: t(`view.${tab}`),
-            count: loans.filter(inView[tab]).length,
+            count: counts[tab],
             href: hrefFor(tab),
           }))}
         />
@@ -179,11 +190,9 @@ export async function BookLoansScreen({
             })}
           </ul>
         ) : (
-          <EmptyState
-            icon={query ? SearchX : BookOpen}
+          <DashboardEmptyState
             title={query ? t("noMatchesTitle") : t("emptyTitle")}
-            description={query ? t("noMatchesBody") : t("emptyBody")}
-            className="py-12"
+            body={query ? t("noMatchesBody") : t("emptyBody")}
           />
         )}
       </section>

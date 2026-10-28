@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import { daysOf, dayRange, fillHourlySeries } from "@/src/domain/entities/Analytics";
 
-import { buildSalesChart } from "../salesChart";
+import { formatDayTip } from "../reportFormat";
+import { buildSalesChart, chartTickStep } from "../salesChart";
 
 const TODAY = "2026-10-22";
 
@@ -68,5 +69,27 @@ describe("buildSalesChart", () => {
     expect(chart.points.filter((point) => point.soft)).toHaveLength(1);
     expect(chart.points.at(-1)?.labelled).toBe(true);
     expect(chart.points.at(-2)?.labelled).toBe(false);
+  });
+});
+
+describe("chartTickStep", () => {
+  it("snaps the step to 1, 2 or 5 × 10ⁿ so the top tick clears the tallest bar", () => {
+    expect(chartTickStep(11_200_000)).toBe(5_000_000);
+    expect(chartTickStep(5_400_000)).toBe(2_000_000);
+    expect(chartTickStep(2_900_000)).toBe(1_000_000);
+    expect(chartTickStep(140)).toBe(50);
+    expect(chartTickStep(30)).toBe(10);
+  });
+
+  it("never steps by less than one, so a quiet day doesn't count half orders", () => {
+    expect(chartTickStep(0)).toBe(1);
+    expect(chartTickStep(2)).toBe(1);
+    expect(chartTickStep(4)).toBe(2);
+  });
+});
+
+describe("formatDayTip", () => {
+  it("heads a day's tooltip with the short weekday and date", () => {
+    expect(formatDayTip("2026-10-22", "en")).toBe("Thu, Oct 22");
   });
 });

@@ -7,9 +7,9 @@ import { bookLoansServerApi } from "@/src/presentation/dashboard/book-loans/book
 import { BookLoansScreen } from "@/src/presentation/dashboard/book-loans/BookLoansScreen";
 
 // The lending book is fetched over the REST API (BFF) during server render. Every
-// loan still out plus the latest closed ones are read at once, so each tab can
-// show its count; the tab (`?view=`, default open) and search (`?q=`) live in the
-// query string.
+// loan still out plus the latest closed ones are read at once and the tabs filter
+// them; each tab's count covers every loan, whatever the search. The tab
+// (`?view=`, default open) and search (`?q=`) live in the query string.
 export const dynamic = "force-dynamic";
 
 type DashboardBookLoansPageProps = {
@@ -24,9 +24,10 @@ export default async function DashboardBookLoansPage({ searchParams }: Dashboard
   const view = viewParam && VIEW_SET.has(viewParam) ? (viewParam as BookLoanView) : "open";
   const q = params.get("q")?.trim() || undefined;
 
-  const [open, recent, books, waitlist, canManage] = await Promise.all([
+  const [open, recent, counts, books, waitlist, canManage] = await Promise.all([
     bookLoansServerApi.list("open", q),
     bookLoansServerApi.list("all", q),
+    bookLoansServerApi.getCounts(),
     bookLoansServerApi.listBooks(),
     bookLoansServerApi.listWaitlist(),
     auth().then((session) => sessionHas(session, "loans.manage")),
@@ -38,6 +39,7 @@ export default async function DashboardBookLoansPage({ searchParams }: Dashboard
   return (
     <BookLoansScreen
       loans={loans}
+      counts={counts}
       books={books}
       waitlist={waitlist}
       view={view}

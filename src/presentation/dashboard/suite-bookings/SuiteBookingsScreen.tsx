@@ -1,4 +1,3 @@
-import { BedDouble } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
 import { shiftCafeDay } from "@/src/domain/entities/CafeTime";
@@ -10,8 +9,8 @@ import {
   type SuiteBooking,
 } from "@/src/domain/entities/SuiteBooking";
 import { cn } from "@/src/lib/utils";
-import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
 
+import { DashboardEmptyState } from "../DashboardEmptyState";
 import { DashboardLinkTabs } from "../DashboardLinkTabs";
 
 import { NewStayDialog } from "./NewStayDialog";
@@ -134,11 +133,9 @@ export async function SuiteBookingsScreen({
             ))}
           </ul>
         ) : (
-          <EmptyState
-            icon={BedDouble}
+          <DashboardEmptyState
             title={tab === "upcoming" ? t("emptyUpcomingTitle") : t("emptyPastTitle")}
-            description={tab === "upcoming" ? t("emptyUpcomingBody") : t("emptyPastBody")}
-            className="py-12"
+            body={tab === "upcoming" ? t("emptyUpcomingBody") : t("emptyPastBody")}
           />
         )}
       </section>

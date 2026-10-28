@@ -14,10 +14,12 @@ import { Input } from "@/src/presentation/design-system/components/form/Input/In
 import { Select } from "@/src/presentation/design-system/components/form/Select/Select";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
+import { DashboardField } from "../DashboardField";
+
 import { inventoryApi } from "./inventory-api";
 import { stockApiErrorMessage } from "./stockApiErrorMessage";
 import { StockDialog } from "./StockDialog";
-import { formatStockQuantity, formatUnitCost } from "./stockFormat";
+import { formatStockQuantity, formatUnitCost, typedNumber } from "./stockFormat";
 import { StockItemSelect } from "./StockItemSelect";
 
 type PaymentChoice = (typeof EXPENSE_PAYMENT_CHOICES)[number];
@@ -69,11 +71,21 @@ export function ReceiveDeliveryDialog({
 
   const parsedQuantity = quantityField.safeParse(quantity);
   const parsedCost = moneyField.safeParse(cost);
+  // A number of zero or less broke the "more than 0" rule, and says so; anything
+  // else that isn't a quantity or a whole amount gets the format's own copy.
+  const atMostZero = (value: string): boolean => {
+    const typed = typedNumber(value);
+    return typed !== undefined && typed <= 0;
+  };
   const fieldError =
     quantity.trim() !== "" && !parsedQuantity.success
-      ? formErrorMessage(tFormErrors, parsedQuantity.error.issues[0]?.message)
+      ? atMostZero(quantity)
+        ? t("quick.quantityPositive")
+        : formErrorMessage(tFormErrors, parsedQuantity.error.issues[0]?.message)
       : cost.trim() !== "" && !parsedCost.success
-        ? formErrorMessage(tFormErrors, parsedCost.error.issues[0]?.message)
+        ? atMostZero(cost)
+          ? t("quick.costPositive")
+          : formErrorMessage(tFormErrors, parsedCost.error.issues[0]?.message)
         : undefined;
   const ready = item !== undefined && parsedQuantity.success && parsedCost.success;
 
@@ -132,8 +144,7 @@ export function ReceiveDeliveryDialog({
       }}
     >
       <StockItemSelect items={items} value={itemId} onChange={setItemId} />
-      <label className="flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
-        {t("quick.quantityLabel", { unit })}
+      <DashboardField label={t("quick.quantityLabel", { unit })}>
         <Input
           size="control-md"
           value={quantity}
@@ -143,9 +154,8 @@ export function ReceiveDeliveryDialog({
           placeholder="0"
           dir="ltr"
         />
-      </label>
-      <label className="flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
-        {t("quick.costLabel")}
+      </DashboardField>
+      <DashboardField label={t("quick.costLabel")} hint={t("quick.costHint")}>
         <Input
           size="control-md"
           value={cost}
@@ -155,12 +165,8 @@ export function ReceiveDeliveryDialog({
           placeholder="0"
           dir="ltr"
         />
-        <span className="text-body-small font-normal text-muted-foreground sm:text-body-caption">
-          {t("quick.costHint")}
-        </span>
-      </label>
-      <label className="flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
-        {tExpenses("form.paymentLabel")}
+      </DashboardField>
+      <DashboardField label={tExpenses("form.paymentLabel")}>
         <Select
           size="control-md"
           value={payment}
@@ -174,7 +180,7 @@ export function ReceiveDeliveryDialog({
             </option>
           ))}
         </Select>
-      </label>
+      </DashboardField>
     </StockDialog>
   );
 }

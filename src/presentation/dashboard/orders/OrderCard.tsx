@@ -33,7 +33,7 @@ export function OrderCard({ order }: { order: Order }) {
           <p className="text-body-strong text-foreground">#{order.orderNumber}</p>
           <p className="truncate text-body-default text-muted-foreground sm:text-body-small">{order.customerName}</p>
         </div>
-        <OrderStatusBadge status={order.status} />
+        <OrderStatusBadge status={order.status} size="compact" />
       </div>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <OrderServiceLabel order={order} />
@@ -47,7 +47,7 @@ export function OrderCard({ order }: { order: Order }) {
         <span className="text-body-emphasis text-foreground tabular-nums sm:text-body-small-emphasis">
           {formatMoney(order.total, locale)}
         </span>
-        <Badge variant={order.paymentStatus === "paid" ? "success" : "neutral"}>
+        <Badge variant={order.paymentStatus === "paid" ? "success" : "neutral"} size="compact">
           {t(`payment.${order.paymentStatus}`)}
         </Badge>
       </div>

@@ -213,4 +213,17 @@ describe("dashboard product list", () => {
     expect(page.total).toBeGreaterThanOrEqual(2);
     expect(page.items.every((product) => /latte/i.test(product.name))).toBe(true);
   });
+
+  it("finds items by their category's name", async () => {
+    signInAs("staff");
+    const category = await prisma.category.findUniqueOrThrow({ where: { slug: "hot-drinks" } });
+    const inCategory = await prisma.product.count({ where: { categoryId: category.id } });
+    const q = encodeURIComponent(category.name);
+    const response = await listAdminProducts(getRequest(`/api/admin/products?categoryId=${category.id}&q=${q}`));
+
+    expect(response.status).toBe(200);
+    const page = await readJson<{ total: number }>(response);
+    expect(inCategory).toBeGreaterThan(0);
+    expect(page.total).toBe(inCategory);
+  });
 });

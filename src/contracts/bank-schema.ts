@@ -1,6 +1,5 @@
-import { z } from "zod";
-
 import { BANK_LINE_POSTINGS } from "@/src/domain/entities/BankReconciliation";
+import * as z from "@/src/lib/zod";
 
 import { fieldsParsed } from "./fields-parsed";
 import { balanceField, dayField, optionalMoneyField, optionalTextField, signedAmountField } from "./money-fields";
@@ -13,7 +12,7 @@ const MAX_MATCH_LINES = 500;
 /** One movement as the bank statement shows it; amounts are signed (− money out). */
 export const statementLineSchema = z.object({
   date: dayField,
-  description: z.string().trim().min(1, "descriptionRequired").max(200, "textTooLong"),
+  description: z.string().check(z.trim(), z.minLength(1, "descriptionRequired"), z.maxLength(200, "textTooLong")),
   reference: optionalTextField(80),
   amount: signedAmountField,
 });
@@ -33,29 +32,35 @@ export const bankStatementSchema = z
     toDay: dayField,
     openingBalance: balanceField,
     closingBalance: balanceField,
-    lines: z.array(statementLineSchema).max(MAX_STATEMENT_LINES, "linesTooMany"),
+    lines: z.array(statementLineSchema).check(z.maxLength(MAX_STATEMENT_LINES, "linesTooMany")),
   })
-  .refine((value) => value.fromDay <= value.toDay, {
-    path: ["toDay"],
-    error: "periodEndsBeforeStart",
-    when: statementFieldsParsed,
-  })
-  .refine((value) => value.lines.every((line) => line.date >= value.fromDay && line.date <= value.toDay), {
-    path: ["lines"],
-    error: "lineOutsidePeriod",
-    when: statementFieldsParsed,
-  });
+  .check(
+    z.refine((value) => value.fromDay <= value.toDay, {
+      path: ["toDay"],
+      error: "periodEndsBeforeStart",
+      when: statementFieldsParsed,
+    }),
+    z.refine((value) => value.lines.every((line) => line.date >= value.fromDay && line.date <= value.toDay), {
+      path: ["lines"],
+      error: "lineOutsidePeriod",
+      when: statementFieldsParsed,
+    }),
+  );
 
 export type BankStatementFormInput = z.input<typeof bankStatementSchema>;
 
 /** More lines for an open statement (a second export, a line that was missed). */
 export const statementLinesSchema = z.object({
-  lines: z.array(statementLineSchema).min(1, "linesRequired").max(MAX_STATEMENT_LINES, "linesTooMany"),
+  lines: z
+    .array(statementLineSchema)
+    .check(z.minLength(1, "linesRequired"), z.maxLength(MAX_STATEMENT_LINES, "linesTooMany")),
 });
 
 export type StatementLinesInput = z.input<typeof statementLinesSchema>;
 
-const idList = z.array(z.string().trim().min(1)).min(1, "linesRequired").max(MAX_MATCH_LINES, "linesTooMany");
+const idList = z
+  .array(z.string().check(z.trim(), z.minLength(1)))
+  .check(z.minLength(1, "linesRequired"), z.maxLength(MAX_MATCH_LINES, "linesTooMany"));
 
 /** Statement lines and ledger lines that are the same money. */
 export const bankMatchSchema = z.object({ statementLineIds: idList, ledgerLineIds: idList });

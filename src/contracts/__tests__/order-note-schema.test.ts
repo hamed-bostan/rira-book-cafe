@@ -4,6 +4,8 @@ import { MAX_ORDER_NOTE_LENGTH } from "@/src/domain/entities/OrderNote";
 
 import { orderNoteSchema } from "../order-note-schema";
 
+import { flattened } from "./zod-issues";
+
 describe("orderNoteSchema", () => {
   it("trims the body", () => {
     expect(orderNoteSchema.parse({ body: " Called the guest about the oat milk " })).toEqual({
@@ -12,10 +14,10 @@ describe("orderNoteSchema", () => {
   });
 
   it("requires a body within the cap", () => {
-    expect(orderNoteSchema.safeParse({ body: "   " }).error?.flatten().fieldErrors.body).toEqual(["noteRequired"]);
+    expect(flattened(orderNoteSchema.safeParse({ body: "   " }).error)?.fieldErrors.body).toEqual(["noteRequired"]);
     expect(orderNoteSchema.safeParse({ body: "n".repeat(MAX_ORDER_NOTE_LENGTH) }).success).toBe(true);
     expect(
-      orderNoteSchema.safeParse({ body: "n".repeat(MAX_ORDER_NOTE_LENGTH + 1) }).error?.flatten().fieldErrors.body,
+      flattened(orderNoteSchema.safeParse({ body: "n".repeat(MAX_ORDER_NOTE_LENGTH + 1) }).error)?.fieldErrors.body,
     ).toEqual(["noteTooLong"]);
   });
 });

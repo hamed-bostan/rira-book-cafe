@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ZodError } from "zod";
+import { $ZodError } from "zod/v4/core";
 
 import { parseAnalyticsRange, parseTopItemSort, rangeParams, selectedRangeOption } from "../analytics-params";
 
@@ -28,7 +28,7 @@ describe("analytics params", () => {
       { from: "2024-01-01", to: "2026-01-01" },
     ];
     for (const query of queries) {
-      expect(() => parseAnalyticsRange(new URLSearchParams(query), NOW)).toThrow(ZodError);
+      expect(() => parseAnalyticsRange(new URLSearchParams(query), NOW)).toThrow($ZodError);
     }
   });
 

@@ -1,6 +1,5 @@
-import { z } from "zod";
-
 import { CATEGORY_MOVE_DIRECTIONS } from "@/src/domain/entities/Category";
+import * as z from "@/src/lib/zod";
 
 import { imageUrlField } from "./image-url";
 
@@ -11,29 +10,32 @@ import { imageUrlField } from "./image-url";
  * Validation messages are `formErrors` message keys, translated at display time
  * (see `src/lib/formErrorMessage.ts`).
  */
-export const categoryFormSchema = z
-  .object({
-    name: z.string().trim().min(1, "nameRequired").max(50, "nameTooLong"),
+export const categoryFormSchema = z.pipe(
+  z.object({
+    name: z.string().check(z.trim(), z.minLength(1, "nameRequired"), z.maxLength(50, "nameTooLong")),
     slug: z
       .string()
-      .trim()
-      .min(1, "slugRequired")
-      .max(60, "slugTooLong")
-      .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "slugFormat"),
+      .check(
+        z.trim(),
+        z.minLength(1, "slugRequired"),
+        z.maxLength(60, "slugTooLong"),
+        z.regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "slugFormat"),
+      ),
     iconUrl: imageUrlField("iconRequired"),
     // A new category is active by default, matching the column — an operator who
     // wants to stage one deactivates it deliberately.
-    isActive: z.boolean().default(true),
+    isActive: z._default(z.boolean(), true),
     // Optional Persian (fa) name override; blank means "no fa translation".
-    faName: z
-      .string()
-      .trim()
-      .transform((value) => (value.length > 0 ? value : undefined)),
-  })
-  .transform(({ faName, ...base }) => ({
+    faName: z.pipe(
+      z.string().check(z.trim()),
+      z.transform((value) => (value.length > 0 ? value : undefined)),
+    ),
+  }),
+  z.transform(({ faName, ...base }) => ({
     ...base,
     translations: faName ? [{ locale: "fa", name: faName }] : [],
-  }));
+  })),
+);
 
 /** Form value shape (what the controls hold, before transform). */
 export type CategoryFormInput = z.input<typeof categoryFormSchema>;

@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import { gatewaySettlementSchema, type GatewaySettlementInput } from "../payment-schema";
 
+import { flattened } from "./zod-issues";
+
 const SETTLEMENT: GatewaySettlementInput = {
   date: "2026-10-17",
   deposited: "980000",
@@ -24,9 +26,9 @@ describe("gatewaySettlementSchema", () => {
   });
 
   it("maps each invalid field to its message key", () => {
-    const fieldErrors = gatewaySettlementSchema
-      .safeParse({ date: "17 Oct", deposited: "0", fee: "x", reference: "r".repeat(81) })
-      .error?.flatten().fieldErrors;
+    const fieldErrors = flattened(
+      gatewaySettlementSchema.safeParse({ date: "17 Oct", deposited: "0", fee: "x", reference: "r".repeat(81) }).error,
+    )?.fieldErrors;
     expect(fieldErrors).toEqual({
       date: ["dateInvalid"],
       deposited: ["amountInvalid"],
@@ -37,7 +39,7 @@ describe("gatewaySettlementSchema", () => {
 
   it("requires a deposit", () => {
     expect(
-      gatewaySettlementSchema.safeParse({ ...SETTLEMENT, deposited: "" }).error?.flatten().fieldErrors.deposited,
+      flattened(gatewaySettlementSchema.safeParse({ ...SETTLEMENT, deposited: "" }).error)?.fieldErrors.deposited,
     ).toContain("amountRequired");
   });
 });

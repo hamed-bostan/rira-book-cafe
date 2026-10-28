@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "@/src/lib/zod";
 
 import { dayField, moneyField, optionalMoneyField, optionalTextField } from "./money-fields";
 

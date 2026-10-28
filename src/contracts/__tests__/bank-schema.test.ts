@@ -11,7 +11,7 @@ import {
   type StatementLineFormInput,
 } from "../bank-schema";
 
-import { messagesAt } from "./zod-issues";
+import { messagesAt, flattened } from "./zod-issues";
 
 const LINE: StatementLineFormInput = {
   date: "2026-10-01",
@@ -43,9 +43,9 @@ describe("statementLineSchema", () => {
   });
 
   it("refuses a zero movement, a missing description and an oversized reference", () => {
-    const fieldErrors = statementLineSchema
-      .safeParse({ ...LINE, amount: "0", description: " ", reference: "r".repeat(81) })
-      .error?.flatten().fieldErrors;
+    const fieldErrors = flattened(
+      statementLineSchema.safeParse({ ...LINE, amount: "0", description: " ", reference: "r".repeat(81) }).error,
+    )?.fieldErrors;
     expect(fieldErrors?.amount).toEqual(["amountInvalid"]);
     expect(fieldErrors?.description).toEqual(["descriptionRequired"]);
     expect(fieldErrors?.reference).toEqual(["textTooLong"]);
@@ -53,7 +53,8 @@ describe("statementLineSchema", () => {
 
   it("caps the description at 200 characters", () => {
     expect(
-      statementLineSchema.safeParse({ ...LINE, description: "d".repeat(201) }).error?.flatten().fieldErrors.description,
+      flattened(statementLineSchema.safeParse({ ...LINE, description: "d".repeat(201) }).error)?.fieldErrors
+        .description,
     ).toEqual(["textTooLong"]);
   });
 });
@@ -98,9 +99,9 @@ describe("bankStatementSchema", () => {
   });
 
   it("requires both balances", () => {
-    const fieldErrors = bankStatementSchema
-      .safeParse({ ...STATEMENT, openingBalance: "", closingBalance: "1.5" })
-      .error?.flatten().fieldErrors;
+    const fieldErrors = flattened(
+      bankStatementSchema.safeParse({ ...STATEMENT, openingBalance: "", closingBalance: "1.5" }).error,
+    )?.fieldErrors;
     expect(fieldErrors?.openingBalance).toContain("amountRequired");
     expect(fieldErrors?.closingBalance).toEqual(["amountInvalid"]);
   });
@@ -114,9 +115,11 @@ describe("bankStatementSchema", () => {
 describe("statementLinesSchema", () => {
   it("needs at least one line and at most the cap", () => {
     expect(statementLinesSchema.safeParse({ lines: [LINE] }).success).toBe(true);
-    expect(statementLinesSchema.safeParse({ lines: [] }).error?.flatten().fieldErrors.lines).toEqual(["linesRequired"]);
+    expect(flattened(statementLinesSchema.safeParse({ lines: [] }).error)?.fieldErrors.lines).toEqual([
+      "linesRequired",
+    ]);
     const lines = Array.from({ length: MAX_STATEMENT_LINES + 1 }, () => LINE);
-    expect(statementLinesSchema.safeParse({ lines }).error?.flatten().fieldErrors.lines).toEqual(["linesTooMany"]);
+    expect(flattened(statementLinesSchema.safeParse({ lines }).error)?.fieldErrors.lines).toEqual(["linesTooMany"]);
   });
 });
 
@@ -150,8 +153,8 @@ describe("recordStatementLineSchema", () => {
   });
 
   it("refuses an unknown posting kind", () => {
-    expect(recordStatementLineSchema.safeParse({ kind: "refund", fee: "" }).error?.flatten().fieldErrors.kind).toEqual([
-      "postingKindInvalid",
-    ]);
+    expect(flattened(recordStatementLineSchema.safeParse({ kind: "refund", fee: "" }).error)?.fieldErrors.kind).toEqual(
+      ["postingKindInvalid"],
+    );
   });
 });

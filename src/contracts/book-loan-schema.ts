@@ -1,5 +1,3 @@
-import { z } from "zod";
-
 import {
   BOOK_LOAN_STATUSES,
   MAX_BORROWER_NAME_LENGTH,
@@ -8,6 +6,7 @@ import {
 } from "@/src/domain/entities/BookLoan";
 import { isCafeDay } from "@/src/domain/entities/CafeTime";
 import { isPlausiblePhone } from "@/src/domain/entities/Phone";
+import * as z from "@/src/lib/zod";
 
 /**
  * Book-loan contracts shared by the route handlers and the dashboard form. The due
@@ -16,16 +15,16 @@ import { isPlausiblePhone } from "@/src/domain/entities/Phone";
 
 /** Staff lending a book. */
 export const lendBookSchema = z.object({
-  productId: z.string().min(1, "bookRequired"),
-  borrowerName: z.string().trim().min(1, "nameRequired").max(MAX_BORROWER_NAME_LENGTH, "nameTooLong"),
-  borrowerPhone: z.string().trim().refine(isPlausiblePhone, "phoneInvalid"),
-  dueOn: z.string().refine(isCafeDay, "dateInvalid"),
-  note: z
+  productId: z.string().check(z.minLength(1, "bookRequired")),
+  borrowerName: z
     .string()
-    .trim()
-    .max(MAX_LOAN_NOTE_LENGTH, "noteTooLong")
-    .optional()
-    .transform((value) => (value ? value : undefined)),
+    .check(z.trim(), z.minLength(1, "nameRequired"), z.maxLength(MAX_BORROWER_NAME_LENGTH, "nameTooLong")),
+  borrowerPhone: z.string().check(z.trim(), z.refine(isPlausiblePhone, "phoneInvalid")),
+  dueOn: z.string().check(z.refine(isCafeDay, "dateInvalid")),
+  note: z.pipe(
+    z.optional(z.string().check(z.trim(), z.maxLength(MAX_LOAN_NOTE_LENGTH, "noteTooLong"))),
+    z.transform((value) => (value ? value : undefined)),
+  ),
 });
 
 export type LendBookInput = z.input<typeof lendBookSchema>;
@@ -37,27 +36,33 @@ export type LendBookInput = z.input<typeof lendBookSchema>;
  */
 export const bookLoanUpdateSchema = z
   .object({
-    status: z.enum(BOOK_LOAN_STATUSES, { error: "statusInvalid" }).optional(),
-    extendDays: z.number().int("extendInvalid").min(1, "extendInvalid").max(MAX_LOAN_DAYS, "extendInvalid").optional(),
-    undoExtend: z
-      .object({
-        dueAt: z.string().datetime({ error: "dateInvalid" }),
-        extendedDueAt: z.string().datetime({ error: "dateInvalid" }),
-      })
-      .optional(),
+    status: z.optional(z.enum(BOOK_LOAN_STATUSES, { error: "statusInvalid" })),
+    extendDays: z.optional(
+      z.number().check(z.int("extendInvalid"), z.gte(1, "extendInvalid"), z.lte(MAX_LOAN_DAYS, "extendInvalid")),
+    ),
+    undoExtend: z.optional(
+      z.object({
+        dueAt: z.string().check(z.iso.datetime({ error: "dateInvalid" })),
+        extendedDueAt: z.string().check(z.iso.datetime({ error: "dateInvalid" })),
+      }),
+    ),
   })
   // One change at a time: close the loan, extend it, or take an extension back.
-  .refine((data) => [data.status, data.extendDays, data.undoExtend].filter((v) => v !== undefined).length === 1, {
-    error: "nothingToChange",
-  });
+  .check(
+    z.refine((data) => [data.status, data.extendDays, data.undoExtend].filter((v) => v !== undefined).length === 1, {
+      error: "nothingToChange",
+    }),
+  );
 
 export type BookLoanUpdateInput = z.input<typeof bookLoanUpdateSchema>;
 
 /** Staff adding a guest who asked at the counter or by phone to a book's line. */
 export const addBookHoldSchema = z.object({
-  productId: z.string().min(1, "bookRequired"),
-  guestName: z.string().trim().min(1, "nameRequired").max(MAX_BORROWER_NAME_LENGTH, "nameTooLong"),
-  guestPhone: z.string().trim().refine(isPlausiblePhone, "phoneInvalid"),
+  productId: z.string().check(z.minLength(1, "bookRequired")),
+  guestName: z
+    .string()
+    .check(z.trim(), z.minLength(1, "nameRequired"), z.maxLength(MAX_BORROWER_NAME_LENGTH, "nameTooLong")),
+  guestPhone: z.string().check(z.trim(), z.refine(isPlausiblePhone, "phoneInvalid")),
 });
 
 export type AddBookHoldInput = z.input<typeof addBookHoldSchema>;

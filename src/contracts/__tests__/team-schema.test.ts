@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import { teamMemberListResponseSchema, teamMemberResponseSchema, type TeamMember } from "../team-response-schema";
 import { changeRoleSchema, grantAdminSchema, type GrantAdminInput } from "../team-schema";
 
+import { flattened } from "./zod-issues";
+
 const GRANT: GrantAdminInput = { phone: " +98 912 345 6789 ", email: "", role: "staff" };
 
 describe("grantAdminSchema", () => {
@@ -32,7 +34,7 @@ describe("grantAdminSchema", () => {
   });
 
   it("separates a missing phone from a malformed one", () => {
-    expect(grantAdminSchema.safeParse({ ...GRANT, phone: " " }).error?.flatten().fieldErrors.phone).toContain(
+    expect(flattened(grantAdminSchema.safeParse({ ...GRANT, phone: " " }).error)?.fieldErrors.phone).toContain(
       "phoneRequired",
     );
     for (const phone of [
@@ -44,25 +46,25 @@ describe("grantAdminSchema", () => {
       "-09123456789",
       "0".repeat(21),
     ]) {
-      expect(grantAdminSchema.safeParse({ ...GRANT, phone }).error?.flatten().fieldErrors.phone).toEqual([
+      expect(flattened(grantAdminSchema.safeParse({ ...GRANT, phone }).error)?.fieldErrors.phone).toEqual([
         "teamPhoneInvalid",
       ]);
     }
   });
 
   it("maps a bad email to its message key", () => {
-    expect(grantAdminSchema.safeParse({ ...GRANT, email: "nope" }).error?.flatten().fieldErrors.email).toEqual([
+    expect(flattened(grantAdminSchema.safeParse({ ...GRANT, email: "nope" }).error)?.fieldErrors.email).toEqual([
       "emailInvalid",
     ]);
     expect(
-      grantAdminSchema.safeParse({ ...GRANT, email: `${"a".repeat(250)}@example.com` }).error?.flatten().fieldErrors
+      flattened(grantAdminSchema.safeParse({ ...GRANT, email: `${"a".repeat(250)}@example.com` }).error)?.fieldErrors
         .email,
     ).toEqual(["emailTooLong"]);
   });
 
   it("never grants ownership or a customer role", () => {
     for (const role of ["owner", "customer"]) {
-      expect(grantAdminSchema.safeParse({ ...GRANT, role }).error?.flatten().fieldErrors.role).toHaveLength(1);
+      expect(flattened(grantAdminSchema.safeParse({ ...GRANT, role }).error)?.fieldErrors.role).toHaveLength(1);
     }
   });
 });

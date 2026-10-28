@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "./zod";
 
 /**
  * The server's environment, validated. Every server-side read of configuration
@@ -15,38 +15,49 @@ import { z } from "zod";
 
 const emptyToUndefined = (value: unknown): unknown => (value === "" ? undefined : value);
 
-const optionalString = z.preprocess(emptyToUndefined, z.string().trim().min(1).optional());
-const optionalUrl = z.preprocess(emptyToUndefined, z.string().trim().url().optional());
-const optionalPositiveInt = z.preprocess(emptyToUndefined, z.coerce.number().int().positive().optional());
+const optionalString = z.pipe(z.transform(emptyToUndefined), z.optional(z.string().check(z.trim(), z.minLength(1))));
+const optionalUrl = z.pipe(z.transform(emptyToUndefined), z.optional(z.string().check(z.trim(), z.url())));
+const optionalPositiveInt = z.pipe(
+  z.transform(emptyToUndefined),
+  z.optional(z.coerce.number().check(z.int(), z.positive())),
+);
 const positiveIntOr = (fallback: number) =>
-  z.preprocess(emptyToUndefined, z.coerce.number().int().positive().default(fallback));
+  z.pipe(z.transform(emptyToUndefined), z._default(z.coerce.number().check(z.int(), z.positive()), fallback));
 /** `"true"` → true; unset or `"false"` → false; anything else is a typo worth failing on. */
-const flag = z
-  .preprocess(emptyToUndefined, z.enum(["true", "false"]).optional())
-  .transform((value) => value === "true");
+const flag = z.pipe(
+  z.pipe(z.transform(emptyToUndefined), z.optional(z.enum(["true", "false"]))),
+  z.transform((value) => value === "true"),
+);
 
 const MIN_AUTH_SECRET_LENGTH = 32;
 
 const baseSchema = z.object({
-  NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
+  NODE_ENV: z._default(z.enum(["development", "production", "test"]), "development"),
 
   // Read by Prisma itself; validated here so a bad value fails at boot, not on the first query.
-  DATABASE_URL: z.preprocess(
-    emptyToUndefined,
-    z
-      .string()
-      .trim()
-      .refine((value) => /^postgres(ql)?:\/\//.test(value), "DATABASE_URL must be a postgresql:// connection string.")
-      .optional(),
+  DATABASE_URL: z.pipe(
+    z.transform(emptyToUndefined),
+    z.optional(
+      z.string().check(
+        z.trim(),
+        z.refine(
+          (value) => /^postgres(ql)?:\/\//.test(value),
+          "DATABASE_URL must be a postgresql:// connection string.",
+        ),
+      ),
+    ),
   ),
 
   AUTH_SECRET: optionalString,
   /** Break-glass owner ids, comma-separated normalized phones. */
-  ADMIN_USER_IDS: z.preprocess(emptyToUndefined, z.string().optional()).transform((value) =>
-    (value ?? "")
-      .split(",")
-      .map((id) => id.trim())
-      .filter(Boolean),
+  ADMIN_USER_IDS: z.pipe(
+    z.pipe(z.transform(emptyToUndefined), z.optional(z.string())),
+    z.transform((value) =>
+      (value ?? "")
+        .split(",")
+        .map((id) => id.trim())
+        .filter(Boolean),
+    ),
   ),
 
   SMS_IR_API_KEY: optionalString,
@@ -81,7 +92,7 @@ export type Env = z.output<typeof baseSchema>;
  * Rules spanning several variables, plus the required ones. `strict` is off while
  * `next build` collects page data, which runs without the real secrets.
  */
-function crossFieldRules(env: Env, ctx: z.RefinementCtx, strict: boolean): void {
+function crossFieldRules(env: Env, ctx: z.core.$RefinementCtx, strict: boolean): void {
   if (strict && !env.DATABASE_URL) {
     ctx.addIssue({ code: "custom", path: ["DATABASE_URL"], message: "DATABASE_URL is required." });
   }
@@ -107,7 +118,7 @@ function crossFieldRules(env: Env, ctx: z.RefinementCtx, strict: boolean): void 
 
 /** Parse and validate an environment; throws one error listing every problem. */
 export function parseEnv(source: Record<string, string | undefined>, options: { strict?: boolean } = {}): Env {
-  const schema = baseSchema.superRefine((env, ctx) => crossFieldRules(env, ctx, options.strict ?? true));
+  const schema = baseSchema.check(z.superRefine((env, ctx) => crossFieldRules(env, ctx, options.strict ?? true)));
   const result = schema.safeParse(source);
   if (result.success) return result.data;
 

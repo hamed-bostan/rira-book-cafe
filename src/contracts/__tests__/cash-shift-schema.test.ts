@@ -4,6 +4,8 @@ import { MAX_DRAWER_AMOUNT, MAX_SHIFT_NOTE_LENGTH } from "@/src/domain/entities/
 
 import { closeCashShiftSchema, openCashShiftSchema } from "../cash-shift-schema";
 
+import { flattened } from "./zod-issues";
+
 describe("openCashShiftSchema", () => {
   it("trims the note and turns blank or absent into undefined", () => {
     expect(openCashShiftSchema.parse({ openingFloat: 500000, note: " Float from the safe " })).toEqual({
@@ -19,7 +21,7 @@ describe("openCashShiftSchema", () => {
 
   it("maps each bad amount to its message key", () => {
     const messages = (openingFloat: number): string[] | undefined =>
-      openCashShiftSchema.safeParse({ openingFloat }).error?.flatten().fieldErrors.openingFloat;
+      flattened(openCashShiftSchema.safeParse({ openingFloat }).error)?.fieldErrors.openingFloat;
     expect(messages(1.5)).toEqual(["amountWhole"]);
     expect(messages(-1)).toEqual(["amountInvalid"]);
     expect(messages(MAX_DRAWER_AMOUNT + 1)).toEqual(["amountTooLarge"]);
@@ -27,14 +29,14 @@ describe("openCashShiftSchema", () => {
 
   it("caps the note", () => {
     const result = openCashShiftSchema.safeParse({ openingFloat: 0, note: "n".repeat(MAX_SHIFT_NOTE_LENGTH + 1) });
-    expect(result.error?.flatten().fieldErrors.note).toEqual(["noteTooLong"]);
+    expect(flattened(result.error)?.fieldErrors.note).toEqual(["noteTooLong"]);
   });
 });
 
 describe("closeCashShiftSchema", () => {
   it("takes the counted cash", () => {
     expect(closeCashShiftSchema.parse({ countedCash: 0, note: "" })).toEqual({ countedCash: 0, note: undefined });
-    expect(closeCashShiftSchema.safeParse({ countedCash: -5 }).error?.flatten().fieldErrors.countedCash).toEqual([
+    expect(flattened(closeCashShiftSchema.safeParse({ countedCash: -5 }).error)?.fieldErrors.countedCash).toEqual([
       "amountInvalid",
     ]);
   });

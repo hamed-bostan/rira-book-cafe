@@ -1,11 +1,10 @@
-import { z } from "zod";
-
 import {
   MAX_REVIEW_COMMENT_LENGTH,
   MAX_REVIEW_RATING,
   MIN_REVIEW_RATING,
   MODERATION_STATUSES,
 } from "@/src/domain/entities/ProductReview";
+import * as z from "@/src/lib/zod";
 
 /**
  * Review contracts shared by the route handlers and the forms that call them.
@@ -16,15 +15,15 @@ import {
 export const submitReviewSchema = z.object({
   rating: z
     .number()
-    .int("ratingInvalid")
-    .min(MIN_REVIEW_RATING, "ratingInvalid")
-    .max(MAX_REVIEW_RATING, "ratingInvalid"),
-  comment: z
-    .string()
-    .trim()
-    .max(MAX_REVIEW_COMMENT_LENGTH, "commentTooLong")
-    .optional()
-    .transform((value) => (value ? value : undefined)),
+    .check(
+      z.int("ratingInvalid"),
+      z.gte(MIN_REVIEW_RATING, "ratingInvalid"),
+      z.lte(MAX_REVIEW_RATING, "ratingInvalid"),
+    ),
+  comment: z.pipe(
+    z.optional(z.string().check(z.trim(), z.maxLength(MAX_REVIEW_COMMENT_LENGTH, "commentTooLong"))),
+    z.transform((value) => (value ? value : undefined)),
+  ),
 });
 
 export type SubmitReviewInput = z.input<typeof submitReviewSchema>;

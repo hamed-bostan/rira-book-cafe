@@ -8,6 +8,8 @@ import {
   type RequestSuiteBookingInput,
 } from "../suite-booking-schema";
 
+import { flattened } from "./zod-issues";
+
 const BOOKING: RequestSuiteBookingInput = {
   checkIn: "2026-11-01",
   checkOut: "2026-11-03",
@@ -25,7 +27,7 @@ describe("requestSuiteBookingSchema", () => {
   it("needs at least one night", () => {
     for (const checkOut of ["2026-11-01", "2026-10-31"]) {
       expect(
-        requestSuiteBookingSchema.safeParse({ ...BOOKING, checkOut }).error?.flatten().fieldErrors.checkOut,
+        flattened(requestSuiteBookingSchema.safeParse({ ...BOOKING, checkOut }).error)?.fieldErrors.checkOut,
       ).toEqual(["checkOutBeforeCheckIn"]);
     }
   });
@@ -35,7 +37,7 @@ describe("requestSuiteBookingSchema", () => {
       expect(requestSuiteBookingSchema.safeParse({ ...BOOKING, guests }).success).toBe(true);
     }
     for (const guests of [MIN_SUITE_GUESTS - 1, MAX_SUITE_GUESTS + 1, 1.5]) {
-      expect(requestSuiteBookingSchema.safeParse({ ...BOOKING, guests }).error?.flatten().fieldErrors.guests).toEqual([
+      expect(flattened(requestSuiteBookingSchema.safeParse({ ...BOOKING, guests }).error)?.fieldErrors.guests).toEqual([
         "suiteGuestsInvalid",
       ]);
     }
@@ -43,14 +45,14 @@ describe("requestSuiteBookingSchema", () => {
 
   it("maps bad days and an oversized note to their message keys", () => {
     expect(
-      requestSuiteBookingSchema
-        .safeParse({
+      flattened(
+        requestSuiteBookingSchema.safeParse({
           ...BOOKING,
           checkIn: "Nov 1",
           checkOut: "2026/11/03",
           note: "n".repeat(MAX_SUITE_NOTE_LENGTH + 1),
-        })
-        .error?.flatten().fieldErrors,
+        }).error,
+      )?.fieldErrors,
     ).toEqual({ checkIn: ["dateInvalid"], checkOut: ["dateInvalid"], note: ["noteTooLong"] });
   });
 });
@@ -62,7 +64,7 @@ describe("suiteBookingUpdateSchema", () => {
       status: "confirmed",
       undo: true,
     });
-    expect(suiteBookingUpdateSchema.safeParse({ status: "departed" }).error?.flatten().fieldErrors.status).toEqual([
+    expect(flattened(suiteBookingUpdateSchema.safeParse({ status: "departed" }).error)?.fieldErrors.status).toEqual([
       "statusInvalid",
     ]);
   });

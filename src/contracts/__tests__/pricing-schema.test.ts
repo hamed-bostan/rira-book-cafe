@@ -12,7 +12,7 @@ import {
   type PricingSettingsInput,
 } from "../pricing-schema";
 
-import { messagesAt } from "./zod-issues";
+import { messagesAt, flattened } from "./zod-issues";
 
 const INGREDIENT: IngredientFormInput = {
   name: " Arabica beans ",
@@ -34,7 +34,7 @@ const SETTINGS: PricingSettingsInput = {
 };
 
 const settingsErrors = (input: unknown): Record<string, string[] | undefined> | undefined =>
-  pricingSettingsSchema.safeParse(input).error?.flatten().fieldErrors;
+  flattened(pricingSettingsSchema.safeParse(input).error)?.fieldErrors;
 
 describe("ingredientSchema", () => {
   it("parses the purchase into numbers", () => {
@@ -49,9 +49,10 @@ describe("ingredientSchema", () => {
   });
 
   it("maps each invalid field to its message key", () => {
-    const fieldErrors = ingredientSchema
-      .safeParse({ ...INGREDIENT, name: "", unit: "kg", purchasePrice: "", purchaseQuantity: "0" })
-      .error?.flatten().fieldErrors;
+    const fieldErrors = flattened(
+      ingredientSchema.safeParse({ ...INGREDIENT, name: "", unit: "kg", purchasePrice: "", purchaseQuantity: "0" })
+        .error,
+    )?.fieldErrors;
     expect(fieldErrors?.name).toEqual(["nameRequired"]);
     expect(fieldErrors?.unit).toEqual(["unitInvalid"]);
     expect(fieldErrors?.purchasePrice).toContain("amountRequired");
@@ -60,11 +61,11 @@ describe("ingredientSchema", () => {
 
   it("caps the name and the purchase quantity", () => {
     expect(
-      ingredientSchema.safeParse({ ...INGREDIENT, name: "n".repeat(81) }).error?.flatten().fieldErrors.name,
+      flattened(ingredientSchema.safeParse({ ...INGREDIENT, name: "n".repeat(81) }).error)?.fieldErrors.name,
     ).toEqual(["textTooLong"]);
     for (const purchaseQuantity of ["1000001", "0.0005"]) {
       expect(
-        ingredientSchema.safeParse({ ...INGREDIENT, purchaseQuantity }).error?.flatten().fieldErrors.purchaseQuantity,
+        flattened(ingredientSchema.safeParse({ ...INGREDIENT, purchaseQuantity }).error)?.fieldErrors.purchaseQuantity,
       ).toEqual(["quantityInvalid"]);
     }
   });
@@ -191,7 +192,7 @@ describe("itemMarkupSchema", () => {
   });
 
   it("refuses a malformed markup", () => {
-    expect(itemMarkupSchema.safeParse({ markup: "x" }).error?.flatten().fieldErrors.markup).toEqual(["markupInvalid"]);
+    expect(flattened(itemMarkupSchema.safeParse({ markup: "x" }).error)?.fieldErrors.markup).toEqual(["markupInvalid"]);
   });
 });
 

@@ -1,11 +1,11 @@
-import { z } from "zod";
-
 import {
   ADMIN_STOCK_FILTERS,
   ADMIN_VISIBILITY_FILTERS,
   type AdminProductFilters,
 } from "@/src/domain/entities/AdminProductFilters";
 import { PRODUCT_KINDS } from "@/src/domain/entities/Product";
+
+import * as z from "../zod";
 
 import { trimmedTextParamSchema } from "./trimmed-text-param";
 
@@ -28,14 +28,14 @@ import { trimmedTextParamSchema } from "./trimmed-text-param";
 export const adminProductFiltersSchema = z.object({
   q: trimmedTextParamSchema,
   categoryId: trimmedTextParamSchema,
-  kind: z.enum(PRODUCT_KINDS).optional(),
-  stock: z.enum(ADMIN_STOCK_FILTERS).optional(),
+  kind: z.optional(z.enum(PRODUCT_KINDS)),
+  stock: z.optional(z.enum(ADMIN_STOCK_FILTERS)),
   // Absent means both states — the management list deliberately shows withdrawn
   // products alongside live ones.
-  visibility: z.enum(ADMIN_VISIBILITY_FILTERS).optional(),
+  visibility: z.optional(z.enum(ADMIN_VISIBILITY_FILTERS)),
 });
 
-/** Parse management-list filters from a `URLSearchParams`. Throws `ZodError` for a recognised-but-invalid value. */
+/** Parse management-list filters from a `URLSearchParams`. Throws `$ZodError` for a recognised-but-invalid value. */
 export function parseAdminProductFilters(params: URLSearchParams): AdminProductFilters {
   const parsed = adminProductFiltersSchema.parse(Object.fromEntries(params));
   const filters: AdminProductFilters = {};

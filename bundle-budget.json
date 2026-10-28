@@ -3,7 +3,6 @@
   "routes": {
     "/": 240,
     "/menu": 240,
-    "/account": 290,
-    "/dashboard/*": 310
+    "/dashboard/*": 300
   }
 }

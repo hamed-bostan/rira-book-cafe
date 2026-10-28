@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import { categoryFormSchema, categoryMoveSchema, type CategoryFormInput } from "../category-schema";
 
+import { flattened } from "./zod-issues";
+
 const FORM: CategoryFormInput = {
   name: " Hot drinks ",
   slug: " hot-drinks ",
@@ -10,7 +12,7 @@ const FORM: CategoryFormInput = {
 };
 
 const fieldErrorsOf = (input: CategoryFormInput): Record<string, string[] | undefined> | undefined =>
-  categoryFormSchema.safeParse(input).error?.flatten().fieldErrors;
+  flattened(categoryFormSchema.safeParse(input).error)?.fieldErrors;
 
 describe("categoryFormSchema", () => {
   it("defaults to active and folds the fa name into translations", () => {

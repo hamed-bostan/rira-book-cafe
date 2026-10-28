@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import * as React from "react";
-import { flattenError } from "zod";
+import { flattenError } from "zod/mini";
 
 import { grantAdminSchema } from "@/src/contracts/team-schema";
 import { normalizePhone, phoneDigits, teamPhoneDigitsWhenComplete } from "@/src/domain/entities/Phone";

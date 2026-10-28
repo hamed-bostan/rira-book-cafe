@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "@/src/lib/zod";
 
 /**
  * A guest's own profile edit, shared by the account form and `PUT /api/profile`.
@@ -7,9 +7,12 @@ import { z } from "zod";
  * `formErrors` keys.
  */
 export const profileUpdateSchema = z.object({
-  name: z.string().trim().min(1, "nameRequired").max(80, "nameTooLong"),
+  name: z.string().check(z.trim(), z.minLength(1, "nameRequired"), z.maxLength(80, "nameTooLong")),
   /** Optional; a blank field clears it. */
-  email: z.union([z.string().trim().email("emailInvalid").max(120, "emailTooLong"), z.literal("")]),
+  email: z.union([
+    z.string().check(z.trim(), z.email("emailInvalid"), z.maxLength(120, "emailTooLong")),
+    z.literal(""),
+  ]),
 });
 
 export type ProfileUpdateInput = z.input<typeof profileUpdateSchema>;

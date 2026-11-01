@@ -1,9 +1,17 @@
 import { getTranslations } from "next-intl/server";
 
-import { isReversibleSource, JOURNAL_SOURCES, type Account, type JournalEntry } from "@/src/domain/entities/Ledger";
+import {
+  isReversibleSource,
+  JOURNAL_SOURCES,
+  type Account,
+  type JournalEntry,
+  type JournalSource,
+} from "@/src/domain/entities/Ledger";
 import type { Page } from "@/src/domain/entities/Pagination";
+import { Link } from "@/src/i18n/navigation";
 import { cn } from "@/src/lib/utils";
 import { ListChoiceFilter, ListPager } from "@/src/presentation/dashboard/list";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
 
 import { DashboardEmptyState } from "../DashboardEmptyState";
 
@@ -14,8 +22,8 @@ type JournalScreenProps = {
   page: Page<JournalEntry>;
   /** The chart of accounts, naming each entry's sides. */
   accounts: Account[];
-  /** A "Posted by" filter is applied — to tell "nothing posted" from "nothing by this". */
-  filtered: boolean;
+  /** The "Posted by" filter applied, if any — to tell "nothing posted" from "nothing by this". */
+  source?: JournalSource;
   canWrite: boolean;
   /** Today on the cafe calendar — the day a manual entry or a reversal is booked. */
   today: string;
@@ -26,7 +34,7 @@ type JournalScreenProps = {
  * reversible entry carries "Reverse entry" behind its "⋯"; nothing is ever edited
  * or deleted. Presentational — the page reads the journal over the REST API (BFF).
  */
-export async function JournalScreen({ page, accounts, filtered, canWrite, today }: JournalScreenProps) {
+export async function JournalScreen({ page, accounts, source, canWrite, today }: JournalScreenProps) {
   const t = await getTranslations("dashAccounting");
   const byCode = new Map(accounts.map((account) => [account.code, account]));
 
@@ -44,8 +52,13 @@ export async function JournalScreen({ page, accounts, filtered, canWrite, today 
             label={t("journal.filterSource")}
             allLabel={t("journal.allSources")}
             showAllValue
-            options={JOURNAL_SOURCES.map((source) => ({ value: source, label: t(`source.${source}`) }))}
+            options={JOURNAL_SOURCES.map((option) => ({ value: option, label: t(`source.${option}`) }))}
           />
+          <Button asChild variant="secondary" size="control-md" className="ms-auto px-3">
+            <Link href={`/dashboard/accounting/journal/print${source ? `?source=${source}` : ""}`}>
+              {t("export.journalLink")}
+            </Link>
+          </Button>
         </div>
 
         {page.items.length > 0 ? (
@@ -82,7 +95,7 @@ export async function JournalScreen({ page, accounts, filtered, canWrite, today 
         ) : (
           <DashboardEmptyState
             title={t("journal.emptyTitle")}
-            body={filtered ? t("journal.emptyFiltered") : t("journal.emptyBody")}
+            body={source ? t("journal.emptyFiltered") : t("journal.emptyBody")}
           />
         )}
       </section>

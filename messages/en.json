@@ -2042,7 +2042,13 @@
       "item": "Item",
       "persianDate": "Persian date",
       "recordedBy": "Recorded by",
-      "status": "Status"
+      "status": "Status",
+      "print": "Print",
+      "journalLink": "Print or export",
+      "journalTitle": "Print or export",
+      "journalSubtitle": "Every entry in the period with all its lines, oldest first.",
+      "journalEmpty": "Nothing was posted in this period.",
+      "tooMany": "This period has {total} entries, and only the first {shown} are shown here. Choose a shorter period or one source to print the rest, or export CSV, which has them all."
     }
   },
   "dashExpenses": {

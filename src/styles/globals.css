@@ -145,3 +145,24 @@
     }
   }
 }
+
+/* Paper. The shell hides itself with `print:hidden!`, so what's left of a page reads
+ * as a document. Nothing scrolls on paper, and a scroller doesn't break across pages
+ * in every browser, which would cut a long table off at the first page's foot. */
+@media print {
+  @page {
+    margin: 1.5cm;
+  }
+
+  main * {
+    overflow: visible !important;
+  }
+
+  tr {
+    break-inside: avoid;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+}

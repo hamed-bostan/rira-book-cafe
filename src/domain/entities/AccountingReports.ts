@@ -1,4 +1,4 @@
-import { signedBalance, vatIncluded, type Account, type JournalSource } from "./Ledger";
+import { signedBalance, vatIncluded, type Account, type JournalEntry, type JournalSource } from "./Ledger";
 
 /**
  * The financial statements, as plain data. Every amount is whole Toman. Each
@@ -94,6 +94,19 @@ export type AccountLedger = {
   openingBalance: number;
   lines: LedgerLine[];
   closingBalance: number;
+};
+
+/** The most entries a printed journal carries; past this it's a job for the CSV. */
+export const MAX_PRINTED_ENTRIES = 1000;
+
+/** The journal over a span for printing, oldest first. */
+export type PrintedJournal = {
+  fromDay: string;
+  toDay: string;
+  /** At most {@link MAX_PRINTED_ENTRIES}. */
+  entries: JournalEntry[];
+  /** How many match — more than `entries` when the span is too long to print. */
+  total: number;
 };
 
 /** What one menu item earned over a span, net of VAT, against what it cost. */

@@ -4,19 +4,21 @@ import {
   buildMarginReport,
   buildProfitAndLoss,
   buildTrialBalance,
+  MAX_PRINTED_ENTRIES,
   type AccountLedger,
   type BalanceSheet,
   type MarginReport,
+  type PrintedJournal,
   type ProfitAndLoss,
   type TrialBalance,
   type VatReport,
 } from "../../entities/AccountingReports";
 import { shiftCafeDay } from "../../entities/CafeTime";
-import { SYSTEM_ACCOUNTS } from "../../entities/Ledger";
+import { SYSTEM_ACCOUNTS, type JournalEntry } from "../../entities/Ledger";
 import { NotFoundError } from "../../errors/NotFoundError";
 import { ValidationError } from "../../errors/ValidationError";
 
-import type { ILedgerRepository } from "../../repositories/ILedgerRepository";
+import type { ILedgerRepository, JournalFilters } from "../../repositories/ILedgerRepository";
 
 function assertSpan(fromDay: string, toDay: string): void {
   if (fromDay > toDay) throw new ValidationError("to", "The end date must be on or after the start date.");
@@ -100,5 +102,32 @@ export class FinancialReports {
     assertSpan(fromDay, toDay);
     const [items, settings] = await Promise.all([this.ledger.itemSalesCost(fromDay, toDay), this.ledger.getSettings()]);
     return buildMarginReport(fromDay, toDay, items, settings.vatRateBps);
+  }
+
+  /**
+   * The journal for printing: every entry in the span, unlike the paged screen, up
+   * to what's worth putting on paper. `total` says when that isn't all of them.
+   */
+  async printedJournal(
+    fromDay: string,
+    toDay: string,
+    filters: Pick<JournalFilters, "source" | "accountCode"> = {},
+  ): Promise<PrintedJournal> {
+    assertSpan(fromDay, toDay);
+    const inSpan = { ...filters, fromDay, toDay };
+    const [{ total }, entries] = await Promise.all([
+      this.ledger.listEntries(inSpan, { page: 1, pageSize: 1 }),
+      this.firstEntries(inSpan),
+    ]);
+    return { fromDay, toDay, entries, total };
+  }
+
+  private async firstEntries(filters: JournalFilters): Promise<JournalEntry[]> {
+    const entries: JournalEntry[] = [];
+    for await (const batch of this.ledger.entryBatches(filters)) {
+      entries.push(...batch);
+      if (entries.length >= MAX_PRINTED_ENTRIES) break;
+    }
+    return entries.slice(0, MAX_PRINTED_ENTRIES);
   }
 }

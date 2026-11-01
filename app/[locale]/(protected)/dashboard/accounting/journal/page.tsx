@@ -36,7 +36,7 @@ export default async function JournalPage({ searchParams }: JournalPageProps) {
     <JournalScreen
       page={page}
       accounts={accounts}
-      filtered={filters.source !== undefined}
+      source={filters.source}
       canWrite={canWrite}
       today={cafeDayOf(new Date())}
     />

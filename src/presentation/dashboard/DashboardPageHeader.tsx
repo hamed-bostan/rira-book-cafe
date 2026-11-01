@@ -27,7 +27,9 @@ export function DashboardPageHeader({
 }: DashboardPageHeaderProps) {
   return (
     <div className="flex flex-col gap-4">
-      <DashboardBackLink href={backHref}>{backLabel}</DashboardBackLink>
+      <div className="print:hidden">
+        <DashboardBackLink href={backHref}>{backLabel}</DashboardBackLink>
+      </div>
       <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
         <div className="flex min-w-0 flex-col gap-1">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
@@ -36,7 +38,7 @@ export function DashboardPageHeader({
           </div>
           <p className="text-body-default text-pretty text-muted-foreground sm:text-body-small">{subtitle}</p>
         </div>
-        {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
+        {actions ? <div className="flex flex-wrap gap-2 print:hidden">{actions}</div> : null}
       </div>
       {alert}
     </div>

@@ -37,7 +37,7 @@ export function DashboardTopBar({ viewer, permissions, newOrders, onOpenNav }: D
   return (
     <header
       className={cn(
-        "sticky top-0 z-30 mx-auto flex h-[5.625rem] w-full max-w-[40.75rem] items-center gap-2 border-x border-b border-border bg-background px-4 sm:px-6 lg:px-8 xl:h-16 xl:max-w-none xl:border-x-0 dashboard-landscape:h-16 dashboard-landscape:max-w-none dashboard-landscape:border-x-0 dashboard-short:h-16 dashboard-short:max-w-none dashboard-short:border-x-0 dashboard-phone:h-16",
+        "sticky top-0 z-30 mx-auto flex h-[5.625rem] w-full max-w-[40.75rem] items-center gap-2 border-x border-b border-border bg-background px-4 sm:px-6 lg:px-8 xl:h-16 xl:max-w-none xl:border-x-0 print:hidden! dashboard-landscape:h-16 dashboard-landscape:max-w-none dashboard-landscape:border-x-0 dashboard-short:h-16 dashboard-short:max-w-none dashboard-short:border-x-0 dashboard-phone:h-16",
         HIDDEN_IN_FULL_SCREEN,
       )}
     >

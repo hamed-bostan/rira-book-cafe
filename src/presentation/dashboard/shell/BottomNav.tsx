@@ -56,7 +56,7 @@ export function BottomNav({ onOpenMore }: BottomNavProps) {
     <nav
       className={cn(
         "fixed inset-x-0 bottom-0 z-40 mx-auto flex w-full max-w-[40.75rem] items-stretch justify-around border-x border-t border-border bg-background xl:hidden dashboard-landscape:hidden dashboard-short:hidden",
-        "pb-[env(safe-area-inset-bottom)]",
+        "pb-[env(safe-area-inset-bottom)] print:hidden!",
         HIDDEN_IN_FULL_SCREEN,
       )}
     >

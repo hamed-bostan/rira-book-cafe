@@ -11,6 +11,8 @@ import { statementSpanParams, type StatementSlug } from "./accounting-format";
 import { AsOfPicker } from "./AsOfPicker";
 import { ExportCsvLink } from "./ExportCsvLink";
 import { PeriodPicker } from "./PeriodPicker";
+import { PrintButton } from "./PrintButton";
+import { PrintedSpan } from "./PrintedSpan";
 
 type StatementHeaderProps = {
   slug: StatementSlug;
@@ -33,10 +35,14 @@ export async function StatementHeader({ slug, span }: StatementHeaderProps) {
         title={title}
         subtitle={t(`statements.${slug}.subtitle`)}
         actions={
-          <ExportCsvLink href={accountingExports.statementHref(slug, { ...statementSpanParams(span), locale })} />
+          <>
+            <ExportCsvLink href={accountingExports.statementHref(slug, { ...statementSpanParams(span), locale })} />
+            <PrintButton />
+          </>
         }
       />
-      <div className={cn(PAGE_CARD, "px-5 py-4")}>
+      <PrintedSpan span={span} />
+      <div className={cn(PAGE_CARD, "px-5 py-4 print:hidden")}>
         {"asOfDay" in span ? (
           <AsOfPicker asOfDay={span.asOfDay} />
         ) : (

@@ -2,6 +2,7 @@ import type {
   AccountLedger,
   BalanceSheet,
   MarginReport,
+  PrintedJournal,
   ProfitAndLoss,
   TrialBalance,
   VatReport,
@@ -19,6 +20,7 @@ import {
   journalEntryResponseSchema,
   journalPageResponseSchema,
   marginReportResponseSchema,
+  printedJournalResponseSchema,
   profitAndLossResponseSchema,
   trialBalanceResponseSchema,
   vatReportResponseSchema,
@@ -54,6 +56,11 @@ export const accountsServerApi = {
 export const journalEntriesServerApi = {
   list(params: Query): Promise<Page<JournalEntry>> {
     return serverApiGet("/admin/accounting/journal", journalPageResponseSchema, { params });
+  },
+
+  /** The whole of a span for printing, not one page of it. */
+  getForPrint(params: Query): Promise<PrintedJournal> {
+    return serverApiGet("/admin/accounting/journal/print", printedJournalResponseSchema, { params });
   },
 
   async getById(id: string): Promise<JournalEntry | null> {

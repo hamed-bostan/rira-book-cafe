@@ -47,7 +47,7 @@ export async function VatReportScreen({ report, canWrite }: { report: VatReport;
         ))}
       </dl>
       {canWrite && report.closingBalance > 0 ? (
-        <p className={ROW_CAPTION}>
+        <p className={cn(ROW_CAPTION, "print:hidden")}>
           {t("vat.settleHint")}{" "}
           <Link href="/dashboard/accounting/journal/new" className="font-medium text-primary hover:text-primary-hover">
             {t("journal.newEntry")}

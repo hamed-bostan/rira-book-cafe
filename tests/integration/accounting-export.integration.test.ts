@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import { GET as exportJournal } from "@/app/api/admin/accounting/journal/export/route";
+import { GET as printJournal } from "@/app/api/admin/accounting/journal/print/route";
 import { POST as postEntry } from "@/app/api/admin/accounting/journal/route";
 import { GET as exportReport } from "@/app/api/admin/accounting/reports/[report]/export/route";
 import { GET as getReport } from "@/app/api/admin/accounting/reports/[report]/route";
-import type { ProfitAndLoss } from "@/src/domain/entities/AccountingReports";
+import type { PrintedJournal, ProfitAndLoss } from "@/src/domain/entities/AccountingReports";
 import { cafeDayOf, shiftCafeDay } from "@/src/domain/entities/CafeTime";
 import { prisma } from "@/src/infrastructure/prisma/client";
 
@@ -168,6 +169,48 @@ describe("exporting the journal", () => {
     const csv = await (await journal(SPAN)).text();
 
     expect(csv).toContain(`"'=HYPERLINK(""http://evil.example"")"`);
+  });
+});
+
+describe("the journal's print view", () => {
+  const print = (query: string): Promise<Response> =>
+    printJournal(getRequest(`/api/admin/accounting/journal/print?${query}`));
+
+  it("is for the books' readers", async () => {
+    expect((await print("")).status).toBe(401);
+
+    signInAs("staff");
+    expect((await print("")).status).toBe(401);
+  });
+
+  it("carries the whole period, oldest first, past the screen's page size", async () => {
+    signInAs("admin");
+    const base = await prisma.journalEntry.count();
+    await seedEntries(120);
+
+    const response = await print(SPAN);
+    expect(response.status).toBe(200);
+    const journal = await readJson<PrintedJournal>(response);
+
+    expect(journal.total).toBe(base + 120);
+    expect(journal.entries).toHaveLength(base + 120);
+    expect(journal.entries[1].number).toBeGreaterThan(journal.entries[0].number);
+    expect(journal.entries[0].lines.length).toBeGreaterThan(0);
+  });
+
+  it("keeps to the source it was opened with", async () => {
+    signInAs("admin");
+    await post("Rent", 300_000, "6100", "1110");
+
+    const journal = await readJson<PrintedJournal>(await print(`${SPAN}&source=income`));
+
+    expect(journal.entries.map((entry) => entry.description)).not.toContain("Rent");
+  });
+
+  it("answers 400 for a span that runs backwards", async () => {
+    signInAs("admin");
+
+    expect((await print(`from=${today}&to=${shiftCafeDay(today, -1)}`)).status).toBe(400);
   });
 });
 

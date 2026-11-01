@@ -5,6 +5,7 @@ import type {
   AccountLedger,
   BalanceSheet,
   MarginReport,
+  PrintedJournal,
   ProfitAndLoss,
   StatementSection,
   TrialBalance,
@@ -51,6 +52,13 @@ export const journalEntryResponseSchema: z.ZodMiniType<JournalEntry> = z.object(
 });
 export const journalPageResponseSchema: z.ZodMiniType<Page<JournalEntry>> =
   pageResponseSchema(journalEntryResponseSchema);
+
+export const printedJournalResponseSchema: z.ZodMiniType<PrintedJournal> = z.object({
+  fromDay: z.string(),
+  toDay: z.string(),
+  entries: z.array(journalEntryResponseSchema),
+  total: z.number(),
+});
 
 export const accountingSettingsResponseSchema: z.ZodMiniType<AccountingSettings> = z.object({
   vatRateBps: z.number(),

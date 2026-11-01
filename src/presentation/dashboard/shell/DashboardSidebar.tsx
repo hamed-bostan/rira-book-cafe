@@ -39,6 +39,8 @@ export function DashboardSidebar({ permissions, collapsed, onToggleCollapsed, ba
     <aside
       className={cn(
         "sticky top-0 hidden h-dvh w-20 shrink-0 flex-col border-e border-border bg-background xl:flex dashboard-landscape:flex",
+        // Important: a sheet of paper is `dashboard-landscape` wide, and that variant sorts after `print:`.
+        "print:hidden!",
         collapsed ? "xl:w-20" : "xl:w-64",
         HIDDEN_IN_FULL_SCREEN,
       )}

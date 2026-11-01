@@ -1,12 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { MAX_PRINTED_ENTRIES } from "../../../entities/AccountingReports";
 import { SYSTEM_ACCOUNTS } from "../../../entities/Ledger";
 import { NotFoundError } from "../../../errors/NotFoundError";
 import { ValidationError } from "../../../errors/ValidationError";
 import { FinancialReports } from "../FinancialReports";
 
 import type { AccountMovement } from "../../../entities/AccountingReports";
-import type { Account } from "../../../entities/Ledger";
+import type { Account, JournalEntry } from "../../../entities/Ledger";
 import type {
   ILedgerRepository,
   ItemSalesCost,
@@ -59,6 +60,62 @@ function ledgerWith(
   } as unknown as ILedgerRepository;
   return { ledger, movements, accountLines };
 }
+
+describe("FinancialReports.printedJournal", () => {
+  const entry = (number: number): JournalEntry => ({
+    id: `e${number}`,
+    number,
+    date: "2026-10-20",
+    description: "",
+    source: "manual",
+    lines: [],
+    createdById: "u",
+    createdByName: "U",
+    createdAt: "",
+  });
+
+  function ledgerOf(count: number, batchSize: number) {
+    const entries = Array.from({ length: count }, (_, index) => entry(index + 1));
+    let batchesRead = 0;
+    const entryBatches = vi.fn(async function* (): AsyncGenerator<JournalEntry[]> {
+      for (let start = 0; start < entries.length; start += batchSize) {
+        batchesRead += 1;
+        yield entries.slice(start, start + batchSize);
+      }
+    });
+    const listEntries = vi.fn(async () => ({ items: [], total: count, page: 1, pageSize: 1 }));
+    return {
+      ledger: { entryBatches, listEntries } as unknown as ILedgerRepository,
+      entryBatches,
+      batchesRead: () => batchesRead,
+    };
+  }
+
+  it("carries the whole span, past the screen's page size", async () => {
+    const { ledger, entryBatches } = ledgerOf(250, 100);
+    const printed = await new FinancialReports(ledger).printedJournal("2026-10-01", "2026-10-31", { source: "manual" });
+
+    expect(printed).toMatchObject({ fromDay: "2026-10-01", toDay: "2026-10-31", total: 250 });
+    expect(printed.entries).toHaveLength(250);
+    expect(entryBatches).toHaveBeenCalledWith({ source: "manual", fromDay: "2026-10-01", toDay: "2026-10-31" });
+  });
+
+  it("stops at what's worth printing, stops reading there, and says how many there were", async () => {
+    const { ledger, batchesRead } = ledgerOf(MAX_PRINTED_ENTRIES * 3, 500);
+    const printed = await new FinancialReports(ledger).printedJournal("2026-10-01", "2026-10-31");
+
+    expect(printed.entries).toHaveLength(MAX_PRINTED_ENTRIES);
+    expect(printed.total).toBe(MAX_PRINTED_ENTRIES * 3);
+    expect(batchesRead()).toBe(2);
+  });
+
+  it("refuses a span that runs backwards", async () => {
+    const { ledger } = ledgerOf(0, 100);
+    await expect(new FinancialReports(ledger).printedJournal("2026-10-31", "2026-10-01")).rejects.toMatchObject({
+      field: "to",
+    });
+  });
+});
 
 describe("FinancialReports", () => {
   it("builds the trial balance from every entry up to the day", async () => {

@@ -14,7 +14,7 @@ export function RecordExpenseButton() {
   const { openRecord } = useExpenseDialogs();
 
   return (
-    <Button size="control-md" type="button" className="gap-2 px-4" onClick={openRecord}>
+    <Button size="control-md" type="button" className="gap-2 px-4" onClick={() => openRecord()}>
       <Icon icon={Plus} size="sm" strokeWidth={2} />
       {t("new")}
     </Button>

@@ -171,7 +171,9 @@
     "refundLineUnknown": "این قلم در این سفارش نیست.",
     "refundQuantityInvalid": "بیشتر از مقدار باقی‌مانده نمی‌توان بازپرداخت کرد.",
     "refundNothing": "برای این اقلام مبلغی برای بازپرداخت نیست.",
-    "paymentOverOwed": "این مبلغ از بدهی این صورت‌حساب بیشتر است."
+    "paymentOverOwed": "این مبلغ از بدهی این صورت‌حساب بیشتر است.",
+    "billDayInvalid": "یک روز از ماه را انتخاب کنید.",
+    "billNotDue": "این ماه از صورت‌حساب سررسید نشده است."
   },
   "apiErrors": {
     "alreadyPosted": "این مورد قبلاً ثبت شده است.",
@@ -897,7 +899,9 @@
         "recorded": "<b>{actor}</b> هزینهٔ {entity} را ثبت کرد",
         "paid": "<b>{actor}</b> هزینهٔ {entity} را پرداخت کرد",
         "voided": "<b>{actor}</b> هزینهٔ {entity} را باطل کرد",
-        "receiptChanged": "<b>{actor}</b> رسید هزینهٔ {entity} را تغییر داد"
+        "receiptChanged": "<b>{actor}</b> رسید هزینهٔ {entity} را تغییر داد",
+        "recurringChanged": "<b>{actor}</b> صورت‌حساب دوره‌ای {entity} را تغییر داد",
+        "recurringSkipped": "<b>{actor}</b> یک ماه از {entity} را رد کرد"
       },
       "suiteBooking": {
         "changed": "<b>{actor}</b> رزرو سوئیت {entity} را به‌روز کرد",
@@ -990,7 +994,12 @@
       "tableLabels": "میزهای نگه‌داشته",
       "dueAt": "موعد",
       "position": "ترتیب در منو",
-      "receiptUrl": "رسید"
+      "receiptUrl": "رسید",
+      "dayOfMonth": "موعد در روز",
+      "period": "ماه",
+      "vatAmount": "مالیات",
+      "accountCode": "ثبت در حساب",
+      "supplierId": "تأمین‌کننده"
     },
     "filterField": "فیلد",
     "allFields": "همه فیلدها"
@@ -2204,6 +2213,40 @@
       "saved": "رسید ذخیره شد",
       "removed": "رسید حذف شد",
       "saveFailed": "ذخیرهٔ رسید انجام نشد. دوباره تلاش کنید."
+    },
+    "recurring": {
+      "heading": "صورت‌حساب‌های دوره‌ای",
+      "subtitle": "صورت‌حساب‌هایی که هر ماه تکرار می‌شوند، مثل اجاره. وقتی موعد یکی برسد، در صفحهٔ هزینه‌ها منتظر می‌ماند تا کسی آن را ثبت کند. هیچ چیز خودکار ثبت نمی‌شود.",
+      "new": "افزودن صورت‌حساب",
+      "edit": "ویرایش {name}",
+      "editShort": "ویرایش",
+      "empty": "هنوز صورت‌حساب دوره‌ای ثبت نشده.",
+      "inactive": "غیرفعال",
+      "activeLabel": "فعال",
+      "dayLabel": "موعد در روز",
+      "dayHint": "از هر ماه شمسی. در ماه‌های کوتاه‌تر، آخرین روز ماه موعد است.",
+      "dayOption": "روز {day}",
+      "amountHint": "مبلغ معمول. هر بار هنگام ثبت می‌توانید آن را تغییر دهید.",
+      "every": "روز {day} هر ماه",
+      "startsHint": "از دفعهٔ بعدی که این روز برسد شروع می‌شود.",
+      "save": "ذخیره",
+      "error": "ذخیرهٔ صورت‌حساب انجام نشد. دوباره تلاش کنید.",
+      "saved": "صورت‌حساب ذخیره شد",
+      "added": "صورت‌حساب اضافه شد",
+      "dueHeading": "صورت‌حساب‌های سررسیدشده",
+      "dueCount": "{count, plural, other {{formatted} مورد برای رسیدگی}}",
+      "dueOn": "موعد {date}",
+      "record": "ثبت",
+      "recordLabel": "ثبت {name}، موعد {date}",
+      "recordTitle": "ثبت {name}",
+      "recordSubtitle": "برای {month}. ارقام را با صورت‌حساب مقایسه کنید: با ذخیره، بلافاصله در دفاتر ثبت می‌شود.",
+      "skip": "رد کردن",
+      "skipLabel": "رد کردن {name}، موعد {date}",
+      "skipTitle": "{name} برای {month} رد شود؟",
+      "skipMessage": "چیزی ثبت نمی‌شود و دیگر برای این ماه یادآوری نمی‌شود. برای ثبت بعدی، آن را به‌عنوان هزینهٔ عادی ثبت کنید.",
+      "skipConfirm": "رد کردن این ماه",
+      "skipError": "رد کردن صورت‌حساب انجام نشد. دوباره تلاش کنید.",
+      "skipped": "{name} برای {month} رد شد"
     }
   },
   "dashPricing": {

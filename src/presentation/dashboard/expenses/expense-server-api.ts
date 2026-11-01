@@ -1,4 +1,5 @@
 import type { ExpenseSummary, Supplier, SupplierBalances } from "@/src/domain/entities/Expense";
+import type { DueBill, RecurringBill } from "@/src/domain/entities/RecurringBill";
 import { ApiError } from "@/src/lib/api/ApiError";
 import { serverApiGet } from "@/src/lib/api/server-client";
 import {
@@ -9,7 +10,12 @@ import {
   type ExpensePageWire,
 } from "@/src/presentation/dashboard/accounting/accounting-response-schema";
 
-import { expenseSummaryResponseSchema, supplierBalancesResponseSchema } from "./expense-response-schema";
+import {
+  dueBillListResponseSchema,
+  expenseSummaryResponseSchema,
+  recurringBillListResponseSchema,
+  supplierBalancesResponseSchema,
+} from "./expense-response-schema";
 
 /** Server-side expense and supplier reads for the dashboard (BFF). */
 export const expensesServerApi = {
@@ -45,5 +51,16 @@ export const suppliersServerApi = {
   /** What's left to pay each supplier, part payments taken off. */
   getBalances(): Promise<SupplierBalances> {
     return serverApiGet("/admin/suppliers/balances", supplierBalancesResponseSchema);
+  },
+};
+
+export const recurringBillsServerApi = {
+  list(): Promise<RecurringBill[]> {
+    return serverApiGet("/admin/recurring-bills", recurringBillListResponseSchema);
+  },
+
+  /** Months that have fallen due and nobody has recorded or skipped. */
+  listDue(): Promise<DueBill[]> {
+    return serverApiGet("/admin/recurring-bills/due", dueBillListResponseSchema);
   },
 };

@@ -8,6 +8,7 @@ import { moneyField, optionalMoneyField } from "@/src/contracts/money-fields";
 import { isCafeDay } from "@/src/domain/entities/CafeTime";
 import type { Supplier } from "@/src/domain/entities/Expense";
 import type { Account } from "@/src/domain/entities/Ledger";
+import type { DueBill } from "@/src/domain/entities/RecurringBill";
 import { useRouter } from "@/src/i18n/navigation";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
@@ -20,9 +21,9 @@ import { useToast } from "@/src/presentation/design-system/components/Toast/useT
 import { DashboardDialog } from "../DashboardDialog";
 import { DashboardField } from "../DashboardField";
 
-import { expensesApi } from "./expense-api";
+import { expensesApi, recurringBillsApi } from "./expense-api";
 import { expenseApiErrorMessage } from "./expenseApiErrorMessage";
-import { normalizeAmount } from "./expenseFormat";
+import { formatPersianMonth, normalizeAmount } from "./expenseFormat";
 import { ExpenseReceiptUpload } from "./ExpenseReceiptUpload";
 
 type RecordExpenseDialogProps = {
@@ -34,6 +35,8 @@ type RecordExpenseDialogProps = {
   suppliers: readonly Supplier[];
   /** Today on the cafe calendar — the default date, and the latest allowed. */
   today: string;
+  /** The month of a recurring bill this records: the form starts from its usual figures. */
+  due?: DueBill;
 };
 
 type Payment = (typeof EXPENSE_PAYMENT_CHOICES)[number];
@@ -42,9 +45,10 @@ type Payment = (typeof EXPENSE_PAYMENT_CHOICES)[number];
  * Record a bill or purchase: when, from whom, what for, booked to which account,
  * the total with the invoice's VAT, whether it's owed or paid now, and a photo of
  * the receipt if there is one. The net + VAT split shows as the amounts are typed,
- * and saving waits until it adds up and any photo has finished uploading.
+ * and saving waits until it adds up and any photo has finished uploading. A month of
+ * a recurring bill opens here too, filled in, so a person checks it before it's booked.
  */
-export function RecordExpenseDialog({ open, onOpenChange, accounts, suppliers, today }: RecordExpenseDialogProps) {
+export function RecordExpenseDialog({ open, onOpenChange, accounts, suppliers, today, due }: RecordExpenseDialogProps) {
   const t = useTranslations("dashExpenses");
   const tApiErrors = useTranslations("apiErrors");
   const tFormErrors = useTranslations("formErrors");
@@ -52,12 +56,19 @@ export function RecordExpenseDialog({ open, onOpenChange, accounts, suppliers, t
   const router = useRouter();
   const { toast } = useToast();
 
-  const [date, setDate] = React.useState(today);
-  const [supplierId, setSupplierId] = React.useState("");
-  const [description, setDescription] = React.useState("");
-  const [accountCode, setAccountCode] = React.useState("");
-  const [amount, setAmount] = React.useState("");
-  const [vatAmount, setVatAmount] = React.useState("");
+  const bill = due?.bill;
+  const month = due ? formatPersianMonth(due.dueOn, locale) : undefined;
+  const [date, setDate] = React.useState(due?.dueOn ?? today);
+  // A supplier or account switched off since the bill was set up has to be chosen again.
+  const [supplierId, setSupplierId] = React.useState(
+    suppliers.some((supplier) => supplier.id === bill?.supplierId) ? (bill?.supplierId ?? "") : "",
+  );
+  const [description, setDescription] = React.useState(bill ? `${bill.description} · ${month}` : "");
+  const [accountCode, setAccountCode] = React.useState(
+    accounts.some((account) => account.code === bill?.accountCode) ? (bill?.accountCode ?? "") : "",
+  );
+  const [amount, setAmount] = React.useState(bill ? String(bill.amount) : "");
+  const [vatAmount, setVatAmount] = React.useState(bill?.vatAmount ? String(bill.vatAmount) : "");
   const [payment, setPayment] = React.useState<Payment>("unpaid");
   const [receiptUrl, setReceiptUrl] = React.useState("");
   const [uploading, setUploading] = React.useState(false);
@@ -105,7 +116,9 @@ export function RecordExpenseDialog({ open, onOpenChange, accounts, suppliers, t
     setError(null);
     startTransition(async () => {
       try {
-        const expense = await expensesApi.create(values);
+        const expense = due
+          ? await recurringBillsApi.record(due.bill.id, due.period, values)
+          : await expensesApi.create(values);
         toast({ tone: "success", title: t("form.saved", { number: expense.number }) });
         onOpenChange(false);
         router.refresh();
@@ -119,8 +132,8 @@ export function RecordExpenseDialog({ open, onOpenChange, accounts, suppliers, t
     <DashboardDialog
       open={open}
       onOpenChange={onOpenChange}
-      title={t("form.title")}
-      subtitle={t("form.subtitle")}
+      title={bill ? t("recurring.recordTitle", { name: bill.description }) : t("form.title")}
+      subtitle={month ? t("recurring.recordSubtitle", { month }) : t("form.subtitle")}
       submitLabel={t("form.save")}
       blocked={!ready}
       pending={pending}

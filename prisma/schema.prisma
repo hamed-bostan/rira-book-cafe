@@ -484,6 +484,7 @@ model LedgerAccount {
   expenses       Expense[]
   incomes        Income[]
   bankStatements BankStatement[]
+  recurringBills RecurringBill[]
   createdAt      DateTime        @default(now()) @map("created_at")
 
   @@map("ledger_accounts")
@@ -543,48 +544,90 @@ model AccountingSettings {
 }
 
 model Supplier {
-  id        String    @id @default(uuid())
-  name      String
-  phone     String?
-  note      String?
-  isActive  Boolean   @default(true) @map("is_active")
-  expenses  Expense[]
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
+  id             String          @id @default(uuid())
+  name           String
+  phone          String?
+  note           String?
+  isActive       Boolean         @default(true) @map("is_active")
+  expenses       Expense[]
+  recurringBills RecurringBill[]
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
 
   @@map("suppliers")
 }
 
 model Expense {
-  id            String        @id @default(uuid())
-  number        Int           @unique @default(autoincrement())
-  date          DateTime      @db.Date
-  supplierId    String?       @map("supplier_id")
-  supplier      Supplier?     @relation(fields: [supplierId], references: [id], onDelete: Restrict)
-  supplierName  String?       @map("supplier_name")
-  accountCode   String        @map("account_code")
-  account       LedgerAccount @relation(fields: [accountCode], references: [code], onDelete: Restrict)
+  id            String            @id @default(uuid())
+  number        Int               @unique @default(autoincrement())
+  date          DateTime          @db.Date
+  supplierId    String?           @map("supplier_id")
+  supplier      Supplier?         @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  supplierName  String?           @map("supplier_name")
+  accountCode   String            @map("account_code")
+  account       LedgerAccount     @relation(fields: [accountCode], references: [code], onDelete: Restrict)
   description   String
   amount        BigInt
-  vatAmount     BigInt        @default(0) @map("vat_amount")
+  vatAmount     BigInt            @default(0) @map("vat_amount")
   // unpaid | paid | void
   status        String
   // Paid off so far; stays below `amount` while the expense is `unpaid`. Each
   // payment is an `expensePayment` journal entry on the expense.
-  paidAmount    BigInt        @default(0) @map("paid_amount")
+  paidAmount    BigInt            @default(0) @map("paid_amount")
   // cash | bank, once paid in full
-  paidFrom      String?       @map("paid_from")
-  paidOn        DateTime?     @map("paid_on") @db.Date
-  receiptUrl    String?       @map("receipt_url")
-  createdById   String        @map("created_by_id")
-  createdByName String        @map("created_by_name")
-  createdAt     DateTime      @default(now()) @map("created_at")
-  updatedAt     DateTime      @updatedAt @map("updated_at")
+  paidFrom      String?           @map("paid_from")
+  paidOn        DateTime?         @map("paid_on") @db.Date
+  receiptUrl    String?           @map("receipt_url")
+  createdById   String            @map("created_by_id")
+  createdByName String            @map("created_by_name")
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
+  recurringRun  RecurringBillRun?
 
   @@index([date])
   @@index([status])
   @@index([supplierId])
   @@map("expenses")
+}
+
+// A bill that comes round every Persian month (see domain/entities/RecurringBill).
+// Nothing is booked from it on its own: each month is put in front of someone.
+model RecurringBill {
+  id          String             @id @default(uuid())
+  description String
+  accountCode String             @map("account_code")
+  account     LedgerAccount      @relation(fields: [accountCode], references: [code], onDelete: Restrict)
+  supplierId  String?            @map("supplier_id")
+  supplier    Supplier?          @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  amount      BigInt
+  vatAmount   BigInt             @default(0) @map("vat_amount")
+  dayOfMonth  Int                @map("day_of_month")
+  startsOn    DateTime           @map("starts_on") @db.Date
+  isActive    Boolean            @default(true) @map("is_active")
+  runs        RecurringBillRun[]
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
+
+  @@map("recurring_bills")
+}
+
+// A month of a bill that's been dealt with. The key is what stops a month being
+// booked twice; the row commits in the expense's own transaction.
+model RecurringBillRun {
+  billId        String        @map("bill_id")
+  bill          RecurringBill @relation(fields: [billId], references: [id], onDelete: Restrict)
+  // The Persian month, "1405-08".
+  period        String
+  // The expense it became; null when the month was skipped. Voiding that expense
+  // removes this row, so the month comes due again.
+  expenseId     String?       @unique @map("expense_id")
+  expense       Expense?      @relation(fields: [expenseId], references: [id], onDelete: Restrict)
+  createdById   String        @map("created_by_id")
+  createdByName String        @map("created_by_name")
+  createdAt     DateTime      @default(now()) @map("created_at")
+
+  @@id([billId, period])
+  @@map("recurring_bill_runs")
 }
 
 // Money that came in outside an order (see domain/entities/Income).

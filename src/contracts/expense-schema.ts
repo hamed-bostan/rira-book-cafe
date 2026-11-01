@@ -15,6 +15,30 @@ const receiptUrlField = z
   )
   .check(z.refine((value) => value === undefined || isReceiptUrl(value), "imageInvalid"));
 
+/** What a bill says, whether it's being recorded or set up to recur. */
+export const billFields = {
+  supplierId: z.pipe(
+    z.string().check(z.trim()),
+    z.transform((value) => (value === "" ? undefined : value)),
+  ),
+  accountCode: z.string().check(z.trim(), z.minLength(1, "accountRequired")),
+  description: z
+    .string()
+    .check(z.trim(), z.minLength(1, "descriptionRequired"), z.maxLength(MAX_EXPENSE_DESCRIPTION_LENGTH, "textTooLong")),
+  amount: moneyField,
+  vatAmount: optionalMoneyField,
+};
+
+/** The VAT is part of the total, so it must be less than it. */
+export const vatBelowTotal = z.refine<{ amount: number; vatAmount: number }>(
+  (value) => value.vatAmount < value.amount,
+  {
+    path: ["vatAmount"],
+    error: "vatTooHigh",
+    when: fieldsParsed("amount", "vatAmount"),
+  },
+);
+
 /**
  * Recording a bill or purchase. `amount` is the total paid or owed, VAT included;
  * `vatAmount` is the VAT on the invoice (blank: none), which must be less than it.
@@ -23,30 +47,11 @@ export const expenseSchema = z.pipe(
   z
     .object({
       date: dayField,
-      supplierId: z.pipe(
-        z.string().check(z.trim()),
-        z.transform((value) => (value === "" ? undefined : value)),
-      ),
-      accountCode: z.string().check(z.trim(), z.minLength(1, "accountRequired")),
-      description: z
-        .string()
-        .check(
-          z.trim(),
-          z.minLength(1, "descriptionRequired"),
-          z.maxLength(MAX_EXPENSE_DESCRIPTION_LENGTH, "textTooLong"),
-        ),
-      amount: moneyField,
-      vatAmount: optionalMoneyField,
+      ...billFields,
       payment: z.enum(EXPENSE_PAYMENT_CHOICES, { error: "paymentInvalid" }),
       receiptUrl: receiptUrlField,
     })
-    .check(
-      z.refine((value) => value.vatAmount < value.amount, {
-        path: ["vatAmount"],
-        error: "vatTooHigh",
-        when: fieldsParsed("amount", "vatAmount"),
-      }),
-    ),
+    .check(vatBelowTotal),
   z.transform(({ payment, ...rest }) => ({ ...rest, paidFrom: payment === "unpaid" ? undefined : payment })),
 );
 

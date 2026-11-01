@@ -12,6 +12,8 @@ export type NewExpense = Omit<
 > & {
   /** Paid on the spot from cash or the bank; omitted means owed to the supplier. */
   paidFrom?: PaymentSource;
+  /** The month of a recurring bill this records, claimed in the same transaction. */
+  recurring?: { billId: string; period: string };
 };
 
 export type ExpenseFilters = {

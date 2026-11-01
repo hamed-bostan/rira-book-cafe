@@ -171,7 +171,9 @@
     "refundLineUnknown": "That item isn't on this order.",
     "refundQuantityInvalid": "You can't refund more than is left on the line.",
     "refundNothing": "There's nothing to refund on those items.",
-    "paymentOverOwed": "That's more than is owed on this bill."
+    "paymentOverOwed": "That's more than is owed on this bill.",
+    "billDayInvalid": "Choose a day of the month.",
+    "billNotDue": "That month of the bill isn't due."
   },
   "apiErrors": {
     "badRequest": "The request couldn't be read. Please try again.",
@@ -897,7 +899,9 @@
         "recorded": "<b>{actor}</b> recorded expense {entity}",
         "paid": "<b>{actor}</b> paid expense {entity}",
         "voided": "<b>{actor}</b> voided expense {entity}",
-        "receiptChanged": "<b>{actor}</b> changed the receipt on expense {entity}"
+        "receiptChanged": "<b>{actor}</b> changed the receipt on expense {entity}",
+        "recurringChanged": "<b>{actor}</b> changed recurring bill {entity}",
+        "recurringSkipped": "<b>{actor}</b> skipped a month of {entity}"
       },
       "suiteBooking": {
         "changed": "<b>{actor}</b> updated suite booking {entity}",
@@ -990,7 +994,12 @@
       "tableLabels": "Held tables",
       "dueAt": "Due",
       "position": "Menu order",
-      "receiptUrl": "Receipt"
+      "receiptUrl": "Receipt",
+      "dayOfMonth": "Due on day",
+      "period": "Month",
+      "vatAmount": "VAT",
+      "accountCode": "Booked to",
+      "supplierId": "Supplier"
     },
     "filterField": "Field",
     "allFields": "Any field"
@@ -2204,6 +2213,40 @@
       "saved": "Receipt saved",
       "removed": "Receipt removed",
       "saveFailed": "Couldn't save the receipt. Please try again."
+    },
+    "recurring": {
+      "heading": "Recurring bills",
+      "subtitle": "Bills that come round every month, like rent. When one falls due it waits on the Expenses page for someone to record it. Nothing is booked on its own.",
+      "new": "Add bill",
+      "edit": "Edit {name}",
+      "editShort": "Edit",
+      "empty": "No recurring bills yet.",
+      "inactive": "Switched off",
+      "activeLabel": "Active",
+      "dayLabel": "Due on day",
+      "dayHint": "Of each Persian month. In a shorter month it falls on the last day.",
+      "dayOption": "Day {day}",
+      "amountHint": "The usual amount. You can change it each time you record it.",
+      "every": "Day {day} of each month",
+      "startsHint": "It starts with the next time this day comes round.",
+      "save": "Save",
+      "error": "Couldn't save the bill. Please try again.",
+      "saved": "Bill saved",
+      "added": "Bill added",
+      "dueHeading": "Bills due",
+      "dueCount": "{count, plural, one {{formatted} to deal with} other {{formatted} to deal with}}",
+      "dueOn": "Due {date}",
+      "record": "Record",
+      "recordLabel": "Record {name}, due {date}",
+      "recordTitle": "Record {name}",
+      "recordSubtitle": "For {month}. Check the figures against the bill: it's booked as soon as you save it.",
+      "skip": "Skip",
+      "skipLabel": "Skip {name}, due {date}",
+      "skipTitle": "Skip {name} for {month}?",
+      "skipMessage": "Nothing is booked, and this month stops being asked about. To book it later, record it as an ordinary expense.",
+      "skipConfirm": "Skip this month",
+      "skipError": "Couldn't skip the bill. Please try again.",
+      "skipped": "{name} skipped for {month}"
     }
   },
   "dashPricing": {

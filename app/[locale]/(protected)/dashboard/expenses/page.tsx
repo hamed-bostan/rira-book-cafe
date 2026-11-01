@@ -4,7 +4,11 @@ import { buildExpenseParams, parseExpenseFilters } from "@/src/lib/api/accountin
 import { toSearchParams } from "@/src/lib/api/searchParams";
 import { requirePermission, sessionHas } from "@/src/lib/require-permission";
 import { accountsServerApi } from "@/src/presentation/dashboard/accounting/accounting-server-api";
-import { expensesServerApi, suppliersServerApi } from "@/src/presentation/dashboard/expenses/expense-server-api";
+import {
+  expensesServerApi,
+  recurringBillsServerApi,
+  suppliersServerApi,
+} from "@/src/presentation/dashboard/expenses/expense-server-api";
 import { ExpensesScreen } from "@/src/presentation/dashboard/expenses/ExpensesScreen";
 import { withRememberedPageSize } from "@/src/presentation/dashboard/list/withRememberedPageSize";
 
@@ -24,11 +28,12 @@ export default async function ExpensesPage({ searchParams }: ExpensesPageProps) 
     if (value) request[key] = value;
   }
 
-  const [page, summary, accounts, suppliers, canWrite] = await Promise.all([
+  const [page, summary, accounts, suppliers, dueBills, canWrite] = await Promise.all([
     expensesServerApi.list(request),
     expensesServerApi.getSummary(),
     accountsServerApi.list(),
     suppliersServerApi.list(true),
+    recurringBillsServerApi.listDue(),
     auth().then((session) => sessionHas(session, "accounting.write")),
   ]);
 
@@ -38,6 +43,7 @@ export default async function ExpensesPage({ searchParams }: ExpensesPageProps) 
       summary={summary}
       accounts={accounts}
       suppliers={suppliers}
+      dueBills={dueBills}
       status={status}
       supplierId={supplierId}
       query={query}

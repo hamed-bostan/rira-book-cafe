@@ -29,7 +29,31 @@ export type RecordExpenseInput = {
   paidFrom?: PaymentSource;
   /** A receipt already uploaded to the receipts folder. */
   receiptUrl?: string;
+  /** The month of a recurring bill this records. */
+  recurring?: { billId: string; period: string };
 };
+
+/** The rules a bill's figures keep, whether it's being recorded or set up to recur. Returns the description, trimmed. */
+export function assertBillFigures(input: Pick<RecordExpenseInput, "description" | "amount" | "vatAmount">): string {
+  const description = input.description.trim();
+  if (!description || description.length > MAX_EXPENSE_DESCRIPTION_LENGTH) {
+    throw new ValidationError("description", "Describe the expense (up to 300 characters).");
+  }
+  if (!Number.isSafeInteger(input.amount) || input.amount <= 0)
+    throw new ValidationError("amount", "Enter the amount.");
+  if (!Number.isSafeInteger(input.vatAmount) || input.vatAmount < 0 || input.vatAmount >= input.amount) {
+    throw new ValidationError("vatAmount", "VAT must be less than the total.");
+  }
+  return description;
+}
+
+/** A bill can only be booked to an active expense or equipment account. */
+export async function assertBillAccount(accountCode: string, ledger: ILedgerRepository): Promise<void> {
+  const account = await ledger.getAccount(accountCode);
+  if (!account?.isActive || !isExpenseTarget(account)) {
+    throw new ValidationError("accountCode", "Choose an active expense, inventory or equipment account.");
+  }
+}
 
 const expenseLabel = (expense: Pick<Expense, "number" | "description">) =>
   `EX-${expense.number} ${expense.description}`;
@@ -63,20 +87,9 @@ export class RecordExpense {
 
   async execute(input: RecordExpenseInput, actor: ActivityActor, now: Date = new Date()): Promise<Expense> {
     if (input.date > cafeDayOf(now)) throw new ValidationError("date", "That date is in the future.");
-    const description = input.description.trim();
-    if (!description || description.length > MAX_EXPENSE_DESCRIPTION_LENGTH) {
-      throw new ValidationError("description", "Describe the expense (up to 300 characters).");
-    }
-    if (!Number.isSafeInteger(input.amount) || input.amount <= 0)
-      throw new ValidationError("amount", "Enter the amount.");
-    if (!Number.isSafeInteger(input.vatAmount) || input.vatAmount < 0 || input.vatAmount >= input.amount) {
-      throw new ValidationError("vatAmount", "VAT must be less than the total.");
-    }
+    const description = assertBillFigures(input);
     if (input.receiptUrl !== undefined) assertReceipt(input.receiptUrl);
-    const account = await this.ledger.getAccount(input.accountCode);
-    if (!account?.isActive || !isExpenseTarget(account)) {
-      throw new ValidationError("accountCode", "Choose an active expense, inventory or equipment account.");
-    }
+    await assertBillAccount(input.accountCode, this.ledger);
 
     return this.expenses.create(
       {
@@ -88,6 +101,7 @@ export class RecordExpense {
         vatAmount: input.vatAmount,
         paidFrom: input.paidFrom,
         receiptUrl: input.receiptUrl,
+        recurring: input.recurring,
         createdById: actor.id,
         createdByName: actor.name,
       },

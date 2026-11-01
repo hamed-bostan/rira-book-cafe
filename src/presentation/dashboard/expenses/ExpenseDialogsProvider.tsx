@@ -4,16 +4,20 @@ import * as React from "react";
 
 import type { Supplier } from "@/src/domain/entities/Expense";
 import type { Account } from "@/src/domain/entities/Ledger";
+import type { DueBill } from "@/src/domain/entities/RecurringBill";
 import { useRouter } from "@/src/i18n/navigation";
 
 import { PayExpenseDialog, type PayableExpense } from "./PayExpenseDialog";
 import { RecordExpenseDialog } from "./RecordExpenseDialog";
+import { SkipBillDialog } from "./SkipBillDialog";
 import { VoidExpenseDialog } from "./VoidExpenseDialog";
 
 import type { ReactNode } from "react";
 
 type ExpenseDialogsContextValue = {
-  openRecord: () => void;
+  /** "Record an expense", or that dialog filled in from a month of a recurring bill. */
+  openRecord: (due?: DueBill) => void;
+  openSkip: (due: DueBill) => void;
   openPay: (expense: PayableExpense) => void;
   openVoid: (expense: PayableExpense) => void;
 };
@@ -36,7 +40,8 @@ type ExpenseDialogsProviderProps = {
 };
 
 type DialogState =
-  | { kind: "record"; open: boolean; key: number; fromUrl: boolean }
+  | { kind: "record"; due?: DueBill; open: boolean; key: number; fromUrl: boolean }
+  | { kind: "skip"; due: DueBill; open: boolean; key: number; fromUrl: false }
   | { kind: "pay" | "void"; expense: PayableExpense; open: boolean; key: number; fromUrl: false };
 
 /**
@@ -58,8 +63,10 @@ export function ExpenseDialogsProvider({
 
   const value = React.useMemo<ExpenseDialogsContextValue>(
     () => ({
-      openRecord: () =>
-        setDialog((current) => ({ kind: "record", open: true, key: (current?.key ?? 0) + 1, fromUrl: false })),
+      openRecord: (due) =>
+        setDialog((current) => ({ kind: "record", due, open: true, key: (current?.key ?? 0) + 1, fromUrl: false })),
+      openSkip: (due) =>
+        setDialog((current) => ({ kind: "skip", due, open: true, key: (current?.key ?? 0) + 1, fromUrl: false })),
       openPay: (expense) =>
         setDialog((current) => ({ kind: "pay", expense, open: true, key: (current?.key ?? 0) + 1, fromUrl: false })),
       openVoid: (expense) =>
@@ -84,7 +91,10 @@ export function ExpenseDialogsProvider({
           accounts={accounts}
           suppliers={suppliers}
           today={today}
+          due={dialog.due}
         />
+      ) : dialog?.kind === "skip" ? (
+        <SkipBillDialog key={dialog.key} open={dialog.open} onOpenChange={onOpenChange} due={dialog.due} />
       ) : dialog?.kind === "pay" ? (
         <PayExpenseDialog
           key={dialog.key}

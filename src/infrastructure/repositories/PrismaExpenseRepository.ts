@@ -29,6 +29,7 @@ import { inTransaction, type PrismaDb } from "@/src/infrastructure/prisma/transa
 
 import { recordAudit } from "./writeActivityEntry";
 import { dateToDay, dayToDate, ENTRY_WITH_LINES, postHook, reverseEntry, toJournalEntry } from "./writeJournal";
+import { claimBillMonth } from "./writeRecurringRun";
 import { lockStock, writeMovement } from "./writeStock";
 
 type ExpenseRow = Prisma.ExpenseGetPayload<object>;
@@ -176,6 +177,14 @@ export class PrismaExpenseRepository implements IExpenseRepository {
         },
       });
       const expense = toExpense(row);
+      if (input.recurring) {
+        await claimBillMonth(tx, {
+          ...input.recurring,
+          expenseId: expense.id,
+          createdById: input.createdById,
+          createdByName: input.createdByName,
+        });
+      }
       await postHook(tx, expense, ledger);
       await recordAudit(tx, expense, audit);
       return expense;
@@ -233,6 +242,8 @@ export class PrismaExpenseRepository implements IExpenseRepository {
         await reverseEntry(tx, toJournalEntry(entry), reverse);
       }
       await returnReceivedStock(tx, id);
+      // Recorded by mistake, so the month of its recurring bill is owed again.
+      await tx.recurringBillRun.deleteMany({ where: { expenseId: id } });
       const expense = toExpense(await tx.expense.findUniqueOrThrow({ where: { id } }));
       await recordAudit(tx, expense, audit);
       return expense;

@@ -9,6 +9,7 @@ import {
   type Supplier,
 } from "@/src/domain/entities/Expense";
 import type { Account } from "@/src/domain/entities/Ledger";
+import type { DueBill } from "@/src/domain/entities/RecurringBill";
 import { Link } from "@/src/i18n/navigation";
 import { moneyUnit } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
@@ -22,6 +23,7 @@ import { DashboardEmptyState } from "../DashboardEmptyState";
 import { DashboardLinkTabs } from "../DashboardLinkTabs";
 import { MetricCard } from "../MetricCard";
 
+import { DueBillsPanel } from "./DueBillsPanel";
 import { ExpenseDialogsProvider } from "./ExpenseDialogsProvider";
 import { formatPersianMonth } from "./expenseFormat";
 import { EXPENSE_ROW_GRID, ExpenseRow } from "./ExpenseRow";
@@ -39,6 +41,8 @@ type ExpensesScreenProps = {
   accounts: Account[];
   /** Every supplier, switched off or not — the filter finds old bills too. */
   suppliers: Supplier[];
+  /** Months of recurring bills waiting for someone. */
+  dueBills: DueBill[];
   status: ExpenseStatus | undefined;
   supplierId: string | undefined;
   query: string | undefined;
@@ -61,6 +65,7 @@ export async function ExpensesScreen({
   summary,
   accounts,
   suppliers,
+  dueBills,
   status,
   supplierId,
   query,
@@ -106,6 +111,9 @@ export async function ExpensesScreen({
             <Button size="control-md" asChild variant="secondary" className="px-3">
               <Link href="/dashboard/expenses/suppliers">{t("suppliers.heading")}</Link>
             </Button>
+            <Button size="control-md" asChild variant="secondary" className="px-3">
+              <Link href="/dashboard/expenses/recurring">{t("recurring.heading")}</Link>
+            </Button>
             {canWrite ? <RecordExpenseButton /> : null}
           </div>
         </div>
@@ -135,6 +143,8 @@ export async function ExpensesScreen({
             })}
           />
         </div>
+
+        {canWrite && dueBills.length > 0 ? <DueBillsPanel dueBills={dueBills} /> : null}
 
         <section
           aria-label={t("listLabel")}

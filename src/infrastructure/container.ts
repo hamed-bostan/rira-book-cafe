@@ -25,6 +25,7 @@ import type { IPricingRepository } from "@/src/domain/repositories/IPricingRepos
 import type { IProductRepository } from "@/src/domain/repositories/IProductRepository";
 import type { IPromotionRepository } from "@/src/domain/repositories/IPromotionRepository";
 import type { IRateLimiter } from "@/src/domain/repositories/IRateLimiter";
+import type { IRecurringBillRepository } from "@/src/domain/repositories/IRecurringBillRepository";
 import type { IReservationRepository } from "@/src/domain/repositories/IReservationRepository";
 import type { IReviewRepository } from "@/src/domain/repositories/IReviewRepository";
 import type { ISuiteBookingRepository } from "@/src/domain/repositories/ISuiteBookingRepository";
@@ -64,6 +65,7 @@ import { PrismaPaymentAttemptRepository } from "./repositories/PrismaPaymentAtte
 import { PrismaPricingRepository } from "./repositories/PrismaPricingRepository";
 import { PrismaProductRepository } from "./repositories/PrismaProductRepository";
 import { PrismaPromotionRepository } from "./repositories/PrismaPromotionRepository";
+import { PrismaRecurringBillRepository } from "./repositories/PrismaRecurringBillRepository";
 import { PrismaReservationRepository } from "./repositories/PrismaReservationRepository";
 import { PrismaReviewRepository } from "./repositories/PrismaReviewRepository";
 import { PrismaSuiteBookingRepository } from "./repositories/PrismaSuiteBookingRepository";
@@ -157,6 +159,7 @@ export const analyticsRepository: IAnalyticsRepository = new PrismaAnalyticsRepo
 // transactions; the database itself refuses unbalanced or edited entries.
 export const ledgerRepository: ILedgerRepository = new PrismaLedgerRepository();
 export const expenseRepository: IExpenseRepository = new PrismaExpenseRepository();
+export const recurringBillRepository: IRecurringBillRepository = new PrismaRecurringBillRepository();
 export const incomeRepository: IIncomeRepository = new PrismaIncomeRepository();
 
 // Till shifts: the drawer's expected cash is read from the journal's Cash account,

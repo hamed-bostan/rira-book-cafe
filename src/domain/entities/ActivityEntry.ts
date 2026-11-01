@@ -123,6 +123,10 @@ export const ACTIVITY_ACTIONS = [
   "expense.paid",
   "expense.voided",
   "expense.receiptChanged",
+  // A recurring bill set up or changed, or a month of one skipped. Recording a month
+  // is an ordinary `expense.recorded`.
+  "expense.recurringChanged",
+  "expense.recurringSkipped",
   "income.recorded",
   "income.voided",
   // Another event rather than a change to anything stored — an admin downloaded a

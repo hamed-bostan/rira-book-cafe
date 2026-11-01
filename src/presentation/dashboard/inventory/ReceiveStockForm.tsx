@@ -12,12 +12,16 @@ import { Link, useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatCafeDayMedium } from "@/src/lib/formatCafeDay";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
+import { cn } from "@/src/lib/utils";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
-import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
 import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
 import { Select } from "@/src/presentation/design-system/components/form/Select/Select";
-import { TextField } from "@/src/presentation/design-system/components/form/TextField/TextField";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
+
+import { DashboardFormField } from "../DashboardFormField";
+import { FIELD_INPUT, FIELD_LABEL } from "../fieldStyles";
+import { FormAlert } from "../FormAlert";
+import { PAGE_CARD, ROW_TEXT } from "../pageStyles";
 
 import { inventoryApi } from "./inventory-api";
 import { StockLinesFields, type StockLinesForm } from "./StockLinesFields";
@@ -76,19 +80,29 @@ export function ReceiveStockForm({
   });
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-5" noValidate>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <TextField
+    <form onSubmit={onSubmit} className={cn(PAGE_CARD, "flex flex-col gap-5 p-5")} noValidate>
+      <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-[12rem_minmax(0,1fr)]">
+        <DashboardFormField
           label={t("dateLabel")}
           required
-          description={date ? formatCafeDayMedium(date, locale) : undefined}
+          hint={date ? formatCafeDayMedium(date, locale) : undefined}
           error={fieldError(errors.date?.message)}
         >
-          {(controlProps) => <Input {...controlProps} {...register("date")} type="date" max={today} dir="ltr" />}
-        </TextField>
-        <TextField label={tExpenses("form.supplierLabel")} error={fieldError(errors.supplierId?.message)}>
-          {(controlProps) => (
-            <Select {...controlProps} {...register("supplierId")}>
+          {(field) => (
+            <Input
+              {...field}
+              {...register("date")}
+              size="control-md"
+              type="date"
+              max={today}
+              dir="ltr"
+              inputClassName={FIELD_INPUT}
+            />
+          )}
+        </DashboardFormField>
+        <DashboardFormField label={tExpenses("form.supplierLabel")} error={fieldError(errors.supplierId?.message)}>
+          {(field) => (
+            <Select {...field} {...register("supplierId")} size="control-md" className="border-border-strong">
               <option value="">{tExpenses("form.noSupplier")}</option>
               {suppliers.map((supplier) => (
                 <option key={supplier.id} value={supplier.id}>
@@ -97,18 +111,24 @@ export function ReceiveStockForm({
               ))}
             </Select>
           )}
-        </TextField>
+        </DashboardFormField>
       </div>
-      <TextField label={t("receive.descriptionLabel")} required error={fieldError(errors.description?.message)}>
-        {(controlProps) => (
+      <DashboardFormField
+        label={t("receive.descriptionLabel")}
+        required
+        error={fieldError(errors.description?.message)}
+      >
+        {(field) => (
           <Input
-            {...controlProps}
+            {...field}
             {...register("description")}
+            size="control-md"
             dir="auto"
             placeholder={t("receive.descriptionPlaceholder")}
+            inputClassName={FIELD_INPUT}
           />
         )}
-      </TextField>
+      </DashboardFormField>
 
       <StockLinesFields
         control={control as unknown as Control<StockLinesForm>}
@@ -118,39 +138,43 @@ export function ReceiveStockForm({
         costLabel={t("receive.costLabel")}
       />
 
-      <TextField
+      <DashboardFormField
         label={tExpenses("form.vatLabel")}
-        description={tExpenses("form.vatHint")}
+        hint={tExpenses("form.vatHint")}
         error={fieldError(errors.vatAmount?.message)}
       >
-        {(controlProps) => (
-          <Input {...controlProps} {...register("vatAmount")} inputMode="numeric" dir="ltr" className="max-w-48" />
+        {(field) => (
+          <Input
+            {...field}
+            {...register("vatAmount")}
+            size="control-md"
+            inputMode="numeric"
+            dir="ltr"
+            className="max-w-48"
+            inputClassName={cn(FIELD_INPUT, "tabular-nums")}
+          />
         )}
-      </TextField>
+      </DashboardFormField>
 
-      <fieldset className="flex flex-col gap-2">
-        <legend className="mb-1 text-body-small-emphasis text-input-foreground">
-          {tExpenses("form.paymentLabel")}
-        </legend>
-        <div className="flex flex-wrap gap-2">
-          {EXPENSE_PAYMENT_CHOICES.map((choice) => (
-            <label
-              key={choice}
-              className="flex cursor-pointer items-center gap-2 rounded-card-md border border-border px-3 py-2 text-body-small has-[:checked]:border-primary has-[:checked]:bg-accent"
-            >
-              <input type="radio" value={choice} {...register("payment")} className="accent-primary" />
-              {tExpenses(`form.payment.${choice}`)}
-            </label>
-          ))}
-        </div>
+      <fieldset className="flex min-w-0 flex-col gap-2">
+        <legend className={cn(FIELD_LABEL, "mb-2")}>{tExpenses("form.paymentLabel")}</legend>
+        {EXPENSE_PAYMENT_CHOICES.map((choice) => (
+          <label
+            key={choice}
+            className={cn(ROW_TEXT, "flex min-h-11 w-fit items-center gap-2 text-foreground sm:min-h-8")}
+          >
+            <input type="radio" value={choice} {...register("payment")} className="size-4 accent-primary" />
+            {tExpenses(`form.payment.${choice}`)}
+          </label>
+        ))}
       </fieldset>
 
-      {errors.root?.message ? <FormMessage size="md">{errors.root.message}</FormMessage> : null}
-      <div className="flex gap-3 pt-2">
-        <Button type="submit" loading={isSubmitting}>
+      {errors.root?.message ? <FormAlert>{errors.root.message}</FormAlert> : null}
+      <div className="flex flex-wrap gap-2">
+        <Button type="submit" size="control-md" className="px-4" loading={isSubmitting}>
           {t("receive.save")}
         </Button>
-        <Button asChild variant="outline" type="button">
+        <Button asChild variant="secondary" size="control-md" className="px-3">
           <Link href="/dashboard/inventory">{t("cancel")}</Link>
         </Button>
       </div>

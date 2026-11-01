@@ -1,8 +1,6 @@
 import { getTranslations } from "next-intl/server";
 
-import { Link } from "@/src/i18n/navigation";
-import { cn } from "@/src/lib/utils";
-import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
+import { DashboardLinkTabs } from "../DashboardLinkTabs";
 
 export type PricingTab = "items" | "ingredients" | "settings";
 
@@ -25,27 +23,18 @@ export async function PricingTabs({
   const t = await getTranslations("dashPricing");
 
   return (
-    <div className="flex flex-col gap-4">
-      <div>
+    <>
+      <div className="flex min-w-0 flex-col gap-1">
         <h1 className="dashboard-page-title">{title}</h1>
-        {subtitle ? <p className="mt-1 text-body-small text-muted-foreground">{subtitle}</p> : null}
+        {subtitle ? (
+          <p className="text-body-default text-pretty text-muted-foreground sm:text-body-small">{subtitle}</p>
+        ) : null}
       </div>
-      <nav aria-label={t("tabsLabel")} className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1">
-        {TABS.map(({ tab, href }) => (
-          <Link
-            key={tab}
-            href={href}
-            aria-current={tab === active ? "page" : undefined}
-            className={cn(
-              "flex h-9 shrink-0 items-center rounded-full border px-4 text-button-default-medium transition-colors",
-              focusRing,
-              tab === active ? "border-primary bg-accent text-primary" : "border-border text-foreground hover:bg-muted",
-            )}
-          >
-            {t(`tab.${tab}`)}
-          </Link>
-        ))}
-      </nav>
-    </div>
+      <DashboardLinkTabs
+        tabs={TABS.map(({ tab, href }) => ({ key: tab, label: t(`tab.${tab}`), href }))}
+        current={active}
+        label={t("tabsLabel")}
+      />
+    </>
   );
 }

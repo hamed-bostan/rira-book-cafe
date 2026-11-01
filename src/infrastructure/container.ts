@@ -11,6 +11,7 @@ import type { IEmailSender } from "@/src/domain/repositories/IEmailSender";
 import type { IEventRepository } from "@/src/domain/repositories/IEventRepository";
 import type { IExpenseRepository } from "@/src/domain/repositories/IExpenseRepository";
 import type { IImageStorageRepository } from "@/src/domain/repositories/IImageStorageRepository";
+import type { IIncomeRepository } from "@/src/domain/repositories/IIncomeRepository";
 import type { IInventoryRepository } from "@/src/domain/repositories/IInventoryRepository";
 import type { ILedgerRepository } from "@/src/domain/repositories/ILedgerRepository";
 import type { ILogger } from "@/src/domain/repositories/ILogger";
@@ -52,6 +53,7 @@ import { PrismaCategoryRepository } from "./repositories/PrismaCategoryRepositor
 import { PrismaDatabaseProbe } from "./repositories/PrismaDatabaseProbe";
 import { PrismaEventRepository } from "./repositories/PrismaEventRepository";
 import { PrismaExpenseRepository } from "./repositories/PrismaExpenseRepository";
+import { PrismaIncomeRepository } from "./repositories/PrismaIncomeRepository";
 import { PrismaInventoryRepository } from "./repositories/PrismaInventoryRepository";
 import { PrismaLedgerRepository } from "./repositories/PrismaLedgerRepository";
 import { PrismaLoyaltyRepository } from "./repositories/PrismaLoyaltyRepository";
@@ -155,6 +157,7 @@ export const analyticsRepository: IAnalyticsRepository = new PrismaAnalyticsRepo
 // transactions; the database itself refuses unbalanced or edited entries.
 export const ledgerRepository: ILedgerRepository = new PrismaLedgerRepository();
 export const expenseRepository: IExpenseRepository = new PrismaExpenseRepository();
+export const incomeRepository: IIncomeRepository = new PrismaIncomeRepository();
 
 // Till shifts: the drawer's expected cash is read from the journal's Cash account,
 // and a count's over/short is posted in the same transaction that closes the shift.

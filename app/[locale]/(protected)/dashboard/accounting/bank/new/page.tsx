@@ -5,6 +5,8 @@ import { cafeDayOf } from "@/src/domain/entities/CafeTime";
 import { requirePermission } from "@/src/lib/require-permission";
 import { bankStatementsServerApi } from "@/src/presentation/dashboard/bank/bank-statement-server-api";
 import { NewBankStatementForm } from "@/src/presentation/dashboard/bank/NewBankStatementForm";
+import { DashboardPageHeader } from "@/src/presentation/dashboard/DashboardPageHeader";
+import { DashboardPageCrumb } from "@/src/presentation/dashboard/shell/DashboardPageCrumb";
 
 export const dynamic = "force-dynamic";
 
@@ -18,10 +20,13 @@ export default async function NewBankStatementPage() {
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
-      <div>
-        <h1 className="dashboard-page-title">{t("form.heading")}</h1>
-        <p className="mt-1 text-body-small text-muted-foreground">{t("form.subtitle")}</p>
-      </div>
+      <DashboardPageCrumb label={t("newStatement")} />
+      <DashboardPageHeader
+        backHref="/dashboard/accounting/bank"
+        backLabel={t("heading")}
+        title={t("form.heading")}
+        subtitle={t("form.subtitle")}
+      />
       <NewBankStatementForm
         fromDay={period.fromDay}
         toDay={period.toDay}

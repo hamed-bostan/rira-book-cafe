@@ -164,6 +164,23 @@ export class RecordOpeningStock {
   }
 }
 
+/**
+ * Put every book for sale under stock in one go. A book only books cost of sales
+ * through a recipe, and until now that meant a stock item and a one-line recipe per
+ * title by hand. Copies on the shelf come in at the book's cost price — the opening
+ * stock rule, so the owner's capital takes the other side — and a book with no cost
+ * price comes in at zero, to pick up its real cost with the next delivery.
+ */
+export class TrackBooksInStock {
+  constructor(private readonly inventory: IInventoryRepository) {}
+
+  async execute(actor: ActivityActor, now: Date = new Date()): Promise<{ tracked: number; value: number }> {
+    const books = await this.inventory.listUntrackedBooks();
+    if (books.length === 0) return { tracked: 0, value: 0 };
+    return this.inventory.trackBooks(books, cafeDayOf(now), (event) => openingStockEntry(event, actor), actor);
+  }
+}
+
 export class SetReorderLevel {
   constructor(private readonly inventory: IInventoryRepository) {}
 

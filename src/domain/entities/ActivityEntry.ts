@@ -34,9 +34,10 @@ export const ACTIVITY_ENTITY_TYPES = [
   "bookLoan",
   "event",
   // Accounting: journal entries, the chart of accounts and its settings ("ledger"),
-  // and supplier bills ("expense").
+  // supplier bills ("expense") and money in outside orders ("income").
   "ledger",
   "expense",
+  "income",
 ] as const;
 
 /**
@@ -72,11 +73,13 @@ export const ACTIVITY_ACTIONS = [
   "category.created",
   "category.updated",
   "category.deleted",
-  // No `order.created`: an order is only ever created by the customer placing it,
-  // and the order row already records who that is. The log exists for the changes
-  // *staff* make to something stored.
+  // No `order.created` for a guest's order: the order row already records who placed
+  // it, and the log exists for the changes *staff* make to something stored. A sale
+  // staff rang up at the counter is one of those.
+  "order.counterSale",
   "order.stageChanged",
   "order.paymentChanged",
+  "order.refunded",
   // The one action here that isn't a change to anything stored — an admin sent the
   // customer a message about their order. Recorded through
   // `IActivityLog.recordEvent` rather than an audit hook, because there is no
@@ -119,6 +122,8 @@ export const ACTIVITY_ACTIONS = [
   "expense.recorded",
   "expense.paid",
   "expense.voided",
+  "income.recorded",
+  "income.voided",
   // Another event rather than a change to anything stored — an admin downloaded a
   // customer-data export. Recorded through `IActivityLog.recordEvent`, same as
   // `order.customerNotified`: the file has already left the moment this is

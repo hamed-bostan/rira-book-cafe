@@ -16,6 +16,7 @@ import { NotFoundError } from "@/src/domain/errors/NotFoundError";
 import type { AuditHook } from "@/src/domain/repositories/AuditHook";
 import type {
   ExpenseFilters,
+  ExpensePayment,
   IExpenseRepository,
   NewExpense,
   NewSupplier,
@@ -106,13 +107,16 @@ export class PrismaExpenseRepository implements IExpenseRepository {
   }
 
   async totalUnpaid(): Promise<number> {
-    const result = await prisma.expense.aggregate({ where: { status: "unpaid" }, _sum: { amount: true } });
-    return Number(result._sum.amount ?? 0);
+    const result = await prisma.expense.aggregate({
+      where: { status: "unpaid" },
+      _sum: { amount: true, paidAmount: true },
+    });
+    return Number(result._sum.amount ?? 0) - Number(result._sum.paidAmount ?? 0);
   }
 
   async summary(month: { fromDay: string; toDay: string }): Promise<ExpenseSummary> {
     const [byStatus, inMonth] = await Promise.all([
-      prisma.expense.groupBy({ by: ["status"], _count: { _all: true }, _sum: { amount: true } }),
+      prisma.expense.groupBy({ by: ["status"], _count: { _all: true }, _sum: { amount: true, paidAmount: true } }),
       prisma.expense.aggregate({
         where: { status: { not: "void" }, date: { gte: dayToDate(month.fromDay), lte: dayToDate(month.toDay) } },
         _count: { _all: true },
@@ -124,7 +128,7 @@ export class PrismaExpenseRepository implements IExpenseRepository {
     for (const group of byStatus) {
       const status = toStatus(group.status);
       counts[status] += group._count._all;
-      if (status === "unpaid") owedTotal += Number(group._sum.amount ?? 0);
+      if (status === "unpaid") owedTotal += Number(group._sum.amount ?? 0) - Number(group._sum.paidAmount ?? 0);
     }
     return {
       owed: { count: counts.unpaid, total: owedTotal },
@@ -148,6 +152,7 @@ export class PrismaExpenseRepository implements IExpenseRepository {
           amount: BigInt(input.amount),
           vatAmount: BigInt(input.vatAmount),
           status: input.paidFrom ? "paid" : "unpaid",
+          paidAmount: input.paidFrom ? BigInt(input.amount) : BigInt(0),
           paidFrom: input.paidFrom ?? null,
           paidOn: input.paidFrom ? dayToDate(input.date) : null,
           receiptUrl: input.receiptUrl ?? null,
@@ -164,21 +169,25 @@ export class PrismaExpenseRepository implements IExpenseRepository {
 
   async pay(
     id: string,
-    source: PaymentSource,
-    paidOn: string,
+    payment: ExpensePayment,
     ledger: LedgerHook<Expense>,
     audit?: AuditHook<Expense>,
   ): Promise<Expense> {
     return inTransaction(this.db, async (tx) => {
-      // Guarded on still being unpaid: paying twice (two clicks, two tabs) books nothing twice.
+      const current = await tx.expense.findUnique({ where: { id } });
+      if (!current) throw new NotFoundError("expense", id);
+      const paidAmount = payment.expectedPaid + payment.amount;
+      const settled = BigInt(paidAmount) >= current.amount;
+      // Guarded on what had been paid: paying twice (two clicks, two tabs) books nothing twice.
       const result = await tx.expense.updateMany({
-        where: { id, status: "unpaid" },
-        data: { status: "paid", paidFrom: source, paidOn: dayToDate(paidOn) },
+        where: { id, status: "unpaid", paidAmount: BigInt(payment.expectedPaid) },
+        data: {
+          paidAmount: BigInt(paidAmount),
+          ...(settled ? { status: "paid", paidFrom: payment.source, paidOn: dayToDate(payment.paidOn) } : {}),
+        },
       });
       if (result.count === 0) {
-        const current = await tx.expense.findUnique({ where: { id } });
-        if (!current) throw new NotFoundError("expense", id);
-        throw new ConflictError("INVALID_TRANSITION", `This expense is already ${current.status}.`);
+        throw new ConflictError("INVALID_TRANSITION", `This expense was already paid or changed.`);
       }
       const expense = toExpense(await tx.expense.findUniqueOrThrow({ where: { id } }));
       await postHook(tx, expense, ledger);
@@ -304,6 +313,7 @@ function toExpense(row: ExpenseRow): Expense {
     amount: Number(row.amount),
     vatAmount: Number(row.vatAmount),
     status: toStatus(row.status),
+    paidAmount: Number(row.paidAmount),
     paidFrom: toSource(row.paidFrom),
     paidOn: row.paidOn ? dateToDay(row.paidOn) : undefined,
     receiptUrl: row.receiptUrl ?? undefined,

@@ -34,6 +34,8 @@ type SuiteBookingsScreenProps = {
   /** The stay picked from the strip or just booked, tinted in the list. */
   focusId: string | undefined;
   canManage: boolean;
+  /** For a viewer who can take money: the VAT inside prices. */
+  payment?: { vatRateBps: number };
 };
 
 /**
@@ -49,6 +51,7 @@ export async function SuiteBookingsScreen({
   tab,
   focusId,
   canManage,
+  payment,
 }: SuiteBookingsScreenProps) {
   const t = await getTranslations("dashSuite");
 
@@ -128,6 +131,7 @@ export async function SuiteBookingsScreen({
                   today={today}
                   focused={booking.id === focusId}
                   canManage={canManage}
+                  payment={payment}
                 />
               </li>
             ))}

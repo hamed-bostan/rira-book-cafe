@@ -1,8 +1,12 @@
 import type { AuditHook } from "./AuditHook";
+import type { LedgerHook } from "./ILedgerRepository";
 import type { BookLoan, BookLoanStatus } from "../entities/BookLoan";
 
 /** A loan about to be recorded. Id, reference, status, return time and timestamps are the repository's. */
-export type NewBookLoan = Omit<BookLoan, "id" | "reference" | "status" | "returnedAt" | "createdAt" | "updatedAt">;
+export type NewBookLoan = Omit<
+  BookLoan,
+  "id" | "reference" | "status" | "depositState" | "returnedAt" | "createdAt" | "updatedAt"
+>;
 
 /** A book on the shelf staff can lend — the loan form's picker. */
 export type LendableBook = {
@@ -35,7 +39,7 @@ export type IBookLoanRepository = {
    * recording the same hand-over can't both succeed — and a book whose every copy
    * is out (`ConflictError("ALL_COPIES_OUT")`), checked under the same per-book lock.
    */
-  create(input: NewBookLoan, audit?: AuditHook<BookLoan>): Promise<BookLoan>;
+  create(input: NewBookLoan, audit?: AuditHook<BookLoan>, ledger?: LedgerHook<BookLoan>): Promise<BookLoan>;
   getById(id: string): Promise<BookLoan | null>;
   /** Loans for the dashboard, newest first; `open`/`overdue` soonest-due first. */
   list(filters: BookLoanFilters, now: Date): Promise<BookLoan[]>;
@@ -54,7 +58,8 @@ export type IBookLoanRepository = {
   /**
    * Move a loan to a new status, guarded on `expectedStatus` so a concurrent change
    * can't be overwritten (`ConflictError("INVALID_TRANSITION")`). `returnedAt` is
-   * set when it becomes `returned`.
+   * set when it becomes `returned`, and a deposit follows the loan: handed back, or
+   * kept. The ledger entries commit with it.
    */
   applyStatus(
     id: string,
@@ -62,5 +67,6 @@ export type IBookLoanRepository = {
     status: BookLoanStatus,
     at: Date,
     audit?: AuditHook<BookLoan>,
+    ledger?: LedgerHook<BookLoan>,
   ): Promise<BookLoan>;
 };

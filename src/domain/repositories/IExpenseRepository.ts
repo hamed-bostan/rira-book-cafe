@@ -8,7 +8,7 @@ export type NewSupplier = Pick<Supplier, "name" | "phone" | "note">;
 
 export type NewExpense = Omit<
   Expense,
-  "id" | "number" | "createdAt" | "supplierName" | "status" | "paidFrom" | "paidOn"
+  "id" | "number" | "createdAt" | "supplierName" | "status" | "paidAmount" | "paidFrom" | "paidOn"
 > & {
   /** Paid on the spot from cash or the bank; omitted means owed to the supplier. */
   paidFrom?: PaymentSource;
@@ -23,6 +23,9 @@ export type ExpenseFilters = {
   /** Words in the description or supplier's name, or the expense's number ("1042", "EX-1042"). */
   query?: string;
 };
+
+/** A payment on an owed expense. `expectedPaid` is what had been paid when it was checked. */
+export type ExpensePayment = { amount: number; source: PaymentSource; paidOn: string; expectedPaid: number };
 
 export type IExpenseRepository = {
   listSuppliers(includeInactive: boolean): Promise<Supplier[]>;
@@ -39,14 +42,12 @@ export type IExpenseRepository = {
 
   /** Record an expense and post its entry, in one transaction. */
   create(input: NewExpense, ledger: LedgerHook<Expense>, audit?: AuditHook<Expense>): Promise<Expense>;
-  /** Mark an owed expense paid and post the payment, guarded on it still being unpaid. */
-  pay(
-    id: string,
-    source: PaymentSource,
-    paidOn: string,
-    ledger: LedgerHook<Expense>,
-    audit?: AuditHook<Expense>,
-  ): Promise<Expense>;
+  /**
+   * Pay some or all of what's owed and post the payment, guarded on `expectedPaid`
+   * so two clicks or two tabs can't book it twice. Paying the last of it marks the
+   * expense paid.
+   */
+  pay(id: string, payment: ExpensePayment, ledger: LedgerHook<Expense>, audit?: AuditHook<Expense>): Promise<Expense>;
   /**
    * Void an expense: reverse every entry posted for it and mark it void, in one
    * transaction. `reverse` builds each reversal from the original entry.

@@ -1,9 +1,11 @@
 import {
   consumptionFor,
+  receiveStock,
   roundQuantity,
   type StockMovementKind,
   type StockState,
 } from "@/src/domain/entities/Inventory";
+import { allocate } from "@/src/domain/entities/Ledger";
 import type { RecipeLine } from "@/src/domain/entities/Pricing";
 import { Prisma } from "@/src/infrastructure/prisma/generated/client";
 
@@ -136,4 +138,58 @@ export async function consumeStockForOrder(
     }
     await tx.orderItem.update({ where: { id: item.id }, data: { unitCost: consumption.unitCost, stockTracked: true } });
   }
+}
+
+/**
+ * Refunded units going back on the shelf come back into stock at what the sale took
+ * out (`unitCost` per unit), split across the line's recipe by what each ingredient
+ * is worth. Lines that were never stock-tracked have nothing to come back. Returns
+ * the value restored, which the refund's cost-of-sales posting books exactly.
+ */
+export async function returnStockForRefund(
+  tx: Prisma.TransactionClient,
+  lines: readonly { productId: string; quantity: number; unitCost: number }[],
+  day: string,
+  orderId: string,
+  actor: StockActor,
+): Promise<number> {
+  if (lines.length === 0) return 0;
+  const recipeRows = await tx.recipeLine.findMany({
+    where: { productId: { in: [...new Set(lines.map((line) => line.productId))] } },
+    orderBy: { position: "asc" },
+  });
+  if (recipeRows.length === 0) return 0;
+  const stock = await lockStock(
+    tx,
+    recipeRows.map((row) => row.ingredientId),
+  );
+
+  let restored = 0;
+  for (const line of lines) {
+    const recipe = recipeRows.filter((row) => row.productId === line.productId);
+    if (recipe.length === 0) continue;
+    const total = line.unitCost * line.quantity;
+    const values = allocate(
+      total,
+      recipe.map((row) => row.quantity * Math.max(stock.get(row.ingredientId)?.averageCost ?? 0, 1)),
+    );
+    for (const [index, row] of recipe.entries()) {
+      const current = stock.get(row.ingredientId);
+      const quantity = roundQuantity(row.quantity * line.quantity);
+      if (!current || quantity === 0) continue;
+      const movement = {
+        kind: "return" as const,
+        quantity,
+        value: values[index],
+        date: day,
+        referenceId: orderId,
+      };
+      stock.set(
+        row.ingredientId,
+        await writeMovement(tx, current, receiveStock(current, quantity, values[index]), movement, actor),
+      );
+      restored += values[index];
+    }
+  }
+  return restored;
 }

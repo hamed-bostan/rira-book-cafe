@@ -5,7 +5,7 @@ import { sessionHas } from "@/src/lib/require-permission";
 import { ordersServerApi } from "@/src/presentation/dashboard/orders/order-server-api";
 import { OrderDetailScreen } from "@/src/presentation/dashboard/orders/OrderDetailScreen";
 
-// The order, its status history and notes are fetched over the REST API (BFF)
+// The order, its status history, refunds and notes are fetched over the REST API (BFF)
 // during server render; a missing order renders the not-found boundary.
 export const dynamic = "force-dynamic";
 
@@ -16,19 +16,31 @@ type OrderDetailPageProps = {
 export default async function OrderDetailPage({ params }: OrderDetailPageProps) {
   const { id } = await params;
 
-  const [order, events, notes, session] = await Promise.all([
+  const [order, events, notes, refunds, session] = await Promise.all([
     ordersServerApi.getById(id),
     ordersServerApi.listStatusEvents(id),
     ordersServerApi.listNotes(id),
+    ordersServerApi.listRefunds(id),
     auth(),
   ]);
   if (!order) notFound();
 
   // Which controls to draw; every endpoint re-checks for itself.
-  const [canFulfill, canNote] = await Promise.all([
+  const [canFulfill, canRefund, canNote] = await Promise.all([
     sessionHas(session, "orders.fulfill"),
+    sessionHas(session, "accounting.write"),
     sessionHas(session, "orders.note"),
   ]);
 
-  return <OrderDetailScreen order={order} events={events} notes={notes} canFulfill={canFulfill} canNote={canNote} />;
+  return (
+    <OrderDetailScreen
+      order={order}
+      events={events}
+      notes={notes}
+      refunds={refunds}
+      canFulfill={canFulfill}
+      canRefund={canRefund}
+      canNote={canNote}
+    />
+  );
 }

@@ -1,9 +1,8 @@
-import { ChevronRight } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
-import { Link } from "@/src/i18n/navigation";
 import { requirePermission } from "@/src/lib/require-permission";
+import { DashboardBackLink } from "@/src/presentation/dashboard/DashboardBackLink";
 import {
   ingredientsServerApi,
   pricingServerApi,
@@ -28,20 +27,11 @@ export default async function RecipePage({ params }: RecipePageProps) {
   if (!item) notFound();
 
   return (
-    <div className="flex max-w-2xl flex-col gap-6">
-      <nav
-        aria-label={t("breadcrumbLabel")}
-        className="flex items-center gap-2 text-body-caption text-muted-foreground"
-      >
-        <Link href="/dashboard/pricing" className="hover:text-foreground">
-          {t("heading")}
-        </Link>
-        <ChevronRight className="size-3.5 rtl:rotate-180" aria-hidden />
-        <span className="font-medium text-foreground">{item.name}</span>
-      </nav>
-      <div>
+    <div className="flex min-w-0 flex-col gap-6">
+      <DashboardBackLink href="/dashboard/pricing">{t("heading")}</DashboardBackLink>
+      <div className="flex min-w-0 flex-col gap-1">
         <h1 className="dashboard-page-title">{t("recipe.title", { name: item.name })}</h1>
-        <p className="text-body-small text-muted-foreground">{t("recipe.subtitle")}</p>
+        <p className="text-body-default text-pretty text-muted-foreground sm:text-body-small">{t("recipe.subtitle")}</p>
       </div>
       <RecipeForm productId={productId} lines={lines} ingredients={ingredients} />
     </div>

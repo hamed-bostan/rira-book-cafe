@@ -24,6 +24,8 @@ const ORDER_KINDS: Partial<Record<OrderStatus, NewNotification["kind"]>> = {
 
 /** An order moved. A served order that earned points says so instead of a plain "served". */
 export function orderStatusNotification(order: Order): NewNotification | null {
+  // A counter sale has no account to tell.
+  if (!order.userId) return null;
   if (order.status === "completed" && order.pointsEarned > 0) {
     return {
       userId: order.userId,

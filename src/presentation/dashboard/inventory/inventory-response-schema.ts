@@ -3,10 +3,22 @@ import { z } from "zod/mini";
 import { STOCK_MOVEMENT_KINDS, type InventorySummary, type StockMovement } from "@/src/domain/entities/Inventory";
 import type { Page } from "@/src/domain/entities/Pagination";
 import { INGREDIENT_UNITS } from "@/src/domain/entities/Pricing";
+import type { UntrackedBook } from "@/src/domain/repositories/IInventoryRepository";
 import type { FiscalYearStatus } from "@/src/domain/use-cases/accounting/FiscalYearClose";
 import { pageResponseSchema } from "@/src/lib/api/page-response-schema";
 
 /** What the inventory endpoints return, checked at the BFF boundary. */
+
+export const untrackedBookListResponseSchema = z.array(
+  z.object({
+    id: z.string(),
+    name: z.string(),
+    costPrice: z.optional(z.number()),
+    stockQuantity: z.number(),
+  }) satisfies z.ZodMiniType<UntrackedBook>,
+);
+
+export const trackBooksResultResponseSchema = z.object({ tracked: z.number(), value: z.number() });
 
 export const inventorySummaryResponseSchema: z.ZodMiniType<InventorySummary> = z.object({
   items: z.array(

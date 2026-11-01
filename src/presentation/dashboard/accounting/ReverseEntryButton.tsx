@@ -1,18 +1,17 @@
 "use client";
 
-import { Undo2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import * as React from "react";
 
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
-import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
 import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
-import { Textarea } from "@/src/presentation/design-system/components/form/Textarea/Textarea";
-import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
-import { Modal, ModalContent } from "@/src/presentation/design-system/components/Modal/Modal";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
+
+import { DashboardDialog } from "../DashboardDialog";
+import { DashboardField } from "../DashboardField";
+import { FIELD_INPUT } from "../fieldStyles";
 
 import { journalEntriesApi } from "./accounting-api";
 
@@ -51,53 +50,46 @@ export function ReverseEntryButton({ entryId, number, entryDate, today }: Revers
 
   return (
     <>
-      <Button type="button" variant="outline" size="sm" onClick={() => setOpen(true)}>
-        <Icon icon={Undo2} size="sm" className="me-1.5" />
+      <Button type="button" variant="secondary" size="control-md" className="px-3" onClick={() => setOpen(true)}>
         {t("entry.reverse")}
       </Button>
-      <Modal open={open} onOpenChange={setOpen}>
-        <ModalContent title={t("entry.reverseTitle", { number })} className="max-w-md">
-          <form
-            className="mt-4 flex flex-col gap-4"
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (date && reason.trim()) submit();
-            }}
-          >
-            <p className="text-body-small text-muted-foreground">{t("entry.reverseDescription")}</p>
-            <label className="flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
-              {t("entry.reverseDate")}
-              <Input
-                type="date"
-                value={date}
-                min={entryDate}
-                max={today}
-                onChange={(event) => setDate(event.target.value)}
-                dir="ltr"
-              />
-            </label>
-            <label className="flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
-              {t("entry.reverseReason")}
-              <Textarea
-                value={reason}
-                onChange={(event) => setReason(event.target.value)}
-                rows={3}
-                maxLength={200}
-                dir="auto"
-              />
-            </label>
-            {error ? <FormMessage>{error}</FormMessage> : null}
-            <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" size="sm" onClick={() => setOpen(false)}>
-                {t("cancel")}
-              </Button>
-              <Button type="submit" size="sm" loading={pending} disabled={!date || !reason.trim()}>
-                {t("entry.reverseConfirm")}
-              </Button>
-            </div>
-          </form>
-        </ModalContent>
-      </Modal>
+      <DashboardDialog
+        open={open}
+        onOpenChange={setOpen}
+        title={t("entry.reverseTitle", { number })}
+        subtitle={t("entry.reverseDescription")}
+        submitLabel={t("entry.reverseConfirm")}
+        backLabel={t("cancel")}
+        blocked={!date || !reason.trim()}
+        pending={pending}
+        onSubmit={submit}
+        error={error}
+      >
+        <DashboardField label={t("entry.reverseDate")}>
+          <Input
+            size="control-md"
+            type="date"
+            value={date}
+            min={entryDate}
+            max={today}
+            onChange={(event) => setDate(event.target.value)}
+            dir="ltr"
+            inputClassName={FIELD_INPUT}
+          />
+        </DashboardField>
+        <DashboardField label={t("entry.reverseReason")} hint={t("journal.reverseReasonHint")}>
+          <Input
+            size="control-md"
+            value={reason}
+            onChange={(event) => setReason(event.target.value)}
+            autoComplete="off"
+            maxLength={200}
+            placeholder={t("journal.reverseReasonPlaceholder")}
+            dir="auto"
+            inputClassName={FIELD_INPUT}
+          />
+        </DashboardField>
+      </DashboardDialog>
     </>
   );
 }

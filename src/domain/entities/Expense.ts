@@ -47,7 +47,9 @@ export type Expense = {
   /** The VAT inside `amount` that the cafe can offset against VAT it collected. */
   vatAmount: number;
   status: ExpenseStatus;
-  /** Set once paid. */
+  /** Paid so far, in whole Toman: part of an `unpaid` bill, all of a `paid` one. */
+  paidAmount: number;
+  /** Set once paid in full. */
   paidFrom?: PaymentSource;
   paidOn?: string;
   /** An optional receipt or invoice image. */
@@ -56,6 +58,11 @@ export type Expense = {
   createdByName: string;
   createdAt: string;
 };
+
+/** What's still owed on an expense. */
+export function amountOwed(expense: Pick<Expense, "amount" | "paidAmount" | "status">): number {
+  return expense.status === "unpaid" ? expense.amount - expense.paidAmount : 0;
+}
 
 /**
  * The figures across the top of the Expenses page and the counts on its tabs:

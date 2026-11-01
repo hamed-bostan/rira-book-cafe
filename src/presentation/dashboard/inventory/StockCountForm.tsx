@@ -1,6 +1,5 @@
 "use client";
 
-import { Boxes } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import * as React from "react";
 
@@ -9,15 +8,21 @@ import { Link, useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatCafeDayMedium } from "@/src/lib/formatCafeDay";
 import { formatMoney } from "@/src/lib/formatMoney";
-import { formatNumber } from "@/src/lib/formatNumber";
 import { cn } from "@/src/lib/utils";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
-import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
 import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
 import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
+import { DashboardEmptyState } from "../DashboardEmptyState";
+import { DashboardField } from "../DashboardField";
+import { FIELD_INPUT } from "../fieldStyles";
+import { FormAlert } from "../FormAlert";
+import { AMOUNT, AMOUNT_INPUT, PAGE_CARD, ROW_TEXT, TABLE_HEAD, TABLE_TD, TABLE_TH } from "../pageStyles";
+
 import { inventoryApi } from "./inventory-api";
+import { UNIT_INSIDE, UNIT_SUFFIX } from "./stockFieldStyles";
+import { formatStockQuantity } from "./stockFormat";
 
 const NUMBER = /^\d+(\.\d{1,3})?$/;
 
@@ -75,123 +80,148 @@ export function StockCountForm({
 
   return (
     <form
-      className="flex flex-col gap-5"
+      className={cn(PAGE_CARD, "flex flex-col gap-5 p-5")}
       onSubmit={(event) => {
         event.preventDefault();
         if (entered.length > 0 && !invalid) submit();
       }}
     >
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-[12rem_1fr]">
-        <label className="flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
-          {t("dateLabel")}
-          <Input type="date" value={date} max={today} onChange={(event) => setDate(event.target.value)} dir="ltr" />
-          <span className="text-body-caption font-normal text-muted-foreground">
-            {date ? formatCafeDayMedium(date, locale) : ""}
-          </span>
-        </label>
-        <label className="flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
-          {t("count.noteLabel")}
+      <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-[12rem_minmax(0,1fr)]">
+        <DashboardField label={t("dateLabel")} hint={date ? formatCafeDayMedium(date, locale) : undefined}>
           <Input
+            size="control-md"
+            type="date"
+            value={date}
+            max={today}
+            onChange={(event) => setDate(event.target.value)}
+            dir="ltr"
+            inputClassName={FIELD_INPUT}
+          />
+        </DashboardField>
+        <DashboardField label={t("count.noteLabel")}>
+          <Input
+            size="control-md"
             value={note}
             onChange={(event) => setNote(event.target.value)}
             maxLength={200}
             dir="auto"
             placeholder={t("count.notePlaceholder")}
+            inputClassName={FIELD_INPUT}
           />
-        </label>
+        </DashboardField>
       </div>
 
-      <section className="min-w-0 overflow-x-auto rounded-card-lg border border-border bg-background">
+      <div className="overflow-hidden rounded-card-lg border border-border">
         {items.length === 0 ? (
-          <EmptyState
-            icon={Boxes}
+          <DashboardEmptyState
             title={t("empty")}
+            body=""
             action={
-              <Button asChild size="sm">
+              <Button asChild size="control-md" className="px-4">
                 <Link href="/dashboard/pricing/ingredients">{t("addItems")}</Link>
               </Button>
             }
           />
         ) : (
-          <table className="w-full min-w-[36rem] text-body-small">
-            <thead className="bg-surface text-body-caption text-muted-foreground">
-              <tr>
-                <th scope="col" className="px-4 py-3 text-start font-medium">
-                  {t("col.item")}
-                </th>
-                <th scope="col" className="px-4 py-3 text-end font-medium">
-                  {t("count.expected")}
-                </th>
-                <th scope="col" className="px-4 py-3 text-start font-medium">
-                  {t("count.counted")}
-                </th>
-                <th scope="col" className="px-4 py-3 text-end font-medium">
-                  {t("count.difference")}
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {items.map((item) => {
-                const raw = (counted[item.id] ?? "").trim();
-                const difference = NUMBER.test(raw) ? Number(raw) - item.onHand : null;
-                const unit = t(`unit.${item.unit}`);
-                return (
-                  <tr key={item.id}>
-                    <td className="px-4 py-2.5 text-foreground" dir="auto">
-                      {item.name}
-                    </td>
-                    <td className="px-4 py-2.5 text-end whitespace-nowrap text-muted-foreground">
-                      {formatNumber(item.onHand, locale, 3)} {unit}
-                    </td>
-                    <td className="px-4 py-2.5">
-                      <Input
-                        value={counted[item.id] ?? ""}
-                        onChange={(event) => setCounted((current) => ({ ...current, [item.id]: event.target.value }))}
-                        inputMode="decimal"
-                        aria-label={t("count.countedFor", { name: item.name })}
-                        className="h-9 w-28"
-                        dir="ltr"
-                      />
-                    </td>
-                    <td
-                      className={cn(
-                        "px-4 py-2.5 text-end whitespace-nowrap",
-                        difference === null || Math.abs(difference) < 0.0005
-                          ? "text-muted-foreground"
-                          : difference < 0
-                            ? "text-error-foreground"
-                            : "text-success-foreground",
-                      )}
-                    >
-                      {difference === null
-                        ? ""
-                        : `${difference > 0 ? "+" : ""}${formatNumber(difference, locale, 3)} ${unit}`}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <div className="overflow-x-auto">
+            <table className={cn(ROW_TEXT, "w-full min-w-xl table-fixed")}>
+              <thead className={TABLE_HEAD}>
+                <tr>
+                  <th scope="col" className={TABLE_TH}>
+                    {t("col.item")}
+                  </th>
+                  <th scope="col" className={cn(TABLE_TH, "w-36 text-end")}>
+                    {t("count.expected")}
+                  </th>
+                  <th scope="col" className={cn(TABLE_TH, "w-40 text-end")}>
+                    {t("count.counted")}
+                  </th>
+                  <th scope="col" className={cn(TABLE_TH, "w-40 text-end")}>
+                    {t("count.difference")}
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {items.map((item) => {
+                  const raw = (counted[item.id] ?? "").trim();
+                  const difference = NUMBER.test(raw) ? Number(raw) - item.onHand : null;
+                  const unit = t(`unit.${item.unit}`);
+                  return (
+                    <tr key={item.id}>
+                      <td className={cn(TABLE_TD, "py-2 align-middle font-medium text-foreground")} dir="auto">
+                        {item.name}
+                      </td>
+                      <td className={cn(TABLE_TD, AMOUNT, "py-2 align-middle")}>
+                        {formatStockQuantity(item.onHand, locale)} {unit}
+                      </td>
+                      <td className={cn(TABLE_TD, "py-2 align-middle")}>
+                        <div className="relative">
+                          <Input
+                            size="control-md"
+                            value={counted[item.id] ?? ""}
+                            onChange={(event) =>
+                              setCounted((current) => ({ ...current, [item.id]: event.target.value }))
+                            }
+                            inputMode="decimal"
+                            aria-label={t("count.countedFor", { name: item.name })}
+                            inputClassName={cn(FIELD_INPUT, AMOUNT_INPUT, UNIT_INSIDE, "sm:min-h-8 sm:py-1")}
+                            dir="ltr"
+                          />
+                          <span aria-hidden className={UNIT_SUFFIX}>
+                            {unit}
+                          </span>
+                        </div>
+                      </td>
+                      <td
+                        className={cn(
+                          TABLE_TD,
+                          AMOUNT,
+                          "py-2 align-middle font-semibold",
+                          difference === null || Math.abs(difference) < 0.0005
+                            ? "text-muted-foreground"
+                            : difference < 0
+                              ? "text-error-foreground"
+                              : "text-success-foreground",
+                        )}
+                      >
+                        {difference === null
+                          ? ""
+                          : `${difference > 0 ? "+" : ""}${formatStockQuantity(difference, locale)} ${unit}`}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
-      </section>
+      </div>
 
       {costsVisible && entered.length > 0 ? (
         <p
-          className={
-            variance < 0 ? "text-body-small-emphasis text-error-foreground" : "text-body-small-emphasis text-foreground"
-          }
+          className={cn(
+            ROW_TEXT,
+            "font-semibold tabular-nums",
+            variance < 0 ? "text-error-foreground" : "text-foreground",
+          )}
         >
           {t("count.varianceTotal", { amount: formatMoney(variance, locale) })}
         </p>
       ) : null}
       {invalid ? <FormMessage>{t("count.invalid")}</FormMessage> : null}
-      {error ? <FormMessage size="md">{error}</FormMessage> : null}
+      {error ? <FormAlert>{error}</FormAlert> : null}
 
-      <div className="flex gap-3">
-        <Button type="submit" loading={pending} disabled={entered.length === 0 || invalid}>
+      <div className="flex flex-wrap gap-2">
+        <Button
+          type="submit"
+          size="control-md"
+          className="px-4"
+          loading={pending}
+          disabled={entered.length === 0 || invalid}
+        >
           {t("count.save", { count: entered.length })}
         </Button>
-        <Button asChild variant="outline" type="button">
+        <Button asChild variant="secondary" size="control-md" className="px-3">
           <Link href="/dashboard/inventory">{t("cancel")}</Link>
         </Button>
       </div>

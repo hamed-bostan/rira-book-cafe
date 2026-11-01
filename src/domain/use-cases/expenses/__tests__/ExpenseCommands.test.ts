@@ -27,6 +27,7 @@ function expense(overrides: Partial<Expense> = {}): Expense {
     amount: 1_100_000,
     vatAmount: 100_000,
     status: "unpaid",
+    paidAmount: 0,
     createdById: ACTOR.id,
     createdByName: ACTOR.name,
     createdAt: "",
@@ -63,9 +64,15 @@ function expensesWith(current: Expense | null): ExpensesFake {
   const create = vi.fn<IExpenseRepository["create"]>(async (input) =>
     expense({ ...input, status: input.paidFrom ? "paid" : "unpaid" }),
   );
-  const pay = vi.fn<IExpenseRepository["pay"]>(async (_id, source, paidOn) =>
-    expense({ status: "paid", paidFrom: source, paidOn }),
-  );
+  const pay = vi.fn<IExpenseRepository["pay"]>(async (_id, payment) => {
+    const paidAmount = payment.expectedPaid + payment.amount;
+    const settled = paidAmount >= (current?.amount ?? 0);
+    return expense({
+      ...current,
+      paidAmount,
+      ...(settled ? { status: "paid", paidFrom: payment.source, paidOn: payment.paidOn } : {}),
+    });
+  });
   const voidExpense = vi.fn<IExpenseRepository["void"]>(async () => expense({ status: "void" }));
   const createSupplier = vi.fn<IExpenseRepository["createSupplier"]>(async (input) => supplier(input));
   const updateSupplier = vi.fn<IExpenseRepository["updateSupplier"]>(async (id, input) => supplier({ ...input, id }));
@@ -179,41 +186,81 @@ describe("RecordExpense", () => {
 describe("PayExpense", () => {
   it("pays an owed bill and books the money out of the chosen account", async () => {
     const { repo, pay } = expensesWith(expense());
-    const paid = await new PayExpense(repo).execute("x1", "bank", "2026-10-15", ACTOR, NOW);
+    const paid = await new PayExpense(repo).execute("x1", { source: "bank", paidOn: "2026-10-15" }, ACTOR, NOW);
     expect(paid.status).toBe("paid");
 
-    const [id, source, paidOn, ledgerHook, audit] = pay.mock.calls[0];
-    expect([id, source, paidOn]).toEqual(["x1", "bank", "2026-10-15"]);
-    const [journal] = ledgerHook(expense(), SETTINGS);
-    expect(journal).toMatchObject({ date: "2026-10-15", source: "expensePayment", uniqueKey: "expense:x1:payment" });
+    const [id, payment, ledgerHook, audit] = pay.mock.calls[0];
+    expect(id).toBe("x1");
+    expect(payment).toEqual({ amount: 1_100_000, source: "bank", paidOn: "2026-10-15", expectedPaid: 0 });
+    const [journal] = ledgerHook(paid, SETTINGS);
+    expect(journal).toMatchObject({
+      date: "2026-10-15",
+      source: "expensePayment",
+      uniqueKey: "expense:x1:payment:1100000",
+    });
     expect(journal.lines).toEqual([
       { accountCode: SYSTEM_ACCOUNTS.accountsPayable, debit: 1_100_000, credit: 0, memo: "Power Co" },
       { accountCode: SYSTEM_ACCOUNTS.bank, debit: 0, credit: 1_100_000 },
     ]);
-    expect(audit?.(expense())).toMatchObject({
+    expect(audit?.(paid)).toMatchObject({
       action: "expense.paid",
-      changes: [{ field: "status", before: "unpaid", after: "paid" }],
+      changes: [{ field: "paidAmount", before: "0", after: "1100000" }],
     });
+  });
+
+  it("pays part of a bill, leaves the rest owed, and keys each payment apart", async () => {
+    const { repo, pay } = expensesWith(expense());
+    const part = await new PayExpense(repo).execute(
+      "x1",
+      { source: "cash", paidOn: "2026-10-15", amount: 400_000 },
+      ACTOR,
+      NOW,
+    );
+
+    expect(part).toMatchObject({ status: "unpaid", paidAmount: 400_000 });
+    const [, payment, ledgerHook] = pay.mock.calls[0];
+    expect(payment).toMatchObject({ amount: 400_000, expectedPaid: 0 });
+    const [journal] = ledgerHook(part, SETTINGS);
+    expect(journal.uniqueKey).toBe("expense:x1:payment:400000");
+    expect(journal.lines).toEqual([
+      { accountCode: SYSTEM_ACCOUNTS.accountsPayable, debit: 400_000, credit: 0, memo: "Power Co" },
+      { accountCode: SYSTEM_ACCOUNTS.cash, debit: 0, credit: 400_000 },
+    ]);
+  });
+
+  it("pays what's left when no amount is given, and refuses more than that", async () => {
+    const { repo, pay } = expensesWith(expense({ paidAmount: 1_000_000 }));
+    await expect(
+      new PayExpense(repo).execute("x1", { source: "cash", paidOn: "2026-10-15", amount: 100_001 }, ACTOR, NOW),
+    ).rejects.toThrow("paymentOverOwed");
+
+    const paid = await new PayExpense(repo).execute("x1", { source: "cash", paidOn: "2026-10-15" }, ACTOR, NOW);
+    expect(pay.mock.calls[0][1]).toMatchObject({ amount: 100_000, expectedPaid: 1_000_000 });
+    expect(paid).toMatchObject({ status: "paid", paidFrom: "cash", paidAmount: 1_100_000 });
   });
 
   it("refuses an unknown expense", async () => {
     await expect(
-      new PayExpense(expensesWith(null).repo).execute("x1", "cash", "2026-10-15", ACTOR, NOW),
+      new PayExpense(expensesWith(null).repo).execute("x1", { source: "cash", paidOn: "2026-10-15" }, ACTOR, NOW),
     ).rejects.toThrow(NotFoundError);
   });
 
   it.each(["paid", "void"] as const)("refuses an expense that's already %s", async (status) => {
     const { repo, pay } = expensesWith(expense({ status }));
-    await expect(new PayExpense(repo).execute("x1", "cash", "2026-10-15", ACTOR, NOW)).rejects.toThrow(ConflictError);
+    await expect(
+      new PayExpense(repo).execute("x1", { source: "cash", paidOn: "2026-10-15" }, ACTOR, NOW),
+    ).rejects.toThrow(ConflictError);
     expect(pay).not.toHaveBeenCalled();
   });
 
   it("refuses paying in the future or before the bill was incurred", async () => {
     const { repo, pay } = expensesWith(expense({ date: "2026-10-10" }));
-    await expect(new PayExpense(repo).execute("x1", "cash", "2026-10-21", ACTOR, NOW)).rejects.toThrow(ValidationError);
-    await expect(new PayExpense(repo).execute("x1", "cash", "2026-10-09", ACTOR, NOW)).rejects.toThrow(
-      "before it was incurred",
-    );
+    await expect(
+      new PayExpense(repo).execute("x1", { source: "cash", paidOn: "2026-10-21" }, ACTOR, NOW),
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      new PayExpense(repo).execute("x1", { source: "cash", paidOn: "2026-10-09" }, ACTOR, NOW),
+    ).rejects.toThrow("before it was incurred");
     expect(pay).not.toHaveBeenCalled();
   });
 });

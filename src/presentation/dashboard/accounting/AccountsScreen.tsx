@@ -3,8 +3,12 @@ import { getLocale, getTranslations } from "next-intl/server";
 import type { TrialBalance } from "@/src/domain/entities/AccountingReports";
 import { ACCOUNT_TYPES, type Account } from "@/src/domain/entities/Ledger";
 import { Link } from "@/src/i18n/navigation";
-import { formatMoney } from "@/src/lib/formatMoney";
+import { formatNumber } from "@/src/lib/formatNumber";
+import { cn } from "@/src/lib/utils";
 import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
+
+import { GROUP_BAND, PAGE_CARD, ROW_CAPTION, ROW_TEXT } from "../pageStyles";
+import { DashboardPageCrumb } from "../shell/DashboardPageCrumb";
 
 import { AccountActiveSwitch } from "./AccountActiveSwitch";
 import { accountName } from "./accounting-format";
@@ -28,13 +32,14 @@ export async function AccountsScreen({ accounts, trialBalance, canWrite, today }
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
+      <DashboardPageCrumb label={t("tab.accounts")} />
       <AccountingHeader
         active="accounts"
-        intro={t("accounts.subtitle")}
+        subtitle={t("accounts.subtitle")}
         writer={canWrite ? { accounts, today } : null}
       />
       {canWrite ? (
-        <div>
+        <div className="flex">
           <NewAccountButton />
         </div>
       ) : null}
@@ -43,34 +48,41 @@ export async function AccountsScreen({ accounts, trialBalance, canWrite, today }
         const rows = accounts.filter((account) => account.type === type);
         if (rows.length === 0) return null;
         return (
-          <section key={type} className="min-w-0 overflow-hidden rounded-card-lg border border-border bg-background">
-            <h2 className="border-b border-border bg-surface px-4 py-3 text-body-small-emphasis text-foreground">
-              {t(`accountType.${type}`)}
-            </h2>
-            <ul className="divide-y divide-border">
-              {rows.map((account) => (
-                <li key={account.code} className="flex flex-wrap items-center gap-3 px-4 py-3">
-                  <span className="w-12 shrink-0 font-mono text-body-small text-muted-foreground" dir="ltr">
+          <section key={type} aria-label={t(`accountType.${type}`)} className={cn(PAGE_CARD, "overflow-hidden")}>
+            <h2 className={GROUP_BAND}>{t(`accountType.${type}`)}</h2>
+            <ul className={ROW_TEXT}>
+              {rows.map((account, index) => (
+                <li
+                  key={account.code}
+                  className={cn(
+                    "flex flex-wrap items-center gap-x-3 gap-y-2 px-5 py-3",
+                    index > 0 && "border-t border-border",
+                  )}
+                >
+                  <span className={cn(ROW_CAPTION, "w-12 shrink-0 tabular-nums")} dir="ltr">
                     {account.code}
                   </span>
                   <Link
                     href={`/dashboard/accounting/accounts/${account.code}`}
-                    className="min-w-0 flex-1 truncate text-body-small-emphasis text-foreground underline-offset-4 hover:underline"
+                    className={cn(
+                      "-my-3 min-w-0 flex-1 truncate py-3 font-medium transition-colors hover:text-primary sm:my-0 sm:py-0",
+                      account.isActive ? "text-foreground" : "text-muted-foreground",
+                    )}
                   >
                     {accountName(account, locale)}
                   </Link>
                   {account.isSystem ? (
-                    <Badge size="sm" variant="neutral">
+                    <Badge size="compact" variant="neutral" appearance="outline">
                       {t("accounts.system")}
                     </Badge>
                   ) : null}
                   {!account.isActive ? (
-                    <Badge size="sm" variant="warning">
+                    <Badge size="compact" variant="warning" appearance="outline">
                       {t("accounts.inactive")}
                     </Badge>
                   ) : null}
-                  <span className="text-body-small-emphasis whitespace-nowrap text-foreground">
-                    {formatMoney(balances.get(account.code) ?? 0, locale)}
+                  <span className="min-w-32 text-end font-semibold whitespace-nowrap text-foreground tabular-nums">
+                    {formatNumber(balances.get(account.code) ?? 0, locale)}
                   </span>
                   {canWrite && !account.isSystem ? (
                     <AccountActiveSwitch code={account.code} isActive={account.isActive} />

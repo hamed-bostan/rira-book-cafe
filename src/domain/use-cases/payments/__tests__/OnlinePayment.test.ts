@@ -33,6 +33,7 @@ function order(overrides: Partial<Order> = {}): Order {
     pointsRedeemed: 0,
     pointsDiscount: 0,
     pointsEarned: 0,
+    refundedTotal: 0,
     total: 300_000,
     placedAt: NOW.toISOString(),
     updatedAt: NOW.toISOString(),
@@ -97,7 +98,7 @@ function orderStore(initial: Order) {
   let current = { ...initial };
   const setPaymentStatus = vi.fn(async (_id: string, change: PaymentChange, _audit?: unknown, _ledger?: unknown) => {
     if (current.paymentStatus !== change.from) throw new ConflictError("INVALID_TRANSITION", "lost the race");
-    current = { ...current, paymentStatus: change.to, paymentMethod: change.method };
+    current = { ...current, paymentStatus: change.to, paymentMethod: change.parts?.[0]?.method };
     return current;
   });
   const repo = { getById: vi.fn(async () => current), setPaymentStatus } as unknown as IOrderRepository;
@@ -191,7 +192,7 @@ describe("VerifyOnlinePayment", () => {
     expect(verify).toHaveBeenCalledWith({ authority: CALLBACK.authority, amount: 300_000 });
     expect(orders.setPaymentStatus).toHaveBeenCalledWith(
       "o1",
-      { from: "unpaid", to: "paid", method: "online" },
+      { from: "unpaid", to: "paid", parts: [{ method: "online", amount: 300_000 }] },
       expect.any(Function),
       expect.any(Function),
     );

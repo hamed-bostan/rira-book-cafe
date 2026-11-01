@@ -4,7 +4,12 @@ import { CircleAlert, Plus } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import * as React from "react";
 
-import { MAX_BORROWER_NAME_LENGTH, MAX_LOAN_NOTE_LENGTH } from "@/src/domain/entities/BookLoan";
+import {
+  LOAN_DEPOSIT_METHODS,
+  MAX_BORROWER_NAME_LENGTH,
+  MAX_LOAN_NOTE_LENGTH,
+  type LoanDepositMethod,
+} from "@/src/domain/entities/BookLoan";
 import { shiftCafeDay } from "@/src/domain/entities/CafeTime";
 import type { LendableBook } from "@/src/domain/repositories/IBookLoanRepository";
 import { useRouter } from "@/src/i18n/navigation";
@@ -13,6 +18,7 @@ import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatCafeDayLong, formatCafeDayShort } from "@/src/lib/formatCafeDay";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
+import { normalizeAmount } from "@/src/presentation/dashboard/expenses/expenseFormat";
 import { OverviewSegmented } from "@/src/presentation/dashboard/overview/OverviewSegmented";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
 import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
@@ -68,6 +74,8 @@ export function LendBookDialog({ books, heldFor, today }: LendBookDialogProps) {
   const [borrowerPhone, setBorrowerPhone] = React.useState("");
   const [length, setLength] = React.useState<Length>(DEFAULT_LENGTH);
   const [note, setNote] = React.useState("");
+  const [depositAmount, setDepositAmount] = React.useState("");
+  const [depositMethod, setDepositMethod] = React.useState<LoanDepositMethod>("cash");
   const [error, setError] = React.useState<string | null>(null);
   const [pending, startTransition] = React.useTransition();
 
@@ -77,6 +85,8 @@ export function LendBookDialog({ books, heldFor, today }: LendBookDialogProps) {
     setBorrowerPhone("");
     setLength(DEFAULT_LENGTH);
     setNote("");
+    setDepositAmount("");
+    setDepositMethod("cash");
     setError(null);
     setOpen(true);
   }
@@ -95,7 +105,16 @@ export function LendBookDialog({ books, heldFor, today }: LendBookDialogProps) {
     setError(null);
     startTransition(async () => {
       try {
-        const saved = await bookLoansApi.create({ productId, borrowerName, borrowerPhone, dueOn, note });
+        const deposit = normalizeAmount(depositAmount);
+        const saved = await bookLoansApi.create({
+          productId,
+          borrowerName,
+          borrowerPhone,
+          dueOn,
+          note,
+          depositAmount: deposit,
+          depositMethod: deposit ? depositMethod : undefined,
+        });
         toast({
           tone: "success",
           title: t("lentToast", {
@@ -199,6 +218,34 @@ export function LendBookDialog({ books, heldFor, today }: LendBookDialogProps) {
             }))}
           />
           <span className={FIELD_HINT}>{t("dueOnDay", { date: formatCafeDayLong(dueOn, locale) })}</span>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <DashboardField label={t("depositLabel")} hint={t("depositHint")}>
+            <Input
+              size="control-md"
+              value={depositAmount}
+              onChange={(event) => setDepositAmount(event.target.value)}
+              autoComplete="off"
+              inputMode="numeric"
+              placeholder="0"
+              dir="ltr"
+            />
+          </DashboardField>
+          {depositAmount.trim() ? (
+            <DashboardField label={t("depositMethodLabel")}>
+              <Select
+                size="control-md"
+                value={depositMethod}
+                onChange={(event) => setDepositMethod(event.target.value as LoanDepositMethod)}
+              >
+                {LOAN_DEPOSIT_METHODS.map((method) => (
+                  <option key={method} value={method}>
+                    {t(`depositMethod.${method}`)}
+                  </option>
+                ))}
+              </Select>
+            </DashboardField>
+          ) : null}
         </div>
         <DashboardField label={t("note")}>
           <Input

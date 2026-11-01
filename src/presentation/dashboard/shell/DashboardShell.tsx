@@ -6,6 +6,7 @@ import type { Permission } from "@/src/domain/entities/Permission";
 import type { ThemeName } from "@/src/presentation/design-system/tokens/semantic/themes";
 
 import { BottomNav } from "./BottomNav";
+import { DashboardCrumbProvider } from "./DashboardCrumbProvider";
 import { DashboardSidebar } from "./DashboardSidebar";
 import { DashboardTopBar } from "./DashboardTopBar";
 import { NavDrawer } from "./NavDrawer";
@@ -80,17 +81,19 @@ export function DashboardShell({
       />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <DashboardTopBar
-          viewer={viewer}
-          permissions={permissions}
-          newOrders={newOrders}
-          onOpenNav={() => setNavOpen(true)}
-        />
-        {/* Extra bottom padding below `md` clears the fixed BottomNav — without
-            it the tab bar covers whatever the page renders last. */}
-        <main className="mx-auto w-full max-w-[40.75rem] min-w-0 flex-1 border-x border-border bg-canvas px-4 pt-7 pb-28 sm:px-6 sm:pt-8 lg:px-8 xl:max-w-none xl:border-x-0 xl:pt-8 xl:pb-16 dashboard-landscape:max-w-none dashboard-landscape:border-x-0 dashboard-landscape:pt-6 dashboard-landscape:pb-6 dashboard-short:max-w-none dashboard-short:border-x-0 dashboard-short:pt-5 dashboard-short:pb-6 dashboard-phone:pt-5 dashboard-phone:pb-20">
-          {children}
-        </main>
+        <DashboardCrumbProvider>
+          <DashboardTopBar
+            viewer={viewer}
+            permissions={permissions}
+            newOrders={newOrders}
+            onOpenNav={() => setNavOpen(true)}
+          />
+          {/* Extra bottom padding below `md` clears the fixed BottomNav — without
+              it the tab bar covers whatever the page renders last. */}
+          <main className="mx-auto w-full max-w-[40.75rem] min-w-0 flex-1 border-x border-border bg-canvas px-4 pt-7 pb-28 sm:px-6 sm:pt-8 lg:px-8 xl:max-w-none xl:border-x-0 xl:pt-8 xl:pb-16 dashboard-landscape:max-w-none dashboard-landscape:border-x-0 dashboard-landscape:pt-6 dashboard-landscape:pb-6 dashboard-short:max-w-none dashboard-short:border-x-0 dashboard-short:pt-5 dashboard-short:pb-6 dashboard-phone:pt-5 dashboard-phone:pb-20">
+            {children}
+          </main>
+        </DashboardCrumbProvider>
       </div>
 
       <NavDrawer open={navOpen} onOpenChange={setNavOpen} permissions={permissions} badges={navBadges} />

@@ -1,5 +1,6 @@
 import { MAX_LOAN_DAYS, canTransitionBookLoan, type BookLoan, type BookLoanStatus } from "../../entities/BookLoan";
 import { cafeDayOf, cafeDayRange, shiftCafeDay } from "../../entities/CafeTime";
+import { loanDepositSettledEntry } from "../../entities/Postings";
 import { ConflictError } from "../../errors/ConflictError";
 import { NotFoundError } from "../../errors/NotFoundError";
 import { ValidationError } from "../../errors/ValidationError";
@@ -11,7 +12,8 @@ import type { ICustomerNotifier } from "../../repositories/INotificationReposito
 
 /**
  * Staff close a loan: the book came back, or it's written off as lost. A book
- * coming back tells the guest at the front of its waitlist.
+ * coming back tells the guest at the front of its waitlist. A deposit follows the
+ * loan: handed back with the book, kept as income when it's lost.
  */
 export class ChangeBookLoan {
   constructor(
@@ -28,15 +30,25 @@ export class ChangeBookLoan {
       throw new ConflictError("INVALID_TRANSITION", `A loan can't move from "${current.status}" to "${status}".`);
     }
 
-    const saved = await this.loanRepo.applyStatus(id, current.status, status, now, (saved) => ({
-      actorId: staff.id,
-      actorName: staff.name,
-      action: status === "lost" ? "bookLoan.lost" : "bookLoan.returned",
-      entityType: "bookLoan",
-      entityId: saved.id,
-      entityLabel: `L-${saved.reference}`,
-      changes: [{ field: "status", before: current.status, after: saved.status }],
-    }));
+    const saved = await this.loanRepo.applyStatus(
+      id,
+      current.status,
+      status,
+      now,
+      (saved) => ({
+        actorId: staff.id,
+        actorName: staff.name,
+        action: status === "lost" ? "bookLoan.lost" : "bookLoan.returned",
+        entityType: "bookLoan",
+        entityId: saved.id,
+        entityLabel: `L-${saved.reference}`,
+        changes: [{ field: "status", before: current.status, after: saved.status }],
+      }),
+      (saved) => {
+        const entry = loanDepositSettledEntry(saved, current.status, cafeDayOf(now), staff);
+        return entry ? [entry] : [];
+      },
+    );
 
     if (saved.status === "returned" && this.waitlistRepo) {
       const next = await this.waitlistRepo.notifyNext(saved.productId, now);

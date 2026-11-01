@@ -14,6 +14,7 @@ import {
   SERVICE_TYPES,
   SERVING_ORDER_STATUSES,
   canServeItems,
+  largestPaymentPart,
   type Order,
   type OrderItem,
   type OrderStatus,
@@ -21,6 +22,7 @@ import {
   type PaymentStatus,
   type ServiceType,
 } from "@/src/domain/entities/Order";
+import { pointsToClawBack, type NewOrderRefund, type OrderRefund } from "@/src/domain/entities/OrderRefund";
 import type { OrderStatusEvent } from "@/src/domain/entities/OrderStatusEvent";
 import { createPage, toSkipTake, type Page, type PageRequest } from "@/src/domain/entities/Pagination";
 import { PRODUCT_KINDS, type ProductKind } from "@/src/domain/entities/Product";
@@ -30,20 +32,32 @@ import { InvalidOrderTransitionError } from "@/src/domain/errors/InvalidOrderTra
 import { NotFoundError } from "@/src/domain/errors/NotFoundError";
 import type { AuditHook } from "@/src/domain/repositories/AuditHook";
 import type { LedgerHook } from "@/src/domain/repositories/ILedgerRepository";
-import type { IOrderRepository, NewOrder, PaymentChange } from "@/src/domain/repositories/IOrderRepository";
+import type {
+  IOrderRepository,
+  NewOrder,
+  OrderRefundResult,
+  PaymentChange,
+} from "@/src/domain/repositories/IOrderRepository";
 import { prisma } from "@/src/infrastructure/prisma/client";
 import { type Prisma } from "@/src/infrastructure/prisma/generated/client";
 import { inTransaction, type PrismaDb } from "@/src/infrastructure/prisma/transaction";
 
 import { recordAudit } from "./writeActivityEntry";
-import { postHook } from "./writeJournal";
-import { earnPoints, redeemPoints, refundPoints } from "./writeLoyalty";
-import { consumeStockForOrder } from "./writeStock";
+import { dateToDay, dayToDate, postHook } from "./writeJournal";
+import { clawBackPoints, earnPoints, redeemPoints, refundPoints } from "./writeLoyalty";
+import { consumeStockForOrder, returnStockForRefund } from "./writeStock";
 
-/** Every read loads the lines with the order, in the order the guest listed them. */
-const WITH_ITEMS = { items: { orderBy: { position: "asc" } } } satisfies Prisma.OrderInclude;
+/** Every read loads the lines with the order, in the order the guest listed them, and how it was paid. */
+const WITH_ITEMS = {
+  items: { orderBy: { position: "asc" } },
+  paymentParts: { orderBy: { position: "asc" } },
+} satisfies Prisma.OrderInclude;
 
 type OrderRow = Prisma.OrderGetPayload<{ include: typeof WITH_ITEMS }>;
+
+const WITH_REFUND_LINES = { lines: { orderBy: { position: "asc" } } } satisfies Prisma.OrderRefundInclude;
+
+type RefundRow = Prisma.OrderRefundGetPayload<{ include: typeof WITH_REFUND_LINES }>;
 
 /**
  * Orders backed by PostgreSQL via Prisma. Server-side only, bound through the
@@ -52,7 +66,7 @@ type OrderRow = Prisma.OrderGetPayload<{ include: typeof WITH_ITEMS }>;
 export class PrismaOrderRepository implements IOrderRepository {
   constructor(private readonly db: PrismaDb = prisma) {}
 
-  async place(input: NewOrder, placedBy: ActivityActor): Promise<Order> {
+  async place(input: NewOrder, placedBy: ActivityActor, audit?: AuditHook<Order>): Promise<Order> {
     return inTransaction(this.db, async (tx) => {
       // Take the units first, each with a guarded decrement: the guard and the
       // write are one statement, so two orders can't both take the last slice.
@@ -85,11 +99,11 @@ export class PrismaOrderRepository implements IOrderRepository {
 
       // The code's limits are re-checked here, under its lock: the use-case priced the
       // order, but two guests racing for the last use must not both get it.
-      if (input.promoCodeId) await claimPromoUse(tx, input.promoCodeId, input.userId);
+      if (input.promoCodeId && input.userId) await claimPromoUse(tx, input.promoCodeId, input.userId);
 
       const created = await tx.order.create({
         data: {
-          userId: input.userId,
+          userId: input.userId ?? null,
           customerName: input.customerName,
           customerPhone: input.customerPhone,
           serviceType: input.serviceType,
@@ -121,7 +135,7 @@ export class PrismaOrderRepository implements IOrderRepository {
       });
 
       // Points spent come off the guest's balance with the order, or not at all.
-      await redeemPoints(tx, created, input.pointsRedeemed);
+      if (created.userId) await redeemPoints(tx, { ...created, userId: created.userId }, input.pointsRedeemed);
 
       await tx.orderStatusEvent.create({
         data: {
@@ -133,7 +147,9 @@ export class PrismaOrderRepository implements IOrderRepository {
         },
       });
 
-      return toOrder(created);
+      const order = toOrder(created);
+      await recordAudit(tx, order, audit);
+      return order;
     });
   }
 
@@ -210,8 +226,10 @@ export class PrismaOrderRepository implements IOrderRepository {
 
       // The loyalty club: a completed order earns points on what was paid; a cancelled
       // one gives back the points it spent.
-      if (to === "completed") row.pointsEarned = (await earnPoints(tx, row)) || row.pointsEarned;
-      if (to === "cancelled") await refundPoints(tx, row);
+      if (to === "completed" && row.userId) {
+        row.pointsEarned = (await earnPoints(tx, { ...row, userId: row.userId })) || row.pointsEarned;
+      }
+      if (to === "cancelled" && row.userId) await refundPoints(tx, { ...row, userId: row.userId });
 
       // A cancelled order's units go back on the shelf, in the same transaction —
       // counted items only: a made-to-order item took nothing, so gets nothing back.
@@ -244,20 +262,134 @@ export class PrismaOrderRepository implements IOrderRepository {
     return inTransaction(this.db, async (tx) => {
       // Guarded on the status staff saw: a double click or a second tab can't book
       // the same payment twice. Unmarking clears the method with the status.
+      const parts = change.to === "paid" ? (change.parts ?? []) : [];
       const result = await tx.order.updateMany({
         where: { id, paymentStatus: change.from },
-        data: { paymentStatus: change.to, paymentMethod: change.to === "paid" ? (change.method ?? null) : null },
+        data: {
+          paymentStatus: change.to,
+          paymentMethod: parts.length > 0 ? largestPaymentPart(parts).method : null,
+        },
       });
       if (result.count === 0) {
         const current = await tx.order.findUnique({ where: { id }, select: { paymentStatus: true } });
         if (!current) throw new NotFoundError("order", id);
         throw new ConflictError("INVALID_TRANSITION", `The payment is already ${current.paymentStatus}.`);
       }
+      await tx.orderPaymentPart.deleteMany({ where: { orderId: id } });
+      if (parts.length > 0) {
+        await tx.orderPaymentPart.createMany({
+          data: parts.map((part, position) => ({ orderId: id, method: part.method, amount: part.amount, position })),
+        });
+      }
       const order = toOrder(await tx.order.findUniqueOrThrow({ where: { id }, include: WITH_ITEMS }));
       await recordAudit(tx, order, audit);
       await postHook(tx, order, ledger);
       return order;
     });
+  }
+
+  async refund(
+    input: NewOrderRefund,
+    actor: ActivityActor,
+    audit?: AuditHook<OrderRefundResult>,
+    ledger?: LedgerHook<OrderRefundResult>,
+  ): Promise<OrderRefundResult> {
+    return inTransaction(this.db, async (tx) => {
+      // Lock the order: two refunds of one line can't both pass the checks below.
+      await tx.$queryRaw`SELECT "id" FROM "orders" WHERE "id" = ${input.orderId} FOR UPDATE`;
+      const before = await tx.order.findUnique({ where: { id: input.orderId }, include: WITH_ITEMS });
+      if (!before) throw new NotFoundError("order", input.orderId);
+      if (before.status !== "completed" || before.paymentStatus !== "paid") {
+        throw new ConflictError("INVALID_TRANSITION", "Only a completed, paid order can be refunded.");
+      }
+      for (const line of input.lines) {
+        const item = before.items.find((candidate) => candidate.id === line.orderItemId);
+        if (item?.refundedQuantity !== input.expectedRefunded[line.orderItemId]) {
+          throw new ConflictError("INVALID_TRANSITION", "This order was refunded by someone else just now.");
+        }
+      }
+
+      const row = await tx.orderRefund.create({
+        data: {
+          orderId: input.orderId,
+          date: dayToDate(input.date),
+          method: input.method,
+          amount: input.amount,
+          vatAmount: input.vatAmount,
+          reason: input.reason ?? null,
+          createdById: input.createdById,
+          createdByName: input.createdByName,
+          lines: {
+            create: input.lines.map((line, position) => ({
+              orderItemId: line.orderItemId,
+              name: line.name,
+              kind: line.kind,
+              quantity: line.quantity,
+              amount: line.amount,
+              vatAmount: line.vatAmount,
+              restocked: line.restocked,
+              position,
+            })),
+          },
+        },
+        include: WITH_REFUND_LINES,
+      });
+
+      for (const line of input.lines) {
+        await tx.orderItem.update({
+          where: { id: line.orderItemId },
+          data: { refundedQuantity: { increment: line.quantity } },
+        });
+      }
+      const refundedTotal = before.refundedTotal + input.amount;
+      const fully = refundedTotal >= before.total;
+      await tx.order.update({
+        where: { id: input.orderId },
+        data: { refundedTotal, ...(fully ? { paymentStatus: "refunded" } : {}) },
+      });
+
+      // Back on the shelf: counted items only, like a cancellation.
+      const restocked = input.lines.flatMap((line) => {
+        const item = before.items.find((candidate) => candidate.id === line.orderItemId);
+        return line.restocked && item ? [{ item, quantity: line.quantity }] : [];
+      });
+      for (const { item, quantity } of restocked) {
+        await tx.product.updateMany({
+          where: { id: item.productId, madeToOrder: false },
+          data: { stockQuantity: { increment: quantity } },
+        });
+      }
+      const restockedValue = await returnStockForRefund(
+        tx,
+        restocked
+          .filter(({ item }) => item.stockTracked)
+          .map(({ item, quantity }) => ({ productId: item.productId, quantity, unitCost: item.unitCost ?? 0 })),
+        input.date,
+        input.orderId,
+        actor,
+      );
+
+      if (before.userId) {
+        const guest = { ...before, userId: before.userId };
+        await clawBackPoints(tx, guest, row.id, pointsToClawBack(before, input.amount));
+        if (fully) await refundPoints(tx, guest);
+      }
+
+      const order = toOrder(await tx.order.findUniqueOrThrow({ where: { id: input.orderId }, include: WITH_ITEMS }));
+      const result: OrderRefundResult = { refund: toRefund(row), order, restockedValue };
+      await recordAudit(tx, result, audit);
+      await postHook(tx, result, ledger);
+      return result;
+    });
+  }
+
+  async listRefunds(orderId: string): Promise<OrderRefund[]> {
+    const rows = await this.db.orderRefund.findMany({
+      where: { orderId },
+      orderBy: { number: "asc" },
+      include: WITH_REFUND_LINES,
+    });
+    return rows.map(toRefund);
   }
 
   async setItemServed(orderId: string, itemId: string, served: boolean): Promise<Order> {
@@ -378,11 +510,36 @@ function toKind(value: string): ProductKind {
   return (PRODUCT_KINDS as readonly string[]).includes(value) ? (value as ProductKind) : "drink";
 }
 
+function toRefund(row: RefundRow): OrderRefund {
+  return {
+    id: row.id,
+    number: row.number,
+    orderId: row.orderId,
+    date: dateToDay(row.date),
+    method: toPaymentMethod(row.method) ?? "cash",
+    amount: row.amount,
+    vatAmount: row.vatAmount,
+    reason: row.reason ?? undefined,
+    lines: row.lines.map((line) => ({
+      orderItemId: line.orderItemId,
+      name: line.name,
+      kind: toKind(line.kind),
+      quantity: line.quantity,
+      amount: line.amount,
+      vatAmount: line.vatAmount,
+      restocked: line.restocked,
+    })),
+    createdById: row.createdById,
+    createdByName: row.createdByName,
+    createdAt: row.createdAt.toISOString(),
+  };
+}
+
 function toOrder(row: OrderRow): Order {
   return {
     id: row.id,
     orderNumber: row.orderNumber,
-    userId: row.userId,
+    userId: row.userId ?? undefined,
     customerName: row.customerName,
     customerPhone: row.customerPhone,
     status: toStatus(row.status),
@@ -391,6 +548,11 @@ function toOrder(row: OrderRow): Order {
     note: row.note ?? undefined,
     paymentStatus: toPaymentStatus(row.paymentStatus),
     paymentMethod: toPaymentMethod(row.paymentMethod),
+    paymentParts: row.paymentParts.flatMap((part) => {
+      const method = toPaymentMethod(part.method);
+      return method ? [{ method, amount: part.amount }] : [];
+    }),
+    refundedTotal: row.refundedTotal,
     items: row.items.map((item): OrderItem => ({
       id: item.id,
       productId: item.productId,
@@ -402,6 +564,7 @@ function toOrder(row: OrderRow): Order {
       taxExempt: item.taxExempt,
       stockTracked: item.stockTracked,
       quantity: item.quantity,
+      refundedQuantity: item.refundedQuantity,
       note: item.note ?? undefined,
       servedAt: item.servedAt?.toISOString(),
     })),

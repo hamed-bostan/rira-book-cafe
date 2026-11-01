@@ -79,6 +79,7 @@ describe("payExpenseSchema", () => {
     expect(payExpenseSchema.parse({ source: "bank", paidOn: " 2026-10-20 " })).toEqual({
       source: "bank",
       paidOn: "2026-10-20",
+      amount: 0,
     });
   });
 

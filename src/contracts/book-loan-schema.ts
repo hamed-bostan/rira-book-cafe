@@ -1,5 +1,6 @@
 import {
   BOOK_LOAN_STATUSES,
+  LOAN_DEPOSIT_METHODS,
   MAX_BORROWER_NAME_LENGTH,
   MAX_LOAN_DAYS,
   MAX_LOAN_NOTE_LENGTH,
@@ -8,24 +9,37 @@ import { isCafeDay } from "@/src/domain/entities/CafeTime";
 import { isPlausiblePhone } from "@/src/domain/entities/Phone";
 import * as z from "@/src/lib/zod";
 
+import { fieldsParsed } from "./fields-parsed";
+import { optionalMoneyField } from "./money-fields";
+
 /**
  * Book-loan contracts shared by the route handlers and the dashboard form. The due
  * date travels as a cafe day (`YYYY-MM-DD`). Messages are `formErrors` keys.
  */
 
-/** Staff lending a book. */
-export const lendBookSchema = z.object({
-  productId: z.string().check(z.minLength(1, "bookRequired")),
-  borrowerName: z
-    .string()
-    .check(z.trim(), z.minLength(1, "nameRequired"), z.maxLength(MAX_BORROWER_NAME_LENGTH, "nameTooLong")),
-  borrowerPhone: z.string().check(z.trim(), z.refine(isPlausiblePhone, "phoneInvalid")),
-  dueOn: z.string().check(z.refine(isCafeDay, "dateInvalid")),
-  note: z.pipe(
-    z.optional(z.string().check(z.trim(), z.maxLength(MAX_LOAN_NOTE_LENGTH, "noteTooLong"))),
-    z.transform((value) => (value ? value : undefined)),
-  ),
-});
+/** Staff lending a book. A deposit, when one was taken, says how it was paid. */
+export const lendBookSchema = z
+  .object({
+    productId: z.string().check(z.minLength(1, "bookRequired")),
+    borrowerName: z
+      .string()
+      .check(z.trim(), z.minLength(1, "nameRequired"), z.maxLength(MAX_BORROWER_NAME_LENGTH, "nameTooLong")),
+    borrowerPhone: z.string().check(z.trim(), z.refine(isPlausiblePhone, "phoneInvalid")),
+    dueOn: z.string().check(z.refine(isCafeDay, "dateInvalid")),
+    note: z.pipe(
+      z.optional(z.string().check(z.trim(), z.maxLength(MAX_LOAN_NOTE_LENGTH, "noteTooLong"))),
+      z.transform((value) => (value ? value : undefined)),
+    ),
+    depositAmount: z._default(optionalMoneyField, 0),
+    depositMethod: z.optional(z.enum(LOAN_DEPOSIT_METHODS, { error: "paymentInvalid" })),
+  })
+  .check(
+    z.refine((value) => value.depositAmount === 0 || value.depositMethod !== undefined, {
+      path: ["depositMethod"],
+      error: "paymentInvalid",
+      when: fieldsParsed("depositAmount", "depositMethod"),
+    }),
+  );
 
 export type LendBookInput = z.input<typeof lendBookSchema>;
 

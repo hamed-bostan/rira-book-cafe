@@ -16,9 +16,10 @@ import type { RecipeLine } from "./Pricing";
  *   waste    — spoiled, spilled, expired:        −qty, −avg×qty (Dr 5200 waste)
  *   count    — physical count differs:           ±qty, ±avg×qty (5300 inventory variance)
  *   opening  — stock on hand when tracking starts: +qty, +cost  (Cr 3100 owner's capital)
+ *   return   — sold units a refund put back on the shelf: +qty, +cost (Cr 5100 cost of sales)
  */
 
-export const STOCK_MOVEMENT_KINDS = ["opening", "receipt", "sale", "waste", "count"] as const;
+export const STOCK_MOVEMENT_KINDS = ["opening", "receipt", "sale", "waste", "count", "return"] as const;
 export type StockMovementKind = (typeof STOCK_MOVEMENT_KINDS)[number];
 
 export const INVENTORY_ACCOUNTS = {

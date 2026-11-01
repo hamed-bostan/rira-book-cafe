@@ -14,7 +14,7 @@ import { getSessionWith } from "@/src/lib/require-permission";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
-/** PATCH /api/admin/orders/:id/payment — mark the order paid (with its method) or unpaid, and book it. Requires `orders.fulfill`. */
+/** PATCH /api/admin/orders/:id/payment — mark the order paid (by method, or split into parts) or unpaid, and book it. Requires `orders.fulfill`. */
 export async function PATCH(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   const session = await getSessionWith("orders.fulfill");
   if (!session) return unauthorizedResponse();
@@ -36,7 +36,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext): Pro
     const order = await new SetOrderPayment(orderRepository).execute(
       id,
       parsed.data.paymentStatus,
-      parsed.data.paymentMethod,
+      parsed.data.paymentParts ?? parsed.data.paymentMethod,
       {
         id: session.user.id,
         name: session.user.name ?? session.user.id,

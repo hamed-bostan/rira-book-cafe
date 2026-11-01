@@ -13,14 +13,18 @@ import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
 import { slugify } from "@/src/lib/slugify";
+import { DashboardColumns } from "@/src/presentation/dashboard/DashboardColumns";
+import { DashboardFormField } from "@/src/presentation/dashboard/DashboardFormField";
+import { DashboardLanguageColumn } from "@/src/presentation/dashboard/DashboardLanguageColumn";
+import { DashboardPageHeader } from "@/src/presentation/dashboard/DashboardPageHeader";
+import { DashboardSection } from "@/src/presentation/dashboard/DashboardSection";
+import { DashboardSwitchField } from "@/src/presentation/dashboard/DashboardSwitchField";
+import { FIELD_GRID, FIELD_INPUT, LANGUAGE_GRID } from "@/src/presentation/dashboard/fieldStyles";
+import { FormAlert } from "@/src/presentation/dashboard/FormAlert";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
 import { Field } from "@/src/presentation/design-system/components/form/Field/Field";
-import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
 import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
 import { RequiredMark } from "@/src/presentation/design-system/components/form/shared/RequiredMark";
-import { TextField } from "@/src/presentation/design-system/components/form/TextField/TextField";
-import { Switch } from "@/src/presentation/design-system/components/Switch/Switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/presentation/design-system/components/Tabs/Tabs";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { categoriesApi } from "./category-api";
@@ -30,14 +34,21 @@ import { IconUpload } from "./IconUpload";
 const FORM_FIELDS = ["name", "slug", "iconUrl"] as const;
 
 type CategoryFormProps =
-  { mode: "create" } | { mode: "edit"; category: Category; translations: CategoryTranslationInput[] };
+  | { mode: "create" }
+  | {
+      mode: "edit";
+      category: Category;
+      translations: CategoryTranslationInput[];
+      /** The category's history, for the narrow column. */
+      activity: React.ReactNode;
+    };
 
 /**
  * Create/edit category form. React Hook Form + Zod (shared `categoryFormSchema`).
- * The DS fields aren't `forwardRef`, so RHF's `register` is spread onto `Input`
- * via `TextField`'s render-prop. Submits over the REST API via `categoriesApi`
- * (Axios); on success it navigates back to the list, and an `ApiError` surfaces
- * inline — field-specific messages on the offending fields, otherwise at the root.
+ * RHF's `register` is spread onto `Input` via `DashboardFormField`'s render-prop.
+ * Submits over the REST API via `categoriesApi` (Axios); on success it navigates
+ * back to the list, and an `ApiError` surfaces inline — field-specific messages on
+ * the offending fields, otherwise at the root.
  */
 export function CategoryForm(props: CategoryFormProps) {
   const t = useTranslations("dashCategories");
@@ -102,106 +113,137 @@ export function CategoryForm(props: CategoryFormProps) {
   });
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-5" noValidate>
-      {/* The name is per-locale: the base row holds the source (English) name and the
-          `fa` tab its optional translation. Both panels stay mounted (`forceMount`) so
-          switching tabs never drops a value or hides a server-side field error. */}
-      <Tabs defaultValue="base">
-        <TabsList>
-          <TabsTrigger value="base">{t("localeTabBase")}</TabsTrigger>
-          <TabsTrigger value="fa">{t("localeTabFa")}</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="base" forceMount className="flex flex-col gap-5 pt-4 data-[state=inactive]:hidden">
-          <p className="text-body-caption text-muted-foreground">{t("baseTabDescription")}</p>
-
-          <TextField label={t("nameLabel")} required error={fieldError(errors.name?.message)}>
-            {(control) => (
-              <Input
-                {...control}
-                {...register("name", {
-                  onChange: (event: React.ChangeEvent<HTMLInputElement>) => {
-                    if (!slugLocked) setValue("slug", slugify(event.target.value), { shouldValidate: true });
-                  },
-                })}
-                dir="ltr"
-                placeholder={t("namePlaceholder")}
-              />
-            )}
-          </TextField>
-        </TabsContent>
-
-        <TabsContent value="fa" forceMount className="flex flex-col gap-5 pt-4 data-[state=inactive]:hidden">
-          <p className="text-body-caption text-muted-foreground">{t("translationDescription")}</p>
-
-          <TextField label={t("nameLabel")} error={fieldError(errors.faName?.message)}>
-            {(control) => <Input {...control} {...register("faName")} dir="rtl" placeholder={t("faNamePlaceholder")} />}
-          </TextField>
-        </TabsContent>
-      </Tabs>
-
-      <TextField
-        label={t("slugLabel")}
-        required
-        description={t("slugDescription")}
-        error={fieldError(errors.slug?.message)}
-      >
-        {(control) => (
-          <Input
-            {...control}
-            {...register("slug", { onChange: () => setSlugLocked(true) })}
-            dir="ltr"
-            placeholder={t("slugPlaceholder")}
-          />
-        )}
-      </TextField>
-
-      <Field error={fieldError(errors.iconUrl?.message)}>
-        {({ id, ariaDescribedBy, ariaInvalid }) => (
+    <form onSubmit={onSubmit} className="flex flex-col gap-6" noValidate>
+      <DashboardPageHeader
+        backHref="/dashboard/categories"
+        backLabel={t("backToCategories")}
+        title={editing ? t("editHeading") : t("newCategory")}
+        subtitle={editing ? t("editSubtitle", { name: props.category.name }) : t("createSubtitle")}
+        actions={
           <>
-            <label htmlFor={id} className="text-body-small-emphasis text-input-foreground">
-              {t("iconLabel")}
-              <RequiredMark />
-            </label>
-            <IconUpload
-              id={id}
-              value={iconUrl}
-              onChange={(url) => setValue("iconUrl", url, { shouldValidate: true })}
-              aria-invalid={ariaInvalid}
-              aria-describedby={ariaDescribedBy}
-            />
+            <Button asChild variant="secondary" size="control-md" className="px-3">
+              <Link href="/dashboard/categories">{t("cancel")}</Link>
+            </Button>
+            <Button type="submit" size="control-md" loading={isSubmitting}>
+              {editing ? t("saveChanges") : t("createCategory")}
+            </Button>
           </>
-        )}
-      </Field>
-      {/* Keeps iconUrl registered (set imperatively by IconUpload) so it's tracked + submitted. */}
-      <input type="hidden" {...register("iconUrl")} />
-
-      <Controller
-        control={control}
-        name="isActive"
-        render={({ field }) => (
-          <div className="flex items-center justify-between rounded-card-md border border-border px-4 py-3">
-            <div>
-              <label htmlFor="isActive" className="text-body-small-emphasis text-input-foreground">
-                {t("activeLabel")}
-              </label>
-              <p className="text-body-caption text-muted-foreground">{t("activeDescription")}</p>
-            </div>
-            <Switch id="isActive" checked={field.value} onCheckedChange={field.onChange} aria-label={t("activeAria")} />
-          </div>
-        )}
+        }
+        alert={errors.root?.message ? <FormAlert>{errors.root.message}</FormAlert> : null}
       />
 
-      {errors.root?.message && <FormMessage size="md">{errors.root.message}</FormMessage>}
+      <DashboardColumns
+        main={
+          /* The name is per-locale: the base row holds the source (English) name and the
+             `fa` column its optional translation. */
+          <DashboardSection title={t("nameLabel")} description={t("sectionNameHint")}>
+            <div className={LANGUAGE_GRID}>
+              <DashboardLanguageColumn label={t("localeTabBase")}>
+                <DashboardFormField label={t("nameLabel")} required error={fieldError(errors.name?.message)}>
+                  {(wiring) => (
+                    <Input
+                      {...wiring}
+                      {...register("name", {
+                        onChange: (event: React.ChangeEvent<HTMLInputElement>) => {
+                          if (!slugLocked) setValue("slug", slugify(event.target.value), { shouldValidate: true });
+                        },
+                      })}
+                      size="control-md"
+                      inputClassName={FIELD_INPUT}
+                      dir="ltr"
+                      placeholder={t("namePlaceholder")}
+                    />
+                  )}
+                </DashboardFormField>
+              </DashboardLanguageColumn>
 
-      <div className="flex gap-3 pt-2">
-        <Button type="submit" loading={isSubmitting}>
-          {editing ? t("saveChanges") : t("createCategory")}
-        </Button>
-        <Button asChild variant="outline" type="button">
-          <Link href="/dashboard/categories">{t("cancel")}</Link>
-        </Button>
-      </div>
+              <DashboardLanguageColumn label={t("localeTabFa")}>
+                <DashboardFormField label={t("nameLabel")} error={fieldError(errors.faName?.message)}>
+                  {(wiring) => (
+                    <Input
+                      {...wiring}
+                      {...register("faName")}
+                      size="control-md"
+                      inputClassName={FIELD_INPUT}
+                      dir="rtl"
+                      placeholder={t("faNamePlaceholder")}
+                    />
+                  )}
+                </DashboardFormField>
+              </DashboardLanguageColumn>
+            </div>
+
+            <div className={FIELD_GRID}>
+              <DashboardFormField
+                label={t("slugLabel")}
+                required
+                hint={t("slugDescription")}
+                error={fieldError(errors.slug?.message)}
+              >
+                {(wiring) => (
+                  <Input
+                    {...wiring}
+                    {...register("slug", { onChange: () => setSlugLocked(true) })}
+                    size="control-md"
+                    inputClassName={FIELD_INPUT}
+                    dir="ltr"
+                    placeholder={t("slugPlaceholder")}
+                  />
+                )}
+              </DashboardFormField>
+            </div>
+          </DashboardSection>
+        }
+        side={
+          <>
+            <DashboardSection
+              title={
+                <>
+                  {t("iconLabel")}
+                  <RequiredMark />
+                </>
+              }
+            >
+              <Field error={fieldError(errors.iconUrl?.message)}>
+                {({ id, ariaDescribedBy, ariaInvalid }) => (
+                  <>
+                    <label htmlFor={id} className="sr-only">
+                      {t("iconLabel")}
+                    </label>
+                    <IconUpload
+                      id={id}
+                      value={iconUrl}
+                      onChange={(url) => setValue("iconUrl", url, { shouldValidate: true })}
+                      aria-invalid={ariaInvalid}
+                      aria-describedby={ariaDescribedBy}
+                    />
+                  </>
+                )}
+              </Field>
+              {/* Keeps iconUrl registered (set imperatively by IconUpload) so it's tracked + submitted. */}
+              <input type="hidden" {...register("iconUrl")} />
+            </DashboardSection>
+
+            <DashboardSection title={t("sectionVisibility")}>
+              <Controller
+                control={control}
+                name="isActive"
+                render={({ field }) => (
+                  <DashboardSwitchField
+                    label={t("activeLabel")}
+                    hint={t("activeDescription")}
+                    ariaLabel={t("activeAria")}
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                )}
+              />
+            </DashboardSection>
+
+            {editing ? props.activity : null}
+          </>
+        }
+      />
     </form>
   );
 }

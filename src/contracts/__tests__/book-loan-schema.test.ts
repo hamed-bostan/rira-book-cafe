@@ -21,6 +21,8 @@ describe("lendBookSchema", () => {
       borrowerPhone: "+98 912 345 6789",
       dueOn: "2026-10-31",
       note: undefined,
+      depositAmount: 0,
+      depositMethod: undefined,
     });
   });
 

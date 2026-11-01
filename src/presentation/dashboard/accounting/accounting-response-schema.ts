@@ -81,6 +81,7 @@ export const profitAndLossResponseSchema: z.ZodMiniType<ProfitAndLoss> = z.objec
   grossProfit: z.number(),
   expenses: sectionSchema,
   netProfit: z.number(),
+  revenueWithoutCost: z.number(),
 });
 
 export const balanceSheetResponseSchema: z.ZodMiniType<BalanceSheet> = z.object({
@@ -165,6 +166,7 @@ export const expenseResponseSchema: z.ZodMiniType<Expense> = z.object({
   amount: z.number(),
   vatAmount: z.number(),
   status: z.enum(EXPENSE_STATUSES),
+  paidAmount: z.number(),
   paidFrom: z.optional(z.enum(PAYMENT_SOURCES)),
   paidOn: z.optional(z.string()),
   receiptUrl: z.optional(z.string()),

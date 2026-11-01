@@ -21,7 +21,9 @@ const TABS: readonly { tab: AccountingTab; href: string }[] = [
 
 type AccountingHeaderProps = {
   active: AccountingTab;
-  /** A line under the tabs saying what this tab holds. The overview has none — the heading says it. */
+  /** What this tab holds, under the heading in place of the line about the books. */
+  subtitle?: string;
+  /** The same, under the tabs instead (the journal). The overview has neither. */
   intro?: string;
   /**
    * What the header's "New manual entry" needs, for a viewer who can write to the
@@ -35,15 +37,16 @@ type AccountingHeaderProps = {
  * things you come here to do — post a manual entry, record an expense — and the
  * tabs. The same on each tab, so switching tabs only changes what's under it.
  */
-export async function AccountingHeader({ active, intro, writer }: AccountingHeaderProps) {
+export async function AccountingHeader({ active, subtitle, intro, writer }: AccountingHeaderProps) {
   const t = await getTranslations("dashAccounting");
+  const line = subtitle ?? t("subtitle");
 
   return (
     <>
       <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
         <div className="flex min-w-0 flex-col gap-1">
           <h1 className="dashboard-page-title">{t("heading")}</h1>
-          <p className="text-body-default text-pretty text-muted-foreground sm:text-body-small">{t("subtitle")}</p>
+          <p className="text-body-default text-pretty text-muted-foreground sm:text-body-small">{line}</p>
         </div>
         {writer ? (
           <div className="flex flex-wrap gap-2">

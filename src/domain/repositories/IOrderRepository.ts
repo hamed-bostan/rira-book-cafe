@@ -6,15 +6,16 @@ import type {
   Order,
   OrderItem,
   OrderStatus,
-  PaymentMethod,
+  PaymentPart,
   PaymentStatus,
   SettablePaymentStatus,
 } from "../entities/Order";
+import type { NewOrderRefund, OrderRefund } from "../entities/OrderRefund";
 import type { OrderStatusEvent } from "../entities/OrderStatusEvent";
 import type { Page, PageRequest } from "../entities/Pagination";
 
 /** A payment mark: from the status staff saw to the one they chose, and how the guest paid. */
-export type PaymentChange = { from: PaymentStatus; to: SettablePaymentStatus; method?: PaymentMethod };
+export type PaymentChange = { from: PaymentStatus; to: SettablePaymentStatus; parts?: readonly PaymentPart[] };
 
 /** An order about to be placed. Id, number, status and timestamps are the repository's to assign. */
 export type NewOrder = Omit<
@@ -24,13 +25,18 @@ export type NewOrder = Omit<
   | "status"
   | "paymentStatus"
   | "paymentMethod"
+  | "paymentParts"
+  | "refundedTotal"
   | "placedAt"
   | "updatedAt"
   | "items"
   | "pointsEarned"
 > & {
-  items: Omit<OrderItem, "id">[];
+  items: Omit<OrderItem, "id" | "refundedQuantity">[];
 };
+
+/** A refund as it went through: the document, the order after it, and the cost that came back to stock. */
+export type OrderRefundResult = { refund: OrderRefund; order: Order; restockedValue: number };
 
 export type IOrderRepository = {
   /**
@@ -44,7 +50,7 @@ export type IOrderRepository = {
    * guest's balance under theirs (`ConflictError("NOT_ENOUGH_POINTS")`) — so two
    * orders racing for the last use, or the same points, can't both win.
    */
-  place(input: NewOrder, placedBy: ActivityActor): Promise<Order>;
+  place(input: NewOrder, placedBy: ActivityActor, audit?: AuditHook<Order>): Promise<Order>;
   getById(id: string): Promise<Order | null>;
   /** One guest's orders, newest first. */
   listForUser(userId: string): Promise<Order[]>;
@@ -69,7 +75,7 @@ export type IOrderRepository = {
     ledger?: LedgerHook<Order>,
   ): Promise<Order>;
   /**
-   * Mark the order paid (with its method) or unpaid, guarded on `change.from` so two
+   * Mark the order paid (with its parts) or unpaid, guarded on `change.from` so two
    * staff can't both book the same payment. The audit entry and the ledger postings
    * commit with it; the loser of a race gets `InvalidPaymentChangeError`.
    */
@@ -79,6 +85,22 @@ export type IOrderRepository = {
     audit?: AuditHook<Order>,
     ledger?: LedgerHook<Order>,
   ): Promise<Order>;
+  /**
+   * Hand money back on a completed order, all-or-nothing: under a lock on the order,
+   * check no line moved since `input` was priced (`ConflictError("INVALID_TRANSITION")`),
+   * record the refund, bump the running totals, put restocked lines back on the shelf
+   * and in stock, take back what the refund's share of the order earned in points,
+   * and post the audit entry and the ledger entries. Refunding the last of an order
+   * turns it `refunded` and gives back the points it spent.
+   */
+  refund(
+    input: NewOrderRefund,
+    actor: ActivityActor,
+    audit?: AuditHook<OrderRefundResult>,
+    ledger?: LedgerHook<OrderRefundResult>,
+  ): Promise<OrderRefundResult>;
+  /** Refunds on an order, oldest first. */
+  listRefunds(orderId: string): Promise<OrderRefund[]>;
   /**
    * Mark one line served (stamped now) or take the mark back, guarded so it only
    * lands while the order is in a serving status. Setting the state a line already

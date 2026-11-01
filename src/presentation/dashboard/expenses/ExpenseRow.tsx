@@ -1,6 +1,6 @@
 import { getLocale, getTranslations } from "next-intl/server";
 
-import type { Expense } from "@/src/domain/entities/Expense";
+import { amountOwed, type Expense } from "@/src/domain/entities/Expense";
 import { Link } from "@/src/i18n/navigation";
 import { formatCafeDayShort } from "@/src/lib/formatCafeDay";
 import { formatNumber } from "@/src/lib/formatNumber";
@@ -89,6 +89,11 @@ export async function ExpenseRow({ expense, accountName, canWrite }: ExpenseRowP
           >
             {formatNumber(expense.amount, locale)}
           </span>
+          {expense.status === "unpaid" && expense.paidAmount > 0 ? (
+            <span className="text-body-small whitespace-nowrap text-muted-foreground tabular-nums sm:text-body-caption">
+              {t("owedLeft", { amount: formatNumber(amountOwed(expense), locale) })}
+            </span>
+          ) : null}
         </div>
       </div>
 
@@ -101,6 +106,7 @@ export async function ExpenseRow({ expense, accountName, canWrite }: ExpenseRowP
               date: expense.date,
               description: expense.description,
               amount: expense.amount,
+              paidAmount: expense.paidAmount,
               status: expense.status,
             }}
           />

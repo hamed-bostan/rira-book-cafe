@@ -10,12 +10,12 @@ const SECTION_ROWS = [6, 4, 2, 3, 6] as const;
 export default function AccountsLoading() {
   return (
     <LoadingRegion className="flex min-w-0 flex-col gap-6">
-      <AccountingHeaderSkeleton intro />
-      <div>
-        <Skeleton className="h-11 w-36 rounded-button" />
+      <AccountingHeaderSkeleton />
+      <div className="flex">
+        <Skeleton className="h-11 w-36 rounded-button sm:h-9" />
       </div>
       {SECTION_ROWS.map((rows, index) => (
-        <StatementSectionSkeleton key={index} rows={rows} total={false} dense={false} />
+        <StatementSectionSkeleton key={index} rows={rows} total={false} />
       ))}
     </LoadingRegion>
   );

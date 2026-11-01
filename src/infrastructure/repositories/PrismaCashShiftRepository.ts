@@ -21,7 +21,7 @@ import { inTransaction, type PrismaDb } from "@/src/infrastructure/prisma/transa
 import { postHook } from "./writeJournal";
 
 /** The order postings that settle a guest's bill (or hand it back). */
-const PAYMENT_SOURCES = ["orderPayment", "orderPaymentReversal", "orderRefund"];
+const PAYMENT_SOURCES = ["orderPayment", "orderPaymentReversal", "orderRefund", "orderReturn"];
 
 /**
  * Till shifts backed by PostgreSQL via Prisma. The drawer's expected cash comes

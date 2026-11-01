@@ -8,6 +8,7 @@ import {
   SERVICE_TYPES,
   type Order,
 } from "@/src/domain/entities/Order";
+import type { OrderRefund } from "@/src/domain/entities/OrderRefund";
 import type { OrderStatusEvent } from "@/src/domain/entities/OrderStatusEvent";
 import { PRODUCT_KINDS } from "@/src/domain/entities/Product";
 
@@ -19,7 +20,7 @@ import { PRODUCT_KINDS } from "@/src/domain/entities/Product";
 export const orderResponseSchema = z.object({
   id: z.string(),
   orderNumber: z.number(),
-  userId: z.string(),
+  userId: z.optional(z.string()),
   customerName: z.string(),
   customerPhone: z.string(),
   status: z.enum(ORDER_STATUSES),
@@ -28,6 +29,8 @@ export const orderResponseSchema = z.object({
   note: z.optional(z.string()),
   paymentStatus: z.enum(PAYMENT_STATUSES),
   paymentMethod: z.optional(z.enum(PAYMENT_METHODS)),
+  paymentParts: z.optional(z.array(z.object({ method: z.enum(PAYMENT_METHODS), amount: z.number() }))),
+  refundedTotal: z.number(),
   items: z.array(
     z.object({
       id: z.string(),
@@ -41,6 +44,7 @@ export const orderResponseSchema = z.object({
       taxExempt: z.optional(z.boolean()),
       stockTracked: z.optional(z.boolean()),
       quantity: z.number(),
+      refundedQuantity: z.optional(z.number()),
       note: z.optional(z.string()),
       servedAt: z.optional(z.string()),
     }),
@@ -58,6 +62,35 @@ export const orderResponseSchema = z.object({
 }) satisfies z.ZodMiniType<Order>;
 
 export const orderListResponseSchema = z.array(orderResponseSchema);
+
+export const orderRefundListResponseSchema = z.array(
+  z.object({
+    id: z.string(),
+    number: z.number(),
+    orderId: z.string(),
+    date: z.string(),
+    method: z.enum(PAYMENT_METHODS),
+    amount: z.number(),
+    vatAmount: z.number(),
+    reason: z.optional(z.string()),
+    lines: z.array(
+      z.object({
+        orderItemId: z.string(),
+        name: z.string(),
+        kind: z.enum(PRODUCT_KINDS),
+        quantity: z.number(),
+        amount: z.number(),
+        vatAmount: z.number(),
+        restocked: z.boolean(),
+      }),
+    ),
+    createdById: z.string(),
+    createdByName: z.string(),
+    createdAt: z.string(),
+  }) satisfies z.ZodMiniType<OrderRefund>,
+);
+
+export const orderRefundResultResponseSchema = z.object({ order: orderResponseSchema });
 
 export const orderStatusEventListResponseSchema = z.array(
   z.object({

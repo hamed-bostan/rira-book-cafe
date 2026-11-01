@@ -37,6 +37,12 @@ export type ProfitAndLoss = {
   grossProfit: number;
   expenses: StatementSection;
   netProfit: number;
+  /**
+   * VAT-inclusive sales that booked no cost of sales, because the item has no recipe
+   * taking it out of stock. Profit is only as right as these items' cost being
+   * recorded some other way.
+   */
+  revenueWithoutCost: number;
 };
 
 export type BalanceSheet = {
@@ -158,13 +164,23 @@ export function buildProfitAndLoss(
   toDay: string,
   accounts: readonly Account[],
   movements: readonly AccountMovement[],
+  revenueWithoutCost = 0,
 ): ProfitAndLoss {
   const rows = accountBalances(accounts, movements);
   const revenue = section(rows.filter((row) => row.account.type === "revenue"));
   const costOfSales = section(rows.filter((row) => isCostOfSales(row.account)));
   const expenses = section(rows.filter((row) => row.account.type === "expense" && !isCostOfSales(row.account)));
   const grossProfit = revenue.total - costOfSales.total;
-  return { fromDay, toDay, revenue, costOfSales, grossProfit, expenses, netProfit: grossProfit - expenses.total };
+  return {
+    fromDay,
+    toDay,
+    revenue,
+    costOfSales,
+    grossProfit,
+    expenses,
+    netProfit: grossProfit - expenses.total,
+    revenueWithoutCost,
+  };
 }
 
 export function buildBalanceSheet(

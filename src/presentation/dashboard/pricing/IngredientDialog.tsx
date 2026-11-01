@@ -1,10 +1,10 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Pencil, Plus } from "lucide-react";
+import { PenLine, Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import * as React from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 
 import { ingredientSchema, type IngredientFormInput } from "@/src/contracts/pricing-schema";
 import { INGREDIENT_UNITS, type Ingredient } from "@/src/domain/entities/Pricing";
@@ -12,14 +12,16 @@ import { useRouter } from "@/src/i18n/navigation";
 import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
+import { cn } from "@/src/lib/utils";
+import { DashboardDialog } from "@/src/presentation/dashboard/DashboardDialog";
+import { DashboardFormField } from "@/src/presentation/dashboard/DashboardFormField";
+import { DashboardSwitchField } from "@/src/presentation/dashboard/DashboardSwitchField";
+import { FIELD_HINT, FIELD_INPUT } from "@/src/presentation/dashboard/fieldStyles";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
-import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
 import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
 import { Select } from "@/src/presentation/design-system/components/form/Select/Select";
-import { TextField } from "@/src/presentation/design-system/components/form/TextField/TextField";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
-import { Modal, ModalContent } from "@/src/presentation/design-system/components/Modal/Modal";
-import { Switch } from "@/src/presentation/design-system/components/Switch/Switch";
+import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { ingredientsApi } from "./pricing-api";
@@ -57,6 +59,7 @@ export function IngredientDialog({ ingredient }: { ingredient?: Ingredient }) {
     resolver: zodResolver(ingredientSchema, undefined, { raw: true }),
     defaultValues: toDefaults(ingredient),
   });
+  const unit = useWatch({ control, name: "unit" });
 
   const onSubmit = handleSubmit(async (values) => {
     try {
@@ -84,93 +87,112 @@ export function IngredientDialog({ ingredient }: { ingredient?: Ingredient }) {
   return (
     <>
       {ingredient ? (
-        <Button
+        <button
           type="button"
-          size="sm"
-          variant="ghost"
           onClick={() => setOpen(true)}
           aria-label={t("ingredients.edit", { name: ingredient.name })}
+          title={t("ingredients.edit", { name: ingredient.name })}
+          className={cn(
+            "flex size-11 items-center justify-center rounded-button text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:size-8",
+            focusRing,
+          )}
         >
-          <Icon icon={Pencil} size="sm" />
-        </Button>
+          <Icon icon={PenLine} size="icon-md" />
+        </button>
       ) : (
-        <Button type="button" size="sm" onClick={() => setOpen(true)}>
-          <Icon icon={Plus} size="sm" className="me-1.5" />
+        <Button type="button" variant="secondary" size="control-md" className="px-3" onClick={() => setOpen(true)}>
+          <Icon icon={Plus} size="icon-md" className="me-2" />
           {t("ingredients.new")}
         </Button>
       )}
-      <Modal open={open} onOpenChange={setOpen}>
-        <ModalContent title={ingredient ? ingredient.name : t("ingredients.new")} className="max-w-md">
-          <form onSubmit={onSubmit} className="mt-4 flex flex-col gap-4" noValidate>
-            <TextField label={t("ingredients.nameLabel")} required error={fieldError(errors.name?.message)}>
-              {(control) => (
-                <Input {...control} {...register("name")} dir="auto" placeholder={t("ingredients.namePlaceholder")} />
-              )}
-            </TextField>
-            <TextField label={t("ingredients.unitLabel")} error={fieldError(errors.unit?.message)}>
-              {(control) => (
-                <Select {...control} {...register("unit")}>
-                  {INGREDIENT_UNITS.map((unit) => (
-                    <option key={unit} value={unit}>
-                      {t(`unitName.${unit}`)}
-                    </option>
-                  ))}
-                </Select>
-              )}
-            </TextField>
-            <div className="grid grid-cols-2 gap-3">
-              <TextField label={t("ingredients.priceLabel")} required error={fieldError(errors.purchasePrice?.message)}>
-                {(control) => (
-                  <Input
-                    {...control}
-                    {...register("purchasePrice")}
-                    inputMode="numeric"
-                    dir="ltr"
-                    placeholder="1200000"
-                  />
-                )}
-              </TextField>
-              <TextField
-                label={t("ingredients.quantityLabel")}
-                required
-                error={fieldError(errors.purchaseQuantity?.message)}
-              >
-                {(control) => (
-                  <Input
-                    {...control}
-                    {...register("purchaseQuantity")}
-                    inputMode="decimal"
-                    dir="ltr"
-                    placeholder="1000"
-                  />
-                )}
-              </TextField>
-            </div>
-            <p className="-mt-2 text-body-caption text-muted-foreground">{t("ingredients.priceHint")}</p>
-            {ingredient ? (
-              <Controller
-                control={control}
-                name="isActive"
-                render={({ field }) => (
-                  <label className="flex items-center justify-between gap-3 text-body-small-emphasis text-foreground">
-                    {t("ingredients.activeLabel")}
-                    <Switch checked={field.value} onCheckedChange={field.onChange} />
-                  </label>
-                )}
+      <DashboardDialog
+        open={open}
+        onOpenChange={setOpen}
+        title={ingredient ? ingredient.name : t("ingredients.new")}
+        subtitle={null}
+        submitLabel={t("save")}
+        backLabel={t("cancel")}
+        pending={isSubmitting}
+        onSubmit={() => void onSubmit()}
+        error={errors.root?.message}
+      >
+        <DashboardFormField label={t("ingredients.nameLabel")} required error={fieldError(errors.name?.message)}>
+          {(wiring) => (
+            <Input
+              {...wiring}
+              {...register("name")}
+              size="control-md"
+              inputClassName={FIELD_INPUT}
+              dir="auto"
+              placeholder={t("ingredients.namePlaceholder")}
+            />
+          )}
+        </DashboardFormField>
+        <DashboardFormField label={t("ingredients.unitLabel")} error={fieldError(errors.unit?.message)}>
+          {(wiring) => (
+            <Select {...wiring} {...register("unit")} size="control-md" className="border-border-strong">
+              {INGREDIENT_UNITS.map((option) => (
+                <option key={option} value={option}>
+                  {t(`unitName.${option}`)}
+                </option>
+              ))}
+            </Select>
+          )}
+        </DashboardFormField>
+        <div className="grid grid-cols-2 gap-3">
+          <DashboardFormField
+            label={t("ingredients.priceLabel")}
+            required
+            error={fieldError(errors.purchasePrice?.message)}
+          >
+            {(wiring) => (
+              <Input
+                {...wiring}
+                {...register("purchasePrice")}
+                size="control-md"
+                inputClassName={cn(FIELD_INPUT, "tabular-nums")}
+                inputMode="numeric"
+                dir="ltr"
+                placeholder="1200000"
               />
-            ) : null}
-            {errors.root?.message ? <FormMessage>{errors.root.message}</FormMessage> : null}
-            <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" size="sm" onClick={() => setOpen(false)}>
-                {t("cancel")}
-              </Button>
-              <Button type="submit" size="sm" loading={isSubmitting}>
-                {t("save")}
-              </Button>
-            </div>
-          </form>
-        </ModalContent>
-      </Modal>
+            )}
+          </DashboardFormField>
+          <DashboardFormField
+            label={t("ingredients.quantityLabel")}
+            required
+            error={fieldError(errors.purchaseQuantity?.message)}
+          >
+            {(wiring) => (
+              // The field and its unit read left to right in both languages.
+              <div dir="ltr">
+                <Input
+                  {...wiring}
+                  {...register("purchaseQuantity")}
+                  size="control-md"
+                  inputClassName={cn(FIELD_INPUT, "pe-16 tabular-nums")}
+                  inputMode="decimal"
+                  placeholder="1000"
+                  rightElement={<span className="pointer-events-none text-muted-foreground">{t(`unit.${unit}`)}</span>}
+                />
+              </div>
+            )}
+          </DashboardFormField>
+        </div>
+        <p className={FIELD_HINT}>{t("ingredients.priceHint")}</p>
+        {ingredient ? (
+          <Controller
+            control={control}
+            name="isActive"
+            render={({ field }) => (
+              <DashboardSwitchField
+                label={t("ingredients.activeLabel")}
+                checked={field.value}
+                onCheckedChange={field.onChange}
+              />
+            )}
+          />
+        ) : null}
+      </DashboardDialog>
     </>
   );
 }

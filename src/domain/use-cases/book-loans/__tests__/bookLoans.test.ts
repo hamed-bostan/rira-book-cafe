@@ -26,6 +26,7 @@ function loan(status: BookLoanStatus, overrides: Partial<BookLoan> = {}): BookLo
     lentAt: NOW.toISOString(),
     dueAt: "2026-11-03T20:29:59.999Z",
     status,
+    depositAmount: 0,
     lentById: "s1",
     lentByName: "Ali",
     createdAt: NOW.toISOString(),
@@ -83,6 +84,7 @@ describe("LendBook", () => {
       borrowerName: "Sara",
       borrowerPhone: "09121234567",
       userId: "09121234567",
+      depositAmount: 0,
       lentById: "s1",
       // 23:59:59.999 Tehran time on the due day.
       dueAt: "2026-10-27T20:29:59.999Z",

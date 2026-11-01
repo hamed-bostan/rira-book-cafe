@@ -1,6 +1,7 @@
 import type { OrderStatusCounts } from "@/src/domain/entities/AdminOrderFilters";
 import type { Order } from "@/src/domain/entities/Order";
 import type { OrderNote } from "@/src/domain/entities/OrderNote";
+import type { OrderRefund } from "@/src/domain/entities/OrderRefund";
 import type { OrderStatusEvent } from "@/src/domain/entities/OrderStatusEvent";
 import type { Page } from "@/src/domain/entities/Pagination";
 import { ApiError } from "@/src/lib/api/ApiError";
@@ -8,6 +9,7 @@ import { pageResponseSchema } from "@/src/lib/api/page-response-schema";
 import { serverApiGet } from "@/src/lib/api/server-client";
 import { orderNoteListResponseSchema } from "@/src/presentation/dashboard/orders/order-note-response-schema";
 import {
+  orderRefundListResponseSchema,
   orderResponseSchema,
   orderStatusCountsResponseSchema,
   orderStatusEventListResponseSchema,
@@ -42,6 +44,10 @@ export const ordersServerApi = {
 
   listStatusEvents(id: string): Promise<OrderStatusEvent[]> {
     return serverApiGet(`/admin/orders/${id}/status`, orderStatusEventListResponseSchema);
+  },
+
+  listRefunds(id: string): Promise<OrderRefund[]> {
+    return serverApiGet(`/admin/orders/${id}/refunds`, orderRefundListResponseSchema);
   },
 
   listNotes(id: string): Promise<OrderNote[]> {

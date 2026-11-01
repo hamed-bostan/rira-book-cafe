@@ -1,19 +1,30 @@
-import { CircleAlert, Coffee, Package, Receipt, Users } from "lucide-react";
+import { CircleAlert, Package, Receipt, Users } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import type { PricingReport } from "@/src/domain/entities/Pricing";
 import { Link } from "@/src/i18n/navigation";
 import { formatCafeDayMedium, formatPercent } from "@/src/lib/formatCafeDay";
-import { formatMoney } from "@/src/lib/formatMoney";
-import { formatNumber } from "@/src/lib/formatNumber";
+import { formatMoney, moneyUnit } from "@/src/lib/formatMoney";
+import { formatNumber, formatNumberTrimmed } from "@/src/lib/formatNumber";
+import { cn } from "@/src/lib/utils";
 import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
-import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 
-import { StatCard } from "../StatCard";
+import { DashboardEmptyState } from "../DashboardEmptyState";
+import { FIELD_HINT, OVERLINE } from "../fieldStyles";
+import { MetricCard } from "../MetricCard";
 
 import { ApplyPriceButton } from "./ApplyPriceButton";
 import { ItemMarkupField } from "./ItemMarkupField";
 import { PricingTabs } from "./PricingTabs";
+
+/** A column's title: small capitals, wrapping onto a second line where it's long. */
+const HEAD = cn(OVERLINE, "px-2 py-2 align-bottom first:ps-5 last:pe-5");
+/** The first and last cells carry the card's 20px inset, the rest a 16px gap between them. */
+const CELL = "px-2 py-3 align-top first:ps-5 last:pe-5";
+/** A cell's figure and whatever sits under it, right-aligned. */
+const STACK = "flex flex-col items-end gap-0.5";
+const FIGURE = "whitespace-nowrap text-foreground tabular-nums";
 
 type PricingScreenProps = {
   report: PricingReport;
@@ -40,36 +51,39 @@ export async function PricingScreen({ report, canWrite, canApply }: PricingScree
     <div className="flex min-w-0 flex-col gap-6">
       <PricingTabs active="items" title={t("heading")} subtitle={t("subtitle")} />
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <StatCard
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+        <MetricCard
           label={t("summary.monthlyOverhead")}
-          value={basis.monthlyOverhead === null ? "—" : formatMoney(basis.monthlyOverhead, locale)}
-          hint={basis.source === "manual" ? t("summary.manual") : t("summary.fromBooks", { months: basis.months })}
           icon={Receipt}
-          tone="warning"
+          value={basis.monthlyOverhead === null ? "—" : formatNumber(basis.monthlyOverhead, locale)}
+          unit={basis.monthlyOverhead === null ? undefined : moneyUnit(locale)}
+          hint={
+            basis.source === "manual"
+              ? t("summary.manual")
+              : t("summary.fromBooks", { months: formatNumber(basis.months, locale) })
+          }
         />
-        <StatCard
+        <MetricCard
           label={t("summary.monthlyUnits")}
+          icon={Users}
           value={basis.monthlyUnits === null ? "—" : formatNumber(basis.monthlyUnits, locale)}
           hint={
             report.settings.expectedMonthlyUnits
               ? t("summary.expected")
-              : t("summary.fromSales", { months: basis.months })
+              : t("summary.fromSales", { months: formatNumber(basis.months, locale) })
           }
-          icon={Users}
-          tone="info"
         />
-        <StatCard
+        <MetricCard
           label={t("summary.overheadPerUnit")}
-          value={report.overheadPerUnit === null ? "—" : formatMoney(report.overheadPerUnit, locale)}
-          hint={t("summary.defaultProfit", { percent: formatNumber(defaultPercent, locale, 1) })}
           icon={Package}
-          tone="brand"
+          value={report.overheadPerUnit === null ? "—" : formatNumber(report.overheadPerUnit, locale)}
+          unit={report.overheadPerUnit === null ? undefined : moneyUnit(locale)}
+          hint={t("summary.defaultProfit", { percent: formatNumberTrimmed(defaultPercent, locale, 1) })}
         />
       </div>
 
       {basis.fromDay && basis.toDay && basis.source === "ledger" ? (
-        <p className="-mt-3 text-body-caption text-muted-foreground">
+        <p className={FIELD_HINT}>
           {t("summary.span", {
             from: formatCafeDayMedium(basis.fromDay, locale),
             to: formatCafeDayMedium(basis.toDay, locale),
@@ -78,163 +92,185 @@ export async function PricingScreen({ report, canWrite, canApply }: PricingScree
       ) : null}
 
       {report.overheadPerUnit === null ? (
-        <p className="flex items-start gap-2 rounded-card-md border border-warning-foreground bg-warning px-4 py-3 text-body-small text-warning-foreground">
-          <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
-          <span>
+        <div
+          role="alert"
+          className="flex items-start gap-3 rounded-card-lg border border-warning-border bg-warning px-4 py-3 text-warning-foreground"
+        >
+          <Icon icon={CircleAlert} size="icon-lg" />
+          <p className="text-body-default font-medium text-pretty sm:text-body-small">
             {t("noOverhead")}{" "}
-            <Link href="/dashboard/pricing/settings" className="font-medium underline underline-offset-4">
+            <Link href="/dashboard/pricing/settings" className="font-semibold underline">
               {t("tab.settings")}
             </Link>
-          </span>
-        </p>
+          </p>
+        </div>
       ) : null}
 
-      <p className="text-body-small text-muted-foreground">{t("formula")}</p>
+      <div className="flex flex-col gap-1">
+        <p className={FIELD_HINT}>{t("formula")}</p>
+        {withInflation ? (
+          <p className={FIELD_HINT}>
+            {t("inflation.summary", {
+              rate: formatNumberTrimmed(inflation.monthlyInflationBps / 100, locale, 2),
+              months: formatNumber(inflation.horizonMonths, locale),
+              uplift: formatNumberTrimmed((inflation.costFactor - 1) * 100, locale, 1),
+            })}
+          </p>
+        ) : null}
+        {withInflation && inflation.overheadCatchUp !== 1 ? (
+          <p className={FIELD_HINT}>
+            {t("inflation.catchUp", { percent: formatNumberTrimmed((inflation.overheadCatchUp - 1) * 100, locale, 1) })}
+          </p>
+        ) : null}
+      </div>
 
-      {withInflation ? (
-        <p className="-mt-3 text-body-small text-muted-foreground">
-          {t("inflation.summary", {
-            rate: formatNumber(inflation.monthlyInflationBps / 100, locale, 2),
-            months: inflation.horizonMonths,
-            uplift: formatNumber((inflation.costFactor - 1) * 100, locale, 1),
-          })}
-          {inflation.overheadCatchUp !== 1
-            ? ` ${t("inflation.catchUp", { percent: formatNumber((inflation.overheadCatchUp - 1) * 100, locale, 1) })}`
-            : null}
-        </p>
-      ) : null}
-
-      <section className="min-w-0 overflow-x-auto rounded-card-lg border border-border bg-background">
+      <section className="min-w-0 overflow-hidden rounded-card-lg border border-border bg-background shadow-xs">
         {report.rows.length === 0 ? (
-          <EmptyState icon={Coffee} title={tProducts("emptyTitle")} description={tProducts("emptyBody")} />
+          <DashboardEmptyState title={tProducts("emptyTitle")} body={tProducts("emptyBody")} />
         ) : (
-          <table
-            className={withInflation ? "w-full min-w-[66rem] text-body-small" : "w-full min-w-[60rem] text-body-small"}
-          >
-            <thead className="bg-surface text-body-caption text-muted-foreground">
-              <tr>
-                <th scope="col" className="px-3 py-3 text-start font-medium">
-                  {t("col.item")}
-                </th>
-                <th scope="col" className="px-3 py-3 text-end font-medium">
-                  {t("col.ingredients")}
-                </th>
-                <th scope="col" className="px-3 py-3 text-end font-medium">
-                  {t("col.overhead")}
-                </th>
-                <th scope="col" className="px-3 py-3 text-end font-medium">
-                  {t("col.fullCost")}
-                </th>
-                <th scope="col" className="px-3 py-3 text-start font-medium">
-                  {t("col.profit")}
-                </th>
-                {withInflation ? (
-                  <th scope="col" className="px-3 py-3 text-end font-medium">
-                    {t("col.suggestedToday")}
+          <div className="overflow-x-auto">
+            <table
+              className={cn(
+                "w-full table-fixed text-body-default sm:text-body-small",
+                withInflation ? "min-w-[94.5rem]" : "min-w-[83.5rem]",
+              )}
+            >
+              <colgroup>
+                <col className="w-[13.75rem]" />
+                <col className="w-52" />
+                <col className="w-36" />
+                <col className="w-36" />
+                <col className="w-32" />
+                <col className="w-44" />
+                {withInflation ? <col className="w-44" /> : null}
+                <col className="w-36" />
+                <col className="w-[10.75rem]" />
+              </colgroup>
+              <thead className="border-b border-border bg-muted">
+                <tr>
+                  <th scope="col" className={cn(HEAD, "text-start")}>
+                    {t("col.item")}
                   </th>
-                ) : null}
-                <th scope="col" className="px-3 py-3 text-end font-medium">
-                  {withInflation ? t("col.suggestedInflation") : t("col.suggested")}
-                </th>
-                <th scope="col" className="px-3 py-3 text-end font-medium">
-                  {t("col.current")}
-                </th>
-                <th scope="col" className="px-3 py-3 text-end font-medium">
-                  {t("col.earnsNow")}
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {report.rows.map((row) => {
-                const losing = row.profitPerUnit !== null && row.profitPerUnit < 0;
-                return (
-                  <tr key={row.productId} className="align-middle">
-                    <td className="px-3 py-3">
-                      <span className="block text-body-small-emphasis text-foreground" dir="auto">
-                        {row.name}
-                      </span>
-                      <span className="flex flex-wrap items-center gap-1.5 text-body-caption text-muted-foreground">
-                        {t(`kind.${row.kind}`)}
-                        {row.taxExempt ? (
-                          <Badge size="sm" variant="neutral">
-                            {t("vatExempt")}
-                          </Badge>
-                        ) : null}
-                        · {t("perMonth", { count: formatNumber(row.monthlyUnits, locale, 1) })}
-                      </span>
-                    </td>
-                    <td className="px-3 py-3 text-end whitespace-nowrap">
-                      {row.directCost === null ? (
-                        <span className="text-muted-foreground">—</span>
-                      ) : (
-                        formatMoney(row.directCost, locale)
-                      )}
-                      <Link
-                        href={`/dashboard/pricing/recipes/${row.productId}`}
-                        className="block text-body-caption text-primary underline-offset-4 hover:underline"
-                      >
-                        {t(`costSource.${row.costSource}`)}
-                      </Link>
-                    </td>
-                    <td className="px-3 py-3 text-end whitespace-nowrap text-muted-foreground">
-                      {formatMoney(row.overheadPerUnit, locale)}
-                    </td>
-                    <td className="px-3 py-3 text-end whitespace-nowrap">
-                      {row.fullCost === null ? "—" : formatMoney(row.fullCost, locale)}
-                    </td>
-                    <td className="px-3 py-3">
-                      {canWrite ? (
-                        <ItemMarkupField
-                          productId={row.productId}
-                          markupBps={row.markupIsDefault ? null : row.markupBps}
-                          defaultBps={report.settings.defaultMarkupBps}
-                        />
-                      ) : (
-                        <span>{formatNumber(row.markupBps / 100, locale, 1)}%</span>
-                      )}
-                    </td>
-                    {withInflation ? (
-                      <td className="px-3 py-3 text-end whitespace-nowrap text-muted-foreground">
-                        {row.suggestedPriceToday === null ? "—" : formatMoney(row.suggestedPriceToday, locale)}
+                  <th scope="col" className={cn(HEAD, "text-end")}>
+                    {t("col.ingredients")}
+                  </th>
+                  <th scope="col" className={cn(HEAD, "text-end")}>
+                    {t("col.overhead")}
+                  </th>
+                  <th scope="col" className={cn(HEAD, "text-end")}>
+                    {t("col.fullCost")}
+                  </th>
+                  <th scope="col" className={cn(HEAD, "text-end")}>
+                    {t("col.profit")}
+                  </th>
+                  {withInflation ? (
+                    <th scope="col" className={cn(HEAD, "text-end")}>
+                      {t("col.suggestedToday")}
+                    </th>
+                  ) : null}
+                  <th scope="col" className={cn(HEAD, "text-end")}>
+                    {withInflation ? t("col.suggestedInflation") : t("col.suggested")}
+                  </th>
+                  <th scope="col" className={cn(HEAD, "text-end")}>
+                    {t("col.current")}
+                  </th>
+                  <th scope="col" className={cn(HEAD, "text-end")}>
+                    {t("col.earnsNow")}
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {report.rows.map((row) => {
+                  const losing = row.profitPerUnit !== null && row.profitPerUnit < 0;
+                  return (
+                    <tr key={row.productId}>
+                      <td className={CELL}>
+                        <div className="flex flex-col items-start gap-0.5">
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                            <span className="font-semibold text-foreground" dir="auto">
+                              {row.name}
+                            </span>
+                            {row.taxExempt ? (
+                              <Badge variant="neutral" appearance="outline" size="compact">
+                                {t("vatExempt")}
+                              </Badge>
+                            ) : null}
+                          </div>
+                          <span className={FIELD_HINT}>
+                            {t(`kind.${row.kind}`)} ·{" "}
+                            {t("perMonth", { count: formatNumberTrimmed(row.monthlyUnits, locale, 1) })}
+                          </span>
+                        </div>
                       </td>
-                    ) : null}
-                    <td className="px-3 py-3 text-end text-body-small-emphasis whitespace-nowrap text-foreground">
-                      {row.suggestedPrice === null ? "—" : formatMoney(row.suggestedPrice, locale)}
-                      {canApply && row.suggestedPrice !== null && row.suggestedPrice !== row.price ? (
-                        <ApplyPriceButton
-                          productId={row.productId}
-                          name={row.name}
-                          currentPrice={row.price}
-                          suggestedPrice={row.suggestedPrice}
-                        />
+                      <td className={CELL}>
+                        <div className={STACK}>
+                          <span className={FIGURE}>
+                            {row.directCost === null ? "—" : formatMoney(row.directCost, locale)}
+                          </span>
+                          <Link
+                            href={`/dashboard/pricing/recipes/${row.productId}`}
+                            className="-my-3 py-3 text-body-small font-medium whitespace-nowrap text-primary transition-colors hover:text-primary-hover hover:underline sm:my-0 sm:py-0 sm:text-body-caption"
+                          >
+                            {t(`costSource.${row.costSource}`)}
+                          </Link>
+                        </div>
+                      </td>
+                      <td className={cn(CELL, FIGURE, "text-end")}>{formatMoney(row.overheadPerUnit, locale)}</td>
+                      <td className={cn(CELL, FIGURE, "text-end font-medium")}>
+                        {row.fullCost === null ? "—" : formatMoney(row.fullCost, locale)}
+                      </td>
+                      <td className={CELL}>
+                        {canWrite ? (
+                          <ItemMarkupField
+                            productId={row.productId}
+                            markupBps={row.markupIsDefault ? null : row.markupBps}
+                            defaultBps={report.settings.defaultMarkupBps}
+                          />
+                        ) : (
+                          <span className="block text-end text-foreground tabular-nums">
+                            {formatNumberTrimmed(row.markupBps / 100, locale, 1)}%
+                          </span>
+                        )}
+                      </td>
+                      {withInflation ? (
+                        <td className={cn(CELL, FIGURE, "text-end font-semibold")}>
+                          {row.suggestedPriceToday === null ? "—" : formatMoney(row.suggestedPriceToday, locale)}
+                        </td>
                       ) : null}
-                    </td>
-                    <td className="px-3 py-3 text-end whitespace-nowrap">{formatMoney(row.price, locale)}</td>
-                    <td
-                      className={
-                        losing
-                          ? "px-3 py-3 text-end whitespace-nowrap text-error-foreground"
-                          : "px-3 py-3 text-end whitespace-nowrap"
-                      }
-                    >
-                      {row.profitPerUnit === null ? (
-                        "—"
-                      ) : (
-                        <>
-                          {formatMoney(row.profitPerUnit, locale)}
-                          {row.currentMarkupRate !== null ? (
-                            <span className="block text-body-caption text-muted-foreground">
+                      <td className={CELL}>
+                        <div className={STACK}>
+                          <span className={cn(FIGURE, "font-semibold")}>
+                            {row.suggestedPrice === null ? "—" : formatMoney(row.suggestedPrice, locale)}
+                          </span>
+                          {canApply && row.suggestedPrice !== null && row.suggestedPrice !== row.price ? (
+                            <ApplyPriceButton
+                              productId={row.productId}
+                              name={row.name}
+                              currentPrice={row.price}
+                              suggestedPrice={row.suggestedPrice}
+                            />
+                          ) : null}
+                        </div>
+                      </td>
+                      <td className={cn(CELL, FIGURE, "text-end")}>{formatMoney(row.price, locale)}</td>
+                      <td className={CELL}>
+                        <div className={STACK}>
+                          <span className={cn(FIGURE, "font-medium", losing && "text-error-foreground")}>
+                            {row.profitPerUnit === null ? "—" : formatMoney(row.profitPerUnit, locale)}
+                          </span>
+                          {row.profitPerUnit !== null && row.currentMarkupRate !== null ? (
+                            <span className={cn(FIELD_HINT, "whitespace-nowrap tabular-nums")}>
                               {formatPercent(row.currentMarkupRate, locale)}
                             </span>
                           ) : null}
-                        </>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </section>
     </div>

@@ -75,6 +75,32 @@ export async function refundPoints(
   });
 }
 
+/**
+ * A refund takes back what its share of the order earned (once per refund), only
+ * as far as the guest still has them: points already spent stay spent.
+ */
+export async function clawBackPoints(
+  tx: Prisma.TransactionClient,
+  order: { id: string; orderNumber: number; userId: string },
+  refundId: string,
+  points: number,
+): Promise<void> {
+  if (points <= 0) return;
+  await lockGuestPoints(tx, order.userId);
+  const taken = Math.min(points, await pointsBalance(tx, order.userId));
+  if (taken <= 0) return;
+  await tx.loyaltyTransaction.create({
+    data: {
+      userId: order.userId,
+      delta: -taken,
+      reason: "adjust",
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      dedupeKey: `order:${order.id}:refund:${refundId}:clawback`,
+    },
+  });
+}
+
 /** A completed order earns its points (once), recorded on the order too. Returns what it earned. */
 export async function earnPoints(
   tx: Prisma.TransactionClient,

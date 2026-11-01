@@ -1,6 +1,11 @@
 import { z } from "zod/mini";
 
-import { BOOK_LOAN_STATUSES, type BookLoan } from "@/src/domain/entities/BookLoan";
+import {
+  BOOK_LOAN_STATUSES,
+  LOAN_DEPOSIT_METHODS,
+  LOAN_DEPOSIT_STATES,
+  type BookLoan,
+} from "@/src/domain/entities/BookLoan";
 import type { LendableBook } from "@/src/domain/repositories/IBookLoanRepository";
 
 /** What the book-loan endpoints return, validated at the typed-service boundary. */
@@ -18,6 +23,9 @@ export const bookLoanResponseSchema = z.object({
   status: z.enum(BOOK_LOAN_STATUSES),
   returnedAt: z.optional(z.string()),
   note: z.optional(z.string()),
+  depositAmount: z.number(),
+  depositMethod: z.optional(z.enum(LOAN_DEPOSIT_METHODS)),
+  depositState: z.optional(z.enum(LOAN_DEPOSIT_STATES)),
   lentById: z.string(),
   lentByName: z.string(),
   createdAt: z.string(),

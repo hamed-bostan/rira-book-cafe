@@ -53,6 +53,7 @@ function order(overrides: Partial<Order> = {}): Order {
     pointsRedeemed: 0,
     pointsDiscount: 0,
     pointsEarned: 0,
+    refundedTotal: 0,
     total: 550_000,
     placedAt: NOW.toISOString(),
     updatedAt: NOW.toISOString(),
@@ -124,7 +125,7 @@ describe("SetOrderPayment", () => {
     await new SetOrderPayment(repo).execute("o1", "paid", "transfer", STAFF);
     expect(setPaymentStatus).toHaveBeenCalledWith(
       "o1",
-      { from: "unpaid", to: "paid", method: "transfer" },
+      { from: "unpaid", to: "paid", parts: [{ method: "transfer", amount: 550_000 }] },
       expect.any(Function),
       expect.any(Function),
     );

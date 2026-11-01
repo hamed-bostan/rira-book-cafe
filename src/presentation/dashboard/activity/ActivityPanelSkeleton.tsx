@@ -1,16 +1,10 @@
-import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
+import { DashboardSectionSkeleton, DashboardTimelineSkeleton } from "@/src/presentation/dashboard/skeletons";
 
-import { ActivityListSkeleton } from "./ActivityListSkeleton";
-
-/** Placeholder for `ActivityPanel` under an edit form: heading + description over a short, chip-less activity list. */
+/** Placeholder for `ActivityPanel` in a form's narrow column: the titled card over a short timeline. */
 export function ActivityPanelSkeleton() {
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex flex-col gap-1">
-        <Skeleton className="h-5 w-32 rounded-pill" />
-        <Skeleton className="h-4 w-64 max-w-full rounded-pill" />
-      </div>
-      <ActivityListSkeleton rows={3} />
-    </div>
+    <DashboardSectionSkeleton description>
+      <DashboardTimelineSkeleton />
+    </DashboardSectionSkeleton>
   );
 }

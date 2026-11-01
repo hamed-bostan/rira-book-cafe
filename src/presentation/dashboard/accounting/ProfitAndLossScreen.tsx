@@ -1,7 +1,12 @@
 import { getLocale, getTranslations } from "next-intl/server";
 
 import type { ProfitAndLoss } from "@/src/domain/entities/AccountingReports";
-import { formatMoney } from "@/src/lib/formatMoney";
+import { Link } from "@/src/i18n/navigation";
+import { formatNumber } from "@/src/lib/formatNumber";
+import { cn } from "@/src/lib/utils";
+
+import { FormAlert } from "../FormAlert";
+import { AMOUNT, ROW_CAPTION, ROW_TEXT } from "../pageStyles";
 
 import { StatementHeader } from "./StatementHeader";
 import { StatementSectionTable } from "./StatementSectionTable";
@@ -13,14 +18,15 @@ export async function ProfitAndLossScreen({ report }: { report: ProfitAndLoss })
 
   const result = (label: string, amount: number, strong = false) => (
     <div
-      className={
-        strong
-          ? "flex items-center justify-between gap-3 rounded-card-lg border border-primary/40 bg-accent px-4 py-4 text-body-lead"
-          : "flex items-center justify-between gap-3 rounded-card-lg border border-border bg-surface px-4 py-3 text-body-strong"
-      }
+      className={cn(
+        "grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-4 rounded-card-lg border px-5 py-4",
+        strong ? "border-primary/40 bg-accent text-body-default" : cn("border-border bg-background", ROW_TEXT),
+      )}
     >
-      <span className="text-foreground">{label}</span>
-      <span className={amount < 0 ? "text-error-foreground" : "text-foreground"}>{formatMoney(amount, locale)}</span>
+      <span className="font-semibold text-foreground">{label}</span>
+      <span className={cn(AMOUNT, "font-bold", amount < 0 ? "text-error-foreground" : "text-foreground")}>
+        {formatNumber(amount, locale)}
+      </span>
     </div>
   );
 
@@ -31,6 +37,14 @@ export async function ProfitAndLossScreen({ report }: { report: ProfitAndLoss })
         subtitle={t("statements.profit-and-loss.subtitle")}
         span={report}
       />
+      {report.revenueWithoutCost > 0 ? (
+        <FormAlert>
+          {t("pl.withoutCost", { amount: formatNumber(report.revenueWithoutCost, locale) })}{" "}
+          <Link href="/dashboard/inventory" className="underline">
+            {t("pl.withoutCostLink")}
+          </Link>
+        </FormAlert>
+      ) : null}
       <StatementSectionTable
         heading={t("pl.revenue")}
         section={report.revenue}
@@ -51,7 +65,7 @@ export async function ProfitAndLossScreen({ report }: { report: ProfitAndLoss })
         empty={t("statements.noMovement")}
       />
       {result(report.netProfit < 0 ? t("pl.netLoss") : t("pl.netProfit"), report.netProfit, true)}
-      <p className="text-body-caption text-muted-foreground">{t("pl.vatNote")}</p>
+      <p className={ROW_CAPTION}>{t("pl.vatNote")}</p>
     </div>
   );
 }

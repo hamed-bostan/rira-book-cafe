@@ -1,7 +1,6 @@
-import { History } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
-import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
+import { DashboardSection } from "@/src/presentation/dashboard/DashboardSection";
 
 import { ActivityList } from "./ActivityList";
 
@@ -20,28 +19,19 @@ type ActivityPanelProps = {
  * while looking at the item whose price nobody can explain. Finding it by filtering the global log would mean
  * knowing the id and leaving the screen you're on.
  *
- * Sits below the form: the screen above is what the thing *is*, this is what has
- * been done to it.
+ * Sits in the narrow column, beside the form: the screen around it is what the thing
+ * *is*, this is what has been done to it.
  */
 export async function ActivityPanel({ entries }: ActivityPanelProps) {
   const t = await getTranslations("dashActivity");
 
   return (
-    <section className="flex flex-col gap-3">
-      <div>
-        <h2 className="text-body-strong text-foreground">{t("panelHeading")}</h2>
-        <p className="text-body-small text-muted-foreground">{t("panelDescription")}</p>
-      </div>
-
+    <DashboardSection title={t("panelHeading")} description={t("panelDescription")}>
       {entries.length === 0 ? (
-        <EmptyState
-          icon={History}
-          title={t("panelEmpty")}
-          className="rounded-card-lg border border-dashed border-border py-10"
-        />
+        <p className="text-muted-foreground">{t("panelEmpty")}</p>
       ) : (
         <ActivityList entries={entries} />
       )}
-    </section>
+    </DashboardSection>
   );
 }

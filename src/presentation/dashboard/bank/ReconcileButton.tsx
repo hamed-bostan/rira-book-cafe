@@ -6,8 +6,9 @@ import * as React from "react";
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
-import { ConfirmSheet } from "@/src/presentation/design-system/components/Sheet/ConfirmSheet";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
+
+import { DashboardDialog } from "../DashboardDialog";
 
 import { bankStatementsApi } from "./bank-statement-api";
 
@@ -33,18 +34,29 @@ export function ReconcileButton({ statementId, ready }: { statementId: string; r
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      <Button type="button" size="sm" loading={pending} disabled={!ready} onClick={() => setOpen(true)}>
+    <>
+      <Button
+        type="button"
+        size="control-md"
+        className="w-full"
+        loading={pending}
+        disabled={!ready}
+        onClick={() => setOpen(true)}
+      >
         {t("summary.reconcile")}
       </Button>
-      <ConfirmSheet
+      <DashboardDialog
         open={open}
         onOpenChange={setOpen}
         title={t("summary.confirmTitle")}
-        message={t("summary.confirmMessage")}
-        confirmLabel={t("summary.reconcile")}
-        onConfirm={reconcile}
+        subtitle={t("summary.confirmMessage")}
+        submitLabel={t("summary.reconcile")}
+        pending={false}
+        onSubmit={() => {
+          reconcile();
+          setOpen(false);
+        }}
       />
-    </div>
+    </>
   );
 }

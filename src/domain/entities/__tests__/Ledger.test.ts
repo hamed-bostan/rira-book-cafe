@@ -19,7 +19,10 @@ import {
 } from "../Postings";
 
 import type { Expense } from "../Expense";
-import type { Order } from "../Order";
+import type { Order, PaymentMethod, PaymentPart } from "../Order";
+
+/** The whole order paid one way. */
+const whole = (method: PaymentMethod): PaymentPart[] => [{ method, amount: ORDER.total }];
 
 const ACTOR = { id: "staff", name: "Ali" };
 
@@ -63,6 +66,7 @@ const ORDER: Order = {
   pointsRedeemed: 0,
   pointsDiscount: 0,
   pointsEarned: 0,
+  refundedTotal: 0,
   total: 680000,
   placedAt: "2026-10-16T10:00:00Z",
   updatedAt: "2026-10-16T10:00:00Z",
@@ -136,11 +140,11 @@ describe("posting rules", () => {
   });
 
   it("puts each payment method's money in its account, and refunds it the same way", () => {
-    expect(paymentEntry(ORDER, "cash", "2026-10-16", ACTOR).lines[0].accountCode).toBe("1110");
-    expect(paymentEntry(ORDER, "card", "2026-10-16", ACTOR).lines[0].accountCode).toBe("1120");
-    expect(paymentEntry(ORDER, "transfer", "2026-10-16", ACTOR).lines[0].accountCode).toBe("1120");
-    expect(paymentEntry(ORDER, "online", "2026-10-16", ACTOR).lines[0].accountCode).toBe("1130");
-    const refund = paymentReturnEntry(ORDER, "card", "orderRefund", "2026-10-16", ACTOR);
+    expect(paymentEntry(ORDER, whole("cash"), "2026-10-16", ACTOR).lines[0].accountCode).toBe("1110");
+    expect(paymentEntry(ORDER, whole("card"), "2026-10-16", ACTOR).lines[0].accountCode).toBe("1120");
+    expect(paymentEntry(ORDER, whole("transfer"), "2026-10-16", ACTOR).lines[0].accountCode).toBe("1120");
+    expect(paymentEntry(ORDER, whole("online"), "2026-10-16", ACTOR).lines[0].accountCode).toBe("1130");
+    const refund = paymentReturnEntry(ORDER, whole("card"), "orderRefund", "2026-10-16", ACTOR);
     expect(refund.lines).toEqual([
       { accountCode: "1150", debit: 680000, credit: 0 },
       { accountCode: "1120", debit: 0, credit: 680000 },
@@ -158,6 +162,7 @@ describe("posting rules", () => {
       amount: 1100000,
       vatAmount: 100000,
       status: "unpaid",
+      paidAmount: 0,
       createdById: "a",
       createdByName: "Admin",
       createdAt: "",
@@ -168,7 +173,9 @@ describe("posting rules", () => {
       ["2200", 100000, 0],
       ["2100", 0, 1100000],
     ]);
-    const paid = assertBalanced(expensePaymentEntry(expense, "bank", "2026-10-10", ACTOR));
+    const paid = assertBalanced(
+      expensePaymentEntry(expense, { amount: 1100000, source: "bank", date: "2026-10-10" }, ACTOR),
+    );
     expect(paid.lines.map((l) => [l.accountCode, l.debit, l.credit])).toEqual([
       ["2100", 1100000, 0],
       ["1120", 0, 1100000],
@@ -179,7 +186,7 @@ describe("posting rules", () => {
 
   it("reverses an entry by swapping sides", () => {
     const entry: JournalEntry = {
-      ...assertBalanced(paymentEntry(ORDER, "cash", "2026-10-16", ACTOR)),
+      ...assertBalanced(paymentEntry(ORDER, whole("cash"), "2026-10-16", ACTOR)),
       id: "je1",
       number: 7,
       createdAt: "",

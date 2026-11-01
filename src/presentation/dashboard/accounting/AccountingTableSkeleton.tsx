@@ -2,6 +2,8 @@ import { cn } from "@/src/lib/utils";
 import { ListPagerSkeleton } from "@/src/presentation/dashboard/skeletons";
 import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
+import { PAGE_CARD } from "../pageStyles";
+
 type AccountingTableSkeletonProps = {
   /** One entry per column, by alignment: text columns sit at the start, amounts at the end. */
   columns: readonly ("start" | "end")[];
@@ -14,9 +16,8 @@ type AccountingTableSkeletonProps = {
 };
 
 /**
- * Placeholder for the bordered `<table>` sections the accounting screens share: a
- * `bg-surface` header strip, `px-4 py-3` rows, and optionally the totals strip and
- * the pager below.
+ * Placeholder for the tables the accounting screens share: the muted band of small
+ * capitals, `px-5 py-3` rows, and optionally the totals strip and the pager below.
  */
 export function AccountingTableSkeleton({
   columns,
@@ -26,8 +27,8 @@ export function AccountingTableSkeleton({
   className,
 }: AccountingTableSkeletonProps) {
   return (
-    <section className={cn("min-w-0 overflow-hidden rounded-card-lg border border-border bg-background", className)}>
-      <div className="flex gap-4 bg-surface px-4 py-3">
+    <section className={cn(PAGE_CARD, "overflow-hidden", className)}>
+      <div className="flex gap-4 border-b border-border bg-muted px-5 py-2">
         {columns.map((align, index) => (
           <div
             key={index}
@@ -39,7 +40,7 @@ export function AccountingTableSkeleton({
       </div>
       <ul className="divide-y divide-border">
         {Array.from({ length: rows }, (_, row) => (
-          <li key={row} className="flex gap-4 px-4 py-3">
+          <li key={row} className="flex gap-4 px-5 py-3">
             {columns.map((align, index) => (
               <div
                 key={index}
@@ -52,13 +53,13 @@ export function AccountingTableSkeleton({
         ))}
       </ul>
       {totals ? (
-        <div className="flex items-center justify-between gap-4 border-t border-border bg-surface px-4 py-3">
+        <div className="flex items-center justify-between gap-4 border-t border-border bg-muted px-5 py-3">
           <Skeleton className="h-4 w-20 rounded-pill" />
           <Skeleton className="h-4 w-24 rounded-pill" />
         </div>
       ) : null}
       {pager ? (
-        <div className="border-t border-border px-4 py-3">
+        <div className="border-t border-border px-5 py-3">
           <ListPagerSkeleton />
         </div>
       ) : null}

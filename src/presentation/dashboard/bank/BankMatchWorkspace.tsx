@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCheck, Link2, Unlink, Wand2 } from "lucide-react";
+import { Wand2 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import * as React from "react";
 
@@ -9,15 +9,20 @@ import type { BankStatement, LedgerCandidate, MatchPair } from "@/src/domain/ent
 import { Link, useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatCafeDayShort } from "@/src/lib/formatCafeDay";
-import { formatMoney } from "@/src/lib/formatMoney";
+import { formatNumber } from "@/src/lib/formatNumber";
 import { cn } from "@/src/lib/utils";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
-import { Checkbox } from "@/src/presentation/design-system/components/Checkbox/Checkbox";
-import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
+import { Spinner } from "@/src/presentation/design-system/components/Spinner/Spinner";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
+import { DashboardSection } from "../DashboardSection";
+import { TEXT_ACTION } from "../fieldStyles";
+import { AMOUNT, GROUP_BAND, PAGE_CARD, ROW_CAPTION, ROW_TEXT } from "../pageStyles";
+
 import { bankStatementsApi } from "./bank-statement-api";
+import { MatchLine } from "./MatchLine";
 import { StatementLineActions } from "./StatementLineActions";
 
 type BankMatchWorkspaceProps = {
@@ -31,6 +36,9 @@ type BankMatchWorkspaceProps = {
 type WorkspaceAction = "autoMatch" | "match" | `unmatch:${string}` | `line:${string}`;
 
 const sum = (amounts: readonly number[]): number => amounts.reduce((total, amount) => total + amount, 0);
+
+/** A band over one side of the workspace, a step tighter than a full-width group. */
+const SIDE_BAND = cn(GROUP_BAND, "px-4");
 
 /**
  * Matching, side by side: the statement's unmatched lines and the Bank account's
@@ -101,17 +109,18 @@ export function BankMatchWorkspace({ statement, candidates, suggestions, canWrit
       t("workspace.recordError"),
     );
 
-  const amountClass = (amount: number): string => (amount < 0 ? "text-error-foreground" : "text-success-foreground");
+  const signed = (amount: number): string => `${amount > 0 ? "+" : ""}${formatNumber(amount, locale)}`;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className={cn(ROW_TEXT, "flex min-w-0 flex-col gap-4")}>
       {editable ? (
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           {suggestions.length > 0 ? (
             <Button
               type="button"
-              size="sm"
-              variant="outline"
+              variant="secondary"
+              size="control-md"
+              className="px-3"
               loading={isRunning("autoMatch")}
               disabled={pending}
               onClick={() =>
@@ -122,137 +131,122 @@ export function BankMatchWorkspace({ statement, candidates, suggestions, canWrit
                 )
               }
             >
-              <Icon icon={Wand2} size="sm" className="me-1.5" />
+              <Icon icon={Wand2} size="icon-md" className="me-2" />
               {t("workspace.autoMatch", { count: suggestions.length })}
             </Button>
           ) : null}
-          <span className="text-body-small text-muted-foreground">
-            {t("workspace.selection", { bank: formatMoney(bankTotal, locale), books: formatMoney(bookTotal, locale) })}
-          </span>
-          <Button
-            type="button"
-            size="sm"
-            loading={isRunning("match")}
-            disabled={!canMatch || pending}
-            className="ms-auto"
-            onClick={() =>
-              run(
-                "match",
-                async () => {
-                  await bankStatementsApi.match(statement.id, {
-                    statementLineIds: [...bankPicked],
-                    ledgerLineIds: [...bookPicked],
-                  });
-                  return t("workspace.matchedToast");
-                },
-                t("workspace.matchError"),
-              )
-            }
-          >
-            <Icon icon={Link2} size="sm" className="me-1.5" />
-            {t("workspace.match")}
-          </Button>
+          <div className="ms-auto flex flex-wrap items-center gap-x-3 gap-y-2">
+            <span className="whitespace-nowrap text-foreground/80 tabular-nums">
+              {t("workspace.selection", { bank: signed(bankTotal), books: signed(bookTotal) })}
+            </span>
+            <Button
+              type="button"
+              size="control-md"
+              className="px-4"
+              loading={isRunning("match")}
+              disabled={!canMatch || pending}
+              onClick={() =>
+                run(
+                  "match",
+                  async () => {
+                    await bankStatementsApi.match(statement.id, {
+                      statementLineIds: [...bankPicked],
+                      ledgerLineIds: [...bookPicked],
+                    });
+                    return t("workspace.matchedToast");
+                  },
+                  t("workspace.matchError"),
+                )
+              }
+            >
+              {t("workspace.match")}
+            </Button>
+          </div>
         </div>
       ) : null}
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <section className="flex min-w-0 flex-col rounded-card-lg border border-border bg-background">
-          <h2 className="border-b border-border px-4 py-3 text-body-strong text-foreground">
-            {t("workspace.bankSide", { count: openLines.length })}
-          </h2>
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
+        <section className={cn(PAGE_CARD, "flex flex-col overflow-hidden")}>
+          <h2 className={SIDE_BAND}>{t("workspace.bankSide", { count: openLines.length })}</h2>
           {openLines.length === 0 ? (
-            <EmptyState icon={CheckCheck} title={t("workspace.bankDone")} className="py-8" />
+            <p className="p-4 text-muted-foreground">{t("workspace.bankDone")}</p>
           ) : (
             <ul className="divide-y divide-border">
               {openLines.map((line) => (
-                <li key={line.id} className="flex items-center gap-3 px-4 py-2.5 text-body-small">
-                  {editable ? (
-                    <Checkbox
-                      checked={bankPicked.has(line.id)}
-                      onCheckedChange={(checked) => setBankPicked((set) => toggle(set, line.id, checked === true))}
-                      aria-label={t("workspace.pick", { description: line.description })}
-                    />
-                  ) : null}
-                  <span className="w-20 shrink-0 text-muted-foreground">{formatCafeDayShort(line.date, locale)}</span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-foreground" dir="auto">
-                      {line.description}
-                    </span>
-                    {line.reference ? (
-                      <span className="block truncate text-body-caption text-muted-foreground" dir="ltr">
-                        {line.reference}
-                      </span>
-                    ) : null}
-                  </span>
-                  <span className={cn("shrink-0", amountClass(line.amount))}>{formatMoney(line.amount, locale)}</span>
-                  {editable ? (
-                    <StatementLineActions
-                      line={line}
-                      disabled={pending}
-                      busy={isRunning(`line:${line.id}`)}
-                      onRecord={(values) => record(line.id, values)}
-                      onRemove={() =>
-                        run(
-                          `line:${line.id}`,
-                          async () => {
-                            await bankStatementsApi.removeLine(statement.id, line.id);
-                            return t("workspace.lineRemoved");
-                          },
-                          t("workspace.removeError"),
-                        )
-                      }
-                    />
-                  ) : null}
+                <li key={line.id}>
+                  <MatchLine
+                    description={line.description}
+                    meta={
+                      <>
+                        {formatCafeDayShort(line.date, locale)}
+                        {line.reference ? (
+                          <>
+                            {" · "}
+                            <bdi>{line.reference}</bdi>
+                          </>
+                        ) : null}
+                      </>
+                    }
+                    amount={signed(line.amount)}
+                    moneyIn={line.amount > 0}
+                    picked={bankPicked.has(line.id)}
+                    disabled={!editable}
+                    pickLabel={t("workspace.pick", { description: line.description })}
+                    onPickedChange={(on) => setBankPicked((set) => toggle(set, line.id, on))}
+                    end={
+                      editable ? (
+                        <StatementLineActions
+                          line={line}
+                          disabled={pending}
+                          busy={isRunning(`line:${line.id}`)}
+                          onRecord={(values) => record(line.id, values)}
+                          onRemove={() =>
+                            run(
+                              `line:${line.id}`,
+                              async () => {
+                                await bankStatementsApi.removeLine(statement.id, line.id);
+                                return t("workspace.lineRemoved");
+                              },
+                              t("workspace.removeError"),
+                            )
+                          }
+                        />
+                      ) : null
+                    }
+                  />
                 </li>
               ))}
             </ul>
           )}
         </section>
 
-        <section className="flex min-w-0 flex-col rounded-card-lg border border-border bg-background">
-          <h2 className="border-b border-border px-4 py-3 text-body-strong text-foreground">
-            {t("workspace.bookSide", { count: openCandidates.length })}
-          </h2>
+        <section className={cn(PAGE_CARD, "flex flex-col overflow-hidden")}>
+          <h2 className={SIDE_BAND}>{t("workspace.bookSide", { count: openCandidates.length })}</h2>
           {openCandidates.length === 0 ? (
-            <EmptyState icon={CheckCheck} title={t("workspace.bookDone")} className="py-8" />
+            <p className="p-4 text-muted-foreground">{t("workspace.bookDone")}</p>
           ) : (
             <ul className="divide-y divide-border">
               {openCandidates.map((candidate) => (
-                <li key={candidate.lineId} className="flex items-center gap-3 px-4 py-2.5 text-body-small">
-                  {editable ? (
-                    <Checkbox
-                      checked={bookPicked.has(candidate.lineId)}
-                      onCheckedChange={(checked) =>
-                        setBookPicked((set) => toggle(set, candidate.lineId, checked === true))
-                      }
-                      aria-label={t("workspace.pick", { description: candidate.description })}
-                    />
-                  ) : null}
-                  <span
-                    className={cn(
-                      "w-20 shrink-0",
-                      candidate.date > statement.toDay ? "text-warning-foreground" : "text-muted-foreground",
-                    )}
-                  >
-                    {formatCafeDayShort(candidate.date, locale)}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-foreground" dir="auto">
-                      {candidate.description}
-                    </span>
-                    <span className="block truncate text-body-caption text-muted-foreground">
+                <li key={candidate.lineId}>
+                  <MatchLine
+                    description={candidate.description}
+                    meta={`${formatCafeDayShort(candidate.date, locale)} · ${tAccounting(`source.${candidate.source}`)}`}
+                    late={candidate.date > statement.toDay}
+                    amount={signed(candidate.amount)}
+                    moneyIn={candidate.amount > 0}
+                    picked={bookPicked.has(candidate.lineId)}
+                    disabled={!editable}
+                    pickLabel={t("workspace.pick", { description: candidate.description })}
+                    onPickedChange={(on) => setBookPicked((set) => toggle(set, candidate.lineId, on))}
+                    end={
                       <Link
                         href={`/dashboard/accounting/journal/${candidate.entryId}`}
-                        className="text-primary underline-offset-4 hover:underline"
+                        className="-my-3 shrink-0 py-3 font-medium whitespace-nowrap text-primary hover:text-primary-hover sm:my-0 sm:py-0"
                       >
                         JE-{candidate.entryNumber}
-                      </Link>{" "}
-                      · {tAccounting(`source.${candidate.source}`)}
-                    </span>
-                  </span>
-                  <span className={cn("shrink-0", amountClass(candidate.amount))}>
-                    {formatMoney(candidate.amount, locale)}
-                  </span>
+                      </Link>
+                    }
+                  />
                 </li>
               ))}
             </ul>
@@ -260,68 +254,62 @@ export function BankMatchWorkspace({ statement, candidates, suggestions, canWrit
         </section>
       </div>
 
-      {matches.length > 0 ? (
-        <section className="flex flex-col rounded-card-lg border border-border bg-background">
-          <h2 className="border-b border-border px-4 py-3 text-body-strong text-foreground">
-            {t("workspace.matched", { count: matches.length })}
-          </h2>
-          <ul className="divide-y divide-border">
-            {matches.map((match) => (
-              <li key={match.matchId} className="flex flex-wrap items-start gap-3 px-4 py-2.5 text-body-small">
-                <div className="min-w-0 flex-1 basis-60">
-                  {match.lines.map((line) => (
-                    <p key={line.id} className="flex gap-2">
-                      <span className="text-muted-foreground">{formatCafeDayShort(line.date, locale)}</span>
-                      <span className="min-w-0 flex-1 truncate" dir="auto">
-                        {line.description}
-                      </span>
-                      <span className={amountClass(line.amount)}>{formatMoney(line.amount, locale)}</span>
-                    </p>
-                  ))}
-                </div>
-                <div className="min-w-0 flex-1 basis-60 text-muted-foreground">
+      <DashboardSection title={t("workspace.matched", { count: matches.length })} className="overflow-hidden" flush>
+        <ul className="divide-y divide-border">
+          {matches.map((match) => (
+            <li key={match.matchId} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-3">
+              <span className="flex min-w-48 flex-1 flex-col gap-0.5">
+                <span className="font-medium text-foreground" dir="auto">
+                  {match.lines.map((line) => line.description).join(locale === "fa" ? "، " : ", ")}
+                </span>
+                <span className={cn(ROW_CAPTION, "flex flex-wrap gap-1")}>
+                  <span>
+                    {t("workspace.matchedTo", {
+                      date: match.lines[0] ? formatCafeDayShort(match.lines[0].date, locale) : "",
+                    })}
+                  </span>
                   {match.ledger.map((candidate) => (
-                    <p key={candidate.lineId} className="flex gap-2">
-                      <Link
-                        href={`/dashboard/accounting/journal/${candidate.entryId}`}
-                        className="text-primary underline-offset-4 hover:underline"
-                      >
-                        JE-{candidate.entryNumber}
-                      </Link>
-                      <span className="min-w-0 flex-1 truncate" dir="auto">
-                        {candidate.description}
-                      </span>
-                      <span>{formatMoney(candidate.amount, locale)}</span>
-                    </p>
+                    <Link
+                      key={candidate.lineId}
+                      href={`/dashboard/accounting/journal/${candidate.entryId}`}
+                      className="text-primary hover:text-primary-hover"
+                    >
+                      JE-{candidate.entryNumber}
+                    </Link>
                   ))}
-                </div>
-                {editable ? (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    loading={isRunning(`unmatch:${match.matchId}`)}
-                    disabled={pending}
-                    onClick={() =>
-                      run(
-                        `unmatch:${match.matchId}`,
-                        async () => {
-                          await bankStatementsApi.unmatch(statement.id, match.matchId);
-                          return t("workspace.unmatchedToast");
-                        },
-                        t("workspace.matchError"),
-                      )
-                    }
-                  >
-                    <Icon icon={Unlink} size="sm" className="me-1.5" />
-                    {t("workspace.unmatch")}
-                  </Button>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
+                </span>
+              </span>
+              <span className={cn(AMOUNT, "font-semibold text-foreground")}>
+                {signed(sum(match.lines.map((line) => line.amount)))}
+              </span>
+              {editable ? (
+                <button
+                  type="button"
+                  className={cn(
+                    TEXT_ACTION,
+                    focusRing,
+                    "flex items-center gap-1.5 text-primary hover:text-primary-hover",
+                  )}
+                  disabled={pending}
+                  onClick={() =>
+                    run(
+                      `unmatch:${match.matchId}`,
+                      async () => {
+                        await bankStatementsApi.unmatch(statement.id, match.matchId);
+                        return t("workspace.unmatchedToast");
+                      },
+                      t("workspace.matchError"),
+                    )
+                  }
+                >
+                  {isRunning(`unmatch:${match.matchId}`) ? <Spinner size="xs" decorative /> : null}
+                  {t("workspace.unmatch")}
+                </button>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      </DashboardSection>
     </div>
   );
 }

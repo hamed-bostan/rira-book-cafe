@@ -34,12 +34,3 @@ export function ActivityEntrySkeletons({ rows, showEntity = true }: ActivityEntr
     </ul>
   );
 }
-
-/** Placeholder for `ActivityList` — a per-entity panel's entries in their card frame. */
-export function ActivityListSkeleton({ rows = 3 }: { rows?: number }) {
-  return (
-    <div className="overflow-hidden rounded-card-lg border border-border bg-background">
-      <ActivityEntrySkeletons rows={rows} showEntity={false} />
-    </div>
-  );
-}

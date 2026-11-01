@@ -163,7 +163,15 @@
     "tableInvalid": "میزها را از نقشهٔ سالن انتخاب کنید.",
     "copiesWhole": "تعداد نسخه را به صورت عدد صحیح وارد کنید.",
     "copiesRange": "بین ۱ تا ۲۰ نسخه.",
-    "extendInvalid": "مدت تمدید را انتخاب کنید."
+    "extendInvalid": "مدت تمدید را انتخاب کنید.",
+    "paymentPartsDuplicate": "هر روش پرداخت فقط یک بار می‌تواند بیاید.",
+    "paymentPartsInvalid": "برای هر روش یک مبلغ صحیح وارد کنید.",
+    "paymentPartsTotal": "جمع مبلغ‌ها باید با صورت‌حساب برابر باشد.",
+    "refundLinesRequired": "اقلامی را که بازپرداخت می‌شوند انتخاب کنید.",
+    "refundLineUnknown": "این قلم در این سفارش نیست.",
+    "refundQuantityInvalid": "بیشتر از مقدار باقی‌مانده نمی‌توان بازپرداخت کرد.",
+    "refundNothing": "برای این اقلام مبلغی برای بازپرداخت نیست.",
+    "paymentOverOwed": "این مبلغ از بدهی این صورت‌حساب بیشتر است."
   },
   "apiErrors": {
     "alreadyPosted": "این مورد قبلاً ثبت شده است.",
@@ -215,7 +223,8 @@
     "notReconciled": "صورت‌حساب هنوز تطبیق ندارد — همهٔ ردیف‌ها را تطبیق دهید و اختلاف را صفر کنید.",
     "previousNotReconciled": "اول صورت‌حساب‌های قبلی را مغایرت‌گیری کنید.",
     "tableHeld": "این میز در آن زمان برای یک رویداد نگه داشته شده است.",
-    "allCopiesOut": "همهٔ نسخه‌های این کتاب بیرون است. مهمان را به صف آن اضافه کنید."
+    "allCopiesOut": "همهٔ نسخه‌های این کتاب بیرون است. مهمان را به صف آن اضافه کنید.",
+    "notRefundable": "فروش این سفارش در دفاتر ثبت نشده، پس اینجا بازپرداخت نمی‌شود."
   },
   "meta": {
     "siteName": "کافه کتاب ریرا",
@@ -278,7 +287,8 @@
     "notificationsEmpty": "سفارشی در انتظار نیست.",
     "groupBookings": "رزروها",
     "groupLibrary": "کتابخانه",
-    "navBookHolds": "رزرو کتاب"
+    "navBookHolds": "رزرو کتاب",
+    "navIncome": "درآمدها"
   },
   "dashTeam": {
     "membersHeading": "اعضای تیم",
@@ -467,8 +477,6 @@
     "originPlaceholder": "Ethiopia Yirgacheffe, washed.",
     "localeTabBase": "انگلیسی",
     "localeTabFa": "فارسی",
-    "baseTabDescription": "رکورد اصلی: متنی که مهمان‌ها به انگلیسی می‌بینند و جایگزین سایر زبان‌ها.",
-    "translationDescription": "متن فارسی اختیاری برای مهمان‌های فارسی‌زبان. اگر نام خالی بماند، متن انگلیسی نمایش داده می‌شود.",
     "faNamePlaceholder": "لاته اسپانیایی سرد",
     "faUnitPlaceholder": "۳۵۰ میلی‌لیتر",
     "faDescriptionPlaceholder": "دابل اسپرسو روی شیر عسلی و یخ.",
@@ -516,7 +524,12 @@
     "saved": "«{name}» ذخیره شد.",
     "deleted": "{name} حذف شد",
     "bookCopiesLabel": "نسخه‌های امانتی",
-    "bookCopiesDescription": "قفسهٔ امانت چند نسخه از این کتاب دارد. برای یک نسخه خالی بگذارید."
+    "bookCopiesDescription": "قفسهٔ امانت چند نسخه از این کتاب دارد. برای یک نسخه خالی بگذارید.",
+    "sectionBasics": "اطلاعات پایه",
+    "sectionText": "نام و توضیحات",
+    "sectionTextHint": "مهمان‌ها بسته به زبان سایت، نسخهٔ انگلیسی یا فارسی را می‌بینند.",
+    "sectionOnMenu": "در منو",
+    "noImage": "هنوز تصویری نیست"
   },
   "dashCategories": {
     "heading": "دسته‌بندی‌ها",
@@ -562,8 +575,6 @@
     "activeAria": "فعال",
     "localeTabBase": "انگلیسی",
     "localeTabFa": "فارسی",
-    "baseTabDescription": "رکورد اصلی: نامی که مهمان‌ها به انگلیسی می‌بینند و جایگزین سایر زبان‌ها.",
-    "translationDescription": "نام فارسی اختیاری برای مهمان‌های فارسی‌زبان. اگر خالی بماند، نام انگلیسی نمایش داده می‌شود.",
     "faNamePlaceholder": "نوشیدنی‌های گرم",
     "formError": "مشکلی پیش آمد. لطفاً دوباره تلاش کنید.",
     "saveChanges": "ذخیره تغییرات",
@@ -583,7 +594,9 @@
     "uploadHint": "PNG، JPG، WebP یا AVIF · تا ۵ مگابایت",
     "savedToast": "دسته‌بندی ذخیره شد",
     "createdToast": "دسته‌بندی ساخته شد",
-    "deleted": "{name} حذف شد"
+    "deleted": "{name} حذف شد",
+    "sectionNameHint": "به زبان مهمان، به‌صورت یک زبانه در منو نمایش داده می‌شود.",
+    "sectionVisibility": "نمایش"
   },
   "dashBulk": {
     "label": "عملیات گروهی",
@@ -686,7 +699,7 @@
     "paidWith": "پرداخت‌شده · {method}",
     "paymentMethodLabel": "مهمان چطور پرداخت کرد؟",
     "unmarkPaid": "لغو پرداخت",
-    "refundedNote": "بازپرداخت شد — سفارش پس از پرداخت لغو شد.",
+    "refundedNote": "بازپرداخت شد — مبلغ به مهمان برگشت.",
     "markPaid": "ثبت پرداخت",
     "markAsPaid": "ثبت پرداخت",
     "paymentError": "به‌روزرسانی پرداخت ممکن نشد. دوباره تلاش کنید.",
@@ -729,7 +742,61 @@
     "bulkCancelledToast": "{count, plural, other {# سفارش لغو شد}}",
     "bulkError": "به‌روزرسانی سفارش‌ها ممکن نشد. دوباره تلاش کنید.",
     "bulkCancelTitle": "{count, plural, other {# سفارش لغو شود؟}}",
-    "bulkCancelMessage": "آیتم‌های این سفارش‌ها به موجودی برمی‌گردند. این کار قابل بازگشت نیست."
+    "bulkCancelMessage": "آیتم‌های این سفارش‌ها به موجودی برمی‌گردند. این کار قابل بازگشت نیست.",
+    "notesHint": "هرگز به مهمان نشان داده نمی‌شود",
+    "newSale": "فروش جدید",
+    "recordPayment": "ثبت پرداخت",
+    "splitPayment": "تقسیم صورت‌حساب",
+    "oneMethod": "پرداخت با یک روش",
+    "splitAddsUp": "با جمع کل برابر است.",
+    "splitRemaining": "{amount} هنوز تخصیص نیافته.",
+    "splitOver": "{amount} بیشتر از جمع کل.",
+    "counter": {
+      "heading": "فروش جدید",
+      "subtitle": "ثبت فروش حضوری، سفارش تلفنی یا کتابی از قفسه.",
+      "menuHeading": "منو",
+      "searchLabel": "جستجو در منو",
+      "noMatches": "چیزی در منو پیدا نشد.",
+      "addAria": "افزودن {name}",
+      "soldOut": "تمام شد",
+      "saleHeading": "این فروش",
+      "basketEmpty": "اقلام را از منو انتخاب کنید.",
+      "decreaseAria": "یکی کمتر {name}",
+      "increaseAria": "یکی بیشتر {name}",
+      "detailsHeading": "برای چه کسی",
+      "customerLabel": "نام",
+      "walkIn": "مهمان حضوری",
+      "phoneLabel": "تلفن (اختیاری)",
+      "tableLabel": "میز",
+      "noteLabel": "یادداشت برای بار (اختیاری)",
+      "payment": {
+        "later": "پرداخت بعدی",
+        "split": "تقسیم"
+      },
+      "completeLabel": "تحویل همین حالا",
+      "completeHint": "برای چیزی که آماده است، مثل کتاب. اگر خاموش باشد به صف بار می‌رود.",
+      "submit": "ثبت فروش",
+      "incomplete": "نام را وارد کنید و برای سفارش سالن، میز را هم مشخص کنید.",
+      "saved": "فروش با شماره سفارش #{number} ثبت شد",
+      "error": "فروش ثبت نشد. دوباره تلاش کنید."
+    },
+    "refund": {
+      "open": "بازپرداخت",
+      "title": "بازپرداخت سفارش #{number}",
+      "subtitle": "اقلام برگشتی را انتخاب کنید. از درآمد و مالیات بر ارزش افزوده کم می‌شود و فروش در سوابق می‌ماند.",
+      "quantityAria": "چند عدد از {name} بازپرداخت شود",
+      "restock": "برگشت به قفسه",
+      "methodLabel": "روش بازپرداخت",
+      "reasonLabel": "دلیل (اختیاری)",
+      "preview": "{amount} به مهمان برمی‌گردد.",
+      "submit": "بازپرداخت",
+      "saved": "بازپرداخت روی سفارش #{number} ثبت شد",
+      "error": "بازپرداخت ثبت نشد. دوباره تلاش کنید.",
+      "heading": "بازپرداخت‌ها",
+      "restocked": "برگشت به انبار",
+      "lineRefunded": "{quantity} بازپرداخت شد",
+      "totalLabel": "بازپرداخت‌شده"
+    }
   },
   "dashOrderNotes": {
     "label": "یادداشت داخلی",
@@ -773,7 +840,8 @@
       "ledger": "دفاتر",
       "expense": "هزینه‌ها",
       "suiteBooking": "سوئیت",
-      "bookLoan": "امانت کتاب"
+      "bookLoan": "امانت کتاب",
+      "income": "درآمدها"
     },
     "action": {
       "product": {
@@ -785,7 +853,9 @@
         "stageChanged": "<b>{actor}</b> وضعیت سفارش {entity} را تغییر داد",
         "customerNotified": "<b>{actor}</b> دربارهٔ سفارش {entity} به مهمان پیام داد",
         "placed": "<b>{actor}</b> سفارش {entity} را ثبت کرد",
-        "paymentChanged": "<b>{actor}</b> وضعیت پرداخت سفارش {entity} را تغییر داد"
+        "paymentChanged": "<b>{actor}</b> وضعیت پرداخت سفارش {entity} را تغییر داد",
+        "counterSale": "<b>{actor}</b> سفارش {entity} را در صندوق ثبت کرد",
+        "refunded": "<b>{actor}</b> سفارش {entity} را بازپرداخت کرد"
       },
       "review": {
         "moderated": "<b>{actor}</b> نظر {entity} را بررسی کرد",
@@ -838,6 +908,10 @@
         "lost": "<b>{actor}</b> امانت {entity} را گم‌شده ثبت کرد",
         "extended": "<b>{actor}</b> امانت {entity} را تمدید کرد",
         "extensionUndone": "<b>{actor}</b> تمدید امانت {entity} را لغو کرد"
+      },
+      "income": {
+        "recorded": "<b>{actor}</b> درآمد {entity} را ثبت کرد",
+        "voided": "<b>{actor}</b> درآمد {entity} را باطل کرد"
       }
     },
     "role": {
@@ -1026,7 +1100,6 @@
     "descriptionLabel": "توضیحات",
     "localeTabBase": "English",
     "localeTabFa": "فارسی (Persian)",
-    "translationDescription": "متن فارسی اختیاری برای مهمان‌های فارسی‌زبان. اگر خالی بماند، متن انگلیسی نمایش داده می‌شود.",
     "startsAtLabel": "شروع",
     "endsAtLabel": "پایان",
     "timeZoneHint": "زمان‌ها به وقت کافه (تهران) هستند.",
@@ -1098,7 +1171,14 @@
     "emptyUpcomingTitle": "هنوز برنامه‌ای نیست",
     "emptyUpcomingBody": "باشگاه‌های کتاب، کتاب‌خوانی‌ها و کارگاه‌هایی که برنامه‌ریزی می‌کنید اینجا می‌آیند.",
     "emptyPastTitle": "رویداد گذشته‌ای نیست",
-    "emptyPastBody": "رویدادهایی که برگزار شده‌اند اینجا می‌آیند."
+    "emptyPastBody": "رویدادهایی که برگزار شده‌اند اینجا می‌آیند.",
+    "backToEvents": "بازگشت به رویدادها",
+    "sectionDetails": "جزئیات",
+    "sectionWhen": "زمان و ظرفیت",
+    "sectionVisibility": "نمایش",
+    "noImage": "هنوز تصویری نیست",
+    "registrationPaid": "پرداخت‌شده {amount}",
+    "registrationRefundDue": "اگر مبلغ برگشت داده شد، پرداخت را در درآمدها باطل کنید"
   },
   "dashOverview": {
     "heading": "امروز",
@@ -1739,7 +1819,11 @@
       "yearClose": "بستن سال مالی",
       "cashShift": "شیفت صندوق",
       "bankFee": "کارمزد بانک",
-      "bankInterest": "سود بانکی"
+      "bankInterest": "سود بانکی",
+      "orderReturn": "بازپرداخت",
+      "orderReturnCost": "برگشت بهای تمام‌شده به انبار",
+      "income": "درآمد",
+      "loanDeposit": "ودیعهٔ کتاب"
     },
     "entry": {
       "title": "سند JE-{number}",
@@ -1764,7 +1848,9 @@
       "reverseReason": "دلیل",
       "reverseConfirm": "ثبت سند برگشتی",
       "reverseError": "برگشت سند انجام نشد. دوباره تلاش کنید.",
-      "reversed": "سند JE-{number} برگشت خورد"
+      "reversed": "سند JE-{number} برگشت خورد",
+      "viewIncome": "مشاهدهٔ درآمد",
+      "viewBookLoans": "مشاهدهٔ امانت کتاب‌ها"
     },
     "form": {
       "title": "سند دستی جدید",
@@ -1894,7 +1980,9 @@
       "totalExpenses": "جمع هزینه‌های عملیاتی",
       "netProfit": "سود خالص",
       "netLoss": "زیان خالص",
-      "vatNote": "درآمد بدون مالیات بر ارزش افزوده است؛ مالیات بدهی به سازمان امور مالیاتی است، نه درآمد."
+      "vatNote": "درآمد بدون مالیات بر ارزش افزوده است؛ مالیات بدهی به سازمان امور مالیاتی است، نه درآمد.",
+      "withoutCost": "برای {amount} از این فروش‌ها بهای تمام‌شده ثبت نشده، چون این اقلام دستور مصرفی ندارند که از انبار کم شوند. سود فقط وقتی درست است که هزینهٔ آن‌ها هنگام خرید ثبت شده باشد.",
+      "withoutCostLink": "رفتن به انبار"
     },
     "bs": {
       "balanced": "دارایی‌ها با جمع بدهی‌ها و حقوق صاحبان سرمایه برابر است.",
@@ -2039,13 +2127,17 @@
       "voidConfirm": "ابطال هزینه",
       "voidError": "ابطال هزینه انجام نشد. دوباره تلاش کنید.",
       "paid": "پرداخت EX-{number} ثبت شد",
-      "voided": "EX-{number} باطل شد"
+      "voided": "EX-{number} باطل شد",
+      "paidSoFar": "{paid} پرداخت‌شده، {left} مانده",
+      "payAmount": "مبلغ",
+      "payAmountHint": "برای پرداخت کل مانده خالی بگذارید، یا بخشی از آن را وارد کنید."
     },
     "suppliers": {
       "heading": "تأمین‌کنندگان",
       "subtitle": "کسانی که کافه از آن‌ها خرید می‌کند. به جای حذف، غیرفعالشان کنید — صورت‌حساب‌های قبلی نامشان را نگه می‌دارند.",
       "new": "افزودن تأمین‌کننده",
       "edit": "ویرایش {name}",
+      "editShort": "ویرایش",
       "nameLabel": "نام",
       "phoneLabel": "تلفن",
       "noteLabel": "یادداشت",
@@ -2056,13 +2148,13 @@
       "error": "ذخیرهٔ تأمین‌کننده انجام نشد. دوباره تلاش کنید.",
       "saved": "تأمین‌کننده ذخیره شد",
       "added": "تأمین‌کننده افزوده شد"
-    }
+    },
+    "owedLeft": "{amount} مانده"
   },
   "dashPricing": {
     "heading": "قیمت‌گذاری",
     "subtitle": "بهای واقعی هر قلم، و قیمت منویی که سود دلخواه شما را از آن می‌دهد.",
     "tabsLabel": "بخش‌های قیمت‌گذاری",
-    "breadcrumbLabel": "مسیر صفحه",
     "cancel": "انصراف",
     "save": "ذخیره",
     "tab": {
@@ -2315,7 +2407,8 @@
       "receipt": "دریافت کالا",
       "sale": "فروش",
       "waste": "ضایعات",
-      "count": "انبارگردانی"
+      "count": "انبارگردانی",
+      "return": "بازپرداخت"
     },
     "movements": {
       "heading": "گردش انبار",
@@ -2370,6 +2463,14 @@
       "levelSaved": "حد سفارش {name} روی {quantity} تنظیم شد",
       "levelCleared": "حد سفارش {name} برداشته شد",
       "wastePreviewWorth": "موجودی از {from} به {to} می‌رسد. {amount} به عنوان ضایعات ثبت می‌شود."
+    },
+    "books": {
+      "notice": "{formatted} کتاب فروشی قلم انبار ندارد، پس فروششان بهای تمام‌شده ثبت نمی‌کند.",
+      "action": "راه‌اندازی کتاب‌ها",
+      "confirmTitle": "{count, plural, other {# کتاب در انبار راه‌اندازی شود؟}}",
+      "confirmBody": "هر کتاب یک قلم انبار و دستور مصرف یک‌نسخه‌ای می‌گیرد تا از این پس هر فروش بهای تمام‌شده‌اش را ثبت کند. نسخه‌های روی قفسه با قیمت تمام‌شده به‌عنوان موجودی اول دوره در برابر سرمایهٔ مالک وارد می‌شوند. کتاب‌های بدون قیمت تمام‌شده با صفر وارد می‌شوند تا رسید بعدی آن را مشخص کند.",
+      "saved": "{count, plural, other {# کتاب در انبار راه‌اندازی شد}}",
+      "error": "راه‌اندازی کتاب‌ها انجام نشد. دوباره تلاش کنید."
     }
   },
   "dashBookLoans": {
@@ -2381,7 +2482,7 @@
     "borrowerName": "نام امانت‌گیرنده",
     "borrowerPhone": "تلفن امانت‌گیرنده",
     "note": "یادداشت (اختیاری)",
-    "notePlaceholder": "مثلاً وضعیت کتاب، ودیعهٔ دریافتی",
+    "notePlaceholder": "مثلاً وضعیت کتاب",
     "phoneHint": "اگر این شماره حساب کاربری داشته باشد، مهمان این امانت را در صفحهٔ حسابش می‌بیند.",
     "lendSubmit": "ثبت امانت",
     "lendError": "ثبت امانت ممکن نشد. دوباره تلاش کنید.",
@@ -2446,7 +2547,19 @@
     "dueToday": "موعد امروز",
     "dueIn": "موعد {date} · {days, plural, other {{formatted} روز}} دیگر",
     "wasDue": "موعد {date} بود",
-    "peopleWaiting": "{count, plural, other {{formatted} نفر}} در انتظار"
+    "peopleWaiting": "{count, plural, other {{formatted} نفر}} در انتظار",
+    "depositLabel": "ودیعه (اختیاری)",
+    "depositHint": "برای مهمان نگه داشته می‌شود و درآمد نیست.",
+    "depositMethodLabel": "واریز به",
+    "depositMethod": {
+      "cash": "صندوق",
+      "bank": "بانک"
+    },
+    "deposit": {
+      "held": "ودیعه نزد کافه: {amount}",
+      "returned": "ودیعه برگشت داده شد: {amount}",
+      "kept": "ودیعه نگه داشته شد: {amount}"
+    }
   },
   "dashSuite": {
     "heading": "سوئیت",
@@ -2519,7 +2632,9 @@
     "staySummary": "{nights} · {range} · اتاق آزاد است",
     "confirmStay": "تأیید اقامت",
     "stayBooked": "S-{reference} برای {name} تأیید شد · {range}",
-    "bookError": "ذخیرهٔ اقامت ممکن نشد. دوباره تلاش کنید."
+    "bookError": "ذخیرهٔ اقامت ممکن نشد. دوباره تلاش کنید.",
+    "paid": "پرداخت‌شده {amount}",
+    "paymentDescription": "اقامت سوئیت S-{reference}، {range}"
   },
   "dashReviews": {
     "heading": "نظرها",
@@ -2879,6 +2994,7 @@
       "payoutFee": "کارمزد درگاه",
       "payoutConfirm": "ثبت تسویه",
       "matched": "{count, plural, other {# تطبیق}}",
+      "matchedTo": "{date} · تطبیق با",
       "unmatch": "برداشتن تطبیق",
       "matchedToast": "ردیف‌ها تطبیق داده شدند",
       "unmatchedToast": "تطبیق برداشته شد",
@@ -2968,5 +3084,57 @@
     "emptyOpenBody": "وقتی مهمانی کتابی را می‌خواهد که بیرون است، او را به صف اضافه کنید.",
     "emptyClosedTitle": "رزرو بسته‌ای نیست",
     "emptyClosedBody": "رزروهای امانت‌گرفته و لغوشدهٔ دو ماه اخیر اینجا می‌آیند."
+  },
+  "dashIncome": {
+    "heading": "درآمدها",
+    "subtitle": "پولی که خارج از سفارش‌ها وارد می‌شود: بلیت رویداد، اقامت سوئیت، اجارهٔ فضا. فروش‌ها خودشان ثبت می‌شوند.",
+    "new": "ثبت درآمد",
+    "takePayment": "دریافت پرداخت",
+    "monthLabel": "دریافتی {month}",
+    "monthHint": "{formatted} ردیف، با مالیات بر ارزش افزوده",
+    "listLabel": "درآمدها",
+    "tabsLabel": "فیلتر بر اساس وضعیت",
+    "tabAll": "همه",
+    "searchLabel": "جستجوی درآمد",
+    "searchPlaceholder": "شرح، شماره یا پرداخت‌کننده",
+    "noMatchesTitle": "نتیجه‌ای نیست",
+    "noMatchesBody": "درآمدی با این فیلترها پیدا نشد.",
+    "emptyTitle": "هنوز درآمدی ثبت نشده",
+    "emptyBody": "پولی را که خارج از سفارش وارد شده ثبت کنید.",
+    "status": {
+      "received": "دریافت‌شده",
+      "void": "باطل"
+    },
+    "method": {
+      "cash": "نقد",
+      "card": "کارت",
+      "transfer": "کارت‌به‌کارت"
+    },
+    "form": {
+      "title": "ثبت درآمد",
+      "subtitle": "به‌محض ذخیره در دفتر کل ثبت می‌شود.",
+      "dateLabel": "تاریخ",
+      "payerLabel": "از طرف (اختیاری)",
+      "descriptionLabel": "شرح",
+      "descriptionPlaceholder": "مثلاً اجارهٔ فضا، حق عضویت کتاب‌خوانی",
+      "accountLabel": "ثبت در حساب",
+      "accountPlaceholder": "یک حساب انتخاب کنید",
+      "amountLabel": "جمع کل (با مالیات بر ارزش افزوده)",
+      "vatLabel": "مالیات بر ارزش افزوده",
+      "vatHint": "با نرخ کافه محاسبه شده. اگر این درآمد کمتر یا بدون مالیات است تغییرش دهید.",
+      "vatTooHigh": "مالیات نمی‌تواند برابر کل مبلغ باشد.",
+      "breakdown": "{net} خالص + {vat} مالیات = {total}",
+      "methodLabel": "روش دریافت",
+      "save": "ثبت درآمد",
+      "error": "درآمد ثبت نشد. دوباره تلاش کنید.",
+      "saved": "درآمد IN-{number} ثبت شد"
+    },
+    "void": "باطل کردن",
+    "voidTitle": "IN-{number} باطل شود؟",
+    "voidMessage": "سند آن امروز برگشت می‌خورد و ردیف با برچسب باطل می‌ماند. این کار برگشت‌پذیر نیست.",
+    "voidReason": "دلیل (اختیاری)",
+    "voidConfirm": "باطل کردن درآمد",
+    "voidError": "درآمد باطل نشد. دوباره تلاش کنید.",
+    "voided": "IN-{number} باطل شد"
   }
 }

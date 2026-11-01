@@ -23,6 +23,7 @@ function order(id: string, status: OrderStatus, paymentStatus: PaymentStatus = "
     pointsRedeemed: 0,
     pointsDiscount: 0,
     pointsEarned: 0,
+    refundedTotal: 0,
     total: 0,
     placedAt: new Date(0).toISOString(),
     updatedAt: new Date(0).toISOString(),
@@ -83,7 +84,7 @@ describe("BulkUpdateOrders", () => {
     expect(updated.map((o) => o.id)).toEqual(["o1"]);
     expect(setPaymentStatus).toHaveBeenCalledWith(
       "o1",
-      { from: "unpaid", to: "paid", method: "card" },
+      { from: "unpaid", to: "paid", parts: [{ method: "card", amount: 0 }] },
       expect.any(Function),
       expect.any(Function),
     );

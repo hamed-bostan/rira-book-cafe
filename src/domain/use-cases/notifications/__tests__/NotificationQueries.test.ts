@@ -25,6 +25,7 @@ function loan(id: string, dueAt: string, overrides: Partial<BookLoan> = {}): Boo
     lentAt: "2026-10-01T10:00:00Z",
     dueAt,
     status: "out",
+    depositAmount: 0,
     lentById: "s1",
     lentByName: "Ali",
     createdAt: "",

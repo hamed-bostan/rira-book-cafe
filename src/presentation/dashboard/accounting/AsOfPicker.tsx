@@ -9,6 +9,10 @@ import { formatCafeDayMedium } from "@/src/lib/formatCafeDay";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
 import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
 
+import { DashboardField } from "../DashboardField";
+import { FIELD_INPUT } from "../fieldStyles";
+import { ROW_CAPTION } from "../pageStyles";
+
 /** The day a point-in-time statement (trial balance, balance sheet) is read at. */
 export function AsOfPicker({ asOfDay }: { asOfDay: string }) {
   const t = useTranslations("dashAccounting");
@@ -25,30 +29,33 @@ export function AsOfPicker({ asOfDay }: { asOfDay: string }) {
 
   return (
     <form
-      className="flex flex-wrap items-end gap-2"
+      className="flex flex-col gap-3"
       onSubmit={(event) => {
         event.preventDefault();
         if (day) go(day);
       }}
     >
-      <label className="flex flex-col gap-1 text-body-caption text-muted-foreground">
-        {t("period.asOf")}
-        <Input
-          type="date"
-          value={day}
-          max={today}
-          onChange={(event) => setDay(event.target.value)}
-          className="h-9"
-          dir="ltr"
-        />
-      </label>
-      <Button type="submit" size="sm" disabled={!day}>
-        {t("period.apply")}
-      </Button>
-      <Button type="button" size="sm" variant="ghost" onClick={() => go(today)}>
-        {t("period.today")}
-      </Button>
-      <span className="w-full text-body-caption text-muted-foreground">{formatCafeDayMedium(asOfDay, locale)}</span>
+      <div className="flex flex-wrap items-end gap-x-4 gap-y-3">
+        <DashboardField label={t("period.asOf")}>
+          <Input
+            size="control-md"
+            type="date"
+            value={day}
+            max={today}
+            onChange={(event) => setDay(event.target.value)}
+            className="w-auto"
+            inputClassName={FIELD_INPUT}
+            dir="ltr"
+          />
+        </DashboardField>
+        <Button type="submit" variant="secondary" size="control-md" className="px-3" disabled={!day}>
+          {t("period.apply")}
+        </Button>
+        <Button type="button" variant="secondary" size="control-md" className="px-3" onClick={() => go(today)}>
+          {t("period.today")}
+        </Button>
+      </div>
+      <p className={ROW_CAPTION}>{formatCafeDayMedium(asOfDay, locale)}</p>
     </form>
   );
 }

@@ -82,5 +82,7 @@ export type EventRegistration = {
   guestPhone: string;
   seats: number;
   status: RegistrationStatus;
+  /** Tickets paid for, in Toman, on the staff list; absent where it isn't read. */
+  paidAmount?: number;
   createdAt: string;
 };

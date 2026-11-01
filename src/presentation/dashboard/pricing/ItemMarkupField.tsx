@@ -5,6 +5,7 @@ import * as React from "react";
 
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
+import { FIELD_ERROR } from "@/src/presentation/dashboard/fieldStyles";
 import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
 import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
@@ -48,8 +49,8 @@ export function ItemMarkupField({ productId, markupBps, defaultBps }: ItemMarkup
   }
 
   return (
-    <div className="flex flex-col gap-1">
-      <div className="flex items-center gap-1">
+    <div className="flex flex-col items-end gap-0.5">
+      <div className="flex items-center gap-1.5">
         <Input
           value={value}
           onChange={(event) => setValue(event.target.value)}
@@ -64,12 +65,14 @@ export function ItemMarkupField({ productId, markupBps, defaultBps }: ItemMarkup
           placeholder={String(defaultBps / 100)}
           aria-label={t("markupLabel")}
           disabled={pending}
-          className="h-9 w-20"
+          size="control-md"
+          className="w-20"
+          inputClassName="border-border-strong px-2 text-end tabular-nums sm:min-h-8 sm:py-1"
           dir="ltr"
         />
         <span className="text-muted-foreground">%</span>
       </div>
-      {error ? <FormMessage>{error}</FormMessage> : null}
+      {error ? <FormMessage className={FIELD_ERROR}>{error}</FormMessage> : null}
     </div>
   );
 }

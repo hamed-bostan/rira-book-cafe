@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { cafeDayOf, isCafeDay, shiftCafeDay } from "@/src/domain/entities/CafeTime";
 import { toSearchParams } from "@/src/lib/api/searchParams";
 import { sessionHas } from "@/src/lib/require-permission";
+import { accountsServerApi } from "@/src/presentation/dashboard/accounting/accounting-server-api";
 import { suiteBookingsServerApi } from "@/src/presentation/dashboard/suite-bookings/suite-booking-server-api";
 import {
   SUITE_TABS,
@@ -28,10 +29,16 @@ export default async function DashboardSuitePage({ searchParams }: DashboardSuit
   const tab: SuiteTab = SUITE_TABS.find((value) => value === params.get("tab")) ?? "upcoming";
   const pastFrom = shiftCafeDay(today, -PAST_LOOKBACK_DAYS);
 
-  const [bookings, canManage] = await Promise.all([
+  const [bookings, session] = await Promise.all([
     suiteBookingsServerApi.listFrom(windowStart < pastFrom ? windowStart : pastFrom),
-    auth().then((session) => sessionHas(session, "reservations.manage")),
+    auth(),
   ]);
+  const [canManage, canTakePayment] = await Promise.all([
+    sessionHas(session, "reservations.manage"),
+    sessionHas(session, "accounting.write"),
+  ]);
+  // Taking a stay's money books it, so it follows the books' permission.
+  const payment = canTakePayment ? { vatRateBps: (await accountsServerApi.getSettings()).vatRateBps } : undefined;
 
   return (
     <SuiteBookingsScreen
@@ -41,6 +48,7 @@ export default async function DashboardSuitePage({ searchParams }: DashboardSuit
       tab={tab}
       focusId={params.get("focus") ?? undefined}
       canManage={canManage}
+      payment={payment}
     />
   );
 }

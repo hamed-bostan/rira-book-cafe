@@ -1,12 +1,19 @@
-import { ChevronRight } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
+import { amountOwed } from "@/src/domain/entities/Expense";
 import type { Account } from "@/src/domain/entities/Ledger";
 import { Link } from "@/src/i18n/navigation";
 import { formatCafeDayMedium } from "@/src/lib/formatCafeDay";
 import { formatMoney } from "@/src/lib/formatMoney";
+import { cn } from "@/src/lib/utils";
 import { accountLabel, entryTotal } from "@/src/presentation/dashboard/accounting/accounting-format";
 import type { ExpenseDetailWire } from "@/src/presentation/dashboard/accounting/accounting-response-schema";
+import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
+
+import { DashboardPageHeader } from "../DashboardPageHeader";
+import { DashboardSection } from "../DashboardSection";
+import { AMOUNT, ROW_CAPTION } from "../pageStyles";
+import { DashboardPageCrumb } from "../shell/DashboardPageCrumb";
 
 import { ExpenseStatusBadge } from "./ExpenseStatusBadge";
 import { PayExpenseButton } from "./PayExpenseButton";
@@ -21,111 +28,113 @@ export async function ExpenseDetailScreen({ expense, entries, accounts, canWrite
   const locale = await getLocale();
   const account = accounts.find((candidate) => candidate.code === expense.accountCode);
 
+  const details: { key: string; label: string; value: string; figure?: boolean; strong?: boolean }[] = [
+    { key: "date", label: t("form.dateLabel"), value: formatCafeDayMedium(expense.date, locale) },
+    { key: "supplier", label: t("form.supplierLabel"), value: expense.supplierName ?? t("form.noSupplier") },
+    {
+      key: "account",
+      label: t("form.accountLabel"),
+      value: account ? accountLabel(account, locale) : expense.accountCode,
+    },
+    {
+      key: "payment",
+      label: t("detail.payment"),
+      value:
+        expense.paidFrom && expense.paidOn
+          ? t("detail.paidFrom", {
+              source: t(`detail.source.${expense.paidFrom}`),
+              date: formatCafeDayMedium(expense.paidOn, locale),
+            })
+          : expense.paidAmount > 0
+            ? t("detail.paidSoFar", {
+                paid: formatMoney(expense.paidAmount, locale),
+                left: formatMoney(amountOwed(expense), locale),
+              })
+            : t("status.unpaid"),
+    },
+    {
+      key: "net",
+      label: t("detail.net"),
+      value: formatMoney(expense.amount - expense.vatAmount, locale),
+      figure: true,
+    },
+    { key: "vat", label: t("detail.vat"), value: formatMoney(expense.vatAmount, locale), figure: true },
+    { key: "total", label: t("detail.total"), value: formatMoney(expense.amount, locale), figure: true, strong: true },
+  ];
+
   return (
     <div className="flex min-w-0 flex-col gap-6">
-      <nav
-        aria-label={t("breadcrumbLabel")}
-        className="flex items-center gap-2 text-body-caption text-muted-foreground"
-      >
-        <Link href="/dashboard/expenses" className="hover:text-foreground">
-          {t("heading")}
-        </Link>
-        <ChevronRight className="size-3.5 rtl:rotate-180" aria-hidden />
-        <span className="font-medium text-foreground">EX-{expense.number}</span>
-      </nav>
+      <DashboardPageCrumb label={`EX-${expense.number}`} />
+      <DashboardPageHeader
+        backHref="/dashboard/expenses"
+        backLabel={t("heading")}
+        title={t("detail.title", { number: expense.number })}
+        badge={<ExpenseStatusBadge status={expense.status} standalone />}
+        subtitle={t("detail.recordedBy", { name: expense.createdByName })}
+        actions={
+          canWrite && expense.status !== "void" ? (
+            <>
+              <VoidExpenseButton id={expense.id} number={expense.number} />
+              {expense.status === "unpaid" ? (
+                <PayExpenseButton
+                  expense={{
+                    id: expense.id,
+                    number: expense.number,
+                    date: expense.date,
+                    description: expense.description,
+                    amount: expense.amount,
+                    paidAmount: expense.paidAmount,
+                  }}
+                  today={today}
+                />
+              ) : null}
+            </>
+          ) : undefined
+        }
+      />
 
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-3">
-            <h1 className="dashboard-page-title">{t("detail.title", { number: expense.number })}</h1>
-            <ExpenseStatusBadge status={expense.status} />
-          </div>
-          <p className="text-body text-foreground" dir="auto">
-            {expense.description}
-          </p>
-          <p className="text-body-caption text-muted-foreground">
-            {t("detail.recordedBy", { name: expense.createdByName })}
-          </p>
-        </div>
-        {canWrite && expense.status !== "void" ? (
-          <div className="flex flex-wrap gap-2">
-            {expense.status === "unpaid" ? (
-              <PayExpenseButton
-                expense={{
-                  id: expense.id,
-                  number: expense.number,
-                  date: expense.date,
-                  description: expense.description,
-                  amount: expense.amount,
-                }}
-                today={today}
-              />
-            ) : null}
-            <VoidExpenseButton id={expense.id} number={expense.number} />
-          </div>
-        ) : null}
-      </div>
-
-      <dl className="grid grid-cols-1 gap-x-6 gap-y-4 rounded-card-lg border border-border bg-background p-4 sm:grid-cols-2 md:p-6">
-        <div>
-          <dt className="text-body-caption text-muted-foreground">{t("form.dateLabel")}</dt>
-          <dd className="text-body-small-emphasis text-foreground">{formatCafeDayMedium(expense.date, locale)}</dd>
-        </div>
-        <div>
-          <dt className="text-body-caption text-muted-foreground">{t("form.supplierLabel")}</dt>
-          <dd className="text-body-small-emphasis text-foreground">{expense.supplierName ?? t("form.noSupplier")}</dd>
-        </div>
-        <div>
-          <dt className="text-body-caption text-muted-foreground">{t("form.accountLabel")}</dt>
-          <dd className="text-body-small-emphasis text-foreground">
-            {account ? accountLabel(account, locale) : expense.accountCode}
-          </dd>
-        </div>
-        <div>
-          <dt className="text-body-caption text-muted-foreground">{t("detail.payment")}</dt>
-          <dd className="text-body-small-emphasis text-foreground">
-            {expense.paidFrom && expense.paidOn
-              ? t("detail.paidFrom", {
-                  source: t(`detail.source.${expense.paidFrom}`),
-                  date: formatCafeDayMedium(expense.paidOn, locale),
-                })
-              : t("status.unpaid")}
-          </dd>
-        </div>
-        <div>
-          <dt className="text-body-caption text-muted-foreground">{t("detail.net")}</dt>
-          <dd className="text-body-small-emphasis text-foreground">
-            {formatMoney(expense.amount - expense.vatAmount, locale)}
-          </dd>
-        </div>
-        <div>
-          <dt className="text-body-caption text-muted-foreground">{t("detail.vat")}</dt>
-          <dd className="text-body-small-emphasis text-foreground">{formatMoney(expense.vatAmount, locale)}</dd>
-        </div>
-        <div className="sm:col-span-2">
-          <dt className="text-body-caption text-muted-foreground">{t("detail.total")}</dt>
-          <dd className="text-body-lead text-foreground">{formatMoney(expense.amount, locale)}</dd>
-        </div>
-      </dl>
-
-      <section className="flex flex-col gap-3">
-        <h2 className="text-body-lead text-foreground">{t("detail.entriesHeading")}</h2>
-        <ul className="divide-y divide-border overflow-hidden rounded-card-lg border border-border bg-background">
-          {entries.map((entry) => (
-            <li key={entry.id} className="flex flex-wrap items-center gap-3 px-4 py-3 text-body-small">
-              <Link
-                href={`/dashboard/accounting/journal/${entry.id}`}
-                className="text-body-small-emphasis text-primary underline-offset-4 hover:underline"
+      <DashboardSection title={<span dir="auto">{expense.description}</span>} flush>
+        <dl className="grid grid-cols-2 gap-x-6 gap-y-5 p-5 lg:grid-cols-4">
+          {details.map((detail) => (
+            <div key={detail.key} className="flex min-w-0 flex-col gap-0.5">
+              <dt className={ROW_CAPTION}>{detail.label}</dt>
+              <dd
+                className={cn(
+                  "text-foreground",
+                  detail.figure && "tabular-nums",
+                  detail.strong ? "font-semibold" : "font-medium",
+                )}
               >
-                JE-{entry.number}
-              </Link>
-              <span className="text-muted-foreground">{formatCafeDayMedium(entry.date, locale)}</span>
-              <span className="min-w-0 flex-1 truncate text-foreground">{tAccounting(`source.${entry.source}`)}</span>
-              <span className="text-body-small-emphasis text-foreground">{formatMoney(entryTotal(entry), locale)}</span>
+                {detail.value}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </DashboardSection>
+
+      <DashboardSection title={t("detail.entriesHeading")} className="overflow-hidden" flush>
+        <ul className="divide-y divide-border">
+          {entries.map((entry) => (
+            <li key={entry.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-5 py-3">
+              <span className="flex min-w-48 flex-1 flex-col gap-0.5">
+                <Link
+                  href={`/dashboard/accounting/journal/${entry.id}`}
+                  className="-my-3 w-fit py-3 font-medium text-primary hover:text-primary-hover sm:my-0 sm:py-0"
+                >
+                  JE-{entry.number}
+                </Link>
+                <span className={ROW_CAPTION}>{formatCafeDayMedium(entry.date, locale)}</span>
+              </span>
+              <Badge size="compact" variant="neutral" appearance="outline">
+                {tAccounting(`source.${entry.source}`)}
+              </Badge>
+              <span className={cn(AMOUNT, "min-w-28 font-semibold text-foreground")}>
+                {formatMoney(entryTotal(entry), locale)}
+              </span>
             </li>
           ))}
         </ul>
-      </section>
+      </DashboardSection>
     </div>
   );
 }

@@ -1,19 +1,16 @@
-import { ChevronRight, Percent, Scale, Sigma, TrendingUp, Wallet } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
 import type { Account } from "@/src/domain/entities/Ledger";
 import { Link } from "@/src/i18n/navigation";
+import { cn } from "@/src/lib/utils";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+
+import { PAGE_CARD, ROW_TEXT } from "../pageStyles";
+import { DashboardPageCrumb } from "../shell/DashboardPageCrumb";
 
 import { STATEMENTS } from "./accounting-format";
 import { AccountingHeader } from "./AccountingHeader";
-
-const ICONS = {
-  "profit-and-loss": TrendingUp,
-  "balance-sheet": Scale,
-  "trial-balance": Sigma,
-  vat: Percent,
-  margins: Wallet,
-} as const;
 
 /** The financial statements on offer, each built from the ledger on demand. */
 export async function StatementsScreen({
@@ -26,28 +23,27 @@ export async function StatementsScreen({
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
-      <AccountingHeader active="statements" intro={t("statements.subtitle")} writer={writer} />
-      <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        {STATEMENTS.map((slug) => {
-          const Icon = ICONS[slug];
-          return (
-            <li key={slug}>
-              <Link
-                href={`/dashboard/accounting/statements/${slug}`}
-                className="flex h-full items-start gap-4 rounded-card-lg border border-border bg-background p-4 transition-colors hover:border-primary/40 md:p-5"
-              >
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-accent text-primary">
-                  <Icon className="size-5" aria-hidden />
-                </span>
-                <span className="flex min-w-0 flex-1 flex-col gap-1">
-                  <span className="text-body-strong text-foreground">{t(`statements.${slug}.title`)}</span>
-                  <span className="text-body-small text-muted-foreground">{t(`statements.${slug}.description`)}</span>
-                </span>
-                <ChevronRight className="mt-1 size-4 shrink-0 text-muted-foreground rtl:rotate-180" aria-hidden />
-              </Link>
-            </li>
-          );
-        })}
+      <DashboardPageCrumb label={t("tab.statements")} />
+      <AccountingHeader active="statements" subtitle={t("statements.subtitle")} writer={writer} />
+      <ul className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+        {STATEMENTS.map((slug) => (
+          <li key={slug} className="min-w-0">
+            <Link
+              href={`/dashboard/accounting/statements/${slug}`}
+              className={cn(
+                PAGE_CARD,
+                ROW_TEXT,
+                "flex h-full flex-col gap-1 px-5 py-4 text-foreground transition-colors hover:border-primary/40",
+              )}
+            >
+              <span className="flex items-center justify-between gap-2 font-semibold">
+                {t(`statements.${slug}.title`)}
+                <Icon icon={ChevronRight} size="icon-md" className="text-muted-foreground rtl:-scale-x-100" />
+              </span>
+              <span className="text-muted-foreground">{t(`statements.${slug}.description`)}</span>
+            </Link>
+          </li>
+        ))}
       </ul>
     </div>
   );

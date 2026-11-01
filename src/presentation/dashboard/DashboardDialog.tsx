@@ -28,6 +28,8 @@ type DashboardDialogProps = {
   /** One line under the title: what saving does, or what's about to change. */
   subtitle: ReactNode;
   submitLabel: string;
+  /** The way out, when "Back" says less than the choice does ("Keep order"). */
+  backLabel?: string;
   /** Nothing to save yet, or something's wrong — the save button waits, dimmed. */
   blocked?: boolean;
   pending: boolean;
@@ -56,6 +58,7 @@ export function DashboardDialog({
   title,
   subtitle,
   submitLabel,
+  backLabel,
   blocked = false,
   pending,
   onSubmit,
@@ -81,6 +84,10 @@ export function DashboardDialog({
           className="mt-5 flex flex-col gap-5"
           onSubmit={(event) => {
             event.preventDefault();
+            // The dialog is portalled, but React still bubbles this submit up its own
+            // tree: on a page whose form wraps the button that opened it, it would
+            // submit that form too.
+            event.stopPropagation();
             if (!blocked && !pending) onSubmit();
           }}
         >
@@ -109,7 +116,7 @@ export function DashboardDialog({
               disabled={pending}
               onClick={() => onOpenChange(false)}
             >
-              {t("dialogBack")}
+              {backLabel ?? t("dialogBack")}
             </Button>
             <Button
               type="submit"

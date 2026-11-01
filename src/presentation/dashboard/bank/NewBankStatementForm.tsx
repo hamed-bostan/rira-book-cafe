@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { CircleAlert, CircleCheck } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useForm, useWatch, type Control, type UseFormRegister } from "react-hook-form";
 
@@ -9,13 +10,18 @@ import { Link, useRouter } from "@/src/i18n/navigation";
 import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatCafeDayMedium } from "@/src/lib/formatCafeDay";
-import { formatMoney } from "@/src/lib/formatMoney";
+import { formatNumber } from "@/src/lib/formatNumber";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
+import { cn } from "@/src/lib/utils";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
-import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
 import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
-import { TextField } from "@/src/presentation/design-system/components/form/TextField/TextField";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
+
+import { DashboardFormField } from "../DashboardFormField";
+import { FIELD_INPUT } from "../fieldStyles";
+import { FormAlert } from "../FormAlert";
+import { PAGE_CARD, ROW_TEXT } from "../pageStyles";
 
 import { bankStatementsApi } from "./bank-statement-api";
 import { parseStatementAmount } from "./parseStatementCsv";
@@ -101,44 +107,79 @@ export function NewBankStatementForm({ fromDay, toDay, openingBalance, today }: 
   });
 
   return (
-    <form
-      onSubmit={onSubmit}
-      className="flex flex-col gap-5 rounded-card-lg border border-border bg-background p-4 md:p-6"
-      noValidate
-    >
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <TextField
+    <form onSubmit={onSubmit} className={cn(PAGE_CARD, "flex flex-col gap-5 p-5")} noValidate>
+      <div className="grid grid-cols-2 items-start gap-4 md:grid-cols-4">
+        <DashboardFormField
           label={t("form.fromDay")}
           required
-          description={from ? formatCafeDayMedium(from, locale) : undefined}
+          hint={from ? formatCafeDayMedium(from, locale) : undefined}
           error={fieldError(errors.fromDay?.message)}
         >
-          {(field) => <Input {...field} {...register("fromDay")} type="date" max={today} dir="ltr" />}
-        </TextField>
-        <TextField
+          {(field) => (
+            <Input
+              {...field}
+              {...register("fromDay")}
+              size="control-md"
+              type="date"
+              max={today}
+              dir="ltr"
+              inputClassName={FIELD_INPUT}
+            />
+          )}
+        </DashboardFormField>
+        <DashboardFormField
           label={t("form.toDay")}
           required
-          description={to ? formatCafeDayMedium(to, locale) : undefined}
+          hint={to ? formatCafeDayMedium(to, locale) : undefined}
           error={fieldError(errors.toDay?.message)}
         >
-          {(field) => <Input {...field} {...register("toDay")} type="date" max={today} dir="ltr" />}
-        </TextField>
-        <TextField
+          {(field) => (
+            <Input
+              {...field}
+              {...register("toDay")}
+              size="control-md"
+              type="date"
+              max={today}
+              dir="ltr"
+              inputClassName={FIELD_INPUT}
+            />
+          )}
+        </DashboardFormField>
+        <DashboardFormField
           label={t("form.openingBalance")}
           required
-          description={openingBalance === undefined ? t("form.openingHintFirst") : t("form.openingHint")}
+          hint={openingBalance === undefined ? t("form.openingHintFirst") : t("form.openingHint")}
           error={fieldError(errors.openingBalance?.message)}
         >
-          {(field) => <Input {...field} {...register("openingBalance")} inputMode="numeric" dir="ltr" />}
-        </TextField>
-        <TextField
+          {(field) => (
+            <Input
+              {...field}
+              {...register("openingBalance")}
+              size="control-md"
+              inputMode="numeric"
+              dir="ltr"
+              inputClassName={cn(FIELD_INPUT, "tabular-nums")}
+            />
+          )}
+        </DashboardFormField>
+        <DashboardFormField
           label={t("form.closingBalance")}
           required
-          description={t("form.closingHint")}
+          hint={t("form.closingHint")}
           error={fieldError(errors.closingBalance?.message)}
         >
-          {(field) => <Input {...field} {...register("closingBalance")} inputMode="numeric" dir="ltr" />}
-        </TextField>
+          {(field) => (
+            <Input
+              {...field}
+              {...register("closingBalance")}
+              size="control-md"
+              inputMode="numeric"
+              placeholder="0"
+              dir="ltr"
+              inputClassName={cn(FIELD_INPUT, "tabular-nums")}
+            />
+          )}
+        </DashboardFormField>
       </div>
 
       <StatementLinesFields
@@ -150,19 +191,24 @@ export function NewBankStatementForm({ fromDay, toDay, openingBalance, today }: 
 
       {gap !== null ? (
         <p
-          className={gap === 0 ? "text-body-small text-success-foreground" : "text-body-small text-warning-foreground"}
+          className={cn(
+            ROW_TEXT,
+            "flex items-start gap-2 font-medium",
+            gap === 0 ? "text-success-foreground" : "text-warning-foreground",
+          )}
           aria-live="polite"
         >
-          {gap === 0 ? t("form.addsUp") : t("form.gap", { amount: formatMoney(gap, locale) })}
+          <Icon icon={gap === 0 ? CircleCheck : CircleAlert} size="icon-md" className="mt-0.5" />
+          <span>{gap === 0 ? t("form.addsUp") : t("form.gap", { amount: formatNumber(gap, locale) })}</span>
         </p>
       ) : null}
 
-      {errors.root?.message ? <FormMessage size="md">{errors.root.message}</FormMessage> : null}
-      <div className="flex gap-3">
-        <Button type="submit" size="sm" loading={isSubmitting}>
+      {errors.root?.message ? <FormAlert>{errors.root.message}</FormAlert> : null}
+      <div className="flex flex-wrap gap-2">
+        <Button type="submit" size="control-md" className="px-4" loading={isSubmitting}>
           {t("form.submit")}
         </Button>
-        <Button asChild type="button" size="sm" variant="ghost">
+        <Button asChild variant="secondary" size="control-md" className="px-3">
           <Link href="/dashboard/accounting/bank">{t("cancel")}</Link>
         </Button>
       </div>

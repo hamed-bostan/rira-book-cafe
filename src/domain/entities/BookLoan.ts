@@ -19,6 +19,25 @@ export const MAX_LOAN_DAYS = 60;
 export const MAX_BORROWER_NAME_LENGTH = 80;
 export const MAX_LOAN_NOTE_LENGTH = 300;
 
+/** Where a deposit was paid into, and handed back from. */
+export const LOAN_DEPOSIT_METHODS = ["cash", "bank"] as const;
+export type LoanDepositMethod = (typeof LOAN_DEPOSIT_METHODS)[number];
+
+/**
+ * A deposit left against the book. It isn't the cafe's money while the loan runs:
+ * - `held` — the book is out; the deposit sits on Deposits held.
+ * - `returned` — the book came back, and the deposit was handed back.
+ * - `kept` — the book was lost; the deposit became income.
+ */
+export const LOAN_DEPOSIT_STATES = ["held", "returned", "kept"] as const;
+export type LoanDepositState = (typeof LOAN_DEPOSIT_STATES)[number];
+
+/** Where a deposit stands once a loan moves to `status`. */
+export function depositStateFor(status: BookLoanStatus): LoanDepositState {
+  if (status === "lost") return "kept";
+  return status === "returned" ? "returned" : "held";
+}
+
 export type BookLoan = {
   id: string;
   /** Short sequential number staff refer to (`L-12`). */
@@ -38,8 +57,12 @@ export type BookLoan = {
   status: BookLoanStatus;
   /** When it came back. */
   returnedAt?: string;
-  /** Condition when lent, deposit taken, etc. */
+  /** Condition when lent, etc. */
   note?: string;
+  /** Whole Toman left against the book; 0 when none was taken. */
+  depositAmount: number;
+  depositMethod?: LoanDepositMethod;
+  depositState?: LoanDepositState;
   /** Who handed it over. */
   lentById: string;
   lentByName: string;

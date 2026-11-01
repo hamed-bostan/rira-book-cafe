@@ -18,9 +18,9 @@ export function VoidExpenseButton({ id, number }: { id: string; number: number }
     <>
       <Button
         type="button"
-        size="sm"
-        variant="outline"
-        className="text-destructive"
+        variant="secondary"
+        size="control-md"
+        className="px-3 text-error-foreground"
         onClick={() => {
           setKey((current) => current + 1);
           setOpen(true);

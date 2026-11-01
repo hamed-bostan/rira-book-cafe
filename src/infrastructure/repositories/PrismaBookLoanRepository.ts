@@ -1,4 +1,13 @@
-import { BOOK_LOAN_STATUSES, type BookLoan, type BookLoanStatus } from "@/src/domain/entities/BookLoan";
+import {
+  BOOK_LOAN_STATUSES,
+  LOAN_DEPOSIT_METHODS,
+  LOAN_DEPOSIT_STATES,
+  depositStateFor,
+  type BookLoan,
+  type BookLoanStatus,
+  type LoanDepositMethod,
+  type LoanDepositState,
+} from "@/src/domain/entities/BookLoan";
 import { lendingCopies } from "@/src/domain/entities/Product";
 import { ConflictError } from "@/src/domain/errors/ConflictError";
 import { NotFoundError } from "@/src/domain/errors/NotFoundError";
@@ -10,11 +19,13 @@ import type {
   LendableBook,
   NewBookLoan,
 } from "@/src/domain/repositories/IBookLoanRepository";
+import type { LedgerHook } from "@/src/domain/repositories/ILedgerRepository";
 import { prisma } from "@/src/infrastructure/prisma/client";
 import type { Prisma } from "@/src/infrastructure/prisma/generated/client";
 import { inTransaction, type PrismaDb } from "@/src/infrastructure/prisma/transaction";
 
 import { recordAudit } from "./writeActivityEntry";
+import { postHook } from "./writeJournal";
 
 /** The dashboard list is a working view, not an archive — older history stays searchable. */
 const LIST_LIMIT = 200;
@@ -26,7 +37,7 @@ const LIST_LIMIT = 200;
 export class PrismaBookLoanRepository implements IBookLoanRepository {
   constructor(private readonly db: PrismaDb = prisma) {}
 
-  async create(input: NewBookLoan, audit?: AuditHook<BookLoan>): Promise<BookLoan> {
+  async create(input: NewBookLoan, audit?: AuditHook<BookLoan>, ledger?: LedgerHook<BookLoan>): Promise<BookLoan> {
     return inTransaction(this.db, async (tx) => {
       // Serialize loans of this book so the duplicate check below can't race (the
       // database trigger takes the same lock and repeats the check as a backstop).
@@ -57,12 +68,16 @@ export class PrismaBookLoanRepository implements IBookLoanRepository {
           lentAt: new Date(input.lentAt),
           dueAt: new Date(input.dueAt),
           note: input.note ?? null,
+          depositAmount: input.depositAmount,
+          depositMethod: input.depositAmount > 0 ? (input.depositMethod ?? null) : null,
+          depositState: input.depositAmount > 0 ? "held" : null,
           lentById: input.lentById,
           lentByName: input.lentByName,
         },
       });
       const saved = toBookLoan(row);
       await recordAudit(tx, saved, audit);
+      await postHook(tx, saved, ledger);
       return saved;
     });
   }
@@ -190,6 +205,7 @@ export class PrismaBookLoanRepository implements IBookLoanRepository {
     status: BookLoanStatus,
     at: Date,
     audit?: AuditHook<BookLoan>,
+    ledger?: LedgerHook<BookLoan>,
   ): Promise<BookLoan> {
     return inTransaction(this.db, async (tx) => {
       // Guarded on the status the caller read: a concurrent change makes this match nothing.
@@ -202,9 +218,14 @@ export class PrismaBookLoanRepository implements IBookLoanRepository {
           throw new NotFoundError("book loan", id);
         throw new ConflictError("INVALID_TRANSITION", "This loan was just changed by someone else.");
       }
+      await tx.bookLoan.updateMany({
+        where: { id, depositAmount: { gt: 0 } },
+        data: { depositState: depositStateFor(status) },
+      });
 
       const saved = toBookLoan(await tx.bookLoan.findUniqueOrThrow({ where: { id } }));
       await recordAudit(tx, saved, audit);
+      await postHook(tx, saved, ledger);
       return saved;
     });
   }
@@ -214,6 +235,16 @@ type BookLoanRow = Prisma.BookLoanGetPayload<object>;
 
 function toStatus(value: string): BookLoanStatus {
   return (BOOK_LOAN_STATUSES as readonly string[]).includes(value) ? (value as BookLoanStatus) : "out";
+}
+
+function toDepositMethod(value: string | null): LoanDepositMethod | undefined {
+  return value && (LOAN_DEPOSIT_METHODS as readonly string[]).includes(value)
+    ? (value as LoanDepositMethod)
+    : undefined;
+}
+
+function toDepositState(value: string | null): LoanDepositState | undefined {
+  return value && (LOAN_DEPOSIT_STATES as readonly string[]).includes(value) ? (value as LoanDepositState) : undefined;
 }
 
 function toBookLoan(row: BookLoanRow): BookLoan {
@@ -231,6 +262,9 @@ function toBookLoan(row: BookLoanRow): BookLoan {
     status: toStatus(row.status),
     returnedAt: row.returnedAt?.toISOString(),
     note: row.note ?? undefined,
+    depositAmount: row.depositAmount,
+    depositMethod: toDepositMethod(row.depositMethod),
+    depositState: toDepositState(row.depositState),
     lentById: row.lentById,
     lentByName: row.lentByName,
     createdAt: row.createdAt.toISOString(),

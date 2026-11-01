@@ -467,7 +467,7 @@ function planPurchasing(owner: ActivityActor): void {
     ).id;
   });
   schedule(at(-5, "11:00"), "pay utilities", async () =>
-    utilityBill ? payExpense.execute(utilityBill, "bank", day(-5), owner, new Date()) : undefined,
+    utilityBill ? payExpense.execute(utilityBill, { source: "bank", paidOn: day(-5) }, owner, new Date()) : undefined,
   );
   schedule(at(-9, "12:00"), "supplies", () =>
     expense(

@@ -26,6 +26,7 @@ function order(status: OrderStatus, servedAt?: string): Order {
     pointsRedeemed: 0,
     pointsDiscount: 0,
     pointsEarned: 0,
+    refundedTotal: 0,
     total: 100,
     placedAt: new Date(0).toISOString(),
     updatedAt: new Date(0).toISOString(),

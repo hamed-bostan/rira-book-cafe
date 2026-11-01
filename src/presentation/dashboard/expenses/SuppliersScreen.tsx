@@ -1,10 +1,13 @@
-import { ChevronRight, Truck } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
 import type { Supplier } from "@/src/domain/entities/Expense";
 import { Link } from "@/src/i18n/navigation";
+import { cn } from "@/src/lib/utils";
 import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
-import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
+
+import { DashboardPageHeader } from "../DashboardPageHeader";
+import { PAGE_CARD, ROW_CAPTION, ROW_TEXT } from "../pageStyles";
+import { DashboardPageCrumb } from "../shell/DashboardPageCrumb";
 
 import { SupplierDialog } from "./SupplierDialog";
 
@@ -14,49 +17,48 @@ export async function SuppliersScreen({ suppliers, canWrite }: { suppliers: Supp
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
-      <nav
-        aria-label={t("breadcrumbLabel")}
-        className="flex items-center gap-2 text-body-caption text-muted-foreground"
-      >
-        <Link href="/dashboard/expenses" className="hover:text-foreground">
-          {t("heading")}
-        </Link>
-        <ChevronRight className="size-3.5 rtl:rotate-180" aria-hidden />
-        <span className="font-medium text-foreground">{t("suppliers.heading")}</span>
-      </nav>
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="dashboard-page-title">{t("suppliers.heading")}</h1>
-          <p className="mt-1 text-body-small text-muted-foreground">{t("suppliers.subtitle")}</p>
-        </div>
-        {canWrite ? <SupplierDialog /> : null}
-      </div>
+      <DashboardPageCrumb label={t("suppliers.heading")} />
+      <DashboardPageHeader
+        backHref="/dashboard/expenses"
+        backLabel={t("heading")}
+        title={t("suppliers.heading")}
+        subtitle={t("suppliers.subtitle")}
+        actions={canWrite ? <SupplierDialog /> : undefined}
+      />
 
-      <section className="min-w-0 overflow-hidden rounded-card-lg border border-border bg-background">
+      <section aria-label={t("suppliers.heading")} className={cn(PAGE_CARD, ROW_TEXT, "overflow-hidden")}>
         {suppliers.length === 0 ? (
-          <EmptyState icon={Truck} title={t("suppliers.empty")} action={canWrite ? <SupplierDialog /> : undefined} />
+          <p className="px-5 py-12 text-center font-semibold text-foreground">{t("suppliers.empty")}</p>
         ) : (
           <ul className="divide-y divide-border">
             {suppliers.map((supplier) => (
-              <li key={supplier.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
-                <div className="min-w-0 flex-1">
-                  <Link
-                    href={`/dashboard/expenses?supplier=${supplier.id}`}
-                    className="text-body-small-emphasis text-foreground underline-offset-4 hover:underline"
-                  >
-                    {supplier.name}
-                  </Link>
-                  {supplier.phone || supplier.note ? (
-                    <p className="truncate text-body-caption text-muted-foreground" dir="auto">
-                      {[supplier.phone, supplier.note].filter(Boolean).join(" · ")}
-                    </p>
+              <li key={supplier.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-3">
+                <span className="flex min-w-48 flex-1 flex-col gap-0.5">
+                  <span className="flex flex-wrap items-center gap-2">
+                    <Link
+                      href={`/dashboard/expenses?supplier=${supplier.id}`}
+                      className={cn(
+                        "font-semibold transition-colors hover:text-primary",
+                        supplier.isActive ? "text-foreground" : "text-muted-foreground",
+                      )}
+                    >
+                      {supplier.name}
+                    </Link>
+                    {!supplier.isActive ? (
+                      <Badge size="compact" variant="neutral" appearance="outline">
+                        {t("suppliers.inactive")}
+                      </Badge>
+                    ) : null}
+                  </span>
+                  {supplier.note ? (
+                    <span className={ROW_CAPTION} dir="auto">
+                      {supplier.note}
+                    </span>
                   ) : null}
-                </div>
-                {!supplier.isActive ? (
-                  <Badge size="sm" variant="neutral">
-                    {t("suppliers.inactive")}
-                  </Badge>
-                ) : null}
+                </span>
+                <span className="whitespace-nowrap text-foreground/80 tabular-nums" dir="ltr">
+                  {supplier.phone || "—"}
+                </span>
                 {canWrite ? <SupplierDialog supplier={supplier} /> : null}
               </li>
             ))}

@@ -158,34 +158,40 @@ model ActivityEntry {
 // status / service_type / payment_status are plain strings matching the domain
 // unions (enum-free style).
 model Order {
-  id              String           @id @default(uuid())
+  id              String             @id @default(uuid())
   // Short sequential number staff call out.
-  orderNumber     Int              @unique @default(autoincrement()) @map("order_number")
-  userId          String           @map("user_id")
-  customerName    String           @map("customer_name")
-  customerPhone   String           @map("customer_phone")
-  status          String           @default("pending")
-  serviceType     String           @map("service_type")
-  tableLabel      String?          @map("table_label")
+  orderNumber     Int                @unique @default(autoincrement()) @map("order_number")
+  // The guest's account; null for a sale staff rang up at the counter.
+  userId          String?            @map("user_id")
+  customerName    String             @map("customer_name")
+  customerPhone   String             @map("customer_phone")
+  status          String             @default("pending")
+  serviceType     String             @map("service_type")
+  tableLabel      String?            @map("table_label")
   note            String?
-  paymentStatus   String           @default("unpaid") @map("payment_status")
-  // cash | card | transfer | online, once paid (kept after a refund).
-  paymentMethod   String?          @map("payment_method")
+  paymentStatus   String             @default("unpaid") @map("payment_status")
+  // cash | card | transfer | online, once paid (kept after a refund). The largest
+  // part when the bill was split; `payment_parts` holds every part.
+  paymentMethod   String?            @map("payment_method")
+  paymentParts    OrderPaymentPart[]
+  // Handed back on a completed order, in Toman (`refunds` are the documents).
+  refundedTotal   Int                @default(0) @map("refunded_total")
+  refunds         OrderRefund[]
   subtotal        Int
   // The promo code applied at placement (snapshotted text; the id counts its uses).
-  promoCodeId     String?          @map("promo_code_id")
-  promoCode       String?          @map("promo_code")
-  promoDiscount   Int              @default(0) @map("promo_discount")
+  promoCodeId     String?            @map("promo_code_id")
+  promoCode       String?            @map("promo_code")
+  promoDiscount   Int                @default(0) @map("promo_discount")
   // Loyalty points spent on this order, and the Toman they took off.
-  pointsRedeemed  Int              @default(0) @map("points_redeemed")
-  pointsDiscount  Int              @default(0) @map("points_discount")
+  pointsRedeemed  Int                @default(0) @map("points_redeemed")
+  pointsDiscount  Int                @default(0) @map("points_discount")
   // Points the guest earned when it was completed.
-  pointsEarned    Int              @default(0) @map("points_earned")
+  pointsEarned    Int                @default(0) @map("points_earned")
   total           Int
   items           OrderItem[]
   paymentAttempts PaymentAttempt[]
-  placedAt        DateTime         @default(now()) @map("placed_at")
-  updatedAt       DateTime         @updatedAt @map("updated_at")
+  placedAt        DateTime           @default(now()) @map("placed_at")
+  updatedAt       DateTime           @updatedAt @map("updated_at")
 
   @@index([status, placedAt])
   @@index([userId, placedAt])
@@ -194,29 +200,88 @@ model Order {
 }
 
 model OrderItem {
-  id           String    @id @default(uuid())
-  orderId      String    @map("order_id")
-  order        Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  id               String            @id @default(uuid())
+  orderId          String            @map("order_id")
+  order            Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
   // Plain reference, not a foreign key: deleting a menu item must not touch history.
-  productId    String    @map("product_id")
-  kind         String
-  name         String
-  imageUrl     String    @map("image_url")
-  unitPrice    Int       @map("unit_price")
+  productId        String            @map("product_id")
+  kind             String
+  name             String
+  imageUrl         String            @map("image_url")
+  unitPrice        Int               @map("unit_price")
   // Cost per unit when placed, if the item had one — for cost of sales.
-  unitCost     Int?      @map("unit_cost")
+  unitCost         Int?              @map("unit_cost")
   // Whether the item was VAT-exempt when placed (books are); the sale's VAT comes from the rest.
-  taxExempt    Boolean   @default(false) @map("tax_exempt")
+  taxExempt        Boolean           @default(false) @map("tax_exempt")
   // Set at completion when the line's recipe was taken out of stock (unit_cost is then actual).
-  stockTracked Boolean   @default(false) @map("stock_tracked")
-  quantity     Int
-  note         String?
-  position     Int
+  stockTracked     Boolean           @default(false) @map("stock_tracked")
+  quantity         Int
+  // Units of this line handed back after the order was completed.
+  refundedQuantity Int               @default(0) @map("refunded_quantity")
+  note             String?
+  position         Int
   // When staff marked the line served; null while it's still being prepared.
-  servedAt     DateTime? @map("served_at")
+  servedAt         DateTime?         @map("served_at")
+  refundLines      OrderRefundLine[]
 
   @@index([orderId])
   @@map("order_items")
+}
+
+// One part of how an order was paid (see domain/entities/Order). Amounts are whole
+// Toman and add up to the order's total.
+model OrderPaymentPart {
+  id       String @id @default(uuid())
+  orderId  String @map("order_id")
+  order    Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  method   String
+  amount   Int
+  position Int
+
+  @@index([orderId])
+  @@index([method])
+  @@map("order_payment_parts")
+}
+
+// Money handed back on a completed order (see domain/entities/OrderRefund).
+model OrderRefund {
+  id            String            @id @default(uuid())
+  number        Int               @unique @default(autoincrement())
+  orderId       String            @map("order_id")
+  order         Order             @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  date          DateTime          @db.Date
+  // cash | card | transfer | online
+  method        String
+  amount        Int
+  vatAmount     Int               @map("vat_amount")
+  reason        String?
+  lines         OrderRefundLine[]
+  createdById   String            @map("created_by_id")
+  createdByName String            @map("created_by_name")
+  createdAt     DateTime          @default(now()) @map("created_at")
+
+  @@index([orderId])
+  @@map("order_refunds")
+}
+
+model OrderRefundLine {
+  id          String      @id @default(uuid())
+  refundId    String      @map("refund_id")
+  refund      OrderRefund @relation(fields: [refundId], references: [id], onDelete: Cascade)
+  orderItemId String      @map("order_item_id")
+  orderItem   OrderItem   @relation(fields: [orderItemId], references: [id], onDelete: Restrict)
+  name        String
+  kind        String
+  quantity    Int
+  amount      Int
+  vatAmount   Int         @map("vat_amount")
+  // Whether the units went back on the shelf (a book can; a drink can't).
+  restocked   Boolean     @default(false)
+  position    Int
+
+  @@index([refundId])
+  @@index([orderItemId])
+  @@map("order_refund_lines")
 }
 
 // One try at paying an order online (see domain/entities/PaymentAttempt).
@@ -338,6 +403,12 @@ model BookLoan {
   status        String    @default("out")
   returnedAt    DateTime? @map("returned_at")
   note          String?
+  // Money left against the book, in Toman; 0 when none was taken.
+  depositAmount Int       @default(0) @map("deposit_amount")
+  // cash | bank, when a deposit was taken
+  depositMethod String?   @map("deposit_method")
+  // held | returned | kept, when a deposit was taken
+  depositState  String?   @map("deposit_state")
   lentById      String    @map("lent_by_id")
   lentByName    String    @map("lent_by_name")
   createdAt     DateTime  @default(now()) @map("created_at")
@@ -411,6 +482,7 @@ model LedgerAccount {
   isActive       Boolean         @default(true) @map("is_active")
   lines          JournalLine[]
   expenses       Expense[]
+  incomes        Income[]
   bankStatements BankStatement[]
   createdAt      DateTime        @default(now()) @map("created_at")
 
@@ -497,7 +569,10 @@ model Expense {
   vatAmount     BigInt        @default(0) @map("vat_amount")
   // unpaid | paid | void
   status        String
-  // cash | bank, once paid
+  // Paid off so far; stays below `amount` while the expense is `unpaid`. Each
+  // payment is an `expensePayment` journal entry on the expense.
+  paidAmount    BigInt        @default(0) @map("paid_amount")
+  // cash | bank, once paid in full
   paidFrom      String?       @map("paid_from")
   paidOn        DateTime?     @map("paid_on") @db.Date
   receiptUrl    String?       @map("receipt_url")
@@ -510,6 +585,35 @@ model Expense {
   @@index([status])
   @@index([supplierId])
   @@map("expenses")
+}
+
+// Money that came in outside an order (see domain/entities/Income).
+model Income {
+  id            String        @id @default(uuid())
+  number        Int           @unique @default(autoincrement())
+  date          DateTime      @db.Date
+  accountCode   String        @map("account_code")
+  account       LedgerAccount @relation(fields: [accountCode], references: [code], onDelete: Restrict)
+  description   String
+  amount        BigInt
+  vatAmount     BigInt        @default(0) @map("vat_amount")
+  // cash | card | transfer
+  method        String
+  payerName     String?       @map("payer_name")
+  // What it was paid for, when it was: eventRegistration | suiteBooking, and its id.
+  sourceType    String?       @map("source_type")
+  sourceId      String?       @map("source_id")
+  // received | void
+  status        String        @default("received")
+  createdById   String        @map("created_by_id")
+  createdByName String        @map("created_by_name")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  @@index([date])
+  @@index([status])
+  @@index([sourceType, sourceId])
+  @@map("incomes")
 }
 
 // --- Pricing: ingredients, recipes and the advisor's settings.

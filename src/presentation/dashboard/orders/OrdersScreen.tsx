@@ -1,3 +1,4 @@
+import { Plus } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
 import {
@@ -23,6 +24,7 @@ import {
 } from "@/src/presentation/dashboard/list";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
 import { DataTableToolbar } from "@/src/presentation/design-system/components/DataTable/DataTable";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 
 import { OrderBulkActions } from "./OrderBulkActions";
 import { OrdersTable } from "./OrdersTable";
@@ -111,7 +113,17 @@ export async function OrdersScreen({ orders, counts, filters, params, canFulfill
       <AutoRefresh intervalSeconds={REFRESH_SECONDS} />
 
       <div className="min-w-0 space-y-1">
-        <h1 className="dashboard-page-title">{t("heading")}</h1>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h1 className="dashboard-page-title">{t("heading")}</h1>
+          {canFulfill ? (
+            <Button size="control-md" asChild className="gap-2 px-4">
+              <Link href="/dashboard/orders/new">
+                <Icon icon={Plus} size="sm" strokeWidth={2} />
+                {t("newSale")}
+              </Link>
+            </Button>
+          ) : null}
+        </div>
         <p className="text-body-default text-muted-foreground sm:text-body-small">
           {t("activeSummary", { count: counts.active })}
         </p>

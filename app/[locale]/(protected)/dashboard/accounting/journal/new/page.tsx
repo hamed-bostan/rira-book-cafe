@@ -4,6 +4,8 @@ import { cafeDayOf } from "@/src/domain/entities/CafeTime";
 import { requirePermission } from "@/src/lib/require-permission";
 import { accountsServerApi } from "@/src/presentation/dashboard/accounting/accounting-server-api";
 import { ManualEntryForm } from "@/src/presentation/dashboard/accounting/ManualEntryForm";
+import { DashboardPageHeader } from "@/src/presentation/dashboard/DashboardPageHeader";
+import { DashboardPageCrumb } from "@/src/presentation/dashboard/shell/DashboardPageCrumb";
 
 export const dynamic = "force-dynamic";
 
@@ -12,11 +14,14 @@ export default async function NewJournalEntryPage() {
   const [t, accounts] = await Promise.all([getTranslations("dashAccounting"), accountsServerApi.list()]);
 
   return (
-    <div className="flex max-w-4xl flex-col gap-6">
-      <div>
-        <h1 className="dashboard-page-title">{t("form.title")}</h1>
-        <p className="text-body-small text-muted-foreground">{t("form.subtitle")}</p>
-      </div>
+    <div className="flex min-w-0 flex-col gap-6">
+      <DashboardPageCrumb label={t("form.title")} />
+      <DashboardPageHeader
+        backHref="/dashboard/accounting/journal"
+        backLabel={t("journal.heading")}
+        title={t("form.title")}
+        subtitle={t("form.subtitle")}
+      />
       <ManualEntryForm accounts={accounts} today={cafeDayOf(new Date())} />
     </div>
   );

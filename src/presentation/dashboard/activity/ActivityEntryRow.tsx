@@ -24,6 +24,11 @@ type ActivityEntryRowProps = {
    * every row is about the same thing and repeating it says nothing.
    */
   showEntity?: boolean;
+  /**
+   * Just the entry's content, for a timeline that draws its own dot and line: no
+   * initials, and the time under the sentence.
+   */
+  timeline?: boolean;
 };
 
 /** Two leading initials, e.g. "Sara Ahmadi" → "SA". */
@@ -55,7 +60,7 @@ function switchedTo(changes: readonly ActivityChange[]): "on" | "off" | "unknown
  * same wherever it's shown. Read-only: there is nothing here to edit or delete,
  * because a record an admin can quietly tidy up isn't one.
  */
-export async function ActivityEntryRow({ entry, time, showEntity = true }: ActivityEntryRowProps) {
+export async function ActivityEntryRow({ entry, time, showEntity = true, timeline = false }: ActivityEntryRowProps) {
   const t = await getTranslations("dashActivity");
   const locale = await getLocale();
 
@@ -88,6 +93,48 @@ export async function ActivityEntryRow({ entry, time, showEntity = true }: Activ
           })
         : t.rich(`action.${entry.action}`, { actor: entry.actorName, entity: label, b: actor });
 
+  const timeElement = (
+    <time
+      dateTime={entry.at}
+      title={
+        new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" }).format(
+          new Date(entry.at),
+        ) + " UTC"
+      }
+      className="text-body-small whitespace-nowrap text-muted-foreground tabular-nums sm:text-body-caption"
+    >
+      {time}
+    </time>
+  );
+
+  const diff =
+    entry.changes.length > 0 ? (
+      <ActivityDiff
+        changes={entry.changes}
+        fieldLabel={(field) => fieldLabel(t as unknown as LooseTranslator, field)}
+        valueLabel={(field, value) => {
+          if (value === "true") return t("value.yes");
+          if (value === "false") return t("value.no");
+          if (field === ROLE_CHANGE_FIELD && isUserRole(value)) return t(`roleName.${value}`);
+          return value;
+        }}
+      />
+    ) : null;
+
+  if (timeline) {
+    return (
+      <div className="flex min-w-0 flex-col gap-2">
+        <div className="flex flex-col">
+          <p className="text-body-default text-pretty [overflow-wrap:anywhere] text-foreground sm:text-body-small">
+            {sentence}
+          </p>
+          {timeElement}
+        </div>
+        {diff}
+      </div>
+    );
+  }
+
   return (
     <div className="flex gap-4 px-5 py-4">
       <span
@@ -103,17 +150,7 @@ export async function ActivityEntryRow({ entry, time, showEntity = true }: Activ
               {t(`entity.${entry.entityType}`)}
             </Badge>
           ) : null}
-          <time
-            dateTime={entry.at}
-            title={
-              new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" }).format(
-                new Date(entry.at),
-              ) + " UTC"
-            }
-            className="text-body-small whitespace-nowrap text-muted-foreground tabular-nums sm:text-body-caption"
-          >
-            {time}
-          </time>
+          {timeElement}
         </div>
         <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
           <p className="min-w-0 text-body-default text-pretty [overflow-wrap:anywhere] text-foreground sm:text-body-small">
@@ -134,18 +171,7 @@ export async function ActivityEntryRow({ entry, time, showEntity = true }: Activ
           ) : null}
         </div>
 
-        {entry.changes.length > 0 ? (
-          <ActivityDiff
-            changes={entry.changes}
-            fieldLabel={(field) => fieldLabel(t as unknown as LooseTranslator, field)}
-            valueLabel={(field, value) => {
-              if (value === "true") return t("value.yes");
-              if (value === "false") return t("value.no");
-              if (field === ROLE_CHANGE_FIELD && isUserRole(value)) return t(`roleName.${value}`);
-              return value;
-            }}
-          />
-        ) : null}
+        {diff}
       </div>
     </div>
   );

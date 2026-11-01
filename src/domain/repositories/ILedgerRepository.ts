@@ -47,7 +47,7 @@ export type RawLedgerLine = {
 
 /** VAT payable (2200) movement over a span, split by what caused it. */
 export type VatMovement = {
-  /** Net credits from sales (and their reversals). */
+  /** Net credits from sales and other income (and their refunds and reversals). */
   output: number;
   /** Net debits from expenses (and their reversals). */
   input: number;
@@ -108,8 +108,13 @@ export type ILedgerRepository = {
   /** One account's lines within the span, in posting order. */
   accountLines(code: string, fromDay: string, toDay: string): Promise<RawLedgerLine[]>;
   vatMovement(fromDay: string, toDay: string): Promise<VatMovement>;
-  /** Units, revenue and cost per item for orders completed (sale posted) within the span. */
+  /** Units, revenue and cost per item for orders completed (sale posted) within the span, net of refunds. */
   itemSalesCost(fromDay: string, toDay: string): Promise<ItemSalesCost[]>;
+  /**
+   * VAT-inclusive sales within the span whose lines booked no cost of sales: items
+   * with no recipe to take out of stock.
+   */
+  revenueWithoutCost(fromDay: string, toDay: string): Promise<number>;
 };
 
 export type { AccountType };

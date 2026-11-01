@@ -14,7 +14,7 @@ import { getSessionWith } from "@/src/lib/require-permission";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
-/** POST /api/admin/expenses/:id/pay — pay an owed expense from cash or the bank. Requires `accounting.write`. */
+/** POST /api/admin/expenses/:id/pay — pay some or all of an owed expense from cash or the bank. Requires `accounting.write`. */
 export async function POST(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   const session = await getSessionWith("accounting.write");
   if (!session) return unauthorizedResponse();
@@ -32,10 +32,12 @@ export async function POST(request: NextRequest, { params }: RouteContext): Prom
   }
 
   try {
-    const expense = await new PayExpense(expenseRepository).execute(id, parsed.data.source, parsed.data.paidOn, {
-      id: session.user.id,
-      name: session.user.name ?? session.user.id,
-    });
+    const { source, paidOn, amount } = parsed.data;
+    const expense = await new PayExpense(expenseRepository).execute(
+      id,
+      { source, paidOn, amount: amount > 0 ? amount : undefined },
+      { id: session.user.id, name: session.user.name ?? session.user.id },
+    );
     return NextResponse.json(expense);
   } catch (error) {
     return errorResponseFromException(error, `POST /api/admin/expenses/${id}/pay failed`);

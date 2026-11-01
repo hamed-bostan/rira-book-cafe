@@ -4,9 +4,11 @@ import {
   MAX_LOAN_DAYS,
   MAX_LOAN_NOTE_LENGTH,
   type BookLoan,
+  type LoanDepositMethod,
 } from "../../entities/BookLoan";
 import { cafeDayOf, cafeDayRange, isCafeDay, shiftCafeDay } from "../../entities/CafeTime";
 import { isPlausiblePhone, normalizePhone } from "../../entities/Phone";
+import { loanDepositEntry } from "../../entities/Postings";
 import { ValidationError } from "../../errors/ValidationError";
 import { loanStartedNotification } from "../notifications/guestNotifications";
 
@@ -23,13 +25,18 @@ export type LendBookInput = {
   /** Cafe day the book is due back (`YYYY-MM-DD`); omit for {@link DEFAULT_LOAN_DAYS}. */
   dueOn?: string;
   note?: string;
+  /** Money left against the book, in Toman; 0 or omitted when none was taken. */
+  depositAmount?: number;
+  /** Required with a deposit: where it was paid into. */
+  depositMethod?: LoanDepositMethod;
 };
 
 /**
  * Staff hand a book to a guest. The borrower is whoever is at the counter — they
  * needn't have an account — but when their phone matches one, the loan is linked
  * so the guest sees it on their account page (and is told about it). Lending the
- * book to someone in its waitlist takes them out of the line.
+ * book to someone in its waitlist takes them out of the line. A deposit goes on the
+ * books as money held for the borrower, not as income.
  */
 export class LendBook {
   constructor(
@@ -59,6 +66,14 @@ export class LendBook {
     const note = input.note?.trim() || undefined;
     if (note && note.length > MAX_LOAN_NOTE_LENGTH) throw new ValidationError("note", "That note is too long.");
 
+    const depositAmount = input.depositAmount ?? 0;
+    if (!Number.isSafeInteger(depositAmount) || depositAmount < 0) {
+      throw new ValidationError("depositAmount", "Enter the deposit in whole Toman.");
+    }
+    if (depositAmount > 0 && !input.depositMethod) {
+      throw new ValidationError("depositMethod", "Choose how the deposit was paid.");
+    }
+
     const book = await this.loanRepo.getBook(input.productId);
     if (!book) throw new ValidationError("productId", "Choose a book from the shelf.");
 
@@ -77,6 +92,8 @@ export class LendBook {
         // Due by closing time: the last instant of the due day on the cafe's clock.
         dueAt: new Date(cafeDayRange(dueOn).to.getTime() - 1).toISOString(),
         note,
+        depositAmount,
+        depositMethod: depositAmount > 0 ? input.depositMethod : undefined,
         lentById: staff.id,
         lentByName: staff.name,
       },
@@ -89,6 +106,10 @@ export class LendBook {
         entityLabel: `L-${saved.reference}`,
         changes: [],
       }),
+      (saved) => {
+        const entry = loanDepositEntry(saved, today, staff);
+        return entry ? [entry] : [];
+      },
     );
 
     if (this.waitlistRepo)

@@ -25,12 +25,20 @@ export default async function InventoryPage({ searchParams }: InventoryPageProps
   const view = level && VIEW_SET.has(level) ? (level as InventoryView) : "all";
   const q = params.get("q")?.trim() || undefined;
 
-  const [summary, canManage] = await Promise.all([
+  const [summary, untrackedBooks, canManage] = await Promise.all([
     inventoryServerApi.getSummary(),
+    inventoryServerApi.listUntrackedBooks(),
     auth().then((session) => sessionHas(session, "inventory.manage")),
   ]);
 
   return (
-    <InventoryScreen summary={summary} view={view} query={q} today={cafeDayOf(new Date())} canManage={canManage} />
+    <InventoryScreen
+      summary={summary}
+      view={view}
+      query={q}
+      today={cafeDayOf(new Date())}
+      canManage={canManage}
+      untrackedBooks={untrackedBooks.length}
+    />
   );
 }

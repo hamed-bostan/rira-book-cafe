@@ -5,6 +5,7 @@ import * as React from "react";
 
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
+import { cn } from "@/src/lib/utils";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
@@ -42,8 +43,9 @@ export function OrderItemServeToggle({ orderId, itemId, itemName, served }: Orde
   return (
     <Button
       type="button"
-      size="sm"
-      variant={served ? "ghost" : "soft"}
+      size="control-sm"
+      variant="secondary"
+      className={cn("ms-auto px-3", !served && "border-accent-border text-accent-foreground")}
       loading={pending}
       aria-label={t(served ? "unmarkServedAria" : "markServedAria", { name: itemName })}
       onClick={toggle}

@@ -40,6 +40,7 @@ type ApiErrorKey =
   | "accountInactive"
   | "unbalanced"
   | "stockUsed"
+  | "notRefundable"
   | "yearNotEnded"
   | "statementOverlap"
   | "statementReconciled"
@@ -94,6 +95,7 @@ const CODE_KEYS: Readonly<Record<string, ApiErrorKey>> = {
   ACCOUNT_INACTIVE: "accountInactive",
   UNBALANCED: "unbalanced",
   STOCK_USED: "stockUsed",
+  NOT_REFUNDABLE: "notRefundable",
   YEAR_NOT_ENDED: "yearNotEnded",
   // Bank reconciliation.
   STATEMENT_OVERLAP: "statementOverlap",

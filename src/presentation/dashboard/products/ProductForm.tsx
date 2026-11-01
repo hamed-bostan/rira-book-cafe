@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Check } from "lucide-react";
 import { useTranslations } from "next-intl";
 import * as React from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
@@ -14,7 +15,24 @@ import { Link, useRouter } from "@/src/i18n/navigation";
 import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
+import { DashboardColumns } from "@/src/presentation/dashboard/DashboardColumns";
+import { DashboardFormField } from "@/src/presentation/dashboard/DashboardFormField";
+import { DashboardLanguageColumn } from "@/src/presentation/dashboard/DashboardLanguageColumn";
+import { DashboardPageHeader } from "@/src/presentation/dashboard/DashboardPageHeader";
+import { DashboardSection } from "@/src/presentation/dashboard/DashboardSection";
+import { DashboardSwitchField } from "@/src/presentation/dashboard/DashboardSwitchField";
+import {
+  FIELD_GRID,
+  FIELD_HINT,
+  FIELD_INPUT,
+  FIELD_LABEL,
+  FIELD_PICKER,
+  FIELD_TEXTAREA,
+  LANGUAGE_GRID,
+} from "@/src/presentation/dashboard/fieldStyles";
+import { FormAlert } from "@/src/presentation/dashboard/FormAlert";
 import { ControlledChoicePicker } from "@/src/presentation/dashboard/list";
+import { OverviewSegmented } from "@/src/presentation/dashboard/overview/OverviewSegmented";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
 import { ToggleChip } from "@/src/presentation/design-system/components/Chip/ToggleChip";
 import { Field } from "@/src/presentation/design-system/components/form/Field/Field";
@@ -22,9 +40,7 @@ import { FormMessage } from "@/src/presentation/design-system/components/form/Fo
 import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
 import { RequiredMark } from "@/src/presentation/design-system/components/form/shared/RequiredMark";
 import { Textarea } from "@/src/presentation/design-system/components/form/Textarea/Textarea";
-import { TextField } from "@/src/presentation/design-system/components/form/TextField/TextField";
-import { Switch } from "@/src/presentation/design-system/components/Switch/Switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/presentation/design-system/components/Tabs/Tabs";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { productsApi } from "./product-api";
@@ -54,9 +70,20 @@ const FORM_FIELDS = [
   "bookCopies",
 ] as const satisfies readonly (keyof ProductFormInput)[];
 
+/** A dietary tag is a field, not a filter: it tints rather than fills once it's on. */
+const DIETARY_CHIP =
+  "h-11 gap-1.5 border px-3 text-body-default font-medium sm:h-8 sm:text-body-small data-[state=off]:border-border-strong data-[state=off]:text-foreground/80 data-[state=on]:border-accent-border data-[state=on]:bg-accent data-[state=on]:text-accent-foreground";
+
 type ProductFormProps =
   | { mode: "create"; categories: Category[] }
-  | { mode: "edit"; categories: Category[]; product: Product; translations: ProductTranslationInput[] };
+  | {
+      mode: "edit";
+      categories: Category[];
+      product: Product;
+      translations: ProductTranslationInput[];
+      /** The item's history, for the narrow column. */
+      activity: React.ReactNode;
+    };
 
 /** Build the form's initial values, coercing the numeric/optional domain fields to the string controls. */
 function toDefaults(product?: Product, translations?: ProductTranslationInput[]): ProductFormInput {
@@ -132,6 +159,7 @@ export function ProductForm(props: ProductFormProps) {
     defaultValues: toDefaults(editing ? props.product : undefined, editing ? props.translations : undefined),
   });
 
+  const dietaryLabelId = React.useId();
   const imageUrl = useWatch({ control, name: "imageUrl" });
   const kind = useWatch({ control, name: "kind" });
   const madeToOrder = useWatch({ control, name: "madeToOrder" });
@@ -163,432 +191,564 @@ export function ProductForm(props: ProductFormProps) {
   });
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-5" noValidate>
-      <Field error={fieldError(errors.kind?.message)}>
-        {({ id, ariaDescribedBy, ariaInvalid }) => (
+    <form onSubmit={onSubmit} className="flex flex-col gap-6" noValidate>
+      <DashboardPageHeader
+        backHref="/dashboard/products"
+        backLabel={t("backToProducts")}
+        title={editing ? t("editHeading") : t("newProduct")}
+        subtitle={editing ? t("editSubtitle", { name: props.product.name }) : t("createSubtitle")}
+        actions={
           <>
-            <label htmlFor={id} className="text-body-small-emphasis text-input-foreground">
-              {t("kindLabel")}
-              <RequiredMark />
-            </label>
-            <Controller
-              control={control}
-              name="kind"
-              render={({ field }) => (
-                <ControlledChoicePicker
-                  id={id}
-                  ariaInvalid={ariaInvalid}
-                  ariaDescribedBy={ariaDescribedBy}
-                  label={t("kindLabel")}
-                  value={field.value}
-                  onValueChange={(value) => field.onChange(value)}
-                  inactiveValue="drink"
-                  triggerClassName="h-12 w-full justify-between rounded-input text-body-small"
-                  options={PRODUCT_KINDS.map((kind) => ({ value: kind, label: t(`kind.${kind}`) }))}
-                />
-              )}
-            />
+            <Button asChild variant="secondary" size="control-md" className="px-3">
+              <Link href="/dashboard/products">{t("cancel")}</Link>
+            </Button>
+            <Button type="submit" size="control-md" loading={isSubmitting}>
+              {editing ? t("saveChanges") : t("createProduct")}
+            </Button>
           </>
-        )}
-      </Field>
+        }
+        alert={errors.root?.message ? <FormAlert>{errors.root.message}</FormAlert> : null}
+      />
 
-      {/* The guest-facing copy is per-locale: the base row holds the source (English)
-          text and the `fa` tab its optional translation. Everything below the tabs
-          (price, stock, image, category…) is locale-independent, so it lives once on the
-          base row. Both panels stay mounted (`forceMount`) so switching tabs never drops
-          a value or hides a server-side field error. */}
-      <Tabs defaultValue="base">
-        <TabsList>
-          <TabsTrigger value="base">{t("localeTabBase")}</TabsTrigger>
-          <TabsTrigger value="fa">{t("localeTabFa")}</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="base" forceMount className="flex flex-col gap-5 pt-4 data-[state=inactive]:hidden">
-          <p className="text-body-caption text-muted-foreground">{t("baseTabDescription")}</p>
-
-          <TextField label={t("nameLabel")} required error={fieldError(errors.name?.message)}>
-            {(control) => <Input {...control} {...register("name")} dir="ltr" placeholder={t("namePlaceholder")} />}
-          </TextField>
-
-          <TextField label={t("unitLabel")} description={t("unitDescription")} error={fieldError(errors.unit?.message)}>
-            {(control) => <Input {...control} {...register("unit")} dir="ltr" placeholder={t("unitPlaceholder")} />}
-          </TextField>
-
-          <TextField
-            label={t("descriptionLabel")}
-            description={t("descriptionHelp")}
-            error={fieldError(errors.description?.message)}
-          >
-            {(control) => (
-              <Textarea {...control} {...register("description")} dir="ltr" placeholder={t("descriptionPlaceholder")} />
-            )}
-          </TextField>
-
-          <TextField
-            label={t("nutritionLabel")}
-            description={t("nutritionHelp")}
-            error={fieldError(errors.nutrition?.message)}
-          >
-            {(control) => (
-              <Textarea {...control} {...register("nutrition")} dir="ltr" placeholder={t("nutritionPlaceholder")} />
-            )}
-          </TextField>
-
-          <TextField label={t("originLabel")} description={t("originHelp")} error={fieldError(errors.origin?.message)}>
-            {(control) => (
-              <Textarea {...control} {...register("origin")} dir="ltr" placeholder={t("originPlaceholder")} />
-            )}
-          </TextField>
-        </TabsContent>
-
-        <TabsContent value="fa" forceMount className="flex flex-col gap-5 pt-4 data-[state=inactive]:hidden">
-          <p className="text-body-caption text-muted-foreground">{t("translationDescription")}</p>
-
-          <TextField label={t("nameLabel")} error={fieldError(errors.faName?.message)}>
-            {(control) => <Input {...control} {...register("faName")} dir="rtl" placeholder={t("faNamePlaceholder")} />}
-          </TextField>
-
-          <TextField
-            label={t("unitLabel")}
-            description={t("unitDescription")}
-            error={fieldError(errors.faUnit?.message)}
-          >
-            {(control) => <Input {...control} {...register("faUnit")} dir="rtl" placeholder={t("faUnitPlaceholder")} />}
-          </TextField>
-
-          <TextField
-            label={t("descriptionLabel")}
-            description={t("descriptionHelp")}
-            error={fieldError(errors.faDescription?.message)}
-          >
-            {(control) => (
-              <Textarea
-                {...control}
-                {...register("faDescription")}
-                dir="rtl"
-                placeholder={t("faDescriptionPlaceholder")}
-              />
-            )}
-          </TextField>
-
-          <TextField
-            label={t("nutritionLabel")}
-            description={t("nutritionHelp")}
-            error={fieldError(errors.faNutrition?.message)}
-          >
-            {(control) => (
-              <Textarea {...control} {...register("faNutrition")} dir="rtl" placeholder={t("faNutritionPlaceholder")} />
-            )}
-          </TextField>
-
-          <TextField
-            label={t("originLabel")}
-            description={t("originHelp")}
-            error={fieldError(errors.faOrigin?.message)}
-          >
-            {(control) => (
-              <Textarea {...control} {...register("faOrigin")} dir="rtl" placeholder={t("faOriginPlaceholder")} />
-            )}
-          </TextField>
-        </TabsContent>
-      </Tabs>
-
-      {kind === "book" ? (
-        <fieldset className="flex flex-col gap-5 rounded-card-md border border-border p-4">
-          <legend className="px-1 text-body-small-emphasis text-input-foreground">{t("bookLegend")}</legend>
-
-          <TextField label={t("bookAuthorLabel")} required error={fieldError(errors.bookAuthor?.message)}>
-            {(control) => (
-              <Input {...control} {...register("bookAuthor")} dir="auto" placeholder={t("bookAuthorPlaceholder")} />
-            )}
-          </TextField>
-
-          <TextField
-            label={t("bookIsbnLabel")}
-            description={t("bookIsbnDescription")}
-            error={fieldError(errors.bookIsbn?.message)}
-          >
-            {(control) => (
-              <Input {...control} {...register("bookIsbn")} dir="ltr" inputMode="numeric" placeholder="978-600-..." />
-            )}
-          </TextField>
-
-          <TextField
-            label={t("bookCopiesLabel")}
-            description={t("bookCopiesDescription")}
-            error={fieldError(errors.bookCopies?.message)}
-          >
-            {(control) => (
-              <Input {...control} {...register("bookCopies")} dir="ltr" inputMode="numeric" placeholder="1" />
-            )}
-          </TextField>
-
-          <Field error={fieldError(errors.bookAvailability?.message)}>
-            {({ id, ariaDescribedBy, ariaInvalid }) => (
-              <>
-                <label htmlFor={id} className="text-body-small-emphasis text-input-foreground">
-                  {t("bookAvailabilityLabel")}
+      <DashboardColumns
+        main={
+          <>
+            <DashboardSection title={t("sectionBasics")}>
+              <div className="flex flex-col gap-1.5">
+                <span className={FIELD_LABEL}>
+                  {t("kindLabel")}
                   <RequiredMark />
-                </label>
+                </span>
                 <Controller
                   control={control}
-                  name="bookAvailability"
+                  name="kind"
                   render={({ field }) => (
-                    <ControlledChoicePicker
-                      id={id}
-                      ariaInvalid={ariaInvalid}
-                      ariaDescribedBy={ariaDescribedBy}
-                      label={t("bookAvailabilityLabel")}
+                    <OverviewSegmented
+                      label={t("kindLabel")}
                       value={field.value}
-                      onValueChange={(value) => field.onChange(value)}
-                      inactiveValue="sale"
-                      triggerClassName="h-12 w-full justify-between rounded-input text-body-small"
-                      options={BOOK_AVAILABILITIES.map((value) => ({ value, label: t(`bookAvailability.${value}`) }))}
+                      options={PRODUCT_KINDS.map((option) => ({ value: option, label: t(`kind.${option}`) }))}
+                      onChange={field.onChange}
+                      fill
                     />
                   )}
                 />
-              </>
-            )}
-          </Field>
-        </fieldset>
-      ) : null}
+                {errors.kind?.message ? <FormMessage>{fieldError(errors.kind.message)}</FormMessage> : null}
+              </div>
 
-      <Field error={fieldError(errors.categoryId?.message)}>
-        {({ id, ariaDescribedBy, ariaInvalid }) => (
-          <>
-            <label htmlFor={id} className="text-body-small-emphasis text-input-foreground">
-              {t("categoryLabel")}
-              <RequiredMark />
-            </label>
-            <Controller
-              control={control}
-              name="categoryId"
-              render={({ field }) => (
-                <ControlledChoicePicker
-                  id={id}
-                  ariaInvalid={ariaInvalid}
-                  ariaDescribedBy={ariaDescribedBy}
-                  label={t("categoryLabel")}
-                  placeholder={t("selectCategory")}
-                  value={field.value}
-                  onValueChange={field.onChange}
-                  inactiveValue=""
-                  triggerClassName="h-12 w-full justify-between rounded-input text-body-small"
-                  options={props.categories.map((category) => ({ value: category.id, label: category.name }))}
-                />
-              )}
-            />
-          </>
-        )}
-      </Field>
+              <DashboardFormField label={t("categoryLabel")} required error={fieldError(errors.categoryId?.message)}>
+                {(wiring) => (
+                  <Controller
+                    control={control}
+                    name="categoryId"
+                    render={({ field }) => (
+                      <ControlledChoicePicker
+                        id={wiring.id}
+                        ariaInvalid={wiring["aria-invalid"]}
+                        ariaDescribedBy={wiring["aria-describedby"]}
+                        label={t("categoryLabel")}
+                        placeholder={t("selectCategory")}
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        isActive={false}
+                        size="control-md"
+                        triggerClassName={FIELD_PICKER}
+                        options={props.categories.map((category) => ({ value: category.id, label: category.name }))}
+                      />
+                    )}
+                  />
+                )}
+              </DashboardFormField>
+            </DashboardSection>
 
-      <div className="grid grid-cols-2 gap-4">
-        <TextField
-          label={t("priceLabel")}
-          required
-          description={t("priceDescription")}
-          error={fieldError(errors.price?.message)}
-        >
-          {(control) => (
-            <Input {...control} {...register("price")} inputMode="numeric" placeholder={t("pricePlaceholder")} />
-          )}
-        </TextField>
+            {/* The guest-facing copy is per-locale: the base row holds the source (English)
+                text and the `fa` column its optional translation. Everything else (price,
+                stock, image, category…) is locale-independent, so it lives once on the base row. */}
+            <DashboardSection title={t("sectionText")} description={t("sectionTextHint")}>
+              <div className={LANGUAGE_GRID}>
+                <DashboardLanguageColumn label={t("localeTabBase")}>
+                  <DashboardFormField label={t("nameLabel")} required error={fieldError(errors.name?.message)}>
+                    {(wiring) => (
+                      <Input
+                        {...wiring}
+                        {...register("name")}
+                        size="control-md"
+                        inputClassName={FIELD_INPUT}
+                        dir="ltr"
+                        placeholder={t("namePlaceholder")}
+                      />
+                    )}
+                  </DashboardFormField>
 
-        <TextField
-          label={t("originalPriceLabel")}
-          description={t("originalPriceDescription")}
-          error={fieldError(errors.originalPrice?.message)}
-        >
-          {(control) => (
-            <Input
-              {...control}
-              {...register("originalPrice")}
-              inputMode="numeric"
-              placeholder={t("pricePlaceholder")}
-            />
-          )}
-        </TextField>
-      </div>
-
-      <TextField
-        label={t("costPriceLabel")}
-        description={t("costPriceDescription")}
-        error={fieldError(errors.costPrice?.message)}
-      >
-        {(control) => (
-          <Input {...control} {...register("costPrice")} inputMode="numeric" placeholder={t("pricePlaceholder")} />
-        )}
-      </TextField>
-
-      <Controller
-        control={control}
-        name="madeToOrder"
-        render={({ field }) => (
-          <div className="flex items-center justify-between rounded-card-md border border-border px-4 py-3">
-            <div>
-              <label htmlFor="madeToOrder" className="text-body-small-emphasis text-input-foreground">
-                {t("madeToOrderLabel")}
-              </label>
-              <p className="text-body-caption text-muted-foreground">{t("madeToOrderDescription")}</p>
-            </div>
-            <Switch
-              id="madeToOrder"
-              checked={field.value}
-              onCheckedChange={field.onChange}
-              aria-label={t("madeToOrderAria")}
-            />
-          </div>
-        )}
-      />
-
-      {/* A made-to-order item isn't counted: no stock to enter, and the saved count
-          is left as it is. The value stays in the form, so switching back restores it. */}
-      {madeToOrder ? null : (
-        <TextField
-          label={t("stockLabel")}
-          required
-          description={t("stockDescription")}
-          error={fieldError(errors.stockQuantity?.message)}
-        >
-          {(control) => (
-            <Input
-              {...control}
-              {...register("stockQuantity")}
-              inputMode="numeric"
-              placeholder={t("stockPlaceholder")}
-            />
-          )}
-        </TextField>
-      )}
-
-      <Field error={fieldError(errors.imageUrl?.message)}>
-        {({ id, ariaDescribedBy, ariaInvalid }) => (
-          <>
-            <label htmlFor={id} className="text-body-small-emphasis text-input-foreground">
-              {t("imageLabel")}
-              <RequiredMark />
-            </label>
-            <ProductImageUpload
-              id={id}
-              value={imageUrl}
-              onChange={(url) => setValue("imageUrl", url, { shouldValidate: true })}
-              aria-invalid={ariaInvalid}
-              aria-describedby={ariaDescribedBy}
-            />
-          </>
-        )}
-      </Field>
-      {/* Keeps imageUrl registered (set imperatively by ProductImageUpload) so it's tracked + submitted. */}
-      <input type="hidden" {...register("imageUrl")} />
-
-      <TextField label={t("badgeLabel")} description={t("badgeDescription")} error={fieldError(errors.badge?.message)}>
-        {(control) => <Input {...control} {...register("badge")} dir="ltr" placeholder={t("badgePlaceholder")} />}
-      </TextField>
-
-      <Controller
-        control={control}
-        name="dietary"
-        render={({ field }) => (
-          <fieldset>
-            <legend className="text-body-small-emphasis text-input-foreground">{t("dietaryLegend")}</legend>
-            <p className="mb-2 text-body-caption text-muted-foreground">{t("dietaryDescription")}</p>
-            <div className="flex flex-wrap gap-2">
-              {DIETARY_TAGS.map((tag) => {
-                const checked = field.value?.includes(tag) ?? false;
-                return (
-                  <ToggleChip
-                    key={tag}
-                    pressed={checked}
-                    onPressedChange={(pressed) =>
-                      field.onChange(
-                        pressed
-                          ? [...(field.value ?? []), tag]
-                          : (field.value ?? []).filter((item: string) => item !== tag),
-                      )
-                    }
+                  <DashboardFormField
+                    label={t("unitLabel")}
+                    hint={t("unitDescription")}
+                    error={fieldError(errors.unit?.message)}
                   >
-                    {tDietary(tag)}
-                  </ToggleChip>
-                );
-              })}
-            </div>
-          </fieldset>
-        )}
+                    {(wiring) => (
+                      <Input
+                        {...wiring}
+                        {...register("unit")}
+                        size="control-md"
+                        inputClassName={FIELD_INPUT}
+                        dir="ltr"
+                        placeholder={t("unitPlaceholder")}
+                      />
+                    )}
+                  </DashboardFormField>
+
+                  <DashboardFormField
+                    label={t("descriptionLabel")}
+                    hint={t("descriptionHelp")}
+                    error={fieldError(errors.description?.message)}
+                  >
+                    {(wiring) => (
+                      <Textarea
+                        {...wiring}
+                        {...register("description")}
+                        className={FIELD_TEXTAREA}
+                        rows={4}
+                        dir="ltr"
+                        placeholder={t("descriptionPlaceholder")}
+                      />
+                    )}
+                  </DashboardFormField>
+
+                  <DashboardFormField
+                    label={t("nutritionLabel")}
+                    hint={t("nutritionHelp")}
+                    error={fieldError(errors.nutrition?.message)}
+                  >
+                    {(wiring) => (
+                      <Textarea
+                        {...wiring}
+                        {...register("nutrition")}
+                        className={FIELD_TEXTAREA}
+                        rows={4}
+                        dir="ltr"
+                        placeholder={t("nutritionPlaceholder")}
+                      />
+                    )}
+                  </DashboardFormField>
+
+                  <DashboardFormField
+                    label={t("originLabel")}
+                    hint={t("originHelp")}
+                    error={fieldError(errors.origin?.message)}
+                  >
+                    {(wiring) => (
+                      <Textarea
+                        {...wiring}
+                        {...register("origin")}
+                        className={FIELD_TEXTAREA}
+                        rows={4}
+                        dir="ltr"
+                        placeholder={t("originPlaceholder")}
+                      />
+                    )}
+                  </DashboardFormField>
+                </DashboardLanguageColumn>
+
+                <DashboardLanguageColumn label={t("localeTabFa")}>
+                  <DashboardFormField label={t("nameLabel")} error={fieldError(errors.faName?.message)}>
+                    {(wiring) => (
+                      <Input
+                        {...wiring}
+                        {...register("faName")}
+                        size="control-md"
+                        inputClassName={FIELD_INPUT}
+                        dir="rtl"
+                        placeholder={t("faNamePlaceholder")}
+                      />
+                    )}
+                  </DashboardFormField>
+
+                  <DashboardFormField
+                    label={t("unitLabel")}
+                    hint={t("unitDescription")}
+                    error={fieldError(errors.faUnit?.message)}
+                  >
+                    {(wiring) => (
+                      <Input
+                        {...wiring}
+                        {...register("faUnit")}
+                        size="control-md"
+                        inputClassName={FIELD_INPUT}
+                        dir="rtl"
+                        placeholder={t("faUnitPlaceholder")}
+                      />
+                    )}
+                  </DashboardFormField>
+
+                  <DashboardFormField
+                    label={t("descriptionLabel")}
+                    hint={t("descriptionHelp")}
+                    error={fieldError(errors.faDescription?.message)}
+                  >
+                    {(wiring) => (
+                      <Textarea
+                        {...wiring}
+                        {...register("faDescription")}
+                        className={FIELD_TEXTAREA}
+                        rows={4}
+                        dir="rtl"
+                        placeholder={t("faDescriptionPlaceholder")}
+                      />
+                    )}
+                  </DashboardFormField>
+
+                  <DashboardFormField
+                    label={t("nutritionLabel")}
+                    hint={t("nutritionHelp")}
+                    error={fieldError(errors.faNutrition?.message)}
+                  >
+                    {(wiring) => (
+                      <Textarea
+                        {...wiring}
+                        {...register("faNutrition")}
+                        className={FIELD_TEXTAREA}
+                        rows={4}
+                        dir="rtl"
+                        placeholder={t("faNutritionPlaceholder")}
+                      />
+                    )}
+                  </DashboardFormField>
+
+                  <DashboardFormField
+                    label={t("originLabel")}
+                    hint={t("originHelp")}
+                    error={fieldError(errors.faOrigin?.message)}
+                  >
+                    {(wiring) => (
+                      <Textarea
+                        {...wiring}
+                        {...register("faOrigin")}
+                        className={FIELD_TEXTAREA}
+                        rows={4}
+                        dir="rtl"
+                        placeholder={t("faOriginPlaceholder")}
+                      />
+                    )}
+                  </DashboardFormField>
+                </DashboardLanguageColumn>
+              </div>
+            </DashboardSection>
+
+            {kind === "book" ? (
+              <DashboardSection title={t("bookLegend")}>
+                <div className={FIELD_GRID}>
+                  <DashboardFormField
+                    label={t("bookAuthorLabel")}
+                    required
+                    error={fieldError(errors.bookAuthor?.message)}
+                  >
+                    {(wiring) => (
+                      <Input
+                        {...wiring}
+                        {...register("bookAuthor")}
+                        size="control-md"
+                        inputClassName={FIELD_INPUT}
+                        dir="auto"
+                        placeholder={t("bookAuthorPlaceholder")}
+                      />
+                    )}
+                  </DashboardFormField>
+
+                  <DashboardFormField
+                    label={t("bookIsbnLabel")}
+                    hint={t("bookIsbnDescription")}
+                    error={fieldError(errors.bookIsbn?.message)}
+                  >
+                    {(wiring) => (
+                      <Input
+                        {...wiring}
+                        {...register("bookIsbn")}
+                        size="control-md"
+                        inputClassName={FIELD_INPUT}
+                        dir="ltr"
+                        inputMode="numeric"
+                        placeholder="978-600-..."
+                      />
+                    )}
+                  </DashboardFormField>
+
+                  <DashboardFormField
+                    label={t("bookCopiesLabel")}
+                    hint={t("bookCopiesDescription")}
+                    error={fieldError(errors.bookCopies?.message)}
+                  >
+                    {(wiring) => (
+                      <Input
+                        {...wiring}
+                        {...register("bookCopies")}
+                        size="control-md"
+                        inputClassName={FIELD_INPUT}
+                        dir="ltr"
+                        inputMode="numeric"
+                        placeholder="1"
+                      />
+                    )}
+                  </DashboardFormField>
+
+                  <DashboardFormField
+                    label={t("bookAvailabilityLabel")}
+                    required
+                    error={fieldError(errors.bookAvailability?.message)}
+                  >
+                    {(wiring) => (
+                      <Controller
+                        control={control}
+                        name="bookAvailability"
+                        render={({ field }) => (
+                          <ControlledChoicePicker
+                            id={wiring.id}
+                            ariaInvalid={wiring["aria-invalid"]}
+                            ariaDescribedBy={wiring["aria-describedby"]}
+                            label={t("bookAvailabilityLabel")}
+                            value={field.value}
+                            onValueChange={(value) => field.onChange(value)}
+                            isActive={false}
+                            size="control-md"
+                            triggerClassName={FIELD_PICKER}
+                            options={BOOK_AVAILABILITIES.map((value) => ({
+                              value,
+                              label: t(`bookAvailability.${value}`),
+                            }))}
+                          />
+                        )}
+                      />
+                    )}
+                  </DashboardFormField>
+                </div>
+              </DashboardSection>
+            ) : null}
+
+            <DashboardSection title={t("priceLabel")}>
+              <div className={FIELD_GRID}>
+                <DashboardFormField
+                  label={t("priceLabel")}
+                  required
+                  hint={t("priceDescription")}
+                  error={fieldError(errors.price?.message)}
+                >
+                  {(wiring) => (
+                    <Input
+                      {...wiring}
+                      {...register("price")}
+                      size="control-md"
+                      inputClassName={FIELD_INPUT}
+                      inputMode="numeric"
+                      placeholder={t("pricePlaceholder")}
+                    />
+                  )}
+                </DashboardFormField>
+
+                <DashboardFormField
+                  label={t("originalPriceLabel")}
+                  hint={t("originalPriceDescription")}
+                  error={fieldError(errors.originalPrice?.message)}
+                >
+                  {(wiring) => (
+                    <Input
+                      {...wiring}
+                      {...register("originalPrice")}
+                      size="control-md"
+                      inputClassName={FIELD_INPUT}
+                      inputMode="numeric"
+                      placeholder={t("pricePlaceholder")}
+                    />
+                  )}
+                </DashboardFormField>
+
+                <DashboardFormField
+                  label={t("costPriceLabel")}
+                  hint={t("costPriceDescription")}
+                  error={fieldError(errors.costPrice?.message)}
+                >
+                  {(wiring) => (
+                    <Input
+                      {...wiring}
+                      {...register("costPrice")}
+                      size="control-md"
+                      inputClassName={FIELD_INPUT}
+                      inputMode="numeric"
+                      placeholder={t("pricePlaceholder")}
+                    />
+                  )}
+                </DashboardFormField>
+              </div>
+            </DashboardSection>
+
+            <DashboardSection title={t("stockLabel")}>
+              <Controller
+                control={control}
+                name="madeToOrder"
+                render={({ field }) => (
+                  <DashboardSwitchField
+                    label={t("madeToOrderLabel")}
+                    hint={t("madeToOrderDescription")}
+                    ariaLabel={t("madeToOrderAria")}
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                )}
+              />
+
+              {/* A made-to-order item isn't counted: no stock to enter, and the saved count
+                  is left as it is. The value stays in the form, so switching back restores it. */}
+              {madeToOrder ? null : (
+                <div className={FIELD_GRID}>
+                  <DashboardFormField
+                    label={t("stockLabel")}
+                    required
+                    hint={t("stockDescription")}
+                    error={fieldError(errors.stockQuantity?.message)}
+                  >
+                    {(wiring) => (
+                      <Input
+                        {...wiring}
+                        {...register("stockQuantity")}
+                        size="control-md"
+                        inputClassName={FIELD_INPUT}
+                        inputMode="numeric"
+                        placeholder={t("stockPlaceholder")}
+                      />
+                    )}
+                  </DashboardFormField>
+                </div>
+              )}
+            </DashboardSection>
+          </>
+        }
+        side={
+          <>
+            <DashboardSection
+              title={
+                <>
+                  {t("imageLabel")}
+                  <RequiredMark />
+                </>
+              }
+            >
+              <Field error={fieldError(errors.imageUrl?.message)}>
+                {({ id, ariaDescribedBy, ariaInvalid }) => (
+                  <>
+                    <label htmlFor={id} className="sr-only">
+                      {t("imageLabel")}
+                    </label>
+                    <ProductImageUpload
+                      id={id}
+                      value={imageUrl}
+                      onChange={(url) => setValue("imageUrl", url, { shouldValidate: true })}
+                      aria-invalid={ariaInvalid}
+                      aria-describedby={ariaDescribedBy}
+                    />
+                  </>
+                )}
+              </Field>
+              {/* Keeps imageUrl registered (set imperatively by ProductImageUpload) so it's tracked + submitted. */}
+              <input type="hidden" {...register("imageUrl")} />
+            </DashboardSection>
+
+            <DashboardSection title={t("sectionOnMenu")}>
+              <DashboardFormField
+                label={t("badgeLabel")}
+                hint={t("badgeDescription")}
+                error={fieldError(errors.badge?.message)}
+              >
+                {(wiring) => (
+                  <Input
+                    {...wiring}
+                    {...register("badge")}
+                    size="control-md"
+                    inputClassName={FIELD_INPUT}
+                    dir="ltr"
+                    placeholder={t("badgePlaceholder")}
+                  />
+                )}
+              </DashboardFormField>
+
+              <Controller
+                control={control}
+                name="dietary"
+                render={({ field }) => (
+                  <div role="group" aria-labelledby={dietaryLabelId} className="flex flex-col gap-1.5">
+                    <span id={dietaryLabelId} className={FIELD_LABEL}>
+                      {t("dietaryLegend")}
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      {DIETARY_TAGS.map((tag) => {
+                        const checked = field.value?.includes(tag) ?? false;
+                        return (
+                          <ToggleChip
+                            key={tag}
+                            className={DIETARY_CHIP}
+                            pressed={checked}
+                            onPressedChange={(pressed) =>
+                              field.onChange(
+                                pressed
+                                  ? [...(field.value ?? []), tag]
+                                  : (field.value ?? []).filter((item: string) => item !== tag),
+                              )
+                            }
+                          >
+                            {checked ? <Icon icon={Check} size="sm" strokeWidth={2} /> : null}
+                            {tDietary(tag)}
+                          </ToggleChip>
+                        );
+                      })}
+                    </div>
+                    <p className={FIELD_HINT}>{t("dietaryDescription")}</p>
+                  </div>
+                )}
+              />
+
+              <Controller
+                control={control}
+                name="isFeatured"
+                render={({ field }) => (
+                  <DashboardSwitchField
+                    label={t("featuredLabel")}
+                    hint={t("featuredDescription")}
+                    ariaLabel={t("featuredAria")}
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                )}
+              />
+
+              <Controller
+                control={control}
+                name="isPublished"
+                render={({ field }) => (
+                  <DashboardSwitchField
+                    label={t("publishedLabel")}
+                    hint={t("publishedDescription")}
+                    ariaLabel={t("publishedAria")}
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                )}
+              />
+
+              <Controller
+                control={control}
+                name="taxExempt"
+                render={({ field }) => (
+                  <DashboardSwitchField
+                    label={t("taxExemptLabel")}
+                    hint={t("taxExemptDescription")}
+                    ariaLabel={t("taxExemptAria")}
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                )}
+              />
+            </DashboardSection>
+
+            {editing ? props.activity : null}
+          </>
+        }
       />
-
-      <Controller
-        control={control}
-        name="isFeatured"
-        render={({ field }) => (
-          <div className="flex items-center justify-between rounded-card-md border border-border px-4 py-3">
-            <div>
-              <label htmlFor="isFeatured" className="text-body-small-emphasis text-input-foreground">
-                {t("featuredLabel")}
-              </label>
-              <p className="text-body-caption text-muted-foreground">{t("featuredDescription")}</p>
-            </div>
-            <Switch
-              id="isFeatured"
-              checked={field.value}
-              onCheckedChange={field.onChange}
-              aria-label={t("featuredAria")}
-            />
-          </div>
-        )}
-      />
-
-      <Controller
-        control={control}
-        name="isPublished"
-        render={({ field }) => (
-          <div className="flex items-center justify-between rounded-card-md border border-border px-4 py-3">
-            <div>
-              <label htmlFor="isPublished" className="text-body-small-emphasis text-input-foreground">
-                {t("publishedLabel")}
-              </label>
-              <p className="text-body-caption text-muted-foreground">{t("publishedDescription")}</p>
-            </div>
-            <Switch
-              id="isPublished"
-              checked={field.value}
-              onCheckedChange={field.onChange}
-              aria-label={t("publishedAria")}
-            />
-          </div>
-        )}
-      />
-
-      <Controller
-        control={control}
-        name="taxExempt"
-        render={({ field }) => (
-          <div className="flex items-center justify-between rounded-card-md border border-border px-4 py-3">
-            <div>
-              <label htmlFor="taxExempt" className="text-body-small-emphasis text-input-foreground">
-                {t("taxExemptLabel")}
-              </label>
-              <p className="text-body-caption text-muted-foreground">{t("taxExemptDescription")}</p>
-            </div>
-            <Switch
-              id="taxExempt"
-              checked={field.value}
-              onCheckedChange={field.onChange}
-              aria-label={t("taxExemptAria")}
-            />
-          </div>
-        )}
-      />
-
-      {errors.root?.message && <FormMessage size="md">{errors.root.message}</FormMessage>}
-
-      <div className="flex gap-3 pt-2">
-        <Button type="submit" loading={isSubmitting}>
-          {editing ? t("saveChanges") : t("createProduct")}
-        </Button>
-        <Button asChild variant="outline" type="button">
-          <Link href="/dashboard/products">{t("cancel")}</Link>
-        </Button>
-      </div>
     </form>
   );
 }

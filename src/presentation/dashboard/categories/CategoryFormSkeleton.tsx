@@ -1,56 +1,58 @@
+import { ActivityPanelSkeleton } from "@/src/presentation/dashboard/activity/ActivityPanelSkeleton";
+import { DashboardColumns } from "@/src/presentation/dashboard/DashboardColumns";
+import { LANGUAGE_GRID } from "@/src/presentation/dashboard/fieldStyles";
+import {
+  DashboardFieldSkeleton,
+  DashboardPageHeaderSkeleton,
+  DashboardSectionSkeleton,
+  DashboardSwitchFieldSkeleton,
+} from "@/src/presentation/dashboard/skeletons";
 import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
+/** The two languages' columns. */
+const LANGUAGES = 2;
+
 /**
- * Placeholder for `CategoryForm`: the base / Persian locale tabs with the name
- * field, the slug with its hint, the icon upload, the active switch row, and the
- * submit row.
+ * Placeholder for `CategoryForm` (create and edit): the header and its buttons, the
+ * name in both languages with the slug, then the icon, the active switch and (when
+ * editing) the activity panel in the narrow column.
  */
-export function CategoryFormSkeleton() {
+export function CategoryFormSkeleton({ activity = false }: { activity?: boolean }) {
   return (
-    <div className="flex flex-col gap-5">
-      <div className="flex flex-col">
-        <div className="inline-flex w-fit gap-1 rounded-card-lg bg-surface-sunken p-1">
-          <Skeleton className="h-8 w-20 rounded-card-md" />
-          <Skeleton className="h-8 w-20 rounded-card-md" />
-        </div>
-        <div className="flex flex-col gap-5 pt-4">
-          <Skeleton className="h-3.5 w-64 max-w-full rounded-pill" />
-          <div className="flex flex-col gap-1.5">
-            <Skeleton className="h-4 w-16 rounded-pill" />
-            <Skeleton className="h-10 w-full rounded-input" />
-          </div>
-        </div>
-      </div>
+    <div className="flex flex-col gap-6">
+      <DashboardPageHeaderSkeleton />
+      <DashboardColumns
+        main={
+          <DashboardSectionSkeleton description>
+            <div className={LANGUAGE_GRID}>
+              {Array.from({ length: LANGUAGES }, (_, language) => (
+                <div key={language} className="flex min-w-0 flex-col gap-4">
+                  <Skeleton className="h-4 w-20 rounded-pill" />
+                  <DashboardFieldSkeleton />
+                </div>
+              ))}
+            </div>
+            <DashboardFieldSkeleton hint />
+          </DashboardSectionSkeleton>
+        }
+        side={
+          <>
+            <DashboardSectionSkeleton>
+              <div className="flex flex-wrap items-center gap-4">
+                <Skeleton className="size-12 shrink-0 rounded-card-md" />
+                <Skeleton className="h-11 w-36 rounded-button sm:h-9" />
+              </div>
+              <Skeleton className="h-4 w-48 max-w-full rounded-pill" />
+            </DashboardSectionSkeleton>
 
-      <div className="flex flex-col gap-1.5">
-        <Skeleton className="h-4 w-12 rounded-pill" />
-        <Skeleton className="h-10 w-full rounded-input" />
-        <Skeleton className="h-3.5 w-56 max-w-full rounded-pill" />
-      </div>
+            <DashboardSectionSkeleton>
+              <DashboardSwitchFieldSkeleton />
+            </DashboardSectionSkeleton>
 
-      <div className="flex flex-col gap-1">
-        <Skeleton className="h-4 w-12 rounded-pill" />
-        <div className="flex items-center gap-4">
-          <Skeleton className="size-20 shrink-0 rounded-card-lg" />
-          <div className="flex flex-col gap-1.5">
-            <Skeleton className="h-10 w-28 rounded-button" />
-            <Skeleton className="h-3.5 w-36 rounded-pill" />
-          </div>
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between rounded-card-md border border-border px-4 py-3">
-        <div className="flex flex-col gap-1.5">
-          <Skeleton className="h-4 w-16 rounded-pill" />
-          <Skeleton className="h-3.5 w-48 rounded-pill" />
-        </div>
-        <Skeleton className="h-6 w-11 shrink-0 rounded-full" />
-      </div>
-
-      <div className="flex gap-3 pt-2">
-        <Skeleton className="h-11 w-32 rounded-button" />
-        <Skeleton className="h-11 w-24 rounded-button" />
-      </div>
+            {activity ? <ActivityPanelSkeleton /> : null}
+          </>
+        }
+      />
     </div>
   );
 }

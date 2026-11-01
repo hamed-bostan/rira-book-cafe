@@ -1,10 +1,9 @@
-import { getTranslations } from "next-intl/server";
-
 import type { Category } from "@/src/domain/entities/Category";
 import type { Product } from "@/src/domain/entities/Product";
 import type { ProductTranslationInput } from "@/src/domain/repositories/IProductRepository";
 import type { ActivityEntryWire } from "@/src/presentation/dashboard/activity/activity-response-schema";
 import { ActivityPanel } from "@/src/presentation/dashboard/activity/ActivityPanel";
+import { DashboardPageCrumb } from "@/src/presentation/dashboard/shell/DashboardPageCrumb";
 
 import { ProductForm } from "./ProductForm";
 
@@ -14,7 +13,7 @@ import { ProductForm } from "./ProductForm";
  * them in, then hands them to the shared `ProductForm`. A missing product is
  * handled upstream via `notFound()`.
  */
-export async function EditProductScreen({
+export function EditProductScreen({
   product,
   categories,
   translations,
@@ -23,19 +22,19 @@ export async function EditProductScreen({
   product: Product;
   categories: Category[];
   translations: ProductTranslationInput[];
-  /** The item's recent admin activity, for the panel under the form. */
+  /** The item's recent admin activity, for the form's narrow column. */
   activity: ActivityEntryWire[];
 }) {
-  const t = await getTranslations("dashProducts");
-
   return (
-    <div className="flex max-w-xl flex-col gap-6">
-      <div>
-        <h1 className="dashboard-page-title">{t("editHeading")}</h1>
-        <p className="text-body-small text-muted-foreground">{t("editSubtitle", { name: product.name })}</p>
-      </div>
-      <ProductForm mode="edit" product={product} categories={categories} translations={translations} />
-      <ActivityPanel entries={activity} />
-    </div>
+    <>
+      <DashboardPageCrumb label={product.name} />
+      <ProductForm
+        mode="edit"
+        product={product}
+        categories={categories}
+        translations={translations}
+        activity={<ActivityPanel entries={activity} />}
+      />
+    </>
   );
 }

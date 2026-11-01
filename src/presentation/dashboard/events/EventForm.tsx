@@ -12,20 +12,33 @@ import { Link, useRouter } from "@/src/i18n/navigation";
 import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
-import { ControlledChoicePicker } from "@/src/presentation/dashboard/list";
+import { DashboardColumns } from "@/src/presentation/dashboard/DashboardColumns";
+import { DashboardFormField } from "@/src/presentation/dashboard/DashboardFormField";
+import { DashboardLanguageColumn } from "@/src/presentation/dashboard/DashboardLanguageColumn";
+import { DashboardPageHeader } from "@/src/presentation/dashboard/DashboardPageHeader";
+import { DashboardSection } from "@/src/presentation/dashboard/DashboardSection";
+import { DashboardSwitchField } from "@/src/presentation/dashboard/DashboardSwitchField";
+import {
+  FIELD_GRID,
+  FIELD_HINT,
+  FIELD_INPUT,
+  FIELD_LABEL,
+  FIELD_TEXTAREA,
+  LANGUAGE_GRID,
+} from "@/src/presentation/dashboard/fieldStyles";
+import { FormAlert } from "@/src/presentation/dashboard/FormAlert";
+import { OverviewSegmented } from "@/src/presentation/dashboard/overview/OverviewSegmented";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
 import { Field } from "@/src/presentation/design-system/components/form/Field/Field";
 import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
 import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
 import { RequiredMark } from "@/src/presentation/design-system/components/form/shared/RequiredMark";
 import { Textarea } from "@/src/presentation/design-system/components/form/Textarea/Textarea";
-import { TextField } from "@/src/presentation/design-system/components/form/TextField/TextField";
-import { Switch } from "@/src/presentation/design-system/components/Switch/Switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/presentation/design-system/components/Tabs/Tabs";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { tableNameValues } from "../floor/tableName";
 
+import { DeleteEventButton } from "./DeleteEventButton";
 import { eventsApi } from "./event-api";
 import { EventImageUpload } from "./EventImageUpload";
 
@@ -42,7 +55,16 @@ const FORM_FIELDS = [
   "price",
 ] as const satisfies readonly (keyof EventFormInput)[];
 
-type EventFormProps = { mode: "create" } | { mode: "edit"; event: CafeEvent };
+type EventFormProps =
+  | { mode: "create" }
+  | {
+      mode: "edit";
+      event: CafeEvent;
+      /** Who has signed up, for the wide column. */
+      guestList: React.ReactNode;
+      /** The event's history, for the narrow column. */
+      activity: React.ReactNode;
+    };
 
 /** Form values from an event; times as cafe wall time for the `datetime-local` inputs. */
 function toDefaults(event?: CafeEvent): EventFormInput {
@@ -132,136 +154,215 @@ export function EventForm(props: EventFormProps) {
   });
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-5" noValidate>
-      <Field error={fieldError(errors.kind?.message)}>
-        {({ id, ariaDescribedBy, ariaInvalid }) => (
+    <form onSubmit={onSubmit} className="flex flex-col gap-6" noValidate>
+      <DashboardPageHeader
+        backHref="/dashboard/events"
+        backLabel={t("backToEvents")}
+        title={editing ? t("editHeading") : t("newEvent")}
+        subtitle={editing ? props.event.title : t("createSubtitle")}
+        actions={
           <>
-            <label htmlFor={id} className="text-body-small-emphasis text-input-foreground">
-              {t("kindLabel")}
-              <RequiredMark />
-            </label>
-            <Controller
-              control={control}
-              name="kind"
-              render={({ field }) => (
-                <ControlledChoicePicker
-                  id={id}
-                  ariaInvalid={ariaInvalid}
-                  ariaDescribedBy={ariaDescribedBy}
-                  label={t("kindLabel")}
-                  value={field.value}
-                  onValueChange={field.onChange}
-                  inactiveValue="bookClub"
-                  triggerClassName="h-12 w-full justify-between rounded-input text-body-small"
-                  options={EVENT_KINDS.map((kind) => ({ value: kind, label: t(`kind.${kind}`) }))}
-                />
-              )}
-            />
+            {editing ? <DeleteEventButton id={props.event.id} title={props.event.title} /> : null}
+            <Button asChild variant="secondary" size="control-md" className="px-3">
+              <Link href="/dashboard/events">{t("cancel")}</Link>
+            </Button>
+            <Button type="submit" size="control-md" loading={isSubmitting}>
+              {editing ? t("saveChanges") : t("createEvent")}
+            </Button>
           </>
-        )}
-      </Field>
-
-      {/* Guest-facing copy per locale; both panels stay mounted so no value is dropped. */}
-      <Tabs defaultValue="base">
-        <TabsList>
-          <TabsTrigger value="base">{t("localeTabBase")}</TabsTrigger>
-          <TabsTrigger value="fa">{t("localeTabFa")}</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="base" forceMount className="flex flex-col gap-5 pt-4 data-[state=inactive]:hidden">
-          <TextField label={t("titleLabel")} required error={fieldError(errors.title?.message)}>
-            {(control) => <Input {...control} {...register("title")} dir="auto" placeholder={t("titlePlaceholder")} />}
-          </TextField>
-          <TextField label={t("descriptionLabel")} error={fieldError(errors.description?.message)}>
-            {(control) => <Textarea {...control} {...register("description")} dir="auto" rows={5} />}
-          </TextField>
-        </TabsContent>
-
-        <TabsContent value="fa" forceMount className="flex flex-col gap-5 pt-4 data-[state=inactive]:hidden">
-          <p className="text-body-caption text-muted-foreground">{t("translationDescription")}</p>
-          <TextField label={t("titleLabel")} error={fieldError(errors.titleFa?.message)}>
-            {(control) => <Input {...control} {...register("titleFa")} dir="rtl" />}
-          </TextField>
-          <TextField label={t("descriptionLabel")} error={fieldError(errors.descriptionFa?.message)}>
-            {(control) => <Textarea {...control} {...register("descriptionFa")} dir="rtl" rows={5} />}
-          </TextField>
-        </TabsContent>
-      </Tabs>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <TextField label={t("startsAtLabel")} required error={fieldError(errors.startsAt?.message)}>
-          {(control) => <Input {...control} {...register("startsAt")} type="datetime-local" dir="ltr" />}
-        </TextField>
-        <TextField label={t("endsAtLabel")} required error={fieldError(errors.endsAt?.message)}>
-          {(control) => <Input {...control} {...register("endsAt")} type="datetime-local" dir="ltr" />}
-        </TextField>
-      </div>
-      <p className="-mt-3 text-body-caption text-muted-foreground">{t("timeZoneHint")}</p>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <TextField
-          label={t("capacityLabel")}
-          description={t("capacityDescription")}
-          error={fieldError(errors.capacity?.message)}
-        >
-          {(control) => <Input {...control} {...register("capacity")} inputMode="numeric" placeholder="20" />}
-        </TextField>
-        <TextField
-          label={t("priceLabel")}
-          description={t("priceDescription")}
-          error={fieldError(errors.price?.message)}
-        >
-          {(control) => <Input {...control} {...register("price")} inputMode="numeric" placeholder="0" />}
-        </TextField>
-      </div>
-
-      <Field error={fieldError(errors.imageUrl?.message)}>
-        {({ id }) => (
-          <>
-            <label htmlFor={id} className="text-body-small-emphasis text-input-foreground">
-              {t("imageLabel")}
-            </label>
-            <EventImageUpload
-              id={id}
-              value={imageUrl}
-              onChange={(url) => setValue("imageUrl", url, { shouldValidate: true })}
-            />
-          </>
-        )}
-      </Field>
-      <input type="hidden" {...register("imageUrl")} />
-
-      <Controller
-        control={control}
-        name="isPublished"
-        render={({ field }) => (
-          <div className="flex items-center justify-between rounded-card-md border border-border px-4 py-3">
-            <div>
-              <label htmlFor="isPublished" className="text-body-small-emphasis text-input-foreground">
-                {t("publishedLabel")}
-              </label>
-              <p className="text-body-caption text-muted-foreground">{t("publishedDescription")}</p>
-            </div>
-            <Switch
-              id="isPublished"
-              checked={field.value}
-              onCheckedChange={field.onChange}
-              aria-label={t("publishedLabel")}
-            />
-          </div>
-        )}
+        }
+        alert={errors.root?.message ? <FormAlert>{errors.root.message}</FormAlert> : null}
       />
 
-      {errors.root?.message ? <FormMessage size="md">{errors.root.message}</FormMessage> : null}
+      <DashboardColumns
+        main={
+          <>
+            <DashboardSection title={t("sectionDetails")}>
+              <div className="flex flex-col gap-1.5">
+                <span className={FIELD_LABEL}>
+                  {t("kindLabel")}
+                  <RequiredMark />
+                </span>
+                <Controller
+                  control={control}
+                  name="kind"
+                  render={({ field }) => (
+                    <OverviewSegmented
+                      label={t("kindLabel")}
+                      value={field.value}
+                      options={EVENT_KINDS.map((kind) => ({ value: kind, label: t(`kind.${kind}`) }))}
+                      onChange={field.onChange}
+                      fill
+                    />
+                  )}
+                />
+                {errors.kind?.message ? <FormMessage>{fieldError(errors.kind.message)}</FormMessage> : null}
+              </div>
 
-      <div className="flex gap-3 pt-2">
-        <Button type="submit" loading={isSubmitting}>
-          {editing ? t("saveChanges") : t("createEvent")}
-        </Button>
-        <Button asChild variant="outline" type="button">
-          <Link href="/dashboard/events">{t("cancel")}</Link>
-        </Button>
-      </div>
+              {/* Guest-facing copy per locale, both on screen so no value is hidden. */}
+              <div className={LANGUAGE_GRID}>
+                <DashboardLanguageColumn label={t("localeTabBase")}>
+                  <DashboardFormField label={t("titleLabel")} required error={fieldError(errors.title?.message)}>
+                    {(wiring) => (
+                      <Input
+                        {...wiring}
+                        {...register("title")}
+                        size="control-md"
+                        inputClassName={FIELD_INPUT}
+                        dir="auto"
+                        placeholder={t("titlePlaceholder")}
+                      />
+                    )}
+                  </DashboardFormField>
+                  <DashboardFormField label={t("descriptionLabel")} error={fieldError(errors.description?.message)}>
+                    {(wiring) => (
+                      <Textarea
+                        {...wiring}
+                        {...register("description")}
+                        className={FIELD_TEXTAREA}
+                        dir="auto"
+                        rows={4}
+                      />
+                    )}
+                  </DashboardFormField>
+                </DashboardLanguageColumn>
+
+                <DashboardLanguageColumn label={t("localeTabFa")}>
+                  <DashboardFormField label={t("titleLabel")} error={fieldError(errors.titleFa?.message)}>
+                    {(wiring) => (
+                      <Input
+                        {...wiring}
+                        {...register("titleFa")}
+                        size="control-md"
+                        inputClassName={FIELD_INPUT}
+                        dir="rtl"
+                      />
+                    )}
+                  </DashboardFormField>
+                  <DashboardFormField label={t("descriptionLabel")} error={fieldError(errors.descriptionFa?.message)}>
+                    {(wiring) => (
+                      <Textarea
+                        {...wiring}
+                        {...register("descriptionFa")}
+                        className={FIELD_TEXTAREA}
+                        dir="rtl"
+                        rows={4}
+                      />
+                    )}
+                  </DashboardFormField>
+                </DashboardLanguageColumn>
+              </div>
+            </DashboardSection>
+
+            <DashboardSection title={t("sectionWhen")}>
+              <div className="flex flex-col gap-1.5">
+                <div className={FIELD_GRID}>
+                  <DashboardFormField label={t("startsAtLabel")} required error={fieldError(errors.startsAt?.message)}>
+                    {(wiring) => (
+                      <Input
+                        {...wiring}
+                        {...register("startsAt")}
+                        size="control-md"
+                        inputClassName={FIELD_INPUT}
+                        type="datetime-local"
+                        dir="ltr"
+                      />
+                    )}
+                  </DashboardFormField>
+                  <DashboardFormField label={t("endsAtLabel")} required error={fieldError(errors.endsAt?.message)}>
+                    {(wiring) => (
+                      <Input
+                        {...wiring}
+                        {...register("endsAt")}
+                        size="control-md"
+                        inputClassName={FIELD_INPUT}
+                        type="datetime-local"
+                        dir="ltr"
+                      />
+                    )}
+                  </DashboardFormField>
+                </div>
+                <p className={FIELD_HINT}>{t("timeZoneHint")}</p>
+              </div>
+
+              <div className={FIELD_GRID}>
+                <DashboardFormField
+                  label={t("capacityLabel")}
+                  hint={t("capacityDescription")}
+                  error={fieldError(errors.capacity?.message)}
+                >
+                  {(wiring) => (
+                    <Input
+                      {...wiring}
+                      {...register("capacity")}
+                      size="control-md"
+                      inputClassName={FIELD_INPUT}
+                      inputMode="numeric"
+                      placeholder="20"
+                    />
+                  )}
+                </DashboardFormField>
+                <DashboardFormField
+                  label={t("priceLabel")}
+                  hint={t("priceDescription")}
+                  error={fieldError(errors.price?.message)}
+                >
+                  {(wiring) => (
+                    <Input
+                      {...wiring}
+                      {...register("price")}
+                      size="control-md"
+                      inputClassName={FIELD_INPUT}
+                      inputMode="numeric"
+                      placeholder="0"
+                    />
+                  )}
+                </DashboardFormField>
+              </div>
+            </DashboardSection>
+
+            {editing ? props.guestList : null}
+          </>
+        }
+        side={
+          <>
+            <DashboardSection title={t("imageLabel")}>
+              <Field error={fieldError(errors.imageUrl?.message)}>
+                {({ id }) => (
+                  <>
+                    <label htmlFor={id} className="sr-only">
+                      {t("imageLabel")}
+                    </label>
+                    <EventImageUpload
+                      id={id}
+                      value={imageUrl}
+                      onChange={(url) => setValue("imageUrl", url, { shouldValidate: true })}
+                    />
+                  </>
+                )}
+              </Field>
+              <input type="hidden" {...register("imageUrl")} />
+            </DashboardSection>
+
+            <DashboardSection title={t("sectionVisibility")}>
+              <Controller
+                control={control}
+                name="isPublished"
+                render={({ field }) => (
+                  <DashboardSwitchField
+                    label={t("publishedLabel")}
+                    hint={t("publishedDescription")}
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                )}
+              />
+            </DashboardSection>
+
+            {editing ? props.activity : null}
+          </>
+        }
+      />
     </form>
   );
 }

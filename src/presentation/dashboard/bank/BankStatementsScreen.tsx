@@ -1,16 +1,20 @@
-import { Landmark } from "lucide-react";
+import { Plus } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import type { BankStatementSummary } from "@/src/domain/entities/BankReconciliation";
 import type { Account } from "@/src/domain/entities/Ledger";
 import { Link } from "@/src/i18n/navigation";
 import { formatCafeDayMedium } from "@/src/lib/formatCafeDay";
-import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
+import { cn } from "@/src/lib/utils";
 import { AccountingHeader } from "@/src/presentation/dashboard/accounting/AccountingHeader";
 import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
-import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+
+import { DashboardEmptyState } from "../DashboardEmptyState";
+import { AMOUNT, PAGE_CARD, ROW_CAPTION, ROW_TEXT, TABLE_HEAD, TABLE_TD, TABLE_TH } from "../pageStyles";
+import { DashboardPageCrumb } from "../shell/DashboardPageCrumb";
 
 /** Bank statements by period, newest first, with how far each is from reconciled. */
 export async function BankStatementsScreen({
@@ -24,53 +28,46 @@ export async function BankStatementsScreen({
   writer: { accounts: Account[]; today: string } | null;
 }) {
   const t = await getTranslations("dashBank");
+  const tAccounting = await getTranslations("dashAccounting");
   const locale = await getLocale();
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
-      <AccountingHeader active="bank" intro={t("subtitle")} writer={writer} />
+      <DashboardPageCrumb label={tAccounting("tab.bank")} />
+      <AccountingHeader active="bank" subtitle={t("subtitle")} writer={writer} />
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-body-lead text-foreground">{t("heading")}</h2>
-        {canWrite ? (
-          <Button asChild size="sm">
-            <Link href="/dashboard/accounting/bank/new">{t("newStatement")}</Link>
+      {canWrite ? (
+        <div className="flex">
+          <Button asChild variant="secondary" size="control-md" className="px-3">
+            <Link href="/dashboard/accounting/bank/new">
+              <Icon icon={Plus} size="icon-md" className="me-2" />
+              {t("newStatement")}
+            </Link>
           </Button>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
 
-      <section className="min-w-0 overflow-hidden rounded-card-lg border border-border bg-background">
+      <section aria-label={t("heading")} className={cn(PAGE_CARD, "overflow-hidden")}>
         {statements.length === 0 ? (
-          <EmptyState
-            icon={Landmark}
-            title={t("emptyTitle")}
-            description={t("empty")}
-            action={
-              canWrite ? (
-                <Button asChild size="sm">
-                  <Link href="/dashboard/accounting/bank/new">{t("newStatement")}</Link>
-                </Button>
-              ) : undefined
-            }
-          />
+          <DashboardEmptyState title={t("emptyTitle")} body={t("empty")} />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[44rem] text-body-small">
-              <thead className="bg-surface text-body-caption text-muted-foreground">
+            <table className={cn(ROW_TEXT, "w-full min-w-xl table-fixed")}>
+              <thead className={TABLE_HEAD}>
                 <tr>
-                  <th scope="col" className="px-4 py-3 text-start font-medium">
+                  <th scope="col" className={TABLE_TH}>
                     {t("col.period")}
                   </th>
-                  <th scope="col" className="px-4 py-3 text-end font-medium">
+                  <th scope="col" className={cn(TABLE_TH, "w-40 text-end")}>
                     {t("col.opening")}
                   </th>
-                  <th scope="col" className="px-4 py-3 text-end font-medium">
+                  <th scope="col" className={cn(TABLE_TH, "w-40 text-end")}>
                     {t("col.closing")}
                   </th>
-                  <th scope="col" className="px-4 py-3 text-end font-medium">
+                  <th scope="col" className={cn(TABLE_TH, "w-24 text-end")}>
                     {t("col.lines")}
                   </th>
-                  <th scope="col" className="px-4 py-3 text-start font-medium">
+                  <th scope="col" className={cn(TABLE_TH, "w-56 text-end")}>
                     {t("col.status")}
                   </th>
                 </tr>
@@ -78,33 +75,39 @@ export async function BankStatementsScreen({
               <tbody className="divide-y divide-border">
                 {statements.map((statement) => (
                   <tr key={statement.id}>
-                    <td className="px-4 py-2.5 whitespace-nowrap">
+                    <td className={cn(TABLE_TD, "align-middle")}>
                       <Link
                         href={`/dashboard/accounting/bank/${statement.id}`}
-                        className="text-primary underline-offset-4 hover:underline"
+                        className="font-medium text-primary hover:text-primary-hover"
                       >
                         {formatCafeDayMedium(statement.fromDay, locale)} –{" "}
                         {formatCafeDayMedium(statement.toDay, locale)}
                       </Link>
                     </td>
-                    <td className="px-4 py-2.5 text-end whitespace-nowrap text-muted-foreground">
-                      {formatMoney(statement.openingBalance, locale)}
+                    <td className={cn(TABLE_TD, AMOUNT, "align-middle text-foreground")}>
+                      {formatNumber(statement.openingBalance, locale)}
                     </td>
-                    <td className="px-4 py-2.5 text-end whitespace-nowrap text-foreground">
-                      {formatMoney(statement.closingBalance, locale)}
+                    <td className={cn(TABLE_TD, AMOUNT, "align-middle text-foreground")}>
+                      {formatNumber(statement.closingBalance, locale)}
                     </td>
-                    <td className="px-4 py-2.5 text-end whitespace-nowrap">
+                    <td className={cn(TABLE_TD, AMOUNT, "align-middle")}>
                       {formatNumber(statement.lineCount, locale)}
-                      {statement.unmatchedCount > 0 ? (
-                        <span className="block text-body-caption text-warning-foreground">
-                          {t("unmatchedCount", { count: statement.unmatchedCount })}
-                        </span>
-                      ) : null}
                     </td>
-                    <td className="px-4 py-2.5">
-                      <Badge size="sm" variant={statement.status === "reconciled" ? "success" : "warning"}>
-                        {t(`status.${statement.status}`)}
-                      </Badge>
+                    <td className={cn(TABLE_TD, "align-middle")}>
+                      <span className="flex flex-wrap items-center justify-end gap-2">
+                        {statement.unmatchedCount > 0 ? (
+                          <span className={ROW_CAPTION}>
+                            {t("unmatchedCount", { count: statement.unmatchedCount })}
+                          </span>
+                        ) : null}
+                        <Badge
+                          size="compact"
+                          appearance="outline"
+                          variant={statement.status === "reconciled" ? "success" : "warning"}
+                        >
+                          {t(`status.${statement.status}`)}
+                        </Badge>
+                      </span>
                     </td>
                   </tr>
                 ))}

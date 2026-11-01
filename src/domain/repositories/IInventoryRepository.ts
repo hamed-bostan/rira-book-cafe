@@ -28,6 +28,16 @@ export type StockLedgerHook = (event: StockEvent) => NewJournalEntry | null;
 
 export type MovementFilters = { ingredientId?: string; kind?: StockMovementKind; fromDay?: string; toDay?: string };
 
+/** A book for sale that no stock item stands behind, so its sales book no cost. */
+export type UntrackedBook = {
+  id: string;
+  name: string;
+  /** What one copy cost, when it's on the item. */
+  costPrice?: number;
+  /** Copies on the shelf. */
+  stockQuantity: number;
+};
+
 export type IInventoryRepository = {
   listStock(includeInactive: boolean): Promise<StockItem[]>;
   listMovements(filters: MovementFilters, page: PageRequest): Promise<Page<StockMovement>>;
@@ -47,6 +57,18 @@ export type IInventoryRepository = {
     ledger: StockLedgerHook,
     actor: { id: string; name: string },
   ): Promise<{ id: string; variance: number; adjusted: number }>;
+  /** Books for sale with no recipe yet. */
+  listUntrackedBooks(): Promise<UntrackedBook[]>;
+  /**
+   * Give each book a stock item and a one-copy recipe, and bring the copies on the
+   * shelf into stock at their cost price, in one transaction.
+   */
+  trackBooks(
+    books: readonly UntrackedBook[],
+    date: string,
+    ledger: StockLedgerHook,
+    actor: { id: string; name: string },
+  ): Promise<{ tracked: number; value: number }>;
   /** Bring stock already on the shelves into the books. */
   recordOpening(
     input: OpeningStockInput,

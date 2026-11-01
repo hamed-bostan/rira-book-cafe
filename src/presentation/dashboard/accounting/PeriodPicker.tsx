@@ -11,6 +11,10 @@ import { Button } from "@/src/presentation/design-system/components/Button/Butto
 import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
 import { Select } from "@/src/presentation/design-system/components/form/Select/Select";
 
+import { DashboardField } from "../DashboardField";
+import { FIELD_INPUT } from "../fieldStyles";
+import { ROW_CAPTION } from "../pageStyles";
+
 import { formatYear } from "./accounting-format";
 
 type PeriodPickerProps = {
@@ -69,11 +73,11 @@ export function PeriodPicker({ fromDay, toDay, keep = {} }: PeriodPickerProps) {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-end gap-2">
-        <label className="flex flex-col gap-1 text-body-caption text-muted-foreground">
-          {t("period.fiscalYearLabel")}
+      <div className="flex flex-wrap items-end gap-x-4 gap-y-3">
+        <DashboardField label={t("period.fiscalYearLabel")}>
           <Select
-            className="h-9 min-w-32"
+            size="control-md"
+            className="w-auto min-w-32 border-border-strong"
             value={String(year)}
             onChange={(event) => choose(Number(event.target.value), period === "custom" ? "year" : period)}
           >
@@ -83,10 +87,14 @@ export function PeriodPicker({ fromDay, toDay, keep = {} }: PeriodPickerProps) {
               </option>
             ))}
           </Select>
-        </label>
-        <label className="flex flex-col gap-1 text-body-caption text-muted-foreground">
-          {t("period.periodLabel")}
-          <Select className="h-9 min-w-40" value={period} onChange={(event) => choose(year, event.target.value)}>
+        </DashboardField>
+        <DashboardField label={t("period.periodLabel")}>
+          <Select
+            size="control-md"
+            className="w-auto min-w-40 border-border-strong"
+            value={period}
+            onChange={(event) => choose(year, event.target.value)}
+          >
             <option value="year">{t("period.wholeYear")}</option>
             {MONTHS.map((month) => (
               <option key={month} value={String(month)}>
@@ -95,46 +103,54 @@ export function PeriodPicker({ fromDay, toDay, keep = {} }: PeriodPickerProps) {
             ))}
             <option value="custom">{t("period.custom")}</option>
           </Select>
-        </label>
+        </DashboardField>
+
+        {period === "custom" ? (
+          <form
+            className="contents"
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (from && to && from <= to) navigate({ fromDay: from, toDay: to });
+            }}
+          >
+            <DashboardField label={t("period.from")}>
+              <Input
+                size="control-md"
+                type="date"
+                value={from}
+                max={to || undefined}
+                onChange={(event) => setFrom(event.target.value)}
+                className="w-auto"
+                inputClassName={FIELD_INPUT}
+                dir="ltr"
+              />
+            </DashboardField>
+            <DashboardField label={t("period.to")}>
+              <Input
+                size="control-md"
+                type="date"
+                value={to}
+                min={from || undefined}
+                onChange={(event) => setTo(event.target.value)}
+                className="w-auto"
+                inputClassName={FIELD_INPUT}
+                dir="ltr"
+              />
+            </DashboardField>
+            <Button
+              type="submit"
+              variant="secondary"
+              size="control-md"
+              className="px-3"
+              disabled={!from || !to || from > to}
+            >
+              {t("period.apply")}
+            </Button>
+          </form>
+        ) : null}
       </div>
 
-      {period === "custom" ? (
-        <form
-          className="flex flex-wrap items-end gap-2"
-          onSubmit={(event) => {
-            event.preventDefault();
-            if (from && to && from <= to) navigate({ fromDay: from, toDay: to });
-          }}
-        >
-          <label className="flex flex-col gap-1 text-body-caption text-muted-foreground">
-            {t("period.from")}
-            <Input
-              type="date"
-              value={from}
-              max={to || undefined}
-              onChange={(event) => setFrom(event.target.value)}
-              className="h-9"
-              dir="ltr"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-body-caption text-muted-foreground">
-            {t("period.to")}
-            <Input
-              type="date"
-              value={to}
-              min={from || undefined}
-              onChange={(event) => setTo(event.target.value)}
-              className="h-9"
-              dir="ltr"
-            />
-          </label>
-          <Button type="submit" size="sm" disabled={!from || !to || from > to}>
-            {t("period.apply")}
-          </Button>
-        </form>
-      ) : null}
-
-      <p className="text-body-caption text-muted-foreground">
+      <p className={ROW_CAPTION}>
         {t("period.caption", { from: formatCafeDayMedium(fromDay, locale), to: formatCafeDayMedium(toDay, locale) })}
         {toDay > cafeDayOf(new Date()) ? ` · ${t("period.toDate")}` : null}
       </p>

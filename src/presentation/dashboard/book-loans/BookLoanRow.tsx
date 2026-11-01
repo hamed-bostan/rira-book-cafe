@@ -1,9 +1,10 @@
-import { BookOpen, Bookmark, MessageSquare, Phone } from "lucide-react";
+import { BookOpen, Bookmark, MessageSquare, Phone, Wallet } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { isBookLoanOverdue, type BookLoan } from "@/src/domain/entities/BookLoan";
 import { cafeDayOf, cafeDaysBetween } from "@/src/domain/entities/CafeTime";
 import { formatCafeDayShort } from "@/src/lib/formatCafeDay";
+import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { cn } from "@/src/lib/utils";
 import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
@@ -101,6 +102,12 @@ export async function BookLoanRow({ loan, now, waiting, firstInLine, canManage }
           <span aria-hidden>·</span>
           <span className={due.tone}>{due.text}</span>
         </p>
+        {loan.depositAmount > 0 && loan.depositState ? (
+          <p className="flex items-center gap-1.5 text-body-default text-foreground/80 tabular-nums sm:text-body-small">
+            <Icon icon={Wallet} size="icon-md" className="shrink-0 text-muted-foreground" />
+            {t(`deposit.${loan.depositState}`, { amount: formatMoney(loan.depositAmount, locale) })}
+          </p>
+        ) : null}
         {loan.note ? (
           <p className="flex items-start gap-1.5 text-body-default text-pretty text-muted-foreground sm:text-body-small">
             <Icon icon={MessageSquare} size="icon-md" className="mt-0.5 shrink-0" />

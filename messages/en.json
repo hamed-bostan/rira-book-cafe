@@ -163,7 +163,15 @@
     "tableInvalid": "Choose tables from the floor plan.",
     "copiesWhole": "Enter a whole number of copies.",
     "copiesRange": "Between 1 and 20 copies.",
-    "extendInvalid": "Choose how many days to extend by."
+    "extendInvalid": "Choose how many days to extend by.",
+    "paymentPartsDuplicate": "Each method can only appear once.",
+    "paymentPartsInvalid": "Enter a whole amount for each method.",
+    "paymentPartsTotal": "The amounts have to add up to the bill.",
+    "refundLinesRequired": "Pick what's being refunded.",
+    "refundLineUnknown": "That item isn't on this order.",
+    "refundQuantityInvalid": "You can't refund more than is left on the line.",
+    "refundNothing": "There's nothing to refund on those items.",
+    "paymentOverOwed": "That's more than is owed on this bill."
   },
   "apiErrors": {
     "badRequest": "The request couldn't be read. Please try again.",
@@ -215,7 +223,8 @@
     "notReconciled": "The statement doesn't reconcile yet — match every line and clear the difference first.",
     "previousNotReconciled": "Reconcile the earlier statements first.",
     "tableHeld": "That table is held for an event at that time.",
-    "allCopiesOut": "Every copy of that book is out. Add the guest to its line instead."
+    "allCopiesOut": "Every copy of that book is out. Add the guest to its line instead.",
+    "notRefundable": "This order's sale isn't on the books, so it can't be refunded here."
   },
   "meta": {
     "siteName": "Rira Book Cafe",
@@ -278,7 +287,8 @@
     "notificationsEmpty": "No orders waiting. You're all caught up.",
     "groupBookings": "Bookings",
     "groupLibrary": "Library",
-    "navBookHolds": "Book holds"
+    "navBookHolds": "Book holds",
+    "navIncome": "Income"
   },
   "dashTeam": {
     "membersHeading": "Team members",
@@ -467,8 +477,6 @@
     "originPlaceholder": "Ethiopia Yirgacheffe, washed.",
     "localeTabBase": "English",
     "localeTabFa": "فارسی (Persian)",
-    "baseTabDescription": "The source record: the copy guests see in English, and the fallback for every other locale.",
-    "translationDescription": "Optional Persian copy shown to guests using Persian. Leave the name blank to fall back to the English tab.",
     "faNamePlaceholder": "لاته اسپانیایی سرد",
     "faUnitPlaceholder": "۳۵۰ میلی‌لیتر",
     "faDescriptionPlaceholder": "دابل اسپرسو روی شیر عسلی و یخ.",
@@ -516,7 +524,12 @@
     "saved": "“{name}” saved.",
     "deleted": "{name} deleted",
     "bookCopiesLabel": "Copies to lend",
-    "bookCopiesDescription": "How many copies the lending shelf has. Leave blank for one."
+    "bookCopiesDescription": "How many copies the lending shelf has. Leave blank for one.",
+    "sectionBasics": "Basics",
+    "sectionText": "Name and description",
+    "sectionTextHint": "Guests see the English or Persian version, depending on the site's language.",
+    "sectionOnMenu": "On the menu",
+    "noImage": "No image yet"
   },
   "dashCategories": {
     "heading": "Categories",
@@ -562,8 +575,6 @@
     "activeAria": "Active",
     "localeTabBase": "English",
     "localeTabFa": "فارسی (Persian)",
-    "baseTabDescription": "The source record: the name guests see in English, and the fallback for every other locale.",
-    "translationDescription": "Optional Persian name shown to guests using Persian. Leave it blank to fall back to the English tab.",
     "faNamePlaceholder": "نوشیدنی‌های گرم",
     "formError": "Something went wrong. Please try again.",
     "saveChanges": "Save changes",
@@ -583,7 +594,9 @@
     "uploadHint": "PNG, JPG, WebP or AVIF · up to 5 MB",
     "savedToast": "Category saved",
     "createdToast": "Category created",
-    "deleted": "{name} deleted"
+    "deleted": "{name} deleted",
+    "sectionNameHint": "Shown as a tab on the menu, in the guest's language.",
+    "sectionVisibility": "Visibility"
   },
   "dashBulk": {
     "label": "Bulk actions",
@@ -686,7 +699,7 @@
     "paidWith": "Paid · {method}",
     "paymentMethodLabel": "How did the guest pay?",
     "unmarkPaid": "Unmark",
-    "refundedNote": "Refunded — the order was cancelled after payment.",
+    "refundedNote": "Refunded — the money went back to the guest.",
     "markPaid": "Mark paid",
     "markAsPaid": "Mark as paid",
     "paymentError": "Couldn't update the payment. Please try again.",
@@ -729,7 +742,61 @@
     "bulkCancelledToast": "{count, plural, one {# order cancelled} other {# orders cancelled}}",
     "bulkError": "Couldn't update the orders. Please try again.",
     "bulkCancelTitle": "{count, plural, one {Cancel # order?} other {Cancel # orders?}}",
-    "bulkCancelMessage": "Their items go back into stock. This can't be undone."
+    "bulkCancelMessage": "Their items go back into stock. This can't be undone.",
+    "notesHint": "Never shown to the guest",
+    "newSale": "New sale",
+    "recordPayment": "Record payment",
+    "splitPayment": "Split the bill",
+    "oneMethod": "Pay one way",
+    "splitAddsUp": "Adds up to the total.",
+    "splitRemaining": "{amount} still to assign.",
+    "splitOver": "{amount} over the total.",
+    "counter": {
+      "heading": "New sale",
+      "subtitle": "Ring up a walk-in, a phone order or a book off the shelf.",
+      "menuHeading": "Menu",
+      "searchLabel": "Search the menu",
+      "noMatches": "Nothing on the menu matches.",
+      "addAria": "Add {name}",
+      "soldOut": "Sold out",
+      "saleHeading": "This sale",
+      "basketEmpty": "Pick items from the menu.",
+      "decreaseAria": "One less {name}",
+      "increaseAria": "One more {name}",
+      "detailsHeading": "Who it's for",
+      "customerLabel": "Name",
+      "walkIn": "Walk-in guest",
+      "phoneLabel": "Phone (optional)",
+      "tableLabel": "Table",
+      "noteLabel": "Note for the bar (optional)",
+      "payment": {
+        "later": "Pay later",
+        "split": "Split"
+      },
+      "completeLabel": "Hand over now",
+      "completeHint": "For something ready to go, like a book. Switch off to send it to the bar's queue.",
+      "submit": "Record sale",
+      "incomplete": "Fill in the name, and the table for a dine-in order.",
+      "saved": "Sale recorded as order #{number}",
+      "error": "Couldn't record the sale. Please try again."
+    },
+    "refund": {
+      "open": "Refund",
+      "title": "Refund order #{number}",
+      "subtitle": "Pick what's coming back. It comes off revenue and VAT, and the sale stays on the record.",
+      "quantityAria": "How many of {name} to refund",
+      "restock": "Back on the shelf",
+      "methodLabel": "Refund by",
+      "reasonLabel": "Reason (optional)",
+      "preview": "{amount} goes back to the guest.",
+      "submit": "Refund",
+      "saved": "Refund recorded on order #{number}",
+      "error": "Couldn't record the refund. Please try again.",
+      "heading": "Refunds",
+      "restocked": "back in stock",
+      "lineRefunded": "{quantity} refunded",
+      "totalLabel": "Refunded"
+    }
   },
   "dashOrderNotes": {
     "label": "Internal note",
@@ -773,7 +840,8 @@
       "ledger": "Books",
       "expense": "Expenses",
       "suiteBooking": "Suite",
-      "bookLoan": "Book loans"
+      "bookLoan": "Book loans",
+      "income": "Income"
     },
     "action": {
       "product": {
@@ -785,7 +853,9 @@
         "stageChanged": "<b>{actor}</b> changed the status of order {entity}",
         "customerNotified": "<b>{actor}</b> messaged the guest about order {entity}",
         "placed": "<b>{actor}</b> placed order {entity}",
-        "paymentChanged": "<b>{actor}</b> changed the payment of order {entity}"
+        "paymentChanged": "<b>{actor}</b> changed the payment of order {entity}",
+        "counterSale": "<b>{actor}</b> rang up order {entity} at the counter",
+        "refunded": "<b>{actor}</b> refunded order {entity}"
       },
       "review": {
         "moderated": "<b>{actor}</b> moderated {entity}’s review",
@@ -838,6 +908,10 @@
         "lost": "<b>{actor}</b> marked loan {entity} lost",
         "extended": "<b>{actor}</b> extended loan {entity}",
         "extensionUndone": "<b>{actor}</b> took back the extension on loan {entity}"
+      },
+      "income": {
+        "recorded": "<b>{actor}</b> recorded income {entity}",
+        "voided": "<b>{actor}</b> voided income {entity}"
       }
     },
     "role": {
@@ -1026,7 +1100,6 @@
     "descriptionLabel": "Description",
     "localeTabBase": "English",
     "localeTabFa": "فارسی (Persian)",
-    "translationDescription": "Optional Persian copy for guests using Persian. Leave blank to fall back to the English tab.",
     "startsAtLabel": "Starts",
     "endsAtLabel": "Ends",
     "timeZoneHint": "Times are on the cafe's clock (Tehran).",
@@ -1098,7 +1171,14 @@
     "emptyUpcomingTitle": "Nothing scheduled yet",
     "emptyUpcomingBody": "Book clubs, readings and workshops you plan show up here.",
     "emptyPastTitle": "No past events",
-    "emptyPastBody": "Events that have happened land here."
+    "emptyPastBody": "Events that have happened land here.",
+    "backToEvents": "Back to events",
+    "sectionDetails": "Details",
+    "sectionWhen": "When and seats",
+    "sectionVisibility": "Visibility",
+    "noImage": "No image yet",
+    "registrationPaid": "Paid {amount}",
+    "registrationRefundDue": "Void the payment on Income if it was handed back"
   },
   "dashOverview": {
     "heading": "Today",
@@ -1739,7 +1819,11 @@
       "yearClose": "Year-end close",
       "cashShift": "Cash shift",
       "bankFee": "Bank fee",
-      "bankInterest": "Bank interest"
+      "bankInterest": "Bank interest",
+      "orderReturn": "Refund",
+      "orderReturnCost": "Cost back in stock",
+      "income": "Income",
+      "loanDeposit": "Book deposit"
     },
     "entry": {
       "title": "Journal entry JE-{number}",
@@ -1764,7 +1848,9 @@
       "reverseReason": "Reason",
       "reverseConfirm": "Post reversal",
       "reverseError": "Couldn't reverse the entry. Please try again.",
-      "reversed": "JE-{number} reversed"
+      "reversed": "JE-{number} reversed",
+      "viewIncome": "View income",
+      "viewBookLoans": "View book loans"
     },
     "form": {
       "title": "New manual entry",
@@ -1894,7 +1980,9 @@
       "totalExpenses": "Total operating expenses",
       "netProfit": "Net profit",
       "netLoss": "Net loss",
-      "vatNote": "Revenue excludes VAT, which is owed to the tax office rather than earned."
+      "vatNote": "Revenue excludes VAT, which is owed to the tax office rather than earned.",
+      "withoutCost": "{amount} of these sales booked no cost of sales, because the items have no recipe taking them out of stock. Profit is only right if their cost was recorded as an expense when they were bought.",
+      "withoutCostLink": "Go to Inventory"
     },
     "bs": {
       "balanced": "Assets equal liabilities plus equity.",
@@ -2039,13 +2127,17 @@
       "voidConfirm": "Void expense",
       "voidError": "Couldn't void the expense. Please try again.",
       "paid": "Payment recorded for EX-{number}",
-      "voided": "EX-{number} voided"
+      "voided": "EX-{number} voided",
+      "paidSoFar": "{paid} paid, {left} left",
+      "payAmount": "Amount",
+      "payAmountHint": "Leave blank to pay all that's left, or enter part of it."
     },
     "suppliers": {
       "heading": "Suppliers",
       "subtitle": "Who the cafe buys from. Switch a supplier off rather than deleting it — past bills keep its name.",
       "new": "Add supplier",
       "edit": "Edit {name}",
+      "editShort": "Edit",
       "nameLabel": "Name",
       "phoneLabel": "Phone",
       "noteLabel": "Note",
@@ -2056,13 +2148,13 @@
       "error": "Couldn't save the supplier. Please try again.",
       "saved": "Supplier saved",
       "added": "Supplier added"
-    }
+    },
+    "owedLeft": "{amount} left"
   },
   "dashPricing": {
     "heading": "Pricing",
     "subtitle": "What each item really costs, and the menu price that earns the profit you want on it.",
     "tabsLabel": "Pricing sections",
-    "breadcrumbLabel": "Breadcrumb",
     "cancel": "Cancel",
     "save": "Save",
     "tab": {
@@ -2315,7 +2407,8 @@
       "receipt": "Delivery",
       "sale": "Sale",
       "waste": "Waste",
-      "count": "Count"
+      "count": "Count",
+      "return": "Refund"
     },
     "movements": {
       "heading": "Stock history",
@@ -2370,6 +2463,14 @@
       "levelSaved": "Reorder level for {name} set to {quantity}",
       "levelCleared": "Reorder level for {name} cleared",
       "wastePreviewWorth": "On hand goes from {from} to {to}. {amount} is written off as waste."
+    },
+    "books": {
+      "notice": "{count, plural, one {{formatted} book for sale has} other {{formatted} books for sale have}} no stock item, so selling them books no cost.",
+      "action": "Set up books",
+      "confirmTitle": "{count, plural, one {Set up # book in stock?} other {Set up # books in stock?}}",
+      "confirmBody": "Each book gets a stock item and a one-copy recipe, so every sale books its cost from now on. Copies on the shelf come in as opening stock at their cost price, against the owner's capital. Books with no cost price come in at zero until a delivery sets it.",
+      "saved": "{count, plural, one {# book set up in stock} other {# books set up in stock}}",
+      "error": "Couldn't set up the books. Please try again."
     }
   },
   "dashBookLoans": {
@@ -2381,7 +2482,7 @@
     "borrowerName": "Borrower's name",
     "borrowerPhone": "Borrower's phone",
     "note": "Note (optional)",
-    "notePlaceholder": "e.g. condition, deposit taken",
+    "notePlaceholder": "e.g. condition",
     "phoneHint": "If the phone matches a guest account, they'll see this loan on their account page.",
     "lendSubmit": "Record loan",
     "lendError": "Couldn't record the loan. Please try again.",
@@ -2446,7 +2547,19 @@
     "dueToday": "Due today",
     "dueIn": "Due {date} · in {days, plural, one {{formatted} day} other {{formatted} days}}",
     "wasDue": "Was due {date}",
-    "peopleWaiting": "{count, plural, one {{formatted} person} other {{formatted} people}} waiting"
+    "peopleWaiting": "{count, plural, one {{formatted} person} other {{formatted} people}} waiting",
+    "depositLabel": "Deposit (optional)",
+    "depositHint": "Held for the guest, not income.",
+    "depositMethodLabel": "Paid into",
+    "depositMethod": {
+      "cash": "Cash register",
+      "bank": "Bank"
+    },
+    "deposit": {
+      "held": "Deposit held: {amount}",
+      "returned": "Deposit returned: {amount}",
+      "kept": "Deposit kept: {amount}"
+    }
   },
   "dashSuite": {
     "heading": "Suite",
@@ -2519,7 +2632,9 @@
     "staySummary": "{nights} · {range} · the suite is free",
     "confirmStay": "Confirm stay",
     "stayBooked": "S-{reference} confirmed for {name} · {range}",
-    "bookError": "Couldn't save the stay. Please try again."
+    "bookError": "Couldn't save the stay. Please try again.",
+    "paid": "Paid {amount}",
+    "paymentDescription": "Suite stay S-{reference}, {range}"
   },
   "dashReviews": {
     "heading": "Reviews",
@@ -2879,6 +2994,7 @@
       "payoutFee": "Gateway fee",
       "payoutConfirm": "Book payout",
       "matched": "{count, plural, one {# match} other {# matches}}",
+      "matchedTo": "{date} · matched to",
       "unmatch": "Unmatch",
       "matchedToast": "Lines matched",
       "unmatchedToast": "Match undone",
@@ -2968,5 +3084,57 @@
     "emptyOpenBody": "When a guest asks for a book that's out, add them to the line.",
     "emptyClosedTitle": "No closed holds",
     "emptyClosedBody": "Borrowed and cancelled holds from the last two months land here."
+  },
+  "dashIncome": {
+    "heading": "Income",
+    "subtitle": "Money that comes in outside orders: event tickets, suite stays, room hire. Sales post themselves.",
+    "new": "Record income",
+    "takePayment": "Take payment",
+    "monthLabel": "Received in {month}",
+    "monthHint": "{count, plural, one {{formatted} entry} other {{formatted} entries}}, VAT included",
+    "listLabel": "Income",
+    "tabsLabel": "Filter by status",
+    "tabAll": "All",
+    "searchLabel": "Search income",
+    "searchPlaceholder": "Description, number or payer",
+    "noMatchesTitle": "No matches",
+    "noMatchesBody": "No income matches these filters.",
+    "emptyTitle": "No income yet",
+    "emptyBody": "Record money that came in outside an order.",
+    "status": {
+      "received": "Received",
+      "void": "Void"
+    },
+    "method": {
+      "cash": "Cash",
+      "card": "Card",
+      "transfer": "Transfer"
+    },
+    "form": {
+      "title": "Record income",
+      "subtitle": "It's booked to the ledger as soon as you save it.",
+      "dateLabel": "Date",
+      "payerLabel": "From (optional)",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "e.g. Room hire, Book club fee",
+      "accountLabel": "Booked to",
+      "accountPlaceholder": "Choose an account",
+      "amountLabel": "Total (VAT included)",
+      "vatLabel": "VAT inside it",
+      "vatHint": "Worked out at the cafe's rate. Change it if this income carries less or none.",
+      "vatTooHigh": "VAT can't be the whole total.",
+      "breakdown": "{net} net + {vat} VAT = {total}",
+      "methodLabel": "Received by",
+      "save": "Record income",
+      "error": "Couldn't record the income. Please try again.",
+      "saved": "Income IN-{number} recorded"
+    },
+    "void": "Void",
+    "voidTitle": "Void IN-{number}?",
+    "voidMessage": "Its entry is reversed today. The record stays, marked void. This can't be undone.",
+    "voidReason": "Reason (optional)",
+    "voidConfirm": "Void income",
+    "voidError": "Couldn't void the income. Please try again.",
+    "voided": "IN-{number} voided"
   }
 }

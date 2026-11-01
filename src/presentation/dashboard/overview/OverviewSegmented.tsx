@@ -41,7 +41,10 @@ export function OverviewSegmented<T extends string>({
             onClick={() => onChange(option.value)}
             className={cn(
               "h-11 rounded-button px-3 text-body-default whitespace-nowrap transition-colors sm:h-8 sm:text-body-small",
-              fill && "flex-1",
+              fill && "min-w-0 flex-1 truncate px-2",
+              // Four equal shares of a phone are too narrow for the longer labels, so
+              // there each takes what its label needs, a step smaller.
+              fill && options.length > 3 && "flex-auto px-1 text-body-small sm:flex-1 sm:px-2",
               focusRing,
               selected
                 ? "bg-background font-semibold text-foreground shadow-xs"

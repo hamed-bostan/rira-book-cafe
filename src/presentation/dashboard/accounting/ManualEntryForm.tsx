@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, X } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useFieldArray, useForm, useWatch } from "react-hook-form";
 
@@ -11,20 +11,31 @@ import { Link, useRouter } from "@/src/i18n/navigation";
 import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatCafeDayMedium } from "@/src/lib/formatCafeDay";
-import { formatMoney } from "@/src/lib/formatMoney";
+import { formatNumber } from "@/src/lib/formatNumber";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
+import { cn } from "@/src/lib/utils";
+import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
 import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
 import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
 import { Select } from "@/src/presentation/design-system/components/form/Select/Select";
-import { TextField } from "@/src/presentation/design-system/components/form/TextField/TextField";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
+
+import { DashboardFormField } from "../DashboardFormField";
+import { FIELD_INPUT, FIELD_LABEL } from "../fieldStyles";
+import { FormAlert } from "../FormAlert";
+import { AMOUNT_INPUT, LINE_HEAD, LINE_ROW, PAGE_CARD, ROW_TEXT } from "../pageStyles";
+import { RemoveLineButton } from "../RemoveLineButton";
 
 import { journalEntriesApi } from "./accounting-api";
 import { accountLabel } from "./accounting-format";
 
 const EMPTY_LINE = { accountCode: "", debit: "", credit: "", memo: "" };
+
+/** Account, debit and credit, memo and the remove button; on a phone the account and memo take their own rows. */
+const LINE_COLUMNS =
+  "grid-cols-[minmax(0,1fr)_minmax(0,1fr)_2.75rem] sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_2.25rem] md:grid-cols-[minmax(0,2fr)_8rem_8rem_minmax(0,1fr)_2.25rem]";
 
 /** A typed amount as a number for the running totals; anything unparseable counts as 0. */
 function amountOf(value: string | undefined): number {
@@ -82,42 +93,59 @@ export function ManualEntryForm({ accounts, today }: { accounts: Account[]; toda
   const linesError = errors.lines?.root?.message ?? errors.lines?.message;
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-5" noValidate>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-[12rem_1fr]">
-        <TextField
+    <form onSubmit={onSubmit} className={cn(PAGE_CARD, "flex flex-col gap-5 p-5")} noValidate>
+      <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-[12rem_minmax(0,1fr)]">
+        <DashboardFormField
           label={t("form.dateLabel")}
           required
-          description={date ? formatCafeDayMedium(date, locale) : undefined}
+          hint={date ? formatCafeDayMedium(date, locale) : undefined}
           error={fieldError(errors.date?.message)}
         >
-          {(controlProps) => <Input {...controlProps} {...register("date")} type="date" max={today} dir="ltr" />}
-        </TextField>
-        <TextField label={t("form.descriptionLabel")} required error={fieldError(errors.description?.message)}>
-          {(controlProps) => (
+          {(field) => (
             <Input
-              {...controlProps}
-              {...register("description")}
-              dir="auto"
-              placeholder={t("form.descriptionPlaceholder")}
+              {...field}
+              {...register("date")}
+              size="control-md"
+              type="date"
+              max={today}
+              dir="ltr"
+              inputClassName={FIELD_INPUT}
             />
           )}
-        </TextField>
+        </DashboardFormField>
+        <DashboardFormField label={t("form.descriptionLabel")} required error={fieldError(errors.description?.message)}>
+          {(field) => (
+            <Input
+              {...field}
+              {...register("description")}
+              size="control-md"
+              dir="auto"
+              placeholder={t("form.descriptionPlaceholder")}
+              inputClassName={FIELD_INPUT}
+            />
+          )}
+        </DashboardFormField>
       </div>
 
-      <fieldset className="flex flex-col gap-3">
-        <legend className="mb-2 text-body-small-emphasis text-input-foreground">{t("form.linesLabel")}</legend>
+      <fieldset className="flex min-w-0 flex-col gap-3">
+        <legend className={cn(FIELD_LABEL, "mb-3")}>{t("form.linesLabel")}</legend>
+        <div aria-hidden className={cn(LINE_HEAD, "hidden gap-x-3 md:grid", LINE_COLUMNS)}>
+          <span>{t("form.accountLabel")}</span>
+          <span className="text-end">{t("form.debitLabel")}</span>
+          <span className="text-end">{t("form.creditLabel")}</span>
+          <span>{t("form.memoLabel")}</span>
+          <span />
+        </div>
         {fields.map((field, index) => {
           const lineErrors = errors.lines?.[index];
           return (
-            <div
-              key={field.id}
-              className="grid grid-cols-2 gap-2 rounded-card-md border border-border p-3 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.5fr)_auto] md:items-start md:border-0 md:p-0"
-            >
-              <div className="col-span-2 flex flex-col gap-1 md:col-span-1">
+            <div key={field.id} className={cn(LINE_ROW, LINE_COLUMNS)}>
+              <div className="col-span-full flex min-w-0 flex-col gap-1 md:col-span-1">
                 <Select
                   {...register(`lines.${index}.accountCode`)}
+                  size="control-md"
                   aria-label={t("form.accountLabel")}
-                  className="h-10"
+                  className="border-border-strong"
                 >
                   <option value="">{t("form.accountPlaceholder")}</option>
                   {active.map((account) => (
@@ -130,24 +158,26 @@ export function ManualEntryForm({ accounts, today }: { accounts: Account[]; toda
                   <FormMessage>{fieldError(lineErrors.accountCode.message)}</FormMessage>
                 ) : null}
               </div>
-              <div className="flex flex-col gap-1">
+              <div className="flex min-w-0 flex-col gap-1">
                 <Input
                   {...register(`lines.${index}.debit`)}
+                  size="control-md"
                   inputMode="numeric"
                   placeholder={t("form.debitLabel")}
                   aria-label={t("form.debitLabel")}
-                  className="h-10"
+                  inputClassName={cn(FIELD_INPUT, AMOUNT_INPUT)}
                   dir="ltr"
                 />
                 {lineErrors?.debit?.message ? <FormMessage>{fieldError(lineErrors.debit.message)}</FormMessage> : null}
               </div>
-              <div className="flex flex-col gap-1">
+              <div className="flex min-w-0 flex-col gap-1">
                 <Input
                   {...register(`lines.${index}.credit`)}
+                  size="control-md"
                   inputMode="numeric"
                   placeholder={t("form.creditLabel")}
                   aria-label={t("form.creditLabel")}
-                  className="h-10"
+                  inputClassName={cn(FIELD_INPUT, AMOUNT_INPUT)}
                   dir="ltr"
                 />
                 {lineErrors?.credit?.message ? (
@@ -156,60 +186,58 @@ export function ManualEntryForm({ accounts, today }: { accounts: Account[]; toda
               </div>
               <Input
                 {...register(`lines.${index}.memo`)}
+                size="control-md"
                 placeholder={t("form.memoLabel")}
                 aria-label={t("form.memoLabel")}
-                className="col-span-2 h-10 md:col-span-1"
+                className="col-span-2 md:col-span-1"
+                inputClassName={FIELD_INPUT}
                 dir="auto"
               />
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="col-span-2 h-10 justify-self-end md:col-span-1"
+              <RemoveLineButton
+                label={t("form.removeLine")}
                 onClick={() => remove(index)}
                 disabled={fields.length <= 2}
-                aria-label={t("form.removeLine")}
-              >
-                <Icon icon={X} size="sm" />
-              </Button>
+              />
             </div>
           );
         })}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Button
             type="button"
-            variant="outline"
-            size="sm"
+            variant="secondary"
+            size="control-md"
+            className="px-3"
             onClick={() => append(EMPTY_LINE)}
             disabled={fields.length >= MAX_ENTRY_LINES}
           >
-            <Icon icon={Plus} size="sm" className="me-1.5" />
+            <Icon icon={Plus} size="icon-md" className="me-2" />
             {t("form.addLine")}
           </Button>
-          <p
-            className={
-              difference === 0 && debits > 0
-                ? "text-body-small-emphasis text-success-foreground"
-                : "text-body-small-emphasis text-muted-foreground"
-            }
-          >
-            {t("form.totals", { debits: formatMoney(debits, locale), credits: formatMoney(credits, locale) })}
-            {" · "}
-            {difference === 0
-              ? t("form.balanced")
-              : t("form.difference", { amount: formatMoney(Math.abs(difference), locale) })}
-          </p>
+          <div className={cn(ROW_TEXT, "flex flex-wrap items-center gap-x-3 gap-y-2")}>
+            {linesError ? <FormMessage>{fieldError(linesError)}</FormMessage> : null}
+            <span className="whitespace-nowrap text-foreground/80 tabular-nums">
+              {t("form.totals", { debits: formatNumber(debits, locale), credits: formatNumber(credits, locale) })}
+            </span>
+            <Badge
+              size="compact"
+              appearance="outline"
+              variant={difference !== 0 ? "warning" : debits > 0 ? "success" : "neutral"}
+            >
+              {difference === 0
+                ? t("form.balanced")
+                : t("form.difference", { amount: formatNumber(Math.abs(difference), locale) })}
+            </Badge>
+          </div>
         </div>
-        {linesError ? <FormMessage>{fieldError(linesError)}</FormMessage> : null}
       </fieldset>
 
-      {errors.root?.message ? <FormMessage size="md">{errors.root.message}</FormMessage> : null}
+      {errors.root?.message ? <FormAlert>{errors.root.message}</FormAlert> : null}
 
-      <div className="flex gap-3 pt-2">
-        <Button type="submit" loading={isSubmitting}>
+      <div className="flex flex-wrap gap-2">
+        <Button type="submit" size="control-md" className="px-4" loading={isSubmitting}>
           {t("form.post")}
         </Button>
-        <Button asChild variant="outline" type="button">
+        <Button asChild variant="secondary" size="control-md" className="px-3">
           <Link href="/dashboard/accounting/journal">{t("cancel")}</Link>
         </Button>
       </div>

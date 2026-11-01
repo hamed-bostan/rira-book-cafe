@@ -1,6 +1,5 @@
 "use client";
 
-import { StickyNote } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import * as React from "react";
 
@@ -9,11 +8,11 @@ import { MAX_ORDER_NOTE_LENGTH } from "@/src/domain/entities/OrderNote";
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatOrderDate } from "@/src/lib/formatOrderDate";
-import { Avatar } from "@/src/presentation/design-system/components/Avatar/Avatar";
+import { DashboardField } from "@/src/presentation/dashboard/DashboardField";
+import { FIELD_HINT, FIELD_TEXTAREA } from "@/src/presentation/dashboard/fieldStyles";
+import { FormAlert } from "@/src/presentation/dashboard/FormAlert";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
-import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
 import { Textarea } from "@/src/presentation/design-system/components/form/Textarea/Textarea";
-import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 
 import { ordersApi } from "./order-api";
 
@@ -62,48 +61,54 @@ export function OrderNotesPanel({ orderId, notes, canWrite }: OrderNotesPanelPro
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      {canWrite ? (
-        <div className="flex flex-col gap-2">
-          <Textarea
-            value={body}
-            onChange={(event) => setBody(event.target.value)}
-            placeholder={t("placeholder")}
-            aria-label={t("label")}
-            maxLength={MAX_ORDER_NOTE_LENGTH}
-            rows={3}
-            disabled={pending}
-          />
-          <Button size="sm" className="self-start" loading={pending} disabled={body.trim() === ""} onClick={submit}>
-            <Icon icon={StickyNote} size="sm" className="me-1.5" />
-            {t("add")}
-          </Button>
-          {error ? <p className="text-body-small text-destructive">{error}</p> : null}
-        </div>
-      ) : null}
-
+    <>
       {notes.length > 0 ? (
-        <ul className="flex flex-col divide-y divide-border">
+        <ul className="flex flex-col gap-2">
           {notes.map((note) => (
-            <li key={note.id} className="flex gap-3 py-3 first:pt-0 last:pb-0">
-              <Avatar name={note.authorName} className="mt-0.5 size-8 shrink-0" />
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-baseline gap-2">
-                  {/* The snapshotted name, not a lookup — the note reads correctly
-                      after its author is renamed or gone. */}
-                  <span className="text-body-small-strong text-foreground">{note.authorName}</span>
-                  <time dateTime={note.createdAt} className="text-body-caption text-muted-foreground">
-                    {formatOrderDate(note.createdAt, locale)}
-                  </time>
-                </div>
-                <p className="text-body-small whitespace-pre-wrap text-foreground">{note.body}</p>
-              </div>
+            <li key={note.id} className="flex flex-col gap-0.5 rounded-button bg-muted p-3">
+              <p className="whitespace-pre-wrap text-foreground">{note.body}</p>
+              {/* The snapshotted name, not a lookup — the note reads correctly
+                  after its author is renamed or gone. */}
+              <p className={FIELD_HINT}>
+                {note.authorName} ·{" "}
+                <time dateTime={note.createdAt} className="tabular-nums">
+                  {formatOrderDate(note.createdAt, locale)}
+                </time>
+              </p>
             </li>
           ))}
         </ul>
       ) : (
-        <EmptyState icon={StickyNote} title={t("empty")} className="py-8" />
+        <p className="text-muted-foreground">{t("empty")}</p>
       )}
-    </div>
+
+      {canWrite ? (
+        <>
+          <DashboardField label={t("label")}>
+            <Textarea
+              value={body}
+              onChange={(event) => setBody(event.target.value)}
+              placeholder={t("placeholder")}
+              maxLength={MAX_ORDER_NOTE_LENGTH}
+              rows={3}
+              disabled={pending}
+              className={FIELD_TEXTAREA}
+            />
+          </DashboardField>
+          {error ? <FormAlert>{error}</FormAlert> : null}
+          <Button
+            type="button"
+            variant="secondary"
+            size="control-md"
+            className="self-end px-3"
+            loading={pending}
+            disabled={body.trim() === ""}
+            onClick={submit}
+          >
+            {t("add")}
+          </Button>
+        </>
+      ) : null}
+    </>
   );
 }

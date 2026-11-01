@@ -3,9 +3,10 @@
 import { useTranslations } from "next-intl";
 
 import type { Permission } from "@/src/domain/entities/Permission";
-import { usePathname } from "@/src/i18n/navigation";
+import { Link, usePathname } from "@/src/i18n/navigation";
 import { cn } from "@/src/lib/utils";
 
+import { useDashboardCrumb } from "./DashboardCrumbProvider";
 import { isSectionActive, navGroupsFor } from "./sections";
 
 type DashboardBreadcrumbProps = {
@@ -17,10 +18,13 @@ type DashboardBreadcrumbProps = {
  * Where the reader is: the nav group, then the section ("Service / Orders"), read
  * from the same table as the sidebar so the two can't disagree. The group has no
  * page of its own, so it's a label rather than a link; the overview has no group.
+ * A full page below a section adds its own name, and the section becomes the way
+ * back ("Service / Orders / #229").
  */
 export function DashboardBreadcrumb({ permissions, className }: DashboardBreadcrumbProps) {
   const t = useTranslations("dashboard");
   const pathname = usePathname();
+  const { crumb } = useDashboardCrumb();
 
   // The most specific match wins: `/dashboard` is a prefix of every section.
   const match = navGroupsFor(permissions)
@@ -41,9 +45,25 @@ export function DashboardBreadcrumb({ permissions, className }: DashboardBreadcr
             </li>
           </>
         ) : null}
-        <li aria-current="page" className="truncate font-semibold text-foreground">
-          {t(match.section.labelKey)}
-        </li>
+        {crumb ? (
+          <>
+            <li>
+              <Link href={match.section.href} className="text-muted-foreground hover:text-foreground">
+                {t(match.section.labelKey)}
+              </Link>
+            </li>
+            <li aria-hidden className="text-border-strong">
+              /
+            </li>
+            <li aria-current="page" className="truncate font-semibold text-foreground tabular-nums">
+              <bdi>{crumb}</bdi>
+            </li>
+          </>
+        ) : (
+          <li aria-current="page" className="truncate font-semibold text-foreground">
+            {t(match.section.labelKey)}
+          </li>
+        )}
       </ol>
     </nav>
   );

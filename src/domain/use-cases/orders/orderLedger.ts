@@ -1,10 +1,18 @@
 import { cafeDayOf } from "../../entities/CafeTime";
-import { costOfSalesEntry, paymentEntry, paymentReturnEntry, saleEntry } from "../../entities/Postings";
+import { paymentPartsOf, type Order } from "../../entities/Order";
+import {
+  costOfSalesEntry,
+  orderReturnCostEntry,
+  orderReturnEntry,
+  paymentEntry,
+  paymentReturnEntry,
+  saleEntry,
+} from "../../entities/Postings";
 
 import type { ActivityActor } from "../../entities/ActivityEntry";
 import type { NewJournalEntry } from "../../entities/Ledger";
-import type { Order } from "../../entities/Order";
 import type { LedgerHook } from "../../repositories/ILedgerRepository";
+import type { OrderRefundResult } from "../../repositories/IOrderRepository";
 
 /**
  * What the books need when an order changes status, computed from the order as
@@ -28,7 +36,7 @@ export function statusPostings(actor: ActivityActor, now: Date = new Date()): Le
       if (cost) entries.push(cost);
     }
     if (order.status === "cancelled" && order.paymentStatus === "refunded" && order.paymentMethod) {
-      entries.push(paymentReturnEntry(order, order.paymentMethod, "orderRefund", day, actor));
+      entries.push(paymentReturnEntry(order, paymentPartsOf(order), "orderRefund", day, actor));
     }
     return entries;
   };
@@ -43,11 +51,19 @@ export function paymentPostings(previous: Order, actor: ActivityActor, now: Date
     const day = cafeDayOf(now);
     if (order.total <= 0) return [];
     if (order.paymentStatus === "paid" && order.paymentMethod) {
-      return [paymentEntry(order, order.paymentMethod, day, actor)];
+      return [paymentEntry(order, paymentPartsOf(order), day, actor)];
     }
     if (order.paymentStatus === "unpaid" && previous.paymentStatus === "paid" && previous.paymentMethod) {
-      return [paymentReturnEntry(order, previous.paymentMethod, "orderPaymentReversal", day, actor)];
+      return [paymentReturnEntry(order, paymentPartsOf(previous), "orderPaymentReversal", day, actor)];
     }
     return [];
+  };
+}
+
+/** What a refund on a completed order books: the money back, and the cost of any units restocked. */
+export function refundPostings(actor: ActivityActor): LedgerHook<OrderRefundResult> {
+  return ({ refund, order, restockedValue }) => {
+    const cost = orderReturnCostEntry(order, refund, restockedValue, actor);
+    return [orderReturnEntry(order, refund, actor), ...(cost ? [cost] : [])];
   };
 }

@@ -51,6 +51,8 @@ export type SuiteBooking = {
   checkOut: string;
   status: SuiteBookingStatus;
   note?: string;
+  /** Paid towards the stay, in Toman, on the staff list; absent where it isn't read. */
+  paidAmount?: number;
   createdAt: string;
   updatedAt: string;
 };

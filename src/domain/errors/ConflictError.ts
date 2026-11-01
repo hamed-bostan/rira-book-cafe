@@ -34,6 +34,8 @@ export type ConflictCode =
   | "NOT_PAYABLE"
   | "PAYMENT_IN_PROGRESS"
   | "STOCK_USED"
+  // A refund of an order whose sale was never booked.
+  | "NOT_REFUNDABLE"
   | "YEAR_NOT_ENDED"
   // Reviews: only guests who've had the item may review it.
   | "NOT_PURCHASED"

@@ -39,6 +39,19 @@ export function formatNumber(value: number, locale: Locale, fractionDigits = 0):
   return getFormatter(locale, fractionDigits).format(value);
 }
 
+const trimmedCache = new Map<string, Intl.NumberFormat>();
+
+/** Like `formatNumber`, but drops the decimals a value doesn't need: "30", "0.5", "2.75". */
+export function formatNumberTrimmed(value: number, locale: Locale, maxFractionDigits: number): string {
+  const key = `${locale}:${maxFractionDigits}`;
+  let formatter = trimmedCache.get(key);
+  if (!formatter) {
+    formatter = new Intl.NumberFormat(NUMBER_TAG[locale], { maximumFractionDigits: maxFractionDigits });
+    trimmedCache.set(key, formatter);
+  }
+  return formatter.format(value);
+}
+
 /**
  * Format a star rating for the given locale, preserving its natural precision — a
  * whole rating shows no decimals ("۴"), a fractional one shows the single decimal it

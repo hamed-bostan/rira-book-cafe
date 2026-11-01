@@ -13,13 +13,14 @@ import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
-import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
 import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
 import { Select } from "@/src/presentation/design-system/components/form/Select/Select";
-import { TextField } from "@/src/presentation/design-system/components/form/TextField/TextField";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
-import { Modal, ModalContent } from "@/src/presentation/design-system/components/Modal/Modal";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
+
+import { DashboardDialog } from "../DashboardDialog";
+import { DashboardFormField } from "../DashboardFormField";
+import { FIELD_INPUT } from "../fieldStyles";
 
 import { accountsApi } from "./accounting-api";
 
@@ -76,63 +77,66 @@ export function NewAccountButton() {
 
   return (
     <>
-      <Button type="button" size="sm" onClick={() => setOpen(true)}>
-        <Icon icon={Plus} size="sm" className="me-1.5" />
+      <Button type="button" variant="secondary" size="control-md" className="px-3" onClick={() => setOpen(true)}>
+        <Icon icon={Plus} size="icon-md" className="me-2" />
         {t("accounts.new")}
       </Button>
-      <Modal open={open} onOpenChange={setOpen}>
-        <ModalContent title={t("accounts.new")} className="max-w-md">
-          <form onSubmit={onSubmit} className="mt-4 flex flex-col gap-4" noValidate>
-            <TextField
-              label={t("accounts.codeLabel")}
-              required
-              description={t("accounts.codeHint")}
-              error={fieldError(errors.code?.message)}
-            >
-              {(control) => (
-                <Input
-                  {...control}
-                  {...codeField}
-                  onChange={(event) => {
-                    void codeField.onChange(event);
-                    if (/^\d/.test(event.target.value)) setValue("type", typeForCode(event.target.value));
-                  }}
-                  inputMode="numeric"
-                  maxLength={4}
-                  dir="ltr"
-                  placeholder="6800"
-                />
-              )}
-            </TextField>
-            <TextField label={t("accounts.nameLabel")} required error={fieldError(errors.name?.message)}>
-              {(control) => <Input {...control} {...register("name")} dir="ltr" />}
-            </TextField>
-            <TextField label={t("accounts.nameFaLabel")} required error={fieldError(errors.nameFa?.message)}>
-              {(control) => <Input {...control} {...register("nameFa")} dir="rtl" />}
-            </TextField>
-            <TextField label={t("accounts.typeLabel")} error={fieldError(errors.type?.message)}>
-              {(control) => (
-                <Select {...control} {...register("type")}>
-                  {ACCOUNT_TYPES.map((type) => (
-                    <option key={type} value={type}>
-                      {t(`accountType.${type}`)}
-                    </option>
-                  ))}
-                </Select>
-              )}
-            </TextField>
-            {errors.root?.message ? <FormMessage>{errors.root.message}</FormMessage> : null}
-            <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" size="sm" onClick={() => setOpen(false)}>
-                {t("cancel")}
-              </Button>
-              <Button type="submit" size="sm" loading={isSubmitting}>
-                {t("accounts.create")}
-              </Button>
-            </div>
-          </form>
-        </ModalContent>
-      </Modal>
+      <DashboardDialog
+        open={open}
+        onOpenChange={setOpen}
+        title={t("accounts.new")}
+        subtitle=""
+        submitLabel={t("accounts.create")}
+        backLabel={t("cancel")}
+        pending={isSubmitting}
+        onSubmit={() => void onSubmit()}
+        error={errors.root?.message}
+      >
+        <DashboardFormField
+          label={t("accounts.codeLabel")}
+          required
+          hint={t("accounts.codeHint")}
+          error={fieldError(errors.code?.message)}
+        >
+          {(field) => (
+            <Input
+              {...field}
+              {...codeField}
+              onChange={(event) => {
+                void codeField.onChange(event);
+                if (/^\d/.test(event.target.value)) setValue("type", typeForCode(event.target.value));
+              }}
+              size="control-md"
+              inputMode="numeric"
+              maxLength={4}
+              dir="ltr"
+              placeholder="6800"
+              inputClassName={FIELD_INPUT}
+            />
+          )}
+        </DashboardFormField>
+        <DashboardFormField label={t("accounts.nameLabel")} required error={fieldError(errors.name?.message)}>
+          {(field) => (
+            <Input {...field} {...register("name")} size="control-md" dir="ltr" inputClassName={FIELD_INPUT} />
+          )}
+        </DashboardFormField>
+        <DashboardFormField label={t("accounts.nameFaLabel")} required error={fieldError(errors.nameFa?.message)}>
+          {(field) => (
+            <Input {...field} {...register("nameFa")} size="control-md" dir="rtl" inputClassName={FIELD_INPUT} />
+          )}
+        </DashboardFormField>
+        <DashboardFormField label={t("accounts.typeLabel")} error={fieldError(errors.type?.message)}>
+          {(field) => (
+            <Select {...field} {...register("type")} size="control-md" className="border-border-strong">
+              {ACCOUNT_TYPES.map((type) => (
+                <option key={type} value={type}>
+                  {t(`accountType.${type}`)}
+                </option>
+              ))}
+            </Select>
+          )}
+        </DashboardFormField>
+      </DashboardDialog>
     </>
   );
 }

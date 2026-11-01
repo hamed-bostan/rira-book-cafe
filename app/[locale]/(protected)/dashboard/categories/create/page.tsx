@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 
 import { requirePermission } from "@/src/lib/require-permission";
 import { CategoryForm } from "@/src/presentation/dashboard/categories/CategoryForm";
+import { DashboardPageCrumb } from "@/src/presentation/dashboard/shell/DashboardPageCrumb";
 
 export default async function CreateCategoryPage() {
   // The layout only gates on `dashboard.view`; this whole section is a write
@@ -12,12 +13,9 @@ export default async function CreateCategoryPage() {
   const t = await getTranslations("dashCategories");
 
   return (
-    <div className="flex max-w-xl flex-col gap-6">
-      <div>
-        <h1 className="text-heading-section text-foreground">{t("newCategory")}</h1>
-        <p className="text-body-small text-muted-foreground">{t("createSubtitle")}</p>
-      </div>
+    <>
+      <DashboardPageCrumb label={t("newCategory")} />
       <CategoryForm mode="create" />
-    </div>
+    </>
   );
 }

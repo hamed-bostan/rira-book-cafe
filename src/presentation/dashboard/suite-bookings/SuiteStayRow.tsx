@@ -1,10 +1,14 @@
 import { CircleAlert, MessageSquare, Phone, Users } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
+import { SYSTEM_ACCOUNTS } from "@/src/domain/entities/Ledger";
 import { suiteNights, type SuiteBooking } from "@/src/domain/entities/SuiteBooking";
 import { formatCafeDayShort } from "@/src/lib/formatCafeDay";
+import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { cn } from "@/src/lib/utils";
+import { TakePaymentButton } from "@/src/presentation/dashboard/income/TakePaymentButton";
+import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 
@@ -19,6 +23,8 @@ type SuiteStayRowProps = {
   /** Picked from the calendar: tinted so the eye lands on it. */
   focused: boolean;
   canManage: boolean;
+  /** For a viewer who can take money: the VAT inside prices. */
+  payment?: { vatRateBps: number };
 };
 
 const FINISHED = ["checkedOut", "cancelled", "noShow"];
@@ -28,7 +34,7 @@ const FINISHED = ["checkedOut", "cancelled", "noShow"];
  * status and what's due today (arriving, checking out, overdue), party and phone,
  * any note, a clash with a held stay, and the desk's controls.
  */
-export async function SuiteStayRow({ booking, clash, today, focused, canManage }: SuiteStayRowProps) {
+export async function SuiteStayRow({ booking, clash, today, focused, canManage, payment }: SuiteStayRowProps) {
   const t = await getTranslations("dashSuite");
   const locale = await getLocale();
 
@@ -67,6 +73,11 @@ export async function SuiteStayRow({ booking, clash, today, focused, canManage }
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className="text-body-strong text-foreground">{booking.guestName}</span>
           <SuiteBookingStatusBadge status={booking.status} outlined />
+          {booking.paidAmount ? (
+            <Badge variant="success" appearance="outline" size="compact">
+              {t("paid", { amount: formatMoney(booking.paidAmount, locale) })}
+            </Badge>
+          ) : null}
           {hint ? (
             <span className={cn("text-body-small font-semibold whitespace-nowrap sm:text-body-caption", hint.tone)}>
               {hint.text}
@@ -103,6 +114,20 @@ export async function SuiteStayRow({ booking, clash, today, focused, canManage }
           </p>
         ) : null}
       </div>
+
+      {payment && booking.status !== "cancelled" && booking.status !== "noShow" && booking.status !== "requested" ? (
+        <TakePaymentButton
+          today={today}
+          vatRateBps={payment.vatRateBps}
+          preset={{
+            accountCode: SYSTEM_ACCOUNTS.salesSuite,
+            description: t("paymentDescription", { reference: booking.reference, range: range(booking) }),
+            payerName: booking.guestName,
+            sourceType: "suiteBooking",
+            sourceId: booking.id,
+          }}
+        />
+      ) : null}
 
       {canManage ? (
         <SuiteStayActions

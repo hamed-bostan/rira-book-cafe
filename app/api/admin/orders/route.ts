@@ -1,15 +1,25 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { counterOrderSchema } from "@/src/contracts/order-schema";
 import {
   ADMIN_ORDER_SORTS,
   DEFAULT_ADMIN_ORDER_DIRECTION,
   DEFAULT_ADMIN_ORDER_SORT,
 } from "@/src/domain/entities/AdminOrderFilters";
 import { ListOrders } from "@/src/domain/use-cases/orders/OrderQueries";
-import { orderRepository } from "@/src/infrastructure/container";
+import { PlaceCounterOrder } from "@/src/domain/use-cases/orders/PlaceCounterOrder";
+import { orderRepository, productRepository } from "@/src/infrastructure/container";
 import { parseAdminOrderFilters } from "@/src/lib/api/admin-order-params";
+import { invalidatesCatalog } from "@/src/lib/api/invalidatesCatalog";
 import { parsePageRequest } from "@/src/lib/api/pagination-params";
-import { errorResponseFromException, unauthorizedResponse } from "@/src/lib/api/responses";
+import {
+  errorResponse,
+  errorResponseFromException,
+  firstFieldErrors,
+  parseJsonBody,
+  unauthorizedResponse,
+} from "@/src/lib/api/responses";
+import { CATALOG_TAGS } from "@/src/lib/cache-tags";
 import { getSessionWith } from "@/src/lib/require-permission";
 
 export const dynamic = "force-dynamic";
@@ -34,3 +44,36 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return errorResponseFromException(error, "GET /api/admin/orders failed");
   }
 }
+
+/**
+ * POST /api/admin/orders — ring up a sale at the counter, for a guest with no account.
+ * Prices come from the menu; it can be paid and handed over in the same request.
+ * 201 with the order; 409 when an item sold out. Requires `orders.fulfill`.
+ */
+async function handlePost(request: NextRequest): Promise<NextResponse> {
+  const session = await getSessionWith("orders.fulfill");
+  if (!session) return unauthorizedResponse();
+
+  const body = await parseJsonBody(request);
+  if (!body.ok) return errorResponse(400, { message: "Expected a JSON body.", code: "BAD_REQUEST" });
+  const parsed = counterOrderSchema.safeParse(body.data);
+  if (!parsed.success) {
+    return errorResponse(400, {
+      message: "Please fix the highlighted fields.",
+      code: "VALIDATION",
+      fieldErrors: firstFieldErrors(parsed.error),
+    });
+  }
+
+  try {
+    const order = await new PlaceCounterOrder(orderRepository, productRepository).execute(parsed.data, {
+      id: session.user.id,
+      name: session.user.name ?? session.user.id,
+    });
+    return NextResponse.json(order, { status: 201 });
+  } catch (error) {
+    return errorResponseFromException(error, "POST /api/admin/orders failed");
+  }
+}
+
+export const POST = invalidatesCatalog([CATALOG_TAGS.products], handlePost);

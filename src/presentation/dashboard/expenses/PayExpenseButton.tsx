@@ -20,7 +20,8 @@ export function PayExpenseButton({ expense, today }: PayExpenseButtonProps) {
     <>
       <Button
         type="button"
-        size="sm"
+        size="control-md"
+        className="px-4"
         onClick={() => {
           setKey((current) => current + 1);
           setOpen(true);

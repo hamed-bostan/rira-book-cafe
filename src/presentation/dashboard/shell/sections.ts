@@ -10,6 +10,7 @@ import {
   ClipboardList,
   Coffee,
   Gift,
+  HandCoins,
   History,
   LayoutDashboard,
   Landmark,
@@ -65,6 +66,7 @@ export type DashboardSectionLabelKey =
   | "navCashShifts"
   | "navReports"
   | "navAccounting"
+  | "navIncome"
   | "navExpenses"
   | "navPricing"
   | "navActivity"
@@ -181,6 +183,13 @@ const SECTIONS = [
     href: "/dashboard/accounting",
     labelKey: "navAccounting",
     icon: Landmark,
+    needs: "accounting.view",
+    group: "groupFinance",
+  },
+  {
+    href: "/dashboard/income",
+    labelKey: "navIncome",
+    icon: HandCoins,
     needs: "accounting.view",
     group: "groupFinance",
   },

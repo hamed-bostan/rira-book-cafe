@@ -47,6 +47,7 @@ function expense(overrides: Partial<Expense> = {}): Expense {
     amount: 110_000,
     vatAmount: 10_000,
     status: "unpaid",
+    paidAmount: 0,
     createdById: ACTOR.id,
     createdByName: ACTOR.name,
     createdAt: "",

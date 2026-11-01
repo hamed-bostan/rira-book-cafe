@@ -9,7 +9,7 @@ export default function PricingLoading() {
       <PricingTabsSkeleton />
 
       {/* Monthly overhead · monthly units · overhead per unit. */}
-      <DashboardStatGridSkeleton count={3} className="sm:grid-cols-3 xl:grid-cols-3" />
+      <DashboardStatGridSkeleton count={3} className="sm:grid-cols-1 md:grid-cols-3 xl:grid-cols-3" />
 
       {/* The formula line. */}
       <Skeleton className="h-4 w-full max-w-xl rounded-pill" />

@@ -151,7 +151,7 @@ export class VerifyOnlinePayment {
         order.id,
         "paid",
         "online",
-        { id: order.userId, name: order.customerName },
+        { id: order.userId ?? order.id, name: order.customerName },
         { strict: true },
       );
     } catch (error) {

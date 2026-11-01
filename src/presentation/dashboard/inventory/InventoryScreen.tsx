@@ -17,6 +17,7 @@ import { MetricCard } from "../MetricCard";
 import { InventoryHeaderActions } from "./InventoryHeaderActions";
 import { StockDialogsProvider } from "./StockDialogsProvider";
 import { STOCK_COLUMNS, StockRow } from "./StockRow";
+import { TrackBooksButton } from "./TrackBooksButton";
 
 /** The lists the page can show: every item, or just the ones low or out. */
 export const INVENTORY_VIEWS = ["all", "low", "out"] as const;
@@ -30,6 +31,8 @@ type InventoryScreenProps = {
   /** Today on the cafe calendar — the date the dialogs book entries on. */
   today: string;
   canManage: boolean;
+  /** Books for sale with no stock item behind them, so their sales book no cost. */
+  untrackedBooks: number;
 };
 
 /** Out first, then low, then the rest — what needs ordering is read first. */
@@ -45,7 +48,14 @@ const LEVEL_RANK: Record<StockLevel, number> = { out: 0, low: 1, ok: 2 };
  * Presentational: the page fetches over the REST API (BFF); every write
  * `router.refresh()`es.
  */
-export async function InventoryScreen({ summary, view, query, today, canManage }: InventoryScreenProps) {
+export async function InventoryScreen({
+  summary,
+  view,
+  query,
+  today,
+  canManage,
+  untrackedBooks,
+}: InventoryScreenProps) {
   const t = await getTranslations("dashInventory");
   const locale = await getLocale();
 
@@ -87,6 +97,15 @@ export async function InventoryScreen({ summary, view, query, today, canManage }
             {canManage ? <InventoryHeaderActions countItemId={active[0]?.id} receiveItemId={firstToOrder?.id} /> : null}
           </div>
         </div>
+
+        {untrackedBooks > 0 ? (
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-card-lg border border-warning-border bg-warning px-5 py-3">
+            <p className="min-w-0 flex-[1_1_20rem] text-body-default text-pretty text-warning-foreground sm:text-body-small">
+              {t("books.notice", { count: untrackedBooks, formatted: formatNumber(untrackedBooks, locale) })}
+            </p>
+            {canManage ? <TrackBooksButton count={untrackedBooks} /> : null}
+          </div>
+        ) : null}
 
         <div className={cn("grid grid-cols-2 gap-3", summary.costsVisible && "sm:grid-cols-3")}>
           <MetricCard

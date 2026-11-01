@@ -26,6 +26,8 @@ export function activityEntityHref(
       return `/dashboard/categories/${entityId}/edit`;
     case "event":
       return `/dashboard/events/${entityId}/edit`;
+    case "income":
+      return "/dashboard/income";
     default:
       return null;
   }

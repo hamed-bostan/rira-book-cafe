@@ -1,12 +1,18 @@
 import type { OrderBulkAction } from "@/src/contracts/bulk-action-schema";
 import type { OrderNoteInput } from "@/src/contracts/order-note-schema";
-import type { OrderItemServedInput, OrderPaymentInput, OrderStatusChangeInput } from "@/src/contracts/order-schema";
+import type {
+  CounterOrderFormInput,
+  OrderItemServedInput,
+  OrderPaymentInput,
+  OrderRefundInput,
+  OrderStatusChangeInput,
+} from "@/src/contracts/order-schema";
 import type { Order } from "@/src/domain/entities/Order";
 import type { OrderNote } from "@/src/domain/entities/OrderNote";
 import { apiPatch, apiPost } from "@/src/lib/api/client";
 import { bulkResultSchema, type BulkResult } from "@/src/presentation/dashboard/bulk/bulk-result-response-schema";
 import { orderNoteResponseSchema } from "@/src/presentation/dashboard/orders/order-note-response-schema";
-import { orderResponseSchema } from "@/src/presentation/orders/order-response-schema";
+import { orderRefundResultResponseSchema, orderResponseSchema } from "@/src/presentation/orders/order-response-schema";
 
 /**
  * Typed client for the dashboard's order *mutations*. Components call these, then
@@ -14,6 +20,17 @@ import { orderResponseSchema } from "@/src/presentation/orders/order-response-sc
  * (see `ordersServerApi`).
  */
 export const ordersApi = {
+  /** Ring up a sale at the counter. 409 when an item just sold out. */
+  createCounterSale(values: CounterOrderFormInput): Promise<Order> {
+    return apiPost("/admin/orders", values, orderResponseSchema);
+  },
+
+  /** Hand money back on a completed order. 409 if someone refunded it first. */
+  async refund(id: string, values: OrderRefundInput): Promise<Order> {
+    const { order } = await apiPost(`/admin/orders/${id}/refunds`, values, orderRefundResultResponseSchema);
+    return order;
+  },
+
   /** Move the order along the workflow (or cancel it). 409 if someone else moved it first. */
   changeStatus(id: string, values: OrderStatusChangeInput): Promise<Order> {
     return apiPatch(`/admin/orders/${id}/status`, values, orderResponseSchema);

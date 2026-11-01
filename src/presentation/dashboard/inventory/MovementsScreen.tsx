@@ -1,15 +1,35 @@
-import { ChevronRight, History } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
-import { STOCK_MOVEMENT_KINDS, type StockItem, type StockMovement } from "@/src/domain/entities/Inventory";
+import {
+  STOCK_MOVEMENT_KINDS,
+  type StockItem,
+  type StockMovement,
+  type StockMovementKind,
+} from "@/src/domain/entities/Inventory";
 import type { Page } from "@/src/domain/entities/Pagination";
 import { Link } from "@/src/i18n/navigation";
 import { formatCafeDayMedium } from "@/src/lib/formatCafeDay";
 import { formatMoney } from "@/src/lib/formatMoney";
-import { formatNumber } from "@/src/lib/formatNumber";
 import { cn } from "@/src/lib/utils";
 import { ListFilterSelect, ListPager } from "@/src/presentation/dashboard/list";
-import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
+import { Badge, type BadgeProps } from "@/src/presentation/design-system/components/Badge/Badge";
+
+import { DashboardPageHeader } from "../DashboardPageHeader";
+import { FIELD_LABEL } from "../fieldStyles";
+import { AMOUNT, PAGE_CARD, ROW_CAPTION, ROW_TEXT, TABLE_HEAD, TABLE_TD, TABLE_TH } from "../pageStyles";
+import { DashboardPageCrumb } from "../shell/DashboardPageCrumb";
+
+import { formatStockQuantity } from "./stockFormat";
+
+/** Each kind's tint, read down the Type column. */
+const KIND_VARIANT: Record<StockMovementKind, BadgeProps["variant"]> = {
+  opening: "neutral",
+  receipt: "success",
+  sale: "info",
+  waste: "error",
+  count: "warning",
+  return: "info",
+};
 
 type MovementsScreenProps = { page: Page<StockMovement>; items: StockItem[]; costsVisible: boolean };
 
@@ -21,83 +41,74 @@ export async function MovementsScreen({ page, items, costsVisible }: MovementsSc
 
   const referenceHref = (movement: StockMovement): string | null => {
     if (!movement.referenceId) return null;
-    if (movement.kind === "sale") return `/dashboard/orders/${movement.referenceId}`;
+    if (movement.kind === "sale" || movement.kind === "return") return `/dashboard/orders/${movement.referenceId}`;
     if (movement.kind === "receipt") return `/dashboard/expenses/${movement.referenceId}`;
     return null;
   };
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
-      <nav
-        aria-label={t("breadcrumbLabel")}
-        className="flex items-center gap-2 text-body-caption text-muted-foreground"
-      >
-        <Link href="/dashboard/inventory" className="hover:text-foreground">
-          {t("heading")}
-        </Link>
-        <ChevronRight className="size-3.5 rtl:rotate-180" aria-hidden />
-        <span className="font-medium text-foreground">{t("movements.heading")}</span>
-      </nav>
-      <div>
-        <h1 className="dashboard-page-title">{t("movements.heading")}</h1>
-        <p className="mt-1 text-body-small text-muted-foreground">{t("movements.subtitle")}</p>
-      </div>
+      <DashboardPageCrumb label={t("movements.heading")} />
+      <DashboardPageHeader
+        backHref="/dashboard/inventory"
+        backLabel={t("heading")}
+        title={t("movements.heading")}
+        subtitle={t("movements.subtitle")}
+      />
 
-      <div className="flex flex-wrap items-end gap-2">
-        <label className="flex flex-col gap-1 text-body-caption text-muted-foreground">
-          {t("col.item")}
-          <ListFilterSelect
-            className="h-9 min-w-48"
-            size="md"
-            paramName="item"
-            label={t("col.item")}
-            options={[
-              { value: "", label: t("movements.allItems") },
-              ...items.map((item) => ({ value: item.id, label: item.name })),
-            ]}
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-body-caption text-muted-foreground">
-          {t("movements.kindLabel")}
-          <ListFilterSelect
-            className="h-9 min-w-40"
-            size="md"
-            paramName="kind"
-            label={t("movements.kindLabel")}
-            options={[
-              { value: "", label: t("movements.allKinds") },
-              ...STOCK_MOVEMENT_KINDS.map((kind) => ({ value: kind, label: t(`kind.${kind}`) })),
-            ]}
-          />
-        </label>
-      </div>
+      <section aria-label={t("movements.heading")} className={cn(PAGE_CARD, "overflow-hidden")}>
+        <div className="flex flex-wrap items-end gap-x-4 gap-y-3 border-b border-border px-5 py-4">
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <span className={FIELD_LABEL}>{t("col.item")}</span>
+            <ListFilterSelect
+              className="min-w-48 border-border-strong"
+              paramName="item"
+              label={t("col.item")}
+              options={[
+                { value: "", label: t("movements.allItems") },
+                ...items.map((item) => ({ value: item.id, label: item.name })),
+              ]}
+            />
+          </div>
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <span className={FIELD_LABEL}>{t("movements.kindLabel")}</span>
+            <ListFilterSelect
+              className="min-w-40 border-border-strong"
+              paramName="kind"
+              label={t("movements.kindLabel")}
+              options={[
+                { value: "", label: t("movements.allKinds") },
+                ...STOCK_MOVEMENT_KINDS.map((kind) => ({ value: kind, label: t(`kind.${kind}`) })),
+              ]}
+            />
+          </div>
+        </div>
 
-      <section className="min-w-0 overflow-hidden rounded-card-lg border border-border bg-background">
         {page.items.length === 0 ? (
-          <EmptyState icon={History} title={t("movements.empty")} />
+          <p className={cn(ROW_TEXT, "px-5 py-12 text-center font-semibold text-foreground")}>{t("movements.empty")}</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[40rem] text-body-small">
-              <thead className="bg-surface text-body-caption text-muted-foreground">
+            <table className={cn(ROW_TEXT, "w-full min-w-2xl table-fixed")}>
+              <thead className={TABLE_HEAD}>
                 <tr>
-                  <th scope="col" className="px-4 py-3 text-start font-medium">
+                  <th scope="col" className={cn(TABLE_TH, "w-36")}>
                     {t("dateLabel")}
                   </th>
-                  <th scope="col" className="px-4 py-3 text-start font-medium">
+                  <th scope="col" className={TABLE_TH}>
                     {t("col.item")}
                   </th>
-                  <th scope="col" className="px-4 py-3 text-start font-medium">
+                  <th scope="col" className={cn(TABLE_TH, "w-44")}>
                     {t("movements.kindLabel")}
                   </th>
-                  <th scope="col" className="px-4 py-3 text-end font-medium">
+                  <th scope="col" className={cn(TABLE_TH, "w-32 text-end")}>
                     {t("movements.quantity")}
                   </th>
                   {costsVisible ? (
-                    <th scope="col" className="px-4 py-3 text-end font-medium">
+                    <th scope="col" className={cn(TABLE_TH, "w-40 text-end")}>
                       {t("col.value")}
                     </th>
                   ) : null}
-                  <th scope="col" className="px-4 py-3 text-start font-medium">
+                  <th scope="col" className={cn(TABLE_TH, "w-40")}>
                     {t("movements.by")}
                   </th>
                 </tr>
@@ -106,43 +117,52 @@ export async function MovementsScreen({ page, items, costsVisible }: MovementsSc
                 {page.items.map((movement) => {
                   const href = referenceHref(movement);
                   const unit = t(`unit.${units.get(movement.ingredientId) ?? "piece"}`);
+                  const kind = (
+                    <Badge size="compact" variant={KIND_VARIANT[movement.kind]} appearance="outline">
+                      {t(`kind.${movement.kind}`)}
+                    </Badge>
+                  );
                   return (
                     <tr key={movement.id}>
-                      <td className="px-4 py-2.5 whitespace-nowrap text-muted-foreground">
+                      <td className={cn(TABLE_TD, "align-middle whitespace-nowrap text-muted-foreground")}>
                         {formatCafeDayMedium(movement.date, locale)}
                       </td>
-                      <td className="px-4 py-2.5 text-foreground" dir="auto">
+                      <td className={cn(TABLE_TD, "align-middle font-medium text-foreground")} dir="auto">
                         {movement.ingredientName}
                       </td>
-                      <td className="px-4 py-2.5">
-                        {href ? (
-                          <Link href={href} className="text-primary underline-offset-4 hover:underline">
-                            {t(`kind.${movement.kind}`)}
-                          </Link>
-                        ) : (
-                          t(`kind.${movement.kind}`)
-                        )}
-                        {movement.note ? (
-                          <span className="block text-body-caption text-muted-foreground" dir="auto">
-                            {movement.note}
-                          </span>
-                        ) : null}
+                      <td className={cn(TABLE_TD, "align-middle")}>
+                        <span className="flex flex-col items-start gap-0.5">
+                          {href ? (
+                            <Link href={href} className="inline-flex">
+                              {kind}
+                            </Link>
+                          ) : (
+                            kind
+                          )}
+                          {movement.note ? (
+                            <span className={ROW_CAPTION} dir="auto">
+                              {movement.note}
+                            </span>
+                          ) : null}
+                        </span>
                       </td>
                       <td
                         className={cn(
-                          "px-4 py-2.5 text-end whitespace-nowrap",
-                          movement.quantity < 0 ? "text-error-foreground" : "text-success-foreground",
+                          TABLE_TD,
+                          AMOUNT,
+                          "align-middle font-semibold",
+                          movement.quantity < 0 ? "text-foreground" : "text-success-foreground",
                         )}
                       >
                         {movement.quantity > 0 ? "+" : ""}
-                        {formatNumber(movement.quantity, locale, 3)} {unit}
+                        {formatStockQuantity(movement.quantity, locale)} {unit}
                       </td>
                       {costsVisible ? (
-                        <td className="px-4 py-2.5 text-end whitespace-nowrap">
+                        <td className={cn(TABLE_TD, AMOUNT, "align-middle text-foreground")}>
                           {formatMoney(movement.value, locale)}
                         </td>
                       ) : null}
-                      <td className="px-4 py-2.5 text-muted-foreground">{movement.createdByName}</td>
+                      <td className={cn(TABLE_TD, "align-middle text-foreground/80")}>{movement.createdByName}</td>
                     </tr>
                   );
                 })}
@@ -150,8 +170,8 @@ export async function MovementsScreen({ page, items, costsVisible }: MovementsSc
             </table>
           </div>
         )}
-        <div className="border-t border-border px-4 py-3">
-          <ListPager page={page} size="md" />
+        <div className="border-t border-border px-5 py-3">
+          <ListPager page={page} />
         </div>
       </section>
     </div>

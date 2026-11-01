@@ -1,32 +1,25 @@
-import { DashboardHeaderSkeleton, DashboardTableSkeleton } from "@/src/presentation/dashboard/skeletons";
+import { AccountingTableSkeleton } from "@/src/presentation/dashboard/accounting/AccountingTableSkeleton";
+import { PAGE_CARD } from "@/src/presentation/dashboard/pageStyles";
+import { DashboardFieldSkeleton, DashboardPageHeaderSkeleton } from "@/src/presentation/dashboard/skeletons";
 import { LoadingRegion } from "@/src/presentation/design-system/components/Skeleton/LoadingRegion";
 import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
+const COUNT_COLUMNS = ["start", "end", "end", "end"] as const;
+
 export default function StockCountLoading() {
   return (
-    <LoadingRegion className="flex max-w-4xl flex-col gap-6">
-      <DashboardHeaderSkeleton />
-
-      <div className="flex flex-col gap-5">
-        {/* Date (with its formatted day) beside the note. */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-[12rem_1fr]">
-          <div className="flex flex-col gap-1.5">
-            <Skeleton className="h-4 w-16 rounded-pill" />
-            <Skeleton className="h-10 w-full rounded-input" />
-            <Skeleton className="h-3.5 w-24 rounded-pill" />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Skeleton className="h-4 w-20 rounded-pill" />
-            <Skeleton className="h-10 w-full rounded-input" />
-          </div>
+    <LoadingRegion className="flex min-w-0 flex-col gap-6">
+      <DashboardPageHeaderSkeleton actions={0} />
+      <div className={`${PAGE_CARD} flex flex-col gap-5 p-5`}>
+        <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-[12rem_minmax(0,1fr)]">
+          <DashboardFieldSkeleton hint />
+          <DashboardFieldSkeleton />
         </div>
-
         {/* Item · expected · counted · difference. */}
-        <DashboardTableSkeleton toolbar={false} pager={false} columns={4} rows={8} />
-
-        <div className="flex gap-3">
-          <Skeleton className="h-11 w-32 rounded-button" />
-          <Skeleton className="h-11 w-24 rounded-button" />
+        <AccountingTableSkeleton columns={COUNT_COLUMNS} rows={8} className="shadow-none" />
+        <div className="flex gap-2">
+          <Skeleton className="h-11 w-32 rounded-button sm:h-9" />
+          <Skeleton className="h-11 w-20 rounded-button sm:h-9" />
         </div>
       </div>
     </LoadingRegion>

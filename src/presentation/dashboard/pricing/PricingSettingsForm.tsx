@@ -2,6 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
+import * as React from "react";
 import { useForm, useWatch } from "react-hook-form";
 
 import { pricingSettingsSchema, type PricingSettingsInput } from "@/src/contracts/pricing-schema";
@@ -10,10 +11,11 @@ import { useRouter } from "@/src/i18n/navigation";
 import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
+import { DashboardFormField } from "@/src/presentation/dashboard/DashboardFormField";
+import { FIELD_HINT, FIELD_INPUT, FIELD_LABEL } from "@/src/presentation/dashboard/fieldStyles";
+import { FormAlert } from "@/src/presentation/dashboard/FormAlert";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
-import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
 import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
-import { TextField } from "@/src/presentation/design-system/components/form/TextField/TextField";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { pricingApi } from "./pricing-api";
@@ -54,6 +56,7 @@ export function PricingSettingsForm({ settings, canWrite }: { settings: PricingS
   const fieldError = (message?: string): string | undefined => formErrorMessage(tFormErrors, message);
   const router = useRouter();
   const { toast } = useToast();
+  const sourceLabelId = React.useId();
 
   const {
     register,
@@ -91,161 +94,177 @@ export function PricingSettingsForm({ settings, canWrite }: { settings: PricingS
   return (
     <form
       onSubmit={onSubmit}
-      className="flex max-w-xl flex-col gap-5 rounded-card-lg border border-border bg-background p-4 md:p-6"
+      className="min-w-0 rounded-card-lg border border-border bg-background p-5 shadow-xs"
       noValidate
     >
-      <TextField
-        label={t("settings.defaultMarkupLabel")}
-        required
-        description={t("settings.defaultMarkupHint")}
-        error={fieldError(errors.defaultMarkup?.message)}
-      >
-        {(control) => (
-          <Input
-            {...control}
-            {...register("defaultMarkup")}
-            inputMode="decimal"
-            dir="ltr"
-            className="max-w-32"
-            disabled={!canWrite}
-          />
-        )}
-      </TextField>
-
-      <fieldset className="flex flex-col gap-2" disabled={!canWrite}>
-        <legend className="mb-1 text-body-small-emphasis text-input-foreground">
-          {t("settings.overheadSourceLabel")}
-        </legend>
-        {OVERHEAD_SOURCES.map((option) => (
-          <label
-            key={option}
-            className="flex cursor-pointer items-start gap-2 rounded-card-md border border-border px-3 py-2 text-body-small has-[:checked]:border-primary has-[:checked]:bg-accent"
-          >
-            <input type="radio" value={option} {...register("overheadSource")} className="mt-1 accent-primary" />
-            <span>
-              <span className="block text-body-small-emphasis text-foreground">{t(`settings.source.${option}`)}</span>
-              <span className="text-body-caption text-muted-foreground">{t(`settings.sourceHint.${option}`)}</span>
-            </span>
-          </label>
-        ))}
-      </fieldset>
-
-      {source === "manual" ? (
-        <TextField
-          label={t("settings.manualOverheadLabel")}
+      <div className="flex max-w-md flex-col gap-5">
+        <DashboardFormField
+          label={t("settings.defaultMarkupLabel")}
           required
-          description={t("settings.manualOverheadHint")}
-          error={fieldError(errors.manualMonthlyOverhead?.message)}
+          hint={t("settings.defaultMarkupHint")}
+          error={fieldError(errors.defaultMarkup?.message)}
         >
-          {(control) => (
+          {(wiring) => (
             <Input
-              {...control}
-              {...register("manualMonthlyOverhead")}
-              inputMode="numeric"
+              {...wiring}
+              {...register("defaultMarkup")}
+              size="control-md"
+              inputClassName={FIELD_INPUT}
+              inputMode="decimal"
               dir="ltr"
               disabled={!canWrite}
             />
           )}
-        </TextField>
-      ) : (
-        <TextField
-          label={t("settings.monthsLabel")}
-          description={t("settings.monthsHint")}
-          error={fieldError(errors.overheadMonths?.message)}
-        >
-          {(control) => (
-            <Input
-              {...control}
-              {...register("overheadMonths")}
-              inputMode="numeric"
-              dir="ltr"
-              className="max-w-24"
-              disabled={!canWrite}
-            />
-          )}
-        </TextField>
-      )}
+        </DashboardFormField>
 
-      <TextField
-        label={t("settings.expectedUnitsLabel")}
-        description={t("settings.expectedUnitsHint")}
-        error={fieldError(errors.expectedMonthlyUnits?.message)}
-      >
-        {(control) => (
-          <Input
-            {...control}
-            {...register("expectedMonthlyUnits")}
-            inputMode="numeric"
-            dir="ltr"
-            className="max-w-40"
-            disabled={!canWrite}
-          />
+        <fieldset className="flex min-w-0 flex-col gap-1.5" disabled={!canWrite} aria-labelledby={sourceLabelId}>
+          <span id={sourceLabelId} className={FIELD_LABEL}>
+            {t("settings.overheadSourceLabel")}
+          </span>
+          <div className="flex flex-col gap-2">
+            {OVERHEAD_SOURCES.map((option) => (
+              <label
+                key={option}
+                className="group flex min-h-11 cursor-pointer items-start gap-3 rounded-button border border-border-strong bg-background p-3 transition-colors hover:border-accent-border has-checked:border-primary has-checked:bg-accent has-focus-visible:ring-2 has-focus-visible:ring-ring has-disabled:cursor-not-allowed sm:min-h-9"
+              >
+                <input type="radio" value={option} {...register("overheadSource")} className="peer sr-only" />
+                <span
+                  aria-hidden
+                  className="mt-0.5 flex size-4 flex-none items-center justify-center rounded-full border-2 border-border-strong bg-background peer-checked:border-primary"
+                >
+                  <span className="size-2 rounded-full group-has-checked:bg-primary" />
+                </span>
+                <span className="flex min-w-0 flex-col gap-0.5">
+                  <span className={FIELD_LABEL}>{t(`settings.source.${option}`)}</span>
+                  <span className={FIELD_HINT}>{t(`settings.sourceHint.${option}`)}</span>
+                </span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
+        {source === "manual" ? (
+          <DashboardFormField
+            label={t("settings.manualOverheadLabel")}
+            required
+            hint={t("settings.manualOverheadHint")}
+            error={fieldError(errors.manualMonthlyOverhead?.message)}
+          >
+            {(wiring) => (
+              <Input
+                {...wiring}
+                {...register("manualMonthlyOverhead")}
+                size="control-md"
+                inputClassName={FIELD_INPUT}
+                inputMode="numeric"
+                dir="ltr"
+                disabled={!canWrite}
+              />
+            )}
+          </DashboardFormField>
+        ) : (
+          <DashboardFormField
+            label={t("settings.monthsLabel")}
+            hint={t("settings.monthsHint")}
+            error={fieldError(errors.overheadMonths?.message)}
+          >
+            {(wiring) => (
+              <Input
+                {...wiring}
+                {...register("overheadMonths")}
+                size="control-md"
+                inputClassName={FIELD_INPUT}
+                inputMode="numeric"
+                dir="ltr"
+                disabled={!canWrite}
+              />
+            )}
+          </DashboardFormField>
         )}
-      </TextField>
 
-      <fieldset className="flex flex-col gap-3" disabled={!canWrite}>
-        <legend className="mb-1 text-body-small-emphasis text-input-foreground">{t("settings.inflationLegend")}</legend>
-        <p className="-mt-1 text-body-caption text-muted-foreground">{t("settings.inflationHint")}</p>
-        <div className="flex flex-col gap-4 sm:flex-row">
-          <TextField
+        <DashboardFormField
+          label={t("settings.expectedUnitsLabel")}
+          hint={t("settings.expectedUnitsHint")}
+          error={fieldError(errors.expectedMonthlyUnits?.message)}
+        >
+          {(wiring) => (
+            <Input
+              {...wiring}
+              {...register("expectedMonthlyUnits")}
+              size="control-md"
+              inputClassName={FIELD_INPUT}
+              inputMode="numeric"
+              dir="ltr"
+              disabled={!canWrite}
+            />
+          )}
+        </DashboardFormField>
+
+        <fieldset className="flex min-w-0 flex-col gap-4 rounded-card-lg border border-border p-4" disabled={!canWrite}>
+          <legend className="px-1 text-body-default font-semibold text-foreground sm:text-body-small">
+            {t("settings.inflationLegend")}
+          </legend>
+          <p className={FIELD_HINT}>{t("settings.inflationHint")}</p>
+          <DashboardFormField
             label={t("settings.monthlyInflationLabel")}
-            description={t("settings.monthlyInflationHint")}
+            hint={t("settings.monthlyInflationHint")}
             error={fieldError(errors.monthlyInflation?.message)}
           >
-            {(control) => (
+            {(wiring) => (
               <Input
-                {...control}
+                {...wiring}
                 {...register("monthlyInflation")}
+                size="control-md"
+                inputClassName={FIELD_INPUT}
                 inputMode="decimal"
                 dir="ltr"
                 placeholder="0"
-                className="max-w-24"
               />
             )}
-          </TextField>
-          <TextField
+          </DashboardFormField>
+          <DashboardFormField
             label={t("settings.horizonLabel")}
-            description={t("settings.horizonHint")}
+            hint={t("settings.horizonHint")}
             error={fieldError(errors.priceHorizonMonths?.message)}
           >
-            {(control) => (
+            {(wiring) => (
               <Input
-                {...control}
+                {...wiring}
                 {...register("priceHorizonMonths")}
+                size="control-md"
+                inputClassName={FIELD_INPUT}
                 inputMode="numeric"
                 dir="ltr"
-                className="max-w-24"
               />
             )}
-          </TextField>
-        </div>
-      </fieldset>
+          </DashboardFormField>
+        </fieldset>
 
-      <TextField
-        label={t("settings.roundingLabel")}
-        description={t("settings.roundingHint")}
-        error={fieldError(errors.roundingStep?.message)}
-      >
-        {(control) => (
-          <Input
-            {...control}
-            {...register("roundingStep")}
-            inputMode="numeric"
-            dir="ltr"
-            className="max-w-40"
-            disabled={!canWrite}
-          />
-        )}
-      </TextField>
+        <DashboardFormField
+          label={t("settings.roundingLabel")}
+          hint={t("settings.roundingHint")}
+          error={fieldError(errors.roundingStep?.message)}
+        >
+          {(wiring) => (
+            <Input
+              {...wiring}
+              {...register("roundingStep")}
+              size="control-md"
+              inputClassName={FIELD_INPUT}
+              inputMode="numeric"
+              dir="ltr"
+              disabled={!canWrite}
+            />
+          )}
+        </DashboardFormField>
 
-      {errors.root?.message ? <FormMessage size="md">{errors.root.message}</FormMessage> : null}
-      {canWrite ? (
-        <div>
-          <Button type="submit" loading={isSubmitting} disabled={!isDirty}>
+        {errors.root?.message ? <FormAlert>{errors.root.message}</FormAlert> : null}
+        {canWrite ? (
+          <Button type="submit" size="control-md" className="self-start" loading={isSubmitting} disabled={!isDirty}>
             {t("save")}
           </Button>
-        </div>
-      ) : null}
+        ) : null}
+      </div>
     </form>
   );
 }

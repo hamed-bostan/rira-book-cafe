@@ -3,6 +3,7 @@
 import { useLocale, useTranslations } from "next-intl";
 import * as React from "react";
 
+import { optionalMoneyField } from "@/src/contracts/money-fields";
 import { isCafeDay } from "@/src/domain/entities/CafeTime";
 import { PAYMENT_SOURCES, type Expense, type PaymentSource } from "@/src/domain/entities/Expense";
 import { useRouter } from "@/src/i18n/navigation";
@@ -16,8 +17,9 @@ import { DashboardField } from "../DashboardField";
 
 import { expensesApi } from "./expense-api";
 import { expenseApiErrorMessage } from "./expenseApiErrorMessage";
+import { normalizeAmount } from "./expenseFormat";
 
-export type PayableExpense = Pick<Expense, "id" | "number" | "date" | "description" | "amount">;
+export type PayableExpense = Pick<Expense, "id" | "number" | "date" | "description" | "amount" | "paidAmount">;
 
 type PayExpenseDialogProps = {
   open: boolean;
@@ -27,7 +29,11 @@ type PayExpenseDialogProps = {
   today: string;
 };
 
-/** Pay an owed bill from the cash register or the bank, on a day between the bill's and today. */
+/**
+ * Pay an owed bill, or part of it, from the cash register or the bank, on a day
+ * between the bill's and today. A blank amount pays all that's left; a part keeps the
+ * bill owed for the rest.
+ */
 export function PayExpenseDialog({ open, onOpenChange, expense, today }: PayExpenseDialogProps) {
   const t = useTranslations("dashExpenses");
   const tApiErrors = useTranslations("apiErrors");
@@ -38,16 +44,25 @@ export function PayExpenseDialog({ open, onOpenChange, expense, today }: PayExpe
 
   const [source, setSource] = React.useState<PaymentSource>("cash");
   const [paidOn, setPaidOn] = React.useState(today);
+  const [amount, setAmount] = React.useState("");
   const [error, setError] = React.useState<string | null>(null);
   const [pending, startTransition] = React.useTransition();
 
-  const ready = isCafeDay(paidOn) && paidOn >= expense.date && paidOn <= today;
+  const owed = expense.amount - expense.paidAmount;
+  const typed = normalizeAmount(amount);
+  const part = optionalMoneyField.safeParse(typed);
+  const fieldError = !part.success
+    ? tFormErrors("amountInvalid")
+    : part.data > owed
+      ? tFormErrors("paymentOverOwed")
+      : undefined;
+  const ready = !fieldError && isCafeDay(paidOn) && paidOn >= expense.date && paidOn <= today;
 
   function submit(): void {
     setError(null);
     startTransition(async () => {
       try {
-        await expensesApi.pay(expense.id, { source, paidOn });
+        await expensesApi.pay(expense.id, { source, paidOn, amount: typed });
         toast({ tone: "success", title: t("detail.paid", { number: expense.number }) });
         onOpenChange(false);
         router.refresh();
@@ -62,13 +77,24 @@ export function PayExpenseDialog({ open, onOpenChange, expense, today }: PayExpe
       open={open}
       onOpenChange={onOpenChange}
       title={t("detail.payTitle", { number: expense.number })}
-      subtitle={t("detail.paySub", { description: expense.description, amount: formatMoney(expense.amount, locale) })}
+      subtitle={t("detail.paySub", { description: expense.description, amount: formatMoney(owed, locale) })}
       submitLabel={t("detail.payConfirm")}
       blocked={!ready}
       pending={pending}
       onSubmit={submit}
-      error={error}
+      error={fieldError ?? error}
     >
+      <DashboardField label={t("detail.payAmount")} hint={t("detail.payAmountHint")}>
+        <Input
+          size="control-md"
+          value={amount}
+          onChange={(event) => setAmount(event.target.value)}
+          autoComplete="off"
+          inputMode="numeric"
+          placeholder={String(owed)}
+          dir="ltr"
+        />
+      </DashboardField>
       <div className="grid grid-cols-2 gap-4">
         <DashboardField label={t("detail.paySource")}>
           <Select size="control-md" value={source} onChange={(event) => setSource(event.target.value as PaymentSource)}>

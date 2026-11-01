@@ -6,7 +6,9 @@ import * as React from "react";
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatMoney } from "@/src/lib/formatMoney";
-import { ConfirmSheet } from "@/src/presentation/design-system/components/Sheet/ConfirmSheet";
+import { cn } from "@/src/lib/utils";
+import { DashboardDialog } from "@/src/presentation/dashboard/DashboardDialog";
+import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 import { Spinner } from "@/src/presentation/design-system/components/Spinner/Spinner";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
@@ -25,6 +27,7 @@ export function ApplyPriceButton({ productId, name, currentPrice, suggestedPrice
   const [pending, startTransition] = React.useTransition();
 
   function apply(): void {
+    setOpen(false);
     startTransition(async () => {
       try {
         await pricingApi.applySuggestion(productId, currentPrice);
@@ -43,22 +46,27 @@ export function ApplyPriceButton({ productId, name, currentPrice, suggestedPrice
         onClick={() => setOpen(true)}
         disabled={pending}
         aria-busy={pending || undefined}
-        className="block w-full text-end text-body-caption text-primary underline-offset-4 hover:underline disabled:opacity-50"
+        className={cn(
+          "-my-3 py-3 text-body-small font-medium whitespace-nowrap text-primary hover:underline disabled:opacity-50 sm:my-0 sm:py-0 sm:text-body-caption",
+          focusRing,
+        )}
       >
-        {/* A text link rather than a DS Button, so the spinner is placed by hand. */}
+        {/* A text action rather than a DS Button, so the spinner is placed by hand. */}
         {pending ? <Spinner decorative size="xs" className="me-1 inline-block align-middle" /> : null}
         {t("apply")}
       </button>
-      <ConfirmSheet
+      <DashboardDialog
         open={open}
         onOpenChange={setOpen}
         title={t("applyTitle", { name })}
-        message={t("applyMessage", {
+        subtitle={t("applyMessage", {
           from: formatMoney(currentPrice, locale),
           to: formatMoney(suggestedPrice, locale),
         })}
-        confirmLabel={t("applyConfirm")}
-        onConfirm={apply}
+        submitLabel={t("applyConfirm")}
+        backLabel={t("cancel")}
+        pending={false}
+        onSubmit={apply}
       />
     </>
   );

@@ -19,8 +19,9 @@ export function AccountActiveSwitch({ code, isActive }: { code: string; isActive
   const [pending, startTransition] = React.useTransition();
 
   return (
-    <span className="flex items-center gap-2">
+    <span className="flex min-h-11 items-center sm:min-h-8">
       <Switch
+        size="sm"
         checked={isActive}
         disabled={pending}
         aria-label={t("accounts.activeLabel", { code })}

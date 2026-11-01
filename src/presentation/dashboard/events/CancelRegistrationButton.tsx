@@ -5,8 +5,8 @@ import * as React from "react";
 
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
+import { DashboardDialog } from "@/src/presentation/dashboard/DashboardDialog";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
-import { ConfirmSheet } from "@/src/presentation/design-system/components/Sheet/ConfirmSheet";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { eventsApi } from "./event-api";
@@ -40,25 +40,27 @@ export function CancelRegistrationButton({ eventId, registrationId, guestName }:
   }
 
   return (
-    <div className="flex flex-col items-end gap-1">
+    <>
       <Button
         type="button"
-        variant="ghost"
-        size="sm"
-        className="text-destructive"
+        variant="secondary"
+        size="control-sm"
+        className="px-2 text-error-foreground hover:bg-error active:bg-error"
         loading={pending}
         onClick={() => setOpen(true)}
       >
         {t("cancelRegistration")}
       </Button>
-      <ConfirmSheet
+      <DashboardDialog
         open={open}
         onOpenChange={setOpen}
         title={t("cancelRegistrationTitle", { name: guestName })}
-        message={t("cancelRegistrationMessage")}
-        confirmLabel={t("cancelRegistration")}
-        onConfirm={handleConfirm}
+        subtitle={t("cancelRegistrationMessage")}
+        submitLabel={t("cancelRegistration")}
+        pending={false}
+        onSubmit={handleConfirm}
+        danger
       />
-    </div>
+    </>
   );
 }

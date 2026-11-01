@@ -7,11 +7,15 @@ import type { FiscalYearStatus } from "@/src/domain/use-cases/accounting/FiscalY
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatCafeDayMedium } from "@/src/lib/formatCafeDay";
+import { cn } from "@/src/lib/utils";
 import { fiscalYearsApi } from "@/src/presentation/dashboard/inventory/inventory-api";
 import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
-import { ConfirmSheet } from "@/src/presentation/design-system/components/Sheet/ConfirmSheet";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
+
+import { DashboardDialog } from "../DashboardDialog";
+import { DashboardSection } from "../DashboardSection";
+import { ROW_CAPTION } from "../pageStyles";
 
 import { formatYear } from "./accounting-format";
 
@@ -45,59 +49,67 @@ export function YearClosePanel({ years, canWrite }: { years: FiscalYearStatus[];
   }
 
   return (
-    <section className="flex max-w-xl flex-col gap-3 rounded-card-lg border border-border bg-background p-4 md:p-6">
-      <div>
-        <h2 className="text-body-lead text-foreground">{t("yearClose.heading")}</h2>
-        <p className="text-body-small text-muted-foreground">{t("yearClose.description")}</p>
-      </div>
-      <ul className="divide-y divide-border">
-        {years.map((year) => (
-          <li key={year.year} className="flex flex-wrap items-center gap-3 py-3">
-            <span className="text-body-small-emphasis text-foreground">
-              {t("yearClose.year", { year: formatYear(year.year, locale) })}
+    <DashboardSection title={t("yearClose.heading")} description={t("yearClose.description")} flush>
+      <ul>
+        {years.map((year, index) => (
+          <li
+            key={year.year}
+            className={cn(
+              "flex flex-wrap items-center gap-x-3 gap-y-2 px-5 py-4",
+              index > 0 && "border-t border-border",
+            )}
+          >
+            <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <span className="font-semibold text-foreground">
+                {t("yearClose.year", { year: formatYear(year.year, locale) })}
+              </span>
+              <span className={ROW_CAPTION}>
+                {formatCafeDayMedium(year.fromDay, locale)} – {formatCafeDayMedium(year.toDay, locale)}
+              </span>
             </span>
-            <span className="text-body-caption text-muted-foreground">
-              {formatCafeDayMedium(year.fromDay, locale)} – {formatCafeDayMedium(year.toDay, locale)}
-            </span>
-            <span className="ms-auto flex items-center gap-2">
-              {year.closed ? (
-                <Badge size="sm" variant="success">
-                  {t("yearClose.closed")}
-                </Badge>
-              ) : !year.ended ? (
-                <Badge size="sm" variant="neutral">
-                  {t("yearClose.open")}
-                </Badge>
-              ) : canWrite ? (
-                <Button
-                  type="button"
-                  size="sm"
-                  loading={pending && running === year.year}
-                  disabled={pending}
-                  onClick={() => setClosing(year.year)}
-                >
-                  {t("yearClose.close")}
-                </Button>
-              ) : (
-                <Badge size="sm" variant="warning">
+            {year.closed ? (
+              <Badge size="compact" variant="success" appearance="outline">
+                {t("yearClose.closed")}
+              </Badge>
+            ) : !year.ended ? (
+              <Badge size="compact" variant="neutral" appearance="outline">
+                {t("yearClose.open")}
+              </Badge>
+            ) : (
+              <>
+                <Badge size="compact" variant="warning" appearance="outline">
                   {t("yearClose.toClose")}
                 </Badge>
-              )}
-            </span>
+                {canWrite ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="control-md"
+                    className="px-3"
+                    loading={pending && running === year.year}
+                    disabled={pending}
+                    onClick={() => setClosing(year.year)}
+                  >
+                    {t("yearClose.close")}
+                  </Button>
+                ) : null}
+              </>
+            )}
           </li>
         ))}
       </ul>
-      <ConfirmSheet
+      <DashboardDialog
         open={closing !== null}
         onOpenChange={(open) => !open && setClosing(null)}
         title={closing === null ? "" : t("yearClose.confirmTitle", { year: formatYear(closing, locale) })}
-        message={t("yearClose.confirmMessage")}
-        confirmLabel={t("yearClose.close")}
-        onConfirm={() => {
+        subtitle={t("yearClose.confirmMessage")}
+        submitLabel={t("yearClose.close")}
+        pending={false}
+        onSubmit={() => {
           if (closing !== null) close(closing);
           setClosing(null);
         }}
       />
-    </section>
+    </DashboardSection>
   );
 }

@@ -15,9 +15,9 @@ function listed(page: Page, text: string): Locator {
   return page.getByText(text, { exact: true }).filter({ visible: true });
 }
 
-/** The base-language name; the Persian tab has a "Name" field of its own. */
+/** The base-language name; the Persian column has a "Name" field of its own. */
 function nameField(page: Page): Locator {
-  return page.getByRole("tabpanel", { name: "English" }).getByLabel("Name");
+  return page.getByRole("group", { name: "English" }).getByLabel("Name");
 }
 
 test("an admin creates, edits and deletes a menu item, image included", async ({ page }) => {

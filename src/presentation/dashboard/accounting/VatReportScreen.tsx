@@ -2,7 +2,10 @@ import { getLocale, getTranslations } from "next-intl/server";
 
 import type { VatReport } from "@/src/domain/entities/AccountingReports";
 import { Link } from "@/src/i18n/navigation";
-import { formatMoney } from "@/src/lib/formatMoney";
+import { formatNumber } from "@/src/lib/formatNumber";
+import { cn } from "@/src/lib/utils";
+
+import { AMOUNT, PAGE_CARD, ROW_CAPTION, ROW_TEXT } from "../pageStyles";
 
 import { StatementHeader } from "./StatementHeader";
 
@@ -26,31 +29,27 @@ export async function VatReportScreen({ report, canWrite }: { report: VatReport;
   return (
     <div className="flex min-w-0 flex-col gap-6">
       <StatementHeader title={t("statements.vat.title")} subtitle={t("statements.vat.subtitle")} span={report} />
-      <dl className="divide-y divide-border overflow-hidden rounded-card-lg border border-border bg-background text-body-small">
+      <dl className={cn(PAGE_CARD, ROW_TEXT, "divide-y divide-border overflow-hidden")}>
         {rows.map((row) => (
           <div
             key={row.key}
-            className={
-              "strong" in row
-                ? "flex items-center justify-between gap-3 bg-surface px-4 py-3 text-body-small-emphasis"
-                : "flex items-center justify-between gap-3 px-4 py-3"
-            }
+            className={cn(
+              "grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-4 px-5 py-4",
+              "strong" in row && "bg-muted font-semibold",
+            )}
           >
-            <dt className="flex flex-col">
+            <dt className="flex min-w-0 flex-col gap-0.5">
               <span className="text-foreground">{t(`vat.${row.key}`)}</span>
-              <span className="text-body-caption text-muted-foreground">{t(`vat.${row.key}Hint`)}</span>
+              <span className={cn(ROW_CAPTION, "font-normal")}>{t(`vat.${row.key}Hint`)}</span>
             </dt>
-            <dd className="whitespace-nowrap text-foreground">{formatMoney(row.amount, locale)}</dd>
+            <dd className={cn(AMOUNT, "text-foreground")}>{formatNumber(row.amount, locale)}</dd>
           </div>
         ))}
       </dl>
       {canWrite && report.closingBalance > 0 ? (
-        <p className="text-body-small text-muted-foreground">
+        <p className={ROW_CAPTION}>
           {t("vat.settleHint")}{" "}
-          <Link
-            href="/dashboard/accounting/journal/new"
-            className="font-medium text-primary underline underline-offset-4"
-          >
+          <Link href="/dashboard/accounting/journal/new" className="font-medium text-primary hover:text-primary-hover">
             {t("journal.newEntry")}
           </Link>
         </p>

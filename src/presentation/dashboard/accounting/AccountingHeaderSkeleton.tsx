@@ -5,7 +5,7 @@ import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/S
 const TAB_WIDTHS = ["w-16", "w-14", "w-16", "w-20", "w-10", "w-14"] as const;
 
 type AccountingHeaderSkeletonProps = {
-  /** Holds the line the tab shows under the tabs. */
+  /** Holds the line the journal shows under the tabs. */
   intro?: boolean;
 };
 

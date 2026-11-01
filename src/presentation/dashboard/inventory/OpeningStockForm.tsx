@@ -10,11 +10,15 @@ import { Link, useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatCafeDayMedium } from "@/src/lib/formatCafeDay";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
+import { cn } from "@/src/lib/utils";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
-import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
 import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
-import { TextField } from "@/src/presentation/design-system/components/form/TextField/TextField";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
+
+import { DashboardFormField } from "../DashboardFormField";
+import { FIELD_INPUT } from "../fieldStyles";
+import { FormAlert } from "../FormAlert";
+import { PAGE_CARD } from "../pageStyles";
 
 import { inventoryApi } from "./inventory-api";
 import { StockLinesFields, type StockLinesForm } from "./StockLinesFields";
@@ -56,17 +60,26 @@ export function OpeningStockForm({ items, today }: { items: StockItem[]; today: 
   });
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-5" noValidate>
-      <TextField
+    <form onSubmit={onSubmit} className={cn(PAGE_CARD, "flex flex-col gap-5 p-5")} noValidate>
+      <DashboardFormField
         label={t("dateLabel")}
         required
-        description={date ? formatCafeDayMedium(date, locale) : undefined}
+        hint={date ? formatCafeDayMedium(date, locale) : undefined}
         error={fieldError(errors.date?.message)}
       >
-        {(controlProps) => (
-          <Input {...controlProps} {...register("date")} type="date" max={today} dir="ltr" className="max-w-48" />
+        {(field) => (
+          <Input
+            {...field}
+            {...register("date")}
+            size="control-md"
+            type="date"
+            max={today}
+            dir="ltr"
+            className="max-w-48"
+            inputClassName={FIELD_INPUT}
+          />
         )}
-      </TextField>
+      </DashboardFormField>
       <StockLinesFields
         control={control as unknown as Control<StockLinesForm>}
         register={register as unknown as UseFormRegister<StockLinesForm>}
@@ -74,12 +87,12 @@ export function OpeningStockForm({ items, today }: { items: StockItem[]; today: 
         items={items}
         costLabel={t("opening.costLabel")}
       />
-      {errors.root?.message ? <FormMessage size="md">{errors.root.message}</FormMessage> : null}
-      <div className="flex gap-3 pt-2">
-        <Button type="submit" loading={isSubmitting}>
+      {errors.root?.message ? <FormAlert>{errors.root.message}</FormAlert> : null}
+      <div className="flex flex-wrap gap-2">
+        <Button type="submit" size="control-md" className="px-4" loading={isSubmitting}>
           {t("opening.save")}
         </Button>
-        <Button asChild variant="outline" type="button">
+        <Button asChild variant="secondary" size="control-md" className="px-3">
           <Link href="/dashboard/inventory">{t("cancel")}</Link>
         </Button>
       </div>

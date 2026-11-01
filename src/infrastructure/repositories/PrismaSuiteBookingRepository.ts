@@ -13,6 +13,7 @@ import { prisma } from "@/src/infrastructure/prisma/client";
 import type { Prisma } from "@/src/infrastructure/prisma/generated/client";
 import { inTransaction, type PrismaDb } from "@/src/infrastructure/prisma/transaction";
 
+import { paidBySource } from "./readIncomePaid";
 import { recordAudit } from "./writeActivityEntry";
 
 /**
@@ -64,7 +65,12 @@ export class PrismaSuiteBookingRepository implements ISuiteBookingRepository {
       where: { checkOut: { gt: fromDay(day) }, ...(status ? { status } : {}) },
       orderBy: [{ checkIn: "asc" }, { reference: "asc" }],
     });
-    return rows.map(toSuiteBooking);
+    const paid = await paidBySource(
+      this.db,
+      "suiteBooking",
+      rows.map((row) => row.id),
+    );
+    return rows.map((row) => ({ ...toSuiteBooking(row), paidAmount: paid.get(row.id) ?? 0 }));
   }
 
   async listBusyFrom(day: string): Promise<SuiteBusyRange[]> {

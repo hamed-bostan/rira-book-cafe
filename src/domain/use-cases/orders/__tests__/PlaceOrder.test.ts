@@ -36,6 +36,7 @@ function setup(products: Product[]) {
     paymentStatus: "unpaid",
     items: input.items.map((item, index) => ({ ...item, id: `i${index}` })),
     pointsEarned: 0,
+    refundedTotal: 0,
     placedAt: new Date(0).toISOString(),
     updatedAt: new Date(0).toISOString(),
   }));

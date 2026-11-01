@@ -1,10 +1,11 @@
 "use client";
 
-import { ImagePlus } from "lucide-react";
+import { ImagePlus, Upload } from "lucide-react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import * as React from "react";
 
+import { FIELD_HINT } from "@/src/presentation/dashboard/fieldStyles";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
 import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
@@ -53,22 +54,29 @@ export function IconUpload({ value, onChange, id, ...aria }: IconUploadProps) {
   }
 
   return (
-    <div className="flex items-center gap-4">
-      <Thumbnail radius="lg" className="size-20">
-        {value ? (
-          <Image src={value} alt={t("iconPreviewAlt")} width={64} height={64} className="object-contain" />
-        ) : (
-          <Icon icon={ImagePlus} size="md" className="text-icon-muted" />
-        )}
-      </Thumbnail>
-
-      <div className="flex flex-col items-start gap-1.5">
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-center gap-4">
+        <Thumbnail className="size-12 border border-border">
+          {value ? (
+            <Image src={value} alt={t("iconPreviewAlt")} width={48} height={48} className="object-contain" />
+          ) : (
+            <Icon icon={ImagePlus} size="icon-lg" className="text-icon-accent" />
+          )}
+        </Thumbnail>
         <input ref={inputRef} id={id} type="file" accept={ACCEPT} className="sr-only" onChange={handleFile} {...aria} />
-        <Button type="button" variant="outline" size="sm" loading={uploading} onClick={() => inputRef.current?.click()}>
+        <Button
+          type="button"
+          variant="secondary"
+          size="control-md"
+          className="px-3"
+          loading={uploading}
+          onClick={() => inputRef.current?.click()}
+        >
+          {uploading ? null : <Icon icon={Upload} size="icon-md" className="me-2" />}
           {uploading ? t("uploading") : value ? t("replaceImage") : t("uploadImage")}
         </Button>
-        {error ? <FormMessage>{error}</FormMessage> : <FormMessage tone="hint">{t("uploadHint")}</FormMessage>}
       </div>
+      {error ? <FormMessage>{error}</FormMessage> : <p className={FIELD_HINT}>{t("uploadHint")}</p>}
     </div>
   );
 }

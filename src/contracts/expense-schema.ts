@@ -43,10 +43,11 @@ export const expenseSchema = z.pipe(
 
 export type ExpenseFormInput = z.input<typeof expenseSchema>;
 
-/** Paying an owed expense. */
+/** Paying an owed expense; a blank amount pays all of it. */
 export const payExpenseSchema = z.object({
   source: z.enum(PAYMENT_SOURCES, { error: "paymentInvalid" }),
   paidOn: dayField,
+  amount: z._default(optionalMoneyField, 0),
 });
 
 export type PayExpenseInput = z.input<typeof payExpenseSchema>;

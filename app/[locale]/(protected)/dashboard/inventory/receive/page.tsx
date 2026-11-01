@@ -2,9 +2,11 @@ import { getTranslations } from "next-intl/server";
 
 import { cafeDayOf } from "@/src/domain/entities/CafeTime";
 import { requirePermission } from "@/src/lib/require-permission";
+import { DashboardPageHeader } from "@/src/presentation/dashboard/DashboardPageHeader";
 import { suppliersServerApi } from "@/src/presentation/dashboard/expenses/expense-server-api";
 import { inventoryServerApi } from "@/src/presentation/dashboard/inventory/inventory-server-api";
 import { ReceiveStockForm } from "@/src/presentation/dashboard/inventory/ReceiveStockForm";
+import { DashboardPageCrumb } from "@/src/presentation/dashboard/shell/DashboardPageCrumb";
 
 export const dynamic = "force-dynamic";
 
@@ -17,11 +19,14 @@ export default async function ReceiveStockPage() {
   ]);
 
   return (
-    <div className="flex max-w-4xl flex-col gap-6">
-      <div>
-        <h1 className="dashboard-page-title">{t("receive.heading")}</h1>
-        <p className="text-body-small text-muted-foreground">{t("receive.subtitle")}</p>
-      </div>
+    <div className="flex min-w-0 flex-col gap-6">
+      <DashboardPageCrumb label={t("receive.heading")} />
+      <DashboardPageHeader
+        backHref="/dashboard/inventory"
+        backLabel={t("heading")}
+        title={t("receive.heading")}
+        subtitle={t("receive.subtitle")}
+      />
       <ReceiveStockForm
         items={summary.items.filter((item) => item.isActive)}
         suppliers={suppliers}

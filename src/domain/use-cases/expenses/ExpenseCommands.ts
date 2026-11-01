@@ -1,6 +1,7 @@
 import { singleChange, type ActivityActor } from "../../entities/ActivityEntry";
 import { cafeDayOf } from "../../entities/CafeTime";
 import {
+  amountOwed,
   isExpenseTarget,
   MAX_EXPENSE_DESCRIPTION_LENGTH,
   type Expense,
@@ -91,30 +92,39 @@ export class RecordExpense {
   }
 }
 
-/** Pay an owed expense from cash or the bank: clears accounts payable, books the money out. */
+export type PayExpenseInput = {
+  source: PaymentSource;
+  paidOn: string;
+  /** Part of what's owed; omitted pays all of it. */
+  amount?: number;
+};
+
+/**
+ * Pay some or all of an owed expense from cash or the bank: clears that much of
+ * accounts payable and books the money out. The expense stays owed until the last
+ * of it is paid.
+ */
 export class PayExpense {
   constructor(private readonly expenses: IExpenseRepository) {}
 
-  async execute(
-    id: string,
-    source: PaymentSource,
-    paidOn: string,
-    actor: ActivityActor,
-    now: Date = new Date(),
-  ): Promise<Expense> {
+  async execute(id: string, input: PayExpenseInput, actor: ActivityActor, now: Date = new Date()): Promise<Expense> {
+    const { source, paidOn } = input;
     const expense = await this.expenses.getExpense(id);
     if (!expense) throw new NotFoundError("expense", id);
     if (expense.status !== "unpaid")
       throw new ConflictError("INVALID_TRANSITION", `This expense is already ${expense.status}.`);
     if (paidOn > cafeDayOf(now)) throw new ValidationError("paidOn", "That date is in the future.");
     if (paidOn < expense.date) throw new ValidationError("paidOn", "An expense can't be paid before it was incurred.");
+    const owed = amountOwed(expense);
+    const amount = input.amount ?? owed;
+    if (!Number.isSafeInteger(amount) || amount <= 0) throw new ValidationError("amount", "Enter the amount.");
+    if (amount > owed) throw new ValidationError("amount", "paymentOverOwed");
 
     return this.expenses.pay(
       id,
-      source,
-      paidOn,
-      (paid) => [expensePaymentEntry(paid, source, paidOn, actor)],
-      audit(actor, "expense.paid", () => singleChange("status", "unpaid", "paid")),
+      { amount, source, paidOn, expectedPaid: expense.paidAmount },
+      (paid) => [expensePaymentEntry(paid, { amount, source, date: paidOn }, actor)],
+      audit(actor, "expense.paid", (paid) => singleChange("paidAmount", expense.paidAmount, paid.paidAmount)),
     );
   }
 }

@@ -1,21 +1,23 @@
 import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
-/**
- * Placeholder for `PricingTabs`: the page title and subtitle over the items /
- * ingredients / settings pills every pricing page leads with.
- */
+/** The items / ingredients / settings tabs. */
+const TABS = 3;
+
+/** Placeholder for `PricingTabs`: the page title and subtitle over the underlined tabs. */
 export function PricingTabsSkeleton() {
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-2">
-        <Skeleton className="h-8 w-48 rounded-button sm:h-9 sm:w-56" />
-        <Skeleton className="h-4 w-64 max-w-full rounded-pill" />
+    <>
+      <div className="flex flex-col gap-1.5">
+        <Skeleton className="h-7 w-48 rounded-button lg:h-8" />
+        <Skeleton className="h-5 w-64 max-w-full rounded-pill" />
       </div>
-      <div className="flex gap-1 pb-1">
-        <Skeleton className="h-9 w-24 shrink-0 rounded-full" />
-        <Skeleton className="h-9 w-28 shrink-0 rounded-full" />
-        <Skeleton className="h-9 w-24 shrink-0 rounded-full" />
+      <div className="flex gap-6 border-b border-border">
+        {Array.from({ length: TABS }, (_, tab) => (
+          <div key={tab} className="flex h-12 items-center">
+            <Skeleton className="h-4 w-20 rounded-pill" />
+          </div>
+        ))}
       </div>
-    </div>
+    </>
   );
 }

@@ -54,6 +54,7 @@ function ledgerWith(
     accountLines,
     vatMovement: vi.fn(async () => options.vat ?? { output: 0, input: 0, settled: 0 }),
     itemSalesCost: vi.fn(async () => options.sales ?? []),
+    revenueWithoutCost: vi.fn(async () => 0),
     getSettings: vi.fn(async () => ({ vatRateBps: 1000 })),
   } as unknown as ILedgerRepository;
   return { ledger, movements, accountLines };

@@ -1,11 +1,13 @@
 import { FadeInImage } from "@/src/presentation/components/FadeInImage";
 import { Thumbnail } from "@/src/presentation/design-system/components/Thumbnail/Thumbnail";
 
-type ProductThumbnailSize = "compact" | "table" | "card" | "responsive";
+type ProductThumbnailSize = "compact" | "table" | "line" | "card" | "responsive";
 
 const sizeStyles: Record<ProductThumbnailSize, string> = {
   compact: "size-10 p-1",
   table: "size-11 p-1",
+  // An order's item line: the design's 48px at every width.
+  line: "size-12 p-1",
   card: "size-14 p-1.5",
   responsive: "size-12 p-1.5 sm:size-10 sm:p-1",
 };

@@ -54,6 +54,7 @@ export const eventRegistrationResponseSchema = z.object({
   seats: z.number(),
   status: z.enum(REGISTRATION_STATUSES),
   createdAt: z.string(),
+  paidAmount: z.optional(z.number()),
 }) satisfies z.ZodMiniType<EventRegistration>;
 
 export const eventRegistrationListResponseSchema = z.array(eventRegistrationResponseSchema);

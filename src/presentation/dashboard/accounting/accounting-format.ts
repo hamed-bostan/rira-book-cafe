@@ -22,14 +22,18 @@ export function sourceHref(entry: Pick<JournalEntry, "source" | "sourceId">): st
   if (entry.source.startsWith("order")) return `/dashboard/orders/${entry.sourceId}`;
   if (entry.source.startsWith("expense")) return `/dashboard/expenses/${entry.sourceId}`;
   if (entry.source === "cashShift") return "/dashboard/cash-shifts";
+  if (entry.source === "income") return "/dashboard/income";
+  if (entry.source === "loanDeposit") return "/dashboard/book-loans";
   return null;
 }
 
 /** What the link to that document reads: a `dashAccounting` message key. */
 export function sourceLinkKey(
   source: JournalEntry["source"],
-): "entry.viewOrder" | "entry.viewExpense" | "entry.viewCashShifts" {
+): "entry.viewOrder" | "entry.viewExpense" | "entry.viewCashShifts" | "entry.viewIncome" | "entry.viewBookLoans" {
   if (source.startsWith("order")) return "entry.viewOrder";
+  if (source === "income") return "entry.viewIncome";
+  if (source === "loanDeposit") return "entry.viewBookLoans";
   return source === "cashShift" ? "entry.viewCashShifts" : "entry.viewExpense";
 }
 

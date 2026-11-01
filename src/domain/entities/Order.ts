@@ -32,13 +32,14 @@ export const ACTIVE_ORDER_STATUSES = ["pending", "preparing"] as const satisfies
 
 /**
  * Whether the guest has paid. Payment is taken at the counter, so staff mark it.
- * `refunded` is set automatically when a paid order is cancelled — the money went
- * back to the guest, and the ledger records the refund.
+ * `refunded` is set automatically when a paid order is cancelled, or when a
+ * completed one has been refunded in full — the money went back to the guest, and
+ * the ledger records the refund.
  */
 export const PAYMENT_STATUSES = ["unpaid", "paid", "refunded"] as const;
 export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
 
-/** The statuses staff set by hand; `refunded` only ever follows a cancellation. */
+/** The statuses staff set by hand; `refunded` only ever follows a cancellation or a full refund. */
 export const SETTABLE_PAYMENT_STATUSES = ["unpaid", "paid"] as const satisfies readonly PaymentStatus[];
 export type SettablePaymentStatus = (typeof SETTABLE_PAYMENT_STATUSES)[number];
 
@@ -50,6 +51,12 @@ export type SettablePaymentStatus = (typeof SETTABLE_PAYMENT_STATUSES)[number];
 export const PAYMENT_METHODS = ["cash", "card", "transfer", "online"] as const;
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 
+/** What a bill can be split between at the counter. */
+export const COUNTER_PAYMENT_METHODS = ["cash", "card", "transfer"] as const satisfies readonly PaymentMethod[];
+
+/** One part of how an order was paid. A bill split between cash and card has two. */
+export type PaymentPart = { method: PaymentMethod; amount: number };
+
 /**
  * The order as its guest may see it: without the cost snapshotted on each line,
  * which is the cafe's business (margins). Staff endpoints return it whole.
@@ -58,6 +65,8 @@ export function withoutCosts(order: Order): Order {
   return { ...order, items: order.items.map(({ unitCost: _unitCost, ...item }) => item) };
 }
 
+/** Longest name staff can put on a counter sale. */
+export const MAX_COUNTER_CUSTOMER_LENGTH = 80;
 /** Longest table label accepted, e.g. "12" or "Terrace 3". */
 export const MAX_TABLE_LABEL_LENGTH = 20;
 /** Longest note a guest can attach to an order or a line. */
@@ -92,6 +101,8 @@ export type OrderItem = {
    */
   stockTracked?: boolean;
   quantity: number;
+  /** Units of this line handed back after the order was completed. */
+  refundedQuantity?: number;
   /** The guest's request for this line, e.g. "oat milk, no sugar". */
   note?: string;
   /**
@@ -105,10 +116,11 @@ export type Order = {
   id: string;
   /** Short sequential number staff call out ("order 42"). */
   orderNumber: number;
-  /** Who placed it. */
-  userId: string;
+  /** The guest who placed it; absent for a sale staff rang up at the counter. */
+  userId?: string;
   /** The guest's name and phone, snapshotted at placement so the queue reads without a lookup. */
   customerName: string;
+  /** Empty when a guest at the counter didn't give one. */
   customerPhone: string;
   status: OrderStatus;
   serviceType: ServiceType;
@@ -117,8 +129,12 @@ export type Order = {
   /** A note for the whole order, e.g. "birthday — bring candles with the cake". */
   note?: string;
   paymentStatus: PaymentStatus;
-  /** How it was paid, once paid (kept after a refund, so the refund goes back the same way). */
+  /** How it was paid, once paid (kept after a refund, so the refund goes back the same way). The largest part of a split bill. */
   paymentMethod?: PaymentMethod;
+  /** Every part of the payment; read through {@link paymentPartsOf}. */
+  paymentParts?: PaymentPart[];
+  /** Handed back after completion, in Toman. Part of a `paid` order; all of a `refunded` one. */
+  refundedTotal: number;
   items: OrderItem[];
   /** Sum of the lines, in Toman. */
   subtotal: number;
@@ -182,6 +198,39 @@ export function isActiveOrder(status: OrderStatus): boolean {
 /** Whether staff may record a counter payment: unpaid, and not called off. */
 export function canMarkPaid(order: Pick<Order, "status" | "paymentStatus">): boolean {
   return order.paymentStatus === "unpaid" && order.status !== "cancelled";
+}
+
+/** The order's payment by part; a payment recorded in one go is one part for the whole total. */
+export function paymentPartsOf(order: Pick<Order, "paymentParts" | "paymentMethod" | "total">): PaymentPart[] {
+  if (order.paymentParts && order.paymentParts.length > 0) return order.paymentParts;
+  return order.paymentMethod ? [{ method: order.paymentMethod, amount: order.total }] : [];
+}
+
+/** Why these parts can't pay `total` (a key under `formErrors`), or `null` when they add up. */
+export function paymentPartsProblem(
+  parts: readonly PaymentPart[],
+  total: number,
+): "paymentPartsDuplicate" | "paymentPartsInvalid" | "paymentPartsTotal" | null {
+  if (new Set(parts.map((part) => part.method)).size !== parts.length) return "paymentPartsDuplicate";
+  if (parts.length === 0 || parts.some((part) => !Number.isSafeInteger(part.amount) || part.amount <= 0)) {
+    return "paymentPartsInvalid";
+  }
+  return parts.reduce((sum, part) => sum + part.amount, 0) === total ? null : "paymentPartsTotal";
+}
+
+/** The part most of the money came in by; on a tie, the first. */
+export function largestPaymentPart(parts: readonly PaymentPart[]): PaymentPart {
+  return parts.reduce((largest, part) => (part.amount > largest.amount ? part : largest));
+}
+
+/** Units of a line that can still be handed back. */
+export function refundableQuantity(item: Pick<OrderItem, "quantity" | "refundedQuantity">): number {
+  return item.quantity - (item.refundedQuantity ?? 0);
+}
+
+/** Whether staff may refund any of the order: served, paid for, and not all handed back yet. */
+export function canRefundOrder(order: Pick<Order, "status" | "paymentStatus" | "total" | "refundedTotal">): boolean {
+  return order.status === "completed" && order.paymentStatus === "paid" && order.refundedTotal < order.total;
 }
 
 /**

@@ -6,8 +6,10 @@ import * as React from "react";
 import { isStaffCancellable, nextOrderStatus, type OrderStatus } from "@/src/domain/entities/Order";
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
+import { cn } from "@/src/lib/utils";
+import { DashboardDialog } from "@/src/presentation/dashboard/DashboardDialog";
+import { DANGER_SECONDARY } from "@/src/presentation/dashboard/fieldStyles";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
-import { ConfirmSheet } from "@/src/presentation/design-system/components/Sheet/ConfirmSheet";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { ordersApi } from "./order-api";
@@ -60,38 +62,46 @@ export function OrderStatusActions({ orderId, orderNumber, status }: OrderStatus
   if (!next && !cancellable) return null;
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex flex-wrap gap-2">
-        {next ? (
-          <Button type="button" onClick={() => moveTo(next)} loading={pending && active === next} disabled={pending}>
-            {t(`advance.${next}`)}
-          </Button>
-        ) : null}
-        {cancellable ? (
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setConfirmCancel(true)}
-            loading={pending && active === "cancelled"}
-            disabled={pending}
-          >
-            {t("cancelOrder")}
-          </Button>
-        ) : null}
-      </div>
+    <>
+      {cancellable ? (
+        <Button
+          type="button"
+          variant="secondary"
+          size="control-md"
+          className={cn("px-4", DANGER_SECONDARY)}
+          onClick={() => setConfirmCancel(true)}
+          loading={pending && active === "cancelled"}
+          disabled={pending}
+        >
+          {t("cancelOrder")}
+        </Button>
+      ) : null}
+      {next ? (
+        <Button
+          type="button"
+          size="control-md"
+          onClick={() => moveTo(next)}
+          loading={pending && active === next}
+          disabled={pending}
+        >
+          {t(`advance.${next}`)}
+        </Button>
+      ) : null}
 
-      <ConfirmSheet
+      <DashboardDialog
         open={confirmCancel}
         onOpenChange={setConfirmCancel}
         title={t("cancelTitle", { number: orderNumber })}
-        message={t("cancelMessage")}
-        confirmLabel={t("cancelConfirm")}
-        cancelLabel={t("cancelKeep")}
-        onConfirm={() => {
+        subtitle={t("cancelMessage")}
+        submitLabel={t("cancelConfirm")}
+        backLabel={t("cancelKeep")}
+        pending={false}
+        onSubmit={() => {
           setConfirmCancel(false);
           moveTo("cancelled");
         }}
+        danger
       />
-    </div>
+    </>
   );
 }

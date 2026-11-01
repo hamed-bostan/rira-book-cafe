@@ -8,6 +8,7 @@ import { AccountingHeader } from "@/src/presentation/dashboard/accounting/Accoun
 import { AccountingSettingsForm } from "@/src/presentation/dashboard/accounting/AccountingSettingsForm";
 import { YearClosePanel } from "@/src/presentation/dashboard/accounting/YearClosePanel";
 import { fiscalYearsServerApi } from "@/src/presentation/dashboard/inventory/inventory-server-api";
+import { DashboardPageCrumb } from "@/src/presentation/dashboard/shell/DashboardPageCrumb";
 
 export const dynamic = "force-dynamic";
 
@@ -24,13 +25,16 @@ export default async function AccountingSettingsPage() {
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
+      <DashboardPageCrumb label={t("tab.settings")} />
       <AccountingHeader
         active="settings"
-        intro={t("settings.subtitle")}
+        subtitle={t("settings.subtitle")}
         writer={canWrite ? { accounts, today } : null}
       />
-      <AccountingSettingsForm settings={settings} today={today} canWrite={canWrite} />
-      <YearClosePanel years={years} canWrite={canWrite} />
+      <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-2">
+        <AccountingSettingsForm settings={settings} today={today} canWrite={canWrite} />
+        <YearClosePanel years={years} canWrite={canWrite} />
+      </div>
     </div>
   );
 }

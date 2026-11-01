@@ -18,6 +18,7 @@ import { ValidationError } from "@/src/domain/errors/ValidationError";
 import type { AuditHook } from "@/src/domain/repositories/AuditHook";
 import type {
   IInventoryRepository,
+  UntrackedBook,
   MovementFilters,
   OpeningStockInput,
   StockCountInput,
@@ -298,7 +299,67 @@ export class PrismaInventoryRepository implements IInventoryRepository {
       return { id, value };
     });
   }
+
+  async listUntrackedBooks(): Promise<UntrackedBook[]> {
+    const rows = await prisma.product.findMany({
+      where: { kind: "book", bookAvailability: { not: "reading" }, recipeLines: { none: {} } },
+      select: { id: true, name: true, costPrice: true, stockQuantity: true },
+      orderBy: { name: "asc" },
+    });
+    return rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      costPrice: row.costPrice ?? undefined,
+      stockQuantity: row.stockQuantity,
+    }));
+  }
+
+  async trackBooks(
+    books: readonly UntrackedBook[],
+    date: string,
+    ledger: StockLedgerHook,
+    actor: StockActor,
+  ): Promise<{ tracked: number; value: number }> {
+    return prisma.$transaction(
+      async (tx) => {
+        const id = randomUUID();
+        let tracked = 0;
+        let value = 0;
+        for (const book of books) {
+          // Re-read under the transaction: someone may have given it a recipe since.
+          if ((await tx.recipeLine.count({ where: { productId: book.id } })) > 0) continue;
+          const cost = book.costPrice ?? 0;
+          const item = await tx.ingredient.create({
+            data: { name: book.name, unit: "piece", purchasePrice: cost, purchaseQuantity: 1 },
+          });
+          await tx.recipeLine.create({
+            data: { productId: book.id, ingredientId: item.id, quantity: 1, position: 0 },
+          });
+          tracked += 1;
+          if (book.stockQuantity > 0) {
+            const lineValue = cost * book.stockQuantity;
+            const [current] = (await lockStock(tx, [item.id])).values();
+            await writeMovement(
+              tx,
+              current,
+              receiveStock(current, book.stockQuantity, lineValue),
+              { kind: "opening", quantity: book.stockQuantity, value: lineValue, date, referenceId: id },
+              actor,
+            );
+            value += lineValue;
+          }
+        }
+        const entry = value > 0 ? ledger({ id, date, value, description: "Opening stock — books" }) : null;
+        if (entry) await postEntry(tx, entry);
+        return { tracked, value };
+      },
+      { timeout: TRACK_BOOKS_TIMEOUT_MS },
+    );
+  }
 }
+
+/** Long enough for a catalog's worth of titles in one transaction. */
+const TRACK_BOOKS_TIMEOUT_MS = 60_000;
 
 /** Lock the rows and make sure every item exists and is active. */
 async function lockAll(tx: Prisma.TransactionClient, ids: readonly string[]): Promise<Map<string, LockedStock>> {

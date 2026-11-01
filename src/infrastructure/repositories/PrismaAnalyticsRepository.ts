@@ -55,13 +55,13 @@ export class PrismaAnalyticsRepository implements IAnalyticsRepository {
     >`
       SELECT
         COUNT(*) FILTER (WHERE status = 'completed') AS orders,
-        SUM(total) FILTER (WHERE status = 'completed') AS revenue,
+        SUM(total - refunded_total) FILTER (WHERE status = 'completed') AS revenue,
         COUNT(*) FILTER (WHERE status = 'cancelled') AS cancelled,
         SUM(total) FILTER (WHERE status = 'cancelled') AS cancelled_value
       FROM orders
       WHERE placed_at >= ${range.from} AND placed_at < ${range.to}`;
     const [items] = await prisma.$queryRaw<{ items: bigint | null }[]>`
-      SELECT SUM(oi.quantity) AS items
+      SELECT SUM(oi.quantity - oi.refunded_quantity) AS items
       FROM order_items oi JOIN orders o ON o.id = oi.order_id
       WHERE o.status = 'completed' AND o.placed_at >= ${range.from} AND o.placed_at < ${range.to}`;
 
@@ -82,7 +82,7 @@ export class PrismaAnalyticsRepository implements IAnalyticsRepository {
       SELECT
         to_char(${localTime(Prisma.sql`placed_at`)}, 'YYYY-MM-DD') AS day,
         COUNT(*) AS orders,
-        SUM(total) AS revenue
+        SUM(total - refunded_total) AS revenue
       FROM orders
       WHERE status = 'completed' AND placed_at >= ${range.from} AND placed_at < ${range.to}
       GROUP BY 1
@@ -95,7 +95,7 @@ export class PrismaAnalyticsRepository implements IAnalyticsRepository {
       SELECT
         EXTRACT(HOUR FROM ${localTime(Prisma.sql`placed_at`)})::int AS hour,
         COUNT(*) AS orders,
-        SUM(total) AS revenue
+        SUM(total - refunded_total) AS revenue
       FROM orders
       WHERE status = 'completed' AND placed_at >= ${range.from} AND placed_at < ${range.to}
       GROUP BY 1
@@ -109,7 +109,10 @@ export class PrismaAnalyticsRepository implements IAnalyticsRepository {
 
   async salesByKind(range: DateRange): Promise<KindSales[]> {
     const rows = await prisma.$queryRaw<{ kind: string; revenue: bigint | null; quantity: bigint | null }[]>`
-      SELECT oi.kind, SUM(oi.unit_price * oi.quantity) AS revenue, SUM(oi.quantity) AS quantity
+      SELECT
+        oi.kind,
+        SUM(oi.unit_price * (oi.quantity - oi.refunded_quantity)) AS revenue,
+        SUM(oi.quantity - oi.refunded_quantity) AS quantity
       FROM order_items oi JOIN orders o ON o.id = oi.order_id
       WHERE o.status = 'completed' AND o.placed_at >= ${range.from} AND o.placed_at < ${range.to}
       GROUP BY oi.kind
@@ -142,8 +145,8 @@ export class PrismaAnalyticsRepository implements IAnalyticsRepository {
           oi.product_id,
           (array_agg(oi.name ORDER BY o.placed_at DESC))[1] AS name,
           (array_agg(oi.kind ORDER BY o.placed_at DESC))[1] AS kind,
-          SUM(oi.quantity) AS quantity,
-          SUM(oi.unit_price * oi.quantity) AS revenue
+          SUM(oi.quantity - oi.refunded_quantity) AS quantity,
+          SUM(oi.unit_price * (oi.quantity - oi.refunded_quantity)) AS revenue
         FROM order_items oi JOIN orders o ON o.id = oi.order_id
         WHERE o.status = 'completed' AND o.placed_at >= ${range.from} AND o.placed_at < ${range.to}
         GROUP BY oi.product_id
@@ -179,9 +182,9 @@ export class PrismaAnalyticsRepository implements IAnalyticsRepository {
       }[]
     >`
       SELECT
-        SUM(o.total) FILTER (WHERE o.status = 'completed') AS revenue,
+        SUM(o.total - o.refunded_total) FILTER (WHERE o.status = 'completed') AS revenue,
         COUNT(*) FILTER (WHERE o.status = 'completed' AND o.payment_status = 'paid') AS paid,
-        SUM(o.total) FILTER (WHERE o.status = 'completed' AND o.payment_status = 'paid') AS paid_value,
+        SUM(o.total - o.refunded_total) FILTER (WHERE o.status = 'completed' AND o.payment_status = 'paid') AS paid_value,
         COUNT(*) FILTER (WHERE o.payment_status = 'unpaid') AS unpaid,
         SUM(o.total) FILTER (WHERE o.payment_status = 'unpaid') AS unpaid_value
       FROM orders o
@@ -197,11 +200,11 @@ export class PrismaAnalyticsRepository implements IAnalyticsRepository {
 
   async paidByMethod(range: DateRange): Promise<MethodPayments[]> {
     const rows = await prisma.$queryRaw<{ method: string; orders: bigint; value: bigint | null }[]>`
-      SELECT payment_method AS method, COUNT(*) AS orders, SUM(total) AS value
-      FROM orders
-      WHERE status = 'completed' AND payment_status = 'paid' AND payment_method IS NOT NULL
-        AND placed_at >= ${range.from} AND placed_at < ${range.to}
-      GROUP BY payment_method
+      SELECT p.method, COUNT(DISTINCT p.order_id) AS orders, SUM(p.amount) AS value
+      FROM order_payment_parts p JOIN orders o ON o.id = p.order_id
+      WHERE o.status = 'completed' AND o.payment_status = 'paid'
+        AND o.placed_at >= ${range.from} AND o.placed_at < ${range.to}
+      GROUP BY p.method
       ORDER BY value DESC`;
     return rows.flatMap((row) =>
       isPaymentMethod(row.method)
@@ -240,7 +243,8 @@ export class PrismaAnalyticsRepository implements IAnalyticsRepository {
       WITH in_range AS (
         SELECT user_id, COUNT(*) AS orders
         FROM orders
-        WHERE status = 'completed' AND placed_at >= ${range.from} AND placed_at < ${range.to}
+        WHERE status = 'completed' AND user_id IS NOT NULL
+          AND placed_at >= ${range.from} AND placed_at < ${range.to}
         GROUP BY user_id
       ),
       first_order AS (
@@ -273,9 +277,10 @@ export class PrismaAnalyticsRepository implements IAnalyticsRepository {
         (array_agg(customer_name ORDER BY placed_at DESC))[1] AS name,
         (array_agg(customer_phone ORDER BY placed_at DESC))[1] AS phone,
         COUNT(*) AS orders,
-        SUM(total) AS revenue
+        SUM(total - refunded_total) AS revenue
       FROM orders
-      WHERE status = 'completed' AND placed_at >= ${range.from} AND placed_at < ${range.to}
+      WHERE status = 'completed' AND user_id IS NOT NULL
+        AND placed_at >= ${range.from} AND placed_at < ${range.to}
       GROUP BY user_id
       ORDER BY revenue DESC, orders DESC
       LIMIT ${limit}`;

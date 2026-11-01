@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Pencil, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import * as React from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -12,13 +12,14 @@ import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
-import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
 import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
-import { TextField } from "@/src/presentation/design-system/components/form/TextField/TextField";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
-import { Modal, ModalContent } from "@/src/presentation/design-system/components/Modal/Modal";
 import { Switch } from "@/src/presentation/design-system/components/Switch/Switch";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
+
+import { DashboardDialog } from "../DashboardDialog";
+import { DashboardFormField } from "../DashboardFormField";
+import { FIELD_INPUT, FIELD_LABEL } from "../fieldStyles";
 
 import { suppliersApi } from "./expense-api";
 
@@ -71,55 +72,66 @@ export function SupplierDialog({ supplier }: { supplier?: Supplier }) {
       {supplier ? (
         <Button
           type="button"
-          size="sm"
-          variant="ghost"
+          variant="secondary"
+          size="control-sm"
+          className="px-3"
           onClick={() => setOpen(true)}
           aria-label={t("suppliers.edit", { name: supplier.name })}
         >
-          <Icon icon={Pencil} size="sm" />
+          {t("suppliers.editShort")}
         </Button>
       ) : (
-        <Button type="button" size="sm" onClick={() => setOpen(true)}>
-          <Icon icon={Plus} size="sm" className="me-1.5" />
+        <Button type="button" size="control-md" className="px-4" onClick={() => setOpen(true)}>
+          <Icon icon={Plus} size="icon-md" className="me-2" />
           {t("suppliers.new")}
         </Button>
       )}
-      <Modal open={open} onOpenChange={setOpen}>
-        <ModalContent title={supplier ? supplier.name : t("suppliers.new")} className="max-w-md">
-          <form onSubmit={onSubmit} className="mt-4 flex flex-col gap-4" noValidate>
-            <TextField label={t("suppliers.nameLabel")} required error={fieldError(errors.name?.message)}>
-              {(controlProps) => <Input {...controlProps} {...register("name")} dir="auto" />}
-            </TextField>
-            <TextField label={t("suppliers.phoneLabel")} error={fieldError(errors.phone?.message)}>
-              {(controlProps) => <Input {...controlProps} {...register("phone")} inputMode="tel" dir="ltr" />}
-            </TextField>
-            <TextField label={t("suppliers.noteLabel")} error={fieldError(errors.note?.message)}>
-              {(controlProps) => <Input {...controlProps} {...register("note")} dir="auto" />}
-            </TextField>
-            {supplier ? (
-              <Controller
-                control={control}
-                name="isActive"
-                render={({ field }) => (
-                  <label className="flex items-center justify-between gap-3 text-body-small-emphasis text-foreground">
-                    {t("suppliers.activeLabel")}
-                    <Switch checked={field.value} onCheckedChange={field.onChange} />
-                  </label>
-                )}
-              />
-            ) : null}
-            {errors.root?.message ? <FormMessage>{errors.root.message}</FormMessage> : null}
-            <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" size="sm" onClick={() => setOpen(false)}>
-                {t("cancel")}
-              </Button>
-              <Button type="submit" size="sm" loading={isSubmitting}>
-                {t("suppliers.save")}
-              </Button>
-            </div>
-          </form>
-        </ModalContent>
-      </Modal>
+      <DashboardDialog
+        open={open}
+        onOpenChange={setOpen}
+        title={supplier ? supplier.name : t("suppliers.new")}
+        subtitle=""
+        submitLabel={t("suppliers.save")}
+        backLabel={t("cancel")}
+        pending={isSubmitting}
+        onSubmit={() => void onSubmit()}
+        error={errors.root?.message}
+      >
+        <DashboardFormField label={t("suppliers.nameLabel")} required error={fieldError(errors.name?.message)}>
+          {(field) => (
+            <Input {...field} {...register("name")} size="control-md" dir="auto" inputClassName={FIELD_INPUT} />
+          )}
+        </DashboardFormField>
+        <DashboardFormField label={t("suppliers.phoneLabel")} error={fieldError(errors.phone?.message)}>
+          {(field) => (
+            <Input
+              {...field}
+              {...register("phone")}
+              size="control-md"
+              inputMode="tel"
+              dir="ltr"
+              inputClassName={FIELD_INPUT}
+            />
+          )}
+        </DashboardFormField>
+        <DashboardFormField label={t("suppliers.noteLabel")} error={fieldError(errors.note?.message)}>
+          {(field) => (
+            <Input {...field} {...register("note")} size="control-md" dir="auto" inputClassName={FIELD_INPUT} />
+          )}
+        </DashboardFormField>
+        {supplier ? (
+          <Controller
+            control={control}
+            name="isActive"
+            render={({ field }) => (
+              <label className="flex min-h-11 items-center gap-3 sm:min-h-8">
+                <Switch size="sm" checked={field.value} onCheckedChange={field.onChange} />
+                <span className={FIELD_LABEL}>{t("suppliers.activeLabel")}</span>
+              </label>
+            )}
+          />
+        ) : null}
+      </DashboardDialog>
     </>
   );
 }

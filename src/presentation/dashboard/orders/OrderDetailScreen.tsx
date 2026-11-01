@@ -1,17 +1,27 @@
-import { ChevronLeft } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
-import { canServeItems, orderItemCount, servedLineCount, type Order } from "@/src/domain/entities/Order";
+import {
+  canRefundOrder,
+  canServeItems,
+  orderItemCount,
+  servedLineCount,
+  type Order,
+} from "@/src/domain/entities/Order";
 import type { OrderNote } from "@/src/domain/entities/OrderNote";
+import type { OrderRefund } from "@/src/domain/entities/OrderRefund";
 import type { OrderStatusEvent } from "@/src/domain/entities/OrderStatusEvent";
-import { Link } from "@/src/i18n/navigation";
+import { formatCafeDayMedium } from "@/src/lib/formatCafeDay";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { formatOrderDate, formatOrderTime } from "@/src/lib/formatOrderDate";
+import { cn } from "@/src/lib/utils";
 import { AutoRefresh } from "@/src/presentation/components/AutoRefresh";
-import { DashboardPanel, DashboardPanelHeader } from "@/src/presentation/dashboard/DashboardPanel";
+import { DashboardColumns } from "@/src/presentation/dashboard/DashboardColumns";
+import { DashboardPageHeader } from "@/src/presentation/dashboard/DashboardPageHeader";
+import { DashboardSection } from "@/src/presentation/dashboard/DashboardSection";
+import { FIELD_HINT, OVERLINE } from "@/src/presentation/dashboard/fieldStyles";
 import { ProductThumbnail } from "@/src/presentation/dashboard/ProductThumbnail";
-import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { DashboardPageCrumb } from "@/src/presentation/dashboard/shell/DashboardPageCrumb";
 import { OrderTotals } from "@/src/presentation/orders/OrderTotals";
 
 import { OrderItemServeToggle } from "./OrderItemServeToggle";
@@ -22,6 +32,7 @@ import { OrderServiceLabel } from "./OrderServiceLabel";
 import { OrderStatusActions } from "./OrderStatusActions";
 import { OrderStatusBadge } from "./OrderStatusBadge";
 import { OrderTimeline } from "./OrderTimeline";
+import { RefundOrderButton } from "./RefundOrderButton";
 
 /** A detail screen left open re-reads less often than the list — it's one order. */
 const REFRESH_SECONDS = 30;
@@ -30,8 +41,12 @@ type OrderDetailScreenProps = {
   order: Order;
   events: OrderStatusEvent[];
   notes: OrderNote[];
+  /** Money handed back on the order, oldest first. */
+  refunds: OrderRefund[];
   /** Whether the viewer may move the order along and mark it paid. */
   canFulfill: boolean;
+  /** Whether the viewer may hand money back. */
+  canRefund: boolean;
   /** Whether the viewer may add an internal note. */
   canNote: boolean;
 };
@@ -41,147 +56,203 @@ type OrderDetailScreenProps = {
  * history and notes over the REST API (BFF) during server render. Controls are
  * drawn only for what the viewer may do; every endpoint re-checks.
  */
-export async function OrderDetailScreen({ order, events, notes, canFulfill, canNote }: OrderDetailScreenProps) {
+export async function OrderDetailScreen({
+  order,
+  events,
+  notes,
+  refunds,
+  canFulfill,
+  canRefund,
+  canNote,
+}: OrderDetailScreenProps) {
   const t = await getTranslations("dashOrders");
   const locale = await getLocale();
   const serving = canServeItems(order.status);
+  const refundable = canRefund && canRefundOrder(order);
 
   return (
     <div className="flex flex-col gap-6">
       <AutoRefresh intervalSeconds={REFRESH_SECONDS} />
+      <DashboardPageCrumb label={`#${order.orderNumber}`} />
 
-      <div className="flex flex-col gap-3">
-        <Link
-          href="/dashboard/orders"
-          className="inline-flex w-fit items-center gap-1 text-body-small-strong text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <Icon icon={ChevronLeft} size="xs" className="rtl:-scale-x-100" />
-          {t("backToOrders")}
-        </Link>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="min-w-0">
-            <h1 className="dashboard-page-title">{t("orderNumber", { number: order.orderNumber })}</h1>
-            <p className="text-body-small text-muted-foreground">
-              {t("placedOn", { date: formatOrderDate(order.placedAt, locale) })}
-            </p>
-          </div>
-          <OrderStatusBadge status={order.status} />
-        </div>
-        {canFulfill ? (
-          <OrderStatusActions orderId={order.id} orderNumber={order.orderNumber} status={order.status} />
-        ) : null}
-      </div>
+      <DashboardPageHeader
+        backHref="/dashboard/orders"
+        backLabel={t("backToOrders")}
+        title={t("orderNumber", { number: order.orderNumber })}
+        subtitle={t("placedOn", { date: formatOrderDate(order.placedAt, locale) })}
+        badge={<OrderStatusBadge status={order.status} size="compact" />}
+        actions={
+          refundable || canFulfill ? (
+            <>
+              {refundable ? <RefundOrderButton order={order} /> : null}
+              {canFulfill ? (
+                <OrderStatusActions orderId={order.id} orderNumber={order.orderNumber} status={order.status} />
+              ) : null}
+            </>
+          ) : null
+        }
+      />
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <div className="flex flex-col gap-6">
-          <DashboardPanel>
-            <DashboardPanelHeader
+      <DashboardColumns
+        main={
+          <>
+            <DashboardSection
               title={t("itemsHeading")}
-              action={
-                <span className="text-body-small text-muted-foreground">
+              aside={
+                <>
                   {t("itemCount", { count: orderItemCount(order) })}
                   {serving ? ` · ${t("servedProgress", servedLineCount(order))}` : null}
-                </span>
+                </>
               }
-            />
-            <ul className="mt-4 flex flex-col divide-y divide-border">
-              {order.items.map((item) => (
-                <li key={item.id} className="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
-                  <ProductThumbnail src={item.imageUrl} size="table" />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-body-small-strong text-foreground">
-                      <span className="tabular-nums">{formatNumber(item.quantity, locale)}×</span> {item.name}
-                    </p>
-                    {item.note ? <p className="text-body-small text-warning-foreground">{item.note}</p> : null}
-                    {serving || item.servedAt ? (
-                      <div className="mt-1.5 flex flex-wrap items-center gap-2">
-                        <OrderItemStateBadge item={item} />
-                        {item.servedAt ? (
-                          <span className="text-body-caption text-muted-foreground">
-                            {t("servedAt", { time: formatOrderTime(item.servedAt, locale) })}
-                          </span>
-                        ) : null}
+              flush
+            >
+              <ul>
+                {order.items.map((item) => (
+                  <li key={item.id} className="flex gap-3 border-t border-border px-5 py-4 first:border-t-0">
+                    <ProductThumbnail src={item.imageUrl} size="line" />
+                    <div className="flex min-w-0 flex-1 flex-col gap-1">
+                      <div className="flex items-baseline justify-between gap-3">
+                        <span className="min-w-0 font-medium text-foreground">
+                          <span className="text-muted-foreground tabular-nums">
+                            {formatNumber(item.quantity, locale)}×
+                          </span>{" "}
+                          {item.name}
+                        </span>
+                        <span className="flex-none whitespace-nowrap text-foreground tabular-nums">
+                          {formatMoney(item.unitPrice * item.quantity, locale)}
+                        </span>
                       </div>
-                    ) : null}
-                  </div>
-                  <div className="flex flex-col items-end gap-2">
-                    <span className="text-body-small-emphasis whitespace-nowrap text-foreground">
-                      {formatMoney(item.unitPrice * item.quantity, locale)}
-                    </span>
-                    {serving && canFulfill ? (
-                      <OrderItemServeToggle
-                        orderId={order.id}
-                        itemId={item.id}
-                        itemName={item.name}
-                        served={Boolean(item.servedAt)}
-                      />
-                    ) : null}
-                  </div>
-                </li>
-              ))}
-            </ul>
-            <div className="mt-4">
-              <OrderTotals order={order} />
-            </div>
-          </DashboardPanel>
+                      {item.note ? <p className={cn(FIELD_HINT, "text-warning-foreground")}>{item.note}</p> : null}
+                      {item.refundedQuantity ? (
+                        <p className={cn(FIELD_HINT, "text-error-foreground")}>
+                          {t("refund.lineRefunded", { quantity: formatNumber(item.refundedQuantity, locale) })}
+                        </p>
+                      ) : null}
+                      {serving || item.servedAt ? (
+                        <div className="flex min-h-11 flex-wrap items-center gap-x-3 gap-y-2 sm:min-h-8">
+                          <OrderItemStateBadge item={item} dense />
+                          {item.servedAt ? (
+                            <span className={cn(FIELD_HINT, "tabular-nums")}>
+                              {t("servedAt", { time: formatOrderTime(item.servedAt, locale) })}
+                            </span>
+                          ) : null}
+                          {serving && canFulfill ? (
+                            <OrderItemServeToggle
+                              orderId={order.id}
+                              itemId={item.id}
+                              itemName={item.name}
+                              served={Boolean(item.servedAt)}
+                            />
+                          ) : null}
+                        </div>
+                      ) : null}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              <OrderTotals order={order} inset />
+            </DashboardSection>
 
-          <DashboardPanel>
-            <DashboardPanelHeader title={t("notesHeading")} />
-            <div className="mt-4">
+            {refunds.length > 0 ? (
+              <DashboardSection title={t("refund.heading")} flush>
+                <ul>
+                  {refunds.map((refund) => (
+                    <li
+                      key={refund.id}
+                      className="flex flex-col gap-1 border-t border-border px-5 py-4 first:border-t-0"
+                    >
+                      <div className="flex items-baseline justify-between gap-3">
+                        <span className="font-medium text-foreground">
+                          R-{refund.number} · {t(`paymentMethod.${refund.method}`)}
+                        </span>
+                        <span className="flex-none font-semibold whitespace-nowrap text-foreground tabular-nums">
+                          {formatMoney(refund.amount, locale)}
+                        </span>
+                      </div>
+                      <p className={FIELD_HINT}>
+                        {formatCafeDayMedium(refund.date, locale)} · {t("timelineBy", { name: refund.createdByName })}
+                      </p>
+                      <p className={FIELD_HINT}>
+                        {refund.lines
+                          .map(
+                            (line) =>
+                              `${formatNumber(line.quantity, locale)}× ${line.name}${
+                                line.restocked ? ` (${t("refund.restocked")})` : ""
+                              }`,
+                          )
+                          .join("، ")}
+                      </p>
+                      {refund.reason ? <q className={FIELD_HINT}>{refund.reason}</q> : null}
+                    </li>
+                  ))}
+                </ul>
+              </DashboardSection>
+            ) : null}
+
+            <DashboardSection title={t("notesHeading")} aside={t("notesHint")}>
               <OrderNotesPanel orderId={order.id} notes={notes} canWrite={canNote} />
-            </div>
-          </DashboardPanel>
-        </div>
-
-        <div className="flex flex-col gap-6">
-          <DashboardPanel>
-            <DashboardPanelHeader title={t("serviceHeading")} />
-            <dl className="mt-4 flex flex-col gap-3 text-body-small">
-              <div>
-                <dt className="text-muted-foreground">{t("colService")}</dt>
-                <dd className="mt-1">
-                  <OrderServiceLabel order={order} />
-                </dd>
-              </div>
-              <div>
-                <dt className="text-muted-foreground">{t("colGuest")}</dt>
-                <dd className="mt-1 text-foreground">{order.customerName}</dd>
-                <dd dir="ltr" className="text-start text-muted-foreground">
-                  {order.customerPhone}
-                </dd>
-              </div>
-              {order.note ? (
-                <div>
-                  <dt className="text-muted-foreground">{t("guestNote")}</dt>
-                  <dd className="mt-1 whitespace-pre-wrap text-foreground">{order.note}</dd>
+            </DashboardSection>
+          </>
+        }
+        side={
+          <>
+            <DashboardSection title={t("serviceHeading")} flush>
+              <dl className="flex flex-col gap-5 p-5">
+                <div className="flex flex-col gap-1">
+                  <dt className={OVERLINE}>{t("colService")}</dt>
+                  <dd className="font-medium">
+                    <OrderServiceLabel order={order} />
+                  </dd>
                 </div>
-              ) : null}
-            </dl>
-            <div className="mt-4 border-t border-border pt-4">
-              {canFulfill ? (
-                <OrderPaymentToggle
-                  orderId={order.id}
-                  paymentStatus={order.paymentStatus}
-                  paymentMethod={order.paymentMethod}
-                  cancelled={order.status === "cancelled"}
-                />
-              ) : (
-                <p className="text-body-small text-foreground">
-                  {t(`payment.${order.paymentStatus}`)}
-                  {order.paymentMethod ? ` · ${t(`paymentMethod.${order.paymentMethod}`)}` : null}
-                </p>
-              )}
-            </div>
-          </DashboardPanel>
+                <div className="flex flex-col gap-1">
+                  <dt className={OVERLINE}>{t("colGuest")}</dt>
+                  <dd className="flex flex-col">
+                    <span className="font-medium text-foreground">{order.customerName}</span>
+                    {order.customerPhone ? (
+                      <span dir="ltr" className="self-start text-muted-foreground tabular-nums">
+                        {order.customerPhone}
+                      </span>
+                    ) : null}
+                  </dd>
+                </div>
+                {order.note ? (
+                  <div className="flex flex-col gap-1">
+                    <dt className={OVERLINE}>{t("guestNote")}</dt>
+                    <dd className="whitespace-pre-wrap text-foreground/80">
+                      <q>{order.note}</q>
+                    </dd>
+                  </div>
+                ) : null}
+                <div className="flex flex-col gap-2">
+                  <dt className={OVERLINE}>{t("filterPayment")}</dt>
+                  <dd>
+                    {canFulfill ? (
+                      <OrderPaymentToggle
+                        orderId={order.id}
+                        total={order.total}
+                        paymentStatus={order.paymentStatus}
+                        paymentMethod={order.paymentMethod}
+                        paymentParts={order.paymentParts}
+                        cancelled={order.status === "cancelled"}
+                        refunded={order.refundedTotal > 0}
+                      />
+                    ) : (
+                      <p className="text-foreground/80">
+                        {t(`payment.${order.paymentStatus}`)}
+                        {order.paymentMethod ? ` · ${t(`paymentMethod.${order.paymentMethod}`)}` : null}
+                      </p>
+                    )}
+                  </dd>
+                </div>
+              </dl>
+            </DashboardSection>
 
-          <DashboardPanel>
-            <DashboardPanelHeader title={t("timelineHeading")} />
-            <div className="mt-4">
+            <DashboardSection title={t("timelineHeading")}>
               <OrderTimeline events={events} />
-            </div>
-          </DashboardPanel>
-        </div>
-      </div>
+            </DashboardSection>
+          </>
+        }
+      />
     </div>
   );
 }

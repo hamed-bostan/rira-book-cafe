@@ -220,7 +220,7 @@ export class PrismaLedgerRepository implements ILedgerRepository {
     // its input VAT back out rather than looking like new output VAT.
     const [row] = await prisma.$queryRaw<{ output: bigint | null; input: bigint | null; settled: bigint | null }[]>`
       SELECT
-        SUM(CASE WHEN origin IN ('orderSale') THEN credit - debit ELSE 0 END) AS output,
+        SUM(CASE WHEN origin IN ('orderSale', 'orderReturn', 'income') THEN credit - debit ELSE 0 END) AS output,
         SUM(CASE WHEN origin IN ('expense') THEN debit - credit ELSE 0 END) AS input,
         SUM(CASE WHEN origin IN ('manual') THEN debit - credit ELSE 0 END) AS settled
       FROM (
@@ -249,14 +249,21 @@ export class PrismaLedgerRepository implements ILedgerRepository {
       SELECT
         oi.product_id,
         (array_agg(oi.name ORDER BY o.placed_at DESC))[1] AS name,
-        SUM(oi.quantity) AS quantity,
-        SUM(oi.unit_price * oi.quantity) AS gross,
-        SUM(CASE WHEN oi.tax_exempt THEN 0 ELSE oi.unit_price * oi.quantity END) AS taxable_gross,
-        SUM(COALESCE(oi.unit_cost, 0) * oi.quantity) AS cost,
+        SUM(oi.quantity - oi.refunded_quantity) AS quantity,
+        SUM(oi.unit_price * (oi.quantity - oi.refunded_quantity)) AS gross,
+        SUM(CASE WHEN oi.tax_exempt THEN 0 ELSE oi.unit_price * (oi.quantity - oi.refunded_quantity) END)
+          AS taxable_gross,
+        -- Refunded units keep their cost unless they went back on the shelf.
+        SUM(COALESCE(oi.unit_cost, 0) * (oi.quantity - COALESCE(back.quantity, 0))) AS cost,
         BOOL_AND(oi.unit_cost IS NOT NULL) AS cost_known
       FROM order_items oi
       JOIN orders o ON o.id = oi.order_id
       JOIN journal_entries je ON je.source = 'orderSale' AND je.source_id = o.id AND je.reversed_by_id IS NULL
+      LEFT JOIN LATERAL (
+        SELECT SUM(rl.quantity) AS quantity
+        FROM order_refund_lines rl
+        WHERE rl.order_item_id = oi.id AND rl.restocked
+      ) back ON true
       WHERE je.date >= ${fromDay}::date AND je.date <= ${toDay}::date
       GROUP BY oi.product_id
       ORDER BY gross DESC`;
@@ -269,6 +276,15 @@ export class PrismaLedgerRepository implements ILedgerRepository {
       cost: Number(row.cost ?? 0),
       costKnown: row.cost_known,
     }));
+  }
+
+  async revenueWithoutCost(fromDay: string, toDay: string): Promise<number> {
+    const [row] = await prisma.$queryRaw<{ gross: bigint | null }[]>`
+      SELECT SUM(oi.unit_price * (oi.quantity - oi.refunded_quantity)) AS gross
+      FROM order_items oi
+      JOIN journal_entries je ON je.source = 'orderSale' AND je.source_id = oi.order_id AND je.reversed_by_id IS NULL
+      WHERE NOT oi.stock_tracked AND je.date >= ${fromDay}::date AND je.date <= ${toDay}::date`;
+    return Number(row?.gross ?? 0);
   }
 }
 

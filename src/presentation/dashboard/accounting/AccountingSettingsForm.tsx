@@ -11,11 +11,15 @@ import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatCafeDayMedium } from "@/src/lib/formatCafeDay";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
+import { cn } from "@/src/lib/utils";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
-import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
 import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
-import { TextField } from "@/src/presentation/design-system/components/form/TextField/TextField";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
+
+import { DashboardFormField } from "../DashboardFormField";
+import { FIELD_HINT, FIELD_INPUT } from "../fieldStyles";
+import { FormAlert } from "../FormAlert";
+import { PAGE_CARD } from "../pageStyles";
 
 import { accountsApi } from "./accounting-api";
 
@@ -74,59 +78,55 @@ export function AccountingSettingsForm({
   });
 
   return (
-    <form
-      onSubmit={onSubmit}
-      className="flex max-w-xl flex-col gap-5 rounded-card-lg border border-border bg-background p-4 md:p-6"
-      noValidate
-    >
-      <TextField
+    <form onSubmit={onSubmit} className={cn(PAGE_CARD, "flex flex-col gap-5 p-5")} noValidate>
+      <DashboardFormField
         label={t("settings.vatRateLabel")}
         required
-        description={t("settings.vatRateHint")}
+        hint={t("settings.vatRateHint")}
         error={fieldError(errors.vatRate?.message)}
       >
-        {(control) => (
+        {(field) => (
           <Input
-            {...control}
+            {...field}
             {...register("vatRate")}
+            size="control-md"
             inputMode="decimal"
             dir="ltr"
             className="max-w-32"
+            inputClassName={FIELD_INPUT}
             disabled={!canWrite}
           />
         )}
-      </TextField>
-      <TextField
+      </DashboardFormField>
+      <DashboardFormField
         label={t("settings.closedThroughLabel")}
-        description={
-          <>
-            {t("settings.closedThroughHint")}
-            {closedThrough ? (
-              <span className="mt-1 block text-foreground">{formatCafeDayMedium(closedThrough, locale)}</span>
-            ) : null}
-          </>
-        }
+        hint={t("settings.closedThroughHint")}
         error={fieldError(errors.booksClosedThrough?.message)}
       >
-        {(control) => (
-          <Input
-            {...control}
-            {...register("booksClosedThrough")}
-            type="date"
-            max={today}
-            dir="ltr"
-            className="max-w-48"
-            disabled={!canWrite}
-          />
+        {(field) => (
+          <>
+            <Input
+              {...field}
+              {...register("booksClosedThrough")}
+              size="control-md"
+              type="date"
+              max={today}
+              dir="ltr"
+              className="max-w-48"
+              inputClassName={FIELD_INPUT}
+              disabled={!canWrite}
+            />
+            {closedThrough ? (
+              <span className={cn(FIELD_HINT, "text-foreground")}>{formatCafeDayMedium(closedThrough, locale)}</span>
+            ) : null}
+          </>
         )}
-      </TextField>
-      {errors.root?.message ? <FormMessage size="md">{errors.root.message}</FormMessage> : null}
+      </DashboardFormField>
+      {errors.root?.message ? <FormAlert>{errors.root.message}</FormAlert> : null}
       {canWrite ? (
-        <div>
-          <Button type="submit" loading={isSubmitting} disabled={!isDirty}>
-            {t("settings.save")}
-          </Button>
-        </div>
+        <Button type="submit" size="control-md" className="w-fit px-4" loading={isSubmitting} disabled={!isDirty}>
+          {t("settings.save")}
+        </Button>
       ) : null}
     </form>
   );

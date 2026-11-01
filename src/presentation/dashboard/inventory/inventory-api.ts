@@ -13,10 +13,19 @@ import {
   journalEntryResponseSchema,
 } from "@/src/presentation/dashboard/accounting/accounting-response-schema";
 
-import { countResultResponseSchema, openingResultResponseSchema } from "./inventory-response-schema";
+import {
+  countResultResponseSchema,
+  openingResultResponseSchema,
+  trackBooksResultResponseSchema,
+} from "./inventory-response-schema";
 
 /** Typed client for stock writes; each posts its journal entries server-side. Callers refresh or navigate after. */
 export const inventoryApi = {
+  /** Put every book for sale under stock. */
+  trackBooks(): Promise<{ tracked: number; value: number }> {
+    return apiPost("/admin/inventory/books", {}, trackBooksResultResponseSchema);
+  },
+
   receive(values: StockReceiptFormInput): Promise<Expense> {
     return apiPost("/admin/inventory/receipts", values, expenseResponseSchema);
   },

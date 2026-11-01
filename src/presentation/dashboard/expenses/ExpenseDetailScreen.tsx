@@ -15,6 +15,8 @@ import { DashboardSection } from "../DashboardSection";
 import { AMOUNT, ROW_CAPTION } from "../pageStyles";
 import { DashboardPageCrumb } from "../shell/DashboardPageCrumb";
 
+import { ExpenseReceiptEditor } from "./ExpenseReceiptEditor";
+import { ExpenseReceiptImage } from "./ExpenseReceiptImage";
 import { ExpenseStatusBadge } from "./ExpenseStatusBadge";
 import { PayExpenseButton } from "./PayExpenseButton";
 import { VoidExpenseButton } from "./VoidExpenseButton";
@@ -111,6 +113,16 @@ export async function ExpenseDetailScreen({ expense, entries, accounts, canWrite
           ))}
         </dl>
       </DashboardSection>
+
+      {canWrite && expense.status !== "void" ? (
+        <DashboardSection title={t("receipt.heading")}>
+          <ExpenseReceiptEditor id={expense.id} receiptUrl={expense.receiptUrl} />
+        </DashboardSection>
+      ) : expense.receiptUrl ? (
+        <DashboardSection title={t("receipt.heading")}>
+          <ExpenseReceiptImage src={expense.receiptUrl} alt={t("receipt.alt")} openLabel={t("receipt.open")} />
+        </DashboardSection>
+      ) : null}
 
       <DashboardSection title={t("detail.entriesHeading")} className="overflow-hidden" flush>
         <ul className="divide-y divide-border">

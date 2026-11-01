@@ -4,7 +4,14 @@ import { SYSTEM_ACCOUNTS } from "../../../entities/Ledger";
 import { ConflictError } from "../../../errors/ConflictError";
 import { NotFoundError } from "../../../errors/NotFoundError";
 import { ValidationError } from "../../../errors/ValidationError";
-import { PayExpense, RecordExpense, SaveSupplier, VoidExpense, type RecordExpenseInput } from "../ExpenseCommands";
+import {
+  PayExpense,
+  RecordExpense,
+  SaveSupplier,
+  SetExpenseReceipt,
+  VoidExpense,
+  type RecordExpenseInput,
+} from "../ExpenseCommands";
 
 import type { Expense, Supplier } from "../../../entities/Expense";
 import type { Account, JournalEntry } from "../../../entities/Ledger";
@@ -15,6 +22,8 @@ const ACTOR = { id: "owner", name: "Rira" };
 /** 13:30 in Tehran on 2026-10-20. */
 const NOW = new Date("2026-10-20T10:00:00Z");
 const SETTINGS = { vatRateBps: 1000 };
+const RECEIPT = "/uploads/receipts/0f8fad5b-d9cb-469f-a165-70867728950e.jpg";
+const OTHER_RECEIPT = "/uploads/receipts/7c9e6679-7425-40de-944b-e07fc1f90ae7.png";
 
 function expense(overrides: Partial<Expense> = {}): Expense {
   return {
@@ -49,6 +58,7 @@ type ExpensesFake = {
   create: ReturnType<typeof vi.fn<IExpenseRepository["create"]>>;
   pay: ReturnType<typeof vi.fn<IExpenseRepository["pay"]>>;
   voidExpense: ReturnType<typeof vi.fn<IExpenseRepository["void"]>>;
+  setReceipt: ReturnType<typeof vi.fn<IExpenseRepository["setReceipt"]>>;
   createSupplier: ReturnType<typeof vi.fn<IExpenseRepository["createSupplier"]>>;
   updateSupplier: ReturnType<typeof vi.fn<IExpenseRepository["updateSupplier"]>>;
 };
@@ -74,6 +84,9 @@ function expensesWith(current: Expense | null): ExpensesFake {
     });
   });
   const voidExpense = vi.fn<IExpenseRepository["void"]>(async () => expense({ status: "void" }));
+  const setReceipt = vi.fn<IExpenseRepository["setReceipt"]>(async (_id, receiptUrl) =>
+    expense({ ...current, receiptUrl }),
+  );
   const createSupplier = vi.fn<IExpenseRepository["createSupplier"]>(async (input) => supplier(input));
   const updateSupplier = vi.fn<IExpenseRepository["updateSupplier"]>(async (id, input) => supplier({ ...input, id }));
   const repo = {
@@ -81,10 +94,11 @@ function expensesWith(current: Expense | null): ExpensesFake {
     create,
     pay,
     void: voidExpense,
+    setReceipt,
     createSupplier,
     updateSupplier,
   } as unknown as IExpenseRepository;
-  return { repo, create, pay, voidExpense, createSupplier, updateSupplier };
+  return { repo, create, pay, voidExpense, setReceipt, createSupplier, updateSupplier };
 }
 
 function ledgerWith(account: Account | null): ILedgerRepository {
@@ -151,7 +165,14 @@ describe("RecordExpense", () => {
     expect(create.mock.calls[0][0].paidFrom).toBe("bank");
   });
 
+  it("keeps a receipt uploaded with the expense", async () => {
+    const { repo, create } = expensesWith(null);
+    await new RecordExpense(repo, ledgerWith(UTILITIES)).execute({ ...INPUT, receiptUrl: RECEIPT }, ACTOR, NOW);
+    expect(create.mock.calls[0][0].receiptUrl).toBe(RECEIPT);
+  });
+
   it.each<[string, Partial<RecordExpenseInput>, string]>([
+    ["a receipt stored somewhere else", { receiptUrl: "https://example.com/receipt.jpg" }, "receiptUrl"],
     ["a future date", { date: "2026-10-21" }, "date"],
     ["a blank description", { description: "  " }, "description"],
     ["an overlong description", { description: "x".repeat(301) }, "description"],
@@ -320,6 +341,62 @@ describe("VoidExpense", () => {
       code: "INVALID_TRANSITION",
     });
     expect(voidExpense).not.toHaveBeenCalled();
+  });
+});
+
+describe("SetExpenseReceipt", () => {
+  it("attaches a receipt and audits the change without posting anything", async () => {
+    const { repo, setReceipt } = expensesWith(expense({ status: "paid" }));
+    const updated = await new SetExpenseReceipt(repo).execute("x1", RECEIPT, ACTOR);
+
+    expect(updated.receiptUrl).toBe(RECEIPT);
+    const [id, receiptUrl, audit] = setReceipt.mock.calls[0];
+    expect([id, receiptUrl]).toEqual(["x1", RECEIPT]);
+    expect(audit?.(updated)).toMatchObject({
+      action: "expense.receiptChanged",
+      entityLabel: "EX-14 Electricity",
+      changes: [{ field: "receiptUrl", before: null, after: RECEIPT }],
+    });
+  });
+
+  it("records what a replaced receipt was, and what removing one took off", async () => {
+    const replacing = expensesWith(expense({ receiptUrl: RECEIPT }));
+    const replaced = await new SetExpenseReceipt(replacing.repo).execute("x1", OTHER_RECEIPT, ACTOR);
+    expect(replacing.setReceipt.mock.calls[0][2]?.(replaced)?.changes).toEqual([
+      { field: "receiptUrl", before: RECEIPT, after: OTHER_RECEIPT },
+    ]);
+
+    const removing = expensesWith(expense({ receiptUrl: RECEIPT }));
+    const removed = await new SetExpenseReceipt(removing.repo).execute("x1", undefined, ACTOR);
+    expect(removing.setReceipt.mock.calls[0][2]?.(removed)?.changes).toEqual([
+      { field: "receiptUrl", before: RECEIPT, after: null },
+    ]);
+  });
+
+  it("does nothing when the receipt is already the one attached", async () => {
+    const { repo, setReceipt } = expensesWith(expense({ receiptUrl: RECEIPT }));
+    await expect(new SetExpenseReceipt(repo).execute("x1", RECEIPT, ACTOR)).resolves.toMatchObject({
+      receiptUrl: RECEIPT,
+    });
+    expect(setReceipt).not.toHaveBeenCalled();
+  });
+
+  it("refuses an unknown expense, a void one and a URL it didn't store", async () => {
+    await expect(new SetExpenseReceipt(expensesWith(null).repo).execute("x1", RECEIPT, ACTOR)).rejects.toThrow(
+      NotFoundError,
+    );
+
+    const voided = expensesWith(expense({ status: "void" }));
+    await expect(new SetExpenseReceipt(voided.repo).execute("x1", RECEIPT, ACTOR)).rejects.toMatchObject({
+      code: "INVALID_TRANSITION",
+    });
+    expect(voided.setReceipt).not.toHaveBeenCalled();
+
+    const { repo, setReceipt } = expensesWith(expense());
+    await expect(new SetExpenseReceipt(repo).execute("x1", "/uploads/products/a.png", ACTOR)).rejects.toMatchObject({
+      field: "receiptUrl",
+    });
+    expect(setReceipt).not.toHaveBeenCalled();
   });
 });
 

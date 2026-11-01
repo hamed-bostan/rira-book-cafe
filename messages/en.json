@@ -896,7 +896,8 @@
       "expense": {
         "recorded": "<b>{actor}</b> recorded expense {entity}",
         "paid": "<b>{actor}</b> paid expense {entity}",
-        "voided": "<b>{actor}</b> voided expense {entity}"
+        "voided": "<b>{actor}</b> voided expense {entity}",
+        "receiptChanged": "<b>{actor}</b> changed the receipt on expense {entity}"
       },
       "suiteBooking": {
         "changed": "<b>{actor}</b> updated suite booking {entity}",
@@ -988,7 +989,8 @@
       "unmatched": "Matches undone",
       "tableLabels": "Held tables",
       "dueAt": "Due",
-      "position": "Menu order"
+      "position": "Menu order",
+      "receiptUrl": "Receipt"
     },
     "filterField": "Field",
     "allFields": "Any field"
@@ -2149,7 +2151,21 @@
       "saved": "Supplier saved",
       "added": "Supplier added"
     },
-    "owedLeft": "{amount} left"
+    "owedLeft": "{amount} left",
+    "receipt": {
+      "heading": "Receipt",
+      "alt": "The expense's receipt",
+      "open": "Open the receipt at full size",
+      "upload": "Add a receipt",
+      "replace": "Replace",
+      "remove": "Remove",
+      "uploading": "Uploading…",
+      "hint": "A photo or scan: PNG, JPG, WebP or AVIF, up to 5 MB. Only people who can see the books can open it.",
+      "uploadFailed": "Couldn't upload the receipt. Use a PNG, JPG, WebP or AVIF image up to 5 MB.",
+      "saved": "Receipt saved",
+      "removed": "Receipt removed",
+      "saveFailed": "Couldn't save the receipt. Please try again."
+    }
   },
   "dashPricing": {
     "heading": "Pricing",

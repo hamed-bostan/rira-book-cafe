@@ -3,6 +3,7 @@ import { cafeDayOf } from "../../entities/CafeTime";
 import {
   amountOwed,
   isExpenseTarget,
+  isReceiptUrl,
   MAX_EXPENSE_DESCRIPTION_LENGTH,
   type Expense,
   type PaymentSource,
@@ -26,6 +27,8 @@ export type RecordExpenseInput = {
   vatAmount: number;
   /** Paid on the spot; omitted means it's owed to the supplier. */
   paidFrom?: PaymentSource;
+  /** A receipt already uploaded to the receipts folder. */
+  receiptUrl?: string;
 };
 
 const expenseLabel = (expense: Pick<Expense, "number" | "description">) =>
@@ -33,7 +36,7 @@ const expenseLabel = (expense: Pick<Expense, "number" | "description">) =>
 
 function audit(
   actor: ActivityActor,
-  action: "expense.recorded" | "expense.paid" | "expense.voided",
+  action: "expense.recorded" | "expense.paid" | "expense.voided" | "expense.receiptChanged",
   changes: (e: Expense) => ReturnType<typeof singleChange>,
 ) {
   return (expense: Expense) => ({
@@ -69,6 +72,7 @@ export class RecordExpense {
     if (!Number.isSafeInteger(input.vatAmount) || input.vatAmount < 0 || input.vatAmount >= input.amount) {
       throw new ValidationError("vatAmount", "VAT must be less than the total.");
     }
+    if (input.receiptUrl !== undefined) assertReceipt(input.receiptUrl);
     const account = await this.ledger.getAccount(input.accountCode);
     if (!account?.isActive || !isExpenseTarget(account)) {
       throw new ValidationError("accountCode", "Choose an active expense, inventory or equipment account.");
@@ -83,6 +87,7 @@ export class RecordExpense {
         amount: input.amount,
         vatAmount: input.vatAmount,
         paidFrom: input.paidFrom,
+        receiptUrl: input.receiptUrl,
         createdById: actor.id,
         createdByName: actor.name,
       },
@@ -152,6 +157,30 @@ export class VoidExpense {
   }
 }
 
+/**
+ * Attach a receipt to an expense already on the books, swap it, or take it off.
+ * A delivery's bill can only get one this way: it's recorded by `ReceiveStock`,
+ * from the stock screen. Nothing it posted changes. A replaced file stays on disk
+ * and the activity log keeps its URL, so the record of what was attached survives.
+ */
+export class SetExpenseReceipt {
+  constructor(private readonly expenses: IExpenseRepository) {}
+
+  async execute(id: string, receiptUrl: string | undefined, actor: ActivityActor): Promise<Expense> {
+    if (receiptUrl !== undefined) assertReceipt(receiptUrl);
+    const expense = await this.expenses.getExpense(id);
+    if (!expense) throw new NotFoundError("expense", id);
+    if (expense.status === "void") throw new ConflictError("INVALID_TRANSITION", "This expense is void.");
+    if (expense.receiptUrl === receiptUrl) return expense;
+
+    return this.expenses.setReceipt(
+      id,
+      receiptUrl,
+      audit(actor, "expense.receiptChanged", () => singleChange("receiptUrl", expense.receiptUrl, receiptUrl)),
+    );
+  }
+}
+
 /** Add or edit a supplier. Suppliers are never deleted — past bills keep their name. */
 export class SaveSupplier {
   constructor(private readonly expenses: IExpenseRepository) {}
@@ -163,6 +192,10 @@ export class SaveSupplier {
   async update(id: string, input: NewSupplier & { isActive: boolean }): Promise<Supplier> {
     return this.expenses.updateSupplier(id, { ...clean(input), isActive: input.isActive });
   }
+}
+
+function assertReceipt(receiptUrl: string): void {
+  if (!isReceiptUrl(receiptUrl)) throw new ValidationError("receiptUrl", "imageInvalid");
 }
 
 function clean(input: NewSupplier): NewSupplier {

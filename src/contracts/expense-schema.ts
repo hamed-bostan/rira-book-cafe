@@ -1,4 +1,4 @@
-import { MAX_EXPENSE_DESCRIPTION_LENGTH, PAYMENT_SOURCES } from "@/src/domain/entities/Expense";
+import { isReceiptUrl, MAX_EXPENSE_DESCRIPTION_LENGTH, PAYMENT_SOURCES } from "@/src/domain/entities/Expense";
 import * as z from "@/src/lib/zod";
 
 import { fieldsParsed } from "./fields-parsed";
@@ -6,6 +6,14 @@ import { dayField, moneyField, optionalMoneyField, optionalTextField } from "./m
 
 /** How an expense was settled when it was recorded: on account, or paid now. */
 export const EXPENSE_PAYMENT_CHOICES = ["unpaid", ...PAYMENT_SOURCES] as const;
+
+/** A receipt in the receipts folder; blank or left out means none. */
+const receiptUrlField = z
+  .pipe(
+    z.optional(z.string().check(z.trim())),
+    z.transform((value) => value || undefined),
+  )
+  .check(z.refine((value) => value === undefined || isReceiptUrl(value), "imageInvalid"));
 
 /**
  * Recording a bill or purchase. `amount` is the total paid or owed, VAT included;
@@ -30,6 +38,7 @@ export const expenseSchema = z.pipe(
       amount: moneyField,
       vatAmount: optionalMoneyField,
       payment: z.enum(EXPENSE_PAYMENT_CHOICES, { error: "paymentInvalid" }),
+      receiptUrl: receiptUrlField,
     })
     .check(
       z.refine((value) => value.vatAmount < value.amount, {
@@ -42,6 +51,9 @@ export const expenseSchema = z.pipe(
 );
 
 export type ExpenseFormInput = z.input<typeof expenseSchema>;
+
+/** Attaching a receipt to a recorded expense, replacing its receipt, or (blank) removing it. */
+export const expenseReceiptSchema = z.object({ receiptUrl: receiptUrlField });
 
 /** Paying an owed expense; a blank amount pays all of it. */
 export const payExpenseSchema = z.object({

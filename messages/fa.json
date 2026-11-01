@@ -896,7 +896,8 @@
       "expense": {
         "recorded": "<b>{actor}</b> هزینهٔ {entity} را ثبت کرد",
         "paid": "<b>{actor}</b> هزینهٔ {entity} را پرداخت کرد",
-        "voided": "<b>{actor}</b> هزینهٔ {entity} را باطل کرد"
+        "voided": "<b>{actor}</b> هزینهٔ {entity} را باطل کرد",
+        "receiptChanged": "<b>{actor}</b> رسید هزینهٔ {entity} را تغییر داد"
       },
       "suiteBooking": {
         "changed": "<b>{actor}</b> رزرو سوئیت {entity} را به‌روز کرد",
@@ -988,7 +989,8 @@
       "unmatched": "تطبیق‌های برداشته‌شده",
       "tableLabels": "میزهای نگه‌داشته",
       "dueAt": "موعد",
-      "position": "ترتیب در منو"
+      "position": "ترتیب در منو",
+      "receiptUrl": "رسید"
     },
     "filterField": "فیلد",
     "allFields": "همه فیلدها"
@@ -2149,7 +2151,21 @@
       "saved": "تأمین‌کننده ذخیره شد",
       "added": "تأمین‌کننده افزوده شد"
     },
-    "owedLeft": "{amount} مانده"
+    "owedLeft": "{amount} مانده",
+    "receipt": {
+      "heading": "رسید",
+      "alt": "رسید این هزینه",
+      "open": "باز کردن رسید در اندازهٔ کامل",
+      "upload": "افزودن رسید",
+      "replace": "تعویض",
+      "remove": "حذف",
+      "uploading": "در حال بارگذاری…",
+      "hint": "عکس یا اسکن: PNG، JPG، WebP یا AVIF، تا ۵ مگابایت. فقط کسانی که به دفاتر دسترسی دارند می‌توانند آن را ببینند.",
+      "uploadFailed": "بارگذاری رسید انجام نشد. از تصویر PNG، JPG، WebP یا AVIF تا ۵ مگابایت استفاده کنید.",
+      "saved": "رسید ذخیره شد",
+      "removed": "رسید حذف شد",
+      "saveFailed": "ذخیرهٔ رسید انجام نشد. دوباره تلاش کنید."
+    }
   },
   "dashPricing": {
     "heading": "قیمت‌گذاری",

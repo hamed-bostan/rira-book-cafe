@@ -4,6 +4,7 @@ import { MAX_EXPENSE_DESCRIPTION_LENGTH } from "@/src/domain/entities/Expense";
 
 import {
   EXPENSE_PAYMENT_CHOICES,
+  expenseReceiptSchema,
   expenseSchema,
   payExpenseSchema,
   supplierSchema,
@@ -26,6 +27,12 @@ const EXPENSE: ExpenseFormInput = {
 
 const fieldErrorsOf = (input: unknown): Record<string, string[] | undefined> | undefined =>
   flattened(expenseSchema.safeParse(input).error)?.fieldErrors;
+
+describe("expenseReceiptSchema", () => {
+  it("reads a blank receipt as taking it off", () => {
+    expect(expenseReceiptSchema.parse({ receiptUrl: "" }).receiptUrl).toBeUndefined();
+  });
+});
 
 describe("EXPENSE_PAYMENT_CHOICES", () => {
   it("offers on-account plus every payment source", () => {
@@ -50,6 +57,24 @@ describe("expenseSchema", () => {
     const parsed = expenseSchema.parse({ ...EXPENSE, supplierId: "  ", vatAmount: "", payment: "unpaid" });
     expect(parsed).toMatchObject({ supplierId: undefined, vatAmount: 0, paidFrom: undefined });
     expect(parsed).not.toHaveProperty("payment");
+  });
+
+  it("takes a stored receipt, and reads a blank or missing one as none", () => {
+    const receiptUrl = "/uploads/receipts/0f8fad5b-d9cb-469f-a165-70867728950e.webp";
+    expect(expenseSchema.parse({ ...EXPENSE, receiptUrl: ` ${receiptUrl} ` }).receiptUrl).toBe(receiptUrl);
+    expect(expenseSchema.parse({ ...EXPENSE, receiptUrl: "  " }).receiptUrl).toBeUndefined();
+    expect(expenseSchema.parse(EXPENSE).receiptUrl).toBeUndefined();
+  });
+
+  it.each([
+    "https://example.com/uploads/receipts/0f8fad5b-d9cb-469f-a165-70867728950e.png",
+    "//example.com/uploads/receipts/0f8fad5b-d9cb-469f-a165-70867728950e.png",
+    "javascript:alert(1)",
+    "/uploads/products/0f8fad5b-d9cb-469f-a165-70867728950e.png",
+    "/uploads/receipts/../products/0f8fad5b-d9cb-469f-a165-70867728950e.png",
+    "/uploads/receipts/0f8fad5b-d9cb-469f-a165-70867728950e.svg",
+  ])("refuses a receipt that isn't one this app stored: %s", (receiptUrl) => {
+    expect(fieldErrorsOf({ ...EXPENSE, receiptUrl })?.receiptUrl).toEqual(["imageInvalid"]);
   });
 
   it("refuses VAT that isn't less than the total", () => {

@@ -64,6 +64,14 @@ export function amountOwed(expense: Pick<Expense, "amount" | "paidAmount" | "sta
   return expense.status === "unpaid" ? expense.amount - expense.paidAmount : 0;
 }
 
+/** Where image storage keeps a receipt: a random name in the private receipts folder. */
+const RECEIPT_URL = /^\/uploads\/receipts\/[0-9a-f-]{36}\.(?:jpg|png|webp|avif)$/;
+
+/** Whether a URL is a receipt this app stored, not an address a client made up. */
+export function isReceiptUrl(value: string): boolean {
+  return RECEIPT_URL.test(value);
+}
+
 /**
  * The figures across the top of the Expenses page and the counts on its tabs:
  * what's owed to suppliers now, what was recorded this month, and how many

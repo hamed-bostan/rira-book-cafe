@@ -12,6 +12,7 @@ import { useRouter } from "@/src/i18n/navigation";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { accountLabel } from "@/src/presentation/dashboard/accounting/accounting-format";
+import { FIELD_LABEL } from "@/src/presentation/dashboard/fieldStyles";
 import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
 import { Select } from "@/src/presentation/design-system/components/form/Select/Select";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
@@ -22,6 +23,7 @@ import { DashboardField } from "../DashboardField";
 import { expensesApi } from "./expense-api";
 import { expenseApiErrorMessage } from "./expenseApiErrorMessage";
 import { normalizeAmount } from "./expenseFormat";
+import { ExpenseReceiptUpload } from "./ExpenseReceiptUpload";
 
 type RecordExpenseDialogProps = {
   open: boolean;
@@ -38,8 +40,9 @@ type Payment = (typeof EXPENSE_PAYMENT_CHOICES)[number];
 
 /**
  * Record a bill or purchase: when, from whom, what for, booked to which account,
- * the total with the invoice's VAT, and whether it's owed or paid now. The net +
- * VAT split shows as the amounts are typed, and saving waits until it adds up.
+ * the total with the invoice's VAT, whether it's owed or paid now, and a photo of
+ * the receipt if there is one. The net + VAT split shows as the amounts are typed,
+ * and saving waits until it adds up and any photo has finished uploading.
  */
 export function RecordExpenseDialog({ open, onOpenChange, accounts, suppliers, today }: RecordExpenseDialogProps) {
   const t = useTranslations("dashExpenses");
@@ -56,8 +59,11 @@ export function RecordExpenseDialog({ open, onOpenChange, accounts, suppliers, t
   const [amount, setAmount] = React.useState("");
   const [vatAmount, setVatAmount] = React.useState("");
   const [payment, setPayment] = React.useState<Payment>("unpaid");
+  const [receiptUrl, setReceiptUrl] = React.useState("");
+  const [uploading, setUploading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [pending, startTransition] = React.useTransition();
+  const receiptId = React.useId();
 
   const total = moneyField.safeParse(normalizeAmount(amount));
   const vat = optionalMoneyField.safeParse(normalizeAmount(vatAmount));
@@ -68,7 +74,13 @@ export function RecordExpenseDialog({ open, onOpenChange, accounts, suppliers, t
         ? t("form.vatTooHigh")
         : undefined;
   const ready =
-    !fieldError && total.success && isCafeDay(date) && date <= today && description.trim() !== "" && accountCode !== "";
+    !fieldError &&
+    !uploading &&
+    total.success &&
+    isCafeDay(date) &&
+    date <= today &&
+    description.trim() !== "" &&
+    accountCode !== "";
 
   const preview =
     total.success && vat.success && !fieldError
@@ -88,6 +100,7 @@ export function RecordExpenseDialog({ open, onOpenChange, accounts, suppliers, t
       amount: normalizeAmount(amount),
       vatAmount: normalizeAmount(vatAmount),
       payment,
+      receiptUrl,
     };
     setError(null);
     startTransition(async () => {
@@ -194,6 +207,18 @@ export function RecordExpenseDialog({ open, onOpenChange, accounts, suppliers, t
           ))}
         </Select>
       </DashboardField>
+
+      <div className="flex min-w-0 flex-col gap-1.5">
+        <label htmlFor={receiptId} className={FIELD_LABEL}>
+          {t("receipt.heading")}
+        </label>
+        <ExpenseReceiptUpload
+          id={receiptId}
+          value={receiptUrl}
+          onChange={setReceiptUrl}
+          onUploadingChange={setUploading}
+        />
+      </div>
     </DashboardDialog>
   );
 }

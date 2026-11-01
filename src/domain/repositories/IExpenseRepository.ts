@@ -53,4 +53,6 @@ export type IExpenseRepository = {
    * transaction. `reverse` builds each reversal from the original entry.
    */
   void(id: string, reverse: (entry: JournalEntry) => NewJournalEntry, audit?: AuditHook<Expense>): Promise<Expense>;
+  /** Attach, replace or (with `undefined`) remove a receipt, guarded so a void expense stays as it was. */
+  setReceipt(id: string, receiptUrl: string | undefined, audit?: AuditHook<Expense>): Promise<Expense>;
 };

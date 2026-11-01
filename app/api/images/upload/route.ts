@@ -7,12 +7,12 @@ import { enforceRateLimit, RATE_LIMITS } from "@/src/lib/api/rate-limit";
 import { readBodyWithLimit } from "@/src/lib/api/read-body";
 import { requestLogger } from "@/src/lib/api/requestLogger";
 import { errorResponse, errorResponseFromException, unauthorizedResponse } from "@/src/lib/api/responses";
-import { AVATAR_IMAGE_FOLDER, MANAGED_IMAGE_FOLDERS } from "@/src/lib/imageFolders";
+import { AVATAR_IMAGE_FOLDER, MANAGED_IMAGE_FOLDERS, RECEIPT_IMAGE_FOLDER } from "@/src/lib/imageFolders";
 import { getUserSession } from "@/src/lib/require-auth";
 import { getSessionWith } from "@/src/lib/require-permission";
 
 const ADMIN_FOLDERS = new Set<string>(MANAGED_IMAGE_FOLDERS);
-const ALLOWED_FOLDERS = new Set<string>([...MANAGED_IMAGE_FOLDERS, AVATAR_IMAGE_FOLDER]);
+const ALLOWED_FOLDERS = new Set<string>([...MANAGED_IMAGE_FOLDERS, AVATAR_IMAGE_FOLDER, RECEIPT_IMAGE_FOLDER]);
 
 /** The image limit plus room for the multipart envelope (boundaries, part headers, `folder`). */
 const MAX_BODY_BYTES = MAX_IMAGE_BYTES + 64 * 1024;
@@ -25,17 +25,19 @@ const MAX_BODY_BYTES = MAX_IMAGE_BYTES + 64 * 1024;
  * Authorization is per-folder: the catalog folders (products/categories/misc)
  * are admin-only — they back the storefront and feed the orphan sweep. The
  * `avatars` folder is open to any signed-in user uploading their own profile
- * picture. Anonymous callers can never write to a billable, service-role bucket.
+ * picture; `receipts` is for whoever can write to the books. Anonymous callers can
+ * never write to a billable, service-role bucket.
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
   // Decide which session this caller has up front; the folder check below picks
   // the right requirement. (Admins satisfy the user check too.)
-  const [catalogSession, eventsSession, userSession] = await Promise.all([
+  const [catalogSession, eventsSession, accountingSession, userSession] = await Promise.all([
     getSessionWith("catalog.write"),
     getSessionWith("events.manage"),
+    getSessionWith("accounting.write"),
     getUserSession(),
   ]);
-  if (!catalogSession && !eventsSession && !userSession) return unauthorizedResponse();
+  if (!catalogSession && !eventsSession && !accountingSession && !userSession) return unauthorizedResponse();
 
   const limited = await enforceRateLimit(request, RATE_LIMITS.imageUpload, userSession?.user.id);
   if (limited) return limited;
@@ -74,6 +76,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   // Event images need `events.manage`; every other managed folder needs the catalog.
   const writer = folder === "events" ? eventsSession : catalogSession;
   if ((!folder || ADMIN_FOLDERS.has(folder)) && !writer) return unauthorizedResponse();
+  if (folder === RECEIPT_IMAGE_FOLDER && !accountingSession) return unauthorizedResponse();
 
   try {
     const image = await new UploadImage(imageStorageRepository).execute({

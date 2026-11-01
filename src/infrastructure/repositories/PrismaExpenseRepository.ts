@@ -223,6 +223,23 @@ export class PrismaExpenseRepository implements IExpenseRepository {
       return expense;
     });
   }
+
+  async setReceipt(id: string, receiptUrl: string | undefined, audit?: AuditHook<Expense>): Promise<Expense> {
+    return inTransaction(this.db, async (tx) => {
+      const result = await tx.expense.updateMany({
+        where: { id, status: { not: "void" } },
+        data: { receiptUrl: receiptUrl ?? null },
+      });
+      if (result.count === 0) {
+        const current = await tx.expense.findUnique({ where: { id } });
+        if (!current) throw new NotFoundError("expense", id);
+        throw new ConflictError("INVALID_TRANSITION", "This expense is void.");
+      }
+      const expense = toExpense(await tx.expense.findUniqueOrThrow({ where: { id } }));
+      await recordAudit(tx, expense, audit);
+      return expense;
+    });
+  }
 }
 
 /**

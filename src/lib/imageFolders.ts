@@ -16,5 +16,12 @@ export type ManagedImageFolder = (typeof MANAGED_IMAGE_FOLDERS)[number];
  */
 export const AVATAR_IMAGE_FOLDER = "avatars";
 
+/**
+ * Where expense receipts go. Also deliberately *not* a managed folder: a receipt
+ * backs a bill in the books, so nothing reconciles it away. And unlike every other
+ * folder it isn't public: `/uploads` serves it only to `accounting.view`.
+ */
+export const RECEIPT_IMAGE_FOLDER = "receipts";
+
 /** Every folder an upload may target — the allowlist the route enforces. */
-export type ImageFolder = ManagedImageFolder | typeof AVATAR_IMAGE_FOLDER;
+export type ImageFolder = ManagedImageFolder | typeof AVATAR_IMAGE_FOLDER | typeof RECEIPT_IMAGE_FOLDER;

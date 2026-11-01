@@ -122,6 +122,7 @@ export const ACTIVITY_ACTIONS = [
   "expense.recorded",
   "expense.paid",
   "expense.voided",
+  "expense.receiptChanged",
   "income.recorded",
   "income.voided",
   // Another event rather than a change to anything stored — an admin downloaded a

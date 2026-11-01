@@ -20,6 +20,11 @@ export const expensesApi = {
   void(id: string, reason: string): Promise<Expense> {
     return apiPost(`/admin/expenses/${id}/void`, { reason }, expenseResponseSchema);
   },
+
+  /** Attach or replace the receipt; a blank URL removes it. Nothing posted changes. */
+  setReceipt(id: string, receiptUrl: string): Promise<Expense> {
+    return apiPut(`/admin/expenses/${id}/receipt`, { receiptUrl }, expenseResponseSchema);
+  },
 };
 
 export const suppliersApi = {

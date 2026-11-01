@@ -28,7 +28,7 @@ export async function VatReportScreen({ report, canWrite }: { report: VatReport;
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
-      <StatementHeader title={t("statements.vat.title")} subtitle={t("statements.vat.subtitle")} span={report} />
+      <StatementHeader slug="vat" span={report} />
       <dl className={cn(PAGE_CARD, ROW_TEXT, "divide-y divide-border overflow-hidden")}>
         {rows.map((row) => (
           <div

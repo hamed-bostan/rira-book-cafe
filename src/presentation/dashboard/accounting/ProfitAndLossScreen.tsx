@@ -32,11 +32,7 @@ export async function ProfitAndLossScreen({ report }: { report: ProfitAndLoss })
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
-      <StatementHeader
-        title={t("statements.profit-and-loss.title")}
-        subtitle={t("statements.profit-and-loss.subtitle")}
-        span={report}
-      />
+      <StatementHeader slug="profit-and-loss" span={report} />
       {report.revenueWithoutCost > 0 ? (
         <FormAlert>
           {t("pl.withoutCost", { amount: formatNumber(report.revenueWithoutCost, locale) })}{" "}

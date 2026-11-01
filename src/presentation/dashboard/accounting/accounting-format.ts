@@ -63,3 +63,10 @@ export type StatementSlug = (typeof STATEMENTS)[number];
 export function isStatementSlug(value: string): value is StatementSlug {
   return (STATEMENTS as readonly string[]).includes(value);
 }
+
+/** What a statement covers, as its export link asks for it. */
+export function statementSpanParams(
+  span: { fromDay: string; toDay: string } | { asOfDay: string },
+): Record<string, string> {
+  return "asOfDay" in span ? { asOf: span.asOfDay } : { from: span.fromDay, to: span.toDay };
+}

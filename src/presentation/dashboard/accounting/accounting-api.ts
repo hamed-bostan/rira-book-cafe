@@ -6,13 +6,29 @@ import type {
 } from "@/src/contracts/accounting-schema";
 import type { GatewaySettlementInput } from "@/src/contracts/payment-schema";
 import type { Account, AccountingSettings, JournalEntry } from "@/src/domain/entities/Ledger";
-import { apiPatch, apiPost, apiPut } from "@/src/lib/api/client";
+import { apiClient, apiPatch, apiPost, apiPut } from "@/src/lib/api/client";
 
 import {
   accountResponseSchema,
   accountingSettingsResponseSchema,
   journalEntryResponseSchema,
 } from "./accounting-response-schema";
+
+import type { StatementSlug } from "./accounting-format";
+
+/**
+ * Where the browser downloads the books as CSV. Plain links rather than calls: the
+ * browser saves the file, and the session cookie goes with it.
+ */
+export const accountingExports = {
+  statementHref(slug: StatementSlug, params: Record<string, string>): string {
+    return apiClient.getUri({ url: `/admin/accounting/reports/${slug}/export`, params });
+  },
+
+  journalHref(params: Record<string, string>): string {
+    return apiClient.getUri({ url: "/admin/accounting/journal/export", params });
+  },
+};
 
 /**
  * Typed client for writes to the books. Payloads are the forms' input shapes; the

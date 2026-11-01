@@ -5,10 +5,18 @@ import {
   fiscalYearDays,
   fromJalali,
   isLeapJalaliYear,
+  jalaliDayLabel,
   jalaliMonthDays,
   jalaliMonthLength,
   toJalali,
 } from "../JalaliCalendar";
+
+describe("jalaliDayLabel", () => {
+  it("pads the month and day, as the books write them", () => {
+    expect(jalaliDayLabel("2026-10-20")).toBe("1405/07/28");
+    expect(jalaliDayLabel("2026-03-21")).toBe("1405/01/01");
+  });
+});
 
 /** The platform's own Persian calendar, as an independent oracle. */
 function intlJalali(day: string): { jy: number; jm: number; jd: number } {

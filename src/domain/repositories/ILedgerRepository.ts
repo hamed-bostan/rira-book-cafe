@@ -95,6 +95,11 @@ export type ILedgerRepository = {
 
   getEntry(id: string): Promise<JournalEntry | null>;
   listEntries(filters: JournalFilters, page: PageRequest): Promise<Page<JournalEntry>>;
+  /**
+   * Every matching entry, oldest first, a batch at a time — for an export, which
+   * can't stop at a page and mustn't hold a year of the journal in memory.
+   */
+  entryBatches(filters: JournalFilters): AsyncIterable<JournalEntry[]>;
   /** Entries posted for one source document (an order, an expense), oldest first. */
   entriesFor(sourceId: string): Promise<JournalEntry[]>;
 

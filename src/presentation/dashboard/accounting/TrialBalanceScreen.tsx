@@ -18,11 +18,7 @@ export async function TrialBalanceScreen({ report }: { report: TrialBalance }) {
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
-      <StatementHeader
-        title={t("statements.trial-balance.title")}
-        subtitle={t("statements.trial-balance.subtitle")}
-        span={report}
-      />
+      <StatementHeader slug="trial-balance" span={report} />
       <BalanceCheck ok={report.balanced} okLabel={t("tb.balanced")} failLabel={t("tb.unbalanced")} />
       <section className={cn(PAGE_CARD, "overflow-hidden")}>
         <div className="overflow-x-auto">

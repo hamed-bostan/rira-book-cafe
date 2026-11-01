@@ -12,11 +12,7 @@ export async function BalanceSheetScreen({ report }: { report: BalanceSheet }) {
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
-      <StatementHeader
-        title={t("statements.balance-sheet.title")}
-        subtitle={t("statements.balance-sheet.subtitle")}
-        span={report}
-      />
+      <StatementHeader slug="balance-sheet" span={report} />
       <BalanceCheck ok={report.balanced} okLabel={t("bs.balanced")} failLabel={t("bs.unbalanced")} />
       <StatementSectionTable
         heading={t("accountType.asset")}

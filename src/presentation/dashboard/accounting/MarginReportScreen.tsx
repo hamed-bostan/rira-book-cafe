@@ -19,11 +19,7 @@ export async function MarginReportScreen({ report }: { report: MarginReport }) {
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
-      <StatementHeader
-        title={t("statements.margins.title")}
-        subtitle={t("statements.margins.subtitle")}
-        span={report}
-      />
+      <StatementHeader slug="margins" span={report} />
 
       <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {(

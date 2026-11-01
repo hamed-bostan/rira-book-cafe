@@ -35,6 +35,9 @@ import {
   toJournalEntry,
 } from "./writeJournal";
 
+/** How many entries an export reads at a time. */
+const ENTRY_BATCH_SIZE = 500;
+
 /**
  * The general ledger, backed by PostgreSQL. Writes go through `writeJournal`'s
  * single posting path; reads aggregate in SQL. Sums come back as `bigint` and are
@@ -147,18 +150,7 @@ export class PrismaLedgerRepository implements ILedgerRepository {
   }
 
   async listEntries(filters: JournalFilters, page: PageRequest): Promise<Page<JournalEntry>> {
-    const where: Prisma.JournalEntryWhereInput = {
-      ...(filters.fromDay || filters.toDay
-        ? {
-            date: {
-              ...(filters.fromDay ? { gte: dayToDate(filters.fromDay) } : {}),
-              ...(filters.toDay ? { lte: dayToDate(filters.toDay) } : {}),
-            },
-          }
-        : {}),
-      ...(filters.source ? { source: filters.source } : {}),
-      ...(filters.accountCode ? { lines: { some: { accountCode: filters.accountCode } } } : {}),
-    };
+    const where = entriesWhere(filters);
     const { skip, take } = toSkipTake(page);
     const [rows, total] = await prisma.$transaction([
       prisma.journalEntry.findMany({
@@ -171,6 +163,25 @@ export class PrismaLedgerRepository implements ILedgerRepository {
       prisma.journalEntry.count({ where }),
     ]);
     return createPage(rows.map(toJournalEntry), total, page);
+  }
+
+  async *entryBatches(filters: JournalFilters): AsyncGenerator<JournalEntry[]> {
+    const where = entriesWhere(filters);
+    // Keyed on the last row read, not an offset: an entry posted mid-export can't
+    // shift a page and repeat a row.
+    let after: Prisma.JournalEntryWhereInput = {};
+    for (;;) {
+      const rows = await prisma.journalEntry.findMany({
+        where: { AND: [where, after] },
+        orderBy: [{ date: "asc" }, { number: "asc" }],
+        take: ENTRY_BATCH_SIZE,
+        include: ENTRY_WITH_LINES,
+      });
+      const last = rows.at(-1);
+      if (last) yield rows.map(toJournalEntry);
+      if (!last || rows.length < ENTRY_BATCH_SIZE) return;
+      after = { OR: [{ date: { gt: last.date } }, { date: last.date, number: { gt: last.number } }] };
+    }
   }
 
   async entriesFor(sourceId: string): Promise<JournalEntry[]> {
@@ -286,6 +297,21 @@ export class PrismaLedgerRepository implements ILedgerRepository {
       WHERE NOT oi.stock_tracked AND je.date >= ${fromDay}::date AND je.date <= ${toDay}::date`;
     return Number(row?.gross ?? 0);
   }
+}
+
+function entriesWhere(filters: JournalFilters): Prisma.JournalEntryWhereInput {
+  return {
+    ...(filters.fromDay || filters.toDay
+      ? {
+          date: {
+            ...(filters.fromDay ? { gte: dayToDate(filters.fromDay) } : {}),
+            ...(filters.toDay ? { lte: dayToDate(filters.toDay) } : {}),
+          },
+        }
+      : {}),
+    ...(filters.source ? { source: filters.source } : {}),
+    ...(filters.accountCode ? { lines: { some: { accountCode: filters.accountCode } } } : {}),
+  };
 }
 
 function toType(value: string): AccountType {

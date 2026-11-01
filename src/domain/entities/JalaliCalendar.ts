@@ -102,6 +102,12 @@ export function toJalali(day: string): JalaliDate {
   return d2j(g2d(gy, gm, gd));
 }
 
+/** A cafe day as the books write it in Persian dates: "1405/07/28". */
+export function jalaliDayLabel(day: string): string {
+  const { jy, jm, jd } = toJalali(day);
+  return `${jy}/${String(jm).padStart(2, "0")}/${String(jd).padStart(2, "0")}`;
+}
+
 /** A Jalali date → the Gregorian cafe day (`YYYY-MM-DD`). */
 export function fromJalali(jy: number, jm: number, jd: number): string {
   return formatDay(d2g(j2d(jy, jm, jd)));

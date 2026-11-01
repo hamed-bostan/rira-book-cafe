@@ -2034,6 +2034,15 @@
       "confirmMessage": "The year's revenue and expenses move into retained earnings, and nothing dated in the year can be posted afterwards. This can't be undone from here.",
       "error": "Couldn't close the year. Please try again.",
       "closedToast": "Fiscal year {year} closed"
+    },
+    "export": {
+      "csv": "Export CSV",
+      "code": "Code",
+      "amount": "Amount",
+      "item": "Item",
+      "persianDate": "Persian date",
+      "recordedBy": "Recorded by",
+      "status": "Status"
     }
   },
   "dashExpenses": {

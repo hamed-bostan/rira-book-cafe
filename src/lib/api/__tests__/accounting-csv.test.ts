@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildBalanceSheet,
+  buildCashFlow,
   buildProfitAndLoss,
   buildTrialBalance,
   type AccountMovement,
@@ -11,6 +12,7 @@ import type { Account, JournalEntry } from "@/src/domain/entities/Ledger";
 import {
   accountingMessages,
   balanceSheetRows,
+  cashFlowRows,
   journalCsv,
   marginRows,
   parseCsvLocale,
@@ -101,6 +103,29 @@ describe("statement rows", () => {
     expect(rows).toContainEqual([undefined, "Profit to date (not yet closed)", 800_000]);
     expect(rows.at(-1)).toEqual([undefined, "Total equity", 1_300_000]);
     expect(rows[1]).toEqual(["As of", "2026-10-20"]);
+  });
+
+  it("lays out cash flow by section, ending on the cash at the end", () => {
+    const flow = buildCashFlow(
+      "2026-09-23",
+      "2026-10-22",
+      ACCOUNTS,
+      [
+        { accountCode: "4100", debit: 0, credit: 900 },
+        { accountCode: "3100", debit: 0, credit: 500 },
+      ],
+      [{ accountCode: "1110", debit: 100, credit: 0 }],
+      [{ accountCode: "1110", debit: 1500, credit: 0 }],
+    );
+    const rows = cashFlowRows(flow, en, "en");
+
+    expect(rows).toContainEqual(["4100", "Drinks", 900]);
+    expect(rows).toContainEqual([undefined, "Net cash from the owner", 500]);
+    expect(rows.slice(-3)).toEqual([
+      [undefined, "Net change in cash", 1400],
+      [undefined, "Cash at the start", 100],
+      [undefined, "Cash at the end", 1500],
+    ]);
   });
 
   it("nets each account to one side of the trial balance", () => {

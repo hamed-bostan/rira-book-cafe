@@ -1970,6 +1970,11 @@
         "title": "Item margins",
         "description": "What each menu item earned against what it cost.",
         "subtitle": "Sales net of VAT against cost, for orders completed in the period."
+      },
+      "cash-flow": {
+        "title": "Cash flow",
+        "description": "Where the period's cash came from and where it went.",
+        "subtitle": "Cash in and out of the till, the bank and the gateway, by what it was for."
       }
     },
     "pl": {
@@ -2049,6 +2054,21 @@
       "journalSubtitle": "Every entry in the period with all its lines, oldest first.",
       "journalEmpty": "Nothing was posted in this period.",
       "tooMany": "This period has {total} entries, and only the first {shown} are shown here. Choose a shorter period or one source to print the rest, or export CSV, which has them all."
+    },
+    "cf": {
+      "reconciled": "Opening cash plus the net change equals the cash in the books.",
+      "unreconciled": "The cash doesn't add up to the books. Please contact support.",
+      "operating": "Running the cafe",
+      "netOperating": "Net cash from running the cafe",
+      "investing": "Equipment",
+      "netInvesting": "Net cash on equipment",
+      "financing": "Owner's money",
+      "netFinancing": "Net cash from the owner",
+      "noCash": "No cash moved.",
+      "netChange": "Net change in cash",
+      "openingCash": "Cash at the start",
+      "closingCash": "Cash at the end",
+      "note": "Moves between the till, the bank and the gateway aren't counted. Each row is what was on the other side of the cash, so money from guests shows against Guest receivables, and a bill paid later against Accounts payable, even when it paid for equipment."
     }
   },
   "dashExpenses": {

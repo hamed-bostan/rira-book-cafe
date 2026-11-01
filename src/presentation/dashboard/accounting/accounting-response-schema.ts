@@ -4,6 +4,7 @@ import type {
   AccountBalance,
   AccountLedger,
   BalanceSheet,
+  CashFlowStatement,
   MarginReport,
   PrintedJournal,
   ProfitAndLoss,
@@ -72,6 +73,18 @@ const balanceSchema: z.ZodMiniType<AccountBalance> = z.object({
   balance: z.number(),
 });
 const sectionSchema: z.ZodMiniType<StatementSection> = z.object({ rows: z.array(balanceSchema), total: z.number() });
+
+export const cashFlowResponseSchema: z.ZodMiniType<CashFlowStatement> = z.object({
+  fromDay: z.string(),
+  toDay: z.string(),
+  operating: sectionSchema,
+  investing: sectionSchema,
+  financing: sectionSchema,
+  netChange: z.number(),
+  openingCash: z.number(),
+  closingCash: z.number(),
+  reconciled: z.boolean(),
+});
 
 export const trialBalanceResponseSchema: z.ZodMiniType<TrialBalance> = z.object({
   asOfDay: z.string(),

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildAccountLedger,
   buildBalanceSheet,
+  buildCashFlow,
   buildMarginReport,
   buildProfitAndLoss,
   buildTrialBalance,
@@ -46,6 +47,82 @@ const MOVEMENTS: AccountMovement[] = [
   { accountCode: "5100", debit: 400_000, credit: 0 },
   { accountCode: "6100", debit: 2_000_000, credit: 0 },
 ];
+
+describe("buildCashFlow", () => {
+  const CHART: Account[] = [
+    ...ACCOUNTS,
+    account("1150", "asset"),
+    account("1500", "asset"),
+    account("2400", "liability"),
+    account("3300", "equity"),
+  ];
+  const build = (flows: AccountMovement[], opening: AccountMovement[] = [], closing: AccountMovement[] = []) =>
+    buildCashFlow("2026-10-01", "2026-10-31", CHART, flows, opening, closing);
+
+  it("turns what other accounts took into cash in and out", () => {
+    const { operating } = build([
+      { accountCode: "4100", debit: 0, credit: 900 },
+      { accountCode: "6100", debit: 300, credit: 0 },
+    ]);
+    expect(operating.rows.map((row) => [row.account.code, row.balance])).toEqual([
+      ["4100", 900],
+      ["6100", -300],
+    ]);
+    expect(operating.total).toBe(600);
+  });
+
+  it("calls stock, what guests owe, bills, VAT and deposits operating", () => {
+    const flow = build(
+      ["1150", "1200", "2100", "2200", "2400"].map((accountCode) => ({ accountCode, debit: 0, credit: 10 })),
+    );
+    expect(flow.operating.rows).toHaveLength(5);
+    expect(flow.investing.rows).toEqual([]);
+  });
+
+  it("calls equipment investing and the owner's money financing", () => {
+    const flow = build([
+      { accountCode: "1500", debit: 500, credit: 0 },
+      { accountCode: "3100", debit: 0, credit: 2000 },
+      { accountCode: "3300", debit: 100, credit: 0 },
+    ]);
+    expect(flow.investing.total).toBe(-500);
+    expect(flow.financing.total).toBe(1900);
+    expect(flow.netChange).toBe(1400);
+  });
+
+  it("drops an account that netted to nothing", () => {
+    const flow = build([{ accountCode: "4100", debit: 700, credit: 700 }]);
+    expect(flow.operating.rows).toEqual([]);
+  });
+
+  it("reads cash from the till, the bank and the gateway, and nothing else", () => {
+    const flow = build(
+      [{ accountCode: "4100", debit: 0, credit: 100 }],
+      [
+        { accountCode: "1110", debit: 50, credit: 10 },
+        { accountCode: "1120", debit: 200, credit: 0 },
+        { accountCode: "1200", debit: 9999, credit: 0 },
+      ],
+      [
+        { accountCode: "1110", debit: 50, credit: 10 },
+        { accountCode: "1120", debit: 300, credit: 0 },
+        { accountCode: "1130", debit: 0, credit: 0 },
+      ],
+    );
+    expect(flow.openingCash).toBe(240);
+    expect(flow.closingCash).toBe(340);
+    expect(flow.reconciled).toBe(true);
+  });
+
+  it("says so when the cash doesn't square with the ledger", () => {
+    const flow = build(
+      [{ accountCode: "4100", debit: 0, credit: 100 }],
+      [{ accountCode: "1110", debit: 50, credit: 0 }],
+      [{ accountCode: "1110", debit: 500, credit: 0 }],
+    );
+    expect(flow.reconciled).toBe(false);
+  });
+});
 
 describe("financial statements", () => {
   it("trial balance nets each account to one side and balances", () => {

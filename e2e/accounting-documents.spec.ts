@@ -24,6 +24,16 @@ test("a statement prints as a document at paper width, with its dates", async ({
   await expect(page.getByLabel("As of")).toBeHidden();
 });
 
+test("the cash-flow statement is on offer, and shows how the period's cash ended", async ({ page }) => {
+  await page.goto("/dashboard/accounting/statements");
+  await page.getByRole("link", { name: /^Cash flow/ }).click();
+
+  await expect(page).toHaveURL(/\/statements\/cash-flow$/);
+  await expect(page.getByRole("heading", { name: "Cash flow", exact: true })).toBeVisible();
+  await expect(page.getByText("Opening cash plus the net change equals the cash in the books.")).toBeVisible();
+  await expect(page.getByText("Cash at the end")).toBeVisible();
+});
+
 test("a statement downloads as a file", async ({ page }) => {
   await page.goto("/dashboard/accounting/statements/profit-and-loss");
 

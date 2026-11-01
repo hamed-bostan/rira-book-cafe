@@ -5,6 +5,7 @@ import { ledgerRepository } from "@/src/infrastructure/container";
 import {
   accountingMessages,
   balanceSheetRows,
+  cashFlowRows,
   marginRows,
   parseCsvLocale,
   profitAndLossRows,
@@ -49,6 +50,11 @@ export async function GET(request: NextRequest, { params }: RouteContext): Promi
         const { fromDay, toDay } = parseDaySpan(query);
         const rows = profitAndLossRows(await reports.profitAndLoss(fromDay, toDay), messages, locale);
         return csvResponse(`profit-and-loss-${fromDay}-to-${toDay}.csv`, rows);
+      }
+      case "cash-flow": {
+        const { fromDay, toDay } = parseDaySpan(query);
+        const rows = cashFlowRows(await reports.cashFlow(fromDay, toDay), messages, locale);
+        return csvResponse(`cash-flow-${fromDay}-to-${toDay}.csv`, rows);
       }
       case "vat": {
         const { fromDay, toDay } = parseDaySpan(query);

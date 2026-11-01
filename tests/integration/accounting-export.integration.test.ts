@@ -103,7 +103,7 @@ describe("exporting a statement", () => {
     expect(response.headers.get("content-disposition")).toContain(`${slug}-${today}.csv`);
   });
 
-  it.each(["vat", "margins"])("builds %s over a span", async (slug) => {
+  it.each(["cash-flow", "vat", "margins"])("builds %s over a span", async (slug) => {
     signInAs("admin");
 
     expect((await report(slug, SPAN)).status).toBe(200);

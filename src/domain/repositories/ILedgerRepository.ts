@@ -106,6 +106,12 @@ export type ILedgerRepository = {
   /** Total debits/credits per account for entries dated within `[fromDay, toDay]` (either bound optional). */
   movements(fromDay?: string, toDay?: string, options?: MovementOptions): Promise<AccountMovement[]>;
   /**
+   * Movement on every account outside `cashCodes`, in the entries within the span
+   * that changed the total in those accounts: what cash came from and went to. A
+   * move between two of them changes nothing, so it isn't counted.
+   */
+  cashFlowMovements(fromDay: string, toDay: string, cashCodes: readonly string[]): Promise<AccountMovement[]>;
+  /**
    * Post a fiscal year's closing entry and lock the books through its last day, in
    * one transaction; `ALREADY_POSTED` when the year is already closed.
    */

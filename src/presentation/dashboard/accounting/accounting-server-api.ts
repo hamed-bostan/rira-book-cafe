@@ -1,6 +1,7 @@
 import type {
   AccountLedger,
   BalanceSheet,
+  CashFlowStatement,
   MarginReport,
   PrintedJournal,
   ProfitAndLoss,
@@ -17,6 +18,7 @@ import {
   accountListResponseSchema,
   accountingSettingsResponseSchema,
   balanceSheetResponseSchema,
+  cashFlowResponseSchema,
   journalEntryResponseSchema,
   journalPageResponseSchema,
   marginReportResponseSchema,
@@ -82,6 +84,9 @@ export const statementsServerApi = {
   },
   profitAndLoss(params: Query): Promise<ProfitAndLoss> {
     return serverApiGet("/admin/accounting/reports/profit-and-loss", profitAndLossResponseSchema, { params });
+  },
+  cashFlow(params: Query): Promise<CashFlowStatement> {
+    return serverApiGet("/admin/accounting/reports/cash-flow", cashFlowResponseSchema, { params });
   },
   vat(params: Query): Promise<VatReport> {
     return serverApiGet("/admin/accounting/reports/vat", vatReportResponseSchema, { params });

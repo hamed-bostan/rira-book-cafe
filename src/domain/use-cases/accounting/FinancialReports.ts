@@ -1,12 +1,15 @@
 import {
   buildAccountLedger,
   buildBalanceSheet,
+  buildCashFlow,
   buildMarginReport,
   buildProfitAndLoss,
   buildTrialBalance,
+  CASH_ACCOUNTS,
   MAX_PRINTED_ENTRIES,
   type AccountLedger,
   type BalanceSheet,
+  type CashFlowStatement,
   type MarginReport,
   type PrintedJournal,
   type ProfitAndLoss,
@@ -58,6 +61,18 @@ export class FinancialReports {
       this.ledger.movements(undefined, asOfDay),
     ]);
     return buildBalanceSheet(asOfDay, accounts, movements);
+  }
+
+  /** Where cash came from and went over a span, and how that squares with the cash on hand. */
+  async cashFlow(fromDay: string, toDay: string): Promise<CashFlowStatement> {
+    assertSpan(fromDay, toDay);
+    const [accounts, flows, opening, closing] = await Promise.all([
+      this.ledger.listAccounts(),
+      this.ledger.cashFlowMovements(fromDay, toDay, CASH_ACCOUNTS),
+      this.ledger.movements(undefined, shiftCafeDay(fromDay, -1)),
+      this.ledger.movements(undefined, toDay),
+    ]);
+    return buildCashFlow(fromDay, toDay, accounts, flows, opening, closing);
   }
 
   /** VAT collected, VAT paid on expenses, and what was settled — the period's VAT return. */

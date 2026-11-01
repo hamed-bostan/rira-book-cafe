@@ -8,6 +8,7 @@ import { requirePermission, sessionHas } from "@/src/lib/require-permission";
 import { isStatementSlug } from "@/src/presentation/dashboard/accounting/accounting-format";
 import { statementsServerApi } from "@/src/presentation/dashboard/accounting/accounting-server-api";
 import { BalanceSheetScreen } from "@/src/presentation/dashboard/accounting/BalanceSheetScreen";
+import { CashFlowScreen } from "@/src/presentation/dashboard/accounting/CashFlowScreen";
 import { MarginReportScreen } from "@/src/presentation/dashboard/accounting/MarginReportScreen";
 import { ProfitAndLossScreen } from "@/src/presentation/dashboard/accounting/ProfitAndLossScreen";
 import { TrialBalanceScreen } from "@/src/presentation/dashboard/accounting/TrialBalanceScreen";
@@ -37,6 +38,8 @@ export default async function StatementPage({ params, searchParams }: StatementP
       return <BalanceSheetScreen report={await statementsServerApi.balanceSheet(asOf)} />;
     case "profit-and-loss":
       return <ProfitAndLossScreen report={await statementsServerApi.profitAndLoss(period)} />;
+    case "cash-flow":
+      return <CashFlowScreen report={await statementsServerApi.cashFlow(period)} />;
     case "vat": {
       const [report, canWrite] = await Promise.all([
         statementsServerApi.vat(period),

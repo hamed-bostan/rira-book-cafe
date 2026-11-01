@@ -57,7 +57,7 @@ export function entryTotal(entry: Pick<JournalEntry, "lines">): number {
 }
 
 /** The financial statements, by URL slug. */
-export const STATEMENTS = ["profit-and-loss", "balance-sheet", "trial-balance", "vat", "margins"] as const;
+export const STATEMENTS = ["profit-and-loss", "balance-sheet", "cash-flow", "trial-balance", "vat", "margins"] as const;
 export type StatementSlug = (typeof STATEMENTS)[number];
 
 export function isStatementSlug(value: string): value is StatementSlug {

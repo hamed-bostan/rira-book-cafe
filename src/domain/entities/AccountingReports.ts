@@ -1,4 +1,11 @@
-import { signedBalance, vatIncluded, type Account, type JournalEntry, type JournalSource } from "./Ledger";
+import {
+  signedBalance,
+  SYSTEM_ACCOUNTS,
+  vatIncluded,
+  type Account,
+  type JournalEntry,
+  type JournalSource,
+} from "./Ledger";
 
 /**
  * The financial statements, as plain data. Every amount is whole Toman. Each
@@ -56,6 +63,26 @@ export type BalanceSheet = {
   totalEquity: number;
   /** Assets = liabilities + equity. */
   balanced: boolean;
+};
+
+/**
+ * Where cash came from and went, by what was on the other side of each entry. A
+ * row's `balance` is cash in (positive) or out (negative) against that account.
+ */
+export type CashFlowStatement = {
+  fromDay: string;
+  toDay: string;
+  /** Running the cafe: sales, bills, stock, VAT, deposits. */
+  operating: StatementSection;
+  /** Things the cafe keeps: equipment. */
+  investing: StatementSection;
+  /** The owner's money in and out. */
+  financing: StatementSection;
+  netChange: number;
+  openingCash: number;
+  closingCash: number;
+  /** Opening cash plus the net change is what the ledger says cash closed at. */
+  reconciled: boolean;
 };
 
 /** VAT movement over a span, from VAT payable (2200). */
@@ -216,6 +243,68 @@ export function buildBalanceSheet(
     currentEarnings,
     totalEquity,
     balanced: assets.total === liabilities.total + totalEquity,
+  };
+}
+
+/**
+ * What the statement counts as cash: the till, the bank, and what the gateway is
+ * holding until it pays out. Money moving between them isn't a cash flow.
+ */
+export const CASH_ACCOUNTS: readonly string[] = [
+  SYSTEM_ACCOUNTS.cash,
+  SYSTEM_ACCOUNTS.bank,
+  SYSTEM_ACCOUNTS.gatewayClearing,
+];
+
+const WORKING_CAPITAL_ASSETS: readonly string[] = [SYSTEM_ACCOUNTS.guestReceivables, SYSTEM_ACCOUNTS.inventory];
+
+/** Which part of the statement money against this account belongs in. Cash accounts are never asked about. */
+function cashFlowActivity(account: Pick<Account, "code" | "type">): "operating" | "investing" | "financing" {
+  if (account.type === "equity") return "financing";
+  if (account.type === "asset" && !WORKING_CAPITAL_ASSETS.includes(account.code)) return "investing";
+  return "operating";
+}
+
+const cashBalance = (movements: readonly AccountMovement[]): number =>
+  movements
+    .filter((movement) => CASH_ACCOUNTS.includes(movement.accountCode))
+    .reduce((sum, movement) => sum + movement.debit - movement.credit, 0);
+
+/**
+ * The cash-flow statement, by the direct method. `flows` is the movement on every
+ * other account in the entries that changed cash, and each entry balances, so what
+ * those accounts took is exactly what cash gave: a credit there is cash in, a debit
+ * cash out. An account that netted to nothing isn't a flow, so it isn't shown.
+ */
+export function buildCashFlow(
+  fromDay: string,
+  toDay: string,
+  accounts: readonly Account[],
+  flows: readonly AccountMovement[],
+  opening: readonly AccountMovement[],
+  closing: readonly AccountMovement[],
+): CashFlowStatement {
+  const rows = accountBalances(accounts, flows)
+    .map((row) => ({ ...row, balance: row.credit - row.debit }))
+    .filter((row) => row.balance !== 0);
+  const of = (activity: ReturnType<typeof cashFlowActivity>) =>
+    section(rows.filter((row) => cashFlowActivity(row.account) === activity));
+  const operating = of("operating");
+  const investing = of("investing");
+  const financing = of("financing");
+  const netChange = operating.total + investing.total + financing.total;
+  const openingCash = cashBalance(opening);
+  const closingCash = cashBalance(closing);
+  return {
+    fromDay,
+    toDay,
+    operating,
+    investing,
+    financing,
+    netChange,
+    openingCash,
+    closingCash,
+    reconciled: openingCash + netChange === closingCash,
   };
 }
 

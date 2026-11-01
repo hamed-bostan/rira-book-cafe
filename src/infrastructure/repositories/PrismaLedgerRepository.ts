@@ -208,6 +208,27 @@ export class PrismaLedgerRepository implements ILedgerRepository {
     }));
   }
 
+  async cashFlowMovements(fromDay: string, toDay: string, cashCodes: readonly string[]): Promise<AccountMovement[]> {
+    const codes = [...cashCodes];
+    const rows = await prisma.$queryRaw<{ account_code: string; debit: bigint | null; credit: bigint | null }[]>`
+      WITH cash_entries AS (
+        SELECT e.id
+        FROM journal_entries e JOIN journal_lines l ON l.entry_id = e.id
+        WHERE e.date >= ${fromDay}::date AND e.date <= ${toDay}::date
+        GROUP BY e.id
+        HAVING COALESCE(SUM(l.debit - l.credit) FILTER (WHERE l.account_code = ANY(${codes}::text[])), 0) <> 0
+      )
+      SELECT l.account_code, SUM(l.debit) AS debit, SUM(l.credit) AS credit
+      FROM journal_lines l JOIN cash_entries c ON c.id = l.entry_id
+      WHERE NOT (l.account_code = ANY(${codes}::text[]))
+      GROUP BY l.account_code`;
+    return rows.map((row) => ({
+      accountCode: row.account_code,
+      debit: Number(row.debit ?? 0),
+      credit: Number(row.credit ?? 0),
+    }));
+  }
+
   async accountLines(code: string, fromDay: string, toDay: string): Promise<RawLedgerLine[]> {
     const rows = await prisma.journalLine.findMany({
       where: { accountCode: code, entry: { date: { gte: dayToDate(fromDay), lte: dayToDate(toDay) } } },

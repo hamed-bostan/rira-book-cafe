@@ -61,6 +61,34 @@ function ledgerWith(
   return { ledger, movements, accountLines };
 }
 
+describe("FinancialReports.cashFlow", () => {
+  it("opens on the day before the span, and asks for flows against the cash accounts", async () => {
+    const { ledger, movements } = ledgerWith();
+    const cashFlowMovements = vi.fn<ILedgerRepository["cashFlowMovements"]>(async () => [
+      { accountCode: SYSTEM_ACCOUNTS.salesDrinks, debit: 0, credit: 300 },
+    ]);
+    ledger.cashFlowMovements = cashFlowMovements;
+
+    const flow = await new FinancialReports(ledger).cashFlow("2026-10-01", "2026-10-31");
+
+    expect(cashFlowMovements).toHaveBeenCalledWith("2026-10-01", "2026-10-31", [
+      SYSTEM_ACCOUNTS.cash,
+      SYSTEM_ACCOUNTS.bank,
+      SYSTEM_ACCOUNTS.gatewayClearing,
+    ]);
+    expect(movements).toHaveBeenCalledWith(undefined, "2026-09-30");
+    expect(movements).toHaveBeenCalledWith(undefined, "2026-10-31");
+    expect(flow.operating.total).toBe(300);
+  });
+
+  it("refuses a span that runs backwards", async () => {
+    const { ledger } = ledgerWith();
+    await expect(new FinancialReports(ledger).cashFlow("2026-10-31", "2026-10-01")).rejects.toBeInstanceOf(
+      ValidationError,
+    );
+  });
+});
+
 describe("FinancialReports.printedJournal", () => {
   const entry = (number: number): JournalEntry => ({
     id: `e${number}`,

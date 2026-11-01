@@ -4,6 +4,7 @@ import type en from "@/messages/en.json";
 import type {
   AccountBalance,
   BalanceSheet,
+  CashFlowStatement,
   MarginReport,
   ProfitAndLoss,
   StatementSection,
@@ -97,6 +98,20 @@ export function balanceSheetRows(report: BalanceSheet, messages: AccountingMessa
     ...report.equity.rows.map((row) => accountRow(row, locale)),
     [undefined, bs.currentEarnings, report.currentEarnings],
     [undefined, bs.totalEquity, report.totalEquity],
+  ];
+}
+
+export function cashFlowRows(report: CashFlowStatement, messages: AccountingMessages, locale: Locale): Row[] {
+  const { cf } = messages;
+  return [
+    ...header(messages.statements["cash-flow"].title, report, messages, locale),
+    [messages.export.code, messages.entry.colAccount, messages.export.amount],
+    ...sectionRows(cf.operating, report.operating, cf.netOperating, locale),
+    ...sectionRows(cf.investing, report.investing, cf.netInvesting, locale),
+    ...sectionRows(cf.financing, report.financing, cf.netFinancing, locale),
+    [undefined, cf.netChange, report.netChange],
+    [undefined, cf.openingCash, report.openingCash],
+    [undefined, cf.closingCash, report.closingCash],
   ];
 }
 

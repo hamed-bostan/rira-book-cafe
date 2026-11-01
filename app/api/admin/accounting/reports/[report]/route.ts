@@ -12,8 +12,8 @@ type RouteContext = { params: Promise<{ report: string }> };
 
 /**
  * GET /api/admin/accounting/reports/:report — a financial statement from the ledger.
- *   trial-balance, balance-sheet   → `?asOf=` (default today)
- *   profit-and-loss, vat, margins  → `?from=&to=` (default the current Persian month)
+ *   trial-balance, balance-sheet              → `?asOf=` (default today)
+ *   profit-and-loss, cash-flow, vat, margins  → `?from=&to=` (default the current Persian month)
  * Requires `accounting.view`.
  */
 export async function GET(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
@@ -31,6 +31,10 @@ export async function GET(request: NextRequest, { params }: RouteContext): Promi
       case "profit-and-loss": {
         const { fromDay, toDay } = parseDaySpan(query);
         return NextResponse.json(await reports.profitAndLoss(fromDay, toDay));
+      }
+      case "cash-flow": {
+        const { fromDay, toDay } = parseDaySpan(query);
+        return NextResponse.json(await reports.cashFlow(fromDay, toDay));
       }
       case "vat": {
         const { fromDay, toDay } = parseDaySpan(query);

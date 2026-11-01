@@ -6,7 +6,7 @@ import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/S
 /** Suppliers drawn while the list loads. */
 const SUPPLIER_ROWS = 6;
 
-/** Mirrors `SuppliersScreen`: the way back, heading with the add-supplier button, the supplier rows with their edit buttons. */
+/** Mirrors `SuppliersScreen`: the way back, heading with the add-supplier button, the supplier rows with what's owed and their edit buttons. */
 export default function SuppliersLoading() {
   return (
     <LoadingRegion className="flex min-w-0 flex-col gap-6">
@@ -19,6 +19,10 @@ export default function SuppliersLoading() {
               <Skeleton className="h-3.5 w-32 rounded-pill" />
             </div>
             <Skeleton className="h-4 w-24 rounded-pill" />
+            <div className="flex min-w-32 flex-col items-end gap-1.5">
+              <Skeleton className="h-4 w-24 rounded-pill" />
+              <Skeleton className="h-3.5 w-16 rounded-pill" />
+            </div>
             <Skeleton className="h-11 w-14 shrink-0 rounded-button sm:h-8" />
           </li>
         ))}

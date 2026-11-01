@@ -1,6 +1,6 @@
 import type { AuditHook } from "./AuditHook";
 import type { LedgerHook } from "./ILedgerRepository";
-import type { Expense, ExpenseStatus, ExpenseSummary, PaymentSource, Supplier } from "../entities/Expense";
+import type { AmountOwed, Expense, ExpenseStatus, ExpenseSummary, PaymentSource, Supplier } from "../entities/Expense";
 import type { JournalEntry, NewJournalEntry } from "../entities/Ledger";
 import type { Page, PageRequest } from "../entities/Pagination";
 
@@ -39,6 +39,8 @@ export type IExpenseRepository = {
   totalUnpaid(): Promise<number>;
   /** What's owed now, what was recorded in `month` (voids aside), and each status's count. */
   summary(month: { fromDay: string; toDay: string }): Promise<ExpenseSummary>;
+  /** What's left to pay on unpaid bills, one row per supplier and one for bills with none. */
+  owedBySupplier(): Promise<(AmountOwed & { supplierId?: string })[]>;
 
   /** Record an expense and post its entry, in one transaction. */
   create(input: NewExpense, ledger: LedgerHook<Expense>, audit?: AuditHook<Expense>): Promise<Expense>;

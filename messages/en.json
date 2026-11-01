@@ -2149,7 +2149,11 @@
       "empty": "No suppliers yet.",
       "error": "Couldn't save the supplier. Please try again.",
       "saved": "Supplier saved",
-      "added": "Supplier added"
+      "added": "Supplier added",
+      "owedLink": "See what's owed to {name}: {amount}",
+      "unpaidBills": "{count, plural, one {# unpaid bill} other {# unpaid bills}}",
+      "noSupplierBills": "{count, plural, one {# bill} other {# bills}} with no supplier",
+      "totalOwed": "Total owed"
     },
     "owedLeft": "{amount} left",
     "receipt": {

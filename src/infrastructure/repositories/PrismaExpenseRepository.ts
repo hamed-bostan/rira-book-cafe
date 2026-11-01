@@ -2,6 +2,7 @@ import { cafeDayOf } from "@/src/domain/entities/CafeTime";
 import {
   EXPENSE_STATUSES,
   PAYMENT_SOURCES,
+  type AmountOwed,
   type Expense,
   type ExpenseStatus,
   type ExpenseSummary,
@@ -135,6 +136,20 @@ export class PrismaExpenseRepository implements IExpenseRepository {
       month: { ...month, count: inMonth._count._all, total: Number(inMonth._sum.amount ?? 0) },
       counts,
     };
+  }
+
+  async owedBySupplier(): Promise<(AmountOwed & { supplierId?: string })[]> {
+    const groups = await prisma.expense.groupBy({
+      by: ["supplierId"],
+      where: { status: "unpaid" },
+      _count: { _all: true },
+      _sum: { amount: true, paidAmount: true },
+    });
+    return groups.map((group) => ({
+      supplierId: group.supplierId ?? undefined,
+      billCount: group._count._all,
+      owed: Number(group._sum.amount ?? 0) - Number(group._sum.paidAmount ?? 0),
+    }));
   }
 
   async create(input: NewExpense, ledger: LedgerHook<Expense>, audit?: AuditHook<Expense>): Promise<Expense> {

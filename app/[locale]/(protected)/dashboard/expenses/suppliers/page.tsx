@@ -7,10 +7,11 @@ export const dynamic = "force-dynamic";
 
 export default async function SuppliersPage() {
   await requirePermission("accounting.view");
-  const [suppliers, canWrite] = await Promise.all([
+  const [suppliers, balances, canWrite] = await Promise.all([
     suppliersServerApi.list(true),
+    suppliersServerApi.getBalances(),
     auth().then((session) => sessionHas(session, "accounting.write")),
   ]);
 
-  return <SuppliersScreen suppliers={suppliers} canWrite={canWrite} />;
+  return <SuppliersScreen suppliers={suppliers} balances={balances} canWrite={canWrite} />;
 }

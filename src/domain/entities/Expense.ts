@@ -85,6 +85,36 @@ export type ExpenseSummary = {
   counts: Record<ExpenseStatus, number>;
 };
 
+/** What's left to pay on a set of unpaid bills, part payments taken off. */
+export type AmountOwed = { billCount: number; owed: number };
+
+export type SupplierBalance = AmountOwed & { supplierId: string };
+
+/**
+ * What's owed to each supplier. Bills with no supplier named are kept apart rather
+ * than dropped, so `total` is the same figure as the Expenses page's "owed".
+ */
+export type SupplierBalances = {
+  /** Only suppliers something is owed to. */
+  suppliers: SupplierBalance[];
+  noSupplier: AmountOwed;
+  total: number;
+};
+
+/** Turn each supplier's unpaid total into the balances the Suppliers page shows. */
+export function buildSupplierBalances(rows: readonly (AmountOwed & { supplierId?: string })[]): SupplierBalances {
+  const suppliers: SupplierBalance[] = [];
+  const noSupplier: AmountOwed = { billCount: 0, owed: 0 };
+  for (const { supplierId, billCount, owed } of rows) {
+    if (supplierId) suppliers.push({ supplierId, billCount, owed });
+    else {
+      noSupplier.billCount += billCount;
+      noSupplier.owed += owed;
+    }
+  }
+  return { suppliers, noSupplier, total: rows.reduce((sum, row) => sum + row.owed, 0) };
+}
+
 /** Accounts that hold money or what guests owe — never what an expense is spent *on*. */
 const MONEY_ACCOUNTS: readonly string[] = [
   SYSTEM_ACCOUNTS.cash,

@@ -1,4 +1,4 @@
-import type { ExpenseSummary, Supplier } from "@/src/domain/entities/Expense";
+import type { ExpenseSummary, Supplier, SupplierBalances } from "@/src/domain/entities/Expense";
 import { ApiError } from "@/src/lib/api/ApiError";
 import { serverApiGet } from "@/src/lib/api/server-client";
 import {
@@ -9,7 +9,7 @@ import {
   type ExpensePageWire,
 } from "@/src/presentation/dashboard/accounting/accounting-response-schema";
 
-import { expenseSummaryResponseSchema } from "./expense-response-schema";
+import { expenseSummaryResponseSchema, supplierBalancesResponseSchema } from "./expense-response-schema";
 
 /** Server-side expense and supplier reads for the dashboard (BFF). */
 export const expensesServerApi = {
@@ -40,5 +40,10 @@ export const suppliersServerApi = {
       supplierListResponseSchema,
       includeInactive ? { params: { all: "true" } } : undefined,
     );
+  },
+
+  /** What's left to pay each supplier, part payments taken off. */
+  getBalances(): Promise<SupplierBalances> {
+    return serverApiGet("/admin/suppliers/balances", supplierBalancesResponseSchema);
   },
 };

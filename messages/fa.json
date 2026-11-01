@@ -2149,7 +2149,11 @@
       "empty": "هنوز تأمین‌کننده‌ای ثبت نشده.",
       "error": "ذخیرهٔ تأمین‌کننده انجام نشد. دوباره تلاش کنید.",
       "saved": "تأمین‌کننده ذخیره شد",
-      "added": "تأمین‌کننده افزوده شد"
+      "added": "تأمین‌کننده افزوده شد",
+      "owedLink": "مشاهدهٔ بدهی به {name}: {amount}",
+      "unpaidBills": "{count, plural, other {# صورت‌حساب پرداخت‌نشده}}",
+      "noSupplierBills": "{count, plural, other {# صورت‌حساب بدون تأمین‌کننده}}",
+      "totalOwed": "جمع بدهی"
     },
     "owedLeft": "{amount} مانده",
     "receipt": {

@@ -1756,6 +1756,7 @@
       "automaticNotice": "Posted automatically.",
       "viewOrder": "View the order",
       "viewExpense": "View the expense",
+      "viewCashShifts": "View cash shifts",
       "reverse": "Reverse",
       "reverseTitle": "Reverse JE-{number}",
       "reverseDescription": "Posts the mirror image of this entry so it nets to zero. Both stay in the books.",

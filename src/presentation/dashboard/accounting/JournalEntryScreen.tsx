@@ -8,7 +8,7 @@ import { formatMoney } from "@/src/lib/formatMoney";
 import { formatOrderDateShort, formatOrderTime } from "@/src/lib/formatOrderDate";
 import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
 
-import { accountLabel, entryTotal, sourceHref } from "./accounting-format";
+import { accountLabel, entryTotal, sourceHref, sourceLinkKey } from "./accounting-format";
 import { ReverseEntryButton } from "./ReverseEntryButton";
 
 type JournalEntryScreenProps = {
@@ -93,7 +93,7 @@ export async function JournalEntryScreen({ entry, accounts, canWrite, today }: J
           <p className="text-body-small text-muted-foreground">
             {t("entry.automaticNotice")}{" "}
             <Link href={documentHref} className="font-medium text-primary underline underline-offset-4">
-              {entry.source.startsWith("order") ? t("entry.viewOrder") : t("entry.viewExpense")}
+              {t(sourceLinkKey(entry.source))}
             </Link>
           </p>
         ) : null}

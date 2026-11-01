@@ -25,6 +25,14 @@ export function sourceHref(entry: Pick<JournalEntry, "source" | "sourceId">): st
   return null;
 }
 
+/** What the link to that document reads: a `dashAccounting` message key. */
+export function sourceLinkKey(
+  source: JournalEntry["source"],
+): "entry.viewOrder" | "entry.viewExpense" | "entry.viewCashShifts" {
+  if (source.startsWith("order")) return "entry.viewOrder";
+  return source === "cashShift" ? "entry.viewCashShifts" : "entry.viewExpense";
+}
+
 const PERSIAN_ZERO = 0x06f0;
 const ARABIC_ZERO = 0x0660;
 

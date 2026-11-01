@@ -1756,6 +1756,7 @@
       "automaticNotice": "به‌طور خودکار ثبت شده.",
       "viewOrder": "مشاهدهٔ سفارش",
       "viewExpense": "مشاهدهٔ هزینه",
+      "viewCashShifts": "مشاهدهٔ شیفت‌های صندوق",
       "reverse": "برگشت سند",
       "reverseTitle": "برگشت سند JE-{number}",
       "reverseDescription": "سند قرینهٔ این سند ثبت می‌شود تا اثرش صفر شود. هر دو در دفاتر می‌مانند.",

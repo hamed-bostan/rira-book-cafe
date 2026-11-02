@@ -1,5 +1,6 @@
-import { AccountingTableSkeleton } from "@/src/presentation/dashboard/accounting/AccountingTableSkeleton";
+import { StackedTableSkeleton } from "@/src/presentation/dashboard/accounting/StackedTableSkeleton";
 import { DashboardPageHeaderSkeleton } from "@/src/presentation/dashboard/skeletons";
+import { STACKED_TABLE } from "@/src/presentation/dashboard/stackedTableStyles";
 import { LoadingRegion } from "@/src/presentation/design-system/components/Skeleton/LoadingRegion";
 import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
@@ -12,7 +13,7 @@ export default function JournalEntryLoading() {
       <DashboardPageHeaderSkeleton actions={1} />
       {/* The notice (an automatic entry links to the order or bill behind it). */}
       <Skeleton className="h-12 w-full rounded-card-lg" />
-      <AccountingTableSkeleton columns={ENTRY_COLUMNS} rows={3} totals />
+      <StackedTableSkeleton layout={STACKED_TABLE.compact} columns={ENTRY_COLUMNS} rows={3} totals />
     </LoadingRegion>
   );
 }

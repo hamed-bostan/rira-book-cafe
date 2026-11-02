@@ -85,11 +85,15 @@ const PAGES: Record<string, FinancePage> = {
   "new bank statement": { path: () => "/dashboard/accounting/bank/new" },
   reconciliation: {
     path: (seed) => `/dashboard/accounting/bank/${seed.statementId}`,
+    // A line picked on each side, so the bar's totals are as wide as they get. On a
+    // phone one side shows at a time, so each is brought up by its tab first.
     prepare: async (page) => {
-      for (const side of [
-        /^(On the statement, not in the books|در صورت‌حساب، نه در دفاتر)/,
-        /^(In the books, not on the statement|در دفاتر، نه در صورت‌حساب)/,
+      for (const [tab, side] of [
+        [/^(Statement|صورت‌حساب)/, /^(On the statement, not in the books|در صورت‌حساب، نه در دفاتر)/],
+        [/^(Books|دفاتر)/, /^(In the books, not on the statement|در دفاتر، نه در صورت‌حساب)/],
       ]) {
+        const switcher = page.getByRole("tab", { name: tab });
+        if (await switcher.isVisible()) await switcher.click();
         const list = page.locator("section").filter({ has: page.getByRole("heading", { name: side }) });
         await list.getByRole("checkbox").first().check();
       }
@@ -466,3 +470,53 @@ for (const locale of LOCALES) {
     }
   });
 }
+
+test("on a phone, matching shows one side at a time, keeps what's picked, and keeps Match in reach", async ({
+  page,
+}) => {
+  await page.setViewportSize(PHONE);
+  await page.goto(`/dashboard/accounting/bank/${seed.statementId}`);
+
+  const statementTab = page.getByRole("tab", { name: /^Statement/ });
+  const booksTab = page.getByRole("tab", { name: /^Books/ });
+  const bankSide = page.locator("section").filter({ has: page.getByRole("heading", { name: /^On the statement/ }) });
+  const bookSide = page.locator("section").filter({ has: page.getByRole("heading", { name: /^In the books/ }) });
+  const payment = "E2E payment to the espresso machine service company";
+  const bankLine = page.getByRole("checkbox", { name: `Pick ${payment}` });
+
+  await expect(bookSide).toBeHidden();
+
+  // At every width a line's description gets most of the row, and the date line
+  // under it room to read, whether the amount sits beside the description or under it.
+  const squeezed: { width: number; description: number; reference: number; list: number }[] = [];
+  for (const viewport of VIEWPORTS) {
+    await page.setViewportSize(viewport);
+    const list = (await bankSide.boundingBox())!.width;
+    const description = (await bankSide.getByText(payment, { exact: true }).boundingBox())!.width;
+    const reference = (await bankSide.getByText("TRX-2026-000184-77").boundingBox())!.width;
+    if (description < list * 0.5 || reference < 64)
+      squeezed.push({ width: viewport.width, description, reference, list });
+  }
+  expect(squeezed, "a line's description or date line is squeezed").toEqual([]);
+  await page.setViewportSize(PHONE);
+
+  await bankLine.check();
+  await booksTab.click();
+  await expect(bankSide).toBeHidden();
+  await bookSide.getByRole("listitem").filter({ hasText: "-400,000,000" }).getByRole("checkbox").check();
+  await statementTab.click();
+  await expect(bankLine).toBeChecked();
+
+  // The same amount picked on both sides, so it can be matched, from the bar along
+  // the foot of the screen that the phone's tab bar mustn't cover.
+  await page.evaluate(() => window.scrollTo(0, 0));
+  const match = page.getByRole("button", { name: "Match", exact: true });
+  await expect(match).toBeEnabled();
+  await expect(match).toBeInViewport();
+  const covered = await match.evaluate((button) => {
+    const box = button.getBoundingClientRect();
+    const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+    return !(hit && button.contains(hit));
+  });
+  expect(covered, "the Match button is under the tab bar").toBe(false);
+});

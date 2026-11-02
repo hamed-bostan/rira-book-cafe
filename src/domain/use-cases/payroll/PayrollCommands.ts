@@ -63,7 +63,7 @@ function assertLines(lines: RecordPayRunInput["lines"]): void {
 }
 
 /**
- * Record a month's pay, with the figures the accountant gave. The cost goes to the
+ * Record a month's pay, with the figures as entered. The cost goes to the
  * month and what's owed to the staff, the insurance office and the tax office goes
  * on the books, all in the same transaction as the run.
  */

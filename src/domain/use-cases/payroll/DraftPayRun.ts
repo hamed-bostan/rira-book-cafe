@@ -9,8 +9,8 @@ const MONTHS_OFFERED = 6;
 
 /**
  * What a new pay run starts from: the recent months nobody has recorded, and everyone
- * active on last month's figures. Pay rarely changes month to month, so the accountant
- * only has to correct what did; someone new starts from their usual gross.
+ * active on last month's figures. Pay rarely changes month to month, so whoever records
+ * it only has to correct what did; someone new starts from their usual gross.
  */
 export class DraftPayRun {
   constructor(private readonly payroll: IPayrollRepository) {}

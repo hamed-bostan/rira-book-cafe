@@ -3,9 +3,11 @@ import { jalaliMonthDays, parseJalaliPeriod } from "./JalaliCalendar";
 import type { PaymentSource } from "./Expense";
 
 /**
- * Payroll, with the figures typed in from the accountant's sheet. The app doesn't
- * work out insurance or income tax: those rates change by law every year, and a
- * wrong one is a legal problem, so it records what it's given and books it.
+ * Payroll, with the figures typed in. The app doesn't work out insurance or income
+ * tax: those rates change by law every year, and a wrong one is a legal problem, so
+ * it records what it's given and books it. The cafe pays no insurance and withholds
+ * no tax, so the form asks for a salary alone and the deductions stay 0; they're kept
+ * here for the day that changes.
  *
  * Who earns what is the most private figure in the app, so it stays here. The
  * journal gets a month's totals only, and the activity log never gets an amount.

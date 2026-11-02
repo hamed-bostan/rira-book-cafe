@@ -65,11 +65,16 @@ export function amountOwed(expense: Pick<Expense, "amount" | "paidAmount" | "sta
 }
 
 /** Where image storage keeps a receipt: a random name in the private receipts folder. */
-const RECEIPT_URL = /^\/uploads\/receipts\/[0-9a-f-]{36}\.(?:jpg|png|webp|avif)$/;
+const RECEIPT_URL = /^\/uploads\/receipts\/[0-9a-f-]{36}\.(?:jpg|png|webp|avif|pdf)$/;
 
 /** Whether a URL is a receipt this app stored, not an address a client made up. */
 export function isReceiptUrl(value: string): boolean {
   return RECEIPT_URL.test(value);
+}
+
+/** Whether a stored receipt is a PDF rather than a photo or scan. */
+export function isPdfReceipt(receiptUrl: string): boolean {
+  return receiptUrl.endsWith(".pdf");
 }
 
 /**

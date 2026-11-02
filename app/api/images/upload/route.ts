@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { ValidationError } from "@/src/domain/errors/ValidationError";
 import { MAX_IMAGE_BYTES, UploadImage } from "@/src/domain/use-cases/images/UploadImage";
+import { MAX_RECEIPT_BYTES, UploadReceipt } from "@/src/domain/use-cases/images/UploadReceipt";
 import { imageStorageRepository } from "@/src/infrastructure/container";
 import { enforceRateLimit, RATE_LIMITS } from "@/src/lib/api/rate-limit";
 import { readBodyWithLimit } from "@/src/lib/api/read-body";
@@ -14,8 +15,8 @@ import { getSessionWith } from "@/src/lib/require-permission";
 const ADMIN_FOLDERS = new Set<string>(MANAGED_IMAGE_FOLDERS);
 const ALLOWED_FOLDERS = new Set<string>([...MANAGED_IMAGE_FOLDERS, AVATAR_IMAGE_FOLDER, RECEIPT_IMAGE_FOLDER]);
 
-/** The image limit plus room for the multipart envelope (boundaries, part headers, `folder`). */
-const MAX_BODY_BYTES = MAX_IMAGE_BYTES + 64 * 1024;
+/** Room for the multipart envelope (boundaries, part headers, `folder`) on top of the file limit. */
+const ENVELOPE_BYTES = 64 * 1024;
 
 /**
  * Image upload endpoint: `POST /api/images/upload` with `multipart/form-data`
@@ -27,6 +28,9 @@ const MAX_BODY_BYTES = MAX_IMAGE_BYTES + 64 * 1024;
  * `avatars` folder is open to any signed-in user uploading their own profile
  * picture; `receipts` is for whoever can write to the books. Anonymous callers can
  * never write to a billable, service-role bucket.
+ *
+ * Receipts are the one folder that also takes a PDF, and up to 10 MB rather than 5
+ * (`UploadReceipt`).
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
   // Decide which session this caller has up front; the folder check below picks
@@ -43,11 +47,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   if (limited) return limited;
 
   // Cap the body *before* buffering it: `request.formData()` alone would read an
-  // arbitrarily large upload into memory first.
-  const body = await readBodyWithLimit(request, MAX_BODY_BYTES);
+  // arbitrarily large upload into memory first. Only someone who can write to the
+  // books gets the receipts' larger room; the folder itself isn't known until parsed.
+  const maxFileBytes = accountingSession ? MAX_RECEIPT_BYTES : MAX_IMAGE_BYTES;
+  const body = await readBodyWithLimit(request, maxFileBytes + ENVELOPE_BYTES);
   if (!body.ok) {
     return body.reason === "too-large"
-      ? errorResponse(413, { message: "The image is larger than 5 MB.", code: "PAYLOAD_TOO_LARGE" })
+      ? errorResponse(413, {
+          message: `The file is larger than ${maxFileBytes / (1024 * 1024)} MB.`,
+          code: "PAYLOAD_TOO_LARGE",
+        })
       : errorResponse(400, { message: "Expected multipart/form-data.", code: "BAD_REQUEST" });
   }
 
@@ -79,15 +88,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   if (folder === RECEIPT_IMAGE_FOLDER && !accountingSession) return unauthorizedResponse();
 
   try {
-    const image = await new UploadImage(imageStorageRepository).execute({
-      data: await file.arrayBuffer(),
-      contentType: file.type,
-      folder,
-      fileName: file.name,
-    });
+    const input = { data: await file.arrayBuffer(), contentType: file.type, fileName: file.name };
+    const image =
+      folder === RECEIPT_IMAGE_FOLDER
+        ? await new UploadReceipt(imageStorageRepository).execute(input)
+        : await new UploadImage(imageStorageRepository).execute({ ...input, folder });
     return NextResponse.json({ image }, { status: 201 });
   } catch (error) {
-    // Empty, oversized or not an image — the client's fault, answered 400.
+    // Empty, oversized or not a type the folder takes — the client's fault, answered 400.
     if (error instanceof ValidationError) return errorResponseFromException(error, "Image upload rejected");
     requestLogger(request).error("Image upload failed", { error, folder });
     return errorResponse(502, { message: "Image upload failed. Please try again.", code: "UPLOAD_FAILED" });

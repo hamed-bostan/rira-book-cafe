@@ -15,14 +15,18 @@ export const employeeSchema = z.object({
 
 export type EmployeeFormInput = z.input<typeof employeeSchema>;
 
-/** One person's month, in the figures the accountant gave. */
+/**
+ * One person's month. The cafe pays no insurance and withholds no tax, so the form
+ * sends gross pay alone; the deductions stay accepted, as 0 when left out, for the
+ * day that changes.
+ */
 export const payRunLineSchema = z
   .object({
     employeeId: z.string().check(z.minLength(1, "payRunEmpty")),
     gross: moneyField,
-    employeeInsurance: optionalMoneyField,
-    incomeTax: optionalMoneyField,
-    employerInsurance: optionalMoneyField,
+    employeeInsurance: z._default(optionalMoneyField, 0),
+    incomeTax: z._default(optionalMoneyField, 0),
+    employerInsurance: z._default(optionalMoneyField, 0),
   })
   .check(
     z.refine((line) => line.employeeInsurance + line.incomeTax <= line.gross, {

@@ -1,3 +1,6 @@
+import { mkdir, rm, writeFile } from "node:fs/promises";
+import path from "node:path";
+
 import { describe, expect, it } from "vitest";
 
 import { PUT as setReceipt } from "@/app/api/admin/expenses/[id]/receipt/route";
@@ -7,6 +10,7 @@ import { POST as upload } from "@/app/api/images/upload/route";
 import { GET as serveUpload } from "@/app/uploads/[...path]/route";
 import { cafeDayOf } from "@/src/domain/entities/CafeTime";
 import { isReceiptUrl, type Expense } from "@/src/domain/entities/Expense";
+import { resolveStoredImageFile } from "@/src/infrastructure/container";
 import { prisma } from "@/src/infrastructure/prisma/client";
 
 import { formRequest, getRequest, jsonRequest, readError, readJson, routeParams } from "./helpers/http";
@@ -30,15 +34,24 @@ const electricity = {
   payment: "unpaid",
 };
 
-function receiptForm(folder = "receipts"): FormData {
+/** A one-page PDF, as a supplier's invoice would arrive. */
+const PDF = Buffer.from(
+  "%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\ntrailer\n<< /Root 1 0 R >>\n%%EOF\n",
+  "latin1",
+);
+
+function receiptForm(folder = "receipts", file: Blob = new Blob([PNG], { type: "image/png" })): FormData {
   const form = new FormData();
-  form.append("file", new Blob([PNG], { type: "image/png" }), "receipt.png");
+  form.append("file", file, file.type === "application/pdf" ? "invoice.pdf" : "receipt.png");
   form.append("folder", folder);
   return form;
 }
 
-async function uploaded(folder = "receipts"): Promise<string> {
-  const response = await upload(formRequest("/api/images/upload", receiptForm(folder)));
+const pdfFile = (bytes: Uint8Array<ArrayBuffer> = new Uint8Array(PDF)): Blob =>
+  new Blob([bytes], { type: "application/pdf" });
+
+async function uploaded(folder = "receipts", file?: Blob): Promise<string> {
+  const response = await upload(formRequest("/api/images/upload", receiptForm(folder, file)));
   expect(response.status).toBe(201);
   return (await readJson<{ image: { url: string } }>(response)).image.url;
 }
@@ -75,6 +88,35 @@ describe("uploading a receipt", () => {
     expect(url).toMatch(/^\/uploads\/receipts\/.+\.png$/);
     expect(isReceiptUrl(url)).toBe(true);
   });
+
+  it("takes a supplier's PDF", async () => {
+    signInAs("admin");
+    const url = await uploaded("receipts", pdfFile());
+
+    expect(url).toMatch(/^\/uploads\/receipts\/.+\.pdf$/);
+    expect(isReceiptUrl(url)).toBe(true);
+  });
+
+  it("takes a receipt larger than an image may be elsewhere, up to 10 MB", async () => {
+    signInAs("admin");
+    const big = new Uint8Array(6 * 1024 * 1024);
+    big.set(PDF);
+
+    expect(await uploaded("receipts", pdfFile(big))).toMatch(/\.pdf$/);
+
+    const tooBig = new Uint8Array(10 * 1024 * 1024 + 1);
+    tooBig.set(PDF);
+    expect((await upload(formRequest("/api/images/upload", receiptForm("receipts", pdfFile(tooBig))))).status).toBe(
+      400,
+    );
+  });
+
+  it("keeps PDFs out of the public folders", async () => {
+    signInAs("admin");
+    const response = await upload(formRequest("/api/images/upload", receiptForm("products", pdfFile())));
+
+    expect(response.status).toBe(400);
+  });
 });
 
 describe("reading a receipt", () => {
@@ -85,6 +127,36 @@ describe("reading a receipt", () => {
     expect(response.status).toBe(200);
     expect(response.headers.get("cache-control")).toBe("private, no-store");
     expect(response.headers.get("content-type")).toBe("image/png");
+  });
+
+  it("serves a PDF so the browser's viewer can open it, and still privately", async () => {
+    signInAs("admin");
+    const url = await uploaded("receipts", pdfFile());
+    const response = await serve(url);
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toBe("application/pdf");
+    expect(response.headers.get("content-disposition")).toBe('inline; filename="receipt.pdf"');
+    expect(response.headers.get("cache-control")).toBe("private, no-store");
+    expect(response.headers.get("x-content-type-options")).toBe("nosniff");
+    expect(response.headers.get("content-security-policy")).toBe("frame-ancestors 'none'");
+
+    signInAs("staff");
+    expect((await serve(url)).status).toBe(404);
+  });
+
+  it("never serves a PDF from a public folder, even one already on disk", async () => {
+    const name = `${crypto.randomUUID()}.pdf`;
+    const file = resolveStoredImageFile(`products/${name}`) ?? "";
+    await mkdir(path.dirname(file), { recursive: true });
+    await writeFile(file, PDF);
+
+    try {
+      signInAs("admin");
+      expect((await servePath(["products", name])).status).toBe(404);
+    } finally {
+      await rm(file, { force: true });
+    }
   });
 
   it("answers everyone else as if the file weren't there", async () => {

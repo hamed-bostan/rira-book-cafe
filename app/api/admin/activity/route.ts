@@ -10,20 +10,24 @@ import {
 import { GetEntityActivity } from "@/src/domain/use-cases/activity/GetEntityActivity";
 import { ListActivity } from "@/src/domain/use-cases/activity/ListActivity";
 import { activityLog } from "@/src/infrastructure/container";
-import { canReadActivityEntityType, visibleActivityEntityTypes } from "@/src/lib/api/activity-visibility";
+import {
+  canReadActivityEntityType,
+  redactActivityEntry,
+  visibleActivityEntityTypes,
+} from "@/src/lib/api/activity-visibility";
 import { parseAdminActivityFilters } from "@/src/lib/api/admin-activity-params";
 import { parsePageRequest } from "@/src/lib/api/pagination-params";
 import { errorResponseFromException, unauthorizedResponse } from "@/src/lib/api/responses";
-import { isOwner } from "@/src/lib/require-admin";
-import { getSessionWith } from "@/src/lib/require-permission";
+import { getSessionWith, sessionPermissions } from "@/src/lib/require-permission";
 
 // Reads the audit trail per request — an audit trail that showed a cached past
 // would be worthless.
 export const dynamic = "force-dynamic";
 
 /**
- * GET /api/admin/activity — the admin audit trail, newest first. Admin only, with
- * team-access entries reserved to the owner (see `activity-visibility`).
+ * GET /api/admin/activity — the audit trail, newest first. Requires `activity.view`,
+ * and each kind of entry takes the permission for what it describes, so the books
+ * and payroll stay with those who can read them (see `activity-visibility`).
  *
  * Two shapes, chosen by whether `limit` is present:
  *
@@ -40,10 +44,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const session = await getSessionWith("activity.view");
   if (!session) return unauthorizedResponse();
 
-  // The owner check is what decides whether team-access history is readable. It's
-  // a second lookup on an admin request, which admin traffic can afford — and the
-  // same trade `isAdmin` already makes to keep revocation instant.
-  const owner = await isOwner(session);
+  // What decides which entries are readable. It's a second lookup on the request,
+  // which this traffic can afford, and the trade every guard makes to keep
+  // revocation instant.
+  const permissions = await sessionPermissions(session);
 
   const params = request.nextUrl.searchParams;
   const filters = parseAdminActivityFilters(params);
@@ -64,14 +68,14 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       const entityType = toActivityEntityType(params.get("entityType") ?? "");
       // Refused rather than silently emptied: a panel is asked for by id, so "you
       // may not read this kind" is a real answer, not a stale filter to shrug off.
-      if (!canReadActivityEntityType(entityType, owner)) return unauthorizedResponse();
+      if (!canReadActivityEntityType(entityType, permissions)) return unauthorizedResponse();
 
       const entries = await new GetEntityActivity(activityLog).execute(
         entityType,
         params.get("entityId") ?? "",
         Number(rawLimit),
       );
-      return NextResponse.json(entries.map(toWire));
+      return NextResponse.json(entries.map((entry) => toWire(redactActivityEntry(entry, permissions))));
     }
 
     const page = parsePageRequest(params, ACTIVITY_SORTS, {
@@ -81,10 +85,13 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const result = await new ListActivity(activityLog).execute(
       // Applied last so it can't be overwritten by anything parsed off the query
       // string — the restriction is the viewer's, not the caller's to set.
-      { ...filters, visibleEntityTypes: visibleActivityEntityTypes(owner) },
+      { ...filters, visibleEntityTypes: visibleActivityEntityTypes(permissions) },
       page,
     );
-    return NextResponse.json({ ...result, items: result.items.map(toWire) });
+    return NextResponse.json({
+      ...result,
+      items: result.items.map((entry) => toWire(redactActivityEntry(entry, permissions))),
+    });
   } catch (error) {
     return errorResponseFromException(error, "GET /api/admin/activity failed");
   }

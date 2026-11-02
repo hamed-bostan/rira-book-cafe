@@ -38,8 +38,8 @@ export const ACTIVITY_ENTITY_TYPES = [
   "ledger",
   "expense",
   "income",
-  // Pay runs and the people on them. Entries never carry an amount: this log is open
-  // to floor staff, and pay per person is for `payroll.manage` alone.
+  // Pay runs and the people on them. Entries never carry an amount: this log outlives
+  // who may read it, and pay per person is for `payroll.manage` alone.
   "payroll",
 ] as const;
 
@@ -250,10 +250,10 @@ export type ActivityFilters = {
    * someone may read. It's here rather than in the route because a `where` clause
    * is the only place a restriction can't be forgotten by the next caller.
    *
-   * Today this carries exactly one rule: `user` entries — who granted whom
-   * dashboard access — stay owner-only, which is the boundary the team page and
-   * its endpoints already drew. Folding role changes into this log unified the
-   * *storage*, and deliberately did not widen the audience.
+   * The rule is that reading an entry takes the permission for what it describes
+   * (see `activity-visibility`): `user` entries stay owner-only, the books need
+   * `accounting.view`, payroll `payroll.manage`. Folding everything into this log
+   * unified the *storage*, and deliberately did not widen the audience.
    */
   visibleEntityTypes?: readonly ActivityEntityType[];
 };

@@ -1,6 +1,6 @@
 import { getLocale, getTranslations } from "next-intl/server";
 
-import { ACTIVITY_ENTITY_TYPES, FILTERABLE_ACTIVITY_FIELDS } from "@/src/domain/entities/ActivityEntry";
+import { FILTERABLE_ACTIVITY_FIELDS, type ActivityEntityType } from "@/src/domain/entities/ActivityEntry";
 import { cafeDayOf } from "@/src/domain/entities/CafeTime";
 import type { Page } from "@/src/domain/entities/Pagination";
 import { Link } from "@/src/i18n/navigation";
@@ -23,6 +23,8 @@ type ActivityScreenProps = {
   entries: Page<ActivityEntryWire>;
   /** The people who appear in the log, for the "Changed by" filter. */
   actors: ActivityActorWire[];
+  /** The kinds of entry this viewer may read, so the filter offers nothing they can't open. */
+  entityTypes: readonly ActivityEntityType[];
   /** Whether a filter is narrowing the log, to tell "nothing here" from "nothing matched". */
   isFiltered: boolean;
 };
@@ -42,7 +44,7 @@ type ActivityScreenProps = {
  * the three filters that matter — who, what kind of thing, and which value moved
  * — are exact.
  */
-export async function ActivityScreen({ entries, actors, isFiltered }: ActivityScreenProps) {
+export async function ActivityScreen({ entries, actors, entityTypes, isFiltered }: ActivityScreenProps) {
   const t = await getTranslations("dashActivity");
   const locale = await getLocale();
 
@@ -84,7 +86,7 @@ export async function ActivityScreen({ entries, actors, isFiltered }: ActivitySc
             label={t("filterEntity")}
             options={[
               { value: "", label: t("allEntities") },
-              ...ACTIVITY_ENTITY_TYPES.map((type) => ({ value: type, label: t(`entity.${type}`) })),
+              ...entityTypes.map((type) => ({ value: type, label: t(`entity.${type}`) })),
             ]}
           />
           {/* Filters on the *diff*, not the action — which is what lets a save

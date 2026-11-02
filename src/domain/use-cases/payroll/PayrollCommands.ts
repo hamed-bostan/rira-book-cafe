@@ -26,8 +26,9 @@ export type PayPayRunInput = {
 
 /**
  * Every log entry from here carries who, what and which month, and never an amount.
- * The activity log is open to floor staff, so a salary written there would show
- * people each other's pay. The figures stay on the pay run.
+ * The log is a second copy that's read on its own terms and kept for good, so a
+ * salary written there would outlast any change to who may see it. The figures stay
+ * on the pay run.
  */
 function audit(
   actor: ActivityActor,

@@ -416,15 +416,14 @@ describe("keeping pay private", () => {
     for (const figure of [...FIGURES, String(SARA_GROSS + 1000)]) expect(stored).not.toContain(figure);
   });
 
-  it("shows floor staff that payroll happened, and nothing about how much", async () => {
+  it("keeps payroll out of floor staff's activity log altogether", async () => {
     await exercise();
 
     signInAs("staff");
     const response = await readActivity(getRequest("/api/admin/activity?entityType=payroll"));
 
     expect(response.status).toBe(200);
-    const body = await response.text();
-    for (const figure of FIGURES) expect(body).not.toContain(figure);
+    expect((await readJson<{ items: unknown[] }>(response)).items).toEqual([]);
   });
 
   it("never names anyone in the journal", async () => {

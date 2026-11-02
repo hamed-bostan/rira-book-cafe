@@ -119,9 +119,6 @@ const PAGES: Record<string, FinancePage> = {
   "pricing settings": { path: () => "/dashboard/pricing/settings", tabs: true },
 };
 
-/** Pages whose tab is still past the edge of a phone's row, until Phase 2 scrolls it into view. */
-const TABS_OFF_SCREEN: readonly string[] = ["statements", "bank statements", "accounting settings"];
-
 let seed: Seed;
 let openShiftId: string | null = null;
 
@@ -461,7 +458,6 @@ for (const locale of LOCALES) {
 
       if (financePage.tabs) {
         test(`${name} shows the tab it's on`, async ({ page }) => {
-          test.fail(TABS_OFF_SCREEN.includes(name), "Phase 2 scrolls the current tab into view");
           await open(page, financePage);
 
           expect(await page.evaluate(measureCurrentTabHidden), "the current tab is off the edge").toBe(false);

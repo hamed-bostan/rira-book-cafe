@@ -1,5 +1,6 @@
 import {
   EVENT_KINDS,
+  MAX_EVENT_CAPACITY,
   MAX_EVENT_DESCRIPTION_LENGTH,
   MAX_EVENT_TITLE_LENGTH,
   MAX_SEATS_PER_REGISTRATION,
@@ -55,7 +56,10 @@ export const eventFormSchema = z.pipe(
           ),
           z.transform((value) => (value === "" ? undefined : Number(value))),
         )
-        .check(z.refine((value) => value === undefined || value >= 1, "capacityMin")),
+        .check(
+          z.refine((value) => value === undefined || value >= 1, "capacityMin"),
+          z.refine((value) => value === undefined || value <= MAX_EVENT_CAPACITY, "capacityTooLarge"),
+        ),
       /** Toman; blank or 0 is free. */
       price: z
         .pipe(

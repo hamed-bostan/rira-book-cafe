@@ -1,5 +1,5 @@
 import { MAX_ORDER_AMOUNT } from "@/src/domain/entities/Order";
-import { BOOK_AVAILABILITIES, MAX_BOOK_COPIES, PRODUCT_KINDS } from "@/src/domain/entities/Product";
+import { BOOK_AVAILABILITIES, MAX_BOOK_COPIES, MAX_STOCK_QUANTITY, PRODUCT_KINDS } from "@/src/domain/entities/Product";
 import { DIETARY_TAGS } from "@/src/domain/entities/ProductFilters";
 import * as z from "@/src/lib/zod";
 
@@ -146,6 +146,8 @@ export const productFormSchema = z.pipe(
             ctx.addIssue({ code: "custom", path: ["stockQuantity"], message: "stockRequired" });
           } else if (!STOCK_PATTERN.test(data.stockQuantity)) {
             ctx.addIssue({ code: "custom", path: ["stockQuantity"], message: "stockWhole" });
+          } else if (Number(data.stockQuantity) > MAX_STOCK_QUANTITY) {
+            ctx.addIssue({ code: "custom", path: ["stockQuantity"], message: "stockTooLarge" });
           }
         },
         { when: productFieldsParsed },

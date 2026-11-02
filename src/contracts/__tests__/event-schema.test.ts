@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { MAX_EVENT_CAPACITY } from "@/src/domain/entities/CafeEvent";
 import { MAX_ORDER_AMOUNT } from "@/src/domain/entities/Order";
 
 import { eventFormSchema, eventTablesSchema, type EventFormInput } from "../event-schema";
@@ -31,6 +32,12 @@ describe("eventFormSchema", () => {
   it("refuses an end before the start", () => {
     const result = eventFormSchema.safeParse({ ...FORM, endsAt: "2026-10-25T18:00" });
     expect(result.error?.issues.map((issue) => issue.message)).toContain("endBeforeStart");
+  });
+
+  it("caps the capacity", () => {
+    expect(eventFormSchema.parse({ ...FORM, capacity: String(MAX_EVENT_CAPACITY) }).capacity).toBe(MAX_EVENT_CAPACITY);
+    const result = eventFormSchema.safeParse({ ...FORM, capacity: String(MAX_EVENT_CAPACITY + 1) });
+    expect(messagesAt(result, "capacity")).toEqual(["capacityTooLarge"]);
   });
 
   it("caps the price at what an order can hold", () => {

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { MAX_ORDER_AMOUNT } from "../../../entities/Order";
-import { isSellable, withoutCost, type Product } from "../../../entities/Product";
+import { isSellable, MAX_STOCK_QUANTITY, withoutCost, type Product } from "../../../entities/Product";
 import { NotFoundError } from "../../../errors/NotFoundError";
 import { ValidationError } from "../../../errors/ValidationError";
 import { BulkUpdateProducts } from "../BulkUpdateProducts";
@@ -205,7 +205,8 @@ describe("CreateProduct", () => {
     ["price", { price: MAX_ORDER_AMOUNT + 1 }],
     ["originalPrice", { price: MAX_ORDER_AMOUNT, originalPrice: MAX_ORDER_AMOUNT + 1 }],
     ["costPrice", { costPrice: MAX_ORDER_AMOUNT + 1 }],
-  ])("refuses a %s past what an order can hold", async (field, overrides) => {
+    ["stockQuantity", { stockQuantity: MAX_STOCK_QUANTITY + 1 }],
+  ])("refuses a %s over its limit", async (field, overrides) => {
     const { repo, create } = repoWith([]);
     await expect(new CreateProduct(repo).execute({ ...INPUT, ...overrides }, ACTOR)).rejects.toMatchObject({
       name: "ValidationError",

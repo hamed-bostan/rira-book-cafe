@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { MAX_EVENT_CAPACITY } from "../../../entities/CafeEvent";
 import { MAX_ORDER_AMOUNT } from "../../../entities/Order";
 import { NotFoundError } from "../../../errors/NotFoundError";
 import { ValidationError } from "../../../errors/ValidationError";
@@ -142,6 +143,7 @@ describe("CreateEvent", () => {
     ["an unreadable end", { endsAt: "later" }, "endsAt"],
     ["a zero capacity", { capacity: 0 }, "capacity"],
     ["a fractional capacity", { capacity: 2.5 }, "capacity"],
+    ["a capacity over the limit", { capacity: MAX_EVENT_CAPACITY + 1 }, "capacity"],
     ["a negative price", { price: -1 }, "price"],
     ["a fractional price", { price: 1.5 }, "price"],
     ["a price past what an order can hold", { price: MAX_ORDER_AMOUNT + 1 }, "price"],

@@ -1,5 +1,5 @@
 import { MAX_ORDER_AMOUNT } from "../../entities/Order";
-import { PRODUCT_KINDS } from "../../entities/Product";
+import { MAX_STOCK_QUANTITY, PRODUCT_KINDS } from "../../entities/Product";
 import { ValidationError } from "../../errors/ValidationError";
 
 import type { NewProduct } from "../../repositories/IProductRepository";
@@ -34,6 +34,9 @@ export function validateProduct(input: NewProduct): NewProduct {
   }
   if (input.stockQuantity !== undefined && (!Number.isInteger(input.stockQuantity) || input.stockQuantity < 0)) {
     throw new ValidationError("stockQuantity", "Stock must be a whole number of 0 or more.");
+  }
+  if (input.stockQuantity !== undefined && input.stockQuantity > MAX_STOCK_QUANTITY) {
+    throw new ValidationError("stockQuantity", `Stock can be at most ${MAX_STOCK_QUANTITY}.`);
   }
   if (input.kind === "book" && !input.book?.author.trim()) {
     throw new ValidationError("bookAuthor", "A book needs an author.");

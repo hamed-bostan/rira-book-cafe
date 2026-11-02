@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { MAX_ORDER_AMOUNT } from "@/src/domain/entities/Order";
+import { MAX_STOCK_QUANTITY } from "@/src/domain/entities/Product";
 
 import { productFormSchema, type ProductFormInput } from "../product-schema";
 
@@ -70,6 +71,14 @@ describe("productFormSchema", () => {
     expect(messages("")).toEqual(["stockRequired"]);
     expect(messages("2.5")).toEqual(["stockWhole"]);
     expect(productFormSchema.parse(BASE).stockQuantity).toBe(12);
+  });
+
+  it("caps the stock count", () => {
+    expect(productFormSchema.parse({ ...BASE, stockQuantity: String(MAX_STOCK_QUANTITY) }).stockQuantity).toBe(
+      MAX_STOCK_QUANTITY,
+    );
+    const result = productFormSchema.safeParse({ ...BASE, stockQuantity: String(MAX_STOCK_QUANTITY + 1) });
+    expect(messagesAt(result, "stockQuantity")).toEqual(["stockTooLarge"]);
   });
 
   it("ignores the stock of a made-to-order item, so saving leaves the stored count", () => {

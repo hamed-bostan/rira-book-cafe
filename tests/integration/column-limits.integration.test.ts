@@ -5,26 +5,28 @@ import { PUT as updateIngredient } from "@/app/api/admin/ingredients/[id]/route"
 import { POST as createIngredient } from "@/app/api/admin/ingredients/route";
 import { POST as ringUpSale } from "@/app/api/admin/orders/route";
 import { PUT as saveRecipe } from "@/app/api/admin/recipes/[productId]/route";
+import { POST as createEvent } from "@/app/api/events/route";
 import { POST as createProduct } from "@/app/api/products/route";
 import type { BookLoan } from "@/src/domain/entities/BookLoan";
-import { cafeDayOf } from "@/src/domain/entities/CafeTime";
+import { MAX_EVENT_CAPACITY, type CafeEvent } from "@/src/domain/entities/CafeEvent";
+import { cafeDayOf, shiftCafeDay } from "@/src/domain/entities/CafeTime";
 import { MAX_ORDER_AMOUNT } from "@/src/domain/entities/Order";
 import type { Ingredient } from "@/src/domain/entities/Pricing";
-import type { Product } from "@/src/domain/entities/Product";
+import { MAX_STOCK_QUANTITY, type Product } from "@/src/domain/entities/Product";
 import { prisma } from "@/src/infrastructure/prisma/client";
 
 import { jsonRequest, readError, readJson, routeParams } from "./helpers/http";
 import { signInAs } from "./helpers/session";
 
 /**
- * Amounts at the edge of what their columns hold: every one either saves and reads
- * back whole, or is refused with a 400 — never a 500 from the database.
+ * Amounts and counts at the edge of what their columns hold: every one either saves
+ * and reads back whole, or is refused with a 400 — never a 500 from the database.
  */
 
 /** Past the largest INTEGER (int4), 2,147,483,647. */
 const PAST_INT4 = 3_000_000_000;
 
-async function product(price: number): Promise<Response> {
+async function product(price: number, stockQuantity = 40): Promise<Response> {
   signInAs("admin");
   const category = await prisma.category.findUniqueOrThrow({ where: { slug: "hot-drinks" } });
   return createProduct(
@@ -36,7 +38,7 @@ async function product(price: number): Promise<Response> {
       originalPrice: "",
       costPrice: "",
       imageUrl: "/images/seed/espresso.svg",
-      stockQuantity: "40",
+      stockQuantity: String(stockQuantity),
       madeToOrder: false,
       isFeatured: false,
       isPublished: true,
@@ -89,6 +91,54 @@ describe("menu prices", () => {
     const refused = await product(MAX_ORDER_AMOUNT + 1);
     expect(refused.status).toBe(400);
     expect((await readError(refused)).fieldErrors).toEqual({ price: "amountTooLarge" });
+  });
+});
+
+describe("a stock count", () => {
+  it("takes its limit, and answers 400 past it — even past INTEGER", async () => {
+    const saved = await product(130_000, MAX_STOCK_QUANTITY);
+    expect(saved.status).toBe(201);
+    expect((await readJson<Product>(saved)).stockQuantity).toBe(MAX_STOCK_QUANTITY);
+
+    for (const stock of [MAX_STOCK_QUANTITY + 1, PAST_INT4]) {
+      const refused = await product(130_000, stock);
+      expect(refused.status).toBe(400);
+      expect((await readError(refused)).fieldErrors).toEqual({ stockQuantity: "stockTooLarge" });
+    }
+  });
+});
+
+describe("an event's capacity", () => {
+  const event = (capacity: number): Promise<Response> => {
+    signInAs("admin");
+    const nextWeek = shiftCafeDay(cafeDayOf(new Date()), 7);
+    return createEvent(
+      jsonRequest("POST", "/api/events", {
+        kind: "workshop",
+        title: "Latte art workshop",
+        description: "",
+        titleFa: "",
+        descriptionFa: "",
+        imageUrl: "",
+        startsAt: `${nextWeek}T17:00`,
+        endsAt: `${nextWeek}T19:00`,
+        capacity: String(capacity),
+        price: "",
+        isPublished: true,
+      }),
+    );
+  };
+
+  it("takes its limit, and answers 400 past it — even past INTEGER", async () => {
+    const saved = await event(MAX_EVENT_CAPACITY);
+    expect(saved.status).toBe(201);
+    expect((await readJson<CafeEvent>(saved)).capacity).toBe(MAX_EVENT_CAPACITY);
+
+    for (const capacity of [MAX_EVENT_CAPACITY + 1, PAST_INT4]) {
+      const refused = await event(capacity);
+      expect(refused.status).toBe(400);
+      expect((await readError(refused)).fieldErrors).toEqual({ capacity: "capacityTooLarge" });
+    }
   });
 });
 

@@ -50,7 +50,7 @@ export class PrismaCashShiftRepository implements ICashShiftRepository {
     try {
       const row = await this.db.cashShift.create({
         data: {
-          openingFloat: input.openingFloat,
+          openingFloat: BigInt(input.openingFloat),
           note: input.note ?? null,
           openedById: input.by.id,
           openedByName: input.by.name,
@@ -81,7 +81,7 @@ export class PrismaCashShiftRepository implements ICashShiftRepository {
 
       const current = await tx.cashShift.findUniqueOrThrow({ where: { id } });
       const moved = await readMovements(tx, current.openedAt, input.at);
-      const expectedCash = expectedDrawer(current.openingFloat, moved);
+      const expectedCash = expectedDrawer(Number(current.openingFloat), moved);
       const row = await tx.cashShift.update({
         where: { id },
         data: {
@@ -89,9 +89,9 @@ export class PrismaCashShiftRepository implements ICashShiftRepository {
           closedAt: input.at,
           closedById: input.by.id,
           closedByName: input.by.name,
-          expectedCash,
-          countedCash: input.countedCash,
-          difference: input.countedCash - expectedCash,
+          expectedCash: BigInt(expectedCash),
+          countedCash: BigInt(input.countedCash),
+          difference: BigInt(input.countedCash - expectedCash),
           note: input.note ?? current.note,
         },
       });
@@ -149,12 +149,12 @@ function toShift(row: ShiftRow): CashShift {
     openedAt: row.openedAt.toISOString(),
     openedById: row.openedById,
     openedByName: row.openedByName,
-    openingFloat: row.openingFloat,
+    openingFloat: Number(row.openingFloat),
     closedAt: row.closedAt?.toISOString(),
     closedByName: row.closedByName ?? undefined,
-    expectedCash: row.expectedCash ?? undefined,
-    countedCash: row.countedCash ?? undefined,
-    difference: row.difference ?? undefined,
+    expectedCash: row.expectedCash === null ? undefined : Number(row.expectedCash),
+    countedCash: row.countedCash === null ? undefined : Number(row.countedCash),
+    difference: row.difference === null ? undefined : Number(row.difference),
     note: row.note ?? undefined,
   };
 }

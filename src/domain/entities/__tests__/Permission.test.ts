@@ -36,6 +36,13 @@ describe("ROLE_PERMISSIONS", () => {
     expect(roleHasPermission("owner", "reports.view")).toBe(true);
   });
 
+  it("keeps pay per person to admins and the owner, away from everyone with the activity log", () => {
+    expect(roleHasPermission("staff", "payroll.manage")).toBe(false);
+    expect(roleHasPermission("support", "payroll.manage")).toBe(false);
+    expect(roleHasPermission("admin", "payroll.manage")).toBe(true);
+    expect(roleHasPermission("owner", "payroll.manage")).toBe(true);
+  });
+
   it("derives dashboard roles from dashboard.view", () => {
     expect(DASHBOARD_ROLES).toEqual(["support", "staff", "admin", "owner"]);
   });

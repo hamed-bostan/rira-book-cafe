@@ -46,6 +46,11 @@ export const PERMISSIONS = [
    * manage accounts and suppliers, set the VAT rate and close periods. Admin and owner.
    */
   "accounting.write",
+  /**
+   * See and change who's paid what, and run payroll. Its own permission because pay
+   * per person is more private than the books, which only ever show a month's total.
+   */
+  "payroll.manage",
   /** See stock levels and record waste — a floor job, so staff hold it. */
   "inventory.view",
   /** Receive deliveries, count stock, record opening stock and set reorder levels. Admin and owner. */
@@ -95,6 +100,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
     "settings.write",
     "accounting.view",
     "accounting.write",
+    "payroll.manage",
     "inventory.view",
     "inventory.manage",
     "shifts.manage",
@@ -115,6 +121,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
     "settings.write",
     "accounting.view",
     "accounting.write",
+    "payroll.manage",
     "inventory.view",
     "inventory.manage",
     "shifts.manage",

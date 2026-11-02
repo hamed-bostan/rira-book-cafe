@@ -11,6 +11,7 @@ import {
   Coffee,
   Gift,
   HandCoins,
+  HardHat,
   History,
   LayoutDashboard,
   Landmark,
@@ -68,6 +69,7 @@ export type DashboardSectionLabelKey =
   | "navAccounting"
   | "navIncome"
   | "navExpenses"
+  | "navPayroll"
   | "navPricing"
   | "navActivity"
   | "navTeam";
@@ -198,6 +200,14 @@ const SECTIONS = [
     labelKey: "navExpenses",
     icon: Receipt,
     needs: "accounting.view",
+    group: "groupFinance",
+  },
+  // Pay per person is more private than the books, so it has its own permission.
+  {
+    href: "/dashboard/payroll",
+    labelKey: "navPayroll",
+    icon: HardHat,
+    needs: "payroll.manage",
     group: "groupFinance",
   },
   {

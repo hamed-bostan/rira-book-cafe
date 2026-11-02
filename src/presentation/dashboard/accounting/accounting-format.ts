@@ -21,6 +21,7 @@ export function sourceHref(entry: Pick<JournalEntry, "source" | "sourceId">): st
   if (!entry.sourceId) return null;
   if (entry.source.startsWith("order")) return `/dashboard/orders/${entry.sourceId}`;
   if (entry.source.startsWith("expense")) return `/dashboard/expenses/${entry.sourceId}`;
+  if (entry.source.startsWith("payroll")) return `/dashboard/payroll/${entry.sourceId}`;
   if (entry.source === "cashShift") return "/dashboard/cash-shifts";
   if (entry.source === "income") return "/dashboard/income";
   if (entry.source === "loanDeposit") return "/dashboard/book-loans";
@@ -30,8 +31,15 @@ export function sourceHref(entry: Pick<JournalEntry, "source" | "sourceId">): st
 /** What the link to that document reads: a `dashAccounting` message key. */
 export function sourceLinkKey(
   source: JournalEntry["source"],
-): "entry.viewOrder" | "entry.viewExpense" | "entry.viewCashShifts" | "entry.viewIncome" | "entry.viewBookLoans" {
+):
+  | "entry.viewOrder"
+  | "entry.viewExpense"
+  | "entry.viewCashShifts"
+  | "entry.viewIncome"
+  | "entry.viewBookLoans"
+  | "entry.viewPayroll" {
   if (source.startsWith("order")) return "entry.viewOrder";
+  if (source.startsWith("payroll")) return "entry.viewPayroll";
   if (source === "income") return "entry.viewIncome";
   if (source === "loanDeposit") return "entry.viewBookLoans";
   return source === "cashShift" ? "entry.viewCashShifts" : "entry.viewExpense";

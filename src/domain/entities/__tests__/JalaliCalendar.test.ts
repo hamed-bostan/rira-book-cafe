@@ -8,8 +8,28 @@ import {
   jalaliDayLabel,
   jalaliMonthDays,
   jalaliMonthLength,
+  jalaliPeriod,
+  parseJalaliPeriod,
+  recentJalaliPeriods,
   toJalali,
 } from "../JalaliCalendar";
+
+describe("Persian month keys", () => {
+  it("pads the month, and reads back what it wrote", () => {
+    expect(jalaliPeriod(1405, 8)).toBe("1405-08");
+    expect(parseJalaliPeriod("1405-08")).toEqual({ jy: 1405, jm: 8 });
+  });
+
+  it("reads nothing from what isn't a month", () => {
+    expect(parseJalaliPeriod("1405-13")).toBeNull();
+    expect(parseJalaliPeriod("1405-8")).toBeNull();
+    expect(parseJalaliPeriod("soon")).toBeNull();
+  });
+
+  it("counts back across the start of the year", () => {
+    expect(recentJalaliPeriods("2026-04-21", 3)).toEqual(["1405-02", "1405-01", "1404-12"]);
+  });
+});
 
 describe("jalaliDayLabel", () => {
   it("pads the month and day, as the books write them", () => {

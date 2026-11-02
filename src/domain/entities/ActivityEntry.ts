@@ -38,6 +38,9 @@ export const ACTIVITY_ENTITY_TYPES = [
   "ledger",
   "expense",
   "income",
+  // Pay runs and the people on them. Entries never carry an amount: this log is open
+  // to floor staff, and pay per person is for `payroll.manage` alone.
+  "payroll",
 ] as const;
 
 /**
@@ -129,6 +132,10 @@ export const ACTIVITY_ACTIONS = [
   "expense.recurringSkipped",
   "income.recorded",
   "income.voided",
+  "payroll.recorded",
+  "payroll.paid",
+  "payroll.voided",
+  "payroll.employeeChanged",
   // Another event rather than a change to anything stored — an admin downloaded a
   // customer-data export. Recorded through `IActivityLog.recordEvent`, same as
   // `order.customerNotified`: the file has already left the moment this is

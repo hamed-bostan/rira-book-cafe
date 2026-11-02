@@ -1,4 +1,4 @@
-import { fromJalali, jalaliMonthLength, toJalali } from "./JalaliCalendar";
+import { fromJalali, jalaliMonthLength, jalaliPeriod, parseJalaliPeriod, toJalali } from "./JalaliCalendar";
 
 /**
  * A bill that comes round every Persian month: rent, internet, a service contract.
@@ -37,13 +37,9 @@ export type DueBill = {
   dueOn: string;
 };
 
-const BILL_PERIOD = /^(\d{4})-(0[1-9]|1[0-2])$/;
-
 export function isBillPeriod(value: string): boolean {
-  return BILL_PERIOD.test(value);
+  return parseJalaliPeriod(value) !== null;
 }
-
-const periodOf = (jy: number, jm: number): string => `${jy}-${String(jm).padStart(2, "0")}`;
 
 function dueDayIn(dayOfMonth: number, jy: number, jm: number): string {
   return fromJalali(jy, jm, Math.min(dayOfMonth, jalaliMonthLength(jy, jm)));
@@ -55,9 +51,9 @@ export function isDuePeriod(
   period: string,
   today: string,
 ): boolean {
-  const match = BILL_PERIOD.exec(period);
-  if (!match || !bill.isActive) return false;
-  const dueOn = dueDayIn(bill.dayOfMonth, Number(match[1]), Number(match[2]));
+  const month = parseJalaliPeriod(period);
+  if (!month || !bill.isActive) return false;
+  const dueOn = dueDayIn(bill.dayOfMonth, month.jy, month.jm);
   return dueOn >= bill.startsOn && dueOn <= today;
 }
 
@@ -70,7 +66,7 @@ export function dueMonths(bill: RecurringBill, done: ReadonlySet<string>, today:
   const end = toJalali(today);
   let { jy, jm } = toJalali(bill.startsOn);
   while (jy < end.jy || (jy === end.jy && jm <= end.jm)) {
-    const period = periodOf(jy, jm);
+    const period = jalaliPeriod(jy, jm);
     if (!done.has(period) && isDuePeriod(bill, period, today)) {
       due.push({ bill, period, dueOn: dueDayIn(bill.dayOfMonth, jy, jm) });
     }

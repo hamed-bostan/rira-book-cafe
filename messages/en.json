@@ -173,7 +173,13 @@
     "refundNothing": "There's nothing to refund on those items.",
     "paymentOverOwed": "That's more than is owed on this bill.",
     "billDayInvalid": "Choose a day of the month.",
-    "billNotDue": "That month of the bill isn't due."
+    "billNotDue": "That month of the bill isn't due.",
+    "payRunMonthInvalid": "Choose a month.",
+    "payRunEmpty": "Enter gross pay for at least one person.",
+    "payRunDuplicate": "Someone is on this run twice.",
+    "payRunDeductionsTooHigh": "Deductions can't be more than gross pay.",
+    "payRunDateBeforeMonth": "That date is before the month starts.",
+    "payRunPaidBeforeBooked": "A run can't be paid before it was booked."
   },
   "apiErrors": {
     "badRequest": "The request couldn't be read. Please try again.",
@@ -290,7 +296,8 @@
     "groupBookings": "Bookings",
     "groupLibrary": "Library",
     "navBookHolds": "Book holds",
-    "navIncome": "Income"
+    "navIncome": "Income",
+    "navPayroll": "Payroll"
   },
   "dashTeam": {
     "membersHeading": "Team members",
@@ -843,7 +850,8 @@
       "expense": "Expenses",
       "suiteBooking": "Suite",
       "bookLoan": "Book loans",
-      "income": "Income"
+      "income": "Income",
+      "payroll": "Payroll"
     },
     "action": {
       "product": {
@@ -917,6 +925,12 @@
       "income": {
         "recorded": "<b>{actor}</b> recorded income {entity}",
         "voided": "<b>{actor}</b> voided income {entity}"
+      },
+      "payroll": {
+        "recorded": "<b>{actor}</b> recorded payroll for {entity}",
+        "paid": "<b>{actor}</b> recorded a salary payment for {entity}",
+        "voided": "<b>{actor}</b> voided payroll for {entity}",
+        "employeeChanged": "<b>{actor}</b> updated employee {entity}"
       }
     },
     "role": {
@@ -993,13 +1007,15 @@
       "unmatched": "Matches undone",
       "tableLabels": "Held tables",
       "dueAt": "Due",
-      "position": "Menu order",
+      "position": "Job",
       "receiptUrl": "Receipt",
       "dayOfMonth": "Due on day",
       "period": "Month",
       "vatAmount": "VAT",
       "accountCode": "Booked to",
-      "supplierId": "Supplier"
+      "supplierId": "Supplier",
+      "monthlySalary": "Usual pay (figures not shown)",
+      "phone": "Phone"
     },
     "filterField": "Field",
     "allFields": "Any field"
@@ -1834,7 +1850,9 @@
       "orderReturn": "Refund",
       "orderReturnCost": "Cost back in stock",
       "income": "Income",
-      "loanDeposit": "Book deposit"
+      "loanDeposit": "Book deposit",
+      "payroll": "Payroll",
+      "payrollPayment": "Salary payment"
     },
     "entry": {
       "title": "Journal entry JE-{number}",
@@ -1861,7 +1879,8 @@
       "reverseError": "Couldn't reverse the entry. Please try again.",
       "reversed": "JE-{number} reversed",
       "viewIncome": "View income",
-      "viewBookLoans": "View book loans"
+      "viewBookLoans": "View book loans",
+      "viewPayroll": "View the pay run"
     },
     "form": {
       "title": "New manual entry",
@@ -3234,5 +3253,110 @@
     "voidConfirm": "Void income",
     "voidError": "Couldn't void the income. Please try again.",
     "voided": "IN-{number} voided"
+  },
+  "dashPayroll": {
+    "heading": "Payroll",
+    "subtitle": "Each month's pay, from the figures your accountant gives you. The app doesn't calculate tax or insurance.",
+    "breadcrumbLabel": "Payroll",
+    "new": "New pay run",
+    "employees": "Employees",
+    "owed": "Salaries owed",
+    "owedHint": "{count, plural, one {{formatted} run to pay} other {{formatted} runs to pay}}",
+    "owedNone": "Nothing owed",
+    "listLabel": "Pay runs",
+    "emptyTitle": "No pay runs yet",
+    "emptyBody": "Add your employees, then record the first month.",
+    "col": {
+      "month": "Month",
+      "people": "People",
+      "gross": "Gross",
+      "net": "Net pay",
+      "status": "Status"
+    },
+    "peopleCount": "{count, plural, one {{formatted} person} other {{formatted} people}}",
+    "openRun": "Open payroll for {month}",
+    "grossLabel": "Gross pay",
+    "employeeInsuranceLabel": "Insurance, employee's share",
+    "incomeTaxLabel": "Income tax",
+    "employerInsuranceLabel": "Insurance, employer's share",
+    "netLabel": "Net pay",
+    "form": {
+      "title": "New pay run",
+      "subtitle": "Enter the figures from your accountant's sheet. It's booked as soon as you save it.",
+      "monthLabel": "Month",
+      "dateLabel": "Booked on",
+      "dateHint": "The month's last day, unless that's still to come.",
+      "peopleHeading": "Who's paid",
+      "peopleHint": "Starts from last month's figures. Leave gross pay blank to leave someone out of this month.",
+      "netFor": "Net pay: {amount}",
+      "deductionsTooHigh": "Deductions can't be more than gross pay.",
+      "totalsHeading": "This run",
+      "totalGross": "Gross pay",
+      "totalNet": "Paid to staff",
+      "totalInsurance": "To the insurance office, both shares",
+      "totalTax": "To the tax office",
+      "totalCost": "Cost to the cafe",
+      "save": "Record pay run",
+      "saved": "Payroll recorded for {month}",
+      "error": "Couldn't record the pay run. Please try again.",
+      "noEmployees": "There's nobody on the payroll yet.",
+      "addEmployees": "Add employees",
+      "noMonths": "The last six months are all recorded. To redo one, void its run first."
+    },
+    "detail": {
+      "title": "Payroll, {month}",
+      "recordedBy": "Recorded by {name}",
+      "bookedOn": "Booked on",
+      "payment": "Payment",
+      "paidFrom": "Paid from {source} on {date}",
+      "paidSoFar": "{paid} paid, {left} left",
+      "unpaid": "Not paid yet",
+      "linesHeading": "Who's paid",
+      "totals": "Totals",
+      "entriesHeading": "Journal entries",
+      "settleHint": "Pay the insurance and tax offices with a manual entry: debit Insurance payable (2310) or Payroll tax payable (2320), credit the bank (1120).",
+      "newEntry": "New manual entry",
+      "pay": "Pay",
+      "payTitle": "Pay {month}",
+      "paySub": "{amount} owed to staff",
+      "paySource": "Pay from",
+      "from": {
+        "cash": "Cash register",
+        "bank": "Bank"
+      },
+      "paidOn": "Paid on",
+      "payAmount": "Amount",
+      "payAmountHint": "Leave blank to pay all that's left, or enter part of it.",
+      "payConfirm": "Record payment",
+      "payError": "Couldn't record the payment. Please try again.",
+      "paid": "Payment recorded for {month}",
+      "void": "Void",
+      "voidTitle": "Void payroll for {month}?",
+      "voidMessage": "Everything it posted is reversed today, payments included. The run stays on record, marked void, and the month can be recorded again. This can't be undone.",
+      "voidReason": "Reason (optional)",
+      "voidConfirm": "Void pay run",
+      "voidError": "Couldn't void the pay run. Please try again.",
+      "voided": "Payroll voided for {month}"
+    },
+    "staff": {
+      "heading": "Employees",
+      "subtitle": "Who the cafe pays. Switch someone off rather than deleting them: past pay runs keep their name.",
+      "new": "Add employee",
+      "edit": "Edit {name}",
+      "editShort": "Edit",
+      "nameLabel": "Name",
+      "positionLabel": "Job",
+      "phoneLabel": "Phone",
+      "salaryLabel": "Usual monthly gross",
+      "salaryHint": "Where their first pay run starts. You can change it on the run.",
+      "activeLabel": "Active",
+      "inactive": "Inactive",
+      "noSalary": "No usual pay set",
+      "save": "Save",
+      "empty": "Nobody on the payroll yet.",
+      "error": "Couldn't save the employee. Please try again.",
+      "saved": "Employee saved",
+      "added": "Employee added"
+    }
   }
 }

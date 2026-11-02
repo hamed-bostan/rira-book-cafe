@@ -1,4 +1,5 @@
 import { allocate, SYSTEM_ACCOUNTS, vatIncluded, type JournalLine, type NewJournalEntry } from "./Ledger";
+import { payRunTotals } from "./Payroll";
 
 import type { BookLoan, BookLoanStatus } from "./BookLoan";
 import type { CashShift } from "./CashShift";
@@ -6,6 +7,7 @@ import type { Expense, PaymentSource } from "./Expense";
 import type { Income } from "./Income";
 import type { Order, PaymentMethod, PaymentPart } from "./Order";
 import type { OrderRefund } from "./OrderRefund";
+import type { PayRun } from "./Payroll";
 import type { ProductKind } from "./Product";
 
 /**
@@ -374,6 +376,58 @@ export function cashOverShortEntry(shift: CashShift, date: string, actor: Actor)
     lines: [
       { accountCode: over ? SYSTEM_ACCOUNTS.cash : SYSTEM_ACCOUNTS.cashOverShort, debit: amount, credit: 0 },
       { accountCode: over ? SYSTEM_ACCOUNTS.cashOverShort : SYSTEM_ACCOUNTS.cash, debit: 0, credit: amount },
+    ],
+    createdById: actor.id,
+    createdByName: actor.name,
+  };
+}
+
+/**
+ * A month's payroll. Salaries and the employer's share of insurance are the month's
+ * cost; what's owed goes to the staff (their net), the insurance office (both shares)
+ * and the tax office. Totals only: who earned what stays on the pay run, so reading
+ * the journal doesn't show anyone's pay.
+ */
+export function payrollEntry(run: PayRun, actor: Actor): NewJournalEntry {
+  const totals = payRunTotals(run.lines);
+  return {
+    date: run.date,
+    description: `Payroll ${run.period}`,
+    source: "payroll",
+    sourceId: run.id,
+    uniqueKey: `payroll:${run.id}`,
+    lines: [
+      { accountCode: SYSTEM_ACCOUNTS.salaries, debit: totals.gross, credit: 0 },
+      { accountCode: SYSTEM_ACCOUNTS.employerInsurance, debit: totals.employerInsurance, credit: 0 },
+      { accountCode: SYSTEM_ACCOUNTS.salariesPayable, debit: 0, credit: totals.net },
+      {
+        accountCode: SYSTEM_ACCOUNTS.insurancePayable,
+        debit: 0,
+        credit: totals.employeeInsurance + totals.employerInsurance,
+      },
+      { accountCode: SYSTEM_ACCOUNTS.payrollTaxPayable, debit: 0, credit: totals.incomeTax },
+    ],
+    createdById: actor.id,
+    createdByName: actor.name,
+  };
+}
+
+/** Salaries paid out, some or all of a run: Dr Salaries payable / Cr the cash or the bank. */
+export function payrollPaymentEntry(
+  run: PayRun,
+  payment: { amount: number; source: PaymentSource; date: string },
+  actor: Actor,
+): NewJournalEntry {
+  return {
+    date: payment.date,
+    description: `Payroll ${run.period} payment`,
+    source: "payrollPayment",
+    sourceId: run.id,
+    // Keyed on what's been paid after this, so each part of a run gets its own entry.
+    uniqueKey: `payroll:${run.id}:payment:${run.paidAmount}`,
+    lines: [
+      { accountCode: SYSTEM_ACCOUNTS.salariesPayable, debit: payment.amount, credit: 0 },
+      { accountCode: SOURCE_ACCOUNT[payment.source], debit: 0, credit: payment.amount },
     ],
     createdById: actor.id,
     createdByName: actor.name,

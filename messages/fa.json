@@ -173,7 +173,13 @@
     "refundNothing": "برای این اقلام مبلغی برای بازپرداخت نیست.",
     "paymentOverOwed": "این مبلغ از بدهی این صورت‌حساب بیشتر است.",
     "billDayInvalid": "یک روز از ماه را انتخاب کنید.",
-    "billNotDue": "این ماه از صورت‌حساب سررسید نشده است."
+    "billNotDue": "این ماه از صورت‌حساب سررسید نشده است.",
+    "payRunMonthInvalid": "یک ماه را انتخاب کنید.",
+    "payRunEmpty": "حقوق ناخالص دست‌کم یک نفر را وارد کنید.",
+    "payRunDuplicate": "نام یک نفر دو بار در این لیست آمده است.",
+    "payRunDeductionsTooHigh": "کسورات نمی‌تواند بیشتر از حقوق ناخالص باشد.",
+    "payRunDateBeforeMonth": "این تاریخ پیش از شروع ماه است.",
+    "payRunPaidBeforeBooked": "لیست حقوق را نمی‌توان پیش از تاریخ ثبت آن پرداخت کرد."
   },
   "apiErrors": {
     "alreadyPosted": "این مورد قبلاً ثبت شده است.",
@@ -290,7 +296,8 @@
     "groupBookings": "رزروها",
     "groupLibrary": "کتابخانه",
     "navBookHolds": "رزرو کتاب",
-    "navIncome": "درآمدها"
+    "navIncome": "درآمدها",
+    "navPayroll": "حقوق و دستمزد"
   },
   "dashTeam": {
     "membersHeading": "اعضای تیم",
@@ -843,7 +850,8 @@
       "expense": "هزینه‌ها",
       "suiteBooking": "سوئیت",
       "bookLoan": "امانت کتاب",
-      "income": "درآمدها"
+      "income": "درآمدها",
+      "payroll": "حقوق و دستمزد"
     },
     "action": {
       "product": {
@@ -917,6 +925,12 @@
       "income": {
         "recorded": "<b>{actor}</b> درآمد {entity} را ثبت کرد",
         "voided": "<b>{actor}</b> درآمد {entity} را باطل کرد"
+      },
+      "payroll": {
+        "recorded": "<b>{actor}</b> حقوق {entity} را ثبت کرد",
+        "paid": "<b>{actor}</b> پرداخت حقوق {entity} را ثبت کرد",
+        "voided": "<b>{actor}</b> حقوق {entity} را باطل کرد",
+        "employeeChanged": "<b>{actor}</b> کارمند {entity} را به‌روز کرد"
       }
     },
     "role": {
@@ -993,13 +1007,15 @@
       "unmatched": "تطبیق‌های برداشته‌شده",
       "tableLabels": "میزهای نگه‌داشته",
       "dueAt": "موعد",
-      "position": "ترتیب در منو",
+      "position": "شغل",
       "receiptUrl": "رسید",
       "dayOfMonth": "موعد در روز",
       "period": "ماه",
       "vatAmount": "مالیات",
       "accountCode": "ثبت در حساب",
-      "supplierId": "تأمین‌کننده"
+      "supplierId": "تأمین‌کننده",
+      "monthlySalary": "حقوق معمول (ارقام نمایش داده نمی‌شود)",
+      "phone": "تلفن"
     },
     "filterField": "فیلد",
     "allFields": "همه فیلدها"
@@ -1834,7 +1850,9 @@
       "orderReturn": "بازپرداخت",
       "orderReturnCost": "برگشت بهای تمام‌شده به انبار",
       "income": "درآمد",
-      "loanDeposit": "ودیعهٔ کتاب"
+      "loanDeposit": "ودیعهٔ کتاب",
+      "payroll": "حقوق و دستمزد",
+      "payrollPayment": "پرداخت حقوق"
     },
     "entry": {
       "title": "سند JE-{number}",
@@ -1861,7 +1879,8 @@
       "reverseError": "برگشت سند انجام نشد. دوباره تلاش کنید.",
       "reversed": "سند JE-{number} برگشت خورد",
       "viewIncome": "مشاهدهٔ درآمد",
-      "viewBookLoans": "مشاهدهٔ امانت کتاب‌ها"
+      "viewBookLoans": "مشاهدهٔ امانت کتاب‌ها",
+      "viewPayroll": "مشاهدهٔ لیست حقوق"
     },
     "form": {
       "title": "سند دستی جدید",
@@ -3234,5 +3253,110 @@
     "voidConfirm": "باطل کردن درآمد",
     "voidError": "درآمد باطل نشد. دوباره تلاش کنید.",
     "voided": "IN-{number} باطل شد"
+  },
+  "dashPayroll": {
+    "heading": "حقوق و دستمزد",
+    "subtitle": "حقوق هر ماه، با ارقامی که حسابدارتان می‌دهد. برنامه مالیات و بیمه را محاسبه نمی‌کند.",
+    "breadcrumbLabel": "حقوق و دستمزد",
+    "new": "لیست حقوق جدید",
+    "employees": "کارکنان",
+    "owed": "حقوق پرداخت‌نشده",
+    "owedHint": "{count, plural, other {{formatted} لیست برای پرداخت}}",
+    "owedNone": "بدهی‌ای نیست",
+    "listLabel": "لیست‌های حقوق",
+    "emptyTitle": "هنوز لیست حقوقی ثبت نشده",
+    "emptyBody": "ابتدا کارکنان را اضافه کنید، سپس اولین ماه را ثبت کنید.",
+    "col": {
+      "month": "ماه",
+      "people": "نفرات",
+      "gross": "حقوق ناخالص",
+      "net": "خالص پرداختی",
+      "status": "وضعیت"
+    },
+    "peopleCount": "{count, plural, other {{formatted} نفر}}",
+    "openRun": "باز کردن لیست حقوق {month}",
+    "grossLabel": "حقوق ناخالص",
+    "employeeInsuranceLabel": "بیمه، سهم کارمند",
+    "incomeTaxLabel": "مالیات حقوق",
+    "employerInsuranceLabel": "بیمه، سهم کارفرما",
+    "netLabel": "خالص پرداختی",
+    "form": {
+      "title": "لیست حقوق جدید",
+      "subtitle": "ارقام را از برگهٔ حسابدارتان وارد کنید. با ذخیره، بلافاصله در دفاتر ثبت می‌شود.",
+      "monthLabel": "ماه",
+      "dateLabel": "تاریخ ثبت",
+      "dateHint": "آخرین روز ماه، مگر اینکه هنوز نرسیده باشد.",
+      "peopleHeading": "دریافت‌کنندگان",
+      "peopleHint": "از ارقام ماه قبل شروع می‌شود. برای کنار گذاشتن کسی در این ماه، حقوق ناخالص را خالی بگذارید.",
+      "netFor": "خالص پرداختی: {amount}",
+      "deductionsTooHigh": "کسورات نمی‌تواند بیشتر از حقوق ناخالص باشد.",
+      "totalsHeading": "این لیست",
+      "totalGross": "حقوق ناخالص",
+      "totalNet": "پرداختی به کارکنان",
+      "totalInsurance": "به سازمان بیمه، هر دو سهم",
+      "totalTax": "به ادارهٔ مالیات",
+      "totalCost": "هزینه برای کافه",
+      "save": "ثبت لیست حقوق",
+      "saved": "حقوق {month} ثبت شد",
+      "error": "ثبت لیست حقوق انجام نشد. دوباره تلاش کنید.",
+      "noEmployees": "هنوز کسی در فهرست حقوق نیست.",
+      "addEmployees": "افزودن کارکنان",
+      "noMonths": "شش ماه اخیر همه ثبت شده‌اند. برای ثبت دوباره، ابتدا لیست آن ماه را باطل کنید."
+    },
+    "detail": {
+      "title": "حقوق {month}",
+      "recordedBy": "ثبت توسط {name}",
+      "bookedOn": "تاریخ ثبت",
+      "payment": "پرداخت",
+      "paidFrom": "پرداخت از {source} در {date}",
+      "paidSoFar": "{paid} پرداخت شده، {left} مانده",
+      "unpaid": "هنوز پرداخت نشده",
+      "linesHeading": "دریافت‌کنندگان",
+      "totals": "جمع",
+      "entriesHeading": "اسناد حسابداری",
+      "settleHint": "پرداخت به سازمان بیمه و ادارهٔ مالیات را با سند دستی ثبت کنید: بدهکار بیمهٔ پرداختنی (2310) یا مالیات حقوق پرداختنی (2320)، بستانکار بانک (1120).",
+      "newEntry": "سند دستی جدید",
+      "pay": "پرداخت",
+      "payTitle": "پرداخت {month}",
+      "paySub": "{amount} بدهی به کارکنان",
+      "paySource": "پرداخت از",
+      "from": {
+        "cash": "صندوق",
+        "bank": "بانک"
+      },
+      "paidOn": "تاریخ پرداخت",
+      "payAmount": "مبلغ",
+      "payAmountHint": "برای پرداخت تمام مانده خالی بگذارید، یا بخشی از آن را وارد کنید.",
+      "payConfirm": "ثبت پرداخت",
+      "payError": "ثبت پرداخت انجام نشد. دوباره تلاش کنید.",
+      "paid": "پرداخت {month} ثبت شد",
+      "void": "ابطال",
+      "voidTitle": "حقوق {month} باطل شود؟",
+      "voidMessage": "همهٔ اسناد آن، از جمله پرداخت‌ها، امروز برگشت می‌خورند. لیست با وضعیت باطل در سوابق می‌ماند و این ماه را می‌توان دوباره ثبت کرد. این کار برگشت‌پذیر نیست.",
+      "voidReason": "دلیل (اختیاری)",
+      "voidConfirm": "ابطال لیست حقوق",
+      "voidError": "ابطال لیست حقوق انجام نشد. دوباره تلاش کنید.",
+      "voided": "حقوق {month} باطل شد"
+    },
+    "staff": {
+      "heading": "کارکنان",
+      "subtitle": "کسانی که کافه به آن‌ها حقوق می‌دهد. به‌جای حذف، غیرفعال کنید: لیست‌های گذشته نامشان را نگه می‌دارند.",
+      "new": "افزودن کارمند",
+      "edit": "ویرایش {name}",
+      "editShort": "ویرایش",
+      "nameLabel": "نام",
+      "positionLabel": "شغل",
+      "phoneLabel": "تلفن",
+      "salaryLabel": "حقوق ناخالص معمول ماهانه",
+      "salaryHint": "نقطهٔ شروع اولین لیست حقوق او. می‌توانید در لیست تغییرش دهید.",
+      "activeLabel": "فعال",
+      "inactive": "غیرفعال",
+      "noSalary": "حقوق معمول تعیین نشده",
+      "save": "ذخیره",
+      "empty": "هنوز کسی در فهرست حقوق نیست.",
+      "error": "ذخیرهٔ کارمند انجام نشد. دوباره تلاش کنید.",
+      "saved": "کارمند ذخیره شد",
+      "added": "کارمند اضافه شد"
+    }
   }
 }

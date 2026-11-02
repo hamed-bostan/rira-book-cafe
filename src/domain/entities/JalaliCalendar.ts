@@ -102,6 +102,31 @@ export function toJalali(day: string): JalaliDate {
   return d2j(g2d(gy, gm, gd));
 }
 
+const PERIOD = /^(\d{4})-(0[1-9]|1[0-2])$/;
+
+/** A Persian month as the app keys it: "1405-08". */
+export function jalaliPeriod(jy: number, jm: number): string {
+  return `${jy}-${String(jm).padStart(2, "0")}`;
+}
+
+/** The year and month of a period, or `null` when it isn't one. */
+export function parseJalaliPeriod(period: string): { jy: number; jm: number } | null {
+  const match = PERIOD.exec(period);
+  return match ? { jy: Number(match[1]), jm: Number(match[2]) } : null;
+}
+
+/** The `count` Persian months up to the one `day` falls in, newest first. */
+export function recentJalaliPeriods(day: string, count: number): string[] {
+  let { jy, jm } = toJalali(day);
+  const periods: string[] = [];
+  while (periods.length < count) {
+    periods.push(jalaliPeriod(jy, jm));
+    jy = jm === 1 ? jy - 1 : jy;
+    jm = jm === 1 ? 12 : jm - 1;
+  }
+  return periods;
+}
+
 /** A cafe day as the books write it in Persian dates: "1405/07/28". */
 export function jalaliDayLabel(day: string): string {
   const { jy, jm, jd } = toJalali(day);

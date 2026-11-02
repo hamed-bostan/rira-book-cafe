@@ -590,6 +590,65 @@ model Expense {
   @@map("expenses")
 }
 
+// Someone the cafe pays (see domain/entities/Payroll). Not a login: not everyone on
+// the payroll has one.
+model Employee {
+  id            String       @id @default(uuid())
+  name          String
+  position      String?
+  phone         String?
+  // The usual gross, in whole Toman: where a first pay run starts from.
+  monthlySalary BigInt       @default(0) @map("monthly_salary")
+  isActive      Boolean      @default(true) @map("is_active")
+  payLines      PayRunLine[]
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+
+  @@map("employees")
+}
+
+// A month's pay. The migration's partial unique index `pay_runs_one_per_period`
+// allows one standing run a month; a voided run frees its month.
+model PayRun {
+  id            String       @id @default(uuid())
+  // The Persian month, "1405-08".
+  period        String
+  date          DateTime     @db.Date
+  // unpaid | paid | void
+  status        String
+  // Net pay paid out so far. Each payment is a `payrollPayment` journal entry.
+  paidAmount    BigInt       @default(0) @map("paid_amount")
+  // cash | bank, once paid in full
+  paidFrom      String?      @map("paid_from")
+  paidOn        DateTime?    @map("paid_on") @db.Date
+  lines         PayRunLine[]
+  createdById   String       @map("created_by_id")
+  createdByName String       @map("created_by_name")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+
+  @@map("pay_runs")
+}
+
+// One person's month, in the figures the accountant gave.
+model PayRunLine {
+  id                String   @id @default(uuid())
+  runId             String   @map("run_id")
+  run               PayRun   @relation(fields: [runId], references: [id], onDelete: Restrict)
+  employeeId        String   @map("employee_id")
+  employee          Employee @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  // Snapshotted, so an old run reads correctly after a rename.
+  employeeName      String   @map("employee_name")
+  gross             BigInt
+  employeeInsurance BigInt   @default(0) @map("employee_insurance")
+  incomeTax         BigInt   @default(0) @map("income_tax")
+  employerInsurance BigInt   @default(0) @map("employer_insurance")
+
+  @@unique([runId, employeeId])
+  @@index([employeeId])
+  @@map("pay_run_lines")
+}
+
 // A bill that comes round every Persian month (see domain/entities/RecurringBill).
 // Nothing is booked from it on its own: each month is put in front of someone.
 model RecurringBill {

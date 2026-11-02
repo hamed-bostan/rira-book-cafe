@@ -21,6 +21,7 @@ import type { IOrderNoteRepository } from "@/src/domain/repositories/IOrderNoteR
 import type { IOrderRepository } from "@/src/domain/repositories/IOrderRepository";
 import type { IPaymentAttemptRepository } from "@/src/domain/repositories/IPaymentAttemptRepository";
 import type { IPaymentGateway } from "@/src/domain/repositories/IPaymentGateway";
+import type { IPayrollRepository } from "@/src/domain/repositories/IPayrollRepository";
 import type { IPricingRepository } from "@/src/domain/repositories/IPricingRepository";
 import type { IProductRepository } from "@/src/domain/repositories/IProductRepository";
 import type { IPromotionRepository } from "@/src/domain/repositories/IPromotionRepository";
@@ -62,6 +63,7 @@ import { PrismaNotificationRepository } from "./repositories/PrismaNotificationR
 import { PrismaOrderNoteRepository } from "./repositories/PrismaOrderNoteRepository";
 import { PrismaOrderRepository } from "./repositories/PrismaOrderRepository";
 import { PrismaPaymentAttemptRepository } from "./repositories/PrismaPaymentAttemptRepository";
+import { PrismaPayrollRepository } from "./repositories/PrismaPayrollRepository";
 import { PrismaPricingRepository } from "./repositories/PrismaPricingRepository";
 import { PrismaProductRepository } from "./repositories/PrismaProductRepository";
 import { PrismaPromotionRepository } from "./repositories/PrismaPromotionRepository";
@@ -160,6 +162,7 @@ export const analyticsRepository: IAnalyticsRepository = new PrismaAnalyticsRepo
 export const ledgerRepository: ILedgerRepository = new PrismaLedgerRepository();
 export const expenseRepository: IExpenseRepository = new PrismaExpenseRepository();
 export const recurringBillRepository: IRecurringBillRepository = new PrismaRecurringBillRepository();
+export const payrollRepository: IPayrollRepository = new PrismaPayrollRepository();
 export const incomeRepository: IIncomeRepository = new PrismaIncomeRepository();
 
 // Till shifts: the drawer's expected cash is read from the journal's Cash account,

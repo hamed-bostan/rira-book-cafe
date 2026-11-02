@@ -87,7 +87,7 @@ export async function CashShiftsScreen({ overview }: { overview: CashShiftOvervi
               }
               description={t("openedBy", { name: current.shift.openedByName, date: when(current.shift.openedAt) })}
             />
-            <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
               <MetricCard label={t("float")} icon={Wallet} value={number(current.shift.openingFloat)} unit={unit} />
               <MetricCard label={t("expected")} icon={Banknote} value={number(current.expectedCash)} unit={unit} />
               <MetricCard label={t("bank")} icon={CreditCard} value={number(current.movements.bank)} unit={unit} />
@@ -142,7 +142,7 @@ export async function CashShiftsScreen({ overview }: { overview: CashShiftOvervi
                     </span>
                   </div>
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                    <span className="text-body-small whitespace-nowrap text-muted-foreground tabular-nums sm:text-body-caption">
+                    <span className="text-body-small text-muted-foreground tabular-nums sm:text-body-caption">
                       {t("expectedCounted", {
                         expected: number(shift.expectedCash ?? 0),
                         counted: number(shift.countedCash ?? 0),

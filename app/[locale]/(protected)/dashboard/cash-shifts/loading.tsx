@@ -30,7 +30,7 @@ export default function CashShiftsLoading() {
           </div>
           <Skeleton className="h-4 w-56 max-w-full rounded-pill" />
         </div>
-        <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {Array.from({ length: SHIFT_FIGURES }, (_, index) => (
             <div
               key={index}

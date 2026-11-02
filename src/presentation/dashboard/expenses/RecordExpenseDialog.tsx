@@ -13,7 +13,7 @@ import { useRouter } from "@/src/i18n/navigation";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { accountLabel } from "@/src/presentation/dashboard/accounting/accounting-format";
-import { FIELD_LABEL } from "@/src/presentation/dashboard/fieldStyles";
+import { FIELD_GRID, FIELD_LABEL } from "@/src/presentation/dashboard/fieldStyles";
 import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
 import { Select } from "@/src/presentation/design-system/components/form/Select/Select";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
@@ -141,7 +141,7 @@ export function RecordExpenseDialog({ open, onOpenChange, accounts, suppliers, t
       preview={preview}
       error={fieldError ?? error}
     >
-      <div className="grid grid-cols-2 gap-4">
+      <div className={FIELD_GRID}>
         <DashboardField label={t("form.dateLabel")}>
           <Input
             size="control-md"
@@ -186,7 +186,7 @@ export function RecordExpenseDialog({ open, onOpenChange, accounts, suppliers, t
         </Select>
       </DashboardField>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className={FIELD_GRID}>
         <DashboardField label={t("form.amountLabel")}>
           <Input
             size="control-md"

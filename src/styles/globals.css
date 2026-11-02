@@ -22,6 +22,52 @@
   display: none; /* Chromium / Safari */
 }
 
+/* A sideways scroller that fades out at whichever edge has more past it, so a cut-off
+ * row reads as "there's more" (DashboardTabRow). Its script sets `data-fade-start` /
+ * `data-fade-end`; start and end follow the reading direction. The fade's width is
+ * also the scroll padding, so an item scrolled into view or focused lands clear of it.
+ * The edges are registered so the fade can ease in; a fade isn't motion, so it stays
+ * under reduced motion (see design-system/shared/motion.ts). */
+@property --edge-fade-start {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --edge-fade-end {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+.edge-fade {
+  --edge-fade-size: 2rem;
+  --edge-fade-toward: to right;
+  scroll-padding-inline: var(--edge-fade-size);
+  mask-image: linear-gradient(
+    var(--edge-fade-toward),
+    transparent,
+    #000 var(--edge-fade-start),
+    #000 calc(100% - var(--edge-fade-end)),
+    transparent
+  );
+  transition:
+    --edge-fade-start 150ms ease-out,
+    --edge-fade-end 150ms ease-out;
+}
+
+[dir="rtl"] .edge-fade {
+  --edge-fade-toward: to left;
+}
+
+.edge-fade[data-fade-start] {
+  --edge-fade-start: var(--edge-fade-size);
+}
+
+.edge-fade[data-fade-end] {
+  --edge-fade-end: var(--edge-fade-size);
+}
+
 /* One semantic title treatment for every dashboard page. Keeping this as a
  * plain class also makes nested report and detail screens follow the same
  * hierarchy as the primary navigation destinations. 20px on a phone, 24px from

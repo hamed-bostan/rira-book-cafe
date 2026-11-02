@@ -8,16 +8,18 @@ type AccountingTableSkeletonProps = {
   /** One entry per column, by alignment: text columns sit at the start, amounts at the end. */
   columns: readonly ("start" | "end")[];
   rows?: number;
-  /** Reserve the `tfoot` totals strip (journal entry, ledger, trial balance). */
+  /** Reserve the `tfoot` totals strip. */
   totals?: boolean;
-  /** Reserve the `ListPager` row under the table (journal, expenses). */
+  /** Reserve the `ListPager` row under the table (stock movements). */
   pager?: boolean;
   className?: string;
 };
 
 /**
- * Placeholder for the tables the accounting screens share: the muted band of small
- * capitals, `px-5 py-3` rows, and optionally the totals strip and the pager below.
+ * Placeholder for a table that keeps its columns at every width (the stock
+ * screens'): the muted band of small capitals, `px-5 py-3` rows, and optionally the
+ * totals strip and the pager below. A table that stacks on a narrow card takes
+ * `StackedTableSkeleton` instead.
  */
 export function AccountingTableSkeleton({
   columns,

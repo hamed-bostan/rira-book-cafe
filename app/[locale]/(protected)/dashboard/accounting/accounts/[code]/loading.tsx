@@ -1,6 +1,7 @@
-import { AccountingTableSkeleton } from "@/src/presentation/dashboard/accounting/AccountingTableSkeleton";
 import { PeriodPickerSkeleton } from "@/src/presentation/dashboard/accounting/PeriodPickerSkeleton";
+import { StackedTableSkeleton } from "@/src/presentation/dashboard/accounting/StackedTableSkeleton";
 import { PAGE_CARD } from "@/src/presentation/dashboard/pageStyles";
+import { STACKED_TABLE } from "@/src/presentation/dashboard/stackedTableStyles";
 import { LoadingRegion } from "@/src/presentation/design-system/components/Skeleton/LoadingRegion";
 import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
@@ -19,7 +20,7 @@ export default function AccountLedgerLoading() {
         <PeriodPickerSkeleton />
       </div>
       {/* The opening-balance row plus the period's movements. */}
-      <AccountingTableSkeleton columns={LEDGER_COLUMNS} rows={9} totals />
+      <StackedTableSkeleton layout={STACKED_TABLE.wide} columns={LEDGER_COLUMNS} rows={9} totals />
     </LoadingRegion>
   );
 }

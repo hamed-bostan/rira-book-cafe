@@ -179,7 +179,7 @@ export function RecipeForm({ productId, lines, ingredients }: RecipeFormProps) {
           <Icon icon={Plus} size="icon-md" className="me-2" />
           {t("recipe.addLine")}
         </Button>
-        <span className="font-semibold whitespace-nowrap text-foreground tabular-nums">
+        <span className="font-semibold text-foreground tabular-nums">
           {t("recipe.total", { cost: formatMoney(Math.round(total), locale) })}
         </span>
       </div>

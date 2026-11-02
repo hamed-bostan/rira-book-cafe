@@ -20,7 +20,7 @@ import { useToast } from "@/src/presentation/design-system/components/Toast/useT
 import { DashboardDialog } from "../DashboardDialog";
 import { DashboardFormField } from "../DashboardFormField";
 import { normalizeAmount } from "../expenses/expenseFormat";
-import { FIELD_LABEL } from "../fieldStyles";
+import { FIELD_GRID, FIELD_LABEL } from "../fieldStyles";
 
 import { employeesApi } from "./payroll-api";
 
@@ -101,7 +101,7 @@ export function EmployeeDialog({ employee }: { employee?: Employee }) {
         <DashboardFormField label={t("nameLabel")} required error={fieldError(errors.name?.message)}>
           {(field) => <Input {...field} {...register("name")} size="control-md" dir="auto" />}
         </DashboardFormField>
-        <div className="grid grid-cols-2 gap-4">
+        <div className={FIELD_GRID}>
           <DashboardFormField label={t("positionLabel")} error={fieldError(errors.position?.message)}>
             {(field) => <Input {...field} {...register("position")} size="control-md" dir="auto" />}
           </DashboardFormField>

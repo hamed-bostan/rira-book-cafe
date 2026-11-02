@@ -14,6 +14,7 @@ import { useToast } from "@/src/presentation/design-system/components/Toast/useT
 
 import { DashboardDialog } from "../DashboardDialog";
 import { DashboardField } from "../DashboardField";
+import { FIELD_GRID } from "../fieldStyles";
 
 import { expensesApi } from "./expense-api";
 import { expenseApiErrorMessage } from "./expenseApiErrorMessage";
@@ -95,7 +96,7 @@ export function PayExpenseDialog({ open, onOpenChange, expense, today }: PayExpe
           dir="ltr"
         />
       </DashboardField>
-      <div className="grid grid-cols-2 gap-4">
+      <div className={FIELD_GRID}>
         <DashboardField label={t("detail.paySource")}>
           <Select size="control-md" value={source} onChange={(event) => setSource(event.target.value as PaymentSource)}>
             {PAYMENT_SOURCES.map((option) => (

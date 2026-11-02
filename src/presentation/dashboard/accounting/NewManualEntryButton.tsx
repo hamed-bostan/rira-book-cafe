@@ -16,6 +16,7 @@ import { useToast } from "@/src/presentation/design-system/components/Toast/useT
 
 import { DashboardDialog } from "../DashboardDialog";
 import { DashboardField } from "../DashboardField";
+import { FIELD_GRID } from "../fieldStyles";
 
 import { journalEntriesApi } from "./accounting-api";
 import { accountLabel, accountName, normalizeAmount } from "./accounting-format";
@@ -144,7 +145,7 @@ export function NewManualEntryButton({ accounts, today }: NewManualEntryButtonPr
           </p>
         }
       >
-        <div className="grid grid-cols-2 gap-4">
+        <div className={FIELD_GRID}>
           <DashboardField label={t("form.dateLabel")}>
             <Input
               size="control-md"

@@ -7,11 +7,17 @@ import { formatNumber } from "@/src/lib/formatNumber";
 import { cn } from "@/src/lib/utils";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 
-import { AMOUNT, PAGE_CARD, ROW_TEXT, TABLE_HEAD, TABLE_TD, TABLE_TH } from "../pageStyles";
+import { PAGE_CARD, ROW_TEXT, TABLE_HEAD, TABLE_TH } from "../pageStyles";
+import { STACKED_TABLE } from "../stackedTableStyles";
 
 import { StatementHeader } from "./StatementHeader";
 
-/** What each menu item earned net of VAT against what it cost, for sales completed in the period. */
+const S = STACKED_TABLE.wide;
+
+/**
+ * What each menu item earned net of VAT against what it cost, for sales completed
+ * in the period. On a narrow card each item sits over its figures, labelled.
+ */
 export async function MarginReportScreen({ report }: { report: MarginReport }) {
   const t = await getTranslations("dashAccounting");
   const locale = await getLocale();
@@ -21,7 +27,7 @@ export async function MarginReportScreen({ report }: { report: MarginReport }) {
     <div className="flex min-w-0 flex-col gap-6">
       <StatementHeader slug="margins" span={report} />
 
-      <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {(
           [
             ["netRevenue", formatNumber(report.totalNetRevenue, locale)],
@@ -55,52 +61,62 @@ export async function MarginReportScreen({ report }: { report: MarginReport }) {
           <p className={cn(ROW_TEXT, "px-5 py-12 text-center font-semibold text-foreground")}>{t("margins.empty")}</p>
         </section>
       ) : (
-        <section className={cn(PAGE_CARD, "overflow-hidden")}>
+        <section className={cn(PAGE_CARD, S.frame, "overflow-hidden")}>
           <div className="overflow-x-auto">
-            <table className={cn(ROW_TEXT, "w-full min-w-2xl table-fixed")}>
-              <thead className={TABLE_HEAD}>
+            <table className={cn(ROW_TEXT, S.table)}>
+              <thead className={cn(TABLE_HEAD, S.head)}>
                 <tr>
                   <th scope="col" className={TABLE_TH}>
                     {t("margins.colItem")}
                   </th>
-                  <th scope="col" className={cn(TABLE_TH, "w-24 text-end")}>
+                  <th scope="col" className={cn(TABLE_TH, "w-20 text-end")}>
                     {t("margins.colQuantity")}
                   </th>
-                  <th scope="col" className={cn(TABLE_TH, "w-36 text-end")}>
+                  {/* "Sales (net of VAT)" is wider than its figures, so it may take two lines. */}
+                  <th scope="col" className={cn(TABLE_TH, "w-36 text-end whitespace-normal")}>
                     {t("margins.netRevenue")}
                   </th>
                   <th scope="col" className={cn(TABLE_TH, "w-36 text-end")}>
                     {t("margins.cost")}
                   </th>
-                  <th scope="col" className={cn(TABLE_TH, "w-36 text-end")}>
+                  <th scope="col" className={cn(TABLE_TH, "w-32 text-end")}>
                     {t("margins.grossProfit")}
                   </th>
-                  <th scope="col" className={cn(TABLE_TH, "w-28 text-end")}>
+                  <th scope="col" className={cn(TABLE_TH, "w-24 text-end")}>
                     {t("margins.marginRate")}
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border">
+              <tbody className={cn(S.body, "divide-y divide-border")}>
                 {report.rows.map((row) => (
-                  <tr key={row.productId}>
-                    <td className={cn(TABLE_TD, "font-medium text-foreground")} dir="auto">
+                  <tr key={row.productId} className={S.row}>
+                    <td className={cn(S.lead, "font-medium text-foreground")} dir="auto">
                       {row.name}
                     </td>
-                    <td className={cn(TABLE_TD, AMOUNT)}>{formatNumber(row.quantity, locale)}</td>
-                    <td className={cn(TABLE_TD, AMOUNT)}>{formatNumber(row.netRevenue, locale)}</td>
+                    <td className={cn(S.cell, S.amount)}>
+                      <span className={S.label}>{t("margins.colQuantity")}</span>
+                      {formatNumber(row.quantity, locale)}
+                    </td>
+                    <td className={cn(S.cell, S.amount)}>
+                      <span className={S.label}>{t("margins.netRevenue")}</span>
+                      {formatNumber(row.netRevenue, locale)}
+                    </td>
                     <td
                       className={cn(
-                        TABLE_TD,
-                        AMOUNT,
+                        S.cell,
+                        S.amount,
                         row.marginRate === null ? "text-warning-foreground" : "text-foreground",
                       )}
                     >
+                      <span className={S.label}>{t("margins.cost")}</span>
                       {row.marginRate === null ? t("margins.noCost") : formatNumber(row.cost, locale)}
                     </td>
-                    <td className={cn(TABLE_TD, AMOUNT)}>
+                    <td className={cn(S.cell, S.amount)}>
+                      <span className={S.label}>{t("margins.grossProfit")}</span>
                       {row.marginRate === null ? "—" : formatNumber(row.grossProfit, locale)}
                     </td>
-                    <td className={cn(TABLE_TD, AMOUNT, "font-semibold")}>
+                    <td className={cn(S.cell, S.amount, "font-semibold")}>
+                      <span className={S.label}>{t("margins.marginRate")}</span>
                       {row.marginRate === null ? "—" : formatPercent(row.marginRate, locale)}
                     </td>
                   </tr>

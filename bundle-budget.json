@@ -2,6 +2,7 @@
   "default": 270,
   "routes": {
     "/": 240,
+    "/account": 275,
     "/menu": 240,
     "/dashboard/*": 300
   }

@@ -7,7 +7,7 @@ import { cn } from "@/src/lib/utils";
 import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
 
 import { DashboardPageHeader } from "../DashboardPageHeader";
-import { AMOUNT, PAGE_CARD, ROW_CAPTION, ROW_TEXT } from "../pageStyles";
+import { AMOUNT, PAGE_CARD, ROW_CAPTION, ROW_END, ROW_TEXT } from "../pageStyles";
 import { DashboardPageCrumb } from "../shell/DashboardPageCrumb";
 
 import { SupplierDialog } from "./SupplierDialog";
@@ -69,29 +69,33 @@ export async function SuppliersScreen({ suppliers, balances, canWrite }: Supplie
                   <span className="whitespace-nowrap text-foreground/80 tabular-nums" dir="ltr">
                     {supplier.phone || "—"}
                   </span>
-                  <span className="flex min-w-32 flex-col items-end gap-0.5">
-                    {balance ? (
-                      <>
-                        <Link
-                          href={`/dashboard/expenses?supplier=${supplier.id}&status=unpaid`}
-                          aria-label={t("suppliers.owedLink", {
-                            name: supplier.name,
-                            amount: formatMoney(balance.owed, locale),
-                          })}
-                          className={cn(
-                            AMOUNT,
-                            "-my-3 py-3 font-semibold text-foreground transition-colors hover:text-primary sm:my-0 sm:py-0",
-                          )}
-                        >
-                          {formatMoney(balance.owed, locale)}
-                        </Link>
-                        <span className={ROW_CAPTION}>{t("suppliers.unpaidBills", { count: balance.billCount })}</span>
-                      </>
-                    ) : (
-                      <span className={ROW_CAPTION}>{t("owedNone")}</span>
-                    )}
+                  <span className={ROW_END}>
+                    <span className="flex min-w-32 flex-col items-end gap-0.5">
+                      {balance ? (
+                        <>
+                          <Link
+                            href={`/dashboard/expenses?supplier=${supplier.id}&status=unpaid`}
+                            aria-label={t("suppliers.owedLink", {
+                              name: supplier.name,
+                              amount: formatMoney(balance.owed, locale),
+                            })}
+                            className={cn(
+                              AMOUNT,
+                              "-my-3 py-3 font-semibold text-foreground transition-colors hover:text-primary sm:my-0 sm:py-0",
+                            )}
+                          >
+                            {formatMoney(balance.owed, locale)}
+                          </Link>
+                          <span className={ROW_CAPTION}>
+                            {t("suppliers.unpaidBills", { count: balance.billCount })}
+                          </span>
+                        </>
+                      ) : (
+                        <span className={ROW_CAPTION}>{t("owedNone")}</span>
+                      )}
+                    </span>
+                    {canWrite ? <SupplierDialog supplier={supplier} /> : null}
                   </span>
-                  {canWrite ? <SupplierDialog supplier={supplier} /> : null}
                 </li>
               );
             })}

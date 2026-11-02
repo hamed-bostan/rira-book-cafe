@@ -15,7 +15,7 @@ export default function AccountsLoading() {
         <Skeleton className="h-11 w-36 rounded-button sm:h-9" />
       </div>
       {SECTION_ROWS.map((rows, index) => (
-        <StatementSectionSkeleton key={index} rows={rows} total={false} />
+        <StatementSectionSkeleton key={index} rows={rows} total={false} amountBelow />
       ))}
     </LoadingRegion>
   );

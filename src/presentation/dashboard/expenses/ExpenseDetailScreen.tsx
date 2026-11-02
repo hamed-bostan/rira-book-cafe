@@ -140,7 +140,7 @@ export async function ExpenseDetailScreen({ expense, entries, accounts, canWrite
               <Badge size="compact" variant="neutral" appearance="outline">
                 {tAccounting(`source.${entry.source}`)}
               </Badge>
-              <span className={cn(AMOUNT, "min-w-28 font-semibold text-foreground")}>
+              <span className={cn(AMOUNT, "ms-auto min-w-28 font-semibold text-foreground")}>
                 {formatMoney(entryTotal(entry), locale)}
               </span>
             </li>

@@ -1,3 +1,5 @@
+import { AMOUNT, TABLE_TD } from "./pageStyles";
+
 /**
  * A table that stacks on a narrow card, the way the journal's and the expenses'
  * rows do: each row leads with one cell on a line of its own, and the rest wrap
@@ -6,8 +8,8 @@
  * does, whatever the width, so a printout keeps its columns.
  *
  * It stays a `<table>` throughout; only the boxes change. The card is the container
- * the width is measured against (`frame`), and the two sets differ only in the
- * width the columns need.
+ * the width is measured against (`frame`), and the sets differ only in the width
+ * the columns need — the narrow set's fit any card, so it never stacks.
  */
 export type StackedTableStyles = {
   /** The card around the table: the container its width is measured against. */
@@ -34,6 +36,25 @@ export type StackedTableStyles = {
 };
 
 export const STACKED_TABLE = {
+  /**
+   * Two columns, a name and its figure: a table at every width, as a phone's card
+   * holds them. For a table whose columns vary, so one markup serves every count.
+   */
+  narrow: {
+    frame: "",
+    table: "w-full",
+    head: "",
+    body: "",
+    foot: "",
+    row: "",
+    pairRow: "",
+    lead: TABLE_TD,
+    cell: TABLE_TD,
+    amount: AMOUNT,
+    label: "hidden",
+    wholeRow: "",
+    wholeCell: "",
+  },
   /** Three or four columns: a table from a 36rem card — a tablet's. */
   compact: {
     frame: "@container/sheet",

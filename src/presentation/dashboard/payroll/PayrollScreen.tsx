@@ -87,7 +87,7 @@ export async function PayrollScreen({ runs }: { runs: PayRun[] }) {
                     </span>
                   </span>
                   <ExpenseStatusBadge status={run.status} />
-                  <span className="flex min-w-36 flex-col items-end gap-0.5">
+                  <span className="ms-auto flex min-w-36 flex-col items-end gap-0.5">
                     <span className={cn(AMOUNT, "font-semibold text-foreground")}>
                       {formatMoney(totals.net, locale)}
                     </span>

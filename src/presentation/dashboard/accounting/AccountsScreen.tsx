@@ -48,14 +48,18 @@ export async function AccountsScreen({ accounts, trialBalance, canWrite, today }
         const rows = accounts.filter((account) => account.type === type);
         if (rows.length === 0) return null;
         return (
-          <section key={type} aria-label={t(`accountType.${type}`)} className={cn(PAGE_CARD, "overflow-hidden")}>
+          <section
+            key={type}
+            aria-label={t(`accountType.${type}`)}
+            className={cn(PAGE_CARD, "@container/accounts overflow-hidden")}
+          >
             <h2 className={GROUP_BAND}>{t(`accountType.${type}`)}</h2>
             <ul className={ROW_TEXT}>
               {rows.map((account, index) => (
                 <li
                   key={account.code}
                   className={cn(
-                    "flex flex-wrap items-center gap-x-3 gap-y-2 px-5 py-3",
+                    "flex flex-wrap items-center gap-x-3 gap-y-1 px-5 py-3",
                     index > 0 && "border-t border-border",
                   )}
                 >
@@ -65,28 +69,31 @@ export async function AccountsScreen({ accounts, trialBalance, canWrite, today }
                   <Link
                     href={`/dashboard/accounting/accounts/${account.code}`}
                     className={cn(
-                      "-my-3 min-w-0 flex-1 truncate py-3 font-medium transition-colors hover:text-primary sm:my-0 sm:py-0",
+                      "-my-3 min-w-0 flex-1 py-3 font-medium [overflow-wrap:anywhere] transition-colors hover:text-primary sm:my-0 sm:py-0 @xl/accounts:truncate",
                       account.isActive ? "text-foreground" : "text-muted-foreground",
                     )}
                   >
                     {accountName(account, locale)}
                   </Link>
-                  {account.isSystem ? (
-                    <Badge size="compact" variant="neutral" appearance="outline">
-                      {t("accounts.system")}
-                    </Badge>
-                  ) : null}
-                  {!account.isActive ? (
-                    <Badge size="compact" variant="warning" appearance="outline">
-                      {t("accounts.inactive")}
-                    </Badge>
-                  ) : null}
-                  <span className="min-w-32 text-end font-semibold whitespace-nowrap text-foreground tabular-nums">
-                    {formatNumber(balances.get(account.code) ?? 0, locale)}
+                  {/* On a narrow card the name keeps the first line, and the rest takes a line under it. */}
+                  <span className="flex basis-full items-center gap-3 ps-15 @xl/accounts:contents">
+                    {account.isSystem ? (
+                      <Badge size="compact" variant="neutral" appearance="outline">
+                        {t("accounts.system")}
+                      </Badge>
+                    ) : null}
+                    {!account.isActive ? (
+                      <Badge size="compact" variant="warning" appearance="outline">
+                        {t("accounts.inactive")}
+                      </Badge>
+                    ) : null}
+                    <span className="ms-auto min-w-32 text-end font-semibold whitespace-nowrap text-foreground tabular-nums">
+                      {formatNumber(balances.get(account.code) ?? 0, locale)}
+                    </span>
+                    {canWrite && !account.isSystem ? (
+                      <AccountActiveSwitch code={account.code} isActive={account.isActive} />
+                    ) : null}
                   </span>
-                  {canWrite && !account.isSystem ? (
-                    <AccountActiveSwitch code={account.code} isActive={account.isActive} />
-                  ) : null}
                 </li>
               ))}
             </ul>

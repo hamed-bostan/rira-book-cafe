@@ -13,10 +13,6 @@ import { storageStatePath } from "./fixtures/sessions";
  *
  * The books are filled first with ten-digit figures and long descriptions — the
  * widest a cafe's real numbers get — so a layout that only fits small sums fails here.
- *
- * Pages that still fall short carry `knownGap`, naming the phase of the responsive
- * plan that fixes them: their check is expected to fail, and starts failing the run
- * the moment it passes, so the mark comes off with the fix.
  */
 
 test.use({ storageState: storageStatePath("admin") });
@@ -48,8 +44,6 @@ type FinancePage = {
   table?: boolean;
   /** Has the row of tabs along its top. */
   tabs?: boolean;
-  /** The phase that makes its tables fit, where they still scroll sideways today. */
-  knownGap?: string;
   /** Something to do before measuring, like picking lines to match. */
   prepare?: (page: Page) => Promise<void>;
 };
@@ -110,7 +104,7 @@ const PAGES: Record<string, FinancePage> = {
   "recurring bills": { path: () => "/dashboard/expenses/recurring" },
   suppliers: { path: () => "/dashboard/expenses/suppliers" },
   payroll: { path: () => "/dashboard/payroll" },
-  "pay run": { path: (seed) => `/dashboard/payroll/${seed.payRunId}`, table: true, knownGap: "Phase 6" },
+  "pay run": { path: (seed) => `/dashboard/payroll/${seed.payRunId}`, table: true },
   employees: { path: () => "/dashboard/payroll/employees" },
   "new pay run": { path: () => "/dashboard/payroll/new" },
   pricing: { path: () => "/dashboard/pricing", table: true, tabs: true },
@@ -443,7 +437,6 @@ for (const locale of LOCALES) {
 
       if (financePage.table) {
         test(`${name} keeps its tables on screen`, async ({ page }) => {
-          test.fail(Boolean(financePage.knownGap), `${financePage.knownGap} fits this page's tables`);
           await open(page, financePage);
 
           const scrolling: { width: number; by: number[] }[] = [];

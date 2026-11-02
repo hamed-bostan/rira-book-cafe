@@ -13,6 +13,13 @@ export const ROW_TEXT = "text-body-default sm:text-body-small";
 /** The line under a row's name, or its code, a step smaller and muted. */
 export const ROW_CAPTION = "text-body-small text-muted-foreground sm:text-body-caption";
 
+/**
+ * A row's figure and the buttons after it, kept together at the row's inline-end:
+ * when a narrow row wraps they move down a line as one, rather than each landing
+ * at the start of a line of its own.
+ */
+export const ROW_END = "ms-auto flex flex-wrap items-center justify-end gap-x-4 gap-y-2";
+
 /** The muted band naming a group of rows. */
 export const GROUP_BAND =
   "border-b border-border bg-muted px-5 py-3 text-body-strong text-foreground sm:text-body-small-strong";

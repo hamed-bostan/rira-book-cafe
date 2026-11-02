@@ -18,7 +18,7 @@ export default function PayrollLoading() {
               <Skeleton className="h-4 w-40 rounded-pill" />
               <Skeleton className="h-3.5 w-24 rounded-pill" />
             </div>
-            <Skeleton className="h-4 w-28 rounded-pill" />
+            <Skeleton className="ms-auto h-4 w-28 rounded-pill" />
           </li>
         ))}
       </ul>

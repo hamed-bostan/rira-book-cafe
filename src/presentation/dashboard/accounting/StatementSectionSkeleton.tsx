@@ -7,6 +7,8 @@ type StatementSectionSkeletonProps = {
   rows?: number;
   /** Reserve the total row at the foot (statement sections; the chart of accounts has none). */
   total?: boolean;
+  /** On a narrow card the amount takes a line under the name, as the chart of accounts' balances do. */
+  amountBelow?: boolean;
   className?: string;
 };
 
@@ -15,20 +17,31 @@ type StatementSectionSkeletonProps = {
  * section of the chart of accounts: the muted heading band, code / name / amount
  * rows, and the total.
  */
-export function StatementSectionSkeleton({ rows = 4, total = true, className }: StatementSectionSkeletonProps) {
+export function StatementSectionSkeleton({
+  rows = 4,
+  total = true,
+  amountBelow = false,
+  className,
+}: StatementSectionSkeletonProps) {
+  const amount = <Skeleton className="h-4 w-20 shrink-0 rounded-pill" />;
+
   return (
-    <section className={cn(PAGE_CARD, "overflow-hidden", className)}>
+    <section className={cn(PAGE_CARD, amountBelow && "@container/accounts", "overflow-hidden", className)}>
       <div className="flex h-11 items-center border-b border-border bg-muted px-5">
         <Skeleton className="h-4 w-24 rounded-pill" />
       </div>
       <ul className="divide-y divide-border">
         {Array.from({ length: rows }, (_, row) => (
-          <li key={row} className="flex items-center gap-3 px-5 py-3">
+          <li key={row} className={cn("flex items-center gap-3 px-5 py-3", amountBelow && "flex-wrap gap-y-1")}>
             <Skeleton className="h-4 w-10 shrink-0 rounded-pill" />
             <div className="flex h-5 min-w-0 flex-1 items-center">
               <Skeleton className={cn("h-4 rounded-pill", row % 2 === 0 ? "w-2/5" : "w-1/3")} />
             </div>
-            <Skeleton className="h-4 w-20 shrink-0 rounded-pill" />
+            {amountBelow ? (
+              <div className="flex h-11 basis-full items-center justify-end @xl/accounts:contents">{amount}</div>
+            ) : (
+              amount
+            )}
           </li>
         ))}
       </ul>

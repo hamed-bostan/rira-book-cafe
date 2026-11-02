@@ -8,7 +8,7 @@ export default function PricingSettingsLoading() {
     <LoadingRegion className="flex min-w-0 flex-col gap-6">
       <PricingTabsSkeleton />
 
-      {/* The settings card: markup, overhead source, months, expected units, inflation, rounding, save. */}
+      {/* The settings card: markup, overhead source, months, expected units, rounding, save. */}
       <div className="rounded-card-lg border border-border bg-background p-5 shadow-xs">
         <div className="flex max-w-md flex-col gap-5">
           <DashboardFieldSkeleton hint />
@@ -21,13 +21,6 @@ export default function PricingSettingsLoading() {
 
           <DashboardFieldSkeleton hint />
           <DashboardFieldSkeleton hint />
-
-          <div className="flex flex-col gap-4 rounded-card-lg border border-border p-4">
-            <Skeleton className="h-4 w-56 max-w-full rounded-pill" />
-            <DashboardFieldSkeleton hint />
-            <DashboardFieldSkeleton hint />
-          </div>
-
           <DashboardFieldSkeleton hint />
           <Skeleton className="h-11 w-20 rounded-button sm:h-9" />
         </div>

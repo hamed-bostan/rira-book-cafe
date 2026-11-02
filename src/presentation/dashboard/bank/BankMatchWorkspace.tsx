@@ -136,7 +136,7 @@ export function BankMatchWorkspace({ statement, candidates, suggestions, canWrit
             </Button>
           ) : null}
           <div className="ms-auto flex flex-wrap items-center gap-x-3 gap-y-2">
-            <span className="whitespace-nowrap text-foreground/80 tabular-nums">
+            <span className="text-foreground/80 tabular-nums">
               {t("workspace.selection", { bank: signed(bankTotal), books: signed(bookTotal) })}
             </span>
             <Button

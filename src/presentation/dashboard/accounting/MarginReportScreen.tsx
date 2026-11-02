@@ -21,7 +21,7 @@ export async function MarginReportScreen({ report }: { report: MarginReport }) {
     <div className="flex min-w-0 flex-col gap-6">
       <StatementHeader slug="margins" span={report} />
 
-      <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {(
           [
             ["netRevenue", formatNumber(report.totalNetRevenue, locale)],

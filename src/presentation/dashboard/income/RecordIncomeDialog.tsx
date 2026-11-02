@@ -19,6 +19,7 @@ import { useToast } from "@/src/presentation/design-system/components/Toast/useT
 
 import { DashboardDialog } from "../DashboardDialog";
 import { DashboardField } from "../DashboardField";
+import { FIELD_GRID } from "../fieldStyles";
 
 import { incomesApi } from "./income-api";
 
@@ -134,7 +135,7 @@ export function RecordIncomeDialog({
       preview={preview}
       error={fieldError ?? error}
     >
-      <div className="grid grid-cols-2 gap-4">
+      <div className={FIELD_GRID}>
         <DashboardField label={t("form.dateLabel")}>
           <Input
             size="control-md"
@@ -180,7 +181,7 @@ export function RecordIncomeDialog({
         </DashboardField>
       )}
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className={FIELD_GRID}>
         <DashboardField label={t("form.amountLabel")}>
           <Input
             size="control-md"

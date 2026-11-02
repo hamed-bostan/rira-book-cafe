@@ -24,7 +24,7 @@ import { useToast } from "@/src/presentation/design-system/components/Toast/useT
 
 import { DashboardDialog } from "../DashboardDialog";
 import { DashboardFormField } from "../DashboardFormField";
-import { FIELD_LABEL } from "../fieldStyles";
+import { FIELD_GRID, FIELD_LABEL } from "../fieldStyles";
 
 import { recurringBillsApi } from "./expense-api";
 import { normalizeAmount } from "./expenseFormat";
@@ -139,7 +139,7 @@ export function RecurringBillDialog({ bill, accounts, suppliers }: RecurringBill
           )}
         </DashboardFormField>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className={FIELD_GRID}>
           <DashboardFormField label={t("form.supplierLabel")} error={fieldError(errors.supplierId?.message)}>
             {(field) => (
               <Select {...field} {...register("supplierId")} size="control-md">
@@ -170,7 +170,7 @@ export function RecurringBillDialog({ bill, accounts, suppliers }: RecurringBill
           </DashboardFormField>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className={FIELD_GRID}>
           <DashboardFormField
             label={t("form.amountLabel")}
             required

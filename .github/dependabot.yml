@@ -12,6 +12,22 @@ updates:
     groups:
       npm-minor-and-patch:
         update-types: [minor, patch]
+      # vitest pins its @vitest/* peers to the exact same version, so a major
+      # can only install when they move together.
+      vitest:
+        patterns: ["vitest", "@vitest/*"]
+    # Majors the toolchain can't take yet. Drop a rule once its blocker ships
+    # support, and Dependabot proposes that major again.
+    ignore:
+      # typescript-eslint requires typescript <6.1.
+      - dependency-name: typescript
+        versions: [">=7.0.0"]
+      # eslint-plugin-jsx-a11y supports eslint up to 9.
+      - dependency-name: eslint
+        versions: [">=10.0.0"]
+      # The types track the Node 24 runtime (package.json engines).
+      - dependency-name: "@types/node"
+        versions: [">=25.0.0"]
     commit-message:
       prefix: deps
 

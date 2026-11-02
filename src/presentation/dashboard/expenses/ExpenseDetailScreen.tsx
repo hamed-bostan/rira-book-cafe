@@ -12,7 +12,7 @@ import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
 
 import { DashboardPageHeader } from "../DashboardPageHeader";
 import { DashboardSection } from "../DashboardSection";
-import { AMOUNT, ROW_CAPTION } from "../pageStyles";
+import { AMOUNT, ROW_CAPTION, ROW_END } from "../pageStyles";
 import { DashboardPageCrumb } from "../shell/DashboardPageCrumb";
 
 import { ExpenseReceiptEditor } from "./ExpenseReceiptEditor";
@@ -127,7 +127,7 @@ export async function ExpenseDetailScreen({ expense, entries, accounts, canWrite
       <DashboardSection title={t("detail.entriesHeading")} className="overflow-hidden" flush>
         <ul className="divide-y divide-border">
           {entries.map((entry) => (
-            <li key={entry.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-5 py-3">
+            <li key={entry.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-3">
               <span className="flex min-w-48 flex-1 flex-col gap-0.5">
                 <Link
                   href={`/dashboard/accounting/journal/${entry.id}`}
@@ -140,8 +140,10 @@ export async function ExpenseDetailScreen({ expense, entries, accounts, canWrite
               <Badge size="compact" variant="neutral" appearance="outline">
                 {tAccounting(`source.${entry.source}`)}
               </Badge>
-              <span className={cn(AMOUNT, "ms-auto min-w-28 font-semibold text-foreground")}>
-                {formatMoney(entryTotal(entry), locale)}
+              <span className={ROW_END}>
+                <span className={cn(AMOUNT, "min-w-28 font-semibold text-foreground")}>
+                  {formatMoney(entryTotal(entry), locale)}
+                </span>
               </span>
             </li>
           ))}

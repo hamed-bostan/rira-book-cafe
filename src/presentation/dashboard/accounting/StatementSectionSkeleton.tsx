@@ -32,7 +32,7 @@ export function StatementSectionSkeleton({
       </div>
       <ul className="divide-y divide-border">
         {Array.from({ length: rows }, (_, row) => (
-          <li key={row} className={cn("flex items-center gap-3 px-5 py-3", amountBelow && "flex-wrap gap-y-1")}>
+          <li key={row} className={cn("flex items-center gap-3 px-5 py-3", amountBelow && "flex-wrap gap-y-2")}>
             <Skeleton className="h-4 w-10 shrink-0 rounded-pill" />
             <div className="flex h-5 min-w-0 flex-1 items-center">
               <Skeleton className={cn("h-4 rounded-pill", row % 2 === 0 ? "w-2/5" : "w-1/3")} />

@@ -1,3 +1,4 @@
+import { EntryListSkeleton } from "@/src/presentation/dashboard/accounting/EntryListSkeleton";
 import { DashboardPageHeaderSkeleton, DashboardSectionSkeleton } from "@/src/presentation/dashboard/skeletons";
 import { LoadingRegion } from "@/src/presentation/design-system/components/Skeleton/LoadingRegion";
 import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
@@ -20,17 +21,7 @@ export default function ExpenseLoading() {
           ))}
         </div>
       </DashboardSectionSkeleton>
-      <DashboardSectionSkeleton>
-        {Array.from({ length: 2 }, (_, index) => (
-          <div key={index} className="flex items-center justify-between gap-4">
-            <div className="flex min-w-0 flex-col gap-1.5">
-              <Skeleton className="h-4 w-16 rounded-pill" />
-              <Skeleton className="h-3.5 w-24 rounded-pill" />
-            </div>
-            <Skeleton className="h-4 w-24 rounded-pill" />
-          </div>
-        ))}
-      </DashboardSectionSkeleton>
+      <EntryListSkeleton />
     </LoadingRegion>
   );
 }

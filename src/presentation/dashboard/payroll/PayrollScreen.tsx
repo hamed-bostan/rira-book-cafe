@@ -12,7 +12,7 @@ import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 import { DashboardEmptyState } from "../DashboardEmptyState";
 import { ExpenseStatusBadge } from "../expenses/ExpenseStatusBadge";
 import { MetricCard } from "../MetricCard";
-import { AMOUNT, PAGE_CARD, ROW_CAPTION, ROW_TEXT } from "../pageStyles";
+import { AMOUNT, PAGE_CARD, ROW_CAPTION, ROW_END, ROW_TEXT } from "../pageStyles";
 import { DashboardPageCrumb } from "../shell/DashboardPageCrumb";
 
 import { formatPayPeriod } from "./payrollFormat";
@@ -87,11 +87,13 @@ export async function PayrollScreen({ runs }: { runs: PayRun[] }) {
                     </span>
                   </span>
                   <ExpenseStatusBadge status={run.status} />
-                  <span className="ms-auto flex min-w-36 flex-col items-end gap-0.5">
-                    <span className={cn(AMOUNT, "font-semibold text-foreground")}>
-                      {formatMoney(totals.net, locale)}
+                  <span className={ROW_END}>
+                    <span className="flex min-w-36 flex-col items-end gap-0.5">
+                      <span className={cn(AMOUNT, "font-semibold text-foreground")}>
+                        {formatMoney(totals.net, locale)}
+                      </span>
+                      <span className={ROW_CAPTION}>{t("col.net")}</span>
                     </span>
-                    <span className={ROW_CAPTION}>{t("col.net")}</span>
                   </span>
                 </li>
               );

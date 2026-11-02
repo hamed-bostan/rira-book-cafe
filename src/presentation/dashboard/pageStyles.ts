@@ -14,9 +14,9 @@ export const ROW_TEXT = "text-body-default sm:text-body-small";
 export const ROW_CAPTION = "text-body-small text-muted-foreground sm:text-body-caption";
 
 /**
- * A row's figure and the buttons after it, kept together at the row's inline-end:
- * when a narrow row wraps they move down a line as one, rather than each landing
- * at the start of a line of its own.
+ * The end of a list row: its figure and any buttons after it, kept together at the
+ * row's inline-end. When a narrow row wraps they move down a line as one and stay
+ * at the end, rather than each landing at the start of a line of its own.
  */
 export const ROW_END = "ms-auto flex flex-wrap items-center justify-end gap-x-4 gap-y-2";
 

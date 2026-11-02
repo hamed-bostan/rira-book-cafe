@@ -7,7 +7,7 @@ import { formatNumber } from "@/src/lib/formatNumber";
 import { cn } from "@/src/lib/utils";
 import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
 
-import { GROUP_BAND, PAGE_CARD, ROW_CAPTION, ROW_TEXT } from "../pageStyles";
+import { AMOUNT, GROUP_BAND, PAGE_CARD, ROW_CAPTION, ROW_END, ROW_TEXT } from "../pageStyles";
 import { DashboardPageCrumb } from "../shell/DashboardPageCrumb";
 
 import { AccountActiveSwitch } from "./AccountActiveSwitch";
@@ -59,7 +59,7 @@ export async function AccountsScreen({ accounts, trialBalance, canWrite, today }
                 <li
                   key={account.code}
                   className={cn(
-                    "flex flex-wrap items-center gap-x-3 gap-y-1 px-5 py-3",
+                    "flex flex-wrap items-center gap-x-3 gap-y-2 px-5 py-3",
                     index > 0 && "border-t border-border",
                   )}
                 >
@@ -87,12 +87,14 @@ export async function AccountsScreen({ accounts, trialBalance, canWrite, today }
                         {t("accounts.inactive")}
                       </Badge>
                     ) : null}
-                    <span className="ms-auto min-w-32 text-end font-semibold whitespace-nowrap text-foreground tabular-nums">
-                      {formatNumber(balances.get(account.code) ?? 0, locale)}
+                    <span className={ROW_END}>
+                      <span className={cn(AMOUNT, "min-w-32 font-semibold text-foreground")}>
+                        {formatNumber(balances.get(account.code) ?? 0, locale)}
+                      </span>
+                      {canWrite && !account.isSystem ? (
+                        <AccountActiveSwitch code={account.code} isActive={account.isActive} />
+                      ) : null}
                     </span>
-                    {canWrite && !account.isSystem ? (
-                      <AccountActiveSwitch code={account.code} isActive={account.isActive} />
-                    ) : null}
                   </span>
                 </li>
               ))}

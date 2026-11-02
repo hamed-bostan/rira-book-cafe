@@ -113,8 +113,8 @@ const PAGES: Record<string, FinancePage> = {
   "pay run": { path: (seed) => `/dashboard/payroll/${seed.payRunId}`, table: true, knownGap: "Phase 6" },
   employees: { path: () => "/dashboard/payroll/employees" },
   "new pay run": { path: () => "/dashboard/payroll/new" },
-  pricing: { path: () => "/dashboard/pricing", table: true, tabs: true, knownGap: "Phase 4" },
-  ingredients: { path: () => "/dashboard/pricing/ingredients", table: true, tabs: true, knownGap: "Phase 4" },
+  pricing: { path: () => "/dashboard/pricing", table: true, tabs: true },
+  ingredients: { path: () => "/dashboard/pricing/ingredients", table: true, tabs: true },
   recipe: { path: (seed) => `/dashboard/pricing/recipes/${seed.productId}` },
   "pricing settings": { path: () => "/dashboard/pricing/settings", tabs: true },
 };

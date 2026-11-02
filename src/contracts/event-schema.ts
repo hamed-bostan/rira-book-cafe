@@ -1,11 +1,13 @@
 import {
   EVENT_KINDS,
+  MAX_EVENT_CAPACITY,
   MAX_EVENT_DESCRIPTION_LENGTH,
   MAX_EVENT_TITLE_LENGTH,
   MAX_SEATS_PER_REGISTRATION,
 } from "@/src/domain/entities/CafeEvent";
 import { CAFE_TABLE_LABELS } from "@/src/domain/entities/CafeTable";
 import { isWallTime, wallTimeToDate } from "@/src/domain/entities/CafeTime";
+import { MAX_ORDER_AMOUNT } from "@/src/domain/entities/Order";
 import * as z from "@/src/lib/zod";
 
 import { fieldsParsed } from "./fields-parsed";
@@ -54,15 +56,20 @@ export const eventFormSchema = z.pipe(
           ),
           z.transform((value) => (value === "" ? undefined : Number(value))),
         )
-        .check(z.refine((value) => value === undefined || value >= 1, "capacityMin")),
-      /** Toman; blank or 0 is free. */
-      price: z.pipe(
-        z.string().check(
-          z.trim(),
-          z.refine((value) => value === "" || /^\d+$/.test(value), "priceInvalid"),
+        .check(
+          z.refine((value) => value === undefined || value >= 1, "capacityMin"),
+          z.refine((value) => value === undefined || value <= MAX_EVENT_CAPACITY, "capacityTooLarge"),
         ),
-        z.transform((value) => (value === "" ? 0 : Number(value))),
-      ),
+      /** Toman; blank or 0 is free. */
+      price: z
+        .pipe(
+          z.string().check(
+            z.trim(),
+            z.refine((value) => value === "" || /^\d+$/.test(value), "priceInvalid"),
+          ),
+          z.transform((value) => (value === "" ? 0 : Number(value))),
+        )
+        .check(z.refine((value) => value <= MAX_ORDER_AMOUNT, "amountTooLarge")),
       isPublished: z.boolean(),
     })
     .check(

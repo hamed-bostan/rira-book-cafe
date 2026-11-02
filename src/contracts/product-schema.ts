@@ -1,4 +1,5 @@
-import { BOOK_AVAILABILITIES, MAX_BOOK_COPIES, PRODUCT_KINDS } from "@/src/domain/entities/Product";
+import { MAX_ORDER_AMOUNT } from "@/src/domain/entities/Order";
+import { BOOK_AVAILABILITIES, MAX_BOOK_COPIES, MAX_STOCK_QUANTITY, PRODUCT_KINDS } from "@/src/domain/entities/Product";
 import { DIETARY_TAGS } from "@/src/domain/entities/ProductFilters";
 import * as z from "@/src/lib/zod";
 
@@ -33,18 +34,23 @@ const priceField = z
     z.string().check(z.trim(), z.minLength(1, "priceRequired"), z.regex(PRICE_PATTERN, "priceInvalid")),
     z.transform(Number),
   )
-  .check(z.refine((n) => n > 0, "pricePositive"));
+  .check(
+    z.refine((n) => n > 0, "pricePositive"),
+    z.refine((n) => n <= MAX_ORDER_AMOUNT, "amountTooLarge"),
+  );
 
 /** Optional price: blank → `undefined`; otherwise the same rules as `priceField`. */
-const optionalPriceField = z.pipe(
-  z
-    .pipe(
-      z.string().check(z.trim()),
-      z.transform((value) => (value.length > 0 ? value : undefined)),
-    )
-    .check(z.refine((value) => value === undefined || PRICE_PATTERN.test(value), "priceInvalid")),
-  z.transform((value) => (value === undefined ? undefined : Number(value))),
-);
+const optionalPriceField = z
+  .pipe(
+    z
+      .pipe(
+        z.string().check(z.trim()),
+        z.transform((value) => (value.length > 0 ? value : undefined)),
+      )
+      .check(z.refine((value) => value === undefined || PRICE_PATTERN.test(value), "priceInvalid")),
+    z.transform((value) => (value === undefined ? undefined : Number(value))),
+  )
+  .check(z.refine((value) => value === undefined || value <= MAX_ORDER_AMOUNT, "amountTooLarge"));
 
 /** A stock count: a non-negative whole number. */
 const STOCK_PATTERN = /^\d+$/;
@@ -140,6 +146,8 @@ export const productFormSchema = z.pipe(
             ctx.addIssue({ code: "custom", path: ["stockQuantity"], message: "stockRequired" });
           } else if (!STOCK_PATTERN.test(data.stockQuantity)) {
             ctx.addIssue({ code: "custom", path: ["stockQuantity"], message: "stockWhole" });
+          } else if (Number(data.stockQuantity) > MAX_STOCK_QUANTITY) {
+            ctx.addIssue({ code: "custom", path: ["stockQuantity"], message: "stockTooLarge" });
           }
         },
         { when: productFieldsParsed },

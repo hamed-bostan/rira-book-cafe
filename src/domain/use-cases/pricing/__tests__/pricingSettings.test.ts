@@ -1,7 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { MAX_ORDER_AMOUNT } from "../../../entities/Order";
 import {
   DEFAULT_PRICING_SETTINGS,
+  MAX_MONTHLY_UNITS,
   MAX_RECIPE_LINES,
   type Ingredient,
   type PricedProduct,
@@ -112,6 +114,15 @@ describe("ApplySuggestedPrice", () => {
     expect(applyPrice).not.toHaveBeenCalled();
   });
 
+  it("refuses a suggestion past what a menu price can be", async () => {
+    // A cost at the ceiling plus the default profit lands above it.
+    const { pricing, applyPrice } = pricingWith([{ ...LATTE, costPrice: MAX_ORDER_AMOUNT }]);
+    await expect(
+      new ApplySuggestedPrice(pricing, quietLedger()).execute("latte", 120_000, ACTOR, NOW),
+    ).rejects.toMatchObject({ name: "ValidationError", field: "price" });
+    expect(applyPrice).not.toHaveBeenCalled();
+  });
+
   it("audits the price move with both sides", async () => {
     const { pricing, applyPrice } = pricingWith([LATTE]);
     await new ApplySuggestedPrice(pricing, quietLedger()).execute("latte", 120_000, ACTOR, NOW);
@@ -149,6 +160,11 @@ describe("UpdatePricingSettings", () => {
     [{ overheadMonths: 0 }, "overheadMonths"],
     [{ overheadMonths: 13 }, "overheadMonths"],
     [{ overheadSource: "manual", manualMonthlyOverhead: undefined }, "manualMonthlyOverhead"],
+    [{ manualMonthlyOverhead: -1 }, "manualMonthlyOverhead"],
+    [{ manualMonthlyOverhead: Number.MAX_SAFE_INTEGER + 2 }, "manualMonthlyOverhead"],
+    [{ expectedMonthlyUnits: 0 }, "expectedMonthlyUnits"],
+    [{ expectedMonthlyUnits: 1.5 }, "expectedMonthlyUnits"],
+    [{ expectedMonthlyUnits: MAX_MONTHLY_UNITS + 1 }, "expectedMonthlyUnits"],
   ])("refuses %o", async (overrides, field) => {
     const { pricing, updateSettings } = pricingWith([]);
     await expect(

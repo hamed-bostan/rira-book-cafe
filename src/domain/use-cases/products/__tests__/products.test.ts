@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { isSellable, withoutCost, type Product } from "../../../entities/Product";
+import { MAX_ORDER_AMOUNT } from "../../../entities/Order";
+import { isSellable, MAX_STOCK_QUANTITY, withoutCost, type Product } from "../../../entities/Product";
 import { NotFoundError } from "../../../errors/NotFoundError";
 import { ValidationError } from "../../../errors/ValidationError";
 import { BulkUpdateProducts } from "../BulkUpdateProducts";
@@ -197,6 +198,20 @@ describe("CreateProduct", () => {
   it("refuses an invalid product before writing", async () => {
     const { repo, create } = repoWith([]);
     await expect(new CreateProduct(repo).execute({ ...INPUT, price: 0 }, ACTOR)).rejects.toThrow(ValidationError);
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["price", { price: MAX_ORDER_AMOUNT + 1 }],
+    ["originalPrice", { price: MAX_ORDER_AMOUNT, originalPrice: MAX_ORDER_AMOUNT + 1 }],
+    ["costPrice", { costPrice: MAX_ORDER_AMOUNT + 1 }],
+    ["stockQuantity", { stockQuantity: MAX_STOCK_QUANTITY + 1 }],
+  ])("refuses a %s over its limit", async (field, overrides) => {
+    const { repo, create } = repoWith([]);
+    await expect(new CreateProduct(repo).execute({ ...INPUT, ...overrides }, ACTOR)).rejects.toMatchObject({
+      name: "ValidationError",
+      field,
+    });
     expect(create).not.toHaveBeenCalled();
   });
 });

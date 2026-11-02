@@ -155,7 +155,7 @@ export class PrismaInventoryRepository implements IInventoryRepository {
         // The latest price paid is what the pricing advisor costs recipes at.
         await tx.ingredient.update({
           where: { id: line.ingredientId },
-          data: { purchasePrice: line.cost, purchaseQuantity: line.quantity },
+          data: { purchasePrice: BigInt(line.cost), purchaseQuantity: line.quantity },
         });
       }
       await recostProductsUsing(
@@ -330,7 +330,7 @@ export class PrismaInventoryRepository implements IInventoryRepository {
           if ((await tx.recipeLine.count({ where: { productId: book.id } })) > 0) continue;
           const cost = book.costPrice ?? 0;
           const item = await tx.ingredient.create({
-            data: { name: book.name, unit: "piece", purchasePrice: cost, purchaseQuantity: 1 },
+            data: { name: book.name, unit: "piece", purchasePrice: BigInt(cost), purchaseQuantity: 1 },
           });
           await tx.recipeLine.create({
             data: { productId: book.id, ingredientId: item.id, quantity: 1, position: 0 },

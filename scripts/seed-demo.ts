@@ -331,7 +331,7 @@ const suppliers: Partial<SupplierIds> = {};
 /** A delivery's line, costed at the item's list price. */
 async function deliveryLine(ingredientId: string, quantity: number) {
   const item = await prisma.ingredient.findUniqueOrThrow({ where: { id: ingredientId } });
-  return { ingredientId, quantity, cost: Math.round((item.purchasePrice / item.purchaseQuantity) * quantity) };
+  return { ingredientId, quantity, cost: Math.round((Number(item.purchasePrice) / item.purchaseQuantity) * quantity) };
 }
 
 function planPurchasing(owner: ActivityActor): void {

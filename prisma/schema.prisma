@@ -404,7 +404,7 @@ model BookLoan {
   returnedAt    DateTime? @map("returned_at")
   note          String?
   // Money left against the book, in Toman; 0 when none was taken.
-  depositAmount Int       @default(0) @map("deposit_amount")
+  depositAmount BigInt    @default(0) @map("deposit_amount")
   // cash | bank, when a deposit was taken
   depositMethod String?   @map("deposit_method")
   // held | returned | kept, when a deposit was taken
@@ -726,7 +726,7 @@ model Ingredient {
   id               String          @id @default(uuid())
   name             String
   unit             String
-  purchasePrice    Int             @map("purchase_price")
+  purchasePrice    BigInt          @map("purchase_price")
   purchaseQuantity Float           @map("purchase_quantity")
   isActive         Boolean         @default(true) @map("is_active")
   // Perpetual inventory: on hand (in unit), its value in Toman (always equal to
@@ -931,14 +931,15 @@ model CashShift {
   openedAt     DateTime  @default(now()) @map("opened_at")
   openedById   String    @map("opened_by_id")
   openedByName String    @map("opened_by_name")
-  openingFloat Int       @map("opening_float")
+  openingFloat BigInt    @map("opening_float")
   closedAt     DateTime? @map("closed_at")
   closedById   String?   @map("closed_by_id")
   closedByName String?   @map("closed_by_name")
   // Snapshotted at close: what the drawer should hold, what was counted, and counted − expected.
-  expectedCash Int?      @map("expected_cash")
-  countedCash  Int?      @map("counted_cash")
-  difference   Int?
+  // BigInt like the journal they come from: the expected cash isn't capped by the float.
+  expectedCash BigInt?   @map("expected_cash")
+  countedCash  BigInt?   @map("counted_cash")
+  difference   BigInt?
   note         String?
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")

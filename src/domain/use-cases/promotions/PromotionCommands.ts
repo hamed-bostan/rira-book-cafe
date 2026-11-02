@@ -7,6 +7,7 @@ import {
   type LoyaltySettings,
   type LoyaltyTransaction,
 } from "../../entities/Loyalty";
+import { MAX_ORDER_AMOUNT } from "../../entities/Order";
 import { isPlausiblePhone, normalizePhone } from "../../entities/Phone";
 import {
   MAX_PROMO_DESCRIPTION_LENGTH,
@@ -55,6 +56,11 @@ function validatePromo(input: PromoCodeInput, storedCode?: string): PromoCodeInp
     throw new ValidationError("value", "Enter how much it takes off.");
   if (input.kind === "percent" && input.value > 100)
     throw new ValidationError("value", "A percentage can't be over 100.");
+  for (const field of ["value", "maxDiscount", "minSubtotal"] as const) {
+    const amount = input[field];
+    if (amount !== undefined && amount > MAX_ORDER_AMOUNT)
+      throw new ValidationError(field, "That amount is too large.");
+  }
   if (input.description && input.description.length > MAX_PROMO_DESCRIPTION_LENGTH) {
     throw new ValidationError("description", "That description is too long.");
   }
@@ -177,6 +183,9 @@ export class UpdateLoyaltySettings {
     }
     if (!Number.isInteger(settings.minRedeemPoints) || settings.minRedeemPoints < 0) {
       throw new ValidationError("minRedeemPoints", "Enter a whole number.");
+    }
+    for (const field of ["tomanPerPoint", "pointValue", "minRedeemPoints"] as const) {
+      if (settings[field] > MAX_ORDER_AMOUNT) throw new ValidationError(field, "That number is too large.");
     }
     return this.loyaltyRepo.saveSettings(settings);
   }

@@ -30,6 +30,9 @@ export type BookDetails = {
 /** The most copies of one book the lending shelf tracks. */
 export const MAX_BOOK_COPIES = 20;
 
+/** The most a counted item can have in stock — a typo guard, not a policy. */
+export const MAX_STOCK_QUANTITY = 1_000_000;
+
 /** Copies of a book the shelf can lend — one unless the book says otherwise. */
 export function lendingCopies(book: Pick<BookDetails, "copies"> | undefined): number {
   return book?.copies ?? 1;

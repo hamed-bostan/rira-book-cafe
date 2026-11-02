@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { MAX_LOYALTY_NOTE_LENGTH, MAX_POINTS_ADJUSTMENT } from "@/src/domain/entities/Loyalty";
+import { MAX_ORDER_AMOUNT } from "@/src/domain/entities/Order";
 import { MAX_PROMO_DESCRIPTION_LENGTH } from "@/src/domain/entities/Promotion";
 
 import {
@@ -138,6 +139,29 @@ describe("promoCodeFormSchema", () => {
       maxDiscount: ["amountInvalid"],
     });
   });
+
+  it("caps amounts and limits at what an order can hold", () => {
+    const top = String(MAX_ORDER_AMOUNT);
+    const over = String(MAX_ORDER_AMOUNT + 1);
+    expect(
+      promoCodeFormSchema.parse({ ...PROMO, kind: "fixed", value: top, minSubtotal: top, usageLimit: top }),
+    ).toMatchObject({ value: MAX_ORDER_AMOUNT, minSubtotal: MAX_ORDER_AMOUNT, usageLimit: MAX_ORDER_AMOUNT });
+    expect(
+      promoErrors({
+        ...PROMO,
+        maxDiscount: over,
+        minSubtotal: over,
+        usageLimit: over,
+        perGuestLimit: over,
+      }),
+    ).toEqual({
+      maxDiscount: ["amountTooLarge"],
+      minSubtotal: ["amountTooLarge"],
+      usageLimit: ["amountTooLarge"],
+      perGuestLimit: ["amountTooLarge"],
+    });
+    expect(promoErrors({ ...PROMO, kind: "fixed", value: over })).toEqual({ value: ["amountTooLarge"] });
+  });
 });
 
 describe("promoCodeActiveSchema", () => {
@@ -168,6 +192,27 @@ describe("loyaltySettingsSchema", () => {
       flattened(loyaltySettingsSchema.safeParse({ ...SETTINGS, minRedeemPoints: 2.5 }).error)?.fieldErrors
         .minRedeemPoints,
     ).toEqual(["limitInvalid"]);
+  });
+
+  it("caps each rate at what an order can hold", () => {
+    const top = {
+      ...SETTINGS,
+      tomanPerPoint: MAX_ORDER_AMOUNT,
+      pointValue: MAX_ORDER_AMOUNT,
+      minRedeemPoints: MAX_ORDER_AMOUNT,
+    };
+    expect(loyaltySettingsSchema.parse(top)).toEqual(top);
+    const over = MAX_ORDER_AMOUNT + 1;
+    expect(
+      flattened(
+        loyaltySettingsSchema.safeParse({ ...SETTINGS, tomanPerPoint: over, pointValue: over, minRedeemPoints: over })
+          .error,
+      )?.fieldErrors,
+    ).toEqual({
+      tomanPerPoint: ["amountTooLarge"],
+      pointValue: ["amountTooLarge"],
+      minRedeemPoints: ["amountTooLarge"],
+    });
   });
 });
 

@@ -70,6 +70,8 @@ export const DEFAULT_PRICING_SETTINGS: PricingSettings = {
 /** Markups are stored in basis points; 100% = 10000. Above 1000% is almost certainly a typo. */
 export const MAX_MARKUP_BPS = 100_000;
 export const MAX_OVERHEAD_MONTHS = 12;
+/** Items sold a month, when the owner sets it by hand — a typo guard, not a policy. */
+export const MAX_MONTHLY_UNITS = 10_000_000;
 
 /** Cost of one unit (g, ml, piece) of an ingredient, unrounded. */
 export function ingredientUnitCost(ingredient: Pick<Ingredient, "purchasePrice" | "purchaseQuantity">): number {

@@ -1,10 +1,12 @@
 import { diffFields, type ActivityActor } from "../../entities/ActivityEntry";
 import {
   EVENT_KINDS,
+  MAX_EVENT_CAPACITY,
   MAX_EVENT_DESCRIPTION_LENGTH,
   MAX_EVENT_TITLE_LENGTH,
   type CafeEvent,
 } from "../../entities/CafeEvent";
+import { MAX_ORDER_AMOUNT } from "../../entities/Order";
 import { NotFoundError } from "../../errors/NotFoundError";
 import { ValidationError } from "../../errors/ValidationError";
 
@@ -47,9 +49,13 @@ function validateEvent(input: NewCafeEvent): NewCafeEvent {
   if (input.capacity !== undefined && (!Number.isInteger(input.capacity) || input.capacity < 1)) {
     throw new ValidationError("capacity", "Capacity must be a whole number of 1 or more.");
   }
+  if (input.capacity !== undefined && input.capacity > MAX_EVENT_CAPACITY) {
+    throw new ValidationError("capacity", `Capacity can be at most ${MAX_EVENT_CAPACITY}.`);
+  }
   if (!Number.isInteger(input.price) || input.price < 0) {
     throw new ValidationError("price", "Price must be a whole number of 0 or more.");
   }
+  if (input.price > MAX_ORDER_AMOUNT) throw new ValidationError("price", "That price is too large.");
   return { ...input, title, startsAt: startsAt.toISOString(), endsAt: endsAt.toISOString() };
 }
 

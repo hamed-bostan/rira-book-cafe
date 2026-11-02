@@ -9,6 +9,8 @@ export type EventKind = (typeof EVENT_KINDS)[number];
 
 /** Most seats one guest can take in a single registration. */
 export const MAX_SEATS_PER_REGISTRATION = 6;
+/** The most seats an event can have — a typo guard, not a policy. */
+export const MAX_EVENT_CAPACITY = 10_000;
 export const MAX_EVENT_TITLE_LENGTH = 120;
 export const MAX_EVENT_DESCRIPTION_LENGTH = 4000;
 

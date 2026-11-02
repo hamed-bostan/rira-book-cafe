@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { MAX_RECIPE_LINES } from "@/src/domain/entities/Pricing";
+import { MAX_MONTHLY_UNITS, MAX_RECIPE_LINES } from "@/src/domain/entities/Pricing";
 
+import { MAX_MONEY_AMOUNT } from "../money-fields";
 import {
   applyPriceSchema,
   ingredientSchema,
@@ -163,6 +164,23 @@ describe("pricingSettingsSchema", () => {
 
   it("refuses zero expected units", () => {
     expect(settingsErrors({ ...SETTINGS, expectedMonthlyUnits: "0" })?.expectedMonthlyUnits).toEqual(["numberInvalid"]);
+  });
+
+  it("caps the expected units and the monthly overhead", () => {
+    expect(
+      pricingSettingsSchema.parse({
+        ...SETTINGS,
+        expectedMonthlyUnits: String(MAX_MONTHLY_UNITS),
+        manualMonthlyOverhead: String(MAX_MONEY_AMOUNT),
+      }),
+    ).toMatchObject({ expectedMonthlyUnits: MAX_MONTHLY_UNITS, manualMonthlyOverhead: MAX_MONEY_AMOUNT });
+    expect(
+      settingsErrors({
+        ...SETTINGS,
+        expectedMonthlyUnits: String(MAX_MONTHLY_UNITS + 1),
+        manualMonthlyOverhead: String(MAX_MONEY_AMOUNT + 1),
+      }),
+    ).toEqual({ expectedMonthlyUnits: ["numberInvalid"], manualMonthlyOverhead: ["amountTooLarge"] });
   });
 });
 

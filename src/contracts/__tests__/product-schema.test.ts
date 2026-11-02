@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
+import { MAX_ORDER_AMOUNT } from "@/src/domain/entities/Order";
+import { MAX_STOCK_QUANTITY } from "@/src/domain/entities/Product";
+
 import { productFormSchema, type ProductFormInput } from "../product-schema";
+
+import { messagesAt } from "./zod-issues";
 
 const BASE: ProductFormInput = {
   kind: "drink",
@@ -68,6 +73,14 @@ describe("productFormSchema", () => {
     expect(productFormSchema.parse(BASE).stockQuantity).toBe(12);
   });
 
+  it("caps the stock count", () => {
+    expect(productFormSchema.parse({ ...BASE, stockQuantity: String(MAX_STOCK_QUANTITY) }).stockQuantity).toBe(
+      MAX_STOCK_QUANTITY,
+    );
+    const result = productFormSchema.safeParse({ ...BASE, stockQuantity: String(MAX_STOCK_QUANTITY + 1) });
+    expect(messagesAt(result, "stockQuantity")).toEqual(["stockTooLarge"]);
+  });
+
   it("ignores the stock of a made-to-order item, so saving leaves the stored count", () => {
     for (const stockQuantity of ["", "abc", "12"]) {
       const parsed = productFormSchema.parse({ ...BASE, madeToOrder: true, stockQuantity });
@@ -79,5 +92,17 @@ describe("productFormSchema", () => {
   it("only accepts whole-Toman prices", () => {
     expect(productFormSchema.safeParse({ ...BASE, price: "185000.5" }).success).toBe(false);
     expect(productFormSchema.parse(BASE).price).toBe(185000);
+  });
+
+  it("caps every price at what an order can hold", () => {
+    const top = String(MAX_ORDER_AMOUNT);
+    const over = String(MAX_ORDER_AMOUNT + 1);
+    expect(productFormSchema.parse({ ...BASE, price: top, costPrice: top })).toMatchObject({
+      price: MAX_ORDER_AMOUNT,
+      costPrice: MAX_ORDER_AMOUNT,
+    });
+    for (const field of ["price", "originalPrice", "costPrice"]) {
+      expect(messagesAt(productFormSchema.safeParse({ ...BASE, [field]: over }), field)).toEqual(["amountTooLarge"]);
+    }
   });
 });

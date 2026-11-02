@@ -28,7 +28,7 @@ import { useToast } from "@/src/presentation/design-system/components/Toast/useT
 
 import { DashboardDialog } from "../DashboardDialog";
 import { DashboardField } from "../DashboardField";
-import { FIELD_HINT, FIELD_LABEL } from "../fieldStyles";
+import { FIELD_GRID, FIELD_HINT, FIELD_LABEL } from "../fieldStyles";
 
 import { bookLoansApi } from "./book-loan-api";
 
@@ -219,7 +219,7 @@ export function LendBookDialog({ books, heldFor, today }: LendBookDialogProps) {
           />
           <span className={FIELD_HINT}>{t("dueOnDay", { date: formatCafeDayLong(dueOn, locale) })}</span>
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className={FIELD_GRID}>
           <DashboardField label={t("depositLabel")} hint={t("depositHint")}>
             <Input
               size="control-md"

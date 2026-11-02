@@ -29,6 +29,7 @@ import { useToast } from "@/src/presentation/design-system/components/Toast/useT
 
 import { DashboardDialog } from "../DashboardDialog";
 import { DashboardField } from "../DashboardField";
+import { FIELD_GRID } from "../fieldStyles";
 
 import { suiteBookingsApi } from "./suite-booking-api";
 import { WINDOW_LEAD_DAYS } from "./suiteCalendar";
@@ -165,7 +166,7 @@ export function NewStayDialog({ held, today, firstFree }: NewStayDialogProps) {
           ) : null
         }
       >
-        <div className="grid grid-cols-2 gap-4">
+        <div className={FIELD_GRID}>
           <DashboardField label={t("guestName")} className="col-span-2">
             <Input
               size="control-md"

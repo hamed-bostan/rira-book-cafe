@@ -16,7 +16,7 @@ import { cn } from "@/src/lib/utils";
 import { DashboardDialog } from "@/src/presentation/dashboard/DashboardDialog";
 import { DashboardFormField } from "@/src/presentation/dashboard/DashboardFormField";
 import { DashboardSwitchField } from "@/src/presentation/dashboard/DashboardSwitchField";
-import { FIELD_HINT, FIELD_INPUT } from "@/src/presentation/dashboard/fieldStyles";
+import { FIELD_GRID, FIELD_HINT, FIELD_INPUT } from "@/src/presentation/dashboard/fieldStyles";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
 import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
 import { Select } from "@/src/presentation/design-system/components/form/Select/Select";
@@ -139,7 +139,7 @@ export function IngredientDialog({ ingredient }: { ingredient?: Ingredient }) {
             </Select>
           )}
         </DashboardFormField>
-        <div className="grid grid-cols-2 gap-3">
+        <div className={FIELD_GRID}>
           <DashboardFormField
             label={t("ingredients.priceLabel")}
             required

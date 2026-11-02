@@ -156,7 +156,12 @@ export async function IncomeScreen({ page, accounts, status, query, today, vatRa
             })}
           </ul>
         )}
-        <ListPager page={page} />
+        {/* The list ends at its last row; the pager only comes in once there's a page to turn to. */}
+        {page.total > page.pageSize || page.page > 1 ? (
+          <div className="border-t border-border px-4 py-3">
+            <ListPager page={page} />
+          </div>
+        ) : null}
       </section>
     </div>
   );

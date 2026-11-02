@@ -128,7 +128,7 @@ export async function AccountingOverviewScreen({
           </div>
           <ResultsPeriodSwitch current={period} />
         </div>
-        <dl className="grid grid-cols-2 gap-x-6 gap-y-4 md:grid-cols-4">
+        <dl className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2 xl:grid-cols-4">
           {results.map(([key, value]) => (
             <div key={key} className="flex min-w-0 flex-col gap-1">
               <dt className="text-body-small text-muted-foreground sm:text-body-caption">{t(`overview.${key}`)}</dt>

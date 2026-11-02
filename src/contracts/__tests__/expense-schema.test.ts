@@ -66,6 +66,11 @@ describe("expenseSchema", () => {
     expect(expenseSchema.parse(EXPENSE).receiptUrl).toBeUndefined();
   });
 
+  it("takes a stored PDF receipt", () => {
+    const receiptUrl = "/uploads/receipts/0f8fad5b-d9cb-469f-a165-70867728950e.pdf";
+    expect(expenseSchema.parse({ ...EXPENSE, receiptUrl }).receiptUrl).toBe(receiptUrl);
+  });
+
   it.each([
     "https://example.com/uploads/receipts/0f8fad5b-d9cb-469f-a165-70867728950e.png",
     "//example.com/uploads/receipts/0f8fad5b-d9cb-469f-a165-70867728950e.png",
@@ -73,6 +78,7 @@ describe("expenseSchema", () => {
     "/uploads/products/0f8fad5b-d9cb-469f-a165-70867728950e.png",
     "/uploads/receipts/../products/0f8fad5b-d9cb-469f-a165-70867728950e.png",
     "/uploads/receipts/0f8fad5b-d9cb-469f-a165-70867728950e.svg",
+    "/uploads/products/0f8fad5b-d9cb-469f-a165-70867728950e.pdf",
   ])("refuses a receipt that isn't one this app stored: %s", (receiptUrl) => {
     expect(fieldErrorsOf({ ...EXPENSE, receiptUrl })?.receiptUrl).toEqual(["imageInvalid"]);
   });

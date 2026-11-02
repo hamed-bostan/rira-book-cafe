@@ -16,7 +16,7 @@ import { AMOUNT, ROW_CAPTION } from "../pageStyles";
 import { DashboardPageCrumb } from "../shell/DashboardPageCrumb";
 
 import { ExpenseReceiptEditor } from "./ExpenseReceiptEditor";
-import { ExpenseReceiptImage } from "./ExpenseReceiptImage";
+import { ExpenseReceiptPreview } from "./ExpenseReceiptPreview";
 import { ExpenseStatusBadge } from "./ExpenseStatusBadge";
 import { PayExpenseButton } from "./PayExpenseButton";
 import { VoidExpenseButton } from "./VoidExpenseButton";
@@ -120,7 +120,7 @@ export async function ExpenseDetailScreen({ expense, entries, accounts, canWrite
         </DashboardSection>
       ) : expense.receiptUrl ? (
         <DashboardSection title={t("receipt.heading")}>
-          <ExpenseReceiptImage src={expense.receiptUrl} alt={t("receipt.alt")} openLabel={t("receipt.open")} />
+          <ExpenseReceiptPreview src={expense.receiptUrl} />
         </DashboardSection>
       ) : null}
 

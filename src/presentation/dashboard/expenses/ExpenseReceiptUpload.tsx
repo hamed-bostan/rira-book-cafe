@@ -13,7 +13,7 @@ import { imagesApi } from "@/src/presentation/images/image-api";
 
 import { DANGER_SECONDARY, FIELD_HINT } from "../fieldStyles";
 
-import { ExpenseReceiptImage } from "./ExpenseReceiptImage";
+import { ExpenseReceiptPreview } from "./ExpenseReceiptPreview";
 
 type ExpenseReceiptUploadProps = {
   value?: string;
@@ -26,9 +26,9 @@ type ExpenseReceiptUploadProps = {
   id?: string;
 };
 
-const ACCEPT = "image/png,image/jpeg,image/webp,image/avif";
+const ACCEPT = "image/png,image/jpeg,image/webp,image/avif,application/pdf";
 
-/** Photograph or pick a receipt; it goes to the private receipts folder and reports the stored URL. */
+/** Photograph or pick a receipt, or a supplier's PDF; it goes to the private receipts folder and reports the stored URL. */
 export function ExpenseReceiptUpload({ value, onChange, onUploadingChange, disabled, id }: ExpenseReceiptUploadProps) {
   const t = useTranslations("dashExpenses.receipt");
   const inputRef = React.useRef<HTMLInputElement>(null);
@@ -59,7 +59,7 @@ export function ExpenseReceiptUpload({ value, onChange, onUploadingChange, disab
 
   return (
     <div className="flex flex-col gap-3">
-      {value ? <ExpenseReceiptImage src={value} alt={t("alt")} openLabel={t("open")} /> : null}
+      {value ? <ExpenseReceiptPreview src={value} /> : null}
       <input ref={inputRef} id={id} type="file" accept={ACCEPT} className="sr-only" onChange={handleFile} />
       <div className="flex flex-wrap gap-2">
         <Button

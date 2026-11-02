@@ -16,6 +16,12 @@ export const IMAGE_EXTENSION_BY_MIME: Record<string, string> = {
   "image/avif": "avif",
 };
 
+/** Everything the disk holds: the images, plus the PDFs only receipts may be (see `UploadReceipt`). */
+export const STORED_EXTENSION_BY_MIME: Record<string, string> = {
+  ...IMAGE_EXTENSION_BY_MIME,
+  "application/pdf": "pdf",
+};
+
 export type LocalDiskImageStorageConfig = {
   /** Absolute directory the images are written to (a Docker volume in production). */
   rootDir: string;
@@ -42,7 +48,7 @@ export class LocalDiskImageStorageRepository implements IImageStorageRepository 
   }
 
   async upload(input: UploadImageInput): Promise<StoredImage> {
-    const extension = IMAGE_EXTENSION_BY_MIME[input.contentType];
+    const extension = STORED_EXTENSION_BY_MIME[input.contentType];
     if (!extension) {
       throw new Error(`LocalDiskImageStorage: unsupported content type "${input.contentType}".`);
     }

@@ -24,6 +24,15 @@ test("a statement prints as a document at paper width, with its dates", async ({
   await expect(page.getByLabel("As of")).toBeHidden();
 });
 
+test("a statement stacks its rows on a phone, and prints them as a table all the same", async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await page.goto("/dashboard/accounting/statements/trial-balance");
+  await expect(page.getByRole("columnheader", { name: "Debit" })).toBeHidden();
+
+  await page.emulateMedia({ media: "print" });
+  await expect(page.getByRole("columnheader", { name: "Debit" })).toBeVisible();
+});
+
 test("the cash-flow statement is on offer, and shows how the period's cash ended", async ({ page }) => {
   await page.goto("/dashboard/accounting/statements");
   await page.getByRole("link", { name: /^Cash flow/ }).click();

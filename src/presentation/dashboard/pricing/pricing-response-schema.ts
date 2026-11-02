@@ -19,8 +19,6 @@ export const pricingSettingsResponseSchema: z.ZodMiniType<PricingSettings> = z.o
   manualMonthlyOverhead: z.optional(z.number()),
   expectedMonthlyUnits: z.optional(z.number()),
   overheadMonths: z.number(),
-  monthlyInflationBps: z.number(),
-  priceHorizonMonths: z.number(),
 });
 
 export const pricingReportResponseSchema: z.ZodMiniType<PricingReport> = z.object({
@@ -34,12 +32,6 @@ export const pricingReportResponseSchema: z.ZodMiniType<PricingReport> = z.objec
     months: z.number(),
   }),
   overheadPerUnit: z.nullable(z.number()),
-  inflation: z.object({
-    monthlyInflationBps: z.number(),
-    horizonMonths: z.number(),
-    overheadCatchUp: z.number(),
-    costFactor: z.number(),
-  }),
   vatRateBps: z.number(),
   rows: z.array(
     z.object({
@@ -54,7 +46,6 @@ export const pricingReportResponseSchema: z.ZodMiniType<PricingReport> = z.objec
       fullCost: z.nullable(z.number()),
       markupBps: z.number(),
       markupIsDefault: z.boolean(),
-      suggestedPriceToday: z.nullable(z.number()),
       suggestedPrice: z.nullable(z.number()),
       profitPerUnit: z.nullable(z.number()),
       currentMarkupRate: z.nullable(z.number()),

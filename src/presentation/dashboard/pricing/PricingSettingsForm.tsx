@@ -27,8 +27,6 @@ const FIELDS = [
   "manualMonthlyOverhead",
   "expectedMonthlyUnits",
   "overheadMonths",
-  "monthlyInflation",
-  "priceHorizonMonths",
 ] as const;
 
 function toDefaults(settings: PricingSettings): PricingSettingsInput {
@@ -39,15 +37,13 @@ function toDefaults(settings: PricingSettings): PricingSettingsInput {
     manualMonthlyOverhead: settings.manualMonthlyOverhead === undefined ? "" : String(settings.manualMonthlyOverhead),
     expectedMonthlyUnits: settings.expectedMonthlyUnits === undefined ? "" : String(settings.expectedMonthlyUnits),
     overheadMonths: String(settings.overheadMonths),
-    monthlyInflation: settings.monthlyInflationBps === 0 ? "" : String(settings.monthlyInflationBps / 100),
-    priceHorizonMonths: String(settings.priceHorizonMonths),
   };
 }
 
 /**
- * The advisor's assumptions: the default profit, how prices round, where the
+ * The advisor's assumptions: the default profit, how prices round, and where the
  * monthly running costs come from — the books (recorded expenses) or a planned
- * figure — and how fast costs are expected to rise until the next price change.
+ * figure.
  */
 export function PricingSettingsForm({ settings, canWrite }: { settings: PricingSettings; canWrite: boolean }) {
   const t = useTranslations("dashPricing");
@@ -199,46 +195,6 @@ export function PricingSettingsForm({ settings, canWrite }: { settings: PricingS
             />
           )}
         </DashboardFormField>
-
-        <fieldset className="flex min-w-0 flex-col gap-4 rounded-card-lg border border-border p-4" disabled={!canWrite}>
-          <legend className="px-1 text-body-default font-semibold text-foreground sm:text-body-small">
-            {t("settings.inflationLegend")}
-          </legend>
-          <p className={FIELD_HINT}>{t("settings.inflationHint")}</p>
-          <DashboardFormField
-            label={t("settings.monthlyInflationLabel")}
-            hint={t("settings.monthlyInflationHint")}
-            error={fieldError(errors.monthlyInflation?.message)}
-          >
-            {(wiring) => (
-              <Input
-                {...wiring}
-                {...register("monthlyInflation")}
-                size="control-md"
-                inputClassName={FIELD_INPUT}
-                inputMode="decimal"
-                dir="ltr"
-                placeholder="0"
-              />
-            )}
-          </DashboardFormField>
-          <DashboardFormField
-            label={t("settings.horizonLabel")}
-            hint={t("settings.horizonHint")}
-            error={fieldError(errors.priceHorizonMonths?.message)}
-          >
-            {(wiring) => (
-              <Input
-                {...wiring}
-                {...register("priceHorizonMonths")}
-                size="control-md"
-                inputClassName={FIELD_INPUT}
-                inputMode="numeric"
-                dir="ltr"
-              />
-            )}
-          </DashboardFormField>
-        </fieldset>
 
         <DashboardFormField
           label={t("settings.roundingLabel")}

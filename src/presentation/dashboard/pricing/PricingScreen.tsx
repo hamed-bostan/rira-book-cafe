@@ -42,10 +42,8 @@ export async function PricingScreen({ report, canWrite, canApply }: PricingScree
   const t = await getTranslations("dashPricing");
   const tProducts = await getTranslations("dashProducts");
   const locale = await getLocale();
-  const { basis, inflation } = report;
+  const { basis } = report;
   const defaultPercent = report.settings.defaultMarkupBps / 100;
-  /** With inflation on, today's price and the inflation-adjusted one sit side by side. */
-  const withInflation = inflation.costFactor !== 1;
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
@@ -106,35 +104,14 @@ export async function PricingScreen({ report, canWrite, canApply }: PricingScree
         </div>
       ) : null}
 
-      <div className="flex flex-col gap-1">
-        <p className={FIELD_HINT}>{t("formula")}</p>
-        {withInflation ? (
-          <p className={FIELD_HINT}>
-            {t("inflation.summary", {
-              rate: formatNumberTrimmed(inflation.monthlyInflationBps / 100, locale, 2),
-              months: formatNumber(inflation.horizonMonths, locale),
-              uplift: formatNumberTrimmed((inflation.costFactor - 1) * 100, locale, 1),
-            })}
-          </p>
-        ) : null}
-        {withInflation && inflation.overheadCatchUp !== 1 ? (
-          <p className={FIELD_HINT}>
-            {t("inflation.catchUp", { percent: formatNumberTrimmed((inflation.overheadCatchUp - 1) * 100, locale, 1) })}
-          </p>
-        ) : null}
-      </div>
+      <p className={FIELD_HINT}>{t("formula")}</p>
 
       <section className="min-w-0 overflow-hidden rounded-card-lg border border-border bg-background shadow-xs">
         {report.rows.length === 0 ? (
           <DashboardEmptyState title={tProducts("emptyTitle")} body={tProducts("emptyBody")} />
         ) : (
           <div className="overflow-x-auto">
-            <table
-              className={cn(
-                "w-full table-fixed text-body-default sm:text-body-small",
-                withInflation ? "min-w-[94.5rem]" : "min-w-[83.5rem]",
-              )}
-            >
+            <table className="w-full min-w-[83.5rem] table-fixed text-body-default sm:text-body-small">
               <colgroup>
                 <col className="w-[13.75rem]" />
                 <col className="w-52" />
@@ -142,7 +119,6 @@ export async function PricingScreen({ report, canWrite, canApply }: PricingScree
                 <col className="w-36" />
                 <col className="w-32" />
                 <col className="w-44" />
-                {withInflation ? <col className="w-44" /> : null}
                 <col className="w-36" />
                 <col className="w-[10.75rem]" />
               </colgroup>
@@ -163,13 +139,8 @@ export async function PricingScreen({ report, canWrite, canApply }: PricingScree
                   <th scope="col" className={cn(HEAD, "text-end")}>
                     {t("col.profit")}
                   </th>
-                  {withInflation ? (
-                    <th scope="col" className={cn(HEAD, "text-end")}>
-                      {t("col.suggestedToday")}
-                    </th>
-                  ) : null}
                   <th scope="col" className={cn(HEAD, "text-end")}>
-                    {withInflation ? t("col.suggestedInflation") : t("col.suggested")}
+                    {t("col.suggested")}
                   </th>
                   <th scope="col" className={cn(HEAD, "text-end")}>
                     {t("col.current")}
@@ -232,11 +203,6 @@ export async function PricingScreen({ report, canWrite, canApply }: PricingScree
                           </span>
                         )}
                       </td>
-                      {withInflation ? (
-                        <td className={cn(CELL, FIGURE, "text-end font-semibold")}>
-                          {row.suggestedPriceToday === null ? "—" : formatMoney(row.suggestedPriceToday, locale)}
-                        </td>
-                      ) : null}
                       <td className={CELL}>
                         <div className={STACK}>
                           <span className={cn(FIGURE, "font-semibold")}>

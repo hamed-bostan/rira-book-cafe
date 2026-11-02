@@ -61,19 +61,17 @@ const PAGES: Record<string, FinancePage> = {
   "journal entry": {
     path: (seed) => `/dashboard/accounting/journal/${seed.entryId}`,
     table: true,
-    knownGap: "Phase 3",
   },
   "journal print": { path: () => "/dashboard/accounting/journal/print" },
   "new journal entry": { path: () => "/dashboard/accounting/journal/new" },
   accounts: { path: () => "/dashboard/accounting/accounts", tabs: true },
-  "bank ledger": { path: () => "/dashboard/accounting/accounts/1120", table: true, knownGap: "Phase 3" },
+  "bank ledger": { path: () => "/dashboard/accounting/accounts/1120", table: true },
   statements: { path: () => "/dashboard/accounting/statements", tabs: true },
   "profit and loss": { path: () => "/dashboard/accounting/statements/profit-and-loss" },
   "balance sheet": { path: () => "/dashboard/accounting/statements/balance-sheet" },
   "trial balance": {
     path: () => "/dashboard/accounting/statements/trial-balance",
     table: true,
-    knownGap: "Phase 3",
   },
   vat: { path: () => "/dashboard/accounting/statements/vat" },
   // Its table only shows once something has sold, which a fresh database hasn't.
@@ -83,7 +81,6 @@ const PAGES: Record<string, FinancePage> = {
     path: () => "/dashboard/accounting/bank",
     table: true,
     tabs: true,
-    knownGap: "Phase 3",
   },
   "new bank statement": { path: () => "/dashboard/accounting/bank/new" },
   reconciliation: {

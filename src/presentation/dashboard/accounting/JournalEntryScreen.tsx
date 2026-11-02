@@ -10,14 +10,17 @@ import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
 
 import { DashboardPageHeader } from "../DashboardPageHeader";
 import { DashboardSection } from "../DashboardSection";
-import { AMOUNT, ROW_TEXT, TABLE_HEAD, TABLE_TD, TABLE_TH } from "../pageStyles";
+import { ROW_TEXT, TABLE_HEAD, TABLE_TH } from "../pageStyles";
 import { DashboardPageCrumb } from "../shell/DashboardPageCrumb";
+import { STACKED_TABLE } from "../stackedTableStyles";
 
 import { accountLabel, entryTotal, sourceHref, sourceLinkKey } from "./accounting-format";
 import { ReverseEntryButton } from "./ReverseEntryButton";
 
 /** A line above the entry saying what else it's tied to. */
 const NOTICE = "flex flex-wrap items-center gap-x-3 gap-y-1 rounded-card-lg px-4 py-3";
+
+const S = STACKED_TABLE.compact;
 
 type JournalEntryScreenProps = {
   entry: JournalEntry;
@@ -27,7 +30,10 @@ type JournalEntryScreenProps = {
   today: string;
 };
 
-/** One journal entry: its lines, who posted it, what it came from, and its reversal if any. */
+/**
+ * One journal entry: its lines, who posted it, what it came from, and its reversal
+ * if any. On a narrow card each line's account sits over its memo and its figure.
+ */
 export async function JournalEntryScreen({ entry, accounts, canWrite, today }: JournalEntryScreenProps) {
   const t = await getTranslations("dashAccounting");
   const locale = await getLocale();
@@ -96,12 +102,12 @@ export async function JournalEntryScreen({ entry, accounts, canWrite, today }: J
       <DashboardSection
         title={<span dir="auto">{entry.description}</span>}
         description={formatCafeDayMedium(entry.date, locale)}
-        className="overflow-hidden"
+        className={cn(S.frame, "overflow-hidden")}
         flush
       >
         <div className="overflow-x-auto">
-          <table className={cn(ROW_TEXT, "w-full min-w-xl table-fixed")}>
-            <thead className={TABLE_HEAD}>
+          <table className={cn(ROW_TEXT, S.table)}>
+            <thead className={cn(TABLE_HEAD, S.head)}>
               <tr>
                 <th scope="col" className={TABLE_TH}>
                   {t("entry.colAccount")}
@@ -117,12 +123,12 @@ export async function JournalEntryScreen({ entry, accounts, canWrite, today }: J
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
+            <tbody className={cn(S.body, "divide-y divide-border")}>
               {entry.lines.map((line, index) => {
                 const account = byCode.get(line.accountCode);
                 return (
-                  <tr key={index}>
-                    <td className={TABLE_TD}>
+                  <tr key={index} className={S.row}>
+                    <td className={S.lead}>
                       <Link
                         href={`/dashboard/accounting/accounts/${line.accountCode}`}
                         className="font-medium text-primary hover:text-primary-hover"
@@ -130,22 +136,35 @@ export async function JournalEntryScreen({ entry, accounts, canWrite, today }: J
                         {account ? accountLabel(account, locale) : line.accountCode}
                       </Link>
                     </td>
-                    <td className={cn(TABLE_TD, "text-muted-foreground")} dir="auto">
+                    {/* Under the account when stacked, unlabelled — it reads as the line's note. */}
+                    <td className={cn(S.lead, "text-muted-foreground", !line.memo && "hidden")} dir="auto">
                       {line.memo ?? ""}
                     </td>
-                    <td className={cn(TABLE_TD, AMOUNT)}>{line.debit ? formatNumber(line.debit, locale) : ""}</td>
-                    <td className={cn(TABLE_TD, AMOUNT)}>{line.credit ? formatNumber(line.credit, locale) : ""}</td>
+                    <td className={cn(S.cell, S.amount, !line.debit && "hidden")}>
+                      <span className={S.label}>{t("entry.colDebit")}</span>
+                      {line.debit ? formatNumber(line.debit, locale) : ""}
+                    </td>
+                    <td className={cn(S.cell, S.amount, !line.credit && "hidden")}>
+                      <span className={S.label}>{t("entry.colCredit")}</span>
+                      {line.credit ? formatNumber(line.credit, locale) : ""}
+                    </td>
                   </tr>
                 );
               })}
             </tbody>
-            <tfoot className="border-t border-border bg-muted font-semibold">
-              <tr>
-                <th scope="row" colSpan={2} className={cn(TABLE_TD, "text-start font-semibold")}>
+            <tfoot className={cn(S.foot, "border-t border-border bg-muted font-semibold")}>
+              <tr className={S.row}>
+                <th scope="row" colSpan={2} className={cn(S.lead, "text-start font-semibold")}>
                   {t("entry.totals")}
                 </th>
-                <td className={cn(TABLE_TD, AMOUNT)}>{formatNumber(total, locale)}</td>
-                <td className={cn(TABLE_TD, AMOUNT)}>{formatNumber(total, locale)}</td>
+                <td className={cn(S.cell, S.amount)}>
+                  <span className={S.label}>{t("entry.colDebit")}</span>
+                  {formatNumber(total, locale)}
+                </td>
+                <td className={cn(S.cell, S.amount)}>
+                  <span className={S.label}>{t("entry.colCredit")}</span>
+                  {formatNumber(total, locale)}
+                </td>
               </tr>
             </tfoot>
           </table>

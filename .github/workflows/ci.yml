@@ -9,6 +9,17 @@ on:
 permissions:
   contents: read
 
+# One run at a time per PR, and one at a time on main. Without this, two pushes to
+# main minutes apart both published :production, and whichever finished last kept
+# the tag, so an older commit could overwrite a newer one.
+# - On a PR, a newer push cancels the run it replaces: only the latest is worth testing.
+# - On main, runs queue instead, so a commit that started is never cut off partway.
+#   GitHub keeps only the newest waiting run, so the last image tagged :production
+#   is always the newest commit's.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   # --- Fast feedback: lint, typecheck, unit tests with coverage thresholds ---
   checks:

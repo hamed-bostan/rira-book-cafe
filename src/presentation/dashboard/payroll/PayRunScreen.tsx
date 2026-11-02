@@ -1,6 +1,6 @@
 import { getLocale, getTranslations } from "next-intl/server";
 
-import { netPay, payRunOwed, payRunTotals } from "@/src/domain/entities/Payroll";
+import { netPay, payRunOwed, payRunTotals, type PayRunLine } from "@/src/domain/entities/Payroll";
 import { Link } from "@/src/i18n/navigation";
 import { formatCafeDayMedium } from "@/src/lib/formatCafeDay";
 import { formatMoney } from "@/src/lib/formatMoney";
@@ -22,6 +22,15 @@ import type { PayRunDetailWire } from "./payroll-response-schema";
 
 type PayRunScreenProps = PayRunDetailWire & { today: string };
 
+/** One figure across the people table: its heading, each person's value, and the total. */
+type FigureColumn = {
+  key: string;
+  label: string;
+  figure: (line: PayRunLine) => number;
+  total: number;
+  strong?: boolean;
+};
+
 /** One month's pay: who got what, how it was paid, and the journal entries behind it. */
 export async function PayRunScreen({ run, entries, today }: PayRunScreenProps) {
   const t = await getTranslations("dashPayroll");
@@ -41,19 +50,39 @@ export async function PayRunScreen({ run, entries, today }: PayRunScreenProps) {
         ? t("detail.paidSoFar", { paid: formatMoney(run.paidAmount, locale), left: formatMoney(owed, locale) })
         : t("detail.unpaid");
 
+  // The form records a salary alone, as the cafe pays no insurance and withholds no
+  // tax. A run that has deductions anyway (from the API) still shows every figure.
+  const hasDeductions = totals.employeeInsurance + totals.incomeTax + totals.employerInsurance > 0;
+
   const details = [
     { key: "date", label: t("detail.bookedOn"), value: formatCafeDayMedium(run.date, locale) },
     { key: "payment", label: t("detail.payment"), value: payment },
-    { key: "net", label: t("netLabel"), value: formatMoney(totals.net, locale) },
+    {
+      key: "net",
+      label: hasDeductions ? t("netLabel") : t("totalSalariesLabel"),
+      value: formatMoney(totals.net, locale),
+    },
   ];
 
-  const columns = [
-    { key: "gross", label: t("grossLabel") },
-    { key: "employeeInsurance", label: t("employeeInsuranceLabel") },
-    { key: "incomeTax", label: t("incomeTaxLabel") },
-    { key: "net", label: t("netLabel") },
-    { key: "employerInsurance", label: t("employerInsuranceLabel") },
-  ] as const;
+  const columns: FigureColumn[] = hasDeductions
+    ? [
+        { key: "gross", label: t("grossLabel"), figure: (line) => line.gross, total: totals.gross },
+        {
+          key: "employeeInsurance",
+          label: t("employeeInsuranceLabel"),
+          figure: (line) => line.employeeInsurance,
+          total: totals.employeeInsurance,
+        },
+        { key: "incomeTax", label: t("incomeTaxLabel"), figure: (line) => line.incomeTax, total: totals.incomeTax },
+        { key: "net", label: t("netLabel"), figure: netPay, total: totals.net, strong: true },
+        {
+          key: "employerInsurance",
+          label: t("employerInsuranceLabel"),
+          figure: (line) => line.employerInsurance,
+          total: totals.employerInsurance,
+        },
+      ]
+    : [{ key: "gross", label: t("salaryLabel"), figure: (line) => line.gross, total: totals.gross }];
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
@@ -84,7 +113,7 @@ export async function PayRunScreen({ run, entries, today }: PayRunScreenProps) {
 
       <DashboardSection title={t("detail.linesHeading")} className="overflow-hidden" flush>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-3xl">
+          <table className={cn("w-full", hasDeductions && "min-w-3xl")}>
             <thead className={TABLE_HEAD}>
               <tr>
                 <th scope="col" className={TABLE_TH}>
@@ -103,11 +132,11 @@ export async function PayRunScreen({ run, entries, today }: PayRunScreenProps) {
                   <td className={TABLE_TD} dir="auto">
                     {line.employeeName}
                   </td>
-                  <td className={cn(TABLE_TD, AMOUNT)}>{formatNumber(line.gross, locale)}</td>
-                  <td className={cn(TABLE_TD, AMOUNT)}>{formatNumber(line.employeeInsurance, locale)}</td>
-                  <td className={cn(TABLE_TD, AMOUNT)}>{formatNumber(line.incomeTax, locale)}</td>
-                  <td className={cn(TABLE_TD, AMOUNT, "font-semibold")}>{formatNumber(netPay(line), locale)}</td>
-                  <td className={cn(TABLE_TD, AMOUNT)}>{formatNumber(line.employerInsurance, locale)}</td>
+                  {columns.map((column) => (
+                    <td key={column.key} className={cn(TABLE_TD, AMOUNT, column.strong && "font-semibold")}>
+                      {formatNumber(column.figure(line), locale)}
+                    </td>
+                  ))}
                 </tr>
               ))}
             </tbody>
@@ -116,18 +145,18 @@ export async function PayRunScreen({ run, entries, today }: PayRunScreenProps) {
                 <th scope="row" className={cn(TABLE_TD, "text-start font-semibold")}>
                   {t("detail.totals")}
                 </th>
-                <td className={cn(TABLE_TD, AMOUNT)}>{formatNumber(totals.gross, locale)}</td>
-                <td className={cn(TABLE_TD, AMOUNT)}>{formatNumber(totals.employeeInsurance, locale)}</td>
-                <td className={cn(TABLE_TD, AMOUNT)}>{formatNumber(totals.incomeTax, locale)}</td>
-                <td className={cn(TABLE_TD, AMOUNT)}>{formatNumber(totals.net, locale)}</td>
-                <td className={cn(TABLE_TD, AMOUNT)}>{formatNumber(totals.employerInsurance, locale)}</td>
+                {columns.map((column) => (
+                  <td key={column.key} className={cn(TABLE_TD, AMOUNT)}>
+                    {formatNumber(column.total, locale)}
+                  </td>
+                ))}
               </tr>
             </tfoot>
           </table>
         </div>
       </DashboardSection>
 
-      {run.status !== "void" && totals.employeeInsurance + totals.employerInsurance + totals.incomeTax > 0 ? (
+      {run.status !== "void" && hasDeductions ? (
         <p className={ROW_CAPTION}>
           {t("detail.settleHint")}{" "}
           <Link href="/dashboard/accounting/journal/new" className="font-medium text-primary hover:text-primary-hover">

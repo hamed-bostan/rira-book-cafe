@@ -21,6 +21,12 @@ describe("payRunSchema", () => {
     ]);
   });
 
+  it("reads a line with only gross pay, as the form sends it, as having no deductions", () => {
+    expect(payRunSchema.parse({ ...RUN, lines: [{ employeeId: "e1", gross: "20000000" }] }).lines).toEqual([
+      { employeeId: "e1", gross: 20_000_000, employeeInsurance: 0, incomeTax: 0, employerInsurance: 0 },
+    ]);
+  });
+
   it.each(["1405-13", "soon", ""])("refuses month %j", (period) => {
     expect(flattened(payRunSchema.safeParse({ ...RUN, period }).error)?.fieldErrors.period).toEqual([
       "payRunMonthInvalid",

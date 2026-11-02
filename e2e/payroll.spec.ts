@@ -5,7 +5,7 @@ import { storageStatePath } from "./fixtures/sessions";
 test.describe("as an admin", () => {
   test.use({ storageState: storageStatePath("admin") });
 
-  test("a month's pay is recorded from the accountant's figures, then paid", async ({ page }) => {
+  test("a month's pay is recorded from everyone's usual salary, then paid", async ({ page }) => {
     const name = `E2E Sara ${Date.now()}`;
 
     await page.goto("/dashboard");
@@ -16,20 +16,19 @@ test.describe("as an admin", () => {
     await page.getByRole("button", { name: "Add employee" }).click();
     const dialog = page.getByRole("dialog");
     await dialog.getByLabel("Name").fill(name);
-    await dialog.getByLabel("Usual monthly gross").fill("20000000");
+    await dialog.getByLabel("Usual monthly salary").fill("20000000");
     await dialog.getByRole("button", { name: "Save" }).click();
     await expect(page.getByRole("listitem").filter({ hasText: name })).toBeVisible();
 
     await page.goto("/dashboard/payroll/new");
-    await expect(page.getByLabel(`Gross pay, ${name}`)).toHaveValue("20000000");
-    await page.getByLabel(`Insurance, employee's share, ${name}`).fill("1400000");
-    await page.getByLabel(`Income tax, ${name}`).fill("600000");
-    await page.getByLabel(`Insurance, employer's share, ${name}`).fill("4600000");
-    await expect(page.getByText(/Net pay: 18,000,000/)).toBeVisible();
+    const salary = page.getByLabel(`Salary, ${name}`);
+    await expect(salary).toHaveValue("20000000");
+    await salary.fill("21000000");
     await page.getByRole("button", { name: "Record pay run" }).click();
 
     await expect(page).toHaveURL(/\/dashboard\/payroll\/[^/]+$/);
-    await expect(page.getByRole("cell", { name, exact: true })).toBeVisible();
+    await expect(page.getByRole("row").filter({ hasText: name })).toContainText("21,000,000");
+    await expect(page.getByRole("columnheader", { name: "Income tax" })).toHaveCount(0);
     await expect(page.getByText("Not paid yet")).toBeVisible();
 
     await page.getByRole("button", { name: "Pay", exact: true }).click();

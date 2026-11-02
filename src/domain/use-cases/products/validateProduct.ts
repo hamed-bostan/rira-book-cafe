@@ -1,3 +1,4 @@
+import { MAX_ORDER_AMOUNT } from "../../entities/Order";
 import { PRODUCT_KINDS } from "../../entities/Product";
 import { ValidationError } from "../../errors/ValidationError";
 
@@ -20,6 +21,10 @@ export function validateProduct(input: NewProduct): NewProduct {
   }
   if (input.originalPrice != null && input.originalPrice <= input.price) {
     throw new ValidationError("originalPrice", "Original price must be higher than the price.");
+  }
+  for (const field of ["price", "originalPrice", "costPrice"] as const) {
+    const amount = input[field];
+    if (amount != null && amount > MAX_ORDER_AMOUNT) throw new ValidationError(field, "That price is too large.");
   }
   if (!input.imageUrl) throw new ValidationError("imageUrl", "An image is required.");
   // A made-to-order item isn't counted, so it may leave its count out; a count

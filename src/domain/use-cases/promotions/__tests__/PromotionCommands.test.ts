@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { DEFAULT_LOYALTY_SETTINGS, type LoyaltySettings, type LoyaltyTransaction } from "../../../entities/Loyalty";
+import { MAX_ORDER_AMOUNT } from "../../../entities/Order";
 import { NotFoundError } from "../../../errors/NotFoundError";
 import { ValidationError } from "../../../errors/ValidationError";
 import {
@@ -121,6 +122,9 @@ describe("CreatePromoCode", () => {
     ["a zero value", { value: 0 }, "value"],
     ["a fractional value", { value: 2.5 }, "value"],
     ["a percentage over 100", { value: 101 }, "value"],
+    ["a fixed amount past an order's", { kind: "fixed", value: MAX_ORDER_AMOUNT + 1 }, "value"],
+    ["a cap past an order's", { maxDiscount: MAX_ORDER_AMOUNT + 1 }, "maxDiscount"],
+    ["a minimum past an order's", { minSubtotal: MAX_ORDER_AMOUNT + 1 }, "minSubtotal"],
     ["a description over the limit", { description: "x".repeat(121) }, "description"],
     ["an end before the start", { startsAt: "2026-02-01T00:00:00.000Z", endsAt: "2026-01-01T00:00:00.000Z" }, "endsAt"],
     [
@@ -317,6 +321,9 @@ describe("loyalty settings", () => {
     [{ pointValue: -1 }, "pointValue"],
     [{ minRedeemPoints: -1 }, "minRedeemPoints"],
     [{ minRedeemPoints: 0.5 }, "minRedeemPoints"],
+    [{ tomanPerPoint: MAX_ORDER_AMOUNT + 1 }, "tomanPerPoint"],
+    [{ pointValue: MAX_ORDER_AMOUNT + 1 }, "pointValue"],
+    [{ minRedeemPoints: MAX_ORDER_AMOUNT + 1 }, "minRedeemPoints"],
   ])("refuses %o", async (overrides, field) => {
     const { repo, saveSettings } = loyaltyRepo();
     await expect(async () =>

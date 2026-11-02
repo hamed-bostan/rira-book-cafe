@@ -404,7 +404,7 @@ model BookLoan {
   returnedAt    DateTime? @map("returned_at")
   note          String?
   // Money left against the book, in Toman; 0 when none was taken.
-  depositAmount Int       @default(0) @map("deposit_amount")
+  depositAmount BigInt    @default(0) @map("deposit_amount")
   // cash | bank, when a deposit was taken
   depositMethod String?   @map("deposit_method")
   // held | returned | kept, when a deposit was taken
@@ -726,7 +726,7 @@ model Ingredient {
   id               String          @id @default(uuid())
   name             String
   unit             String
-  purchasePrice    Int             @map("purchase_price")
+  purchasePrice    BigInt          @map("purchase_price")
   purchaseQuantity Float           @map("purchase_quantity")
   isActive         Boolean         @default(true) @map("is_active")
   // Perpetual inventory: on hand (in unit), its value in Toman (always equal to

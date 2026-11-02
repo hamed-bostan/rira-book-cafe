@@ -1,5 +1,6 @@
 import {
   MAX_LINE_QUANTITY,
+  MAX_ORDER_AMOUNT,
   MAX_ORDER_NOTE_TEXT_LENGTH,
   MAX_TABLE_LABEL_LENGTH,
   orderSubtotal,
@@ -55,7 +56,7 @@ export async function buildOrderLines(
   const products = await productRepo.getByIds(ids);
   const byId = new Map(products.map((product) => [product.id, product]));
 
-  return lines.map((line) => {
+  const items = lines.map((line) => {
     const product = byId.get(line.productId);
     if (!product || !product.isPublished || !isSellable(product)) {
       throw new ValidationError("items", "One of the items is no longer on the menu.");
@@ -77,6 +78,11 @@ export async function buildOrderLines(
       note: lineNote,
     };
   });
+  // Every amount on an order (discounts, payments, refunds) is at most its subtotal.
+  if (orderSubtotal(items) > MAX_ORDER_AMOUNT) {
+    throw new ValidationError("items", "That's more than one order can hold — split it into two.");
+  }
+  return items;
 }
 
 /**

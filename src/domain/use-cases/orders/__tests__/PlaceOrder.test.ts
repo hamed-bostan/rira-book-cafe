@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { MAX_ORDER_AMOUNT, type Order } from "../../../entities/Order";
 import { ValidationError } from "../../../errors/ValidationError";
 import { PlaceOrder } from "../PlaceOrder";
 
-import type { Order } from "../../../entities/Order";
 import type { Product } from "../../../entities/Product";
 import type { IOrderRepository, NewOrder } from "../../../repositories/IOrderRepository";
 import type { IProductRepository } from "../../../repositories/IProductRepository";
@@ -105,5 +105,18 @@ describe("PlaceOrder", () => {
     await expect(
       useCase.execute({ serviceType: "takeaway", items: [{ productId: "p1", quantity: 0 }] }, GUEST),
     ).rejects.toThrow(ValidationError);
+  });
+
+  it("takes an order up to the most one can come to, and refuses one past it", async () => {
+    const half = MAX_ORDER_AMOUNT / 2;
+    const { useCase, place } = setup([product({ price: half })]);
+
+    const order = await useCase.execute({ serviceType: "takeaway", items: [{ productId: "p1", quantity: 2 }] }, GUEST);
+    expect(order.total).toBe(MAX_ORDER_AMOUNT);
+
+    await expect(
+      useCase.execute({ serviceType: "takeaway", items: [{ productId: "p1", quantity: 3 }] }, GUEST),
+    ).rejects.toMatchObject({ name: "ValidationError", field: "items" });
+    expect(place).toHaveBeenCalledTimes(1);
   });
 });

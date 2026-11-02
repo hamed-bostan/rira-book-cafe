@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { MAX_ORDER_AMOUNT } from "../../../entities/Order";
 import { NotFoundError } from "../../../errors/NotFoundError";
 import { ValidationError } from "../../../errors/ValidationError";
 import {
@@ -143,6 +144,7 @@ describe("CreateEvent", () => {
     ["a fractional capacity", { capacity: 2.5 }, "capacity"],
     ["a negative price", { price: -1 }, "price"],
     ["a fractional price", { price: 1.5 }, "price"],
+    ["a price past what an order can hold", { price: MAX_ORDER_AMOUNT + 1 }, "price"],
   ])("refuses %s", async (_label, overrides, field) => {
     const { repo, create } = repoWith(null);
     await expect(new CreateEvent(repo).execute({ ...INPUT, ...overrides }, ACTOR)).rejects.toMatchObject({

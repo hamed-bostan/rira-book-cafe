@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
+import { MAX_ORDER_AMOUNT } from "@/src/domain/entities/Order";
+
 import { productFormSchema, type ProductFormInput } from "../product-schema";
+
+import { messagesAt } from "./zod-issues";
 
 const BASE: ProductFormInput = {
   kind: "drink",
@@ -79,5 +83,17 @@ describe("productFormSchema", () => {
   it("only accepts whole-Toman prices", () => {
     expect(productFormSchema.safeParse({ ...BASE, price: "185000.5" }).success).toBe(false);
     expect(productFormSchema.parse(BASE).price).toBe(185000);
+  });
+
+  it("caps every price at what an order can hold", () => {
+    const top = String(MAX_ORDER_AMOUNT);
+    const over = String(MAX_ORDER_AMOUNT + 1);
+    expect(productFormSchema.parse({ ...BASE, price: top, costPrice: top })).toMatchObject({
+      price: MAX_ORDER_AMOUNT,
+      costPrice: MAX_ORDER_AMOUNT,
+    });
+    for (const field of ["price", "originalPrice", "costPrice"]) {
+      expect(messagesAt(productFormSchema.safeParse({ ...BASE, [field]: over }), field)).toEqual(["amountTooLarge"]);
+    }
   });
 });

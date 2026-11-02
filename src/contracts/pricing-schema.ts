@@ -1,6 +1,7 @@
 import {
   INGREDIENT_UNITS,
   MAX_MARKUP_BPS,
+  MAX_MONTHLY_UNITS,
   MAX_OVERHEAD_MONTHS,
   MAX_RECIPE_LINES,
   OVERHEAD_SOURCES,
@@ -8,7 +9,7 @@ import {
 import * as z from "@/src/lib/zod";
 
 import { fieldsParsed } from "./fields-parsed";
-import { moneyField } from "./money-fields";
+import { MAX_MONEY_AMOUNT, moneyField } from "./money-fields";
 
 /** A positive quantity as typed: "18", "0.5", "1000". */
 const quantityField = z
@@ -70,8 +71,12 @@ export const pricingSettingsSchema = z
       .pipe(z.string().check(z.trim(), z.regex(/^\d+$/, "numberInvalid")), z.transform(Number))
       .check(z.refine((n) => n >= 1 && n <= 1_000_000, "numberInvalid")),
     overheadSource: z.enum(OVERHEAD_SOURCES, { error: "overheadSourceInvalid" }),
-    manualMonthlyOverhead: optionalWholeNumber,
-    expectedMonthlyUnits: optionalWholeNumber.check(z.refine((n) => n === undefined || n > 0, "numberInvalid")),
+    manualMonthlyOverhead: optionalWholeNumber.check(
+      z.refine((n) => n === undefined || n <= MAX_MONEY_AMOUNT, "amountTooLarge"),
+    ),
+    expectedMonthlyUnits: optionalWholeNumber.check(
+      z.refine((n) => n === undefined || (n > 0 && n <= MAX_MONTHLY_UNITS), "numberInvalid"),
+    ),
     overheadMonths: z
       .pipe(z.string().check(z.trim(), z.regex(/^\d+$/, "numberInvalid")), z.transform(Number))
       .check(z.refine((n) => n >= 1 && n <= MAX_OVERHEAD_MONTHS, "numberInvalid")),

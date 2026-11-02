@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 
+import { MAX_ORDER_AMOUNT } from "@/src/domain/entities/Order";
+
 import { eventFormSchema, eventTablesSchema, type EventFormInput } from "../event-schema";
 import { requestReservationSchema, reservationUpdateSchema } from "../reservation-schema";
+
+import { messagesAt } from "./zod-issues";
 
 const FORM: EventFormInput = {
   kind: "reading",
@@ -27,6 +31,12 @@ describe("eventFormSchema", () => {
   it("refuses an end before the start", () => {
     const result = eventFormSchema.safeParse({ ...FORM, endsAt: "2026-10-25T18:00" });
     expect(result.error?.issues.map((issue) => issue.message)).toContain("endBeforeStart");
+  });
+
+  it("caps the price at what an order can hold", () => {
+    expect(eventFormSchema.parse({ ...FORM, price: String(MAX_ORDER_AMOUNT) }).price).toBe(MAX_ORDER_AMOUNT);
+    const result = eventFormSchema.safeParse({ ...FORM, price: String(MAX_ORDER_AMOUNT + 1) });
+    expect(messagesAt(result, "price")).toEqual(["amountTooLarge"]);
   });
 });
 

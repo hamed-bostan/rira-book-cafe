@@ -1,10 +1,12 @@
 import { isCostOfSales } from "../../entities/AccountingReports";
 import { singleChange, type ActivityActor } from "../../entities/ActivityEntry";
 import { completeMonthsBefore, jalaliToday } from "../../entities/JalaliCalendar";
+import { MAX_ORDER_AMOUNT } from "../../entities/Order";
 import {
   buildPricingReport,
   INGREDIENT_UNITS,
   MAX_MARKUP_BPS,
+  MAX_MONTHLY_UNITS,
   MAX_OVERHEAD_MONTHS,
   MAX_RECIPE_LINES,
   type Ingredient,
@@ -105,6 +107,20 @@ export class UpdatePricingSettings {
     if (settings.overheadSource === "manual" && settings.manualMonthlyOverhead === undefined) {
       throw new ValidationError("manualMonthlyOverhead", "Enter the monthly running costs.");
     }
+    if (
+      settings.manualMonthlyOverhead !== undefined &&
+      (!Number.isSafeInteger(settings.manualMonthlyOverhead) || settings.manualMonthlyOverhead < 0)
+    ) {
+      throw new ValidationError("manualMonthlyOverhead", "Enter the monthly running costs.");
+    }
+    if (
+      settings.expectedMonthlyUnits !== undefined &&
+      (!Number.isInteger(settings.expectedMonthlyUnits) ||
+        settings.expectedMonthlyUnits < 1 ||
+        settings.expectedMonthlyUnits > MAX_MONTHLY_UNITS)
+    ) {
+      throw new ValidationError("expectedMonthlyUnits", "Enter how many items sell a month.");
+    }
     return this.pricing.updateSettings(settings);
   }
 }
@@ -143,6 +159,8 @@ export class ApplySuggestedPrice {
     if (!row) throw new NotFoundError("product", productId);
     if (row.suggestedPrice === null)
       throw new ValidationError("price", "This item has no cost yet, so there's no suggestion to apply.");
+    if (row.suggestedPrice > MAX_ORDER_AMOUNT)
+      throw new ValidationError("price", "The suggestion is more than a menu price can be — check its costs.");
 
     return this.pricing.applyPrice(productId, expectedPrice, row.suggestedPrice, (repriced) => ({
       actorId: actor.id,

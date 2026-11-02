@@ -1,3 +1,4 @@
+import { MAX_ORDER_AMOUNT } from "@/src/domain/entities/Order";
 import {
   DEFAULT_PRICING_SETTINGS,
   INGREDIENT_UNITS,
@@ -43,17 +44,24 @@ export class PrismaPricingRepository implements IPricingRepository {
   }
 
   async createIngredient(input: IngredientInput): Promise<Ingredient> {
-    return toIngredient(await prisma.ingredient.create({ data: input }));
+    return toIngredient(
+      await prisma.ingredient.create({ data: { ...input, purchasePrice: BigInt(input.purchasePrice) } }),
+    );
   }
 
   async updateIngredient(id: string, input: IngredientInput & { isActive: boolean }): Promise<Ingredient> {
     return prisma.$transaction(async (tx) => {
       const existing = await tx.ingredient.findUnique({ where: { id } });
       if (!existing) throw new NotFoundError("ingredient", id);
-      const row = await tx.ingredient.update({ where: { id }, data: input });
+      const row = await tx.ingredient.update({
+        where: { id },
+        data: { ...input, purchasePrice: BigInt(input.purchasePrice) },
+      });
       if (existing.purchasePrice !== row.purchasePrice || existing.purchaseQuantity !== row.purchaseQuantity) {
         const affected = await tx.recipeLine.findMany({ where: { ingredientId: id }, select: { productId: true } });
-        for (const productId of new Set(affected.map((line) => line.productId))) await recostProduct(tx, productId);
+        for (const productId of new Set(affected.map((line) => line.productId))) {
+          await recostProduct(tx, productId, "purchasePrice");
+        }
       }
       return toIngredient(row);
     });
@@ -89,7 +97,7 @@ export class PrismaPricingRepository implements IPricingRepository {
             position,
           })),
         });
-        await recostProduct(tx, productId);
+        await recostProduct(tx, productId, "lines");
         return lines;
       });
     } catch (error) {
@@ -190,18 +198,25 @@ export async function recostProductsUsing(
     where: { ingredientId: { in: [...ingredientIds] } },
     select: { productId: true },
   });
-  for (const productId of new Set(affected.map((line) => line.productId))) await recostProduct(tx, productId);
+  for (const productId of new Set(affected.map((line) => line.productId))) await recostProduct(tx, productId, "lines");
 }
 
-/** Set a product's cost price from its recipe; a product without a recipe keeps its manual cost. */
-async function recostProduct(tx: Prisma.TransactionClient, productId: string): Promise<void> {
+/**
+ * Set a product's cost price from its recipe; a product without a recipe keeps its
+ * manual cost. A cost past what a menu price can be is refused (on `field`, the input
+ * that caused it): it's a typo in a price or a quantity, not a real recipe.
+ */
+async function recostProduct(tx: Prisma.TransactionClient, productId: string, field: string): Promise<void> {
   const lines = await tx.recipeLine.findMany({ where: { productId }, include: { ingredient: true } });
   if (lines.length === 0) return;
   const cost = recipeCost(
     lines.map((line) => ({ ingredientId: line.ingredientId, quantity: line.quantity })),
-    new Map(lines.map((line) => [line.ingredientId, line.ingredient])),
+    new Map(lines.map((line) => [line.ingredientId, toIngredient(line.ingredient)])),
   );
-  if (cost !== null) await tx.product.update({ where: { id: productId }, data: { costPrice: cost } });
+  if (cost === null) return;
+  if (cost > MAX_ORDER_AMOUNT)
+    throw new ValidationError(field, "That would make an item cost more than a menu price can be.");
+  await tx.product.update({ where: { id: productId }, data: { costPrice: cost } });
 }
 
 function toSource(value: string): OverheadSource {
@@ -221,7 +236,7 @@ function toIngredient(row: IngredientRow): Ingredient {
     id: row.id,
     name: row.name,
     unit: toUnit(row.unit),
-    purchasePrice: row.purchasePrice,
+    purchasePrice: Number(row.purchasePrice),
     purchaseQuantity: row.purchaseQuantity,
     isActive: row.isActive,
     updatedAt: row.updatedAt.toISOString(),

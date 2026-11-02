@@ -1,5 +1,6 @@
 import { cafeDayRange, isCafeDay } from "@/src/domain/entities/CafeTime";
 import { MAX_LOYALTY_NOTE_LENGTH, MAX_POINTS_ADJUSTMENT } from "@/src/domain/entities/Loyalty";
+import { MAX_ORDER_AMOUNT } from "@/src/domain/entities/Order";
 import { isPlausiblePhone } from "@/src/domain/entities/Phone";
 import {
   MAX_PROMO_DESCRIPTION_LENGTH,
@@ -20,13 +21,15 @@ import { fieldsParsed } from "./fields-parsed";
 
 /** A whole number of Toman (or points) from a text input; blank → `undefined`. */
 const optionalWhole = (message: string) =>
-  z.pipe(
-    z.string().check(
-      z.trim(),
-      z.refine((value) => value === "" || /^\d+$/.test(value), message),
-    ),
-    z.transform((value) => (value === "" ? undefined : Number(value))),
-  );
+  z
+    .pipe(
+      z.string().check(
+        z.trim(),
+        z.refine((value) => value === "" || /^\d+$/.test(value), message),
+      ),
+      z.transform((value) => (value === "" ? undefined : Number(value))),
+    )
+    .check(z.refine((value) => value === undefined || value <= MAX_ORDER_AMOUNT, "amountTooLarge"));
 
 const optionalDay = z.pipe(
   z.string().check(
@@ -58,13 +61,15 @@ export const promoCodeFormSchema = z.pipe(
         z.transform((value) => (value ? value : undefined)),
       ),
       kind: z.enum(PROMO_KINDS, { error: "kindInvalid" }),
-      value: z.pipe(
-        z.string().check(
-          z.trim(),
-          z.refine((value) => /^\d+$/.test(value) && Number(value) > 0, "promoValueInvalid"),
-        ),
-        z.transform(Number),
-      ),
+      value: z
+        .pipe(
+          z.string().check(
+            z.trim(),
+            z.refine((value) => /^\d+$/.test(value) && Number(value) > 0, "promoValueInvalid"),
+          ),
+          z.transform(Number),
+        )
+        .check(z.refine((value) => value <= MAX_ORDER_AMOUNT, "amountTooLarge")),
       maxDiscount: optionalWhole("amountInvalid"),
       minSubtotal: z.pipe(
         optionalWhole("amountInvalid"),
@@ -122,9 +127,15 @@ export type PromoCodeActiveInput = z.input<typeof promoCodeActiveSchema>;
 
 export const loyaltySettingsSchema = z.object({
   enabled: z.boolean(),
-  tomanPerPoint: z.number().check(z.int("amountInvalid"), z.gte(1, "amountInvalid")),
-  pointValue: z.number().check(z.int("amountInvalid"), z.gte(1, "amountInvalid")),
-  minRedeemPoints: z.number().check(z.int("limitInvalid"), z.gte(0, "limitInvalid")),
+  tomanPerPoint: z
+    .number()
+    .check(z.int("amountInvalid"), z.gte(1, "amountInvalid"), z.lte(MAX_ORDER_AMOUNT, "amountTooLarge")),
+  pointValue: z
+    .number()
+    .check(z.int("amountInvalid"), z.gte(1, "amountInvalid"), z.lte(MAX_ORDER_AMOUNT, "amountTooLarge")),
+  minRedeemPoints: z
+    .number()
+    .check(z.int("limitInvalid"), z.gte(0, "limitInvalid"), z.lte(MAX_ORDER_AMOUNT, "amountTooLarge")),
 });
 export type LoyaltySettingsInput = z.input<typeof loyaltySettingsSchema>;
 

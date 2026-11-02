@@ -75,6 +75,12 @@ export const MAX_ORDER_NOTE_TEXT_LENGTH = 300;
 export const MAX_LINE_QUANTITY = 50;
 /** Most distinct lines in one order — a generous table, not a catering job. */
 export const MAX_ORDER_LINES = 30;
+/**
+ * The most an order can come to, in Toman — far above any real bill, and within
+ * what an order's amounts are stored in (32-bit). Everything that prices into an
+ * order is held to it too: menu prices and costs, promo amounts, loyalty rates.
+ */
+export const MAX_ORDER_AMOUNT = 2_000_000_000;
 
 /**
  * One line of an order. Name, kind, image and price are snapshotted at placement,

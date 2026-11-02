@@ -6,6 +6,7 @@ import {
 } from "@/src/domain/entities/CafeEvent";
 import { CAFE_TABLE_LABELS } from "@/src/domain/entities/CafeTable";
 import { isWallTime, wallTimeToDate } from "@/src/domain/entities/CafeTime";
+import { MAX_ORDER_AMOUNT } from "@/src/domain/entities/Order";
 import * as z from "@/src/lib/zod";
 
 import { fieldsParsed } from "./fields-parsed";
@@ -56,13 +57,15 @@ export const eventFormSchema = z.pipe(
         )
         .check(z.refine((value) => value === undefined || value >= 1, "capacityMin")),
       /** Toman; blank or 0 is free. */
-      price: z.pipe(
-        z.string().check(
-          z.trim(),
-          z.refine((value) => value === "" || /^\d+$/.test(value), "priceInvalid"),
-        ),
-        z.transform((value) => (value === "" ? 0 : Number(value))),
-      ),
+      price: z
+        .pipe(
+          z.string().check(
+            z.trim(),
+            z.refine((value) => value === "" || /^\d+$/.test(value), "priceInvalid"),
+          ),
+          z.transform((value) => (value === "" ? 0 : Number(value))),
+        )
+        .check(z.refine((value) => value <= MAX_ORDER_AMOUNT, "amountTooLarge")),
       isPublished: z.boolean(),
     })
     .check(

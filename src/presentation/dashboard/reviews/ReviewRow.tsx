@@ -48,6 +48,7 @@ export async function ReviewRow({ review }: ReviewRowProps) {
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <Link
             href={`/menu/${review.productId}`}
+            dir="auto"
             className={cn("text-body-strong text-foreground transition-colors hover:text-primary", focusRing)}
           >
             {review.productName}
@@ -66,8 +67,12 @@ export async function ReviewRow({ review }: ReviewRowProps) {
               : null}
           </span>
         </div>
+        {/* A guest writes in whichever language they like; it reads in its own direction. */}
         {review.comment ? (
-          <p className="text-body-default text-pretty whitespace-pre-wrap text-foreground/80 sm:text-body-small">
+          <p
+            dir="auto"
+            className="text-body-default text-pretty whitespace-pre-wrap text-foreground/80 sm:text-body-small"
+          >
             {review.comment}
           </p>
         ) : null}

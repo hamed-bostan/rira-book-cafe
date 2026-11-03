@@ -23,7 +23,7 @@ test.describe("signing in", () => {
     await page.getByRole("button", { name: "Verify Code" }).click();
 
     await expect(page).toHaveURL(/\/$/);
-    await expect(page.getByRole("link", { name: /^Notifications/ })).toBeVisible();
+    await expect(page.getByRole("link", { name: /^Messages/ })).toBeVisible();
   });
 
   test("a wrong code is refused", async ({ page }) => {

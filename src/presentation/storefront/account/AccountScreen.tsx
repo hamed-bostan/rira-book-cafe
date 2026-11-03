@@ -1,6 +1,5 @@
 import {
   BedDouble,
-  Bell,
   BookOpen,
   CalendarClock,
   CalendarDays,
@@ -8,6 +7,7 @@ import {
   ClipboardList,
   Gift,
   LayoutDashboard,
+  MessageSquareText,
 } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
@@ -54,7 +54,7 @@ export async function AccountScreen({
   const locale = await getLocale();
 
   const links: { href: string; label: string; icon: LucideIcon; count?: number; detail?: string }[] = [
-    { href: "/notifications", label: t("account.notifications"), icon: Bell, count: unreadNotifications },
+    { href: "/messages", label: t("account.notifications"), icon: MessageSquareText, count: unreadNotifications },
     {
       href: "/rewards",
       label: t("account.rewards"),

@@ -105,6 +105,13 @@ const PAGES: Record<string, MeasuredPage> = {
     dialog: true,
     prepare: menuItemFrom(/^(More actions for|کارهای بیشتر برای) R-/, /^(Cancel booking|لغو رزرو)$/),
   },
+  "message a guest": {
+    path: (s) => `/dashboard/reservations?day=${s.tomorrow}`,
+    dialog: true,
+    prepare: dialogFrom(/^(Message|پیام به) E2E/, async (dialog) => {
+      await dialog.getByRole("textbox").fill(`${NOTE} ${NOTE}`.slice(0, 500));
+    }),
+  },
   suite: { path: () => "/dashboard/suite", tabs: true },
   "suite past": { path: () => "/dashboard/suite?tab=past", tabs: true },
   "new stay": {

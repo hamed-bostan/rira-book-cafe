@@ -1,11 +1,13 @@
+import type { AuditHook } from "./AuditHook";
 import type { NewNotification, Notification } from "../entities/Notification";
 
 export type INotificationRepository = {
   /**
    * Store a notification. One whose `dedupeKey` was already used is dropped, not an
-   * error — returns `null` then.
+   * error — returns `null` then. With `audit` (a message staff wrote to a guest),
+   * the activity entry it returns is written in the same transaction.
    */
-  create(input: NewNotification): Promise<Notification | null>;
+  create(input: NewNotification, audit?: AuditHook<Notification>): Promise<Notification | null>;
   /** One guest's notifications, newest first, at most `limit`. */
   listForUser(userId: string, limit: number): Promise<Notification[]>;
   countUnread(userId: string): Promise<number>;

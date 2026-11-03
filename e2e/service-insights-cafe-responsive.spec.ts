@@ -192,6 +192,13 @@ const PAGES: Record<string, MeasuredPage> = {
     dialog: true,
     prepare: dialogFrom(/^(Cancel order|لغو سفارش)$/),
   },
+  "message the guest about an order": {
+    path: (s) => `/dashboard/orders/${s.pendingOrderId}`,
+    dialog: true,
+    prepare: dialogFrom(/^(Message|پیام به) /, async (dialog) => {
+      await dialog.getByRole("textbox").fill(`${NOTE} ${NOTE}`.slice(0, 500));
+    }),
+  },
   "new sale": {
     path: () => "/dashboard/orders/new",
     form: true,

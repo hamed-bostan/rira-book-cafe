@@ -7,6 +7,7 @@ import { formatNumber } from "@/src/lib/formatNumber";
 import { formatOrderDateShort } from "@/src/lib/formatOrderDate";
 import { DashboardSection } from "@/src/presentation/dashboard/DashboardSection";
 import { FIELD_HINT } from "@/src/presentation/dashboard/fieldStyles";
+import { MessageGuestButton } from "@/src/presentation/dashboard/guest-messages/MessageGuestButton";
 import { TakePaymentButton } from "@/src/presentation/dashboard/income/TakePaymentButton";
 import { ROW_END } from "@/src/presentation/dashboard/pageStyles";
 import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
@@ -90,6 +91,13 @@ export async function EventRegistrationsPanel({
                       sourceType: "eventRegistration",
                       sourceId: registration.id,
                     }}
+                  />
+                ) : null}
+                {canManage && registration.status === "registered" ? (
+                  <MessageGuestButton
+                    appearance="secondary"
+                    guest={{ name: registration.guestName, phone: registration.guestPhone }}
+                    about={{ kind: "eventRegistration", id: registration.id, label: event.title }}
                   />
                 ) : null}
                 {canManage && registration.status === "registered" ? (

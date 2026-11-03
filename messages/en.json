@@ -112,6 +112,8 @@
     "tableRequired": "Choose a table for a dine-in order.",
     "statusInvalid": "That status isn't valid.",
     "noteRequired": "Write a note first.",
+    "messageRequired": "Write the message first.",
+    "messageAboutInvalid": "Choose what the message is about.",
     "dateTimeInvalid": "Choose a valid date and time.",
     "partySizeInvalid": "Choose a party size from 1 to 12.",
     "outsideBookingHours": "Tables can be booked from 08:00 to 21:00.",
@@ -202,6 +204,7 @@
     "eventFull": "This event is full.",
     "eventClosed": "Sign-ups for this event are closed.",
     "alreadyRegistered": "Already signed up for this event.",
+    "guestChanged": "The guest's phone has changed since this page loaded. Reload it and try again.",
     "alreadyPosted": "That has already been booked.",
     "alreadyReversed": "That entry has already been reversed.",
     "notReversible": "Entries posted by an order or an expense are corrected from that order or expense.",
@@ -850,6 +853,21 @@
     "addError": "Couldn't add the note. Please try again.",
     "empty": "No notes yet."
   },
+  "dashGuestMessages": {
+    "action": "Message",
+    "actionAria": "Message {name}",
+    "title": "Message {name}",
+    "subtitle": "About {about}. It goes to their messages on the site, where they'll see it when they sign in with {phone}. They can't reply to it.",
+    "label": "Message",
+    "placeholder": "e.g. We've kept the table by the window for you.",
+    "count": "{used} / {max}",
+    "send": "Send",
+    "sentToast": "Message sent to {name}",
+    "sentToastBody": "They'll see it in their messages on the site when they sign in with {phone}.",
+    "sendError": "Couldn't send the message. Please try again.",
+    "toldToast": "{name} has a message about it on the site.",
+    "toldOnSignInToast": "A message about it went to {name}'s profile on the site. They'll see it when they sign in with {phone}."
+  },
   "dashActivity": {
     "heading": "Activity",
     "summary": "Every change made from the dashboard, newest first. Kept permanently.",
@@ -923,13 +941,15 @@
       },
       "reservation": {
         "changed": "<b>{actor}</b> updated reservation {entity}",
-        "booked": "<b>{actor}</b> booked table reservation {entity}"
+        "booked": "<b>{actor}</b> booked table reservation {entity}",
+        "guestMessaged": "<b>{actor}</b> messaged the guest about reservation {entity}"
       },
       "event": {
         "created": "<b>{actor}</b> created event {entity}",
         "updated": "<b>{actor}</b> edited event {entity}",
         "deleted": "<b>{actor}</b> deleted event {entity}",
-        "registrationCancelled": "<b>{actor}</b> cancelled a sign-up for {entity}"
+        "registrationCancelled": "<b>{actor}</b> cancelled a sign-up for {entity}",
+        "guestMessaged": "<b>{actor}</b> messaged a guest signed up for {entity}"
       },
       "ledger": {
         "entryPosted": "<b>{actor}</b> posted journal entry {entity}",
@@ -951,7 +971,8 @@
       },
       "suiteBooking": {
         "changed": "<b>{actor}</b> updated suite booking {entity}",
-        "booked": "<b>{actor}</b> booked suite stay {entity}"
+        "booked": "<b>{actor}</b> booked suite stay {entity}",
+        "guestMessaged": "<b>{actor}</b> messaged the guest about suite stay {entity}"
       },
       "bookLoan": {
         "lent": "<b>{actor}</b> lent a book ({entity})",
@@ -959,7 +980,8 @@
         "lost": "<b>{actor}</b> marked loan {entity} lost",
         "extended": "<b>{actor}</b> extended loan {entity}",
         "extensionUndone": "<b>{actor}</b> took back the extension on loan {entity}",
-        "holdSkipped": "<b>{actor}</b> lent the copy held for {entity} to someone else"
+        "holdSkipped": "<b>{actor}</b> lent the copy held for {entity} to someone else",
+        "guestMessaged": "<b>{actor}</b> messaged the guest about {entity}"
       },
       "income": {
         "recorded": "<b>{actor}</b> recorded income {entity}",
@@ -1058,6 +1080,8 @@
       "supplierId": "Supplier",
       "monthlySalary": "Usual pay (figures not shown)",
       "phone": "Phone",
+      "guest": "Guest",
+      "message": "Message",
       "reason": "Reason",
       "refId": "Zarinpal ref"
     },
@@ -1628,7 +1652,7 @@
       "signOut": "Sign out",
       "mySuiteStays": "My suite stays",
       "myBookLoans": "Books I've borrowed",
-      "notifications": "Notifications",
+      "notifications": "Messages",
       "rewards": "Rewards club",
       "pointsBalance": "{points} points"
     },
@@ -1666,11 +1690,13 @@
       "returnedOn": "Returned {date}"
     },
     "notifications": {
-      "heading": "Notifications",
-      "subtitle": "Updates on your orders, bookings and the books you've borrowed.",
-      "empty": "Nothing yet. We'll let you know here when something changes.",
+      "heading": "Messages",
+      "subtitle": "Updates on your orders, bookings and the books you've borrowed, and notes from the cafe.",
+      "empty": "No messages yet. We'll let you know here when something changes.",
       "unread": "Unread",
-      "bellAria": "{count, plural, =0 {Notifications} one {Notifications, # unread} other {Notifications, # unread}}",
+      "bellAria": "{count, plural, =0 {Messages} one {Messages, # unread} other {Messages, # unread}}",
+      "markAllRead": "Mark all as read",
+      "replyNote": "To reply, contact the cafe.",
       "kinds": {
         "orderAccepted": {
           "title": "Order #{orderNumber} is being prepared",
@@ -1727,6 +1753,10 @@
         "reviewApproved": {
           "title": "Your review is up",
           "body": "Thanks for reviewing {productName}."
+        },
+        "staffMessage": {
+          "title": "A message from the cafe",
+          "about": "{about, select, reservation {About your table booking R-{reference}} suiteBooking {About your suite stay S-{reference}} eventRegistration {About {subject}} bookLoan {About “{subject}”} bookHold {About “{subject}”} order {About order #{reference}} other {}}"
         }
       }
     },
@@ -2645,7 +2675,7 @@
     "borrowerPhone": "Borrower's phone",
     "note": "Note (optional)",
     "notePlaceholder": "e.g. condition",
-    "phoneHint": "If the phone matches a guest account, they'll see this loan on their account page.",
+    "phoneHint": "A message about the loan goes to their profile on the site. If the phone matches a guest account, they'll see the loan there too.",
     "lendSubmit": "Record loan",
     "lendError": "Couldn't record the loan. Please try again.",
     "searchLabel": "Search loans",
@@ -2702,8 +2732,8 @@
     "extend": "Extend {days, plural, other {{formatted} days}}",
     "markLost": "Mark lost",
     "confirmLostBody": "{title} · {name}. If the book turns up later you can still mark it returned.",
-    "firstInLineTold": "{name} is first in line for {title} and has been told in the app.",
-    "firstInLineCall": "{name} is first in line for {title} but has no account — call them on {phone}.",
+    "firstInLineTold": "{name} is first in line for {title} and has a message on the site that it's back.",
+    "firstInLineOnSignIn": "{name} is first in line for {title}. The message that it's back went to their profile on the site — they'll see it when they sign in with {phone}.",
     "extendedToast": "L-{reference} now due {date}",
     "extendUndoneToast": "L-{reference} is due {date} again",
     "dueOverdue": "Due {date} · {days, plural, one {{formatted} day} other {{formatted} days}} overdue",
@@ -3185,7 +3215,7 @@
     "loans": "We couldn't load your book loans",
     "menu": "We couldn't load the menu",
     "product": "We couldn't load this item",
-    "notifications": "We couldn't load your notifications",
+    "notifications": "We couldn't load your messages",
     "orders": "We couldn't load your orders",
     "order": "We couldn't load this order",
     "reservations": "We couldn't load your reservations",
@@ -3240,17 +3270,17 @@
     "remove": "Remove",
     "removeAria": "Remove {name} from the line",
     "skipTitle": "Skip {name}?",
-    "skipNext": "{name} is next and will be told in the app that {title} is waiting.",
-    "skipNextCall": "{name} is next. They have no account, so call them on {phone} to say {title} is waiting.",
+    "skipNext": "{name} is next and will get a message on the site that {title} is waiting.",
+    "skipNextOnSignIn": "{name} is next. A message that {title} is waiting goes to their profile on the site — they'll see it when they sign in with {phone}.",
     "skipNobody": "Nobody else is in line. {title} goes back on the open shelf.",
     "removeTitle": "Remove {name} from the line?",
     "removeBody": "They lose their place for {title}.",
     "lentToast": "Lent {title} to {name} · L-{reference}, due {date}",
     "removedToast": "{name} taken off the line for {title}.",
-    "nextToldToast": "{name} has been told in the app that it's waiting.",
-    "nextCallToast": "{name} is next but has no account — call them on {phone}.",
-    "callToTell": "Call to tell them",
-    "callToTellAria": "Call {name} on {phone} to tell them it's waiting",
+    "nextToldToast": "{name} has a message on the site that it's waiting.",
+    "nextOnSignInToast": "{name} is next. The message went to their profile on the site — they'll see it when they sign in with {phone}.",
+    "callToTell": "Call them too",
+    "callToTellAria": "Call {name} on {phone} — the message waits on the site until they sign in",
     "emptyOpenTitle": "Nobody is waiting",
     "emptyOpenBody": "When a guest asks for a book that's out, add them to the line.",
     "emptyClosedTitle": "No closed holds",

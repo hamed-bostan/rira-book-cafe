@@ -1,7 +1,10 @@
+import { isPlausiblePhone, normalizePhone } from "./Phone";
+
 /**
  * A message to one guest, shown on their account page and behind the bell in the
  * header — there's no SMS. Something happened that's about them: their order is
- * ready, a booking was confirmed, a borrowed book is due back.
+ * ready, a booking was confirmed, a borrowed book is due back — or staff wrote to
+ * them about one of those.
  *
  * Only the facts are stored (`kind` + `params`); the copy is written in the
  * guest's language when it's shown, so a notification reads right after they
@@ -23,6 +26,8 @@ export const NOTIFICATION_KINDS = [
   "bookAvailable",
   "pointsEarned",
   "reviewApproved",
+  // Words a member of staff wrote to the guest about one of their bookings, loans or orders.
+  "staffMessage",
 ] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 
@@ -31,6 +36,7 @@ export type NotificationParams = Record<string, string | number>;
 
 export type Notification = {
   id: string;
+  /** Who it's for: the guest's account id, which is their normalized phone — see {@link guestRecipient}. */
   userId: string;
   kind: NotificationKind;
   params: NotificationParams;
@@ -53,3 +59,17 @@ export const NOTIFICATION_LIST_LIMIT = 50;
 
 /** How close to its due day a borrowed book gets a reminder. */
 export const LOAN_REMINDER_HOURS = 48;
+
+/**
+ * Who a notice to a guest goes to: their account when the record is linked to one,
+ * else the phone they gave, normalized. A user's id *is* their normalized phone, so
+ * a notice addressed to the number is waiting in their profile from the first time
+ * they sign in with it — a guest who booked by phone or at the counter is told
+ * like any other. `null` only when there's no number to go by (a walk-in who gave
+ * none).
+ */
+export function guestRecipient(guest: { userId?: string; phone?: string }): string | null {
+  if (guest.userId) return guest.userId;
+  if (!guest.phone || !isPlausiblePhone(guest.phone)) return null;
+  return normalizePhone(guest.phone);
+}

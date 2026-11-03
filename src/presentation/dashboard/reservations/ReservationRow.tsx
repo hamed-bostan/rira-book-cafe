@@ -10,6 +10,7 @@ import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 
 import { tableNameValues } from "../floor/tableName";
+import { MessageGuestButton } from "../guest-messages/MessageGuestButton";
 
 import { ReservationRowActions } from "./ReservationRowActions";
 import { ReservationStatusBadge } from "./ReservationStatusBadge";
@@ -95,6 +96,12 @@ export async function ReservationRow({ reservation, now, canManage, bookings, ev
             <Icon icon={Phone} size="icon-md" className="text-muted-foreground" />
             {reservation.guestPhone}
           </a>
+          {canManage ? (
+            <MessageGuestButton
+              guest={{ name: reservation.guestName, phone: reservation.guestPhone }}
+              about={{ kind: "reservation", id: reservation.id, label: `R-${reservation.reference}` }}
+            />
+          ) : null}
         </div>
         {reservation.note ? (
           <p className="flex items-start gap-1.5 text-body-default text-pretty text-muted-foreground sm:text-body-small">

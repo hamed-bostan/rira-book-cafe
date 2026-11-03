@@ -87,10 +87,9 @@ export const ACTIVITY_ACTIONS = [
   "order.writtenOff",
   // An online payment the order couldn't take, given back to the guest from the gateway's panel.
   "order.onlinePaymentRefunded",
-  // The one action here that isn't a change to anything stored — an admin sent the
-  // customer a message about their order. Recorded through
-  // `IActivityLog.recordEvent` rather than an audit hook, because there is no
-  // transaction to ride; see that method for why the rule doesn't reach it.
+  // Staff wrote to the guest about their order: the message went to their profile,
+  // and the entry commits with it (see `MessageGuest`). The `*.guestMessaged`
+  // actions below are the same for the other things a message can be about.
   "order.customerNotified",
   "review.moderated",
   "promoCode.created",
@@ -101,8 +100,10 @@ export const ACTIVITY_ACTIONS = [
   "reservation.changed",
   // Staff booking a table or the suite for a guest who rang or walked in.
   "reservation.booked",
+  "reservation.guestMessaged",
   "suiteBooking.changed",
   "suiteBooking.booked",
+  "suiteBooking.guestMessaged",
   // A book handed over, brought back, or written off.
   "bookLoan.lent",
   "bookLoan.returned",
@@ -113,10 +114,14 @@ export const ACTIVITY_ACTIONS = [
   // A copy held for a guest who was told it's back, lent to someone else: their
   // hold is skipped. The entry is about the hold, not the loan beside it.
   "bookLoan.holdSkipped",
+  // Staff wrote to the borrower, or to a guest holding a book (then about the hold).
+  "bookLoan.guestMessaged",
   "event.created",
   "event.updated",
   "event.deleted",
   "event.registrationCancelled",
+  // Staff wrote to a guest on the event's list.
+  "event.guestMessaged",
   // The books. Order postings aren't logged here — the order's own status and
   // payment entries already are, and the journal names who posted each line.
   "ledger.entryPosted",
@@ -144,9 +149,9 @@ export const ACTIVITY_ACTIONS = [
   "payroll.voided",
   "payroll.employeeChanged",
   // Another event rather than a change to anything stored — an admin downloaded a
-  // customer-data export. Recorded through `IActivityLog.recordEvent`, same as
-  // `order.customerNotified`: the file has already left the moment this is
-  // written, so there is nothing to be atomic with.
+  // customer-data export. Recorded through `IActivityLog.recordEvent`: the file
+  // has already left the moment this is written, so there is nothing to be atomic
+  // with.
   // A standing scheduled-export rule was authored/edited, paused/resumed, or
   // removed — the Scheduled reports panel's own audit trail. A schedule
   // *firing* isn't logged here: it's an automated background action (see

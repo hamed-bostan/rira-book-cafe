@@ -29,6 +29,7 @@ import { useToast } from "@/src/presentation/design-system/components/Toast/useT
 
 import { DashboardDialog } from "../DashboardDialog";
 import { tableNameValues } from "../floor/tableName";
+import { useGuestToldLine } from "../guest-messages/useGuestToldLine";
 
 import { reservationsApi } from "./reservation-api";
 import { TableChoiceGrid } from "./TableChoiceGrid";
@@ -36,7 +37,16 @@ import { TableChoiceGrid } from "./TableChoiceGrid";
 type ReservationRowActionsProps = {
   reservation: Pick<
     Reservation,
-    "id" | "reference" | "status" | "tableLabel" | "startsAt" | "durationMinutes" | "partySize" | "guestName"
+    | "id"
+    | "reference"
+    | "status"
+    | "tableLabel"
+    | "startsAt"
+    | "durationMinutes"
+    | "partySize"
+    | "guestName"
+    | "guestPhone"
+    | "userId"
   >;
   /** "Now", from the page — Mark no-show waits until the booking has started. */
   now: string;
@@ -67,6 +77,7 @@ export function ReservationRowActions({ reservation, now, bookings, events }: Re
   const locale = useLocale();
   const router = useRouter();
   const { toast } = useToast();
+  const guestToldLine = useGuestToldLine();
   const [pending, startTransition] = React.useTransition();
   // Each dialog's purpose stays set while it closes, so its words don't change mid-fade.
   const [tableMode, setTableMode] = React.useState<TableMode>("confirm");
@@ -99,6 +110,15 @@ export function ReservationRowActions({ reservation, now, bookings, events }: Re
             ? t("statusChanged", { reference, status: t(`status.${change.status}`) }) +
               (change.tableLabel ? ` · ${tableName(change.tableLabel)}` : "")
             : t("tableSaved", { reference, table: tableName(change.tableLabel ?? "") }),
+          // Confirming or cancelling sends the guest a message (`reservationNotification`).
+          description:
+            change.status === "confirmed" || change.status === "cancelled"
+              ? guestToldLine({
+                  name: reservation.guestName,
+                  phone: reservation.guestPhone,
+                  userId: reservation.userId,
+                })
+              : undefined,
           onUndo: undoTo ? () => undo(undoTo) : undefined,
         });
       } catch (err) {

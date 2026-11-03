@@ -7,6 +7,7 @@ import { formatCafeDayShort } from "@/src/lib/formatCafeDay";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { cn } from "@/src/lib/utils";
+import { MessageGuestButton } from "@/src/presentation/dashboard/guest-messages/MessageGuestButton";
 import { TakePaymentButton } from "@/src/presentation/dashboard/income/TakePaymentButton";
 import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
@@ -101,6 +102,12 @@ export async function SuiteStayRow({ booking, clash, today, focused, canManage, 
             <Icon icon={Phone} size="icon-md" className="text-muted-foreground" />
             {booking.guestPhone}
           </a>
+          {canManage ? (
+            <MessageGuestButton
+              guest={{ name: booking.guestName, phone: booking.guestPhone }}
+              about={{ kind: "suiteBooking", id: booking.id, label: `S-${booking.reference}` }}
+            />
+          ) : null}
         </div>
         {booking.note ? (
           <p className="flex items-start gap-1.5 text-body-default text-pretty text-muted-foreground sm:text-body-small">

@@ -20,7 +20,7 @@ export const PUBLIC_NAV: readonly PublicNavItem[] = [
 export function isPublicNavActive(href: string, pathname: string): boolean {
   if (href === "/") return pathname === "/";
   if (href === "/account") {
-    return ["/account", "/orders", "/reservations", "/suite", "/loans", "/notifications", "/rewards"].some(
+    return ["/account", "/orders", "/reservations", "/suite", "/loans", "/messages", "/notifications", "/rewards"].some(
       (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
     );
   }

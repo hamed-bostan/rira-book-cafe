@@ -33,7 +33,8 @@ export type LendBookInput = {
 /**
  * Staff hand a book to a guest. The borrower is whoever is at the counter — they
  * needn't have an account — but when their phone matches one, the loan is linked
- * so the guest sees it on their account page (and is told about it). Lending the
+ * so the guest sees it on their account page. Either way they're told about it in
+ * their messages, by their phone (`loanStartedNotification`). Lending the
  * book to someone in its waitlist takes them out of the line; lending a copy held
  * for a guest who was told it's back skips that guest, as staff would, and logs it.
  * A deposit goes on the books as money held for the borrower, not as income.

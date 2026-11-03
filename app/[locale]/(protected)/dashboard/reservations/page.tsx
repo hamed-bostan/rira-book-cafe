@@ -1,11 +1,11 @@
 import { auth } from "@/auth";
 import { cafeDayOf, cafeDayRange, isCafeDay } from "@/src/domain/entities/CafeTime";
-import { RESERVATION_STATUSES, type ReservationStatus } from "@/src/domain/entities/Reservation";
 import { toSearchParams } from "@/src/lib/api/searchParams";
 import { sessionHas } from "@/src/lib/require-permission";
 import { eventsServerApi } from "@/src/presentation/dashboard/events/event-server-api";
 import { reservationsServerApi } from "@/src/presentation/dashboard/reservations/reservation-server-api";
 import { ReservationsScreen } from "@/src/presentation/dashboard/reservations/ReservationsScreen";
+import { RESERVATION_TABS, type ReservationTab } from "@/src/presentation/dashboard/reservations/reservationTabs";
 
 // One cafe day's bookings, and the events running that day, are fetched over the
 // REST API (BFF) during server render — with every request from today on, so
@@ -18,7 +18,7 @@ type DashboardReservationsPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
-const STATUS_SET = new Set<string>(RESERVATION_STATUSES);
+const STATUS_SET = new Set<string>(RESERVATION_TABS);
 
 export default async function DashboardReservationsPage({ searchParams }: DashboardReservationsPageProps) {
   const params = toSearchParams(await searchParams);
@@ -27,7 +27,7 @@ export default async function DashboardReservationsPage({ searchParams }: Dashbo
   const dayParam = params.get("day");
   const day = dayParam && isCafeDay(dayParam) ? dayParam : today;
   const statusParam = params.get("status");
-  const status = statusParam && STATUS_SET.has(statusParam) ? (statusParam as ReservationStatus) : undefined;
+  const status = statusParam && STATUS_SET.has(statusParam) ? (statusParam as ReservationTab) : undefined;
 
   const { from, to } = cafeDayRange(day);
   const [reservations, requests, events, session] = await Promise.all([

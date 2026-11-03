@@ -39,6 +39,8 @@ export function toWaitlistEntry(row: EntryRow): BookWaitlistEntry {
     guestPhone: row.guestPhone,
     status: toStatus(row.status),
     notifiedAt: row.notifiedAt?.toISOString(),
+    pickupBy: row.pickupBy?.toISOString(),
+    expiredAt: row.expiredAt?.toISOString(),
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };

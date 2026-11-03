@@ -1,7 +1,7 @@
 import { getLocale, getTranslations } from "next-intl/server";
 
 import type { CafeEvent } from "@/src/domain/entities/CafeEvent";
-import { RESERVATION_STATUSES, type Reservation, type ReservationStatus } from "@/src/domain/entities/Reservation";
+import type { Reservation } from "@/src/domain/entities/Reservation";
 import { Link } from "@/src/i18n/navigation";
 import { formatCafeDayFull } from "@/src/lib/formatCafeDay";
 import { formatEventTime } from "@/src/lib/formatEventWhen";
@@ -19,6 +19,7 @@ import { NewBookingDialog } from "./NewBookingDialog";
 import { OtherDayRequests } from "./OtherDayRequests";
 import { ReservationDayPicker } from "./ReservationDayPicker";
 import { ReservationRow } from "./ReservationRow";
+import { RESERVATION_TABS, reservationTab, type ReservationTab } from "./reservationTabs";
 
 const REFRESH_SECONDS = 30;
 
@@ -33,7 +34,7 @@ type ReservationsScreenProps = {
   day: string;
   today: string;
   /** The status tab, or `undefined` for All. */
-  status: ReservationStatus | undefined;
+  status: ReservationTab | undefined;
   /** "Now", from the page — the Now line and late parties, without a client clock. */
   now: string;
   canManage: boolean;
@@ -70,7 +71,7 @@ export async function ReservationsScreen({
   const covers = active.reduce((sum, r) => sum + r.partySize, 0);
   const requests = reservations.filter((r) => r.status === "requested").length;
   const dayLabel = formatCafeDayFull(day, locale);
-  const hrefFor = (tab: ReservationStatus | undefined): string => {
+  const hrefFor = (tab: ReservationTab | undefined): string => {
     const params = new URLSearchParams();
     if (day !== today) params.set("day", day);
     if (tab) params.set("status", tab);
@@ -80,7 +81,7 @@ export async function ReservationsScreen({
 
   const rows: Row[] = [
     ...reservations
-      .filter((r) => !status || r.status === status)
+      .filter((r) => !status || reservationTab(r) === status)
       .map((reservation): Row => ({ kind: "booking", startsAt: reservation.startsAt, reservation })),
     // Events sit between bookings on the All tab only — they have no status.
     ...(status ? [] : events.map((event): Row => ({ kind: "event", startsAt: event.startsAt, event }))),
@@ -143,10 +144,10 @@ export async function ReservationsScreen({
           current={status ?? "all"}
           tabs={[
             { key: "all", label: t("filterStatusAll"), count: reservations.length, href: hrefFor(undefined) },
-            ...RESERVATION_STATUSES.map((value) => ({
+            ...RESERVATION_TABS.map((value) => ({
               key: value,
               label: t(`status.${value}`),
-              count: reservations.filter((r) => r.status === value).length,
+              count: reservations.filter((r) => reservationTab(r) === value).length,
               href: hrefFor(value),
             })),
           ]}

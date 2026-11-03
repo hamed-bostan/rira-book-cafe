@@ -80,6 +80,20 @@ export class PrismaReservationRepository implements IReservationRepository {
     return rows.map(toReservation);
   }
 
+  async expireRequest(id: string, at: Date, audit?: AuditHook<Reservation>): Promise<Reservation | null> {
+    return inTransaction(this.db, async (tx) => {
+      // Guarded: a request staff answered, or moved later, a moment ago matches nothing.
+      const result = await tx.reservation.updateMany({
+        where: { id, status: "requested", startsAt: { lte: at } },
+        data: { status: "cancelled", expiredAt: at },
+      });
+      if (result.count === 0) return null;
+      const saved = toReservation(await tx.reservation.findUniqueOrThrow({ where: { id } }));
+      await recordAudit(tx, saved, audit);
+      return saved;
+    });
+  }
+
   async applyChange(
     id: string,
     expectedStatus: ReservationStatus,
@@ -161,6 +175,7 @@ function toReservation(row: ReservationRow): Reservation {
     startsAt: row.startsAt.toISOString(),
     durationMinutes: row.durationMinutes,
     status: toStatus(row.status),
+    expiredAt: row.expiredAt?.toISOString(),
     tableLabel: row.tableLabel ?? undefined,
     note: row.note ?? undefined,
     createdAt: row.createdAt.toISOString(),

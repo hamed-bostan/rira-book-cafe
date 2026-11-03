@@ -1,6 +1,6 @@
 import { getLocale, getTranslations } from "next-intl/server";
 
-import { FILTERABLE_ACTIVITY_FIELDS, type ActivityEntityType } from "@/src/domain/entities/ActivityEntry";
+import { FILTERABLE_ACTIVITY_FIELDS, SYSTEM_ACTOR, type ActivityEntityType } from "@/src/domain/entities/ActivityEntry";
 import { cafeDayOf } from "@/src/domain/entities/CafeTime";
 import type { Page } from "@/src/domain/entities/Pagination";
 import { Link } from "@/src/i18n/navigation";
@@ -78,7 +78,10 @@ export async function ActivityScreen({ entries, actors, entityTypes, isFiltered 
             label={t("filterActor")}
             options={[
               { value: "", label: t("allActors") },
-              ...actors.map((actor) => ({ value: actor.id, label: actor.name })),
+              ...actors.map((actor) => ({
+                value: actor.id,
+                label: actor.id === SYSTEM_ACTOR.id ? t("systemActor") : actor.name,
+              })),
             ]}
           />
           <ActivityFilterSelect

@@ -27,18 +27,33 @@ const ICONS: Record<NotificationKind, LucideIcon> = {
   orderCancelled: ClipboardList,
   reservationConfirmed: CalendarClock,
   reservationCancelled: CalendarClock,
+  reservationTomorrow: CalendarClock,
+  reservationSoon: CalendarClock,
+  reservationExpired: CalendarClock,
   suiteConfirmed: BedDouble,
   suiteCancelled: BedDouble,
+  suiteTomorrow: BedDouble,
+  suiteExpired: BedDouble,
+  eventTomorrow: CalendarClock,
   loanStarted: BookOpen,
   loanDueSoon: BookOpen,
   loanOverdue: BookOpen,
   bookAvailable: BookOpen,
+  holdCollectBy: BookOpen,
+  holdLastDay: BookOpen,
+  holdExpired: BookOpen,
   pointsEarned: Gift,
   reviewApproved: Star,
 };
 
 /** Kinds that ask the guest to do something — drawn in the warning tone. */
-const URGENT: ReadonlySet<NotificationKind> = new Set(["orderReady", "loanOverdue", "bookAvailable"]);
+const URGENT: ReadonlySet<NotificationKind> = new Set([
+  "orderReady",
+  "loanOverdue",
+  "bookAvailable",
+  "holdCollectBy",
+  "holdLastDay",
+]);
 
 /**
  * The guest's inbox: what happened to their orders, bookings and borrowed books,

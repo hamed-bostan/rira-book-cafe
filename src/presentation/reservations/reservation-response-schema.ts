@@ -13,6 +13,7 @@ export const reservationResponseSchema = z.object({
   startsAt: z.string(),
   durationMinutes: z.number(),
   status: z.enum(RESERVATION_STATUSES),
+  expiredAt: z.optional(z.string()),
   tableLabel: z.optional(z.string()),
   note: z.optional(z.string()),
   createdAt: z.string(),

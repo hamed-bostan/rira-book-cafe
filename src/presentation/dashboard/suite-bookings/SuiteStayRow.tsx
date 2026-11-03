@@ -72,7 +72,7 @@ export async function SuiteStayRow({ booking, clash, today, focused, canManage, 
       <div className="flex min-w-0 flex-[1_1_15rem] flex-col gap-1.5">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className="text-body-strong text-foreground">{booking.guestName}</span>
-          <SuiteBookingStatusBadge status={booking.status} outlined />
+          <SuiteBookingStatusBadge status={booking.status} expired={booking.expiredAt !== undefined} outlined />
           {booking.paidAmount ? (
             <Badge variant="success" appearance="outline" size="compact">
               {t("paid", { amount: formatMoney(booking.paidAmount, locale) })}

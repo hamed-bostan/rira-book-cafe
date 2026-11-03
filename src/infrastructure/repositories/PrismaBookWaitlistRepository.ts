@@ -1,11 +1,13 @@
-import { OPEN_WAITLIST_STATUSES, type BookWaitlistEntry } from "@/src/domain/entities/BookWaitlist";
+import { OPEN_WAITLIST_STATUSES, holdPickupDeadline, type BookWaitlistEntry } from "@/src/domain/entities/BookWaitlist";
 import { ConflictError } from "@/src/domain/errors/ConflictError";
+import type { AuditHook } from "@/src/domain/repositories/AuditHook";
 import type { IBookWaitlistRepository, NewWaitlistEntry } from "@/src/domain/repositories/IBookWaitlistRepository";
 import { prisma } from "@/src/infrastructure/prisma/client";
 import { Prisma } from "@/src/infrastructure/prisma/generated/client";
 import { inTransaction, type PrismaDb } from "@/src/infrastructure/prisma/transaction";
 
 import { OPEN_HOLD as OPEN, lockBookShelf, toWaitlistEntry as toEntry } from "./bookShelf";
+import { recordAudit } from "./writeActivityEntry";
 
 /**
  * The book waitlist backed by PostgreSQL via Prisma. A partial unique index keeps
@@ -83,6 +85,24 @@ export class PrismaBookWaitlistRepository implements IBookWaitlistRepository {
     });
   }
 
+  async expireHold(id: string, at: Date, audit?: AuditHook<BookWaitlistEntry>): Promise<BookWaitlistEntry | null> {
+    return inTransaction(this.db, async (tx) => {
+      const entry = await tx.bookWaitlistEntry.findUnique({ where: { id }, select: { productId: true } });
+      if (!entry) return null;
+      // Under the book's lock, like every move of its copies: a loan to them a moment
+      // ago has fulfilled the hold, and then this matches nothing.
+      await lockBookShelf(tx, entry.productId);
+      const result = await tx.bookWaitlistEntry.updateMany({
+        where: { id, status: "notified", pickupBy: { lt: at } },
+        data: { status: "cancelled", expiredAt: at },
+      });
+      if (result.count === 0) return null;
+      const saved = toEntry(await tx.bookWaitlistEntry.findUniqueOrThrow({ where: { id } }));
+      await recordAudit(tx, saved, audit);
+      return saved;
+    });
+  }
+
   async notifyNext(productId: string, at: Date): Promise<BookWaitlistEntry | null> {
     return inTransaction(this.db, async (tx) => {
       await lockBookShelf(tx, productId);
@@ -93,7 +113,7 @@ export class PrismaBookWaitlistRepository implements IBookWaitlistRepository {
       if (!next) return null;
       const row = await tx.bookWaitlistEntry.update({
         where: { id: next.id },
-        data: { status: "notified", notifiedAt: at },
+        data: { status: "notified", notifiedAt: at, pickupBy: holdPickupDeadline(at) },
       });
       return toEntry(row);
     });

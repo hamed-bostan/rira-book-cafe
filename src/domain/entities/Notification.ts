@@ -15,12 +15,24 @@ export const NOTIFICATION_KINDS = [
   "orderCancelled",
   "reservationConfirmed",
   "reservationCancelled",
+  // Sent by the background jobs: reminders before a booking, and a request nobody
+  // answered in time.
+  "reservationTomorrow",
+  "reservationSoon",
+  "reservationExpired",
   "suiteConfirmed",
   "suiteCancelled",
+  "suiteTomorrow",
+  "suiteExpired",
+  "eventTomorrow",
   "loanStarted",
   "loanDueSoon",
   "loanOverdue",
   "bookAvailable",
+  // A told guest's pickup deadline: when they're told, on its last day, and once it's gone.
+  "holdCollectBy",
+  "holdLastDay",
+  "holdExpired",
   "pointsEarned",
   "reviewApproved",
 ] as const;

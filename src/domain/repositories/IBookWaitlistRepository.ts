@@ -1,3 +1,4 @@
+import type { AuditHook } from "./AuditHook";
 import type { BookWaitlistEntry } from "../entities/BookWaitlist";
 
 /** A guest joining the line. Status and timestamps are the repository's. */
@@ -28,9 +29,16 @@ export type IBookWaitlistRepository = {
    */
   cancel(id: string): Promise<BookWaitlistEntry | null>;
   /**
+   * Skip a told guest whose time to collect ran out: cancel the hold as expired at
+   * `at` (`expiredAt`), under the book's lending lock — only while they're still
+   * told and their `pickupBy` is before `at`, so one who borrowed it meanwhile is
+   * left alone (`null`). The audit entry commits with it.
+   */
+  expireHold(id: string, at: Date, audit?: AuditHook<BookWaitlistEntry>): Promise<BookWaitlistEntry | null>;
+  /**
    * A copy came back: move the guest at the front of the line who hasn't been told
-   * yet to `notified`. Serialized per book, so two returns tell two guests.
-   * `null` when nobody is waiting.
+   * yet to `notified`, with the day they must collect it by (`holdPickupDeadline`).
+   * Serialized per book, so two returns tell two guests. `null` when nobody is waiting.
    */
   notifyNext(productId: string, at: Date): Promise<BookWaitlistEntry | null>;
 };

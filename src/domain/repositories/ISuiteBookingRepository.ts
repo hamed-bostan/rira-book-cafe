@@ -23,6 +23,14 @@ export type ISuiteBookingRepository = {
   listFrom(fromDay: string, status?: SuiteBookingStatus): Promise<SuiteBooking[]>;
   /** The nights already held from `fromDay` on — no names, for the public calendar. */
   listBusyFrom(fromDay: string): Promise<SuiteBusyRange[]>;
+  /** Requests still waiting for an answer whose check-in is before `day`, oldest first. */
+  listRequestsArrivingBefore(day: string): Promise<SuiteBooking[]>;
+  /**
+   * Cancel a stay request nobody answered as expired at `at` (`expiredAt`) — only
+   * while it's still `requested` and arrives before `day`, so one answered or moved
+   * meanwhile is left alone (`null`). The audit entry commits with it.
+   */
+  expireRequest(id: string, day: string, at: Date, audit?: AuditHook<SuiteBooking>): Promise<SuiteBooking | null>;
   /**
    * Move a stay to a new status, guarded on `expectedStatus`
    * (`ConflictError("INVALID_TRANSITION")`). When the new status holds the suite,

@@ -101,8 +101,12 @@ export const ACTIVITY_ACTIONS = [
   "reservation.changed",
   // Staff booking a table or the suite for a guest who rang or walked in.
   "reservation.booked",
+  // A request nobody answered before it began, cancelled by the background jobs
+  // (`SYSTEM_ACTOR`). The same for a stay request by its arrival day.
+  "reservation.expired",
   "suiteBooking.changed",
   "suiteBooking.booked",
+  "suiteBooking.expired",
   // A book handed over, brought back, or written off.
   "bookLoan.lent",
   "bookLoan.returned",
@@ -113,6 +117,9 @@ export const ACTIVITY_ACTIONS = [
   // A copy held for a guest who was told it's back, lent to someone else: their
   // hold is skipped. The entry is about the hold, not the loan beside it.
   "bookLoan.holdSkipped",
+  // A told guest who didn't collect the book in time, skipped by the background
+  // jobs (`SYSTEM_ACTOR`); the copy passes to the next guest in line.
+  "bookLoan.holdExpired",
   "event.created",
   "event.updated",
   "event.deleted",
@@ -189,6 +196,14 @@ export type ActivityActor = {
   id: string;
   name: string;
 };
+
+/**
+ * The actor for changes nobody made by hand — the background jobs expiring a
+ * request or a hold. Its id can't be anyone's (a person's id is their phone's
+ * digits), and the log names it in the reader's language rather than by the
+ * snapshotted `name`.
+ */
+export const SYSTEM_ACTOR: ActivityActor = { id: "system", name: "System" };
 
 /**
  * One recorded change.

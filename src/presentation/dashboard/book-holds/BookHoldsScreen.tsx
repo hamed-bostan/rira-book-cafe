@@ -16,6 +16,7 @@ import { DashboardLinkTabs } from "../DashboardLinkTabs";
 
 import { AddHoldDialog } from "./AddHoldDialog";
 import { BookHoldActions } from "./BookHoldActions";
+import { HoldPickupDeadline } from "./HoldPickupDeadline";
 
 export const HOLD_TABS = ["open", "closed"] as const;
 export type HoldTab = (typeof HOLD_TABS)[number];
@@ -177,7 +178,7 @@ export async function BookHoldsScreen({ open, closed, books, tab, now, canManage
                               {entry.guestName}
                             </span>
                             <Badge variant={STATUS_VARIANT[entry.status]} appearance="outline" size="compact" dot>
-                              {t(`status.${entry.status}`)}
+                              {entry.expiredAt ? t("status.expired") : t(`status.${entry.status}`)}
                             </Badge>
                           </span>
                           <span className="text-body-small text-muted-foreground tabular-nums sm:text-body-caption">
@@ -194,6 +195,9 @@ export async function BookHoldsScreen({ open, closed, books, tab, now, canManage
                                   date: formatCafeDayShort(cafeDayOf(new Date(entry.createdAt)), locale),
                                 })}
                           </span>
+                          {tab === "open" && told && entry.pickupBy ? (
+                            <HoldPickupDeadline pickupBy={entry.pickupBy} now={nowDate} />
+                          ) : null}
                           {/* Only guests with an account are told in the app; a counter or phone hold needs a call. */}
                           {tab === "open" && told && !entry.userId ? (
                             <a

@@ -852,6 +852,7 @@
   },
   "dashActivity": {
     "heading": "Activity",
+    "systemActor": "System",
     "summary": "Every change made from the dashboard, newest first. Kept permanently.",
     "empty": "No activity yet",
     "emptyBody": "Changes made from the dashboard will appear here.",
@@ -923,7 +924,8 @@
       },
       "reservation": {
         "changed": "<b>{actor}</b> updated reservation {entity}",
-        "booked": "<b>{actor}</b> booked table reservation {entity}"
+        "booked": "<b>{actor}</b> booked table reservation {entity}",
+        "expired": "<b>{actor}</b> cancelled request {entity}: nobody answered it in time"
       },
       "event": {
         "created": "<b>{actor}</b> created event {entity}",
@@ -951,7 +953,8 @@
       },
       "suiteBooking": {
         "changed": "<b>{actor}</b> updated suite booking {entity}",
-        "booked": "<b>{actor}</b> booked suite stay {entity}"
+        "booked": "<b>{actor}</b> booked suite stay {entity}",
+        "expired": "<b>{actor}</b> cancelled suite request {entity}: nobody answered it in time"
       },
       "bookLoan": {
         "lent": "<b>{actor}</b> lent a book ({entity})",
@@ -959,7 +962,8 @@
         "lost": "<b>{actor}</b> marked loan {entity} lost",
         "extended": "<b>{actor}</b> extended loan {entity}",
         "extensionUndone": "<b>{actor}</b> took back the extension on loan {entity}",
-        "holdSkipped": "<b>{actor}</b> lent the copy held for {entity} to someone else"
+        "holdSkipped": "<b>{actor}</b> lent the copy held for {entity} to someone else",
+        "holdExpired": "<b>{actor}</b> skipped {entity}: the book wasn't collected in time"
       },
       "income": {
         "recorded": "<b>{actor}</b> recorded income {entity}",
@@ -1079,6 +1083,7 @@
       "seated": "Seated",
       "completed": "Completed",
       "cancelled": "Cancelled",
+      "expired": "Expired",
       "noShow": "No-show"
     },
     "action": {
@@ -1696,6 +1701,18 @@
           "title": "Your reservation was cancelled",
           "body": "R-{reference} for {startsAt} is no longer held."
         },
+        "reservationTomorrow": {
+          "title": "Your table is tomorrow",
+          "body": "R-{reference}: {startsAt}, for {partySize}. See you then!"
+        },
+        "reservationSoon": {
+          "title": "Your table is in about two hours",
+          "body": "R-{reference}: {startsAt}, for {partySize}."
+        },
+        "reservationExpired": {
+          "title": "We couldn't confirm your request in time",
+          "body": "Nobody answered R-{reference} for {startsAt} before it began, so it's been cancelled. Sorry — please book again or give us a call."
+        },
         "suiteConfirmed": {
           "title": "Your suite stay is confirmed",
           "body": "S-{reference}: {checkIn} → {checkOut}."
@@ -1703,6 +1720,18 @@
         "suiteCancelled": {
           "title": "Your suite stay was cancelled",
           "body": "S-{reference} ({checkIn} → {checkOut}) is no longer held."
+        },
+        "suiteTomorrow": {
+          "title": "Your suite stay starts tomorrow",
+          "body": "S-{reference}: {checkIn} → {checkOut}. We'll have it ready for you."
+        },
+        "suiteExpired": {
+          "title": "We couldn't confirm your request in time",
+          "body": "Nobody answered S-{reference} ({checkIn} → {checkOut}) by the day you meant to arrive, so it's been cancelled. Sorry — please ask again or give us a call."
+        },
+        "eventTomorrow": {
+          "title": "“{title}” is tomorrow",
+          "body": "It starts {startsAt}. Seats booked: {seats}."
         },
         "loanStarted": {
           "title": "You borrowed “{title}”",
@@ -1719,6 +1748,18 @@
         "bookAvailable": {
           "title": "“{title}” is back on the shelf",
           "body": "You're first in line — ask at the counter to borrow it."
+        },
+        "holdCollectBy": {
+          "title": "“{title}” is waiting for you",
+          "body": "We're holding it at the counter until {dueAt}. After that it goes to the next guest in line."
+        },
+        "holdLastDay": {
+          "title": "Last day to collect “{title}”",
+          "body": "It's held for you until the end of today. After that it goes to the next guest in line."
+        },
+        "holdExpired": {
+          "title": "You didn't collect “{title}” in time",
+          "body": "It's gone to the next guest in line. You can join the line again whenever you like."
         },
         "pointsEarned": {
           "title": "You earned {points} points",
@@ -1764,6 +1805,7 @@
       "signIn": "Sign in to join the waitlist",
       "position": "You're number {position} in line",
       "yourTurn": "It's back — ask at the counter",
+      "collectBy": "Collect it by {date}",
       "onShelf": "A copy is on the shelf right now — ask at the counter",
       "waiting": "Waiting",
       "heading": "Books I'm waiting for",
@@ -2733,6 +2775,7 @@
       "checkedIn": "Checked in",
       "checkedOut": "Checked out",
       "cancelled": "Cancelled",
+      "expired": "Expired",
       "noShow": "No-show"
     },
     "action": {
@@ -3230,11 +3273,14 @@
       "waiting": "Waiting",
       "notified": "Ready to collect",
       "fulfilled": "Borrowed",
-      "cancelled": "Cancelled"
+      "cancelled": "Cancelled",
+      "expired": "Not collected"
     },
     "toldOn": "Told {date}",
     "toldAgo": "Told {date}, {days, plural, one {{formatted} day} other {{formatted} days}} ago",
     "joinedOn": "Joined {date}",
+    "collectBy": "Collect by {date}",
+    "collectByPassed": "Not collected by {date}",
     "skip": "Skip",
     "lendNow": "Lend now",
     "remove": "Remove",

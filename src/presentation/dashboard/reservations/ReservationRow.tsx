@@ -60,7 +60,7 @@ export async function ReservationRow({ reservation, now, canManage, bookings, ev
       <div className="flex min-w-0 flex-[1_1_15rem] flex-col gap-1.5">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className="text-body-strong text-foreground">{reservation.guestName}</span>
-          <ReservationStatusBadge status={reservation.status} outlined />
+          <ReservationStatusBadge status={reservation.status} expired={reservation.expiredAt !== undefined} outlined />
           {late ? (
             <span className="text-body-small font-semibold whitespace-nowrap text-error-foreground sm:text-body-caption">
               {t("latePast", { minutes: formatNumber(lateBy, locale) })}

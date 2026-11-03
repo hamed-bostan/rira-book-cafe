@@ -18,7 +18,9 @@ const CAFE_DAY_PARAMS = new Set(["checkIn", "checkOut"]);
  */
 export function notificationValues(notification: Notification, locale: Locale): Record<string, string> {
   const values: Record<string, string> = {};
-  for (const [key, value] of Object.entries(notification.params)) {
+  for (const [key, stored] of Object.entries(notification.params)) {
+    // A param's Persian copy (`titleFa` beside `title`) stands in for it under fa.
+    const value = (locale === "fa" ? notification.params[`${key}Fa`] : undefined) ?? stored;
     if (typeof value === "number") values[key] = formatNumber(value, locale);
     else if (INSTANT_PARAMS.has(key))
       values[key] = `${formatOrderDate(value, locale)} ${formatOrderTime(value, locale)}`;

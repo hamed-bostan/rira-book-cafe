@@ -32,10 +32,7 @@ import { EditStayDialog } from "./EditStayDialog";
 import { suiteBookingsApi } from "./suite-booking-api";
 
 type SuiteStayActionsProps = {
-  booking: Pick<
-    SuiteBooking,
-    "id" | "reference" | "status" | "checkIn" | "checkOut" | "guests" | "guestName" | "guestPhone" | "userId"
-  >;
+  booking: Pick<SuiteBooking, "id" | "reference" | "status" | "checkIn" | "checkOut" | "guests" | "guestName">;
   /** Stays holding the suite — "Edit stay" warns before moving onto their nights. */
   held: readonly Pick<SuiteBooking, "id" | "reference" | "checkIn" | "checkOut">[];
   today: string;

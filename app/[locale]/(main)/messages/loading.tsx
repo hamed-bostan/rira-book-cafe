@@ -2,7 +2,7 @@ import { LoadingRegion } from "@/src/presentation/design-system/components/Skele
 import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 import { PageTitleSkeleton } from "@/src/presentation/storefront/skeletons";
 
-export default function NotificationsLoading() {
+export default function MessagesLoading() {
   return (
     <LoadingRegion className="mx-auto flex w-full max-w-2xl flex-col gap-6">
       <PageTitleSkeleton subtitle />

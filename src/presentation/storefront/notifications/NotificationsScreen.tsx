@@ -1,4 +1,4 @@
-import { Bell, BedDouble, BookOpen, CalendarClock, ClipboardList, Gift, Star } from "lucide-react";
+import { Bell, BedDouble, BookOpen, CalendarClock, ClipboardList, Gift, MessageSquareText, Star } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import type { Notification, NotificationKind } from "@/src/domain/entities/Notification";
@@ -9,7 +9,7 @@ import { EmptyState } from "@/src/presentation/design-system/components/EmptySta
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 
-import { MarkNotificationsRead } from "./MarkNotificationsRead";
+import { MarkAllReadButton } from "./MarkAllReadButton";
 import { notificationValues } from "./notificationValues";
 
 import type { LucideIcon } from "lucide-react";
@@ -35,14 +35,17 @@ const ICONS: Record<NotificationKind, LucideIcon> = {
   bookAvailable: BookOpen,
   pointsEarned: Gift,
   reviewApproved: Star,
+  staffMessage: MessageSquareText,
 };
 
 /** Kinds that ask the guest to do something — drawn in the warning tone. */
 const URGENT: ReadonlySet<NotificationKind> = new Set(["orderReady", "loanOverdue", "bookAvailable"]);
 
 /**
- * The guest's inbox: what happened to their orders, bookings and borrowed books,
- * newest first. Unread ones are highlighted on this visit, then marked read.
+ * The guest's messages: what happened to their orders, bookings and borrowed books,
+ * and what staff wrote to them, newest first. Unread ones stay highlighted until
+ * the guest marks them all read. A message from staff is shown as they typed it —
+ * plain text, never markup — with what it's about and how to answer (not here).
  */
 export async function NotificationsScreen({ notifications, now }: NotificationsScreenProps) {
   const t = await getTranslations("site");
@@ -52,9 +55,12 @@ export async function NotificationsScreen({ notifications, now }: NotificationsS
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
-      <div>
-        <h1 className="text-heading-page text-foreground">{t("notifications.heading")}</h1>
-        <p className="mt-1 text-body-small text-muted-foreground">{t("notifications.subtitle")}</p>
+      <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
+        <div>
+          <h1 className="text-heading-page text-foreground">{t("notifications.heading")}</h1>
+          <p className="mt-1 text-body-small text-muted-foreground">{t("notifications.subtitle")}</p>
+        </div>
+        {unread > 0 ? <MarkAllReadButton /> : null}
       </div>
 
       {notifications.length === 0 ? (
@@ -71,6 +77,8 @@ export async function NotificationsScreen({ notifications, now }: NotificationsS
               "flex items-start gap-3 rounded-card-md border p-3",
               notification.readAt ? "border-border" : "border-primary/40 bg-accent",
             );
+            const about =
+              notification.kind === "staffMessage" ? t("notifications.kinds.staffMessage.about", values) : "";
             const content = (
               <>
                 <span
@@ -85,9 +93,22 @@ export async function NotificationsScreen({ notifications, now }: NotificationsS
                   <span className="block text-body-small-strong text-foreground">
                     {t(`notifications.kinds.${notification.kind}.title`, values)}
                   </span>
-                  <span className="block text-body-small text-muted-foreground">
-                    {t(`notifications.kinds.${notification.kind}.body`, values)}
-                  </span>
+                  {notification.kind === "staffMessage" ? (
+                    <>
+                      {about ? <span className="block text-body-caption text-muted-foreground">{about}</span> : null}
+                      {/* As typed: React escapes it, and its line breaks are kept. */}
+                      <span className="mt-1 block text-body-small [overflow-wrap:anywhere] whitespace-pre-line text-foreground">
+                        {notification.params.text}
+                      </span>
+                      <span className="mt-1 block text-body-caption text-muted-foreground">
+                        {t("notifications.replyNote")}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="block text-body-small text-muted-foreground">
+                      {t(`notifications.kinds.${notification.kind}.body`, values)}
+                    </span>
+                  )}
                   <span className="mt-1 block text-body-caption text-muted-foreground">
                     {formatRelativeTime(notification.createdAt, locale, nowDate)}
                   </span>
@@ -115,8 +136,6 @@ export async function NotificationsScreen({ notifications, now }: NotificationsS
           })}
         </ul>
       )}
-
-      <MarkNotificationsRead unread={unread} />
     </div>
   );
 }

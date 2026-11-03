@@ -14,12 +14,16 @@ const CAFE_DAY_PARAMS = new Set(["checkIn", "checkOut"]);
 /**
  * A notification's stored params, formatted for its message in the guest's
  * language: dates on the cafe's calendar (Jalali under `fa`), numbers in the
- * locale's digits. Everything else passes through as text.
+ * locale's digits. A text param stored with a Persian twin (`subject` beside
+ * `subjectFa`, an event's two titles) reads in Persian under `fa`. Everything
+ * else passes through as text.
  */
 export function notificationValues(notification: Notification, locale: Locale): Record<string, string> {
   const values: Record<string, string> = {};
   for (const [key, value] of Object.entries(notification.params)) {
-    if (typeof value === "number") values[key] = formatNumber(value, locale);
+    const persian = notification.params[`${key}Fa`];
+    if (locale === "fa" && typeof persian === "string" && persian) values[key] = persian;
+    else if (typeof value === "number") values[key] = formatNumber(value, locale);
     else if (INSTANT_PARAMS.has(key))
       values[key] = `${formatOrderDate(value, locale)} ${formatOrderTime(value, locale)}`;
     else if (DAY_OF_INSTANT_PARAMS.has(key)) values[key] = formatOrderDate(value, locale);

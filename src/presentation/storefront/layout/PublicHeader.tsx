@@ -67,7 +67,7 @@ export function PublicHeader({ signedIn, unreadNotifications }: PublicHeaderProp
           </div>
           {signedIn ? (
             <Link
-              href="/notifications"
+              href="/messages"
               aria-label={t("notifications.bellAria", { count: unreadNotifications })}
               className={cn(
                 "relative grid size-10 place-items-center rounded-full text-foreground hover:bg-muted",

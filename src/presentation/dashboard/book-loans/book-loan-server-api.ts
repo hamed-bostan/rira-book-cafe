@@ -1,20 +1,24 @@
 import type { BookLoan } from "@/src/domain/entities/BookLoan";
 import type { BookWaitlistEntry } from "@/src/domain/entities/BookWaitlist";
-import type { BookLoanCounts, BookLoanView, LendableBook } from "@/src/domain/repositories/IBookLoanRepository";
+import type { Page } from "@/src/domain/entities/Pagination";
+import type { BookLoanCounts, LendableBook } from "@/src/domain/repositories/IBookLoanRepository";
+import { pageResponseSchema } from "@/src/lib/api/page-response-schema";
 import { serverApiGet } from "@/src/lib/api/server-client";
 import {
-  bookLoanListResponseSchema,
+  bookLoanResponseSchema,
   lendableBookListResponseSchema,
 } from "@/src/presentation/book-loans/book-loan-response-schema";
 import { bookWaitlistEntryListResponseSchema } from "@/src/presentation/book-loans/book-waitlist-response-schema";
 
 import { bookLoanCountsResponseSchema } from "./book-loan-counts-response-schema";
 
+const bookLoanPageResponseSchema = pageResponseSchema(bookLoanResponseSchema);
+
 /** Server-side lending reads for the dashboard (BFF), fetched during server render. */
 export const bookLoansServerApi = {
-  /** The lending book in one view, optionally searched. */
-  list(view: BookLoanView, q?: string): Promise<BookLoan[]> {
-    return serverApiGet("/admin/book-loans", bookLoanListResponseSchema, { params: q ? { view, q } : { view } });
+  /** One page of a view of the lending book: the view, search and paging the page's query string carries. */
+  listPage(params: URLSearchParams): Promise<Page<BookLoan>> {
+    return serverApiGet("/admin/book-loans", bookLoanPageResponseSchema, { params: Object.fromEntries(params) });
   },
 
   /** How many loans each view holds, over every loan whatever the search — the tabs' counts. */
@@ -22,7 +26,7 @@ export const bookLoansServerApi = {
     return serverApiGet("/admin/book-loans/counts", bookLoanCountsResponseSchema);
   },
 
-  /** Every book in the catalog, for the lend form's picker. */
+  /** Every book in the catalog, for the lend form's picker — with its copies out, and the one due back first. */
   listBooks(): Promise<LendableBook[]> {
     return serverApiGet("/admin/book-loans/books", lendableBookListResponseSchema);
   },

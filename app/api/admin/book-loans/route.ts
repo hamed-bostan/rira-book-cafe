@@ -6,6 +6,7 @@ import { ListBookLoans } from "@/src/domain/use-cases/book-loans/BookLoanQueries
 import { LendBook } from "@/src/domain/use-cases/book-loans/LendBook";
 import { bookLoanRepository, customerNotifier, userRepository } from "@/src/infrastructure/container";
 import { invalidatesCatalog } from "@/src/lib/api/invalidatesCatalog";
+import { parsePageRequest } from "@/src/lib/api/pagination-params";
 import {
   errorResponse,
   errorResponseFromException,
@@ -21,8 +22,9 @@ export const dynamic = "force-dynamic";
 const VIEW_SET = new Set<string>(BOOK_LOAN_VIEWS);
 
 /**
- * GET /api/admin/book-loans — the lending book. `?view=` open (default) | overdue |
- * returned | lost | all, and optional `?q=` (borrower name or phone, or book title).
+ * GET /api/admin/book-loans — one page of the lending book. `?view=` open (default)
+ * | overdue | returned | lost | all, optional `?q=` (borrower name or phone, or book
+ * title), and `page`/`pageSize`. Responds with `{ items, total, page, pageSize }`.
  * Readable by anyone with the dashboard.
  */
 export async function GET(request: NextRequest): Promise<NextResponse> {
@@ -35,6 +37,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
     const loans = await new ListBookLoans(bookLoanRepository).execute(
       { view: view as BookLoanView, q: params.get("q") ?? undefined },
+      // Each view has its own fixed order, so there's nothing to sort by.
+      parsePageRequest(params, []),
       new Date(),
     );
     return NextResponse.json(loans);

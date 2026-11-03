@@ -10,6 +10,7 @@ import {
   type LoanDepositState,
 } from "@/src/domain/entities/BookLoan";
 import { holdsSkippedByLoan, type BookWaitlistEntry } from "@/src/domain/entities/BookWaitlist";
+import { createPage, toSkipTake, type Page, type PageRequest } from "@/src/domain/entities/Pagination";
 import { lendingCopies, shiftLendingCopies } from "@/src/domain/entities/Product";
 import { ConflictError } from "@/src/domain/errors/ConflictError";
 import { NotFoundError } from "@/src/domain/errors/NotFoundError";
@@ -31,8 +32,10 @@ import { OPEN_HOLD, lockBookShelf, toWaitlistEntry } from "./bookShelf";
 import { recordAudit } from "./writeActivityEntry";
 import { postHook } from "./writeJournal";
 
-/** The dashboard list is a working view, not an archive — older history stays searchable. */
-const LIST_LIMIT = 200;
+/** Soonest due first — so the late ones lead — then in the order they went out. */
+const DUE_FIRST: Prisma.BookLoanOrderByWithRelationInput[] = [{ dueAt: "asc" }, { reference: "asc" }];
+/** Most recently lent first. */
+const NEWEST_FIRST: Prisma.BookLoanOrderByWithRelationInput[] = [{ lentAt: "desc" }, { reference: "desc" }];
 
 /**
  * Book loans backed by PostgreSQL via Prisma. Server-side only, bound through the
@@ -126,42 +129,55 @@ export class PrismaBookLoanRepository implements IBookLoanRepository {
     return row ? toBookLoan(row) : null;
   }
 
-  async list(filters: BookLoanFilters, now: Date): Promise<BookLoan[]> {
-    const where: Prisma.BookLoanWhereInput = {};
-    let orderBy: Prisma.BookLoanOrderByWithRelationInput[] = [{ lentAt: "desc" }];
+  async list(filters: BookLoanFilters, request: PageRequest, now: Date): Promise<Page<BookLoan>> {
+    const search = searchWhere(filters.q);
+    const inView = (where: Prisma.BookLoanWhereInput): Prisma.BookLoanWhereInput => ({ AND: [search, where] });
 
     switch (filters.view) {
       case "open":
-        where.status = "out";
-        orderBy = [{ dueAt: "asc" }, { reference: "asc" }];
-        break;
+        return this.pageOf(inView({ status: "out" }), DUE_FIRST, request);
       case "overdue":
-        where.status = "out";
-        where.dueAt = { lt: now };
-        orderBy = [{ dueAt: "asc" }, { reference: "asc" }];
-        break;
+        return this.pageOf(inView({ status: "out", dueAt: { lt: now } }), DUE_FIRST, request);
       case "returned":
-        where.status = "returned";
-        orderBy = [{ returnedAt: "desc" }];
-        break;
+        return this.pageOf(inView({ status: "returned" }), [{ returnedAt: "desc" }, { reference: "desc" }], request);
       case "lost":
-        where.status = "lost";
-        break;
-      case "all":
-        break;
+        return this.pageOf(inView({ status: "lost" }), NEWEST_FIRST, request);
+      case "all": {
+        // Two runs end to end — what's still out, then what's closed — paged as one list.
+        const out = inView({ status: "out" });
+        const closed = inView({ status: { not: "out" } });
+        const { skip, take } = toSkipTake(request);
+        const [outTotal, closedTotal] = await Promise.all([
+          this.db.bookLoan.count({ where: out }),
+          this.db.bookLoan.count({ where: closed }),
+        ]);
+        const outRows =
+          skip < outTotal ? await this.db.bookLoan.findMany({ where: out, orderBy: DUE_FIRST, skip, take }) : [];
+        const closedRows =
+          outRows.length < take
+            ? await this.db.bookLoan.findMany({
+                where: closed,
+                orderBy: NEWEST_FIRST,
+                skip: Math.max(0, skip - outTotal),
+                take: take - outRows.length,
+              })
+            : [];
+        return createPage([...outRows, ...closedRows].map(toBookLoan), outTotal + closedTotal, request);
+      }
     }
+  }
 
-    if (filters.q) {
-      const digits = filters.q.replace(/\D/g, "");
-      where.OR = [
-        { borrowerName: { contains: filters.q, mode: "insensitive" } },
-        { bookTitle: { contains: filters.q, mode: "insensitive" } },
-        ...(digits ? [{ borrowerPhone: { contains: digits } }] : []),
-      ];
-    }
-
-    const rows = await this.db.bookLoan.findMany({ where, orderBy, take: LIST_LIMIT });
-    return rows.map(toBookLoan);
+  /** One page of the loans `where` matches, in `orderBy`, with how many match in all. */
+  private async pageOf(
+    where: Prisma.BookLoanWhereInput,
+    orderBy: Prisma.BookLoanOrderByWithRelationInput[],
+    request: PageRequest,
+  ): Promise<Page<BookLoan>> {
+    const [rows, total] = await Promise.all([
+      this.db.bookLoan.findMany({ where, orderBy, ...toSkipTake(request) }),
+      this.db.bookLoan.count({ where }),
+    ]);
+    return createPage(rows.map(toBookLoan), total, request);
   }
 
   async countByView(now: Date): Promise<BookLoanCounts> {
@@ -186,21 +202,34 @@ export class PrismaBookLoanRepository implements IBookLoanRepository {
   }
 
   async listLendableBooks(): Promise<LendableBook[]> {
+    // Every loan still out, soonest due first: no more than the shelf has copies.
     const [books, open] = await Promise.all([
       this.db.product.findMany({
         where: { kind: "book" },
         select: { id: true, name: true, bookAuthor: true, bookCopies: true },
         orderBy: { name: "asc" },
       }),
-      this.db.bookLoan.groupBy({ by: ["productId"], where: { status: "out" }, _count: { _all: true } }),
+      this.db.bookLoan.findMany({
+        where: { status: "out" },
+        select: { productId: true, reference: true, dueAt: true },
+        orderBy: DUE_FIRST,
+      }),
     ]);
-    const onLoan = new Map(open.map((group) => [group.productId, group._count._all]));
+    const onLoan = new Map<string, number>();
+    const nextDue = new Map<string, { reference: number; dueAt: string }>();
+    for (const loan of open) {
+      onLoan.set(loan.productId, (onLoan.get(loan.productId) ?? 0) + 1);
+      if (!nextDue.has(loan.productId)) {
+        nextDue.set(loan.productId, { reference: loan.reference, dueAt: loan.dueAt.toISOString() });
+      }
+    }
     return books.map((book) => ({
       id: book.id,
       title: book.name,
       author: book.bookAuthor ?? undefined,
       onLoan: onLoan.get(book.id) ?? 0,
       copies: lendingCopies({ copies: book.bookCopies ?? undefined }),
+      nextDue: nextDue.get(book.id),
     }));
   }
 
@@ -292,6 +321,19 @@ async function moveLendingCopies(
   if (after === before) return undefined;
   await tx.product.update({ where: { id: productId }, data: { bookCopies: after } });
   return { before, after };
+}
+
+/** Matches the borrower's name or phone, or the book's title; everything when there's no search. */
+function searchWhere(q: string | undefined): Prisma.BookLoanWhereInput {
+  if (!q) return {};
+  const digits = q.replace(/\D/g, "");
+  return {
+    OR: [
+      { borrowerName: { contains: q, mode: "insensitive" } },
+      { bookTitle: { contains: q, mode: "insensitive" } },
+      ...(digits ? [{ borrowerPhone: { contains: digits } }] : []),
+    ],
+  };
 }
 
 type BookLoanRow = Prisma.BookLoanGetPayload<object>;

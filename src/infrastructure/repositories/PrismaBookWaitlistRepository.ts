@@ -50,10 +50,11 @@ export class PrismaBookWaitlistRepository implements IBookWaitlistRepository {
   }
 
   async listOpen(): Promise<BookWaitlistEntry[]> {
+    // Uncapped: a cap would drop guests from the end of a line without a word, and
+    // the open lines stay small — one place per guest per book that's out.
     const rows = await this.db.bookWaitlistEntry.findMany({
       where: { status: OPEN },
       orderBy: [{ bookTitle: "asc" }, { productId: "asc" }, { createdAt: "asc" }],
-      take: 200,
     });
     return rows.map(toEntry);
   }

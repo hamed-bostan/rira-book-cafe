@@ -2,11 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import { PATCH as changeLoan } from "@/app/api/admin/book-loans/[id]/route";
 import { GET as listBooks } from "@/app/api/admin/book-loans/books/route";
-import { POST as lend } from "@/app/api/admin/book-loans/route";
+import { GET as listLoans, POST as lend } from "@/app/api/admin/book-loans/route";
 import { GET as listHolds, POST as addHold } from "@/app/api/admin/book-waitlist/route";
 import type { BookLoan } from "@/src/domain/entities/BookLoan";
 import type { BookWaitlistEntry } from "@/src/domain/entities/BookWaitlist";
 import { cafeDayOf, shiftCafeDay } from "@/src/domain/entities/CafeTime";
+import type { Page } from "@/src/domain/entities/Pagination";
 import type { LendableBook } from "@/src/domain/repositories/IBookLoanRepository";
 import { prisma } from "@/src/infrastructure/prisma/client";
 
@@ -36,6 +37,92 @@ function setStatus(id: string, status: "returned" | "lost"): Promise<Response> {
 async function book(productId: string): Promise<LendableBook | undefined> {
   return (await readJson<LendableBook[]>(await listBooks())).find((candidate) => candidate.id === productId);
 }
+
+describe("the loan book", () => {
+  const DAY = 24 * 60 * 60 * 1000;
+  const start = Date.parse("2026-01-01T08:00:00Z");
+
+  /** `count` closed loans, the n-th lent n days after `start` — later ones newer. */
+  async function closedLoans(status: "returned" | "lost", count: number, name: string): Promise<void> {
+    await prisma.bookLoan.createMany({
+      data: Array.from({ length: count }, (_, n) => ({
+        productId: BLIND_OWL,
+        bookTitle: "The Blind Owl",
+        borrowerName: `${name} ${n + 1}`,
+        borrowerPhone: `0912${String(n).padStart(7, "0")}`,
+        lentAt: new Date(start + n * DAY),
+        dueAt: new Date(start + (n + 14) * DAY),
+        status,
+        returnedAt: status === "returned" ? new Date(start + (n + 7) * DAY) : null,
+        lentById: "s1",
+        lentByName: "Ali",
+      })),
+    });
+  }
+
+  async function page(query: string): Promise<Page<BookLoan>> {
+    const response = await listLoans(getRequest(`/api/admin/book-loans?${query}`));
+    expect(response.status).toBe(200);
+    return readJson<Page<BookLoan>>(response);
+  }
+
+  it("filters each tab on the server and pages it past what one read used to hold", async () => {
+    signInAs("admin");
+    await closedLoans("returned", 230, "Returned");
+    await closedLoans("lost", 3, "Lost");
+    await prisma.product.update({ where: { id: BLIND_OWL }, data: { bookCopies: 2 } });
+    await lendTo(BLIND_OWL, "Niloofar", "09121110005");
+    await lendTo(BLIND_OWL, "Parisa", "09121110007");
+
+    const returned = await page("view=returned&pageSize=100&page=3");
+    expect(returned).toMatchObject({ total: 230, page: 3, pageSize: 100 });
+    expect(returned.items).toHaveLength(30);
+    expect(returned.items.every((loan) => loan.status === "returned")).toBe(true);
+    // Latest back first: the last page ends with the first one returned.
+    expect(returned.items.at(-1)?.borrowerName).toBe("Returned 1");
+
+    const lost = await page("view=lost");
+    expect(lost).toMatchObject({ total: 3, page: 1, pageSize: 25 });
+    expect(lost.items.map((loan) => loan.borrowerName)).toEqual(["Lost 3", "Lost 2", "Lost 1"]);
+
+    // All: what's still out leads, then the rest newest first, across the page break.
+    const first = await page("view=all&pageSize=10");
+    expect(first.total).toBe(235);
+    expect(first.items.slice(0, 2).map((loan) => loan.status)).toEqual(["out", "out"]);
+    expect(first.items.slice(2).every((loan) => loan.status !== "out")).toBe(true);
+    const last = await page("view=all&pageSize=10&page=24");
+    expect(last.items).toHaveLength(5);
+    expect(last.items.at(-1)?.borrowerName).toBe("Returned 1");
+
+    // A search narrows the tab it's in, and its total.
+    expect(await page("view=all&q=lost")).toMatchObject({ total: 3 });
+    expect(await page("view=returned&q=lost")).toMatchObject({ total: 0, items: [] });
+  });
+
+  it("knows which copy of a book is due back first", async () => {
+    signInAs("admin");
+    await prisma.product.update({ where: { id: BLIND_OWL }, data: { bookCopies: 2 } });
+    const later = await readJson<BookLoan>(await lendTo(BLIND_OWL, "Niloofar", "09121110005"));
+    const sooner = await readJson<BookLoan>(
+      await lend(
+        jsonRequest("POST", "/api/admin/book-loans", {
+          productId: BLIND_OWL,
+          borrowerName: "Parisa",
+          borrowerPhone: "09121110007",
+          dueOn: shiftCafeDay(cafeDayOf(new Date()), 7),
+          note: "",
+        }),
+      ),
+    );
+
+    expect(await book(BLIND_OWL)).toMatchObject({
+      onLoan: 2,
+      nextDue: { reference: sooner.reference, dueAt: sooner.dueAt },
+    });
+    expect(later.dueAt > sooner.dueAt).toBe(true);
+    expect((await book("seed-book-savushun"))?.nextDue).toBeUndefined();
+  });
+});
 
 describe("a lost copy", () => {
   it("comes off the shelf, so the book can't be lent until it turns up", async () => {

@@ -68,8 +68,8 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         .then((list) => list.length)
         .catch(() => undefined),
       bookLoansServerApi
-        .list("overdue")
-        .then((list) => list.length)
+        .getCounts()
+        .then((loanCounts) => loanCounts.overdue)
         .catch(() => undefined),
       bookLoansServerApi
         .listWaitlist()

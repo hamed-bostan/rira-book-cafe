@@ -2,6 +2,7 @@ import type { AuditHook } from "./AuditHook";
 import type { LedgerHook } from "./ILedgerRepository";
 import type { BookLoan, BookLoanStatus } from "../entities/BookLoan";
 import type { BookWaitlistEntry } from "../entities/BookWaitlist";
+import type { Page, PageRequest } from "../entities/Pagination";
 
 /** A loan about to be recorded. Id, reference, status, return time and timestamps are the repository's. */
 export type NewBookLoan = Omit<
@@ -18,6 +19,8 @@ export type LendableBook = {
   onLoan: number;
   /** Copies the shelf lends (`lendingCopies`). */
   copies: number;
+  /** The loan of it due back soonest, while a copy is out — when the line can next expect one. */
+  nextDue?: { reference: number; dueAt: string };
 };
 
 /** Which loans a list shows. `open` is everything still out, overdue or not. */
@@ -57,13 +60,17 @@ export type IBookLoanRepository = {
     skipAudit?: AuditHook<BookWaitlistEntry>,
   ): Promise<BookLoan>;
   getById(id: string): Promise<BookLoan | null>;
-  /** Loans for the dashboard, newest first; `open`/`overdue` soonest-due first. */
-  list(filters: BookLoanFilters, now: Date): Promise<BookLoan[]>;
+  /**
+   * One page of a view of the lending book. `open`/`overdue` soonest-due first,
+   * `returned` latest back first, `lost` newest first, and `all` every loan still
+   * out (soonest due, so the late ones lead) before the closed ones, newest first.
+   */
+  list(filters: BookLoanFilters, page: PageRequest, now: Date): Promise<Page<BookLoan>>;
   /** How many loans each view holds, uncapped and unsearched — the tabs' counts. */
   countByView(now: Date): Promise<BookLoanCounts>;
   /** One guest's loans (matched by account), newest first. */
   listForUser(userId: string): Promise<BookLoan[]>;
-  /** Every book in the catalog, published or not, with how many copies are out. */
+  /** Every book in the catalog, published or not, with how many copies are out and which is due back first. */
   listLendableBooks(): Promise<LendableBook[]>;
   /** How many copies of the book are out right now. */
   countOpenForBook(productId: string): Promise<number>;

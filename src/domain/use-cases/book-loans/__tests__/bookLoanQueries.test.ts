@@ -41,11 +41,13 @@ describe("loan queries", () => {
     ["  Sara ", "Sara"],
     ["  ", undefined],
     [undefined, undefined],
-  ])("lists the loan book with the search %j trimmed", async (q, expected) => {
-    const list = vi.fn<IBookLoanRepository["list"]>(async () => [LOAN]);
+  ])("lists a page of the loan book with the search %j trimmed", async (q, expected) => {
+    const page = { page: 2, pageSize: 25 };
+    const result = { items: [LOAN], total: 26, ...page };
+    const list = vi.fn<IBookLoanRepository["list"]>(async () => result);
     const repo = { list } as unknown as IBookLoanRepository;
-    expect(await new ListBookLoans(repo).execute({ view: "overdue", q }, NOW)).toEqual([LOAN]);
-    expect(list).toHaveBeenCalledWith({ view: "overdue", q: expected }, NOW);
+    expect(await new ListBookLoans(repo).execute({ view: "overdue", q }, page, NOW)).toBe(result);
+    expect(list).toHaveBeenCalledWith({ view: "overdue", q: expected }, page, NOW);
   });
 
   it("counts each view over every loan, as of now", async () => {

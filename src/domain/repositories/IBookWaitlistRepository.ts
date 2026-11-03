@@ -17,7 +17,7 @@ export type IBookWaitlistRepository = {
   listForUser(userId: string): Promise<BookWaitlistEntry[]>;
   /** Everyone in line for one book, front of the line first. */
   listOpenForBook(productId: string): Promise<BookWaitlistEntry[]>;
-  /** Everyone in line for anything, grouped by book, front of each line first — the dashboard's view. */
+  /** Everyone in line for anything, grouped by book, front of each line first — the dashboard's view. Never capped. */
   listOpen(): Promise<BookWaitlistEntry[]>;
   /** Lines that closed (borrowed or cancelled) since `since`, newest first — the dashboard's Closed tab. */
   listClosedSince(since: Date): Promise<BookWaitlistEntry[]>;

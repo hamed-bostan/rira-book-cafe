@@ -5,11 +5,12 @@ import { toSearchParams } from "@/src/lib/api/searchParams";
 import { sessionHas } from "@/src/lib/require-permission";
 import { bookLoansServerApi } from "@/src/presentation/dashboard/book-loans/book-loan-server-api";
 import { BookLoansScreen } from "@/src/presentation/dashboard/book-loans/BookLoansScreen";
+import { withRememberedPageSize } from "@/src/presentation/dashboard/list/withRememberedPageSize";
 
-// The lending book is fetched over the REST API (BFF) during server render. Every
-// loan still out plus the latest closed ones are read at once and the tabs filter
-// them; each tab's count covers every loan, whatever the search. The tab
-// (`?view=`, default open) and search (`?q=`) live in the query string.
+// The lending book is fetched over the REST API (BFF) during server render: one
+// page of the current tab, filtered and ordered on the server, and each tab's
+// count over every loan, whatever the search. The tab (`?view=`, default open),
+// search (`?q=`) and paging (`?page=`, `?pageSize=`) live in the query string.
 export const dynamic = "force-dynamic";
 
 type DashboardBookLoansPageProps = {
@@ -19,21 +20,22 @@ type DashboardBookLoansPageProps = {
 const VIEW_SET = new Set<string>(BOOK_LOAN_VIEWS);
 
 export default async function DashboardBookLoansPage({ searchParams }: DashboardBookLoansPageProps) {
-  const params = toSearchParams(await searchParams);
+  const params = await withRememberedPageSize(toSearchParams(await searchParams));
   const viewParam = params.get("view");
   const view = viewParam && VIEW_SET.has(viewParam) ? (viewParam as BookLoanView) : "open";
   const q = params.get("q")?.trim() || undefined;
 
-  const [open, recent, counts, books, waitlist, canManage] = await Promise.all([
-    bookLoansServerApi.list("open", q),
-    bookLoansServerApi.list("all", q),
+  // A tab name the page doesn't know reads as On loan, as it's drawn.
+  const listParams = new URLSearchParams(params);
+  listParams.set("view", view);
+
+  const [loans, counts, books, waitlist, canManage] = await Promise.all([
+    bookLoansServerApi.listPage(listParams),
     bookLoansServerApi.getCounts(),
     bookLoansServerApi.listBooks(),
     bookLoansServerApi.listWaitlist(),
     auth().then((session) => sessionHas(session, "loans.manage")),
   ]);
-  // "All" is capped to the newest loans; every loan still out is kept on top of it.
-  const loans = [...open, ...recent.filter((loan) => loan.status !== "out")];
 
   const now = new Date();
   return (

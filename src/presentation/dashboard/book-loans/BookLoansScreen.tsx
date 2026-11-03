@@ -1,8 +1,9 @@
 import { Bookmark, ChevronRight } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
-import { isBookLoanOverdue, type BookLoan } from "@/src/domain/entities/BookLoan";
+import type { BookLoan } from "@/src/domain/entities/BookLoan";
 import type { BookWaitlistEntry } from "@/src/domain/entities/BookWaitlist";
+import type { Page } from "@/src/domain/entities/Pagination";
 import {
   BOOK_LOAN_VIEWS,
   type BookLoanCounts,
@@ -12,7 +13,7 @@ import {
 import { Link } from "@/src/i18n/navigation";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { cn } from "@/src/lib/utils";
-import { ListSearchInput } from "@/src/presentation/dashboard/list";
+import { ListPager, ListSearchInput } from "@/src/presentation/dashboard/list";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 
@@ -23,8 +24,8 @@ import { BookLoanRow } from "./BookLoanRow";
 import { LendBookDialog, type HeldCopy } from "./LendBookDialog";
 
 type BookLoansScreenProps = {
-  /** Every loan matching the search — the tabs filter from it. */
-  loans: BookLoan[];
+  /** One page of the current tab, matching the search, in the tab's order. */
+  loans: Page<BookLoan>;
   /** How many loans each tab holds, whatever the search. */
   counts: BookLoanCounts;
   books: LendableBook[];
@@ -43,10 +44,11 @@ const OVERDUE_HREF = "/dashboard/book-loans?view=overdue";
 
 /**
  * The lending book: who has which book and when it's due, in On loan / Overdue /
- * Returned / Lost / All tabs with a search, overdue loans first. The tabs count
- * every loan whatever the search. A card leads to Book holds with a one-line
- * summary of the lines. Presentational: the page fetches over the REST API (BFF);
- * every action `router.refresh()`es.
+ * Returned / Lost / All tabs with a search, overdue loans first, a page at a time.
+ * The tabs count every loan whatever the search. A card leads to Book holds with a
+ * one-line summary of the lines. Presentational: the page fetches the tab's page
+ * over the REST API (BFF), filtered and ordered there; every action
+ * `router.refresh()`es.
  */
 export async function BookLoansScreen({
   loans,
@@ -61,24 +63,7 @@ export async function BookLoansScreen({
 }: BookLoansScreenProps) {
   const t = await getTranslations("dashBookLoans");
   const locale = await getLocale();
-  const nowDate = new Date(now);
-
-  const overdue = (loan: BookLoan): boolean => isBookLoanOverdue(loan, nowDate);
-  const inView: Record<BookLoanView, (loan: BookLoan) => boolean> = {
-    open: (loan) => loan.status === "out",
-    overdue,
-    returned: (loan) => loan.status === "returned",
-    lost: (loan) => loan.status === "lost",
-    all: () => true,
-  };
-  const shown = loans
-    .filter(inView[view])
-    // Late books first, then what's out by due date, then the rest newest first.
-    .sort(
-      (a, b) =>
-        Number(overdue(b)) - Number(overdue(a)) ||
-        (a.status === "out" && b.status === "out" ? a.dueAt.localeCompare(b.dueAt) : b.lentAt.localeCompare(a.lentAt)),
-    );
+  const shown = loans.items;
 
   const lineFor = (productId: string): BookWaitlistEntry[] => waitlist.filter((entry) => entry.productId === productId);
   const ready = waitlist.filter((entry) => entry.status === "notified");
@@ -205,6 +190,12 @@ export async function BookLoansScreen({
             body={query ? t("noMatchesBody") : t("emptyBody")}
           />
         )}
+        {/* Drawn whenever the tab has rows, so a page past the end can still step back. */}
+        {loans.total > 0 ? (
+          <div className="border-t border-border px-4 py-3">
+            <ListPager page={loans} />
+          </div>
+        ) : null}
       </section>
     </div>
   );

@@ -192,7 +192,7 @@ export async function BookLoansScreen({
                     loan={loan}
                     now={now}
                     waiting={line.length}
-                    firstInLine={line.find((entry) => entry.status === "waiting")?.guestName}
+                    firstInLine={line.find((entry) => entry.status === "waiting")}
                     canManage={canManage}
                   />
                 </li>

@@ -21,8 +21,8 @@ type BookHoldActionsProps = {
   entry: Pick<BookWaitlistEntry, "id" | "productId" | "status" | "guestName" | "guestPhone">;
   /** The book's title, for the confirmations and toasts. */
   title: string;
-  /** Who's told next if this guest is skipped. */
-  nextInLine: string | undefined;
+  /** Who's told next if this guest is skipped — in the app, or by a call when they have no account. */
+  nextInLine: Pick<BookWaitlistEntry, "guestName" | "guestPhone" | "userId"> | undefined;
   /** Today on the cafe calendar — "Lend now" runs the standard length from here. */
   today: string;
 };
@@ -85,7 +85,12 @@ export function BookHoldActions({ entry, title, nextInLine, today }: BookHoldAct
         toast({
           tone: "success",
           title: t("removedToast", { name: entry.guestName, title }),
-          description: ready && nextInLine ? t("nextToldToast", { name: nextInLine }) : undefined,
+          description:
+            ready && nextInLine
+              ? nextInLine.userId
+                ? t("nextToldToast", { name: nextInLine.guestName })
+                : t("nextCallToast", { name: nextInLine.guestName, phone: nextInLine.guestPhone })
+              : undefined,
         });
         setConfirming(false);
       } catch (err) {
@@ -136,7 +141,9 @@ export function BookHoldActions({ entry, title, nextInLine, today }: BookHoldAct
         subtitle={
           ready
             ? nextInLine
-              ? t("skipNext", { name: nextInLine, title })
+              ? nextInLine.userId
+                ? t("skipNext", { name: nextInLine.guestName, title })
+                : t("skipNextCall", { name: nextInLine.guestName, title, phone: nextInLine.guestPhone })
               : t("skipNobody", { title })
             : t("removeBody", { title })
         }

@@ -226,7 +226,7 @@ export function CounterSaleScreen({ products }: CounterSaleScreenProps) {
                         type="button"
                         variant="secondary"
                         size="control-sm"
-                        className="px-2"
+                        iconOnly
                         aria-label={t("counter.decreaseAria", { name: product.name })}
                         onClick={() => setQuantity(product.id, quantity - 1)}
                       >
@@ -239,7 +239,7 @@ export function CounterSaleScreen({ products }: CounterSaleScreenProps) {
                         type="button"
                         variant="secondary"
                         size="control-sm"
-                        className="px-2"
+                        iconOnly
                         aria-label={t("counter.increaseAria", { name: product.name })}
                         disabled={quantity >= maxQuantity(product)}
                         onClick={() => setQuantity(product.id, quantity + 1)}

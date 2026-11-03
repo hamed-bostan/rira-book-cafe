@@ -74,7 +74,7 @@ export function formatOrderDateShort(iso: string, locale: Locale): string {
 }
 
 /**
- * "Monday - October 9,2023" (en). Under `fa`, the Jalali calendar with Persian
+ * "Monday - October 9, 2023" (en). Under `fa`, the Jalali calendar with Persian
  * numerals composed in natural Persian order — weekday day month year
  * ("یکشنبه ۲۱ تیر ۱۴۰۵") — rather than the English dash/comma layout.
  */
@@ -84,7 +84,7 @@ export function formatOrderDate(iso: string, locale: Locale): string {
   if (locale === "fa") {
     return `${f.weekday.format(date)} ${f.day.format(date)} ${f.month.format(date)} ${f.year.format(date)}`;
   }
-  return `${f.weekday.format(date)} - ${f.month.format(date)} ${f.day.format(date)},${f.year.format(date)}`;
+  return `${f.weekday.format(date)} - ${f.month.format(date)} ${f.day.format(date)}, ${f.year.format(date)}`;
 }
 
 // Separate tag set from `INTL_LOCALE` above: this pair renders a compact

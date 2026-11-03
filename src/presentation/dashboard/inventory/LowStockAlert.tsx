@@ -48,9 +48,10 @@ export async function LowStockAlert({ items }: { items: StockItem[] }) {
       </div>
       <ul className="flex flex-wrap gap-2">
         {alerts.slice(0, SHOWN).map((item) => (
+          // A name too long for the alert ends in an ellipsis; how much is left always shows.
           <li
             key={item.id}
-            className="flex h-8 items-center gap-2 rounded-badge-md border border-error-border bg-background px-3 text-body-caption-emphasis whitespace-nowrap text-foreground"
+            className="flex h-8 max-w-full min-w-0 items-center gap-2 rounded-badge-md border border-error-border bg-background px-3 text-body-caption-emphasis whitespace-nowrap text-foreground"
           >
             <span
               aria-hidden
@@ -59,10 +60,15 @@ export async function LowStockAlert({ items }: { items: StockItem[] }) {
                 item.level === "out" ? "bg-error-foreground" : "bg-warning-foreground",
               )}
             />
-            <span dir="auto">{item.name}</span> ·{" "}
-            {item.level === "out"
-              ? t("level.out")
-              : t("alert.left", { amount: `${formatNumber(item.onHand, locale, 3)} ${t(`unit.${item.unit}`)}` })}
+            <span dir="auto" className="min-w-0 truncate">
+              {item.name}
+            </span>
+            <span className="shrink-0">
+              ·{" "}
+              {item.level === "out"
+                ? t("level.out")
+                : t("alert.left", { amount: `${formatNumber(item.onHand, locale, 3)} ${t(`unit.${item.unit}`)}` })}
+            </span>
           </li>
         ))}
         {alerts.length > SHOWN ? (

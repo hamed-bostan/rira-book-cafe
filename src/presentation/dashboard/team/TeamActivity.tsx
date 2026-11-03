@@ -7,7 +7,7 @@ import { cn } from "@/src/lib/utils";
 import type { ActivityEntryWire } from "@/src/presentation/dashboard/activity/activity-response-schema";
 import { DashboardEmptyState } from "@/src/presentation/dashboard/DashboardEmptyState";
 
-import { teamMemberName } from "./teamDisplay";
+import { isolatedName, teamMemberName } from "./teamDisplay";
 
 type TeamActivityProps = {
   /** Recent `user.roleChanged` entries from the activity log, newest first. */
@@ -35,10 +35,11 @@ export function TeamActivity({ changes, viewerId }: TeamActivityProps) {
     const move = roleMove(change.changes);
     const isViewer = change.entityId === viewerId;
     // The entry snapshots the name; the id — their phone — stands in for a
-    // placeholder or a row written before labels existed.
-    const person = teamMemberName(change.entityLabel, change.entityId);
+    // placeholder or a row written before labels existed. Both go into the
+    // sentence isolated, so a number keeps its order in a Persian line.
+    const person = isolatedName(teamMemberName(change.entityLabel, change.entityId));
     const user = isViewer ? t("activity.youObject") : person;
-    const actor = change.actorId === viewerId ? t("activity.you") : change.actorName;
+    const actor = change.actorId === viewerId ? t("activity.you") : isolatedName(change.actorName);
 
     switch (kind) {
       case "granted":

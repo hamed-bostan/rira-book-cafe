@@ -14,6 +14,14 @@ export const ROW_TEXT = "text-body-default sm:text-body-small";
 export const ROW_CAPTION = "text-body-small text-muted-foreground sm:text-body-caption";
 
 /**
+ * Text lined up with the page's start edge rather than its own. A name typed in
+ * either script carries `dir="auto"`, so a Latin name on a Persian page wraps, and
+ * is cut short, at its own end rather than its start; this keeps it on the same
+ * side as the rest of the page all the same.
+ */
+export const PAGE_START_TEXT = "text-left [[dir=rtl]_&]:text-right";
+
+/**
  * The end of a list row: its figure and any buttons after it, kept together at the
  * row's inline-end. When a narrow row wraps they move down a line as one and stay
  * at the end, rather than each landing at the start of a line of its own.

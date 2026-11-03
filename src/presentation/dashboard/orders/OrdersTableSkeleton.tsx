@@ -7,8 +7,8 @@ const TOOLBAR_DROPDOWNS = 3;
 /** Cards drawn below the table breakpoint; rows from it — the list's first screen. */
 const CARD_COUNT = 6;
 const ROW_COUNT = 10;
-/** Order · guest · service · items · status · placed · total. */
-const COLUMN_COUNT = 7;
+/** Order · guest · service (with its items) · status · placed · total. */
+const COLUMN_COUNT = 6;
 
 /**
  * Placeholder for `OrdersTable` inside its `DataTable` frame: the status tabs and
@@ -72,7 +72,7 @@ export function OrdersTableSkeleton() {
               {Array.from({ length: COLUMN_COUNT }, (_, column) => (
                 <div key={column} className="flex flex-1 flex-col gap-1.5">
                   <Skeleton className="h-4 w-4/5 rounded-pill" />
-                  {column === 1 || column === 3 || column === 5 ? (
+                  {column === 1 || column === 2 || column === 4 ? (
                     <Skeleton className="h-3 w-3/5 rounded-pill" />
                   ) : null}
                 </div>

@@ -111,14 +111,15 @@ export async function OrderDetailScreen({
                   <li key={item.id} className="flex gap-3 border-t border-border px-5 py-4 first:border-t-0">
                     <ProductThumbnail src={item.imageUrl} size="line" />
                     <div className="flex min-w-0 flex-1 flex-col gap-1">
-                      <div className="flex items-baseline justify-between gap-3">
-                        <span className="min-w-0 font-medium text-foreground">
+                      {/* The price drops under a name that would be left under 12rem, at the line's end. */}
+                      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                        <span className="min-w-0 flex-[1_1_12rem] font-medium text-foreground">
                           <span className="text-muted-foreground tabular-nums">
                             {formatNumber(item.quantity, locale)}×
                           </span>{" "}
                           {item.name}
                         </span>
-                        <span className="flex-none whitespace-nowrap text-foreground tabular-nums">
+                        <span className="ms-auto flex-none whitespace-nowrap text-foreground tabular-nums">
                           {formatMoney(item.unitPrice * item.quantity, locale)}
                         </span>
                       </div>
@@ -161,11 +162,11 @@ export async function OrderDetailScreen({
                       key={refund.id}
                       className="flex flex-col gap-1 border-t border-border px-5 py-4 first:border-t-0"
                     >
-                      <div className="flex items-baseline justify-between gap-3">
-                        <span className="font-medium text-foreground">
+                      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                        <span className="min-w-0 flex-[1_1_12rem] font-medium text-foreground">
                           R-{refund.number} · {t(`paymentMethod.${refund.method}`)}
                         </span>
-                        <span className="flex-none font-semibold whitespace-nowrap text-foreground tabular-nums">
+                        <span className="ms-auto flex-none font-semibold whitespace-nowrap text-foreground tabular-nums">
                           {formatMoney(refund.amount, locale)}
                         </span>
                       </div>

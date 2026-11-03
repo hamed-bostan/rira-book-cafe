@@ -6,7 +6,12 @@ import type { StockItem } from "@/src/domain/entities/Inventory";
 import type { Order } from "@/src/domain/entities/Order";
 import type { Page } from "@/src/domain/entities/Pagination";
 import type { Reservation } from "@/src/domain/entities/Reservation";
-import { formatCafeDayFull, formatCafeDayLong, formatCafeDayWeekday } from "@/src/lib/formatCafeDay";
+import {
+  formatCafeDayFull,
+  formatCafeDayLong,
+  formatCafeDayOfMonth,
+  formatCafeDayWeekday,
+} from "@/src/lib/formatCafeDay";
 import { moneyUnit } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { formatOrderTime } from "@/src/lib/formatOrderDate";
@@ -75,13 +80,15 @@ export async function DashboardOverviewScreen({
   const longWaits = queue.items.filter((order) => minutesWaiting(order.placedAt, now) >= WAIT_WARN_MINUTES).length;
   const awaiting = overview.todayReservations.awaitingConfirmation;
 
-  // Five cards share a row from `xl`; between `sm` and `xl` the three floor cards
-  // take a third each and the two money cards a half, so neither row runs ragged.
-  const floorSpan = week ? "sm:col-span-2 xl:col-span-1" : undefined;
-  const moneySpan = "sm:col-span-3 xl:col-span-1";
+  // Five cards share a row only once the page is 86rem wide, where a day's takings
+  // at ten digits still fit one; until then (a laptop with the sidebar open, a
+  // tablet) the three floor cards take a third each and the two money cards a
+  // half, so neither row runs ragged.
+  const floorSpan = week ? "sm:col-span-2 @min-[86rem]:col-span-1" : undefined;
+  const moneySpan = "sm:col-span-3 @min-[86rem]:col-span-1";
 
   return (
-    <div className="flex min-w-0 flex-col gap-6">
+    <div className="@container flex min-w-0 flex-col gap-6">
       <AutoRefresh intervalSeconds={REFRESH_SECONDS} />
 
       <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
@@ -101,7 +108,9 @@ export async function DashboardOverviewScreen({
 
       <div
         className={
-          week ? "grid grid-cols-1 gap-3 sm:grid-cols-6 xl:grid-cols-5" : "grid grid-cols-1 gap-3 sm:grid-cols-3"
+          week
+            ? "grid grid-cols-1 gap-3 sm:grid-cols-6 @min-[86rem]:grid-cols-5"
+            : "grid grid-cols-1 gap-3 sm:grid-cols-3"
         }
       >
         <OverviewStat
@@ -191,6 +200,7 @@ export async function DashboardOverviewScreen({
               const isToday = index === week.daily.length - 1;
               return {
                 label: isToday ? t("today") : formatCafeDayWeekday(point.day, locale),
+                shortLabel: formatCafeDayOfMonth(point.day, locale),
                 title: isToday ? t("todaySoFar") : formatCafeDayLong(point.day, locale),
                 revenue: point.revenue,
                 orders: point.orders,

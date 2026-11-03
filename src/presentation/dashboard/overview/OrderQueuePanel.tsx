@@ -6,6 +6,7 @@ import { formatNumber } from "@/src/lib/formatNumber";
 import { cn } from "@/src/lib/utils";
 import { DashboardEmptyState } from "@/src/presentation/dashboard/DashboardEmptyState";
 import { OrderStatusBadge } from "@/src/presentation/dashboard/orders/OrderStatusBadge";
+import { PAGE_START_TEXT } from "@/src/presentation/dashboard/pageStyles";
 
 import { OverviewPanel, OverviewPanelRow } from "./OverviewPanel";
 import { QueueStepButton } from "./QueueStepButton";
@@ -72,18 +73,23 @@ export async function OrderQueuePanel({ orders, total, now, canFulfill }: OrderQ
                 <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
                   <Link
                     href={`/dashboard/orders/${order.id}`}
-                    className="text-body-strong text-primary tabular-nums hover:text-primary-hover sm:text-body-small-strong"
+                    // 44px tall to the touch on a phone, without moving the line.
+                    className="-my-3 py-3 text-body-strong text-primary tabular-nums hover:text-primary-hover sm:my-0 sm:py-0 sm:text-body-small-strong"
                   >
                     #{order.orderNumber}
                   </Link>
-                  <span className="text-body-default whitespace-nowrap text-foreground sm:text-body-small">
+                  <span className="min-w-0 truncate text-body-default text-foreground sm:text-body-small">
                     {order.serviceType === "dineIn"
                       ? tOrders("table", { table: order.tableLabel ?? "?" })
                       : tOrders("service.takeaway")}
                   </span>
                   <OrderStatusBadge status={order.status} size="compact" />
                 </span>
-                <span className="truncate text-body-small text-muted-foreground sm:text-body-caption">
+                {/* A Latin name on a Persian page is cut at its own end, not its start. */}
+                <span
+                  dir="auto"
+                  className={cn(PAGE_START_TEXT, "truncate text-body-small text-muted-foreground sm:text-body-caption")}
+                >
                   {order.customerName} · {tOrders("itemCount", { count: orderItemCount(order) })}
                 </span>
               </span>

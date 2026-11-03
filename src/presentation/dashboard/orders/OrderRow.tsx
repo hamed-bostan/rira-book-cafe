@@ -5,13 +5,18 @@ import { Link } from "@/src/i18n/navigation";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formatOrderDateShort, formatOrderTime } from "@/src/lib/formatOrderDate";
 import { maskPhoneNumber } from "@/src/lib/maskPhoneNumber";
+import { cn } from "@/src/lib/utils";
 import { BulkRowCheckbox } from "@/src/presentation/dashboard/bulk";
+import { PAGE_START_TEXT } from "@/src/presentation/dashboard/pageStyles";
 import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
 import { TableCell, TableRow } from "@/src/presentation/design-system/components/DataTable/DataTable";
 
 import { OrderRowActions } from "./OrderRowActions";
 import { OrderServiceLabel } from "./OrderServiceLabel";
 import { OrderStatusBadge } from "./OrderStatusBadge";
+
+/** The finance tables' cell padding, so every column fits a 56rem card (see `OrdersTable`). */
+const CELL = "px-2";
 
 type OrderRowProps = {
   order: Order;
@@ -40,7 +45,7 @@ export function OrderRow({ order, canFulfill }: OrderRowProps) {
         </TableCell>
       ) : null}
 
-      <TableCell>
+      <TableCell className={cn(CELL, !canFulfill && "ps-5")}>
         <Link
           href={`/dashboard/orders/${order.id}`}
           aria-label={t("viewOrderAria", { number: order.orderNumber })}
@@ -50,31 +55,31 @@ export function OrderRow({ order, canFulfill }: OrderRowProps) {
         </Link>
       </TableCell>
 
-      <TableCell>
-        <span className="block max-w-48 truncate text-body-small-emphasis text-foreground">{order.customerName}</span>
+      <TableCell className={CELL}>
+        {/* A Latin name in a Persian row is cut at its own end, not its start. */}
+        <span dir="auto" className={cn(PAGE_START_TEXT, "block truncate text-body-small-emphasis text-foreground")}>
+          {order.customerName}
+        </span>
         {/* `dir="ltr"`: a phone number reads left-to-right even in an RTL row. */}
-        <span dir="ltr" className="block truncate text-body-caption text-muted-foreground tabular-nums">
+        <span
+          dir="ltr"
+          className={cn(PAGE_START_TEXT, "block truncate text-body-caption text-muted-foreground tabular-nums")}
+        >
           {maskPhoneNumber(order.customerPhone)}
         </span>
       </TableCell>
 
-      <TableCell>
+      <TableCell className={CELL}>
         <OrderServiceLabel order={order} />
-      </TableCell>
-
-      <TableCell>
-        <span className="block text-body-small whitespace-nowrap text-foreground">
+        <span className="block truncate text-body-caption text-muted-foreground">
           {t("itemCount", { count: orderItemCount(order) })}
+          {canServeItems(order.status) ? ` · ${t("servedProgress", servedLineCount(order))}` : null}
         </span>
-        {canServeItems(order.status) ? (
-          <span className="block text-body-caption whitespace-nowrap text-muted-foreground">
-            {t("servedProgress", servedLineCount(order))}
-          </span>
-        ) : null}
       </TableCell>
 
-      <TableCell>
-        <div className="flex flex-nowrap items-center gap-1.5">
+      <TableCell className={CELL}>
+        {/* Stacked, so the column is as wide as one badge. */}
+        <div className="flex flex-col items-start gap-1">
           <OrderStatusBadge status={order.status} size="compact" />
           {order.paymentStatus === "paid" ? (
             <Badge variant="success" appearance="outline" dot size="compact">
@@ -84,7 +89,7 @@ export function OrderRow({ order, canFulfill }: OrderRowProps) {
         </div>
       </TableCell>
 
-      <TableCell className="tabular-nums">
+      <TableCell className={cn(CELL, "tabular-nums")}>
         <span className="block text-body-small whitespace-nowrap text-foreground">
           {formatOrderTime(order.placedAt, locale)}
         </span>
@@ -93,7 +98,13 @@ export function OrderRow({ order, canFulfill }: OrderRowProps) {
         </span>
       </TableCell>
 
-      <TableCell className="text-end text-body-small-strong whitespace-nowrap text-foreground tabular-nums">
+      <TableCell
+        className={cn(
+          CELL,
+          "text-end text-body-small-strong whitespace-nowrap text-foreground tabular-nums",
+          !canFulfill && "pe-5",
+        )}
+      >
         {formatMoney(order.total, locale)}
       </TableCell>
 

@@ -15,6 +15,7 @@ import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 
 import { ChangeRoleDialog } from "./ChangeRoleDialog";
 import { RemoveAccessDialog } from "./RemoveAccessDialog";
+import { isolatedName } from "./teamDisplay";
 import { TransferOwnershipDialog, type TransferIntent } from "./TransferOwnershipDialog";
 
 type TeamMemberActionsProps = {
@@ -84,7 +85,7 @@ export function TeamMemberActions({ member, name, hasOwner }: TeamMemberActionsP
           open={dialog === "role"}
           onOpenChange={onOpenChange}
           id={member.id}
-          name={name}
+          name={isolatedName(name)}
           role={role}
         />
       ) : null}
@@ -94,7 +95,7 @@ export function TeamMemberActions({ member, name, hasOwner }: TeamMemberActionsP
           open={dialog === "owner"}
           onOpenChange={onOpenChange}
           id={member.id}
-          name={name}
+          name={isolatedName(name)}
           intent={intent}
         />
       ) : null}
@@ -104,7 +105,7 @@ export function TeamMemberActions({ member, name, hasOwner }: TeamMemberActionsP
           open={dialog === "remove"}
           onOpenChange={onOpenChange}
           id={member.id}
-          name={name}
+          name={isolatedName(name)}
         />
       ) : null}
     </>

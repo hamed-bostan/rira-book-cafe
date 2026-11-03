@@ -24,6 +24,7 @@ import { prisma } from "@/src/infrastructure/prisma/client";
 import type { Prisma } from "@/src/infrastructure/prisma/generated/client";
 import { inTransaction, type PrismaDb } from "@/src/infrastructure/prisma/transaction";
 
+import { lockBookShelf } from "./bookShelf";
 import { recordAudit } from "./writeActivityEntry";
 import { postHook } from "./writeJournal";
 
@@ -41,7 +42,7 @@ export class PrismaBookLoanRepository implements IBookLoanRepository {
     return inTransaction(this.db, async (tx) => {
       // Serialize loans of this book so the duplicate check below can't race (the
       // database trigger takes the same lock and repeats the check as a backstop).
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`book-loan:${input.productId}`}))`;
+      await lockBookShelf(tx, input.productId);
       const existing = await tx.bookLoan.findFirst({
         where: { productId: input.productId, borrowerPhone: input.borrowerPhone, status: "out" },
       });

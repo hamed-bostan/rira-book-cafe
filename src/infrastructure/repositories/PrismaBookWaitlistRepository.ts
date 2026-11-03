@@ -1,21 +1,16 @@
-import {
-  OPEN_WAITLIST_STATUSES,
-  WAITLIST_STATUSES,
-  type BookWaitlistEntry,
-  type WaitlistStatus,
-} from "@/src/domain/entities/BookWaitlist";
+import { OPEN_WAITLIST_STATUSES, type BookWaitlistEntry } from "@/src/domain/entities/BookWaitlist";
 import { ConflictError } from "@/src/domain/errors/ConflictError";
 import type { IBookWaitlistRepository, NewWaitlistEntry } from "@/src/domain/repositories/IBookWaitlistRepository";
 import { prisma } from "@/src/infrastructure/prisma/client";
 import { Prisma } from "@/src/infrastructure/prisma/generated/client";
 import { inTransaction, type PrismaDb } from "@/src/infrastructure/prisma/transaction";
 
-const OPEN = { in: [...OPEN_WAITLIST_STATUSES] };
+import { OPEN_HOLD as OPEN, lockBookShelf, toWaitlistEntry as toEntry } from "./bookShelf";
 
 /**
  * The book waitlist backed by PostgreSQL via Prisma. A partial unique index keeps
  * a guest in a book's line at most once; telling the next guest is serialized per
- * book with an advisory lock (the same one lending takes).
+ * book with the lock lending takes (`lockBookShelf`).
  */
 export class PrismaBookWaitlistRepository implements IBookWaitlistRepository {
   constructor(private readonly db: PrismaDb = prisma) {}
@@ -83,7 +78,7 @@ export class PrismaBookWaitlistRepository implements IBookWaitlistRepository {
 
   async notifyNext(productId: string, at: Date): Promise<BookWaitlistEntry | null> {
     return inTransaction(this.db, async (tx) => {
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`book-waitlist:${productId}`}))`;
+      await lockBookShelf(tx, productId);
       const next = await tx.bookWaitlistEntry.findFirst({
         where: { productId, status: "waiting" },
         orderBy: { createdAt: "asc" },
@@ -107,25 +102,4 @@ export class PrismaBookWaitlistRepository implements IBookWaitlistRepository {
       data: { status: "fulfilled" },
     });
   }
-}
-
-type EntryRow = Prisma.BookWaitlistEntryGetPayload<object>;
-
-function toStatus(value: string): WaitlistStatus {
-  return (WAITLIST_STATUSES as readonly string[]).includes(value) ? (value as WaitlistStatus) : "waiting";
-}
-
-function toEntry(row: EntryRow): BookWaitlistEntry {
-  return {
-    id: row.id,
-    productId: row.productId,
-    bookTitle: row.bookTitle,
-    userId: row.userId ?? undefined,
-    guestName: row.guestName,
-    guestPhone: row.guestPhone,
-    status: toStatus(row.status),
-    notifiedAt: row.notifiedAt?.toISOString(),
-    createdAt: row.createdAt.toISOString(),
-    updatedAt: row.updatedAt.toISOString(),
-  };
 }

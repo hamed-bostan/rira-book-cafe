@@ -9,6 +9,9 @@ import type { BookLoan } from "@/src/domain/entities/BookLoan";
 import type { BookWaitlistEntry } from "@/src/domain/entities/BookWaitlist";
 import { cafeDayOf, shiftCafeDay } from "@/src/domain/entities/CafeTime";
 import type { BookLoanCounts } from "@/src/domain/repositories/IBookLoanRepository";
+import { prisma } from "@/src/infrastructure/prisma/client";
+import { lockBookShelf } from "@/src/infrastructure/repositories/bookShelf";
+import { PrismaBookWaitlistRepository } from "@/src/infrastructure/repositories/PrismaBookWaitlistRepository";
 
 import { getRequest, jsonRequest, readError, readJson, routeParams } from "./helpers/http";
 import { signInAs } from "./helpers/session";
@@ -98,6 +101,39 @@ describe("book copies and holds", () => {
       await listHolds(getRequest("/api/admin/book-waitlist?view=closed")),
     );
     expect(closed.find((e) => e.id === first.id)?.status).toBe("cancelled");
+  });
+
+  it("tells the next guest only once lending has let go of the book", async () => {
+    signInAs("admin");
+    await lendTo(BLIND_OWL, "Niloofar", "09121110005");
+    await hold(BLIND_OWL, "Sara", "09351112233");
+
+    // A loan of the book in flight: its transaction holds the book's lock until released.
+    let release = (): void => undefined;
+    const released = new Promise<void>((resolve) => (release = resolve));
+    let locked = (): void => undefined;
+    const lockTaken = new Promise<void>((resolve) => (locked = resolve));
+    const lending = prisma.$transaction(
+      async (tx) => {
+        await lockBookShelf(tx, BLIND_OWL);
+        locked();
+        await released;
+      },
+      { timeout: 10_000 },
+    );
+    await lockTaken;
+
+    let told = false;
+    const telling = new PrismaBookWaitlistRepository().notifyNext(BLIND_OWL, new Date()).then(() => {
+      told = true;
+    });
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    expect(told).toBe(false);
+
+    release();
+    await lending;
+    await telling;
+    expect(told).toBe(true);
   });
 
   it("extends a loan that's out by seven days, and only that", async () => {

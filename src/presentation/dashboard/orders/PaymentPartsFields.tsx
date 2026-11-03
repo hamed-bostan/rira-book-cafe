@@ -8,7 +8,7 @@ import { cn } from "@/src/lib/utils";
 import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
 
 import { DashboardField } from "../DashboardField";
-import { FIELD_HINT } from "../fieldStyles";
+import { FIELD_GRID, FIELD_HINT } from "../fieldStyles";
 import { AMOUNT_INPUT } from "../pageStyles";
 
 import { splitParts, splitRemainder, type SplitAmounts } from "./paymentParts";
@@ -28,8 +28,12 @@ export function PaymentPartsFields({ total, amounts, onChange, disabled = false 
 
   return (
     <div className="flex flex-col gap-3">
-      {/* A long method name can wrap to two lines: the inputs still sit on one. */}
-      <div className="grid grid-cols-3 items-end gap-2">
+      {/*
+        Side by side only where each box keeps 12rem — room for a sum at the order
+        cap — so in the narrow column beside a sale or an order they stack. A long
+        method name can wrap to two lines: the inputs still sit on one.
+      */}
+      <div className={cn(FIELD_GRID, "items-end")}>
         {COUNTER_PAYMENT_METHODS.map((method) => (
           <DashboardField key={method} label={t(`paymentMethod.${method}`)}>
             <Input

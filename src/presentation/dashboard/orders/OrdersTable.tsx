@@ -35,13 +35,17 @@ type OrdersTableProps = {
 };
 
 /** Column headings: small caps-style labels, so the rows carry the weight. */
-const HEAD = "h-10 py-0 text-start text-body-caption font-semibold tracking-wider whitespace-nowrap uppercase";
+const HEAD = "h-10 px-2 py-0 text-start text-body-caption font-semibold tracking-wider whitespace-nowrap uppercase";
 
 /**
  * The dashboard order list: cards on narrow content widths, a real table on wide
- * ones — switched on the container's width, so the sidebar's state counts. The
- * table keeps a minimum width and scrolls sideways inside its frame rather than
- * squeezing its columns.
+ * ones — switched on the container's width, so the sidebar's state counts.
+ *
+ * The table fits the narrowest card that shows it (56rem) with figures at the
+ * order cap: its columns have fixed widths, the guest takes what's left, and a
+ * name or a table's label too long for its column ends in an ellipsis. The frame
+ * still scrolls rather than overflow if it ever had to, and is positioned, so the
+ * screen-reader heading of the last column can't reach past it and widen the page.
  */
 export async function OrdersTable({ orders, canFulfill, tabs, toolbar, emptyState, footer }: OrdersTableProps) {
   const t = await getTranslations("dashOrders");
@@ -57,8 +61,8 @@ export async function OrdersTable({ orders, canFulfill, tabs, toolbar, emptyStat
               <OrderCard key={order.id} order={order} canFulfill={canFulfill} />
             ))}
           </div>
-          <div className="hidden overflow-x-auto @min-[56rem]:block">
-            <Table className="min-w-[62.5rem]">
+          <div className="relative hidden overflow-x-auto @min-[56rem]:block">
+            <Table className="table-fixed">
               <caption className="sr-only">{t("heading")}</caption>
               <TableHeader>
                 <tr>
@@ -69,13 +73,15 @@ export async function OrdersTable({ orders, canFulfill, tabs, toolbar, emptyStat
                       </label>
                     </TableHead>
                   ) : null}
-                  <TableHead className={HEAD}>{t("colOrder")}</TableHead>
+                  <TableHead className={cn(HEAD, canFulfill ? "w-16" : "w-20 ps-5")}>{t("colOrder")}</TableHead>
                   <TableHead className={HEAD}>{t("colGuest")}</TableHead>
-                  <TableHead className={HEAD}>{t("colService")}</TableHead>
-                  <TableHead className={HEAD}>{t("colItems")}</TableHead>
-                  <TableHead className={HEAD}>{t("colStatus")}</TableHead>
-                  <TableHead className={HEAD}>{t("colPlaced")}</TableHead>
-                  <TableHead className={cn(HEAD, "text-end")}>{t("colTotal")}</TableHead>
+                  {/* The item count sits under the service, as on a card. */}
+                  <TableHead className={cn(HEAD, "w-44")}>{t("colService")}</TableHead>
+                  <TableHead className={cn(HEAD, "w-36")}>{t("colStatus")}</TableHead>
+                  <TableHead className={cn(HEAD, "w-24")}>{t("colPlaced")}</TableHead>
+                  <TableHead className={cn(HEAD, "text-end", canFulfill ? "w-44" : "w-48 pe-5")}>
+                    {t("colTotal")}
+                  </TableHead>
                   {canFulfill ? (
                     <TableHead className="w-12">
                       <span className="sr-only">{t("colActions")}</span>

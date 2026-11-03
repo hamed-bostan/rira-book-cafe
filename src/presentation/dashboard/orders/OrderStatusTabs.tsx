@@ -9,6 +9,7 @@ import { ORDER_STATUSES } from "@/src/domain/entities/Order";
 import { Link } from "@/src/i18n/navigation";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { cn } from "@/src/lib/utils";
+import { DashboardTabRow } from "@/src/presentation/dashboard/DashboardTabRow";
 
 type OrderStatusTabsProps = {
   /** The status filter the page was rendered with; `undefined` is "All". */
@@ -24,6 +25,8 @@ type OrderStatusTabsProps = {
  *
  * Plain links rather than a client widget: a tab is a URL, so it can be bookmarked
  * ("the ready shelf"), and switching re-runs the server render like any filter.
+ * On a phone the row runs past the screen's edge; `DashboardTabRow` keeps the
+ * chosen tab in view and fades the edge with more tabs past it.
  */
 export async function OrderStatusTabs({ current, counts, params }: OrderStatusTabsProps) {
   const t = await getTranslations("dashOrders");
@@ -48,39 +51,39 @@ export async function OrderStatusTabs({ current, counts, params }: OrderStatusTa
   ];
 
   return (
-    <nav
-      aria-label={t("tabsLabel")}
-      className="scrollbar-hide flex gap-6 overflow-x-auto border-b border-border bg-background px-4"
-    >
-      {tabs.map((tab) => {
-        const selected = tab.value === current;
-        return (
-          <Link
-            key={tab.value ?? "all"}
-            href={hrefFor(tab.value)}
-            aria-current={selected ? "page" : undefined}
-            className={cn(
-              // Equal top and bottom borders keep the label centred while only the
-              // bottom one is ever coloured.
-              "flex h-12 shrink-0 items-center gap-2 border-y-2 border-t-transparent text-body-default whitespace-nowrap transition-colors sm:text-body-small",
-              "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-inset",
-              selected
-                ? "border-b-primary font-semibold text-foreground"
-                : "border-b-transparent font-medium text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {tab.label}
-            <span
+    // The rule sits outside the scrolling row so its edge fade doesn't fade the rule too.
+    <div className="min-w-0 border-b border-border bg-background">
+      <DashboardTabRow label={t("tabsLabel")} current={current ?? "all"} className="flex gap-6 px-4">
+        {tabs.map((tab) => {
+          const selected = tab.value === current;
+          return (
+            <Link
+              key={tab.value ?? "all"}
+              href={hrefFor(tab.value)}
+              aria-current={selected ? "page" : undefined}
               className={cn(
-                "inline-flex h-5 min-w-6 items-center justify-center rounded-badge-md px-1.5 text-body-caption font-semibold tabular-nums",
-                selected ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground",
+                // Equal top and bottom borders keep the label centred while only the
+                // bottom one is ever coloured.
+                "flex h-12 shrink-0 items-center gap-2 border-y-2 border-t-transparent text-body-default whitespace-nowrap transition-colors sm:text-body-small",
+                "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-inset",
+                selected
+                  ? "border-b-primary font-semibold text-foreground"
+                  : "border-b-transparent font-medium text-muted-foreground hover:text-foreground",
               )}
             >
-              {formatNumber(tab.count, locale)}
-            </span>
-          </Link>
-        );
-      })}
-    </nav>
+              {tab.label}
+              <span
+                className={cn(
+                  "inline-flex h-5 min-w-6 items-center justify-center rounded-badge-md px-1.5 text-body-caption font-semibold tabular-nums",
+                  selected ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground",
+                )}
+              >
+                {formatNumber(tab.count, locale)}
+              </span>
+            </Link>
+          );
+        })}
+      </DashboardTabRow>
+    </div>
   );
 }

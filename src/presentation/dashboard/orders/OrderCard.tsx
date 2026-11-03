@@ -4,6 +4,8 @@ import { canServeItems, orderItemCount, servedLineCount, type Order } from "@/sr
 import { Link } from "@/src/i18n/navigation";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formatOrderTime } from "@/src/lib/formatOrderDate";
+import { cn } from "@/src/lib/utils";
+import { PAGE_START_TEXT } from "@/src/presentation/dashboard/pageStyles";
 import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
 
 import { OrderRowActions } from "./OrderRowActions";
@@ -40,7 +42,13 @@ export function OrderCard({ order, canFulfill }: OrderCardProps) {
               #{order.orderNumber}
             </Link>
           </p>
-          <p className="truncate text-body-default text-muted-foreground sm:text-body-small">{order.customerName}</p>
+          {/* A Latin name on a Persian card is cut at its own end, not its start. */}
+          <p
+            dir="auto"
+            className={cn(PAGE_START_TEXT, "truncate text-body-default text-muted-foreground sm:text-body-small")}
+          >
+            {order.customerName}
+          </p>
         </div>
         <div className="flex shrink-0 items-center gap-1">
           <OrderStatusBadge status={order.status} size="compact" />

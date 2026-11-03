@@ -28,6 +28,13 @@ export const NOTIFICATION_KINDS = [
   "reviewApproved",
   // Words a member of staff wrote to the guest about one of their bookings, loans or orders.
   "staffMessage",
+  // Staff moved or edited a booking, or an event the guest signed up for changed.
+  "reservationChanged",
+  "suiteChanged",
+  "eventMoved",
+  "eventOff",
+  "eventCancelled",
+  "eventRegistrationCancelled",
 ] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 

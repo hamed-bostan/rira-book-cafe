@@ -1,7 +1,7 @@
 import { Armchair, MessageSquare, Phone, Users } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
-import type { FloorBooking, FloorEvent } from "@/src/domain/entities/FloorAvailability";
+import type { Floor } from "@/src/domain/entities/FloorAvailability";
 import { reservationEndsAt, type Reservation } from "@/src/domain/entities/Reservation";
 import { formatEventTime } from "@/src/lib/formatEventWhen";
 import { formatNumber } from "@/src/lib/formatNumber";
@@ -23,9 +23,11 @@ type ReservationRowProps = {
   /** "Now", from the page — whether a confirmed party is running late, and whether it can be a no-show yet. */
   now: string;
   canManage: boolean;
-  /** The day's bookings and events, for the table picker. */
-  bookings: readonly FloorBooking[];
-  events: readonly FloorEvent[];
+  /** The day on screen and today, `YYYY-MM-DD` — where "Edit booking" starts, and the earliest day it offers. */
+  day: string;
+  today: string;
+  /** What holds the tables around the day, for the table pickers. */
+  floor: Floor;
 };
 
 /**
@@ -33,7 +35,7 @@ type ReservationRowProps = {
  * booking's status — and how late, for a party that hasn't arrived — the party,
  * the table (or that it still needs one), the phone, any note, and the controls.
  */
-export async function ReservationRow({ reservation, now, canManage, bookings, events }: ReservationRowProps) {
+export async function ReservationRow({ reservation, now, canManage, day, today, floor }: ReservationRowProps) {
   const t = await getTranslations("dashReservations");
   const tFloor = await getTranslations("floorTables");
   const locale = await getLocale();
@@ -111,7 +113,7 @@ export async function ReservationRow({ reservation, now, canManage, bookings, ev
       </div>
 
       {canManage ? (
-        <ReservationRowActions reservation={reservation} now={now} bookings={bookings} events={events} />
+        <ReservationRowActions reservation={reservation} now={now} day={day} today={today} floor={floor} />
       ) : null}
     </article>
   );

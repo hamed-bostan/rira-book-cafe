@@ -9,9 +9,10 @@ import { ReservationsScreen } from "@/src/presentation/dashboard/reservations/Re
 
 // One cafe day's bookings, and the events running that day, are fetched over the
 // REST API (BFF) during server render — with every request from today on, so
-// those waiting on other days show too. The day (`?day=`, default today) and the
-// status tab (`?status=`) live in the query string; the whole day is always
-// fetched so every tab can show its count.
+// those waiting on other days show too, and the floor around the day for the
+// table pickers (a booking late the night before still holds its table). The day
+// (`?day=`, default today) and the status tab (`?status=`) live in the query
+// string; the whole day is always fetched so every tab can show its count.
 export const dynamic = "force-dynamic";
 
 type DashboardReservationsPageProps = {
@@ -30,9 +31,10 @@ export default async function DashboardReservationsPage({ searchParams }: Dashbo
   const status = statusParam && STATUS_SET.has(statusParam) ? (statusParam as ReservationStatus) : undefined;
 
   const { from, to } = cafeDayRange(day);
-  const [reservations, requests, events, session] = await Promise.all([
+  const [reservations, requests, floor, events, session] = await Promise.all([
     reservationsServerApi.listForDay(day),
     reservationsServerApi.listFrom(today, "requested"),
+    reservationsServerApi.getFloor(day),
     eventsServerApi
       .listAll()
       .then((all) =>
@@ -51,6 +53,7 @@ export default async function DashboardReservationsPage({ searchParams }: Dashbo
     <ReservationsScreen
       reservations={reservations}
       otherDayRequests={requests.filter((request) => cafeDayOf(new Date(request.startsAt)) !== day)}
+      floor={floor}
       events={events}
       day={day}
       today={today}

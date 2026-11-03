@@ -16,6 +16,13 @@ export type FloorBooking = Pick<
 >;
 export type FloorEvent = Pick<CafeEvent, "id" | "title" | "startsAt" | "endsAt" | "tableLabels">;
 
+/**
+ * What holds the floor's tables around one cafe day: the bookings holding a table
+ * and the events holding tables. It reaches a day either side, because a booking
+ * late the night before runs on into the day, and one late in the day into the next.
+ */
+export type Floor = { bookings: FloorBooking[]; events: FloorEvent[] };
+
 /** Why a table can't be chosen: another booking or an event has it then, or it seats too few. */
 export type TableBlock =
   { kind: "booking"; reference: number } | { kind: "event"; title: string } | { kind: "tooSmall" };

@@ -95,7 +95,7 @@ export function BookTableForm({ today }: BookTableFormProps) {
         <label className="flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
           {t("book.time")}
           <Select value={time} onChange={(event) => setTime(event.target.value)} dir="ltr">
-            {/* The cafe's booking hours, the same ones staff book within and the server holds both to. */}
+            {/* Every quarter hour of the day: a table can be booked for any time, late ones running past midnight. */}
             {BOOKING_TIMES.map((slot) => (
               <option key={slot} value={slot}>
                 {slot}

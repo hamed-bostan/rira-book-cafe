@@ -6,6 +6,7 @@ import * as React from "react";
 
 import {
   canUndoSuiteBookingStatus,
+  editableSuiteStayDetails,
   isSuiteStayDue,
   type SuiteBooking,
   type SuiteBookingStatus,
@@ -25,10 +26,16 @@ import { useToast } from "@/src/presentation/design-system/components/Toast/useT
 import { DashboardDialog } from "../DashboardDialog";
 import { useGuestToldLine } from "../guest-messages/useGuestToldLine";
 
+import { EditStayDialog } from "./EditStayDialog";
 import { suiteBookingsApi } from "./suite-booking-api";
 
 type SuiteStayActionsProps = {
-  booking: Pick<SuiteBooking, "id" | "reference" | "status" | "checkIn" | "guestName" | "guestPhone" | "userId">;
+  booking: Pick<
+    SuiteBooking,
+    "id" | "reference" | "status" | "checkIn" | "checkOut" | "guests" | "guestName" | "guestPhone" | "userId"
+  >;
+  /** Stays holding the suite — "Edit stay" warns before moving onto their nights. */
+  held: readonly Pick<SuiteBooking, "id" | "reference" | "checkIn" | "checkOut">[];
   today: string;
   /** The held stay a request overlaps — Confirm stays off, and says why. */
   clashReference: number | undefined;
@@ -43,13 +50,20 @@ type Ending = "cancelled" | "noShow";
 
 /**
  * The desk's controls for one stay: Confirm a request (off while it clashes with a
- * held stay), Check in from the arrival day on, Check out, and behind "⋯" Mark
- * no-show (once the guest was due) or Cancel booking — both asking first, naming
- * the guest and nights. Check in offers Undo in its toast. Each writes over the
- * REST API and `router.refresh()`es; a failure shows in the confirmation when one
- * is open, else as a toast.
+ * held stay), Check in from the arrival day on, Check out, and behind "⋯" Edit
+ * stay, Mark no-show (once the guest was due) or Cancel booking — the last two
+ * asking first, naming the guest and nights. Check in offers Undo in its toast.
+ * Each writes over the REST API and `router.refresh()`es; a failure shows in the
+ * confirmation when one is open, else as a toast.
  */
-export function SuiteStayActions({ booking, today, clashReference, checkInLabel, rangeLabel }: SuiteStayActionsProps) {
+export function SuiteStayActions({
+  booking,
+  held,
+  today,
+  clashReference,
+  checkInLabel,
+  rangeLabel,
+}: SuiteStayActionsProps) {
   const t = useTranslations("dashSuite");
   const tApiErrors = useTranslations("apiErrors");
   const router = useRouter();
@@ -60,6 +74,9 @@ export function SuiteStayActions({ booking, today, clashReference, checkInLabel,
   const [ending, setEnding] = React.useState<Ending>("cancelled");
   const [confirming, setConfirming] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  // "Edit stay" mounts afresh each time it opens, so it starts from the stay as it is.
+  const [editing, setEditing] = React.useState(false);
+  const [editKey, setEditKey] = React.useState(0);
 
   const { status, reference } = booking;
   // The server refuses a check-in or no-show before the arrival day too.
@@ -157,7 +174,7 @@ export function SuiteStayActions({ booking, today, clashReference, checkInLabel,
           {primary.label}
         </Button>
       </span>
-      {status === "confirmed" ? (
+      {editableSuiteStayDetails(booking).length > 0 ? (
         <DropdownMenu>
           <DropdownMenuIconTrigger
             appearance="secondary"
@@ -167,17 +184,36 @@ export function SuiteStayActions({ booking, today, clashReference, checkInLabel,
             <Icon icon={MoreHorizontal} size="sm" className="sm:size-4" />
           </DropdownMenuIconTrigger>
           <DropdownMenuContent align="end">
-            {arrived ? (
+            <DropdownMenuItem
+              onSelect={() => {
+                setEditKey((key) => key + 1);
+                setEditing(true);
+              }}
+            >
+              {t("editStay")}
+            </DropdownMenuItem>
+            {status === "confirmed" && arrived ? (
               <DropdownMenuItem destructive onSelect={() => ask("noShow")}>
                 {t("markNoShow")}
               </DropdownMenuItem>
             ) : null}
-            <DropdownMenuItem destructive onSelect={() => ask("cancelled")}>
-              {t("cancelBooking")}
-            </DropdownMenuItem>
+            {status === "confirmed" ? (
+              <DropdownMenuItem destructive onSelect={() => ask("cancelled")}>
+                {t("cancelBooking")}
+              </DropdownMenuItem>
+            ) : null}
           </DropdownMenuContent>
         </DropdownMenu>
       ) : null}
+
+      <EditStayDialog
+        key={editKey}
+        open={editing}
+        onOpenChange={setEditing}
+        booking={booking}
+        held={held}
+        today={today}
+      />
 
       <DashboardDialog
         open={confirming}

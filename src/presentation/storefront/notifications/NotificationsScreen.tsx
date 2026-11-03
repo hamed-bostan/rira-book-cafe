@@ -1,4 +1,14 @@
-import { Bell, BedDouble, BookOpen, CalendarClock, ClipboardList, Gift, MessageSquareText, Star } from "lucide-react";
+import {
+  Bell,
+  BedDouble,
+  BookOpen,
+  CalendarClock,
+  CalendarX,
+  ClipboardList,
+  Gift,
+  MessageSquareText,
+  Star,
+} from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import type { Notification, NotificationKind } from "@/src/domain/entities/Notification";
@@ -36,6 +46,12 @@ const ICONS: Record<NotificationKind, LucideIcon> = {
   pointsEarned: Gift,
   reviewApproved: Star,
   staffMessage: MessageSquareText,
+  reservationChanged: CalendarClock,
+  suiteChanged: BedDouble,
+  eventMoved: CalendarClock,
+  eventOff: CalendarX,
+  eventCancelled: CalendarX,
+  eventRegistrationCancelled: CalendarX,
 };
 
 /** Kinds that ask the guest to do something — drawn in the warning tone. */

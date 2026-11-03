@@ -20,6 +20,8 @@ type SuiteStayRowProps = {
   booking: SuiteBooking;
   /** The held stay this request overlaps, if any — it can't be confirmed as asked. */
   clash: SuiteBooking | undefined;
+  /** Stays holding the suite, so "Edit stay" can warn before moving onto their nights. */
+  held: readonly Pick<SuiteBooking, "id" | "reference" | "checkIn" | "checkOut">[];
   today: string;
   /** Picked from the calendar: tinted so the eye lands on it. */
   focused: boolean;
@@ -35,7 +37,7 @@ const FINISHED = ["checkedOut", "cancelled", "noShow"];
  * status and what's due today (arriving, checking out, overdue), party and phone,
  * any note, a clash with a held stay, and the desk's controls.
  */
-export async function SuiteStayRow({ booking, clash, today, focused, canManage, payment }: SuiteStayRowProps) {
+export async function SuiteStayRow({ booking, clash, held, today, focused, canManage, payment }: SuiteStayRowProps) {
   const t = await getTranslations("dashSuite");
   const locale = await getLocale();
 
@@ -139,6 +141,7 @@ export async function SuiteStayRow({ booking, clash, today, focused, canManage, 
       {canManage ? (
         <SuiteStayActions
           booking={booking}
+          held={held}
           today={today}
           clashReference={clash?.reference}
           checkInLabel={formatCafeDayShort(booking.checkIn, locale)}

@@ -112,6 +112,19 @@ const PAGES: Record<string, MeasuredPage> = {
       await dialog.getByRole("textbox").fill(`${NOTE} ${NOTE}`.slice(0, 500));
     }),
   },
+  "edit booking": {
+    path: (s) => `/dashboard/reservations?day=${s.tomorrow}&status=confirmed`,
+    dialog: true,
+    prepare: async (page) => {
+      await menuItemFrom(/^(More actions for|کارهای بیشتر برای) R-/, /^(Edit booking|ویرایش رزرو)$/)(page);
+      await page.getByRole("dialog").getByRole("radio").first().waitFor();
+    },
+  },
+  "edit a request": {
+    path: (s) => `/dashboard/reservations?day=${s.tomorrow}&status=requested`,
+    dialog: true,
+    prepare: menuItemFrom(/^(More actions for|کارهای بیشتر برای) R-/, /^(Edit booking|ویرایش رزرو)$/),
+  },
   suite: { path: () => "/dashboard/suite", tabs: true },
   "suite past": { path: () => "/dashboard/suite?tab=past", tabs: true },
   "new stay": {
@@ -121,10 +134,20 @@ const PAGES: Record<string, MeasuredPage> = {
       await dialog.getByRole("textbox").nth(0).fill(NAME);
     }),
   },
+  "edit stay": {
+    path: () => "/dashboard/suite",
+    dialog: true,
+    prepare: menuItemFrom(/^(More actions for|کارهای بیشتر برای) S-/, /^(Edit stay|ویرایش اقامت)$/),
+  },
   events: { path: () => "/dashboard/events", tabs: true },
   "events past": { path: () => "/dashboard/events?tab=past", tabs: true },
   "new event": { path: () => "/dashboard/events/create" },
   event: { path: (s) => `/dashboard/events/${s.eventId}/edit` },
+  "cancel event": {
+    path: (s) => `/dashboard/events/${s.eventId}/edit`,
+    dialog: true,
+    prepare: dialogFrom(/^(Cancel event|لغو رویداد)$/),
+  },
   "hold tables": {
     path: () => "/dashboard/events",
     dialog: true,

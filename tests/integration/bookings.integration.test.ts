@@ -117,16 +117,14 @@ describe("the staff list of reservations", () => {
 });
 
 describe("booking hours", () => {
-  it("refuses a guest's request outside them, with a message key both languages have", async () => {
+  it("takes a guest's request for any time of day", async () => {
     signInAs("customer");
-    const late = await askForTable({ startsAt: `${nextWeek}T22:00`, partySize: 2 });
-
-    expect(late.status).toBe(400);
-    expect((await readError(late)).fieldErrors).toEqual({ startsAt: "outsideBookingHours" });
-    expect((await askForTable({ startsAt: `${nextWeek}T21:00`, partySize: 2 })).status).toBe(201);
+    for (const time of ["22:00", "07:30"]) {
+      expect((await askForTable({ startsAt: `${nextWeek}T${time}`, partySize: 2 })).status).toBe(201);
+    }
   });
 
-  it("holds staff bookings to the same hours", async () => {
+  it("takes staff bookings at any hour too", async () => {
     signInAs("staff");
     const early = await bookTable(
       jsonRequest("POST", "/api/admin/reservations", {
@@ -137,8 +135,7 @@ describe("booking hours", () => {
       }),
     );
 
-    expect(early.status).toBe(400);
-    expect((await readError(early)).fieldErrors).toEqual({ startsAt: "outsideBookingHours" });
+    expect(early.status).toBe(201);
   });
 });
 

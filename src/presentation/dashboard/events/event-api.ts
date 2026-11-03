@@ -39,4 +39,9 @@ export const eventsApi = {
   cancelRegistration(eventId: string, registrationId: string): Promise<void> {
     return apiDelete(`/admin/events/${eventId}/registrations/${registrationId}`);
   },
+
+  /** Call the event off: every sign-up cancelled, unpublished, guests told. 409 `EVENT_CLOSED` once it's over. */
+  cancel(id: string): Promise<CafeEvent> {
+    return apiPost(`/admin/events/${id}/cancel`, undefined, eventResponseSchema);
+  },
 };

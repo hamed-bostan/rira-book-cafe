@@ -15,6 +15,18 @@ export type ReservationChange = {
   tableLabel?: string | null;
 };
 
+/**
+ * A booking's details as staff edit them — the whole set, as they're to be after
+ * the save (`note` and `tableLabel` `null` when there are none).
+ */
+export type ReservationEdit = Pick<
+  Reservation,
+  "startsAt" | "partySize" | "durationMinutes" | "guestName" | "guestPhone"
+> & {
+  note: string | null;
+  tableLabel: string | null;
+};
+
 export type IReservationRepository = {
   /**
    * Record a booking. One made with a table refuses a table another booking or an
@@ -41,6 +53,18 @@ export type IReservationRepository = {
     expectedStatus: ReservationStatus,
     change: ReservationChange,
     actor: ActivityActor,
+    audit?: AuditHook<Reservation>,
+  ): Promise<Reservation>;
+  /**
+   * Save a booking's edited details, guarded on `expectedStatus` like
+   * `applyChange`. When the booking holds a table, the table is re-checked at the
+   * new time and length under the same lock — `TABLE_TAKEN` / `TABLE_HELD` when
+   * another booking or an event has it then.
+   */
+  applyEdit(
+    id: string,
+    expectedStatus: ReservationStatus,
+    edit: ReservationEdit,
     audit?: AuditHook<Reservation>,
   ): Promise<Reservation>;
 };

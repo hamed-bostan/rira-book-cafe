@@ -67,3 +67,24 @@ export const suiteBookingUpdateSchema = z.object({
 });
 
 export type SuiteBookingUpdateInput = z.input<typeof suiteBookingUpdateSchema>;
+
+/**
+ * Staff editing a stay ("Edit stay"): its arrival and departure days and how many
+ * it's for. Each is optional — one left out keeps its value — and the use-case
+ * changes only what differs and what the stay's status allows (only the departure
+ * once the guest is in).
+ */
+export const suiteStaySchema = z
+  .object({
+    checkIn: z.optional(stayFields.shape.checkIn),
+    checkOut: z.optional(stayFields.shape.checkOut),
+    guests: z.optional(stayFields.shape.guests),
+  })
+  .check(
+    z.refine((data) => !data.checkIn || !data.checkOut || data.checkOut > data.checkIn, {
+      error: "checkOutBeforeCheckIn",
+      path: ["checkOut"],
+    }),
+  );
+
+export type SuiteStayInput = z.input<typeof suiteStaySchema>;

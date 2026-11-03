@@ -347,6 +347,7 @@ model Reservation {
   guestPhone      String   @map("guest_phone")
   partySize       Int      @map("party_size")
   startsAt        DateTime @map("starts_at")
+  // How long the table is held; never over six hours (a CHECK in the migration).
   durationMinutes Int      @map("duration_minutes")
   status          String   @default("requested")
   tableLabel      String?  @map("table_label")

@@ -5,8 +5,10 @@ import {
   type NewNotification,
   type NotificationParams,
 } from "../../entities/Notification";
+import { normalizePhone } from "../../entities/Phone";
 
 import type { BookWaitlistEntry } from "../../entities/BookWaitlist";
+import type { CafeEvent, EventRegistration } from "../../entities/CafeEvent";
 import type { Order, OrderStatus } from "../../entities/Order";
 import type { Reservation } from "../../entities/Reservation";
 import type { SuiteBooking } from "../../entities/SuiteBooking";
@@ -165,4 +167,111 @@ export function staffMessageNotification(
   const userId = guestRecipient(guest);
   if (!userId) return null;
   return { userId, kind: "staffMessage", params: { ...about, text }, ...(link ? { link } : {}) };
+}
+
+/**
+ * Staff moved a table booking, or changed how many it's for or how long it holds
+ * the table: the booking as it is now. Addressed like every booking notice, so a
+ * phone or walk-in guest finds it once they sign in with that number; keyed on
+ * the save, so each change is told once.
+ */
+export function reservationChangedNotification(reservation: Reservation): NewNotification | null {
+  const to = addressed({ userId: reservation.userId, phone: reservation.guestPhone }, "/reservations");
+  if (!to) return null;
+  return {
+    ...to,
+    kind: "reservationChanged",
+    params: {
+      reference: reservation.reference,
+      startsAt: reservation.startsAt,
+      partySize: reservation.partySize,
+      durationMinutes: reservation.durationMinutes,
+    },
+    dedupeKey: `reservation:${reservation.id}:changed:${reservation.updatedAt}`,
+  };
+}
+
+/** Staff changed a suite stay's days or party: the stay as it is now, told once per change. */
+export function suiteChangedNotification(booking: SuiteBooking): NewNotification | null {
+  const to = addressed({ userId: booking.userId, phone: booking.guestPhone }, "/suite");
+  if (!to) return null;
+  return {
+    ...to,
+    kind: "suiteChanged",
+    params: {
+      reference: booking.reference,
+      checkIn: booking.checkIn,
+      checkOut: booking.checkOut,
+      guests: booking.guests,
+    },
+    dedupeKey: `suite:${booking.id}:changed:${booking.updatedAt}`,
+  };
+}
+
+/**
+ * What a change to an event tells a guest signed up for it: it moved, it's off
+ * (unpublished), or it was cancelled along with their sign-up.
+ */
+export type EventChange = "moved" | "off" | "cancelled";
+
+const EVENT_CHANGE_KINDS: Record<EventChange, NewNotification["kind"]> = {
+  moved: "eventMoved",
+  off: "eventOff",
+  cancelled: "eventCancelled",
+};
+
+/**
+ * What an edit to an event is to the guests signed up for it: `off` when it was
+ * unpublished, `moved` when its start or end changed while it stays on, `null`
+ * for anything else (a new description, a price, held tables).
+ */
+export function eventChangeFor(
+  before: Pick<CafeEvent, "isPublished" | "startsAt" | "endsAt">,
+  after: Pick<CafeEvent, "isPublished" | "startsAt" | "endsAt">,
+): Exclude<EventChange, "cancelled"> | null {
+  if (before.isPublished && !after.isPublished) return "off";
+  const sameTime = (a: string, b: string): boolean => new Date(a).getTime() === new Date(b).getTime();
+  if (after.isPublished && (!sameTime(before.startsAt, after.startsAt) || !sameTime(before.endsAt, after.endsAt))) {
+    return "moved";
+  }
+  return null;
+}
+
+/** The event's name in both languages, and when it is (or was) — the copy picks the guest's. */
+function eventParams(event: CafeEvent): NewNotification["params"] {
+  return { title: event.title, titleFa: event.titleFa ?? event.title, startsAt: event.startsAt };
+}
+
+/**
+ * An event a guest signed up for changed. A move or an unpublish is keyed on the
+ * save, so each is told once; a cancellation is keyed on the sign-up it ended,
+ * which ends only once. An event that's off has no page to open, so it links to
+ * the listing.
+ */
+export function eventChangeNotification(
+  event: CafeEvent,
+  registration: EventRegistration,
+  change: EventChange,
+): NewNotification {
+  return {
+    userId: normalizePhone(registration.guestPhone),
+    kind: EVENT_CHANGE_KINDS[change],
+    params: eventParams(event),
+    link: change === "moved" ? `/events/${event.id}` : "/events",
+    dedupeKey:
+      change === "cancelled"
+        ? `registration:${registration.id}:cancelled`
+        : `event:${event.id}:${change}:${event.updatedAt}:${registration.id}`,
+  };
+}
+
+/** Staff cancelled one guest's sign-up — the event itself is still on. */
+export function registrationCancelledNotification(event: CafeEvent, registration: EventRegistration): NewNotification {
+  return {
+    userId: normalizePhone(registration.guestPhone),
+    kind: "eventRegistrationCancelled",
+    params: { ...eventParams(event), seats: registration.seats },
+    link: `/events/${event.id}`,
+    dedupeKey: `registration:${registration.id}:cancelled`,
+  };
 }

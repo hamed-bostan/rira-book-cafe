@@ -122,6 +122,8 @@ export const ACTIVITY_ACTIONS = [
   "event.registrationCancelled",
   // Staff wrote to a guest on the event's list.
   "event.guestMessaged",
+  // Called off: every sign-up cancelled and the event unpublished, in one step.
+  "event.cancelled",
   // The books. Order postings aren't logged here — the order's own status and
   // payment entries already are, and the journal names who posted each line.
   "ledger.entryPosted",

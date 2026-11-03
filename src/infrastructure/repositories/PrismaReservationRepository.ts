@@ -13,6 +13,7 @@ import type {
   IReservationRepository,
   NewReservation,
   ReservationChange,
+  ReservationEdit,
 } from "@/src/domain/repositories/IReservationRepository";
 import { prisma } from "@/src/infrastructure/prisma/client";
 import type { Prisma } from "@/src/infrastructure/prisma/generated/client";
@@ -108,6 +109,45 @@ export class PrismaReservationRepository implements IReservationRepository {
         data: { status: change.status, tableLabel },
       });
       if (result.count === 0) {
+        throw new ConflictError("INVALID_TRANSITION", "This reservation was just changed by someone else.");
+      }
+
+      const saved = toReservation(await tx.reservation.findUniqueOrThrow({ where: { id } }));
+      await recordAudit(tx, saved, audit);
+      return saved;
+    });
+  }
+
+  async applyEdit(
+    id: string,
+    expectedStatus: ReservationStatus,
+    edit: ReservationEdit,
+    audit?: AuditHook<Reservation>,
+  ): Promise<Reservation> {
+    return inTransaction(this.db, async (tx) => {
+      // A new time or length is checked against everything else holding the table then.
+      if ((TABLE_HOLDING_STATUSES as readonly string[]).includes(expectedStatus) && edit.tableLabel) {
+        const startsAt = new Date(edit.startsAt);
+        await refuseTakenTable(tx, edit.tableLabel, startsAt, reservationEndsAt(edit), id);
+      }
+
+      // Guarded on the status the caller read: a concurrent change makes this match nothing.
+      const result = await tx.reservation.updateMany({
+        where: { id, status: expectedStatus },
+        data: {
+          startsAt: new Date(edit.startsAt),
+          durationMinutes: edit.durationMinutes,
+          partySize: edit.partySize,
+          guestName: edit.guestName,
+          guestPhone: edit.guestPhone,
+          note: edit.note,
+          tableLabel: edit.tableLabel,
+        },
+      });
+      if (result.count === 0) {
+        if (!(await tx.reservation.findUnique({ where: { id }, select: { id: true } }))) {
+          throw new NotFoundError("reservation", id);
+        }
         throw new ConflictError("INVALID_TRANSITION", "This reservation was just changed by someone else.");
       }
 

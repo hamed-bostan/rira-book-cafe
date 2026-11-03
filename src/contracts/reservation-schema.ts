@@ -6,6 +6,7 @@ import {
   MAX_PARTY_SIZE,
   MAX_RESERVATION_NOTE_LENGTH,
   MIN_PARTY_SIZE,
+  RESERVATION_LENGTHS,
   RESERVATION_STATUSES,
 } from "@/src/domain/entities/Reservation";
 import * as z from "@/src/lib/zod";
@@ -68,3 +69,34 @@ export const reservationUpdateSchema = z
   );
 
 export type ReservationUpdateInput = z.input<typeof reservationUpdateSchema>;
+
+/**
+ * Staff editing a booking ("Edit booking"): its day and time (cafe wall time, as a
+ * new booking's), party, length, the guest's name and phone, the note (blank
+ * clears it) and the table (`null` clears it). Each is optional — one left out
+ * keeps its value — and the use-case changes only what differs and what the
+ * booking's status allows.
+ */
+export const reservationDetailsSchema = z.object({
+  startsAt: z.optional(z.string().check(z.refine(isWallTime, "dateTimeInvalid"))),
+  partySize: z.optional(
+    z
+      .number()
+      .check(
+        z.int("partySizeInvalid"),
+        z.gte(MIN_PARTY_SIZE, "partySizeInvalid"),
+        z.lte(MAX_PARTY_SIZE, "partySizeInvalid"),
+      ),
+  ),
+  durationMinutes: z.optional(
+    z.number().check(z.refine((value) => (RESERVATION_LENGTHS as readonly number[]).includes(value), "lengthInvalid")),
+  ),
+  guestName: z.optional(
+    z.string().check(z.trim(), z.minLength(1, "nameRequired"), z.maxLength(MAX_GUEST_NAME_LENGTH, "nameTooLong")),
+  ),
+  guestPhone: z.optional(z.string().check(z.trim(), z.refine(isPlausiblePhone, "phoneInvalid"))),
+  note: z.optional(z.string().check(z.trim(), z.maxLength(MAX_RESERVATION_NOTE_LENGTH, "noteTooLong"))),
+  tableLabel: z.optional(z.nullable(z.enum(CAFE_TABLE_LABELS, { error: "tableInvalid" }))),
+});
+
+export type ReservationDetailsInput = z.input<typeof reservationDetailsSchema>;

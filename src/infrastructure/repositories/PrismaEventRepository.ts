@@ -13,7 +13,12 @@ import { ConflictError } from "@/src/domain/errors/ConflictError";
 import { NotFoundError } from "@/src/domain/errors/NotFoundError";
 import { ResourceInUseError } from "@/src/domain/errors/ResourceInUseError";
 import type { AuditHook } from "@/src/domain/repositories/AuditHook";
-import type { IEventRepository, NewCafeEvent, NewRegistration } from "@/src/domain/repositories/IEventRepository";
+import type {
+  CancelledEvent,
+  IEventRepository,
+  NewCafeEvent,
+  NewRegistration,
+} from "@/src/domain/repositories/IEventRepository";
 import { prisma } from "@/src/infrastructure/prisma/client";
 import { Prisma } from "@/src/infrastructure/prisma/generated/client";
 import { inTransaction, type PrismaDb } from "@/src/infrastructure/prisma/transaction";
@@ -127,6 +132,34 @@ export class PrismaEventRepository implements IEventRepository {
         await tx.eventRegistration.deleteMany({ where: { eventId: id } });
         await tx.event.delete({ where: { id } });
         await recordAudit(tx, undefined, audit);
+      });
+    } catch (error) {
+      throw toDomainError(error, id);
+    }
+  }
+
+  async cancelEvent(id: string, audit?: AuditHook<CancelledEvent>): Promise<CancelledEvent> {
+    try {
+      return await inTransaction(this.db, async (tx) => {
+        // The same row lock a sign-up takes, so none lands between the read and the cancel.
+        await lockEvent(tx, id);
+        const active = await tx.eventRegistration.findMany({
+          where: { eventId: id, status: ACTIVE },
+          orderBy: { createdAt: "asc" },
+        });
+        if (active.length > 0) {
+          await tx.eventRegistration.updateMany({
+            where: { id: { in: active.map((row) => row.id) } },
+            data: { status: "cancelled" },
+          });
+        }
+        const row = await tx.event.update({ where: { id }, data: { isPublished: false } });
+        const result: CancelledEvent = {
+          event: toEvent(row, 0),
+          cancelled: active.map((registration) => toRegistration({ ...registration, status: "cancelled" })),
+        };
+        await recordAudit(tx, result, audit);
+        return result;
       });
     } catch (error) {
       throw toDomainError(error, id);

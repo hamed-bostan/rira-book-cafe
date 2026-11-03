@@ -13,11 +13,12 @@ import { focusRing } from "@/src/presentation/design-system/components/shared/fo
 
 import { ConfirmReservationButton } from "./ConfirmReservationButton";
 import { OverviewPanel, OverviewPanelRow } from "./OverviewPanel";
+import { OverviewReadError } from "./OverviewReadError";
 import { FINISHED_BOOKING_STATUS, splitTodaysBookings } from "./todaysBookings";
 
 type ReservationsPanelProps = {
-  /** Today's reservations, in start order. */
-  reservations: Reservation[];
+  /** Today's reservations, in start order; `null` when they couldn't be read. */
+  reservations: Reservation[] | null;
   /** Draws the Confirm button on requested bookings (`reservations.manage`). */
   canManage: boolean;
 };
@@ -33,16 +34,18 @@ export async function ReservationsPanel({ reservations, canManage }: Reservation
   const t = await getTranslations("dashOverview");
   const tRes = await getTranslations("dashReservations");
   const locale = await getLocale();
-  const { ahead: shown, finished } = splitTodaysBookings(reservations);
+  const { ahead: shown, finished } = splitTodaysBookings(reservations ?? []);
 
   return (
     <OverviewPanel
       id="overview-reservations"
       title={t("reservationsHeading")}
-      count={formatNumber(shown.length, locale)}
+      count={reservations ? formatNumber(shown.length, locale) : undefined}
       action={{ href: "/dashboard/reservations", label: t("viewAll") }}
     >
-      {shown.length === 0 ? (
+      {!reservations ? (
+        <OverviewReadError className="border-t border-border py-10" />
+      ) : shown.length === 0 ? (
         <DashboardEmptyState
           title={t("reservationsEmptyTitle")}
           body={t("reservationsEmptyBody")}

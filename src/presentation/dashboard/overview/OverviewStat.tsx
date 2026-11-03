@@ -20,6 +20,10 @@ type OverviewStatProps = {
   className?: string;
 };
 
+/** A headline card's frame, shared with the one drawn when its number couldn't be read. */
+export const OVERVIEW_STAT_CARD =
+  "flex min-w-0 flex-col justify-between gap-4 rounded-card-lg border border-border bg-background px-5 py-4 text-foreground shadow-xs";
+
 /**
  * One headline number on the overview, linking to where it's worked on. The
  * figure carries the card; colour is kept for the one thing that needs acting on,
@@ -29,11 +33,7 @@ export function OverviewStat({ label, icon, value, unit, hint, alert = false, hr
   return (
     <Link
       href={href}
-      className={cn(
-        "flex min-w-0 flex-col justify-between gap-4 rounded-card-lg border border-border bg-background px-5 py-4 text-foreground shadow-xs transition-colors hover:border-border-strong",
-        focusRing,
-        className,
-      )}
+      className={cn(OVERVIEW_STAT_CARD, "transition-colors hover:border-border-strong", focusRing, className)}
     >
       <span className="flex items-center justify-between gap-3">
         <span className="text-body-default font-medium sm:text-body-small">{label}</span>

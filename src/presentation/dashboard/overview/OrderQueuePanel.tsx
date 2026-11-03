@@ -1,6 +1,7 @@
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { orderItemCount, type Order } from "@/src/domain/entities/Order";
+import type { Page } from "@/src/domain/entities/Pagination";
 import { Link } from "@/src/i18n/navigation";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { cn } from "@/src/lib/utils";
@@ -9,14 +10,20 @@ import { OrderStatusBadge } from "@/src/presentation/dashboard/orders/OrderStatu
 import { PAGE_START_TEXT } from "@/src/presentation/dashboard/pageStyles";
 
 import { OverviewPanel, OverviewPanelRow } from "./OverviewPanel";
+import { OverviewReadError } from "./OverviewReadError";
 import { QueueStepButton } from "./QueueStepButton";
 import { minutesWaiting, WAIT_LATE_MINUTES, WAIT_WARN_MINUTES } from "./waiting";
 
+/** Rows the card lists before "View all". */
+const QUEUE_ROWS = 8;
+
 type OrderQueuePanelProps = {
-  /** Orders still in the queue, oldest first — the one waiting longest leads. */
-  orders: Order[];
-  /** How many are in the queue in all, which can be more than the rows shown. */
-  total: number;
+  /**
+   * Orders still in the queue, oldest first — the one waiting longest leads — with
+   * how many there are in all, which can be more than the rows shown. `null` when
+   * the queue couldn't be read.
+   */
+  queue: Page<Order> | null;
   /** When the page was rendered (ISO), the clock the waits are measured against. */
   now: string;
   /** Draws each row's next-step button (`orders.fulfill`). */
@@ -28,19 +35,22 @@ type OrderQueuePanelProps = {
  * long it has waited and the one button that moves it along. The wait turns amber
  * at {@link WAIT_WARN_MINUTES} and red at {@link WAIT_LATE_MINUTES}.
  */
-export async function OrderQueuePanel({ orders, total, now, canFulfill }: OrderQueuePanelProps) {
+export async function OrderQueuePanel({ queue, now, canFulfill }: OrderQueuePanelProps) {
   const t = await getTranslations("dashOverview");
   const tOrders = await getTranslations("dashOrders");
   const locale = await getLocale();
+  const orders = queue?.items.slice(0, QUEUE_ROWS) ?? [];
 
   return (
     <OverviewPanel
       id="overview-queue"
       title={t("queueHeading")}
-      count={formatNumber(total, locale)}
+      count={queue ? formatNumber(queue.total, locale) : undefined}
       action={{ href: "/dashboard/orders?status=active", label: t("viewAll") }}
     >
-      {orders.length === 0 ? (
+      {!queue ? (
+        <OverviewReadError className="border-t border-border py-10" />
+      ) : orders.length === 0 ? (
         <DashboardEmptyState
           title={t("queueEmptyTitle")}
           body={t("queueEmptyBody")}

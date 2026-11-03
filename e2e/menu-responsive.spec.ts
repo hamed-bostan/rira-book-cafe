@@ -136,9 +136,8 @@ const PAGES: Record<string, MenuPage> = {
   "stock movements": {
     path: () => "/dashboard/inventory/movements",
     table: true,
-    gaps: { fits: "Phase 2", tables: "Phase 2", targets: "Phase 2" },
   },
-  "stock count": { path: () => "/dashboard/inventory/count", table: true, gaps: { tables: "Phase 2" } },
+  "stock count": { path: () => "/dashboard/inventory/count", table: true },
   "opening stock": { path: () => "/dashboard/inventory/opening" },
   "receive delivery form": { path: () => "/dashboard/inventory/receive" },
   reviews: { path: () => "/dashboard/reviews", tabs: true },

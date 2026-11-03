@@ -18,7 +18,8 @@ type RouteContext = { params: Promise<{ id: string }> };
  * PATCH /api/admin/reservations/:id — confirm, seat, complete, cancel or mark a
  * no-show, and/or assign a table; with `undo`, take back a Seat or Complete.
  * Requires `reservations.manage`. 409 for a transition the workflow (or the undo
- * rule) refuses or a table another booking holds.
+ * rule) refuses, `NOT_DUE_YET` for a no-show before the booking starts, or a table
+ * another booking holds.
  */
 export async function PATCH(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   const session = await getSessionWith("reservations.manage");
@@ -38,10 +39,12 @@ export async function PATCH(request: NextRequest, { params }: RouteContext): Pro
   }
 
   try {
-    const reservation = await new ChangeReservation(reservationRepository, customerNotifier).execute(id, parsed.data, {
-      id: session.user.id,
-      name: session.user.name ?? session.user.id,
-    });
+    const reservation = await new ChangeReservation(reservationRepository, customerNotifier).execute(
+      id,
+      parsed.data,
+      { id: session.user.id, name: session.user.name ?? session.user.id },
+      new Date(),
+    );
     return NextResponse.json(reservation);
   } catch (error) {
     return errorResponseFromException(error, `PATCH /api/admin/reservations/${id} failed`);

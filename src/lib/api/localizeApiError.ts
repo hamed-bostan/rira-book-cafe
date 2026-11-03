@@ -22,6 +22,7 @@ type ApiErrorKey =
   | "conflict"
   | "insufficientStock"
   | "invalidTransition"
+  | "notDueYet"
   | "tableTaken"
   | "tableHeld"
   | "suiteTaken"
@@ -76,6 +77,7 @@ const CODE_KEYS: Readonly<Record<string, ApiErrorKey>> = {
   UNIQUE_CONSTRAINT: "conflict",
   INSUFFICIENT_STOCK: "insufficientStock",
   INVALID_TRANSITION: "invalidTransition",
+  NOT_DUE_YET: "notDueYet",
   TABLE_TAKEN: "tableTaken",
   TABLE_HELD: "tableHeld",
   SUITE_TAKEN: "suiteTaken",

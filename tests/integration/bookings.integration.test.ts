@@ -2,9 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import { PATCH as changeReservation } from "@/app/api/admin/reservations/[id]/route";
 import { GET as listReservations, POST as bookTable } from "@/app/api/admin/reservations/route";
+import { PATCH as changeStay } from "@/app/api/admin/suite-bookings/[id]/route";
+import { POST as bookSuite } from "@/app/api/admin/suite-bookings/route";
 import { POST as requestTable } from "@/app/api/reservations/route";
 import { cafeDayOf, shiftCafeDay, wallTimeToDate } from "@/src/domain/entities/CafeTime";
 import type { Reservation } from "@/src/domain/entities/Reservation";
+import type { SuiteBooking } from "@/src/domain/entities/SuiteBooking";
 import { prisma } from "@/src/infrastructure/prisma/client";
 
 import { TEST_USERS } from "../fixtures/users";
@@ -37,6 +40,27 @@ function confirmedAt(startsAt: Date): Promise<{ id: string }> {
     },
     select: { id: true },
   });
+}
+
+/** A stay staff booked (so confirmed straight away) arriving on `checkIn`. */
+async function stayFrom(checkIn: string): Promise<SuiteBooking> {
+  signInAs("staff");
+  const response = await bookSuite(
+    jsonRequest("POST", "/api/admin/suite-bookings", {
+      guestName: "Omid Karimi",
+      guestPhone: "09356401182",
+      checkIn,
+      checkOut: shiftCafeDay(checkIn, 2),
+      guests: 2,
+      note: "",
+    }),
+  );
+  expect(response.status).toBe(201);
+  return readJson<SuiteBooking>(response);
+}
+
+function patchStay(id: string, body: unknown): Promise<Response> {
+  return changeStay(jsonRequest("PATCH", `/api/admin/suite-bookings/${id}`, body), routeParams({ id }));
 }
 
 describe("the staff list of reservations", () => {
@@ -127,5 +151,39 @@ describe("changing a booking's table", () => {
     const moved = await patchReservation(booking.id, { tableLabel: "5" });
     expect(moved.status).toBe(200);
     expect((await readJson<Reservation>(moved)).tableLabel).toBe("5");
+  });
+});
+
+describe("before the guest is due", () => {
+  it("refuses a table no-show before the booking starts (409 NOT_DUE_YET), not after", async () => {
+    const ahead = await confirmedAt(wallTimeToDate(`${nextWeek}T12:00`));
+    const started = await confirmedAt(new Date(Date.now() - 30 * 60_000));
+    signInAs("staff");
+
+    const early = await patchReservation(ahead.id, { status: "noShow" });
+    expect(early.status).toBe(409);
+    expect((await readError(early)).code).toBe("NOT_DUE_YET");
+
+    const late = await patchReservation(started.id, { status: "noShow" });
+    expect(late.status).toBe(200);
+    expect((await readJson<Reservation>(late)).status).toBe("noShow");
+  });
+
+  it("refuses a suite check-in or no-show before the arrival day (409 NOT_DUE_YET)", async () => {
+    const stay = await stayFrom(nextWeek);
+
+    for (const status of ["checkedIn", "noShow"]) {
+      const response = await patchStay(stay.id, { status });
+      expect(response.status).toBe(409);
+      expect((await readError(response)).code).toBe("NOT_DUE_YET");
+    }
+  });
+
+  it("checks a guest in on their arrival day", async () => {
+    const stay = await stayFrom(today);
+
+    const response = await patchStay(stay.id, { status: "checkedIn" });
+    expect(response.status).toBe(200);
+    expect((await readJson<SuiteBooking>(response)).status).toBe("checkedIn");
   });
 });

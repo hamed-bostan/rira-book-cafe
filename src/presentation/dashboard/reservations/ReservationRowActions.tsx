@@ -8,6 +8,7 @@ import { isCafeTable, type CafeTableLabel } from "@/src/domain/entities/CafeTabl
 import { tableChoicesFor, type FloorBooking, type FloorEvent } from "@/src/domain/entities/FloorAvailability";
 import {
   canUndoReservationStatus,
+  isReservationDue,
   reservationEndsAt,
   type Reservation,
   type ReservationStatus,
@@ -37,6 +38,8 @@ type ReservationRowActionsProps = {
     Reservation,
     "id" | "reference" | "status" | "tableLabel" | "startsAt" | "durationMinutes" | "partySize" | "guestName"
   >;
+  /** "Now", from the page — Mark no-show waits until the booking has started. */
+  now: string;
   /** The day's bookings and events, for which tables the picker can offer. */
   bookings: readonly FloorBooking[];
   events: readonly FloorEvent[];
@@ -52,12 +55,12 @@ type Ending = "cancelled" | "noShow";
  * One booking's controls on the day view, as the design lays them out: the next
  * step as a button (Confirm opens the table picker; Seat and Complete act at
  * once), Cancel beside a request, and a "⋯" menu with Change table, Mark no-show
- * and Cancel booking. Cancelling and no-shows ask first; a one-click Seat or
- * Complete offers Undo in its toast. Each writes over the REST API and
- * `router.refresh()`es; a failure (a 409 when the table was just taken) shows in
- * the open dialog, else as a toast.
+ * (once the booking has started) and Cancel booking. Cancelling and no-shows ask
+ * first; a one-click Seat or Complete offers Undo in its toast. Each writes over
+ * the REST API and `router.refresh()`es; a failure (a 409 when the table was just
+ * taken) shows in the open dialog, else as a toast.
  */
-export function ReservationRowActions({ reservation, bookings, events }: ReservationRowActionsProps) {
+export function ReservationRowActions({ reservation, now, bookings, events }: ReservationRowActionsProps) {
   const t = useTranslations("dashReservations");
   const tFloor = useTranslations("floorTables");
   const tApiErrors = useTranslations("apiErrors");
@@ -203,9 +206,11 @@ export function ReservationRowActions({ reservation, bookings, events }: Reserva
             <DropdownMenuItem onSelect={() => openTable("change")}>{t("changeTable")}</DropdownMenuItem>
             {status === "confirmed" ? (
               <>
-                <DropdownMenuItem destructive onSelect={() => ask("noShow")}>
-                  {t("markNoShow")}
-                </DropdownMenuItem>
+                {isReservationDue(reservation, new Date(now)) ? (
+                  <DropdownMenuItem destructive onSelect={() => ask("noShow")}>
+                    {t("markNoShow")}
+                  </DropdownMenuItem>
+                ) : null}
                 <DropdownMenuItem destructive onSelect={() => ask("cancelled")}>
                   {t("cancelBooking")}
                 </DropdownMenuItem>

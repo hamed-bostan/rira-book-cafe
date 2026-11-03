@@ -129,6 +129,11 @@ export function isGuestCancellableReservation(
   );
 }
 
+/** Whether the party is due — their booking has started — so staff may mark them a no-show. */
+export function isReservationDue(reservation: Pick<Reservation, "startsAt">, now: Date): boolean {
+  return new Date(reservation.startsAt) <= now;
+}
+
 /** The instant the table is free again. */
 export function reservationEndsAt(reservation: Pick<Reservation, "startsAt" | "durationMinutes">): Date {
   return new Date(new Date(reservation.startsAt).getTime() + reservation.durationMinutes * 60 * 1000);

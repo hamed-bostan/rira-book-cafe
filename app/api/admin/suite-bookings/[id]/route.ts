@@ -18,7 +18,8 @@ type RouteContext = { params: Promise<{ id: string }> };
  * PATCH /api/admin/suite-bookings/:id — confirm, check in, check out, cancel or
  * mark a no-show; with `undo`, take back a Check in. Requires
  * `reservations.manage`. 409 for a transition the workflow (or the undo rule)
- * refuses, or `SUITE_TAKEN` when another stay already holds those nights.
+ * refuses, `NOT_DUE_YET` for a check-in or no-show before the arrival day, or
+ * `SUITE_TAKEN` when another stay already holds those nights.
  */
 export async function PATCH(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   const session = await getSessionWith("reservations.manage");
@@ -42,6 +43,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext): Pro
       id,
       parsed.data.status,
       { id: session.user.id, name: session.user.name ?? session.user.id },
+      new Date(),
       { undo: parsed.data.undo },
     );
     return NextResponse.json(booking);

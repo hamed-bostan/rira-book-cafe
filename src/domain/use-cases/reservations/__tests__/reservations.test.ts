@@ -140,6 +140,7 @@ describe("ChangeReservation", () => {
       "r1",
       { status: "confirmed", tableLabel: " 4 " },
       { id: "s", name: "Ali" },
+      NOW,
     );
 
     expect(applyChange.mock.calls[0].slice(0, 3)).toEqual([
@@ -159,30 +160,54 @@ describe("ChangeReservation", () => {
   it("moves a booking only to a table on the floor plan, as a new booking takes", async () => {
     for (const tableLabel of ["Patio", "T4", "9"]) {
       const { repo, applyChange } = repoWith(reservation("confirmed", { tableLabel: "4" }));
-      await expect(new ChangeReservation(repo).execute("r1", { tableLabel }, { id: "s", name: "Ali" })).rejects.toThrow(
-        expect.objectContaining({ field: "tableLabel" }),
-      );
+      await expect(
+        new ChangeReservation(repo).execute("r1", { tableLabel }, { id: "s", name: "Ali" }, NOW),
+      ).rejects.toThrow(expect.objectContaining({ field: "tableLabel" }));
       expect(applyChange).not.toHaveBeenCalled();
     }
   });
 
   it("keeps a table a booking already has, even one off today's floor plan", async () => {
     const { repo, applyChange } = repoWith(reservation("confirmed", { tableLabel: "Patio" }));
-    await new ChangeReservation(repo).execute("r1", { status: "seated" }, { id: "s", name: "Ali" });
+    await new ChangeReservation(repo).execute("r1", { status: "seated" }, { id: "s", name: "Ali" }, NOW);
     expect(applyChange.mock.calls[0][2]).toEqual({ status: "seated", tableLabel: "Patio" });
+  });
+
+  it("refuses a no-show before the booking starts, and marks one from its start on", async () => {
+    // The booking starts at 16:00 UTC on the 21st; NOW is a day earlier.
+    for (const now of [NOW, new Date("2026-10-21T15:59:00Z")]) {
+      const { repo, applyChange } = repoWith(reservation("confirmed", { tableLabel: "4" }));
+      await expect(
+        new ChangeReservation(repo).execute("r1", { status: "noShow" }, { id: "s", name: "Ali" }, now),
+      ).rejects.toMatchObject({ code: "NOT_DUE_YET" });
+      expect(applyChange).not.toHaveBeenCalled();
+    }
+    for (const now of [new Date("2026-10-21T16:00:00Z"), new Date("2026-10-21T16:45:00Z")]) {
+      const { repo, applyChange } = repoWith(reservation("confirmed", { tableLabel: "4" }));
+      await new ChangeReservation(repo).execute("r1", { status: "noShow" }, { id: "s", name: "Ali" }, now);
+      expect(applyChange.mock.calls[0][2]).toMatchObject({ status: "noShow" });
+    }
+  });
+
+  it("still seats or cancels a party ahead of their time", async () => {
+    for (const status of ["seated", "cancelled"] as const) {
+      const { repo, applyChange } = repoWith(reservation("confirmed", { tableLabel: "4" }));
+      await new ChangeReservation(repo).execute("r1", { status }, { id: "s", name: "Ali" }, NOW);
+      expect(applyChange).toHaveBeenCalledOnce();
+    }
   });
 
   it("requires a table to seat a party", async () => {
     const { repo } = repoWith(reservation("confirmed"));
     await expect(
-      new ChangeReservation(repo).execute("r1", { status: "seated" }, { id: "s", name: "Ali" }),
+      new ChangeReservation(repo).execute("r1", { status: "seated" }, { id: "s", name: "Ali" }, NOW),
     ).rejects.toThrow(ValidationError);
   });
 
   it("refuses transitions the workflow doesn't allow", async () => {
     const { repo, applyChange } = repoWith(reservation("completed"));
     await expect(
-      new ChangeReservation(repo).execute("r1", { status: "seated", tableLabel: "4" }, { id: "s", name: "Ali" }),
+      new ChangeReservation(repo).execute("r1", { status: "seated", tableLabel: "4" }, { id: "s", name: "Ali" }, NOW),
     ).rejects.toThrow(ConflictError);
     expect(applyChange).not.toHaveBeenCalled();
   });
@@ -190,7 +215,7 @@ describe("ChangeReservation", () => {
   it("does nothing when nothing changes", async () => {
     const current = reservation("confirmed", { tableLabel: "4" });
     const { repo, applyChange } = repoWith(current);
-    expect(await new ChangeReservation(repo).execute("r1", { tableLabel: "4" }, { id: "s", name: "Ali" })).toBe(
+    expect(await new ChangeReservation(repo).execute("r1", { tableLabel: "4" }, { id: "s", name: "Ali" }, NOW)).toBe(
       current,
     );
     expect(applyChange).not.toHaveBeenCalled();
@@ -203,6 +228,7 @@ describe("ChangeReservation", () => {
       "r1",
       { status: "confirmed", undo: true },
       { id: "s", name: "Ali" },
+      NOW,
     );
 
     expect(saved).toMatchObject({ status: "confirmed", tableLabel: "4" });
@@ -219,7 +245,7 @@ describe("ChangeReservation", () => {
 
   it("takes back a Complete", async () => {
     const { repo, applyChange } = repoWith(reservation("completed", { tableLabel: "4" }));
-    await new ChangeReservation(repo).execute("r1", { status: "seated", undo: true }, { id: "s", name: "Ali" });
+    await new ChangeReservation(repo).execute("r1", { status: "seated", undo: true }, { id: "s", name: "Ali" }, NOW);
     expect(applyChange.mock.calls[0].slice(1, 3)).toEqual(["completed", { status: "seated", tableLabel: "4" }]);
   });
 
@@ -233,7 +259,7 @@ describe("ChangeReservation", () => {
     ] as const) {
       const { repo, applyChange } = repoWith(reservation(from, { tableLabel: "4" }));
       await expect(
-        new ChangeReservation(repo).execute("r1", { status: to, undo: true }, { id: "s", name: "Ali" }),
+        new ChangeReservation(repo).execute("r1", { status: to, undo: true }, { id: "s", name: "Ali" }, NOW),
       ).rejects.toThrow(ConflictError);
       expect(applyChange).not.toHaveBeenCalled();
     }
@@ -242,6 +268,7 @@ describe("ChangeReservation", () => {
         "r1",
         { status: "confirmed", tableLabel: "5", undo: true },
         { id: "s", name: "Ali" },
+        NOW,
       ),
     ).rejects.toThrow(ValidationError);
   });
@@ -252,6 +279,7 @@ describe("ChangeReservation", () => {
         "r1",
         { status: "confirmed" },
         { id: "s", name: "Ali" },
+        NOW,
       ),
     ).rejects.toThrow(ConflictError);
   });
@@ -262,6 +290,7 @@ describe("ChangeReservation", () => {
       "r1",
       { status: "confirmed", tableLabel: "4" },
       { id: "s", name: "Ali" },
+      NOW,
     );
     expect(notifier.notify).toHaveBeenCalledWith(expect.objectContaining({ kind: "reservationConfirmed" }));
   });

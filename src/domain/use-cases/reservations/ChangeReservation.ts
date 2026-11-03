@@ -4,6 +4,7 @@ import {
   canTransitionReservation,
   canUndoReservationStatus,
   isGuestCancellableReservation,
+  isReservationDue,
   type Reservation,
   type ReservationStatus,
 } from "../../entities/Reservation";
@@ -32,7 +33,8 @@ export type ReservationUpdate = {
  * Staff act on a reservation: confirm (with a table), seat, complete, mark a
  * no-show, cancel — or just move it to another table — and take back a Seat or
  * Complete from its toast. The workflow table in `Reservation.ts` is the whole
- * rule, with `canUndoReservationStatus` its one way back; the repository refuses a
+ * rule, with `canUndoReservationStatus` its one way back and a no-show waiting
+ * until the booking has started (`isReservationDue`); the repository refuses a
  * table another overlapping booking already holds.
  */
 export class ChangeReservation {
@@ -42,7 +44,7 @@ export class ChangeReservation {
     private readonly notifier?: ICustomerNotifier,
   ) {}
 
-  async execute(id: string, update: ReservationUpdate, actor: ActivityActor): Promise<Reservation> {
+  async execute(id: string, update: ReservationUpdate, actor: ActivityActor, now: Date): Promise<Reservation> {
     const current = await this.reservationRepo.getById(id);
     if (!current) throw new NotFoundError("reservation", id);
 
@@ -57,11 +59,16 @@ export class ChangeReservation {
           `A reservation can't go back from "${current.status}" to "${status}".`,
         );
       }
-    } else if (status !== current.status && !canTransitionReservation(current.status, status)) {
-      throw new ConflictError(
-        "INVALID_TRANSITION",
-        `A reservation can't move from "${current.status}" to "${status}".`,
-      );
+    } else if (status !== current.status) {
+      if (!canTransitionReservation(current.status, status)) {
+        throw new ConflictError(
+          "INVALID_TRANSITION",
+          `A reservation can't move from "${current.status}" to "${status}".`,
+        );
+      }
+      if (status === "noShow" && !isReservationDue(current, now)) {
+        throw new ConflictError("NOT_DUE_YET", "A party can't be a no-show before their booking starts.");
+      }
     }
 
     // A finished booking keeps its table as history; only bookings that hold a

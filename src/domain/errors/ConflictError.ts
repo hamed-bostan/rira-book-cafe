@@ -25,6 +25,8 @@ export type ConflictCode =
   | "EVENT_CLOSED"
   | "ALREADY_REGISTERED"
   | "INVALID_TRANSITION"
+  // A no-show or a check-in before the guest was due (a booking's start, a stay's arrival day).
+  | "NOT_DUE_YET"
   | "ALREADY_POSTED"
   | "ALREADY_REVERSED"
   | "NOT_REVERSIBLE"

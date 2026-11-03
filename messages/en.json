@@ -197,6 +197,7 @@
     "inUse": "That's still in use and can't be removed yet.",
     "insufficientStock": "Not enough stock for one of the items.",
     "invalidTransition": "This order was just changed by someone else. Showing its current state.",
+    "notDueYet": "The guest isn't due yet. Check-ins open on the arrival day, and a no-show can be marked once the booking has started.",
     "tableTaken": "That table is already booked at that time.",
     "eventFull": "This event is full.",
     "eventClosed": "Sign-ups for this event are closed.",

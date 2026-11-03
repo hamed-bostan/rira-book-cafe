@@ -51,6 +51,10 @@ export type ConflictCode =
   | "BOOK_ON_SHELF"
   // Every copy of the book is out — the guest joins its line instead.
   | "ALL_COPIES_OUT"
+  // A book still out on loan or with guests in line can't be deleted.
+  | "BOOK_IN_USE"
+  // A book's copies to lend can't go below the copies of it out on loan.
+  | "COPIES_BELOW_ON_LOAN"
   // Cash shifts.
   | "SHIFT_ALREADY_OPEN"
   | "NO_OPEN_SHIFT"

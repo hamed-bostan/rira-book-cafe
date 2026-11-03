@@ -4,6 +4,7 @@ import { PATCH as changeLoan } from "@/app/api/admin/book-loans/[id]/route";
 import { GET as listBooks } from "@/app/api/admin/book-loans/books/route";
 import { GET as listLoans, POST as lend } from "@/app/api/admin/book-loans/route";
 import { GET as listHolds, POST as addHold } from "@/app/api/admin/book-waitlist/route";
+import { DELETE as deleteProduct, PUT as updateProduct } from "@/app/api/products/[id]/route";
 import type { BookLoan } from "@/src/domain/entities/BookLoan";
 import type { BookWaitlistEntry } from "@/src/domain/entities/BookWaitlist";
 import { cafeDayOf, shiftCafeDay } from "@/src/domain/entities/CafeTime";
@@ -121,6 +122,93 @@ describe("the loan book", () => {
     });
     expect(later.dueAt > sooner.dueAt).toBe(true);
     expect((await book("seed-book-savushun"))?.nextDue).toBeUndefined();
+  });
+});
+
+describe("a book with loans or holds", () => {
+  /** The Blind Owl's edit form as the dashboard sends it, with `copies` to lend. */
+  async function bookForm(copies: string): Promise<Record<string, unknown>> {
+    const row = await prisma.product.findUniqueOrThrow({ where: { id: BLIND_OWL } });
+    return {
+      kind: "book",
+      name: row.name,
+      categoryId: row.categoryId,
+      price: String(row.price),
+      originalPrice: "",
+      costPrice: "",
+      imageUrl: row.imageUrl,
+      stockQuantity: String(row.stockQuantity),
+      madeToOrder: false,
+      isFeatured: row.isFeatured,
+      isPublished: row.isPublished,
+      badge: "",
+      unit: "",
+      description: "",
+      nutrition: "",
+      origin: "",
+      dietary: [],
+      taxExempt: row.taxExempt,
+      bookAuthor: row.bookAuthor ?? "Sadegh Hedayat",
+      bookIsbn: "",
+      bookAvailability: "both",
+      bookCopies: copies,
+      faName: "",
+      faUnit: "",
+      faDescription: "",
+      faNutrition: "",
+      faOrigin: "",
+    };
+  }
+
+  function remove(): Promise<Response> {
+    return deleteProduct(jsonRequest("DELETE", `/api/products/${BLIND_OWL}`), routeParams({ id: BLIND_OWL }));
+  }
+
+  it("can't be deleted while a copy is out, or while a guest is in line", async () => {
+    signInAs("admin");
+    const loan = await readJson<BookLoan>(await lendTo(BLIND_OWL, "Niloofar", "09121110005"));
+    const out = await remove();
+    expect(out.status).toBe(409);
+    expect((await readError(out)).code).toBe("BOOK_IN_USE");
+
+    await addHold(
+      jsonRequest("POST", "/api/admin/book-waitlist", {
+        productId: BLIND_OWL,
+        guestName: "Sara",
+        guestPhone: "09351112233",
+      }),
+    );
+    await setStatus(loan.id, "returned");
+    // Back on the shelf, but held for Sara.
+    const held = await remove();
+    expect(held.status).toBe(409);
+    expect((await readError(held)).code).toBe("BOOK_IN_USE");
+    expect(await prisma.product.count({ where: { id: BLIND_OWL } })).toBe(1);
+  });
+
+  it("is deleted once its loans are closed and its line is empty", async () => {
+    signInAs("admin");
+    const loan = await readJson<BookLoan>(await lendTo(BLIND_OWL, "Niloofar", "09121110005"));
+    await setStatus(loan.id, "returned");
+    expect((await remove()).status).toBe(204);
+  });
+
+  it("keeps its copies to lend at least the copies out", async () => {
+    signInAs("admin");
+    await prisma.product.update({ where: { id: BLIND_OWL }, data: { bookCopies: 2 } });
+    await lendTo(BLIND_OWL, "Niloofar", "09121110005");
+    await lendTo(BLIND_OWL, "Parisa", "09121110007");
+
+    const save = async (copies: string): Promise<Response> =>
+      updateProduct(
+        jsonRequest("PUT", `/api/products/${BLIND_OWL}`, await bookForm(copies)),
+        routeParams({ id: BLIND_OWL }),
+      );
+    const below = await save("1");
+    expect(below.status).toBe(409);
+    expect((await readError(below)).code).toBe("COPIES_BELOW_ON_LOAN");
+    expect((await save("3")).status).toBe(200);
+    expect(await book(BLIND_OWL)).toMatchObject({ copies: 3, onLoan: 2 });
   });
 });
 

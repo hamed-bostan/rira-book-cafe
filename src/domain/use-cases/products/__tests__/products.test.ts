@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { MAX_ORDER_AMOUNT } from "../../../entities/Order";
 import { isSellable, MAX_STOCK_QUANTITY, withoutCost, type Product } from "../../../entities/Product";
+import { ConflictError } from "../../../errors/ConflictError";
 import { NotFoundError } from "../../../errors/NotFoundError";
 import { ValidationError } from "../../../errors/ValidationError";
 import { BulkUpdateProducts } from "../BulkUpdateProducts";
@@ -19,6 +20,7 @@ import { SearchProducts } from "../SearchProducts";
 import { UpdateProduct } from "../UpdateProduct";
 
 import type { NewActivityEntry } from "../../../entities/ActivityEntry";
+import type { BookWaitlistEntry } from "../../../entities/BookWaitlist";
 import type {
   BulkProductChange,
   BulkProductUpdate,
@@ -59,6 +61,19 @@ const INPUT: NewProduct = {
   isPublished: true,
   taxExempt: false,
 };
+
+/** The lending shelf as the guards read it: `onLoan` copies of every product out, `inLine` guests waiting for it. */
+function shelf(onLoan: number, inLine: number) {
+  return {
+    loans: { countOpenForBook: vi.fn(async () => onLoan) },
+    line: {
+      listOpenForBook: vi.fn(async () =>
+        Array.from({ length: inLine }, () => ({ status: "waiting" }) as BookWaitlistEntry),
+      ),
+    },
+  };
+}
+const EMPTY_SHELF = shelf(0, 0);
 
 type Fake = {
   repo: IProductRepository;
@@ -219,7 +234,7 @@ describe("CreateProduct", () => {
 describe("UpdateProduct", () => {
   it("diffs the tracked fields against the stored row", async () => {
     const { repo, entries } = repoWith([product()]);
-    await new UpdateProduct(repo).execute(
+    await new UpdateProduct(repo, EMPTY_SHELF.loans).execute(
       "p1",
       { ...INPUT, name: "Latte", price: 160_000, stockQuantity: 10, imageUrl: product().imageUrl },
       ACTOR,
@@ -230,7 +245,7 @@ describe("UpdateProduct", () => {
 
   it("logs switching to made to order, leaving the stored count alone", async () => {
     const { repo, update, entries } = repoWith([product()]);
-    const saved = await new UpdateProduct(repo).execute(
+    const saved = await new UpdateProduct(repo, EMPTY_SHELF.loans).execute(
       "p1",
       {
         ...INPUT,
@@ -252,25 +267,70 @@ describe("UpdateProduct", () => {
     const existing = product();
     const { repo, entries } = repoWith([existing]);
     const { id: _id, rating: _rating, ratingCount: _ratingCount, ...same } = existing;
-    await new UpdateProduct(repo).execute("p1", same, ACTOR);
+    await new UpdateProduct(repo, EMPTY_SHELF.loans).execute("p1", same, ACTOR);
     expect(entries).toEqual([null]);
   });
 
   it("refuses a missing id, an unknown one, and invalid input", async () => {
     const { repo, update } = repoWith([product()]);
-    await expect(new UpdateProduct(repo).execute("", INPUT, ACTOR)).rejects.toMatchObject({ field: "id" });
-    await expect(new UpdateProduct(repo).execute("missing", INPUT, ACTOR)).rejects.toThrow(NotFoundError);
-    await expect(new UpdateProduct(repo).execute("p1", { ...INPUT, name: " " }, ACTOR)).rejects.toMatchObject({
+    await expect(new UpdateProduct(repo, EMPTY_SHELF.loans).execute("", INPUT, ACTOR)).rejects.toMatchObject({
+      field: "id",
+    });
+    await expect(new UpdateProduct(repo, EMPTY_SHELF.loans).execute("missing", INPUT, ACTOR)).rejects.toThrow(
+      NotFoundError,
+    );
+    await expect(
+      new UpdateProduct(repo, EMPTY_SHELF.loans).execute("p1", { ...INPUT, name: " " }, ACTOR),
+    ).rejects.toMatchObject({
       field: "name",
     });
     expect(update).not.toHaveBeenCalled();
   });
+
+  it("keeps a book's copies to lend at least the copies of it out on loan", async () => {
+    const book = product({ kind: "book", name: "Savushun", book: { author: "Daneshvar", availability: "both" } });
+    const input = (copies: number | undefined): NewProduct => ({
+      ...INPUT,
+      kind: "book",
+      name: "Savushun",
+      book: { author: "Daneshvar", availability: "both", copies },
+    });
+
+    const { repo, update } = repoWith([book]);
+    for (const copies of [1, 0]) {
+      await expect(
+        new UpdateProduct(repo, shelf(2, 0).loans).execute("p1", input(copies), ACTOR),
+      ).rejects.toMatchObject({ code: "COPIES_BELOW_ON_LOAN" });
+    }
+    // No count reads as one; a book with copies out can't stop being a book either.
+    await expect(
+      new UpdateProduct(repo, shelf(2, 0).loans).execute("p1", input(undefined), ACTOR),
+    ).rejects.toBeInstanceOf(ConflictError);
+    await expect(new UpdateProduct(repo, shelf(1, 0).loans).execute("p1", INPUT, ACTOR)).rejects.toMatchObject({
+      code: "COPIES_BELOW_ON_LOAN",
+    });
+    expect(update).not.toHaveBeenCalled();
+
+    await new UpdateProduct(repo, shelf(2, 0).loans).execute("p1", input(2), ACTOR);
+    await new UpdateProduct(repo, shelf(1, 0).loans).execute("p1", input(undefined), ACTOR);
+    expect(update).toHaveBeenCalledTimes(2);
+  });
 });
 
 describe("DeleteProduct", () => {
+  it("refuses a book still out on loan or with guests in line", async () => {
+    const { repo, remove } = repoWith([product({ kind: "book" })]);
+    for (const { loans, line } of [shelf(1, 0), shelf(0, 2)]) {
+      await expect(new DeleteProduct(repo, loans, line).execute("p1", ACTOR)).rejects.toMatchObject({
+        code: "BOOK_IN_USE",
+      });
+    }
+    expect(remove).not.toHaveBeenCalled();
+  });
+
   it("records every set field going away", async () => {
     const { repo, remove, entries } = repoWith([product({ badge: "New" })]);
-    await new DeleteProduct(repo).execute("p1", ACTOR);
+    await new DeleteProduct(repo, EMPTY_SHELF.loans, EMPTY_SHELF.line).execute("p1", ACTOR);
     expect(remove.mock.calls[0][0]).toBe("p1");
     expect(entries[0]).toMatchObject({
       action: "product.deleted",
@@ -294,8 +354,12 @@ describe("DeleteProduct", () => {
 
   it("refuses a missing id and an unknown one", async () => {
     const { repo, remove } = repoWith([]);
-    await expect(new DeleteProduct(repo).execute("", ACTOR)).rejects.toThrow(ValidationError);
-    await expect(new DeleteProduct(repo).execute("missing", ACTOR)).rejects.toThrow(NotFoundError);
+    await expect(new DeleteProduct(repo, EMPTY_SHELF.loans, EMPTY_SHELF.line).execute("", ACTOR)).rejects.toThrow(
+      ValidationError,
+    );
+    await expect(
+      new DeleteProduct(repo, EMPTY_SHELF.loans, EMPTY_SHELF.line).execute("missing", ACTOR),
+    ).rejects.toThrow(NotFoundError);
     expect(remove).not.toHaveBeenCalled();
   });
 });

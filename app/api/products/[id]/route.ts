@@ -5,7 +5,7 @@ import { withoutCost } from "@/src/domain/entities/Product";
 import { DeleteProduct } from "@/src/domain/use-cases/products/DeleteProduct";
 import { GetPublishedProduct } from "@/src/domain/use-cases/products/GetPublishedProduct";
 import { UpdateProduct } from "@/src/domain/use-cases/products/UpdateProduct";
-import { productRepository } from "@/src/infrastructure/container";
+import { bookLoanRepository, bookWaitlistRepository, productRepository } from "@/src/infrastructure/container";
 import { invalidatesCatalog } from "@/src/lib/api/invalidatesCatalog";
 import { getRequestLocale } from "@/src/lib/api/request-locale";
 import {
@@ -40,7 +40,8 @@ export async function GET(request: NextRequest, { params }: RouteContext): Promi
 }
 
 /**
- * PUT /api/products/:id — update a product. Admin only.
+ * PUT /api/products/:id — update a product. Admin only. 409 `COPIES_BELOW_ON_LOAN`
+ * when a book's copies to lend would go below the copies of it out on loan.
  */
 async function handlePut(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   const session = await getSessionWith("catalog.write");
@@ -61,7 +62,7 @@ async function handlePut(request: NextRequest, { params }: RouteContext): Promis
 
   try {
     // The actor attributes the activity entry to whoever saved the form.
-    const updated = await new UpdateProduct(productRepository).execute(id, parsed.data, {
+    const updated = await new UpdateProduct(productRepository, bookLoanRepository).execute(id, parsed.data, {
       id: session.user.id,
       name: session.user.name ?? session.user.id,
     });
@@ -72,7 +73,8 @@ async function handlePut(request: NextRequest, { params }: RouteContext): Promis
 }
 
 /**
- * DELETE /api/products/:id — delete a product. Admin only. 204 on success.
+ * DELETE /api/products/:id — delete a product. Admin only. 204 on success; 409
+ * `BOOK_IN_USE` for a book still out on loan or with guests in line.
  */
 async function handleDelete(_request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   const session = await getSessionWith("catalog.write");
@@ -82,7 +84,7 @@ async function handleDelete(_request: NextRequest, { params }: RouteContext): Pr
   try {
     // The actor comes from the session, never from the request — this is the one
     // change whose activity entry is the only surviving record of the product.
-    await new DeleteProduct(productRepository).execute(id, {
+    await new DeleteProduct(productRepository, bookLoanRepository, bookWaitlistRepository).execute(id, {
       id: session.user.id,
       name: session.user.name ?? session.user.id,
     });

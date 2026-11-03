@@ -233,6 +233,8 @@
     "previousNotReconciled": "Reconcile the earlier statements first.",
     "tableHeld": "That table is held for an event at that time.",
     "allCopiesOut": "Every copy of that book is out. Add the guest to its line instead.",
+    "bookInUse": "This book is out on loan or has guests in line. Close those loans and holds before deleting it.",
+    "copiesBelowOnLoan": "More copies of this book are out on loan than that. Copies to lend can't go below the number out.",
     "notRefundable": "This order's sale isn't on the books, so it can't be refunded here."
   },
   "meta": {

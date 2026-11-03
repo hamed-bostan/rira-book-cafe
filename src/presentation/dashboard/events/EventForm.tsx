@@ -64,6 +64,8 @@ type EventFormProps =
       guestList: React.ReactNode;
       /** The event's history, for the narrow column. */
       activity: React.ReactNode;
+      /** "Cancel event", beside Delete — while there's something to call off. */
+      cancelAction?: React.ReactNode;
     };
 
 /** Form values from an event; times as cafe wall time for the `datetime-local` inputs. */
@@ -162,6 +164,7 @@ export function EventForm(props: EventFormProps) {
         subtitle={editing ? props.event.title : t("createSubtitle")}
         actions={
           <>
+            {editing ? props.cancelAction : null}
             {editing ? <DeleteEventButton id={props.event.id} title={props.event.title} /> : null}
             <Button asChild variant="secondary" size="control-md" className="px-3">
               <Link href="/dashboard/events">{t("cancel")}</Link>

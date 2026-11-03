@@ -10,6 +10,9 @@ export type NewCafeEvent = Omit<CafeEvent, "id" | "seatsTaken" | "tableLabels" |
 /** A sign-up about to be made. */
 export type NewRegistration = Omit<EventRegistration, "id" | "eventId" | "status" | "createdAt">;
 
+/** An event called off: the event as it's left (unpublished), and the sign-ups that cancelling it ended. */
+export type CancelledEvent = { event: CafeEvent; cancelled: EventRegistration[] };
+
 export type IEventRepository = {
   /** Published events that haven't started yet, soonest first — the public listing. */
   listUpcomingPublished(now: Date): Promise<CafeEvent[]>;
@@ -35,6 +38,11 @@ export type IEventRepository = {
   holdTables(eventId: string, tableLabels: string[], audit?: AuditHook<CafeEvent>): Promise<CafeEvent>;
   /** Refuses (`ResourceInUseError`) while the event has active registrations — unpublish it instead. */
   delete(id: string, audit?: AuditHook<void>): Promise<void>;
+  /**
+   * Call the event off, atomically: with the event row locked (so no sign-up slips
+   * in), cancel every active registration and unpublish it.
+   */
+  cancelEvent(id: string, audit?: AuditHook<CancelledEvent>): Promise<CancelledEvent>;
 
   /**
    * Sign a guest up, atomically: with the event row locked, refuse when it's

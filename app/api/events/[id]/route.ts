@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { eventFormSchema } from "@/src/contracts/event-schema";
 import { EventQueries } from "@/src/domain/use-cases/events/EventRegistrations";
 import { DeleteEvent, UpdateEvent } from "@/src/domain/use-cases/events/SaveEvent";
-import { eventRepository } from "@/src/infrastructure/container";
+import { customerNotifier, eventRepository } from "@/src/infrastructure/container";
 import { invalidatesCatalog } from "@/src/lib/api/invalidatesCatalog";
 import {
   errorResponse,
@@ -31,7 +31,10 @@ export async function GET(_request: NextRequest, { params }: RouteContext): Prom
   }
 }
 
-/** PUT /api/events/:id — update an event. Requires `events.manage`. */
+/**
+ * PUT /api/events/:id — update an event. Requires `events.manage`. A new start or
+ * end, or unpublishing it, tells every guest still signed up.
+ */
 async function handlePut(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   const session = await getSessionWith("events.manage");
   if (!session) return unauthorizedResponse();
@@ -50,7 +53,7 @@ async function handlePut(request: NextRequest, { params }: RouteContext): Promis
   }
 
   try {
-    const event = await new UpdateEvent(eventRepository).execute(id, parsed.data, {
+    const event = await new UpdateEvent(eventRepository, customerNotifier).execute(id, parsed.data, {
       id: session.user.id,
       name: session.user.name ?? session.user.id,
     });

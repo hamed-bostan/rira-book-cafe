@@ -104,6 +104,7 @@ function repoWith(current: CafeEvent | null, reg: EventRegistration | null = nul
     listRegistrationsForUser: vi.fn(async () => [registration()]),
     listTableOptions: vi.fn(async () => null),
     holdTables: vi.fn(async () => event()),
+    cancelEvent: vi.fn(async () => ({ event: event({ isPublished: false }), cancelled: [] })),
   };
   return { repo, create, update, remove, register, cancelRegistration, entries };
 }

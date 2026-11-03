@@ -2,9 +2,11 @@ import { singleChange, type ActivityActor } from "../../entities/ActivityEntry";
 import { MAX_SEATS_PER_REGISTRATION, type CafeEvent, type EventRegistration } from "../../entities/CafeEvent";
 import { NotFoundError } from "../../errors/NotFoundError";
 import { ValidationError } from "../../errors/ValidationError";
+import { registrationCancelledNotification } from "../notifications/guestNotifications";
 
 import type { User } from "../../entities/User";
 import type { IEventRepository } from "../../repositories/IEventRepository";
+import type { ICustomerNotifier } from "../../repositories/INotificationRepository";
 
 /**
  * A signed-in guest signs up for an event. The capacity, "already started" and
@@ -42,9 +44,16 @@ export class CancelOwnRegistration {
   }
 }
 
-/** Staff cancel a sign-up (a no-show, a duplicate, a guest who called). Audited. */
+/**
+ * Staff cancel a sign-up (a no-show, a duplicate, a guest who called). Audited,
+ * and the guest is told. A paid sign-up keeps what it paid on record, owed back.
+ */
 export class CancelRegistrationAsStaff {
-  constructor(private readonly eventRepo: IEventRepository) {}
+  constructor(
+    private readonly eventRepo: IEventRepository,
+    /** Tells the guest their sign-up was cancelled. */
+    private readonly notifier?: ICustomerNotifier,
+  ) {}
 
   async execute(eventId: string, registrationId: string, actor: ActivityActor): Promise<EventRegistration> {
     const [event, registration] = await Promise.all([
@@ -54,7 +63,7 @@ export class CancelRegistrationAsStaff {
     if (!event || registration?.eventId !== eventId) throw new NotFoundError("registration", registrationId);
     if (registration.status === "cancelled") return registration;
 
-    return this.eventRepo.cancelRegistration(registrationId, (saved) => ({
+    const saved = await this.eventRepo.cancelRegistration(registrationId, (saved) => ({
       actorId: actor.id,
       actorName: actor.name,
       action: "event.registrationCancelled",
@@ -63,6 +72,8 @@ export class CancelRegistrationAsStaff {
       entityLabel: event.title,
       changes: singleChange("registration", `${saved.guestName} (${saved.seats})`, null),
     }));
+    if (this.notifier) await this.notifier.notify(registrationCancelledNotification(event, saved));
+    return saved;
   }
 }
 

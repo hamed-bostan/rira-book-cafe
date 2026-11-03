@@ -9,8 +9,10 @@ import {
 import { MAX_ORDER_AMOUNT } from "../../entities/Order";
 import { NotFoundError } from "../../errors/NotFoundError";
 import { ValidationError } from "../../errors/ValidationError";
+import { eventChangeFor, eventChangeNotification } from "../notifications/guestNotifications";
 
 import type { IEventRepository, NewCafeEvent } from "../../repositories/IEventRepository";
+import type { ICustomerNotifier } from "../../repositories/INotificationRepository";
 
 /** The fields of an event the activity log tracks. */
 function eventSnapshot(event: CafeEvent | NewCafeEvent): Record<string, unknown> {
@@ -75,8 +77,16 @@ export class CreateEvent {
   }
 }
 
+/**
+ * Save the form's fields. Moving the event (a new start or end) or unpublishing it
+ * tells every guest still signed up (`eventChangeFor`), once per save.
+ */
 export class UpdateEvent {
-  constructor(private readonly eventRepo: IEventRepository) {}
+  constructor(
+    private readonly eventRepo: IEventRepository,
+    /** Tells the guests signed up that the event moved or is off. */
+    private readonly notifier?: ICustomerNotifier,
+  ) {}
 
   async execute(id: string, input: NewCafeEvent, actor: ActivityActor): Promise<CafeEvent> {
     const valid = validateEvent(input);
@@ -88,7 +98,7 @@ export class UpdateEvent {
       throw new ValidationError("capacity", `${existing.seatsTaken} seats are already taken.`);
     }
 
-    return this.eventRepo.update(id, valid, (saved) => {
+    const saved = await this.eventRepo.update(id, valid, (saved) => {
       const changes = diffFields(eventSnapshot(existing), eventSnapshot(saved));
       if (changes.length === 0) return null;
       return {
@@ -101,6 +111,17 @@ export class UpdateEvent {
         changes,
       };
     });
+
+    const change = eventChangeFor(existing, saved);
+    if (change && this.notifier) {
+      const registrations = await this.eventRepo.listRegistrations(id);
+      for (const registration of registrations) {
+        if (registration.status === "registered") {
+          await this.notifier.notify(eventChangeNotification(saved, registration, change));
+        }
+      }
+    }
+    return saved;
   }
 }
 

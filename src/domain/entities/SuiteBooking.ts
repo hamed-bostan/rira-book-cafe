@@ -121,6 +121,23 @@ export function isSuiteStayDue(booking: Pick<SuiteBooking, "checkIn">, today: st
   return booking.checkIn <= today;
 }
 
+/** The parts of a stay staff can edit, in the order the "Edit stay" dialog shows them. */
+export const SUITE_STAY_DETAILS = ["checkIn", "checkOut", "guests"] as const;
+export type SuiteStayDetail = (typeof SUITE_STAY_DETAILS)[number];
+
+/** Once the guest is in, the stay can only be made longer or shorter. */
+const CHECKED_IN_DETAILS: readonly SuiteStayDetail[] = ["checkOut"];
+
+/**
+ * What staff may change on a stay now: its days and party while it's requested
+ * or confirmed, only the departure day once the guest has checked in (extending or
+ * shortening it), nothing once it's over.
+ */
+export function editableSuiteStayDetails(booking: Pick<SuiteBooking, "status">): readonly SuiteStayDetail[] {
+  if (booking.status === "requested" || booking.status === "confirmed") return SUITE_STAY_DETAILS;
+  return booking.status === "checkedIn" ? CHECKED_IN_DETAILS : [];
+}
+
 type StayOnCalendar = Pick<SuiteBooking, "id" | "status" | "checkIn" | "checkOut">;
 
 /** Whether a stay holds the suite (and so blocks its nights for everyone else). */

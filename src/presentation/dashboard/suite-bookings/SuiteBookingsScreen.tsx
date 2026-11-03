@@ -128,6 +128,7 @@ export async function SuiteBookingsScreen({
                 <SuiteStayRow
                   booking={booking}
                   clash={heldClashFor(booking, bookings)}
+                  held={held}
                   today={today}
                   focused={booking.id === focusId}
                   canManage={canManage}

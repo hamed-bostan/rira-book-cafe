@@ -1,13 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { wallTimeToDate } from "../../../entities/CafeTime";
+import { cafeDayOf, dateToWallTime, wallTimeToDate } from "../../../entities/CafeTime";
 import {
   BOOKING_TIMES,
   RESERVATION_STATUSES,
   canUndoReservationStatus,
   isGuestCancellableReservation,
-  isWithinBookingHours,
   rangesOverlap,
+  reservationEndsAt,
   type Reservation,
   type ReservationStatus,
 } from "../../../entities/Reservation";
@@ -85,51 +85,61 @@ describe("RequestReservation", () => {
     }
   });
 
-  it("takes the first and last booking times, and refuses either side of them", async () => {
+  it("takes any quarter hour of the day, midnight and the small hours included", async () => {
     const { repo, create } = repoWith(null);
     const useCase = new RequestReservation(repo);
-    for (const time of ["08:00", "21:00"]) {
+    for (const time of ["00:00", "03:15", "07:45", "21:15", "23:30", "23:45"]) {
       await useCase.execute({ startsAt: wallTimeToDate(`2026-10-21T${time}`), partySize: 2 }, GUEST, NOW);
     }
-    expect(create).toHaveBeenCalledTimes(2);
-
-    for (const time of ["07:45", "21:15", "22:00", "00:00"]) {
-      await expect(
-        useCase.execute({ startsAt: wallTimeToDate(`2026-10-21T${time}`), partySize: 2 }, GUEST, NOW),
-      ).rejects.toMatchObject({ field: "startsAt", message: "outsideBookingHours" });
-    }
+    expect(create).toHaveBeenCalledTimes(6);
   });
 });
 
 describe("BookTableForGuest", () => {
   const walkIn = { guestName: "Omid", guestPhone: "09356401182", partySize: 2 };
 
-  it("holds staff to the same booking hours as guests", async () => {
+  it("books staff's late or early guests at any hour, still on a quarter-hour mark", async () => {
     const { repo, create } = repoWith(null);
     const useCase = new BookTableForGuest(repo);
-    await useCase.execute({ ...walkIn, startsAt: wallTimeToDate("2026-10-21T21:00") }, { id: "s", name: "Ali" }, NOW);
-    expect(create).toHaveBeenCalledOnce();
+    for (const time of ["23:30", "02:00"]) {
+      await useCase.execute(
+        { ...walkIn, startsAt: wallTimeToDate(`2026-10-21T${time}`) },
+        { id: "s", name: "Ali" },
+        NOW,
+      );
+    }
+    expect(create).toHaveBeenCalledTimes(2);
 
     await expect(
-      useCase.execute({ ...walkIn, startsAt: wallTimeToDate("2026-10-21T21:30") }, { id: "s", name: "Ali" }, NOW),
-    ).rejects.toMatchObject({ field: "startsAt", message: "outsideBookingHours" });
+      useCase.execute({ ...walkIn, startsAt: wallTimeToDate("2026-10-21T23:20") }, { id: "s", name: "Ali" }, NOW),
+    ).rejects.toMatchObject({ field: "startsAt" });
   });
 });
 
-describe("booking hours", () => {
-  it("offers every quarter hour from the first booking time to the last", () => {
-    expect(BOOKING_TIMES[0]).toBe("08:00");
-    expect(BOOKING_TIMES.at(-1)).toBe("21:00");
-    expect(BOOKING_TIMES).toHaveLength(53);
-    expect(BOOKING_TIMES.every((time) => isWithinBookingHours(wallTimeToDate(`2026-10-21T${time}`)))).toBe(true);
+describe("booking times", () => {
+  it("offers every quarter hour of the day, from 00:00 to 23:45", () => {
+    expect(BOOKING_TIMES[0]).toBe("00:00");
+    expect(BOOKING_TIMES[1]).toBe("00:15");
+    expect(BOOKING_TIMES.at(-1)).toBe("23:45");
+    expect(BOOKING_TIMES).toHaveLength(96);
+    expect(new Set(BOOKING_TIMES).size).toBe(96);
   });
 
-  it("reads the cafe's wall clock, not UTC", () => {
-    // 04:30 UTC is 08:00 in Tehran; 17:30 UTC is 21:00.
-    expect(isWithinBookingHours(new Date("2026-10-21T04:30:00Z"))).toBe(true);
-    expect(isWithinBookingHours(new Date("2026-10-21T04:15:00Z"))).toBe(false);
-    expect(isWithinBookingHours(new Date("2026-10-21T17:30:00Z"))).toBe(true);
-    expect(isWithinBookingHours(new Date("2026-10-21T17:45:00Z"))).toBe(false);
+  it("lets a late booking run past midnight, ending on the next day", () => {
+    const late = { startsAt: wallTimeToDate("2026-10-21T23:30").toISOString(), durationMinutes: 90 };
+    expect(dateToWallTime(reservationEndsAt(late))).toBe("2026-10-22T01:00");
+    // It stays on the day it starts: the day view, the overview and the guest's list go by the start.
+    expect(cafeDayOf(new Date(late.startsAt))).toBe("2026-10-21");
+    // And it overlaps a booking just after midnight at the same table.
+    const after = { startsAt: wallTimeToDate("2026-10-22T00:30").toISOString(), durationMinutes: 60 };
+    expect(
+      rangesOverlap(
+        new Date(late.startsAt),
+        reservationEndsAt(late),
+        new Date(after.startsAt),
+        reservationEndsAt(after),
+      ),
+    ).toBe(true);
   });
 });
 

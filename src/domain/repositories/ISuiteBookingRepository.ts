@@ -4,6 +4,9 @@ import type { SuiteBooking, SuiteBookingStatus, SuiteBusyRange } from "../entiti
 /** A stay about to be requested. Id, reference, status and timestamps are the repository's. */
 export type NewSuiteBooking = Omit<SuiteBooking, "id" | "reference" | "status" | "createdAt" | "updatedAt">;
 
+/** A stay's days and party as staff edit them — the whole set, as it's to be after the save. */
+export type SuiteStayEdit = Pick<SuiteBooking, "checkIn" | "checkOut" | "guests">;
+
 export type ISuiteBookingRepository = {
   /**
    * Record a stay — a guest's request, or (`confirmed`) one staff booked for a
@@ -34,6 +37,18 @@ export type ISuiteBookingRepository = {
     id: string,
     expectedStatus: SuiteBookingStatus,
     status: SuiteBookingStatus,
+    audit?: AuditHook<SuiteBooking>,
+  ): Promise<SuiteBooking>;
+  /**
+   * Save a stay's edited days and party, guarded on `expectedStatus` like
+   * `applyStatus`. Nights that move are checked against every stay holding the
+   * suite under the suite's lock (`ConflictError("SUITE_TAKEN")`) — as a request's
+   * are when it's made — and the database's overlap trigger checks them again.
+   */
+  applyStayEdit(
+    id: string,
+    expectedStatus: SuiteBookingStatus,
+    edit: SuiteStayEdit,
     audit?: AuditHook<SuiteBooking>,
   ): Promise<SuiteBooking>;
 };

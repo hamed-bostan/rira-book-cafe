@@ -1,5 +1,3 @@
-import { dateToWallTime } from "./CafeTime";
-
 /**
  * A table reservation: a guest asks for a time and a party size; staff confirm it
  * (assigning a table), seat the party when they arrive, and close it out.
@@ -33,40 +31,31 @@ export const TABLE_HOLDING_STATUSES = ["confirmed", "seated"] as const satisfies
 export const MIN_PARTY_SIZE = 1;
 /** Bigger groups book by phone — the floor plan has no table for them. */
 export const MAX_PARTY_SIZE = 12;
-/** How long a table is held for a booking, in minutes. */
+/** How long a table is held for a booking, in minutes, unless staff give it another length. */
 export const DEFAULT_RESERVATION_MINUTES = 90;
+/**
+ * The lengths staff can give a booking, in minutes, the default among them. Each
+ * booking stores its own (`durationMinutes`); `reservationEndsAt` is the one place
+ * its end is worked out. The longest stays well inside the six hours the clash
+ * check looks back over (`tableHolds.ts`), which the database also holds to.
+ */
+export const RESERVATION_LENGTHS = [60, 90, 120, 180] as const;
 /** How far ahead a guest may book. */
 export const MAX_BOOKING_DAYS_AHEAD = 60;
 /** Booking times fall on quarter hours. */
 export const BOOKING_SLOT_MINUTES = 15;
-/**
- * The first and last hour a table can be booked for (cafe wall clock), by a guest
- * or by staff: both forms offer only `BOOKING_TIMES`, and the use-cases refuse
- * anything outside them. The `outsideBookingHours` message names these hours.
- */
-export const FIRST_BOOKING_HOUR = 8;
-export const LAST_BOOKING_HOUR = 21;
 
 const pad = (n: number): string => String(n).padStart(2, "0");
 
-/** Every bookable start of a day, `HH:mm` on the cafe's wall clock: each quarter hour from first to last. */
-export const BOOKING_TIMES: readonly string[] = Array.from(
-  { length: ((LAST_BOOKING_HOUR - FIRST_BOOKING_HOUR) * 60) / BOOKING_SLOT_MINUTES + 1 },
-  (_, index) => {
-    const minutes = FIRST_BOOKING_HOUR * 60 + index * BOOKING_SLOT_MINUTES;
-    return `${pad(Math.floor(minutes / 60))}:${pad(minutes % 60)}`;
-  },
-);
-
 /**
- * Whether an instant falls within the booking hours on the cafe's wall clock, the
- * last hour itself included. Whether it's on a quarter-hour mark is checked apart.
+ * Every bookable start of a day, `HH:mm` on the cafe's wall clock: each quarter
+ * hour from 00:00 to 23:45. A table can be booked for any time of day, by a guest
+ * or by staff; a late booking runs on past midnight, and stays on the day it starts.
  */
-export function isWithinBookingHours(startsAt: Date): boolean {
-  const [hours, minutes] = dateToWallTime(startsAt).slice(11).split(":").map(Number);
-  const at = hours * 60 + minutes;
-  return at >= FIRST_BOOKING_HOUR * 60 && at <= LAST_BOOKING_HOUR * 60;
-}
+export const BOOKING_TIMES: readonly string[] = Array.from({ length: (24 * 60) / BOOKING_SLOT_MINUTES }, (_, index) => {
+  const minutes = index * BOOKING_SLOT_MINUTES;
+  return `${pad(Math.floor(minutes / 60))}:${pad(minutes % 60)}`;
+});
 
 export const MAX_RESERVATION_NOTE_LENGTH = 300;
 /** A guest's name as staff type it for a phone or walk-in booking. */
@@ -143,6 +132,45 @@ export function isGuestCancellableReservation(
 /** Whether the party is due — their booking has started — so staff may mark them a no-show. */
 export function isReservationDue(reservation: Pick<Reservation, "startsAt">, now: Date): boolean {
   return new Date(reservation.startsAt) <= now;
+}
+
+/** The details of a booking staff can edit, in the order the "Edit booking" dialog shows them. */
+export const RESERVATION_DETAILS = [
+  "startsAt",
+  "partySize",
+  "durationMinutes",
+  "guestName",
+  "guestPhone",
+  "note",
+  "tableLabel",
+] as const;
+export type ReservationDetail = (typeof RESERVATION_DETAILS)[number];
+
+/** The details whose change is news to the guest: when, how many, how long. */
+export const RESCHEDULE_DETAILS = [
+  "startsAt",
+  "partySize",
+  "durationMinutes",
+] as const satisfies readonly ReservationDetail[];
+
+/** Once the party is at the table, only how long they keep it and which table it is can change. */
+const SEATED_DETAILS: readonly ReservationDetail[] = ["durationMinutes", "tableLabel"];
+
+/**
+ * What staff may change on a booking now: everything while it's requested or
+ * confirmed, only the length and the table once the party is seated, nothing once
+ * it's over. A guest's own booking keeps the phone of the account behind it.
+ */
+export function editableReservationDetails(
+  reservation: Pick<Reservation, "status" | "userId">,
+): readonly ReservationDetail[] {
+  const details =
+    reservation.status === "requested" || reservation.status === "confirmed"
+      ? RESERVATION_DETAILS
+      : reservation.status === "seated"
+        ? SEATED_DETAILS
+        : [];
+  return reservation.userId ? details.filter((detail) => detail !== "guestPhone") : details;
 }
 
 /** The instant the table is free again. */

@@ -8,7 +8,11 @@ import {
 import { ConflictError } from "@/src/domain/errors/ConflictError";
 import { NotFoundError } from "@/src/domain/errors/NotFoundError";
 import type { AuditHook } from "@/src/domain/repositories/AuditHook";
-import type { ISuiteBookingRepository, NewSuiteBooking } from "@/src/domain/repositories/ISuiteBookingRepository";
+import type {
+  ISuiteBookingRepository,
+  NewSuiteBooking,
+  SuiteStayEdit,
+} from "@/src/domain/repositories/ISuiteBookingRepository";
 import { prisma } from "@/src/infrastructure/prisma/client";
 import type { Prisma } from "@/src/infrastructure/prisma/generated/client";
 import { inTransaction, type PrismaDb } from "@/src/infrastructure/prisma/transaction";
@@ -99,6 +103,36 @@ export class PrismaSuiteBookingRepository implements ISuiteBookingRepository {
 
       // Guarded on the status the caller read: a concurrent change makes this match nothing.
       const result = await tx.suiteBooking.updateMany({ where: { id, status: expectedStatus }, data: { status } });
+      if (result.count === 0) {
+        throw new ConflictError("INVALID_TRANSITION", "This booking was just changed by someone else.");
+      }
+
+      const saved = toSuiteBooking(await tx.suiteBooking.findUniqueOrThrow({ where: { id } }));
+      await recordAudit(tx, saved, audit);
+      return saved;
+    });
+  }
+
+  async applyStayEdit(
+    id: string,
+    expectedStatus: SuiteBookingStatus,
+    edit: SuiteStayEdit,
+    audit?: AuditHook<SuiteBooking>,
+  ): Promise<SuiteBooking> {
+    return inTransaction(this.db, async (tx) => {
+      const current = await tx.suiteBooking.findUnique({ where: { id } });
+      if (!current) throw new NotFoundError("suite booking", id);
+      // Held or asked for, a stay's new nights must be free — the same rule a request is made under.
+      if (toDay(current.checkIn) !== edit.checkIn || toDay(current.checkOut) !== edit.checkOut) {
+        await lockSuite(tx);
+        await refuseClash(tx, id, edit);
+      }
+
+      // Guarded on the status the caller read: a concurrent change makes this match nothing.
+      const result = await tx.suiteBooking.updateMany({
+        where: { id, status: expectedStatus },
+        data: { checkIn: fromDay(edit.checkIn), checkOut: fromDay(edit.checkOut), guests: edit.guests },
+      });
       if (result.count === 0) {
         throw new ConflictError("INVALID_TRANSITION", "This booking was just changed by someone else.");
       }

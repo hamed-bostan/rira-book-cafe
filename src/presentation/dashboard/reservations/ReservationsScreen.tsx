@@ -1,6 +1,7 @@
 import { getLocale, getTranslations } from "next-intl/server";
 
 import type { CafeEvent } from "@/src/domain/entities/CafeEvent";
+import type { Floor } from "@/src/domain/entities/FloorAvailability";
 import { RESERVATION_STATUSES, type Reservation, type ReservationStatus } from "@/src/domain/entities/Reservation";
 import { Link } from "@/src/i18n/navigation";
 import { formatCafeDayFull } from "@/src/lib/formatCafeDay";
@@ -27,6 +28,8 @@ type ReservationsScreenProps = {
   reservations: Reservation[];
   /** Requests from today on that are for some other day, so they aren't missed. */
   otherDayRequests: Reservation[];
+  /** What holds the tables around the day — the table pickers grey out what's taken. */
+  floor: Floor;
   /** Events running that day, shown at their time with the tables they hold. */
   events: CafeEvent[];
   /** The day on screen and today, `YYYY-MM-DD` on the cafe calendar. */
@@ -55,6 +58,7 @@ type Row =
 export async function ReservationsScreen({
   reservations,
   otherDayRequests,
+  floor,
   events,
   day,
   today,
@@ -125,7 +129,7 @@ export async function ReservationsScreen({
           </p>
         </div>
         {canManage && day >= today ? (
-          <NewBookingDialog day={day} dayLabel={dayLabel} now={now} bookings={reservations} events={events} />
+          <NewBookingDialog day={day} dayLabel={dayLabel} now={now} bookings={floor.bookings} events={floor.events} />
         ) : null}
       </div>
 
@@ -174,8 +178,9 @@ export async function ReservationsScreen({
                     reservation={row.reservation}
                     now={now}
                     canManage={canManage}
-                    bookings={reservations}
-                    events={events}
+                    day={day}
+                    today={today}
+                    floor={floor}
                   />
                 ) : (
                   <EventBookingRow event={row.event} today={today} canManageEvents={canManageEvents} />

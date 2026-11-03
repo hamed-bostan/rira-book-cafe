@@ -114,7 +114,7 @@
     "noteRequired": "Write a note first.",
     "dateTimeInvalid": "Choose a valid date and time.",
     "partySizeInvalid": "Choose a party size from 1 to 12.",
-    "outsideBookingHours": "Tables can be booked from 08:00 to 21:00.",
+    "lengthInvalid": "Choose how long the table is held.",
     "nothingToChange": "Nothing to change.",
     "capacityWhole": "Seats must be a whole number.",
     "seatsInvalid": "Choose 1 to 6 seats.",
@@ -929,7 +929,8 @@
         "created": "<b>{actor}</b> created event {entity}",
         "updated": "<b>{actor}</b> edited event {entity}",
         "deleted": "<b>{actor}</b> deleted event {entity}",
-        "registrationCancelled": "<b>{actor}</b> cancelled a sign-up for {entity}"
+        "registrationCancelled": "<b>{actor}</b> cancelled a sign-up for {entity}",
+        "cancelled": "<b>{actor}</b> cancelled event {entity}"
       },
       "ledger": {
         "entryPosted": "<b>{actor}</b> posted journal entry {entity}",
@@ -1059,7 +1060,15 @@
       "monthlySalary": "Usual pay (figures not shown)",
       "phone": "Phone",
       "reason": "Reason",
-      "refId": "Zarinpal ref"
+      "refId": "Zarinpal ref",
+      "partySize": "Party",
+      "durationMinutes": "Length (min)",
+      "guestName": "Guest",
+      "guestPhone": "Guest's phone",
+      "checkIn": "Check-in",
+      "checkOut": "Check-out",
+      "guests": "Guests",
+      "registrations": "Sign-ups"
     },
     "filterField": "Field",
     "allFields": "Any field"
@@ -1146,7 +1155,23 @@
     "bookedToast": "R-{reference} booked for {name} · {time} · {table}",
     "noTableYet": "no table yet",
     "bookError": "Couldn't save the booking. Please try again.",
-    "table": "Table {table}"
+    "table": "Table {table}",
+    "editBooking": "Edit booking",
+    "editTitle": "Edit R-{reference}",
+    "editSub": "{name}'s booking. Moving it, or changing the party or how long it holds the table, lets the guest know.",
+    "editSeatedSub": "The party is at the table: only how long they keep it, and which table, can change.",
+    "editSubmit": "Save changes",
+    "editDay": "Day",
+    "length": "Length",
+    "lengthOption": "{minutes} min",
+    "editPhoneFromAccount": "From the guest's account, so it stays as it is.",
+    "editTableTaken": "{table} is booked then (R-{reference}). Pick another table, or another time.",
+    "editTableHeld": "{table} is held for “{title}” then. Pick another table, or another time.",
+    "editErrorPast": "That time has passed. Choose a later one.",
+    "editSaved": "R-{reference} saved · {day} · {time}",
+    "editError": "Couldn't save the booking. Please try again.",
+    "floorLoadError": "Couldn't load the tables for that day.",
+    "tryAgain": "Try again"
   },
   "dashEvents": {
     "heading": "Events",
@@ -1252,7 +1277,14 @@
     "sectionVisibility": "Visibility",
     "noImage": "No image yet",
     "registrationPaid": "Paid {amount}",
-    "registrationRefundDue": "Void the payment on Income if it was handed back"
+    "registrationRefundDue": "Void the payment on Income if it was handed back",
+    "cancelEvent": "Cancel event",
+    "cancelEventTitle": "Cancel “{title}”?",
+    "cancelEventMessage": "{count, plural, =0 {It comes off the site.} one {It comes off the site, and the # guest signed up is told and their sign-up cancelled.} other {It comes off the site, and the # guests signed up are told and their sign-ups cancelled.}} Paid tickets stay on the guest list as owed back.",
+    "cancelEventConfirm": "Cancel event",
+    "cancelEventBack": "Keep event",
+    "cancelEventToast": "“{title}” is cancelled",
+    "cancelEventError": "Couldn't cancel the event. Please try again."
   },
   "dashOverview": {
     "heading": "Today",
@@ -1727,6 +1759,30 @@
         "reviewApproved": {
           "title": "Your review is up",
           "body": "Thanks for reviewing {productName}."
+        },
+        "reservationChanged": {
+          "title": "Your booking was changed",
+          "body": "R-{reference} is now {startsAt}, for {partySize}, holding the table {durationMinutes} min."
+        },
+        "suiteChanged": {
+          "title": "Your suite stay was changed",
+          "body": "S-{reference} is now {checkIn} → {checkOut}, for {guests}."
+        },
+        "eventMoved": {
+          "title": "{title} has moved",
+          "body": "It's now on {startsAt}. Your sign-up still stands."
+        },
+        "eventOff": {
+          "title": "{title} is off",
+          "body": "It was planned for {startsAt}. We're sorry for the change of plans."
+        },
+        "eventCancelled": {
+          "title": "{title} is off",
+          "body": "It was planned for {startsAt}, and your sign-up is cancelled. If you'd paid, ask us at the counter about getting it back."
+        },
+        "eventRegistrationCancelled": {
+          "title": "Your sign-up for {title} was cancelled",
+          "body": "Your place on {startsAt} is no longer held."
         }
       }
     },
@@ -2797,7 +2853,15 @@
     "stayBooked": "S-{reference} confirmed for {name} · {range}",
     "bookError": "Couldn't save the stay. Please try again.",
     "paid": "Paid {amount}",
-    "paymentDescription": "Suite stay S-{reference}, {range}"
+    "paymentDescription": "Suite stay S-{reference}, {range}",
+    "editStay": "Edit stay",
+    "editStayTitle": "Edit S-{reference}",
+    "editStaySub": "{name}'s stay. The guest is told about the new days.",
+    "editStayCheckedInSub": "The guest is in: only the check-out day can change, to extend or shorten the stay. The guest is told.",
+    "editStaySubmit": "Save changes",
+    "errorDeparturePast": "Check-out can't be in the past.",
+    "stayChanged": "S-{reference} saved · {range}",
+    "editStayError": "Couldn't save the stay. Please try again."
   },
   "dashReviews": {
     "heading": "Reviews",

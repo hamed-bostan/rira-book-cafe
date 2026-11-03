@@ -52,13 +52,14 @@ const DEFAULT_PARTY = 2;
 
 const pad = (n: number): string => String(n).padStart(2, "0");
 
-/** Every bookable quarter hour of a day, as `HH:mm` — the hours a guest's request is held to as well. */
+/** Every quarter hour of the day, as `HH:mm` — a table can be booked for any time, as a guest's request can. */
 const SLOTS = BOOKING_TIMES;
 
 /**
  * "New booking" for a guest who rang or walked in. Pick a table to confirm it on
- * the spot, or leave it as a request to answer later. The floor shown is the
- * day's bookings and events; the server re-checks the table when it saves.
+ * the spot, or leave it as a request to answer later. The floor shown is what
+ * holds the tables around the day (a late booking the night before included);
+ * the server re-checks the table when it saves.
  */
 export function NewBookingDialog({ day, dayLabel, now, bookings, events }: NewBookingDialogProps) {
   const t = useTranslations("dashReservations");

@@ -9,7 +9,6 @@ import {
   MAX_PARTY_SIZE,
   MAX_RESERVATION_NOTE_LENGTH,
   MIN_PARTY_SIZE,
-  isWithinBookingHours,
   type Reservation,
 } from "../../entities/Reservation";
 import { ValidationError } from "../../errors/ValidationError";
@@ -25,13 +24,10 @@ export type RequestReservationInput = {
 };
 
 /**
- * The booking rules both a guest and staff are held to: a quarter-hour start no
- * earlier than `earliest`, within the booking horizon and the booking hours, a
- * party the floor can seat, a short note. Returns the note trimmed (or dropped
- * when blank).
+ * When a booking may start: a quarter-hour mark no earlier than `earliest` and
+ * within the booking horizon. Any time of day will do.
  */
-function validateBooking(input: RequestReservationInput, now: Date, earliest: Date): { note?: string } {
-  const startsAt = input.startsAt;
+export function validateBookingStart(startsAt: Date, now: Date, earliest: Date): void {
   if (Number.isNaN(startsAt.getTime())) throw new ValidationError("startsAt", "Choose a date and time.");
   if (startsAt < earliest) throw new ValidationError("startsAt", "Choose a time in the future.");
   if (startsAt.getTime() - now.getTime() > MAX_BOOKING_DAYS_AHEAD * 24 * 60 * 60 * 1000) {
@@ -40,14 +36,48 @@ function validateBooking(input: RequestReservationInput, now: Date, earliest: Da
   if (startsAt.getUTCMinutes() % BOOKING_SLOT_MINUTES !== 0 || startsAt.getUTCSeconds() !== 0) {
     throw new ValidationError("startsAt", `Choose a time on a ${BOOKING_SLOT_MINUTES}-minute mark.`);
   }
-  // A `formErrors` key, so both forms show it in the reader's language.
-  if (!isWithinBookingHours(startsAt)) throw new ValidationError("startsAt", "outsideBookingHours");
-  if (!Number.isInteger(input.partySize) || input.partySize < MIN_PARTY_SIZE || input.partySize > MAX_PARTY_SIZE) {
+}
+
+/** The earliest staff may book or move a table to: the quarter hour already running, for a walk-in. */
+export function staffEarliestStart(now: Date): Date {
+  return new Date(now.getTime() - BOOKING_SLOT_MINUTES * 60 * 1000);
+}
+
+/** A party the floor can seat. */
+export function validatePartySize(partySize: number): void {
+  if (!Number.isInteger(partySize) || partySize < MIN_PARTY_SIZE || partySize > MAX_PARTY_SIZE) {
     throw new ValidationError("partySize", `Party size must be ${MIN_PARTY_SIZE}–${MAX_PARTY_SIZE}.`);
   }
-  const note = input.note?.trim() || undefined;
-  if (note && note.length > MAX_RESERVATION_NOTE_LENGTH) throw new ValidationError("note", "That note is too long.");
-  return { note };
+}
+
+/** A short note, trimmed — or dropped when blank. */
+export function validateBookingNote(note: string | undefined): string | undefined {
+  const trimmed = note?.trim() || undefined;
+  if (trimmed && trimmed.length > MAX_RESERVATION_NOTE_LENGTH) {
+    throw new ValidationError("note", "That note is too long.");
+  }
+  return trimmed;
+}
+
+/** The guest's name and phone as staff type them for a phone or walk-in booking, trimmed. */
+export function validateBookingGuest(guestName: string, guestPhone: string): { guestName: string; guestPhone: string } {
+  const name = guestName.trim();
+  if (!name) throw new ValidationError("guestName", "Enter the guest's name.");
+  if (name.length > MAX_GUEST_NAME_LENGTH) throw new ValidationError("guestName", "That name is too long.");
+  const phone = guestPhone.trim();
+  if (!isPlausiblePhone(phone)) throw new ValidationError("guestPhone", "Enter a phone number.");
+  return { guestName: name, guestPhone: phone };
+}
+
+/**
+ * The booking rules both a guest and staff are held to: a quarter-hour start no
+ * earlier than `earliest` and within the booking horizon, a party the floor can
+ * seat, a short note. Returns the note trimmed (or dropped when blank).
+ */
+function validateBooking(input: RequestReservationInput, now: Date, earliest: Date): { note?: string } {
+  validateBookingStart(input.startsAt, now, earliest);
+  validatePartySize(input.partySize);
+  return { note: validateBookingNote(input.note) };
 }
 
 /**
@@ -95,12 +125,8 @@ export class BookTableForGuest {
   constructor(private readonly reservationRepo: IReservationRepository) {}
 
   async execute(input: BookTableForGuestInput, actor: ActivityActor, now: Date): Promise<Reservation> {
-    const { note } = validateBooking(input, now, new Date(now.getTime() - BOOKING_SLOT_MINUTES * 60 * 1000));
-    const guestName = input.guestName.trim();
-    if (!guestName) throw new ValidationError("guestName", "Enter the guest's name.");
-    if (guestName.length > MAX_GUEST_NAME_LENGTH) throw new ValidationError("guestName", "That name is too long.");
-    const guestPhone = input.guestPhone.trim();
-    if (!isPlausiblePhone(guestPhone)) throw new ValidationError("guestPhone", "Enter a phone number.");
+    const { note } = validateBooking(input, now, staffEarliestStart(now));
+    const { guestName, guestPhone } = validateBookingGuest(input.guestName, input.guestPhone);
     if (input.tableLabel !== undefined && !isCafeTable(input.tableLabel)) {
       throw new ValidationError("tableLabel", `There's no table "${input.tableLabel}".`);
     }

@@ -5,9 +5,10 @@ import { useLocale, useTranslations } from "next-intl";
 import * as React from "react";
 
 import { isCafeTable, type CafeTableLabel } from "@/src/domain/entities/CafeTable";
-import { tableChoicesFor, type FloorBooking, type FloorEvent } from "@/src/domain/entities/FloorAvailability";
+import { tableChoicesFor, type Floor } from "@/src/domain/entities/FloorAvailability";
 import {
   canUndoReservationStatus,
+  editableReservationDetails,
   isReservationDue,
   reservationEndsAt,
   type Reservation,
@@ -30,19 +31,19 @@ import { useToast } from "@/src/presentation/design-system/components/Toast/useT
 import { DashboardDialog } from "../DashboardDialog";
 import { tableNameValues } from "../floor/tableName";
 
+import { EditBookingDialog } from "./EditBookingDialog";
 import { reservationsApi } from "./reservation-api";
 import { TableChoiceGrid } from "./TableChoiceGrid";
 
 type ReservationRowActionsProps = {
-  reservation: Pick<
-    Reservation,
-    "id" | "reference" | "status" | "tableLabel" | "startsAt" | "durationMinutes" | "partySize" | "guestName"
-  >;
+  reservation: Reservation;
   /** "Now", from the page — Mark no-show waits until the booking has started. */
   now: string;
-  /** The day's bookings and events, for which tables the picker can offer. */
-  bookings: readonly FloorBooking[];
-  events: readonly FloorEvent[];
+  /** The day on screen and today — where "Edit booking" starts, and the earliest day it offers. */
+  day: string;
+  today: string;
+  /** What holds the tables around the day, for which tables the pickers can offer. */
+  floor: Floor;
 };
 
 /** What the table dialog is for: confirming a request, seating a party with no table yet, or moving tables. */
@@ -54,13 +55,13 @@ type Ending = "cancelled" | "noShow";
 /**
  * One booking's controls on the day view, as the design lays them out: the next
  * step as a button (Confirm opens the table picker; Seat and Complete act at
- * once), Cancel beside a request, and a "⋯" menu with Change table, Mark no-show
- * (once the booking has started) and Cancel booking. Cancelling and no-shows ask
- * first; a one-click Seat or Complete offers Undo in its toast. Each writes over
- * the REST API and `router.refresh()`es; a failure (a 409 when the table was just
- * taken) shows in the open dialog, else as a toast.
+ * once), Cancel beside a request, and a "⋯" menu with Edit booking, Change table,
+ * Mark no-show (once the booking has started) and Cancel booking. Cancelling and
+ * no-shows ask first; a one-click Seat or Complete offers Undo in its toast. Each
+ * writes over the REST API and `router.refresh()`es; a failure (a 409 when the
+ * table was just taken) shows in the open dialog, else as a toast.
  */
-export function ReservationRowActions({ reservation, now, bookings, events }: ReservationRowActionsProps) {
+export function ReservationRowActions({ reservation, now, day, today, floor }: ReservationRowActionsProps) {
   const t = useTranslations("dashReservations");
   const tFloor = useTranslations("floorTables");
   const tApiErrors = useTranslations("apiErrors");
@@ -75,6 +76,9 @@ export function ReservationRowActions({ reservation, now, bookings, events }: Re
   const [ending, setEnding] = React.useState<Ending>("cancelled");
   const [confirming, setConfirming] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  // "Edit booking" mounts afresh each time it opens, so it starts from the booking as it is.
+  const [editing, setEditing] = React.useState(false);
+  const [editKey, setEditKey] = React.useState(0);
 
   const { status, reference } = reservation;
   const tableName = (label: string): string => tFloor("tableName", tableNameValues(label, locale));
@@ -157,8 +161,8 @@ export function ReservationRowActions({ reservation, now, bookings, events }: Re
       partySize: reservation.partySize,
       reservationId: reservation.id,
     },
-    bookings,
-    events,
+    floor.bookings,
+    floor.events,
   );
   const until = reservationEndsAt(reservation).toISOString();
 
@@ -193,7 +197,7 @@ export function ReservationRowActions({ reservation, now, bookings, events }: Re
       >
         {primary.label}
       </Button>
-      {status === "confirmed" || status === "seated" ? (
+      {editableReservationDetails(reservation).length > 0 ? (
         <DropdownMenu>
           <DropdownMenuIconTrigger
             appearance="secondary"
@@ -203,7 +207,17 @@ export function ReservationRowActions({ reservation, now, bookings, events }: Re
             <Icon icon={MoreHorizontal} size="sm" className="sm:size-4" />
           </DropdownMenuIconTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onSelect={() => openTable("change")}>{t("changeTable")}</DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={() => {
+                setEditKey((key) => key + 1);
+                setEditing(true);
+              }}
+            >
+              {t("editBooking")}
+            </DropdownMenuItem>
+            {status === "confirmed" || status === "seated" ? (
+              <DropdownMenuItem onSelect={() => openTable("change")}>{t("changeTable")}</DropdownMenuItem>
+            ) : null}
             {status === "confirmed" ? (
               <>
                 {isReservationDue(reservation, new Date(now)) ? (
@@ -254,6 +268,17 @@ export function ReservationRowActions({ reservation, now, bookings, events }: Re
         onSubmit={() => save({ status: ending })}
         error={error}
         danger
+      />
+
+      <EditBookingDialog
+        key={editKey}
+        open={editing}
+        onOpenChange={setEditing}
+        reservation={reservation}
+        now={now}
+        day={day}
+        floor={floor}
+        today={today}
       />
     </div>
   );

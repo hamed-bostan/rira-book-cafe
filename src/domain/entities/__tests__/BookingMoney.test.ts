@@ -40,7 +40,7 @@ describe("a table deposit", () => {
   });
 
   it("goes back the way it came when returned", () => {
-    const returned = { ...booking, status: "completed", deposit: { ...HELD, state: "returned" } };
+    const returned: Reservation = { ...booking, status: "completed", deposit: { ...HELD, state: "returned" } };
     const entry = reservationDepositSettledEntry(returned, "2026-11-08", ACTOR);
 
     expect(sides(assertBalanced(entry ?? { lines: [] }))).toEqual([
@@ -51,7 +51,7 @@ describe("a table deposit", () => {
   });
 
   it("becomes other income when kept", () => {
-    const kept = { ...booking, status: "noShow", deposit: { ...HELD, state: "kept" } };
+    const kept: Reservation = { ...booking, status: "noShow", deposit: { ...HELD, state: "kept" } };
     const entry = reservationDepositSettledEntry(kept, "2026-11-08", ACTOR);
 
     expect(sides(assertBalanced(entry ?? { lines: [] }))).toEqual([

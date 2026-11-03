@@ -42,9 +42,11 @@ export default async function DashboardReservationsPage({ searchParams }: Dashbo
       ),
     auth(),
   ]);
-  const [canManage, canManageEvents] = await Promise.all([
+  const [canManage, canManageEvents, canKeepDeposits] = await Promise.all([
     sessionHas(session, "reservations.manage"),
     sessionHas(session, "events.manage"),
+    // Keeping a table's deposit books it as income, so it follows the books' permission.
+    sessionHas(session, "accounting.write"),
   ]);
 
   return (
@@ -58,6 +60,7 @@ export default async function DashboardReservationsPage({ searchParams }: Dashbo
       now={now.toISOString()}
       canManage={canManage}
       canManageEvents={canManageEvents}
+      canKeepDeposits={canKeepDeposits}
     />
   );
 }

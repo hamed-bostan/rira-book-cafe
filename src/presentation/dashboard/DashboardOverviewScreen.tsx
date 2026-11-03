@@ -147,7 +147,8 @@ export async function DashboardOverviewScreen({
                   formatted: formatNumber(overview.todayReservations.covers, locale),
                 })
           }
-          href="/dashboard/reservations"
+          // The ones waiting for an answer, when there are any — the day's list otherwise.
+          href={awaiting > 0 ? "/dashboard/reservations?status=requested" : "/dashboard/reservations"}
           className={floorSpan}
         />
         <OverviewStat

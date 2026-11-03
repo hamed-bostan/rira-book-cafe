@@ -1757,7 +1757,7 @@
           "body": "If you'd paid, the money goes back the way it came."
         },
         "orderChanged": {
-          "title": "Order #{orderNumber} was updated",
+          "title": "Your order #{orderNumber} was updated",
           "body": "Something on it changed — open the order to see what's on it now."
         },
         "reservationConfirmed": {

@@ -159,18 +159,30 @@ export function measureSpilledFigures(within = "main"): string[] {
  * into one column on a phone rather than share a row (`FIELD_GRID` never makes one
  * narrower than 12rem), but a field pushed into a second, implicit column — by
  * `col-span-2` on a grid of one — is left a sliver, without the page or the dialog
- * scrolling. Looks in the page's `main` unless told where (an open dialog).
+ * scrolling. A picker under 10rem is squeezed only when its longest choice
+ * doesn't fit: one of a few short ones (a quantity, rows per page) can be narrow
+ * on purpose. Looks in the page's `main` unless told where (an open dialog).
  */
 export function measureNarrowFields(within = "main"): string[] {
   const MIN = 160;
   const fields = (document.querySelector(within) ?? document.body).querySelectorAll<HTMLElement>(
     'input:not([type="hidden"], [type="checkbox"], [type="radio"], [type="file"]), select, textarea',
   );
+  const pen = document.createElement("canvas").getContext("2d");
+  const squeezed = (field: HTMLElement, width: number): boolean => {
+    if (width >= MIN - 0.5) return false;
+    if (!(field instanceof HTMLSelectElement) || !pen) return true;
+    const style = getComputedStyle(field);
+    pen.font = style.font;
+    // The padding on the arrow's side already holds the arrow.
+    const longest = Math.max(0, ...[...field.options].map((option) => pen.measureText(option.text).width));
+    return longest > width - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight) + 0.5;
+  };
   const narrow: string[] = [];
   for (const field of fields) {
     if (!field.checkVisibility()) continue;
     const { width } = field.getBoundingClientRect();
-    if (width > 1 && width < MIN - 0.5) {
+    if (width > 1 && squeezed(field, width)) {
       // A label wrapping a select holds its options' text too.
       const label = (field as HTMLInputElement).labels?.[0]?.textContent?.replace(field.textContent ?? "", "").trim();
       const name = label || field.getAttribute("aria-label") || field.tagName.toLowerCase();
@@ -206,9 +218,10 @@ export function measureCurrentTabHidden(): boolean {
 /**
  * The controls a finger can't reliably hit on a phone: less than 44px tall, or
  * less than 44px wide where they're an icon with no words. A control inside a
- * label counts the label's box, as tapping it does the same; a link in a sentence
- * is exempt, the way WCAG's target-size rule exempts it. Looks in the page's
- * `main` unless told where (an open dialog).
+ * label counts the label's box, as tapping it does the same, and so does the hit
+ * area a small glyph draws around itself (a positioned `::after` reaching past
+ * it); a link in a sentence is exempt, the way WCAG's target-size rule exempts it.
+ * Looks in the page's `main` unless told where (an open dialog).
  */
 export function measureSmallTargets(within = "main"): string[] {
   const MIN = 44;
@@ -223,7 +236,16 @@ export function measureSmallTargets(within = "main"): string[] {
     if (own.width <= 1 || own.height <= 1) continue;
     if (control.matches("a") && control.closest("p")) continue;
     const label = control.closest("label");
-    const box = (label ?? control).getBoundingClientRect();
+    const labelBox = (label ?? control).getBoundingClientRect();
+    const after = getComputedStyle(control, "::after");
+    const drawsHitArea =
+      after.content !== "none" && after.position === "absolute" && getComputedStyle(control).position !== "static";
+    const past = (side: "top" | "right" | "bottom" | "left"): number =>
+      drawsHitArea ? Math.max(0, -(parseFloat(after[side]) || 0)) : 0;
+    const box = {
+      width: Math.max(labelBox.width, own.width + past("left") + past("right")),
+      height: Math.max(labelBox.height, own.height + past("top") + past("bottom")),
+    };
     const words = (control.textContent ?? "").trim().length > 0 || control.matches("input, select, textarea");
     if (box.height < MIN - 0.5 || (!words && box.width < MIN - 0.5)) {
       const name =

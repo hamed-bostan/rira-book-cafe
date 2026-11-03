@@ -13,6 +13,7 @@ import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 import { DashboardEmptyState } from "../DashboardEmptyState";
 import { DashboardLinkTabs } from "../DashboardLinkTabs";
 import { MetricCard } from "../MetricCard";
+import { METRIC_GRID_OF_THREE } from "../pageStyles";
 
 import { InventoryHeaderActions } from "./InventoryHeaderActions";
 import { StockDialogsProvider } from "./StockDialogsProvider";
@@ -107,7 +108,7 @@ export async function InventoryScreen({
           </div>
         ) : null}
 
-        <div className={cn("grid grid-cols-2 gap-3", summary.costsVisible && "sm:grid-cols-3")}>
+        <div className={summary.costsVisible ? METRIC_GRID_OF_THREE : "grid grid-cols-1 gap-3 sm:grid-cols-2"}>
           <MetricCard
             label={t("summary.low")}
             icon={AlertTriangle}
@@ -137,7 +138,6 @@ export async function InventoryScreen({
               hint={reconciled ? t("summary.valueHintReconciled") : t("summary.valueHint")}
               // The whole stock's worth: it opens the whole list, search cleared.
               href={hrefFor("all", false)}
-              className="col-span-2 sm:col-span-1"
             />
           ) : null}
         </div>
@@ -176,7 +176,7 @@ export async function InventoryScreen({
               <div
                 aria-hidden
                 className={cn(
-                  "hidden h-10 items-center gap-x-4 border-b border-border bg-muted px-5 text-body-caption font-semibold tracking-wider whitespace-nowrap text-muted-foreground uppercase @2xl/stock:grid",
+                  "hidden h-10 items-center gap-x-4 border-b border-border bg-muted px-5 text-body-caption font-semibold tracking-wider whitespace-nowrap text-muted-foreground uppercase @4xl/stock:grid",
                   summary.costsVisible ? STOCK_COLUMNS.withCosts : STOCK_COLUMNS.withoutCosts,
                 )}
               >

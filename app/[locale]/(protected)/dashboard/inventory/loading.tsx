@@ -1,3 +1,4 @@
+import { METRIC_GRID_OF_THREE } from "@/src/presentation/dashboard/pageStyles";
 import { LoadingRegion } from "@/src/presentation/design-system/components/Skeleton/LoadingRegion";
 import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
@@ -25,11 +26,11 @@ export default function InventoryLoading() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <div className={METRIC_GRID_OF_THREE}>
         {Array.from({ length: 3 }, (_, index) => (
           <div
             key={index}
-            className="flex flex-col justify-between gap-4 rounded-card-lg border border-border bg-background px-5 py-4 shadow-xs last:col-span-2 sm:last:col-span-1"
+            className="flex flex-col justify-between gap-4 rounded-card-lg border border-border bg-background px-5 py-4 shadow-xs"
           >
             <Skeleton className="h-4 w-24 rounded-pill" />
             <div className="flex flex-col gap-1.5">

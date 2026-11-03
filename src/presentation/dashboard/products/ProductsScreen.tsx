@@ -112,7 +112,7 @@ export async function ProductsScreen({
 
       <section
         aria-label={t("listLabel")}
-        className="min-w-0 rounded-card-lg border border-border bg-background shadow-xs"
+        className="@container/menu min-w-0 rounded-card-lg border border-border bg-background shadow-xs"
       >
         <DashboardLinkTabs
           className="px-4"
@@ -148,7 +148,7 @@ export async function ProductsScreen({
             <div
               aria-hidden
               className={cn(
-                "hidden h-10 items-center border-b border-border bg-muted px-5 text-body-caption font-semibold tracking-wider text-muted-foreground uppercase md:grid",
+                "hidden h-10 items-center border-b border-border bg-muted px-5 text-body-caption font-semibold tracking-wider text-muted-foreground uppercase @4xl/menu:grid",
                 PRODUCT_ROW_GRID,
               )}
             >

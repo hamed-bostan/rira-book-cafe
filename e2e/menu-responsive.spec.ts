@@ -27,10 +27,6 @@ import { storageStatePath } from "./fixtures/sessions";
  * The menu is filled first with names as long as the forms take and prices at
  * the most an order can hold, so a layout that only fits a short name and a small
  * sum fails here.
- *
- * Pages that still fall short carry `gaps`, naming the phase of the responsive
- * plan that fixes each check: the check is expected to fail, and starts failing
- * the run the moment it passes, so the mark comes off with the fix.
  */
 
 test.use({ storageState: storageStatePath("admin") });
@@ -47,8 +43,6 @@ const CATEGORY = {
 
 type Seed = { categoryId: string; productId: string };
 
-type Check = "fits" | "tables" | "tabs" | "targets";
-
 type MenuPage = {
   path: (seed: Seed) => string;
   /** Has a table that should fit the screen. */
@@ -59,8 +53,6 @@ type MenuPage = {
   dialog?: boolean;
   /** Something to do before measuring, like opening a dialog. */
   prepare?: (page: Page) => Promise<void>;
-  /** The checks this page still fails, each with the phase of the plan that fixes it. */
-  gaps?: Partial<Record<Check, string>>;
 };
 
 /** The open dialog, once it has finished zooming in: mid-animation it's drawn smaller than it is. */
@@ -92,16 +84,15 @@ function deleteFrom(actions: RegExp): (page: Page) => Promise<void> {
 }
 
 const PAGES: Record<string, MenuPage> = {
-  "menu items": { path: () => "/dashboard/products", tabs: true, gaps: { fits: "Phase 3" } },
+  "menu items": { path: () => "/dashboard/products", tabs: true },
   // The seeded category's tab is the last of a long row.
   "menu items in a category": {
     path: (seed) => `/dashboard/products?categoryId=${seed.categoryId}`,
     tabs: true,
-    gaps: { fits: "Phase 3", tabs: "Phase 1" },
   },
-  "new menu item": { path: () => "/dashboard/products/create", gaps: { targets: "Phase 1" } },
-  "menu item": { path: (seed) => `/dashboard/products/${seed.productId}/edit`, gaps: { targets: "Phase 1" } },
-  "missing menu item": { path: () => "/dashboard/products/e2e-missing-item/edit", gaps: { targets: "Phase 1" } },
+  "new menu item": { path: () => "/dashboard/products/create" },
+  "menu item": { path: (seed) => `/dashboard/products/${seed.productId}/edit` },
+  "missing menu item": { path: () => "/dashboard/products/e2e-missing-item/edit" },
   // The category's tab holds just the seeded item.
   "delete menu item": {
     path: (seed) => `/dashboard/products?categoryId=${seed.categoryId}`,
@@ -109,21 +100,19 @@ const PAGES: Record<string, MenuPage> = {
     prepare: deleteFrom(/^(More actions for|کارهای بیشتر برای) /),
   },
   categories: { path: () => "/dashboard/categories" },
-  "new category": { path: () => "/dashboard/categories/create", gaps: { targets: "Phase 1" } },
-  category: { path: (seed) => `/dashboard/categories/${seed.categoryId}/edit`, gaps: { targets: "Phase 1" } },
-  "missing category": { path: () => "/dashboard/categories/e2e-missing-category/edit", gaps: { targets: "Phase 1" } },
+  "new category": { path: () => "/dashboard/categories/create" },
+  category: { path: (seed) => `/dashboard/categories/${seed.categoryId}/edit` },
+  "missing category": { path: () => "/dashboard/categories/e2e-missing-category/edit" },
   // Whichever language the name is in, under either language's label.
   "delete category": {
     path: () => "/dashboard/categories",
     dialog: true,
     prepare: deleteFrom(new RegExp(`(${CATEGORY.en}|${CATEGORY.fa})$`)),
-    gaps: { targets: "Phase 1" },
   },
-  inventory: { path: () => "/dashboard/inventory", tabs: true, gaps: { fits: "Phase 1" } },
+  inventory: { path: () => "/dashboard/inventory", tabs: true },
   "inventory running low": {
     path: () => "/dashboard/inventory?level=low",
     tabs: true,
-    gaps: { fits: "Phase 1" },
   },
   "receive delivery": {
     path: () => "/dashboard/inventory",
@@ -138,9 +127,8 @@ const PAGES: Record<string, MenuPage> = {
   "stock movements": {
     path: () => "/dashboard/inventory/movements",
     table: true,
-    gaps: { fits: "Phase 2", tables: "Phase 2", targets: "Phase 2" },
   },
-  "stock count": { path: () => "/dashboard/inventory/count", table: true, gaps: { tables: "Phase 2" } },
+  "stock count": { path: () => "/dashboard/inventory/count", table: true },
   "opening stock": { path: () => "/dashboard/inventory/opening" },
   "receive delivery form": { path: () => "/dashboard/inventory/receive" },
   reviews: { path: () => "/dashboard/reviews", tabs: true },
@@ -334,13 +322,8 @@ for (const locale of LOCALES) {
 
     for (const [name, menuPage] of Object.entries(PAGES)) {
       const root = menuPage.dialog ? '[role="dialog"]' : "main";
-      const gap = (check: Check): void => {
-        const phase = menuPage.gaps?.[check];
-        test.fail(phase !== undefined, `${phase} fixes this`);
-      };
 
       test(`${name} fits the screen at every width`, async ({ page }) => {
-        gap("fits");
         await open(page, menuPage);
 
         const overflows: { width: number; by: number; culprits: string[] }[] = [];
@@ -361,7 +344,6 @@ for (const locale of LOCALES) {
       });
 
       test(`${name} has controls a finger can hit on a phone`, async ({ page }) => {
-        gap("targets");
         await open(page, menuPage);
 
         expect(await page.evaluate(measureSmallTargets, root), "a control is under 44px").toEqual([]);
@@ -369,7 +351,6 @@ for (const locale of LOCALES) {
 
       if (menuPage.table) {
         test(`${name} keeps its tables on screen`, async ({ page }) => {
-          gap("tables");
           await open(page, menuPage);
 
           const scrolling: { width: number; by: number[] }[] = [];
@@ -384,7 +365,6 @@ for (const locale of LOCALES) {
 
       if (menuPage.tabs) {
         test(`${name} shows the tab it's on`, async ({ page }) => {
-          gap("tabs");
           await open(page, menuPage);
 
           expect(await page.evaluate(measureCurrentTabHidden), "the current tab is off the edge").toBe(false);

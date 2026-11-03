@@ -11,17 +11,10 @@ import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 import { DashboardEmptyState } from "../DashboardEmptyState";
 import { FIELD_HINT } from "../fieldStyles";
 import { MetricCard } from "../MetricCard";
+import { METRIC_GRID_OF_THREE } from "../pageStyles";
 
 import { PRICING_CARD_GRID, PricingItemCard } from "./PricingItemCard";
 import { PricingTabs } from "./PricingTabs";
-
-/**
- * The three figures over the cards: stacked on a phone, two abreast from `sm` with
- * the third across the row under them, all three from `xl`. Three abreast any
- * narrower splits a ten-digit figure. Shared with the loading skeleton.
- */
-export const PRICING_SUMMARY_GRID =
-  "grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 sm:max-xl:[&>:last-child]:col-span-2";
 
 type PricingScreenProps = {
   report: PricingReport;
@@ -46,7 +39,7 @@ export async function PricingScreen({ report, canWrite, canApply }: PricingScree
     <div className="flex min-w-0 flex-col gap-6">
       <PricingTabs active="items" title={t("heading")} subtitle={t("subtitle")} />
 
-      <div className={PRICING_SUMMARY_GRID}>
+      <div className={METRIC_GRID_OF_THREE}>
         <MetricCard
           label={t("summary.monthlyOverhead")}
           icon={Receipt}

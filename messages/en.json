@@ -993,6 +993,8 @@
       "registration": "Sign-up",
       "amount": "Amount",
       "costPrice": "Cost price",
+      "total": "Total",
+      "refundedTotal": "Refunded",
       "paymentMethod": "Payment method",
       "reversedBy": "Reversed by",
       "vatRateBps": "VAT rate (basis points)",

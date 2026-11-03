@@ -5,6 +5,7 @@ import type { ActivityChange } from "@/src/domain/entities/ActivityEntry";
 import { ROLE_CHANGE_FIELD, roleChangeKind, roleMove } from "@/src/domain/entities/RoleChange";
 import { USER_ROLES, type UserRole } from "@/src/domain/entities/User";
 import { Link } from "@/src/i18n/navigation";
+import { formatNumberTrimmed } from "@/src/lib/formatNumber";
 import { cn } from "@/src/lib/utils";
 import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
@@ -14,6 +15,30 @@ import { activityEntityHref } from "./activityLinks";
 
 import type { ActivityEntryWire } from "./activity-response-schema";
 import type { ReactNode } from "react";
+
+/**
+ * Fields holding a sum or a count, whose stored value ("1990000000") is shown the
+ * way the rest of the dashboard writes it ("1,990,000,000", or in Persian digits).
+ * Named rather than guessed from the value: a phone, an account code or an ISBN
+ * is digits too, and grouping those would garble them.
+ */
+const NUMERIC_FIELDS: ReadonlySet<string> = new Set([
+  "price",
+  "originalPrice",
+  "costPrice",
+  "amount",
+  "total",
+  "refundedTotal",
+  "vatAmount",
+  "deposited",
+  "closingBalance",
+  "monthlySalary",
+  "stockQuantity",
+  "capacity",
+  "counted",
+  "difference",
+]);
+const NUMBER = /^-?\d+(\.\d+)?$/;
 
 type ActivityEntryRowProps = {
   entry: ActivityEntryWire;
@@ -116,6 +141,7 @@ export async function ActivityEntryRow({ entry, time, showEntity = true, timelin
           if (value === "true") return t("value.yes");
           if (value === "false") return t("value.no");
           if (field === ROLE_CHANGE_FIELD && isUserRole(value)) return t(`roleName.${value}`);
+          if (NUMERIC_FIELDS.has(field) && NUMBER.test(value)) return formatNumberTrimmed(Number(value), locale, 3);
           return value;
         }}
       />

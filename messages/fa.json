@@ -993,6 +993,8 @@
       "registration": "ثبت‌نام",
       "amount": "مبلغ",
       "costPrice": "قیمت تمام‌شده",
+      "total": "مبلغ کل",
+      "refundedTotal": "بازپرداخت‌شده",
       "paymentMethod": "روش پرداخت",
       "reversedBy": "برگشت با",
       "vatRateBps": "نرخ مالیات بر ارزش افزوده (واحد پایه)",

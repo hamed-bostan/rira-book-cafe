@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { counterOrderSchema, orderPaymentSchema, orderRefundSchema, placeOrderSchema } from "../order-schema";
+import {
+  counterOrderSchema,
+  orderPaymentSchema,
+  orderRefundSchema,
+  orderWriteOffSchema,
+  placeOrderSchema,
+} from "../order-schema";
 
 import { messagesAt } from "./zod-issues";
 
@@ -66,6 +72,13 @@ describe("a payment staff record", () => {
         "paymentParts.0.method",
       ),
     ).toEqual(["methodInvalid"]);
+  });
+
+  it("gives a write-off's reason trimmed, or none, and bounds it", () => {
+    expect(orderWriteOffSchema.parse({ reason: " Walked out " })).toEqual({ reason: "Walked out" });
+    expect(orderWriteOffSchema.parse({ reason: "  " })).toEqual({ reason: undefined });
+    expect(orderWriteOffSchema.parse({})).toEqual({ reason: undefined });
+    expect(messagesAt(orderWriteOffSchema.safeParse({ reason: "x".repeat(201) }), "reason")).toEqual(["noteTooLong"]);
   });
 
   it("still lets an order paid online be refunded back through the gateway", () => {

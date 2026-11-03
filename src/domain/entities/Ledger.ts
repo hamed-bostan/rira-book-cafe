@@ -91,6 +91,7 @@ export const JOURNAL_SOURCES = [
   "orderRefund",
   "orderReturn",
   "orderReturnCost",
+  "orderWriteOff",
   "income",
   "loanDeposit",
   "expense",

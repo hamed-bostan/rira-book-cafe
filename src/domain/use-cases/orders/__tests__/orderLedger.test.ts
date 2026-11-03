@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { DEFAULT_VAT_RATE_BPS } from "../../../entities/Ledger";
 import { ConflictError } from "../../../errors/ConflictError";
 import { ValidationError } from "../../../errors/ValidationError";
-import { paymentPostings, statusPostings } from "../orderLedger";
+import { paymentPostings, statusPostings, writeOffPostings } from "../orderLedger";
 import { SetOrderPayment } from "../SetOrderPayment";
 
 import type { Order } from "../../../entities/Order";
@@ -92,6 +92,24 @@ describe("statusPostings", () => {
     expect(hook(order({ status: "cancelled", paymentStatus: "refunded" }), SETTINGS)).toEqual([]);
     expect(hook(order({ status: "completed", total: 0, subtotal: 0 }), SETTINGS)).toEqual([]);
     expect(hook(order({ status: "preparing" }), SETTINGS)).toEqual([]);
+  });
+});
+
+describe("writeOffPostings", () => {
+  const written = order({ status: "cancelled" });
+
+  it("takes back the sale as booked, on the cafe's day", () => {
+    const [sale] = statusPostings(STAFF, NOW)(order({ status: "completed" }), SETTINGS);
+    const entries = writeOffPostings(sale, "Walked out", STAFF, NOW)(written, SETTINGS);
+
+    expect(entries.map((entry) => [entry.source, entry.date])).toEqual([["orderWriteOff", "2026-10-16"]]);
+    expect(entries[0].lines).toEqual(
+      sale.lines.map((line) => ({ accountCode: line.accountCode, debit: line.credit, credit: line.debit })),
+    );
+  });
+
+  it("books nothing for an order whose sale never reached the books", () => {
+    expect(writeOffPostings(undefined, undefined, STAFF, NOW)(written, SETTINGS)).toEqual([]);
   });
 });
 

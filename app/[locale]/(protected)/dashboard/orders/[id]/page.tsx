@@ -25,8 +25,9 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
   ]);
   if (!order) notFound();
 
-  // Which controls to draw; every endpoint re-checks for itself.
-  const [canFulfill, canRefund, canNote] = await Promise.all([
+  // Which controls to draw; every endpoint re-checks for itself. Refunding and
+  // writing off are both money decisions: the books' permission, not the floor's.
+  const [canFulfill, canWriteBooks, canNote] = await Promise.all([
     sessionHas(session, "orders.fulfill"),
     sessionHas(session, "accounting.write"),
     sessionHas(session, "orders.note"),
@@ -39,7 +40,8 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
       notes={notes}
       refunds={refunds}
       canFulfill={canFulfill}
-      canRefund={canRefund}
+      canRefund={canWriteBooks}
+      canWriteOff={canWriteBooks}
       canNote={canNote}
     />
   );

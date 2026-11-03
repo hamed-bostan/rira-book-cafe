@@ -8,8 +8,10 @@ import {
   loanDepositSettledEntry,
   orderReturnCostEntry,
   orderReturnEntry,
+  orderWriteOffEntry,
   paymentEntry,
   paymentReturnEntry,
+  saleEntry,
 } from "../Postings";
 
 import type { BookLoan } from "../BookLoan";
@@ -119,6 +121,49 @@ describe("a refund on a completed order", () => {
       ["5100", 0, 120_000],
     ]);
     expect(orderReturnCostEntry(ORDER, refund, 0, ACTOR)).toBeNull();
+  });
+});
+
+describe("a served order nobody paid for, written off", () => {
+  // The sale as booked at completion (10% VAT). The write-off follows it line by
+  // line rather than re-pricing the order, so a rate changed since leaves nothing behind.
+  const sale = saleEntry(
+    {
+      ...ORDER,
+      items: [
+        { kind: "drink", unitPrice: 100_000, quantity: 1 },
+        { kind: "book", unitPrice: 200_000, quantity: 1, taxExempt: true },
+      ],
+    } as Order,
+    1000,
+    "2026-10-19",
+    ACTOR,
+  );
+
+  it("takes the sale's revenue and VAT back out against the receivable it left", () => {
+    const entry = orderWriteOffEntry(ORDER, sale, "2026-10-20", undefined, ACTOR);
+
+    expect(sides(assertBalanced(entry))).toEqual([
+      ["1150", 0, 300_000],
+      ["4100", 90_909, 0],
+      ["4300", 200_000, 0],
+      ["2200", 9_091, 0],
+    ]);
+    // Cost of sales and inventory stay as they are: the goods were consumed.
+    expect(entry.lines.map((line) => line.accountCode)).not.toContain("5100");
+    expect(entry).toMatchObject({
+      date: "2026-10-20",
+      source: "orderWriteOff",
+      sourceId: "o1",
+      uniqueKey: "order:o1:writeOff",
+      description: "Order #42 — written off",
+    });
+  });
+
+  it("carries the reason staff gave", () => {
+    expect(orderWriteOffEntry(ORDER, sale, "2026-10-20", "Walked out", ACTOR).description).toBe(
+      "Order #42 — written off: Walked out",
+    );
   });
 });
 

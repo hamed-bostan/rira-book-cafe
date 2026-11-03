@@ -76,13 +76,14 @@ export async function refundPoints(
 }
 
 /**
- * A refund takes back what its share of the order earned (once per refund), only
- * as far as the guest still has them: points already spent stay spent.
+ * Take back points an order earned, only as far as the guest still has them:
+ * points already spent stay spent. Once per `cause` — a refund (`refund:<id>`) takes
+ * back its share, a write-off (`writeOff`) all of it.
  */
 export async function clawBackPoints(
   tx: Prisma.TransactionClient,
   order: { id: string; orderNumber: number; userId: string },
-  refundId: string,
+  cause: string,
   points: number,
 ): Promise<void> {
   if (points <= 0) return;
@@ -96,7 +97,7 @@ export async function clawBackPoints(
       reason: "adjust",
       orderId: order.id,
       orderNumber: order.orderNumber,
-      dedupeKey: `order:${order.id}:refund:${refundId}:clawback`,
+      dedupeKey: `order:${order.id}:${cause}:clawback`,
     },
   });
 }

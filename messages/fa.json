@@ -722,6 +722,7 @@
     "timelineHeading": "تاریخچه",
     "timelineEmpty": "تاریخچه‌ای ثبت نشده.",
     "timelinePlaced": "ثبت شد",
+    "timelineWrittenOff": "سوخت شد",
     "timelineBy": "توسط {name}",
     "cancelChoice": "انصراف",
     "itemState": {
@@ -806,6 +807,16 @@
       "restocked": "برگشت به انبار",
       "lineRefunded": "{quantity} بازپرداخت شد",
       "totalLabel": "بازپرداخت‌شده"
+    },
+    "writeOff": {
+      "open": "سوخت کردن",
+      "title": "سفارش #{number} سوخت شود؟",
+      "subtitle": "برای مهمانی که بدون پرداخت رفته است. سفارش لغو می‌شود و فروش آن از درآمد و مالیات بر ارزش افزوده کم می‌شود؛ اقلام به موجودی برنمی‌گردند. این کار قابل بازگشت نیست.",
+      "reasonLabel": "دلیل (اختیاری)",
+      "preview": "{amount} دریافت نمی‌شود.",
+      "submit": "سوخت کردن",
+      "saved": "سفارش #{number} سوخت شد",
+      "error": "سوخت کردن سفارش ممکن نشد. دوباره تلاش کنید."
     }
   },
   "dashOrderNotes": {
@@ -866,7 +877,8 @@
         "placed": "<b>{actor}</b> سفارش {entity} را ثبت کرد",
         "paymentChanged": "<b>{actor}</b> وضعیت پرداخت سفارش {entity} را تغییر داد",
         "counterSale": "<b>{actor}</b> سفارش {entity} را در صندوق ثبت کرد",
-        "refunded": "<b>{actor}</b> سفارش {entity} را بازپرداخت کرد"
+        "refunded": "<b>{actor}</b> سفارش {entity} را بازپرداخت کرد",
+        "writtenOff": "<b>{actor}</b> سفارش {entity} را سوخت کرد"
       },
       "review": {
         "moderated": "<b>{actor}</b> نظر {entity} را بررسی کرد",
@@ -1016,7 +1028,8 @@
       "accountCode": "ثبت در حساب",
       "supplierId": "تأمین‌کننده",
       "monthlySalary": "حقوق معمول (ارقام نمایش داده نمی‌شود)",
-      "phone": "تلفن"
+      "phone": "تلفن",
+      "reason": "دلیل"
     },
     "filterField": "فیلد",
     "allFields": "همه فیلدها"
@@ -1850,6 +1863,7 @@
       "bankInterest": "سود بانکی",
       "orderReturn": "بازپرداخت",
       "orderReturnCost": "برگشت بهای تمام‌شده به انبار",
+      "orderWriteOff": "سوخت سفارش",
       "income": "درآمد",
       "loanDeposit": "ودیعهٔ کتاب",
       "payroll": "حقوق و دستمزد",

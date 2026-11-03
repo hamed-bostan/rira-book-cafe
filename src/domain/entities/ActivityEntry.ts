@@ -83,6 +83,8 @@ export const ACTIVITY_ACTIONS = [
   "order.stageChanged",
   "order.paymentChanged",
   "order.refunded",
+  // A served order nobody paid for (a walk-out), cancelled and taken off the books.
+  "order.writtenOff",
   // The one action here that isn't a change to anything stored — an admin sent the
   // customer a message about their order. Recorded through
   // `IActivityLog.recordEvent` rather than an audit hook, because there is no

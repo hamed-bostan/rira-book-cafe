@@ -3,6 +3,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import {
   canRefundOrder,
   canServeItems,
+  canWriteOffOrder,
   orderItemCount,
   servedLineCount,
   type Order,
@@ -33,6 +34,7 @@ import { OrderStatusActions } from "./OrderStatusActions";
 import { OrderStatusBadge } from "./OrderStatusBadge";
 import { OrderTimeline } from "./OrderTimeline";
 import { RefundOrderButton } from "./RefundOrderButton";
+import { WriteOffOrderButton } from "./WriteOffOrderButton";
 
 /** A detail screen left open re-reads less often than the list — it's one order. */
 const REFRESH_SECONDS = 30;
@@ -47,6 +49,8 @@ type OrderDetailScreenProps = {
   canFulfill: boolean;
   /** Whether the viewer may hand money back. */
   canRefund: boolean;
+  /** Whether the viewer may write off a served order nobody paid for. */
+  canWriteOff: boolean;
   /** Whether the viewer may add an internal note. */
   canNote: boolean;
 };
@@ -63,12 +67,14 @@ export async function OrderDetailScreen({
   refunds,
   canFulfill,
   canRefund,
+  canWriteOff,
   canNote,
 }: OrderDetailScreenProps) {
   const t = await getTranslations("dashOrders");
   const locale = await getLocale();
   const serving = canServeItems(order.status);
   const refundable = canRefund && canRefundOrder(order);
+  const writable = canWriteOff && canWriteOffOrder(order);
 
   return (
     <div className="flex flex-col gap-6">
@@ -82,9 +88,10 @@ export async function OrderDetailScreen({
         subtitle={t("placedOn", { date: formatOrderDate(order.placedAt, locale) })}
         badge={<OrderStatusBadge status={order.status} size="compact" />}
         actions={
-          refundable || canFulfill ? (
+          refundable || writable || canFulfill ? (
             <>
               {refundable ? <RefundOrderButton order={order} /> : null}
+              {writable ? <WriteOffOrderButton order={order} /> : null}
               {canFulfill ? (
                 <OrderStatusActions orderId={order.id} orderNumber={order.orderNumber} status={order.status} />
               ) : null}

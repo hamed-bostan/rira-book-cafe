@@ -371,7 +371,7 @@ export class PrismaOrderRepository implements IOrderRepository {
 
       if (before.userId) {
         const guest = { ...before, userId: before.userId };
-        await clawBackPoints(tx, guest, row.id, pointsToClawBack(before, input.amount));
+        await clawBackPoints(tx, guest, `refund:${row.id}`, pointsToClawBack(before, input.amount));
         if (fully) await refundPoints(tx, guest);
       }
 
@@ -390,6 +390,41 @@ export class PrismaOrderRepository implements IOrderRepository {
       include: WITH_REFUND_LINES,
     });
     return rows.map(toRefund);
+  }
+
+  async writeOff(
+    id: string,
+    actor: ActivityActor,
+    audit?: AuditHook<Order>,
+    ledger?: LedgerHook<Order>,
+  ): Promise<Order> {
+    return inTransaction(this.db, async (tx) => {
+      // Guarded on what made it writable: a payment that lands first wins, and this
+      // is refused rather than cancelling an order that's now paid.
+      const result = await tx.order.updateMany({
+        where: { id, status: "completed", paymentStatus: "unpaid" },
+        data: { status: "cancelled" },
+      });
+      if (result.count === 0) {
+        const current = await tx.order.findUnique({ where: { id }, select: { id: true } });
+        if (!current) throw new NotFoundError("order", id);
+        throw new ConflictError("INVALID_TRANSITION", "Only a served order nobody paid for can be written off.");
+      }
+
+      const row = await tx.order.findUniqueOrThrow({ where: { id }, include: WITH_ITEMS });
+      // Nothing goes back on the shelf: the goods were consumed. The points the
+      // order earned go, as far as the guest still has them; those it spent stay spent.
+      if (row.userId) await clawBackPoints(tx, { ...row, userId: row.userId }, "writeOff", row.pointsEarned);
+
+      await tx.orderStatusEvent.create({
+        data: { orderId: id, fromStatus: "completed", toStatus: "cancelled", actorId: actor.id, actorName: actor.name },
+      });
+
+      const order = toOrder(row);
+      await recordAudit(tx, order, audit);
+      await postHook(tx, order, ledger);
+      return order;
+    });
   }
 
   async setItemServed(orderId: string, itemId: string, served: boolean): Promise<Order> {
@@ -484,7 +519,10 @@ function adminWhere(filters: AdminOrderFilters): Prisma.OrderWhereInput {
   else if (filters.status) and.push({ status: filters.status });
 
   if (filters.serviceType) and.push({ serviceType: filters.serviceType });
-  if (filters.paymentStatus) and.push({ paymentStatus: filters.paymentStatus });
+  // "Unpaid" is what's still owed: a cancelled order owes nothing, whether it was
+  // called off before it was served or written off after.
+  if (filters.paymentStatus === "unpaid") and.push({ paymentStatus: "unpaid", status: { not: "cancelled" } });
+  else if (filters.paymentStatus) and.push({ paymentStatus: filters.paymentStatus });
 
   return and.length ? { AND: and } : {};
 }

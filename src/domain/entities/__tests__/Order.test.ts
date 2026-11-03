@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   ORDER_STATUSES,
   canTransition,
+  canWriteOffOrder,
   isGuestCancellable,
   isStaffCancellable,
   nextOrderStatus,
@@ -26,6 +27,16 @@ describe("order workflow", () => {
   it("lets staff cancel until the order is served, and the guest only while pending", () => {
     expect(ORDER_STATUSES.filter(isStaffCancellable)).toEqual(["pending", "preparing"]);
     expect(ORDER_STATUSES.filter(isGuestCancellable)).toEqual(["pending"]);
+  });
+
+  it("writes off only a served order nobody paid for, without opening that step to anyone else", () => {
+    expect(ORDER_STATUSES.filter((status) => canWriteOffOrder({ status, paymentStatus: "unpaid" }))).toEqual([
+      "completed",
+    ]);
+    expect(canWriteOffOrder({ status: "completed", paymentStatus: "paid" })).toBe(false);
+    expect(canWriteOffOrder({ status: "completed", paymentStatus: "refunded" })).toBe(false);
+    // The workflow table still refuses it: a served order is otherwise final.
+    expect(canTransition("completed", "cancelled")).toBe(false);
   });
 
   it("sums lines in whole Toman", () => {

@@ -249,6 +249,20 @@ export function canRefundOrder(order: Pick<Order, "status" | "paymentStatus" | "
   return order.status === "completed" && order.paymentStatus === "paid" && order.refundedTotal < order.total;
 }
 
+/** Longest reason staff can give for writing an order off. */
+export const MAX_WRITE_OFF_REASON_LENGTH = 200;
+
+/**
+ * Whether the cafe may write the order off: served, and nobody paid for it — a
+ * guest who walked out. `completed` is otherwise terminal and a refund needs a
+ * payment, so without this such an order would sit unpaid for ever. Writing off
+ * cancels it (a step the workflow table doesn't offer anyone else) without putting
+ * anything back on the shelf: the goods were consumed.
+ */
+export function canWriteOffOrder(order: Pick<Order, "status" | "paymentStatus">): boolean {
+  return order.status === "completed" && order.paymentStatus === "unpaid";
+}
+
 /**
  * What staff can do to a selection of orders from the list:
  * - `serve` — hand over orders being prepared (`preparing` → `completed`).

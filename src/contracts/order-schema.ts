@@ -5,6 +5,7 @@ import {
   MAX_ORDER_LINES,
   MAX_ORDER_NOTE_TEXT_LENGTH,
   MAX_TABLE_LABEL_LENGTH,
+  MAX_WRITE_OFF_REASON_LENGTH,
   ORDER_STATUSES,
   PAYMENT_METHODS,
   SERVICE_TYPES,
@@ -186,3 +187,10 @@ export const orderRefundSchema = z.object({
 });
 
 export type OrderRefundInput = z.input<typeof orderRefundSchema>;
+
+/** Writing off a served order nobody paid for: why, if staff want to say. */
+export const orderWriteOffSchema = z.object({
+  reason: optionalText(MAX_WRITE_OFF_REASON_LENGTH),
+});
+
+export type OrderWriteOffInput = z.input<typeof orderWriteOffSchema>;

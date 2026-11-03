@@ -1,4 +1,11 @@
-import { allocate, SYSTEM_ACCOUNTS, vatIncluded, type JournalLine, type NewJournalEntry } from "./Ledger";
+import {
+  allocate,
+  SYSTEM_ACCOUNTS,
+  vatIncluded,
+  type JournalEntry,
+  type JournalLine,
+  type NewJournalEntry,
+} from "./Ledger";
 import { payRunTotals } from "./Payroll";
 
 import type { BookLoan, BookLoanStatus } from "./BookLoan";
@@ -23,6 +30,8 @@ import type { ProductKind } from "./Product";
  *   cancelled after being paid → refund: Dr Guest receivables / Cr the accounts it was paid into
  *   refunded after completion → return: Dr Sales by kind (net) + Dr VAT payable / Cr the method's account
  *                             → cost back, for units restocked: Dr Inventory / Cr Cost of sales
+ *   written off (served, never paid) → the sale undone: Dr Sales by kind (net) + Dr VAT payable /
+ *                             Cr Guest receivables; the cost of sales stays — the goods are gone
  *
  * A guest who pays before their order is completed leaves a credit on Guest
  * receivables until the sale is booked — exactly what a prepayment is.
@@ -223,6 +232,32 @@ export function orderReturnCostEntry(
       { accountCode: SYSTEM_ACCOUNTS.inventory, debit: value, credit: 0 },
       { accountCode: SYSTEM_ACCOUNTS.costOfSales, debit: 0, credit: value },
     ],
+    createdById: actor.id,
+    createdByName: actor.name,
+  };
+}
+
+/**
+ * A served order nobody paid for, written off: its sale comes back out of revenue
+ * and output VAT, against the receivable the sale left — the money that will never
+ * come. Built from the sale as it was booked (each account's line, sides swapped),
+ * not re-priced, so a VAT rate changed since leaves nothing behind. The cost of
+ * sales isn't touched: the goods were consumed.
+ */
+export function orderWriteOffEntry(
+  order: Pick<Order, "id" | "orderNumber">,
+  sale: Pick<JournalEntry, "lines">,
+  date: string,
+  reason: string | undefined,
+  actor: Actor,
+): NewJournalEntry {
+  return {
+    date,
+    description: reason ? `${label(order)} — written off: ${reason}` : `${label(order)} — written off`,
+    source: "orderWriteOff",
+    sourceId: order.id,
+    uniqueKey: `order:${order.id}:writeOff`,
+    lines: sale.lines.map((line) => ({ accountCode: line.accountCode, debit: line.credit, credit: line.debit })),
     createdById: actor.id,
     createdByName: actor.name,
   };

@@ -4,13 +4,14 @@ import {
   costOfSalesEntry,
   orderReturnCostEntry,
   orderReturnEntry,
+  orderWriteOffEntry,
   paymentEntry,
   paymentReturnEntry,
   saleEntry,
 } from "../../entities/Postings";
 
 import type { ActivityActor } from "../../entities/ActivityEntry";
-import type { NewJournalEntry } from "../../entities/Ledger";
+import type { JournalEntry, NewJournalEntry } from "../../entities/Ledger";
 import type { LedgerHook } from "../../repositories/ILedgerRepository";
 import type { OrderRefundResult } from "../../repositories/IOrderRepository";
 
@@ -20,9 +21,10 @@ import type { OrderRefundResult } from "../../repositories/IOrderRepository";
  *  - `completed` — the sale (revenue by kind + VAT) and its cost of sales;
  *  - `cancelled` after payment (the repository marks it `refunded`) — the money back.
  *
- * Completed and cancelled are both terminal, so a sale is never undone here. A
- * free order books nothing; an order paid before accounting existed carries no
- * method and had no payment entry, so its refund books nothing either.
+ * Completed and cancelled are both terminal, so a sale is never undone here — only
+ * by writing the order off (`writeOffPostings`). A free order books nothing; an
+ * order paid before accounting existed carries no method and had no payment entry,
+ * so its refund books nothing either.
  */
 export function statusPostings(actor: ActivityActor, now: Date = new Date()): LedgerHook<Order> {
   return (order, settings) => {
@@ -58,6 +60,21 @@ export function paymentPostings(previous: Order, actor: ActivityActor, now: Date
     }
     return [];
   };
+}
+
+/**
+ * What writing off a served, unpaid order books: its sale taken back out of revenue
+ * and VAT against the receivable it left. `sale` is the order's sale entry as
+ * posted; an order with none (free, or completed before the books began) left no
+ * receivable, so it books nothing.
+ */
+export function writeOffPostings(
+  sale: Pick<JournalEntry, "lines"> | undefined,
+  reason: string | undefined,
+  actor: ActivityActor,
+  now: Date = new Date(),
+): LedgerHook<Order> {
+  return (order) => (sale ? [orderWriteOffEntry(order, sale, cafeDayOf(now), reason, actor)] : []);
 }
 
 /** What a refund on a completed order books: the money back, and the cost of any units restocked. */

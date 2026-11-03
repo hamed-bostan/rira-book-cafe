@@ -233,13 +233,13 @@ export async function OrderDetailScreen({
                       </span>
                     ) : null}
                     {canFulfill && order.customerPhone ? (
-                      <span className="mt-2 self-start">
+                      <div className="mt-2 self-start">
                         <MessageGuestButton
                           appearance="secondary"
                           guest={{ name: order.customerName, phone: order.customerPhone }}
                           about={{ kind: "order", id: order.id, label: `#${order.orderNumber}` }}
                         />
-                      </span>
+                      </div>
                     ) : null}
                   </dd>
                 </div>

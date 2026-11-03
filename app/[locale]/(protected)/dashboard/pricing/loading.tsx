@@ -1,5 +1,5 @@
+import { METRIC_GRID_OF_THREE } from "@/src/presentation/dashboard/pageStyles";
 import { PRICING_CARD_GRID } from "@/src/presentation/dashboard/pricing/PricingItemCard";
-import { PRICING_SUMMARY_GRID } from "@/src/presentation/dashboard/pricing/PricingScreen";
 import { PricingTabsSkeleton } from "@/src/presentation/dashboard/pricing/PricingTabsSkeleton";
 import { DashboardStatGridSkeleton } from "@/src/presentation/dashboard/skeletons";
 import { LoadingRegion } from "@/src/presentation/design-system/components/Skeleton/LoadingRegion";
@@ -20,7 +20,7 @@ export default function PricingLoading() {
       <PricingTabsSkeleton />
 
       {/* Monthly overhead · monthly units · overhead per unit. */}
-      <DashboardStatGridSkeleton count={3} className={PRICING_SUMMARY_GRID} />
+      <DashboardStatGridSkeleton count={3} className={METRIC_GRID_OF_THREE} />
 
       {/* The formula line. */}
       <Skeleton className="h-4 w-full max-w-xl rounded-pill" />

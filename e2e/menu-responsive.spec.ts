@@ -97,11 +97,11 @@ const PAGES: Record<string, MenuPage> = {
   "menu items in a category": {
     path: (seed) => `/dashboard/products?categoryId=${seed.categoryId}`,
     tabs: true,
-    gaps: { fits: "Phase 3", tabs: "Phase 1" },
+    gaps: { fits: "Phase 3" },
   },
-  "new menu item": { path: () => "/dashboard/products/create", gaps: { targets: "Phase 1" } },
-  "menu item": { path: (seed) => `/dashboard/products/${seed.productId}/edit`, gaps: { targets: "Phase 1" } },
-  "missing menu item": { path: () => "/dashboard/products/e2e-missing-item/edit", gaps: { targets: "Phase 1" } },
+  "new menu item": { path: () => "/dashboard/products/create" },
+  "menu item": { path: (seed) => `/dashboard/products/${seed.productId}/edit` },
+  "missing menu item": { path: () => "/dashboard/products/e2e-missing-item/edit" },
   // The category's tab holds just the seeded item.
   "delete menu item": {
     path: (seed) => `/dashboard/products?categoryId=${seed.categoryId}`,
@@ -109,21 +109,19 @@ const PAGES: Record<string, MenuPage> = {
     prepare: deleteFrom(/^(More actions for|کارهای بیشتر برای) /),
   },
   categories: { path: () => "/dashboard/categories" },
-  "new category": { path: () => "/dashboard/categories/create", gaps: { targets: "Phase 1" } },
-  category: { path: (seed) => `/dashboard/categories/${seed.categoryId}/edit`, gaps: { targets: "Phase 1" } },
-  "missing category": { path: () => "/dashboard/categories/e2e-missing-category/edit", gaps: { targets: "Phase 1" } },
+  "new category": { path: () => "/dashboard/categories/create" },
+  category: { path: (seed) => `/dashboard/categories/${seed.categoryId}/edit` },
+  "missing category": { path: () => "/dashboard/categories/e2e-missing-category/edit" },
   // Whichever language the name is in, under either language's label.
   "delete category": {
     path: () => "/dashboard/categories",
     dialog: true,
     prepare: deleteFrom(new RegExp(`(${CATEGORY.en}|${CATEGORY.fa})$`)),
-    gaps: { targets: "Phase 1" },
   },
-  inventory: { path: () => "/dashboard/inventory", tabs: true, gaps: { fits: "Phase 1" } },
+  inventory: { path: () => "/dashboard/inventory", tabs: true },
   "inventory running low": {
     path: () => "/dashboard/inventory?level=low",
     tabs: true,
-    gaps: { fits: "Phase 1" },
   },
   "receive delivery": {
     path: () => "/dashboard/inventory",

@@ -24,7 +24,9 @@ type DeleteCategoryDialogProps = {
   onHide: () => void;
 };
 
-const WAY_OUT = "font-medium text-primary underline underline-offset-4 hover:text-primary-hover";
+/** The way out drawn as words, 44px to the touch on a phone without moving the line. */
+const WAY_OUT =
+  "-my-3 inline-block py-3 font-medium text-primary underline underline-offset-4 hover:text-primary-hover sm:my-0 sm:py-0";
 
 /**
  * Confirms a delete: Back, or a red Delete. A category that still has items can't

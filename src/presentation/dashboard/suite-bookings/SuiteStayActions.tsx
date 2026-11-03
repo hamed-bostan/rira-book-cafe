@@ -25,6 +25,8 @@ import { useToast } from "@/src/presentation/design-system/components/Toast/useT
 
 import { DashboardDialog } from "../DashboardDialog";
 import { useGuestToldLine } from "../guest-messages/useGuestToldLine";
+import { RefundOfferFields } from "../income/RefundOfferFields";
+import { useRefundOffer, type RefundOffer } from "../income/useRefundOffer";
 
 import { EditStayDialog } from "./EditStayDialog";
 import { suiteBookingsApi } from "./suite-booking-api";
@@ -43,6 +45,8 @@ type SuiteStayActionsProps = {
   checkInLabel: string;
   /** The stay's nights, formatted — "Oct 22 → Oct 24" — for the confirmation. */
   rangeLabel: string;
+  /** Money paid and not yet handed back, for a viewer who may refund it: cancelling offers to. */
+  refund?: RefundOffer;
 };
 
 /** The moves that end a stay early, each asked about first. */
@@ -63,6 +67,7 @@ export function SuiteStayActions({
   clashReference,
   checkInLabel,
   rangeLabel,
+  refund,
 }: SuiteStayActionsProps) {
   const t = useTranslations("dashSuite");
   const tApiErrors = useTranslations("apiErrors");
@@ -70,6 +75,7 @@ export function SuiteStayActions({
   const { toast } = useToast();
   const guestToldLine = useGuestToldLine();
   const [pending, startTransition] = React.useTransition();
+  const refundOffer = useRefundOffer(refund);
   // Which ending was asked about stays set while the dialog closes, so its words don't change mid-fade.
   const [ending, setEnding] = React.useState<Ending>("cancelled");
   const [confirming, setConfirming] = React.useState(false);
@@ -89,6 +95,8 @@ export function SuiteStayActions({
     startTransition(async () => {
       try {
         await suiteBookingsApi.update(booking.id, { status: next });
+        // A paid stay's cancel can hand the money back in the same click.
+        if (next === "cancelled") await refundOffer?.run();
         setConfirming(false);
         toast({
           tone: "success",
@@ -221,11 +229,14 @@ export function SuiteStayActions({
         title={t(`confirmTitle.${ending}`, { reference })}
         subtitle={t("confirmMessage", { name: booking.guestName, range: rangeLabel })}
         submitLabel={ending === "noShow" ? t("markNoShow") : t("cancelBooking")}
+        blocked={ending === "cancelled" && Boolean(refundOffer?.blocked)}
         pending={pending}
         onSubmit={() => save(ending)}
         error={error}
         danger
-      />
+      >
+        {ending === "cancelled" && refundOffer ? <RefundOfferFields state={refundOffer} /> : null}
+      </DashboardDialog>
     </div>
   );
 }

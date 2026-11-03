@@ -178,6 +178,7 @@
     "refundQuantityInvalid": "You can't refund more than is left on the line.",
     "refundNothing": "There's nothing to refund on those items.",
     "paymentOverOwed": "That's more than is owed on this bill.",
+    "refundOverPaid": "That's more than was paid and not yet refunded.",
     "billDayInvalid": "Choose a day of the month.",
     "billNotDue": "That month of the bill isn't due.",
     "payRunMonthInvalid": "Choose a month.",
@@ -1008,7 +1009,10 @@
         "changed": "<b>{actor}</b> updated reservation {entity}",
         "booked": "<b>{actor}</b> booked table reservation {entity}",
         "guestMessaged": "<b>{actor}</b> messaged the guest about reservation {entity}",
-        "expired": "<b>{actor}</b> cancelled request {entity}: nobody answered it in time"
+        "expired": "<b>{actor}</b> cancelled request {entity}: nobody answered it in time",
+        "depositTaken": "<b>{actor}</b> took a deposit on reservation {entity}",
+        "depositReturned": "<b>{actor}</b> returned the deposit on reservation {entity}",
+        "depositKept": "<b>{actor}</b> kept the deposit on reservation {entity}"
       },
       "event": {
         "created": "<b>{actor}</b> created event {entity}",
@@ -1040,7 +1044,9 @@
         "changed": "<b>{actor}</b> updated suite booking {entity}",
         "booked": "<b>{actor}</b> booked suite stay {entity}",
         "guestMessaged": "<b>{actor}</b> messaged the guest about suite stay {entity}",
-        "expired": "<b>{actor}</b> cancelled suite request {entity}: nobody answered it in time"
+        "expired": "<b>{actor}</b> cancelled suite request {entity}: nobody answered it in time",
+        "rateChanged": "<b>{actor}</b> changed the nightly rate of suite stay {entity}",
+        "priceChanged": "<b>{actor}</b> changed the suite’s nightly price"
       },
       "bookLoan": {
         "lent": "<b>{actor}</b> lent a book ({entity})",
@@ -1054,7 +1060,8 @@
       },
       "income": {
         "recorded": "<b>{actor}</b> recorded income {entity}",
-        "voided": "<b>{actor}</b> voided income {entity}"
+        "voided": "<b>{actor}</b> voided income {entity}",
+        "refunded": "<b>{actor}</b> made a refund from income {entity}"
       },
       "payroll": {
         "recorded": "<b>{actor}</b> recorded payroll for {entity}",
@@ -1126,6 +1133,10 @@
       "costPrice": "Cost price",
       "total": "Total",
       "refundedTotal": "Refunded",
+      "refunded": "Refunded",
+      "deposit": "Deposit",
+      "depositState": "Deposit",
+      "nightlyRate": "Nightly rate",
       "paymentMethod": "Payment method",
       "reversedBy": "Reversed by",
       "vatRateBps": "VAT rate (basis points)",
@@ -1168,6 +1179,34 @@
     "allFields": "Any field"
   },
   "dashReservations": {
+    "deposit": {
+      "take": "Take deposit",
+      "takeTitle": "Deposit for R-{reference}",
+      "takeSubtitle": "Held for {name} until the booking is over, then handed back or kept.",
+      "amountLabel": "Amount (Toman)",
+      "methodLabel": "Paid by",
+      "method": {
+        "cash": "Cash",
+        "card": "Card",
+        "transfer": "Transfer"
+      },
+      "takePreview": "{amount} held on Deposits held — not income.",
+      "taken": "Deposit taken on R-{reference}",
+      "return": "Return deposit",
+      "returnTitle": "Return the deposit on R-{reference}?",
+      "returnMessage": "{amount} goes back to {name} the way it was paid ({method}).",
+      "returned": "Deposit on R-{reference} returned",
+      "keep": "Keep deposit",
+      "keepTitle": "Keep the deposit on R-{reference}?",
+      "keepMessage": "{amount} becomes the cafe's income — a no-show fee, or towards the bill. This can't be undone.",
+      "kept": "Deposit on R-{reference} kept",
+      "error": "Couldn't update the deposit. Please try again.",
+      "state": {
+        "held": "Deposit held: {amount}",
+        "returned": "Deposit returned: {amount}",
+        "kept": "Deposit kept: {amount}"
+      }
+    },
     "heading": "Table reservations",
     "summary": "{bookings, plural, =0 {No bookings} one {{bookingsFormatted} booking} other {{bookingsFormatted} bookings}} · {covers, plural, one {{coversFormatted} guest} other {{coversFormatted} guests}}",
     "today": "Today",
@@ -1372,14 +1411,15 @@
     "sectionVisibility": "Visibility",
     "noImage": "No image yet",
     "registrationPaid": "Paid {amount}",
-    "registrationRefundDue": "Void the payment on Income if it was handed back",
     "cancelEvent": "Cancel event",
     "cancelEventTitle": "Cancel “{title}”?",
     "cancelEventMessage": "{count, plural, =0 {It comes off the site.} one {It comes off the site, and the # guest signed up is told and their sign-up cancelled.} other {It comes off the site, and the # guests signed up are told and their sign-ups cancelled.}} Paid tickets stay on the guest list as owed back.",
     "cancelEventConfirm": "Cancel event",
     "cancelEventBack": "Keep event",
     "cancelEventToast": "“{title}” is cancelled",
-    "cancelEventError": "Couldn't cancel the event. Please try again."
+    "cancelEventError": "Couldn't cancel the event. Please try again.",
+    "registrationRefunded": "Refunded {amount}",
+    "registrationRefundDue": "Refund due"
   },
   "dashOverview": {
     "heading": "Today",
@@ -1926,6 +1966,10 @@
         "eventRegistrationCancelled": {
           "title": "Your sign-up for {title} was cancelled",
           "body": "Your place on {startsAt} is no longer held."
+        },
+        "refundIssued": {
+          "title": "We refunded {amount} Toman",
+          "body": "{subject, select, suite {For your suite stay S-{reference}.} event {For “{title}”.} other {For your booking.}}"
         }
       }
     },
@@ -2105,6 +2149,8 @@
       "orderWriteOff": "Written off",
       "income": "Income",
       "loanDeposit": "Book deposit",
+      "incomeRefund": "Booking refund",
+      "reservationDeposit": "Table deposit",
       "payroll": "Payroll",
       "payrollPayment": "Salary payment"
     },
@@ -2525,6 +2571,14 @@
     }
   },
   "dashPricing": {
+    "suite": {
+      "heading": "Suite",
+      "description": "What a night in the suite costs. New stays are priced at it; stays already booked keep their own rate.",
+      "rateLabel": "A night (Toman)",
+      "save": "Save suite price",
+      "saved": "Suite price saved",
+      "error": "Couldn't save the suite price. Please try again."
+    },
     "heading": "Pricing",
     "subtitle": "What each item really costs, and the menu price that earns the profit you want on it.",
     "tabsLabel": "Pricing sections",
@@ -2997,6 +3051,27 @@
     "confirmStay": "Confirm stay",
     "stayBooked": "S-{reference} confirmed for {name} · {range}",
     "bookError": "Couldn't save the stay. Please try again.",
+    "money": {
+      "total": "Total {amount}",
+      "rate": "{amount} a night",
+      "noRate": "No price yet",
+      "refunded": "Refunded {amount}",
+      "due": "Due {amount}",
+      "settled": "Paid in full",
+      "overpaid": "Overpaid {amount}",
+      "refundDue": "Refund due {amount}"
+    },
+    "rate": {
+      "button": "Change rate",
+      "aria": "Change the nightly rate of S-{reference}",
+      "title": "Nightly rate for S-{reference}",
+      "subtitle": "{nights} · the total follows the rate.",
+      "label": "A night (Toman)",
+      "preview": "{nights} × {rate} = {total}",
+      "save": "Save rate",
+      "error": "Couldn't change the rate. Please try again.",
+      "saved": "S-{reference} is now {amount} a night"
+    },
     "paid": "Paid {amount}",
     "paymentDescription": "Suite stay S-{reference}, {range}",
     "editStay": "Edit stay",
@@ -3514,6 +3589,23 @@
       "save": "Record income",
       "error": "Couldn't record the income. Please try again.",
       "saved": "Income IN-{number} recorded"
+    },
+    "refund": {
+      "button": "Refund",
+      "buttonAria": "Refund {name}",
+      "title": "Refund {name}",
+      "subtitle": "Paid {paid}{refunded, select, none {} other {, {refunded} already refunded}}. Up to {left} can go back.",
+      "amountLabel": "Amount (VAT included)",
+      "methodLabel": "Paid back by",
+      "reasonLabel": "Reason (optional)",
+      "reasonPlaceholder": "e.g. Cancelled two days ahead",
+      "preview": "{amount} back to {name}, taken off the revenue it was booked to.",
+      "save": "Refund",
+      "error": "Couldn't make the refund. Please try again.",
+      "done": "Refunded {amount} to {name}",
+      "offerLabel": "Refund the guest now",
+      "offerHint": "{left} paid and not yet refunded.",
+      "offerFailed": "The refund didn't go through: {message}"
     },
     "void": "Void",
     "voidTitle": "Void IN-{number}?",

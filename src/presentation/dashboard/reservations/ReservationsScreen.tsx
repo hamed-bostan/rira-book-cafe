@@ -43,6 +43,8 @@ type ReservationsScreenProps = {
   canManage: boolean;
   /** Whether "Open event" can open the event itself (`events.manage`), not just its card on the list. */
   canManageEvents: boolean;
+  /** Whether a held deposit can be kept as income (`accounting.write`), not only handed back. */
+  canKeepDeposits?: boolean;
 };
 
 type Row =
@@ -67,6 +69,7 @@ export async function ReservationsScreen({
   now,
   canManage,
   canManageEvents,
+  canKeepDeposits = false,
 }: ReservationsScreenProps) {
   const t = await getTranslations("dashReservations");
   const locale = await getLocale();
@@ -182,6 +185,7 @@ export async function ReservationsScreen({
                     day={day}
                     today={today}
                     floor={floor}
+                    canKeepDeposit={canKeepDeposits}
                   />
                 ) : (
                   <EventBookingRow event={row.event} today={today} canManageEvents={canManageEvents} />

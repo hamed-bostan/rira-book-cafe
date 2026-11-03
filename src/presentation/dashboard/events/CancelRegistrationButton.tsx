@@ -6,6 +6,8 @@ import * as React from "react";
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { DashboardDialog } from "@/src/presentation/dashboard/DashboardDialog";
+import { RefundOfferFields } from "@/src/presentation/dashboard/income/RefundOfferFields";
+import { useRefundOffer, type RefundOffer } from "@/src/presentation/dashboard/income/useRefundOffer";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
@@ -15,16 +17,27 @@ type CancelRegistrationButtonProps = {
   eventId: string;
   registrationId: string;
   guestName: string;
+  /** Money paid and not yet handed back, for a viewer who may refund it: the confirmation offers to. */
+  refund?: RefundOffer;
 };
 
-/** Cancel one guest's sign-up, freeing their seats. Confirms first; refreshes after. */
-export function CancelRegistrationButton({ eventId, registrationId, guestName }: CancelRegistrationButtonProps) {
+/**
+ * Cancel one guest's sign-up, freeing their seats. Confirms first — offering to
+ * refund what they paid, when there's something to give back; refreshes after.
+ */
+export function CancelRegistrationButton({
+  eventId,
+  registrationId,
+  guestName,
+  refund,
+}: CancelRegistrationButtonProps) {
   const t = useTranslations("dashEvents");
   const tApiErrors = useTranslations("apiErrors");
   const router = useRouter();
   const [open, setOpen] = React.useState(false);
   const { toast } = useToast();
   const [pending, startTransition] = React.useTransition();
+  const refundOffer = useRefundOffer(refund);
 
   function handleConfirm(): void {
     setOpen(false);
@@ -32,6 +45,7 @@ export function CancelRegistrationButton({ eventId, registrationId, guestName }:
       try {
         await eventsApi.cancelRegistration(eventId, registrationId);
         toast({ tone: "success", title: t("registrationCancelledToast", { name: guestName }) });
+        await refundOffer?.run();
         router.refresh();
       } catch (err) {
         toast({ tone: "error", title: localizeApiError(err, tApiErrors, t("cancelRegistrationError")) });
@@ -57,10 +71,13 @@ export function CancelRegistrationButton({ eventId, registrationId, guestName }:
         title={t("cancelRegistrationTitle", { name: guestName })}
         subtitle={t("cancelRegistrationMessage")}
         submitLabel={t("cancelRegistration")}
+        blocked={Boolean(refundOffer?.blocked)}
         pending={false}
         onSubmit={handleConfirm}
         danger
-      />
+      >
+        {refundOffer ? <RefundOfferFields state={refundOffer} /> : null}
+      </DashboardDialog>
     </>
   );
 }

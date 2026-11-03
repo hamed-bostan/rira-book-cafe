@@ -15,3 +15,21 @@ export async function paidBySource(
   });
   return new Map(groups.flatMap((group) => (group.sourceId ? [[group.sourceId, Number(group._sum.amount ?? 0)]] : [])));
 }
+
+/**
+ * What's been handed back from each event sign-up or suite stay. Refunds of a
+ * payment that was voided since don't count: voiding reversed them along with it.
+ */
+export async function refundedBySource(
+  db: Pick<PrismaDb, "incomeRefund">,
+  sourceType: IncomeSourceType,
+  ids: readonly string[],
+): Promise<Map<string, number>> {
+  if (ids.length === 0) return new Map();
+  const groups = await db.incomeRefund.groupBy({
+    by: ["sourceId"],
+    where: { sourceType, sourceId: { in: [...ids] }, income: { status: "received" } },
+    _sum: { amount: true },
+  });
+  return new Map(groups.map((group) => [group.sourceId, Number(group._sum.amount ?? 0)]));
+}

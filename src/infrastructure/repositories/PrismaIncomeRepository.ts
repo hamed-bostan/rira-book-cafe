@@ -8,12 +8,18 @@ import {
   type IncomeStatus,
   type IncomeSummary,
 } from "@/src/domain/entities/Income";
+import type { IncomeRefund, RefundablePayment, RefundPortion } from "@/src/domain/entities/IncomeRefund";
 import type { JournalEntry, NewJournalEntry } from "@/src/domain/entities/Ledger";
 import { createPage, toSkipTake, type Page, type PageRequest } from "@/src/domain/entities/Pagination";
 import { ConflictError } from "@/src/domain/errors/ConflictError";
 import { NotFoundError } from "@/src/domain/errors/NotFoundError";
 import type { AuditHook } from "@/src/domain/repositories/AuditHook";
-import type { IIncomeRepository, IncomeFilters, NewIncome } from "@/src/domain/repositories/IIncomeRepository";
+import type {
+  IIncomeRepository,
+  IncomeFilters,
+  NewIncome,
+  NewIncomeRefund,
+} from "@/src/domain/repositories/IIncomeRepository";
 import type { LedgerHook } from "@/src/domain/repositories/ILedgerRepository";
 import { prisma } from "@/src/infrastructure/prisma/client";
 import type { Prisma } from "@/src/infrastructure/prisma/generated/client";
@@ -113,6 +119,102 @@ export class PrismaIncomeRepository implements IIncomeRepository {
       return income;
     });
   }
+
+  listRefundable(sourceType: IncomeSourceType, sourceId: string): Promise<RefundablePayment[]> {
+    return readRefundable(this.db, sourceType, sourceId);
+  }
+
+  async refund(
+    input: NewIncomeRefund,
+    plan: (payments: RefundablePayment[]) => RefundPortion[],
+    ledger: LedgerHook<IncomeRefund>,
+    audit?: AuditHook<IncomeRefund>,
+  ): Promise<IncomeRefund[]> {
+    return inTransaction(this.db, async (tx) => {
+      // The booking's payments, locked: two refunds at once take turns, so neither
+      // can hand back what the other just did. A void waits here too.
+      await tx.$queryRaw`
+        SELECT "id" FROM "incomes"
+        WHERE "source_type" = ${input.sourceType} AND "source_id" = ${input.sourceId} AND "status" = 'received'
+        ORDER BY "id" FOR UPDATE`;
+      const portions = plan(await readRefundable(tx, input.sourceType, input.sourceId));
+
+      const refunds: IncomeRefund[] = [];
+      for (const portion of portions) {
+        const refund = toIncomeRefund(
+          await tx.incomeRefund.create({
+            data: {
+              incomeId: portion.payment.id,
+              sourceType: input.sourceType,
+              sourceId: input.sourceId,
+              date: dayToDate(input.date),
+              amount: BigInt(portion.amount),
+              vatAmount: BigInt(portion.vatAmount),
+              method: input.method,
+              reason: input.reason ?? null,
+              createdById: input.createdById,
+              createdByName: input.createdByName,
+            },
+            include: REFUND_WITH_INCOME,
+          }),
+        );
+        await postHook(tx, refund, ledger);
+        await recordAudit(tx, refund, audit);
+        refunds.push(refund);
+      }
+      return refunds;
+    });
+  }
+}
+
+const REFUND_WITH_INCOME = {
+  income: { select: { number: true, accountCode: true, payerName: true } },
+} satisfies Prisma.IncomeRefundInclude;
+type IncomeRefundRow = Prisma.IncomeRefundGetPayload<{ include: typeof REFUND_WITH_INCOME }>;
+
+/** A booking's standing payments, oldest first, each with what's been handed back from it. */
+async function readRefundable(
+  db: Pick<PrismaDb, "income">,
+  sourceType: IncomeSourceType,
+  sourceId: string,
+): Promise<RefundablePayment[]> {
+  const rows = await db.income.findMany({
+    where: { sourceType, sourceId, status: "received" },
+    include: { refunds: { select: { amount: true, vatAmount: true } } },
+    orderBy: [{ createdAt: "asc" }, { number: "asc" }],
+  });
+  return rows.map((row) => ({
+    id: row.id,
+    number: row.number,
+    accountCode: row.accountCode,
+    amount: Number(row.amount),
+    vatAmount: Number(row.vatAmount),
+    payerName: row.payerName ?? undefined,
+    createdAt: row.createdAt.toISOString(),
+    refunded: row.refunds.reduce((sum, refund) => sum + Number(refund.amount), 0),
+    refundedVat: row.refunds.reduce((sum, refund) => sum + Number(refund.vatAmount), 0),
+  }));
+}
+
+function toIncomeRefund(row: IncomeRefundRow): IncomeRefund {
+  return {
+    id: row.id,
+    number: row.number,
+    incomeId: row.incomeId,
+    incomeNumber: row.income.number,
+    sourceType: toSourceType(row.sourceType) ?? "suiteBooking",
+    sourceId: row.sourceId,
+    date: dateToDay(row.date),
+    accountCode: row.income.accountCode,
+    amount: Number(row.amount),
+    vatAmount: Number(row.vatAmount),
+    method: toMethod(row.method),
+    reason: row.reason ?? undefined,
+    payerName: row.income.payerName ?? undefined,
+    createdById: row.createdById,
+    createdByName: row.createdByName,
+    createdAt: row.createdAt.toISOString(),
+  };
 }
 
 /** "14", "IN-14" or "in 14" — how staff quote an entry's number. */

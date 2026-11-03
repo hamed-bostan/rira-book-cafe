@@ -49,6 +49,8 @@ export const NOTIFICATION_KINDS = [
   "eventRegistrationCancelled",
   // Staff changed an order after it was placed: a round added, a line taken off, another table.
   "orderChanged",
+  // Money handed back to the guest for a stay or an event sign-up.
+  "refundIssued",
 ] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 

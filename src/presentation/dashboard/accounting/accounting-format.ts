@@ -23,7 +23,7 @@ export function sourceHref(entry: Pick<JournalEntry, "source" | "sourceId">): st
   if (entry.source.startsWith("expense")) return `/dashboard/expenses/${entry.sourceId}`;
   if (entry.source.startsWith("payroll")) return `/dashboard/payroll/${entry.sourceId}`;
   if (entry.source === "cashShift") return "/dashboard/cash-shifts";
-  if (entry.source === "income") return "/dashboard/income";
+  if (entry.source === "income" || entry.source === "incomeRefund") return "/dashboard/income";
   if (entry.source === "loanDeposit") return "/dashboard/book-loans";
   return null;
 }
@@ -40,7 +40,7 @@ export function sourceLinkKey(
   | "entry.viewPayroll" {
   if (source.startsWith("order")) return "entry.viewOrder";
   if (source.startsWith("payroll")) return "entry.viewPayroll";
-  if (source === "income") return "entry.viewIncome";
+  if (source === "income" || source === "incomeRefund") return "entry.viewIncome";
   if (source === "loanDeposit") return "entry.viewBookLoans";
   return source === "cashShift" ? "entry.viewCashShifts" : "entry.viewExpense";
 }

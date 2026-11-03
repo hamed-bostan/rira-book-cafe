@@ -8,6 +8,7 @@ import {
   Gift,
   MessageSquareText,
   Star,
+  Wallet,
 } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
@@ -62,6 +63,7 @@ const ICONS: Record<NotificationKind, LucideIcon> = {
   eventCancelled: CalendarX,
   eventRegistrationCancelled: CalendarX,
   orderChanged: ClipboardList,
+  refundIssued: Wallet,
 };
 
 /** Kinds that ask the guest to do something — drawn in the warning tone. */

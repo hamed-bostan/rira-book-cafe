@@ -86,5 +86,7 @@ export type EventRegistration = {
   status: RegistrationStatus;
   /** Tickets paid for, in Toman, on the staff list; absent where it isn't read. */
   paidAmount?: number;
+  /** Handed back from what was paid, in Toman, on the staff list; absent where it isn't read. */
+  refundedAmount?: number;
   createdAt: string;
 };

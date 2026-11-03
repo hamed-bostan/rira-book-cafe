@@ -27,9 +27,11 @@ import type { IProductRepository } from "@/src/domain/repositories/IProductRepos
 import type { IPromotionRepository } from "@/src/domain/repositories/IPromotionRepository";
 import type { IRateLimiter } from "@/src/domain/repositories/IRateLimiter";
 import type { IRecurringBillRepository } from "@/src/domain/repositories/IRecurringBillRepository";
+import type { IReservationDepositRepository } from "@/src/domain/repositories/IReservationDepositRepository";
 import type { IReservationRepository } from "@/src/domain/repositories/IReservationRepository";
 import type { IReviewRepository } from "@/src/domain/repositories/IReviewRepository";
 import type { ISuiteBookingRepository } from "@/src/domain/repositories/ISuiteBookingRepository";
+import type { ISuitePricingRepository } from "@/src/domain/repositories/ISuitePricingRepository";
 import type { ITeamNotifier } from "@/src/domain/repositories/ITeamNotifier";
 import type { IUserRepository } from "@/src/domain/repositories/IUserRepository";
 import { CheckoutPricing } from "@/src/domain/use-cases/orders/CheckoutPricing";
@@ -68,9 +70,11 @@ import { PrismaPricingRepository } from "./repositories/PrismaPricingRepository"
 import { PrismaProductRepository } from "./repositories/PrismaProductRepository";
 import { PrismaPromotionRepository } from "./repositories/PrismaPromotionRepository";
 import { PrismaRecurringBillRepository } from "./repositories/PrismaRecurringBillRepository";
+import { PrismaReservationDepositRepository } from "./repositories/PrismaReservationDepositRepository";
 import { PrismaReservationRepository } from "./repositories/PrismaReservationRepository";
 import { PrismaReviewRepository } from "./repositories/PrismaReviewRepository";
 import { PrismaSuiteBookingRepository } from "./repositories/PrismaSuiteBookingRepository";
+import { PrismaSuitePricingRepository } from "./repositories/PrismaSuitePricingRepository";
 import { PrismaUserRepository } from "./repositories/PrismaUserRepository";
 import { SmsIrAuthRepository } from "./repositories/SmsIrAuthRepository";
 
@@ -164,6 +168,10 @@ export const expenseRepository: IExpenseRepository = new PrismaExpenseRepository
 export const recurringBillRepository: IRecurringBillRepository = new PrismaRecurringBillRepository();
 export const payrollRepository: IPayrollRepository = new PrismaPayrollRepository();
 export const incomeRepository: IIncomeRepository = new PrismaIncomeRepository();
+// Money on bookings: a deposit held against a table, and the suite's nightly price.
+// (Refunds of a stay or a sign-up go through the income repository above.)
+export const reservationDepositRepository: IReservationDepositRepository = new PrismaReservationDepositRepository();
+export const suitePricingRepository: ISuitePricingRepository = new PrismaSuitePricingRepository();
 
 // Till shifts: the drawer's expected cash is read from the journal's Cash account,
 // and a count's over/short is posted in the same transaction that closes the shift.

@@ -1,9 +1,10 @@
-import { Armchair, MessageSquare, Phone, Users } from "lucide-react";
+import { Armchair, MessageSquare, Phone, Users, Wallet } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import type { Floor } from "@/src/domain/entities/FloorAvailability";
 import { reservationEndsAt, type Reservation } from "@/src/domain/entities/Reservation";
 import { formatEventTime } from "@/src/lib/formatEventWhen";
+import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { cn } from "@/src/lib/utils";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
@@ -12,6 +13,7 @@ import { focusRing } from "@/src/presentation/design-system/components/shared/fo
 import { tableNameValues } from "../floor/tableName";
 import { MessageGuestButton } from "../guest-messages/MessageGuestButton";
 
+import { ReservationDepositActions } from "./ReservationDepositActions";
 import { ReservationRowActions } from "./ReservationRowActions";
 import { ReservationStatusBadge } from "./ReservationStatusBadge";
 
@@ -28,6 +30,8 @@ type ReservationRowProps = {
   today: string;
   /** What holds the tables around the day, for the table pickers. */
   floor: Floor;
+  /** A viewer who keeps the books may keep a deposit as income, not only hand it back. */
+  canKeepDeposit?: boolean;
 };
 
 /**
@@ -35,7 +39,15 @@ type ReservationRowProps = {
  * booking's status — and how late, for a party that hasn't arrived — the party,
  * the table (or that it still needs one), the phone, any note, and the controls.
  */
-export async function ReservationRow({ reservation, now, canManage, day, today, floor }: ReservationRowProps) {
+export async function ReservationRow({
+  reservation,
+  now,
+  canManage,
+  day,
+  today,
+  floor,
+  canKeepDeposit = false,
+}: ReservationRowProps) {
   const t = await getTranslations("dashReservations");
   const tFloor = await getTranslations("floorTables");
   const locale = await getLocale();
@@ -105,6 +117,14 @@ export async function ReservationRow({ reservation, now, canManage, day, today, 
             />
           ) : null}
         </div>
+        {reservation.deposit ? (
+          <p className="flex items-center gap-1.5 text-body-default text-foreground/80 tabular-nums sm:text-body-small">
+            <Icon icon={Wallet} size="icon-md" className="shrink-0 text-muted-foreground" />
+            {t(`deposit.state.${reservation.deposit.state}`, {
+              amount: formatMoney(reservation.deposit.amount, locale),
+            })}
+          </p>
+        ) : null}
         {reservation.note ? (
           <p className="flex items-start gap-1.5 text-body-default text-pretty text-muted-foreground sm:text-body-small">
             <Icon icon={MessageSquare} size="icon-md" className="mt-0.5 shrink-0" />“{reservation.note}”
@@ -112,6 +132,7 @@ export async function ReservationRow({ reservation, now, canManage, day, today, 
         ) : null}
       </div>
 
+      {canManage ? <ReservationDepositActions reservation={reservation} canKeep={canKeepDeposit} /> : null}
       {canManage ? (
         <ReservationRowActions reservation={reservation} now={now} day={day} today={today} floor={floor} />
       ) : null}

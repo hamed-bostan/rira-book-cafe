@@ -58,6 +58,13 @@ export type SuiteBooking = {
   note?: string;
   /** Paid towards the stay, in Toman, on the staff list; absent where it isn't read. */
   paidAmount?: number;
+  /** Handed back from what was paid, in Toman, on the staff list; absent where it isn't read. */
+  refundedAmount?: number;
+  /**
+   * What a night costs on this stay, in Toman — the suite's price when it was made
+   * (see `SuitePricing.ts`). Absent for a stay from before the suite had a price.
+   */
+  nightlyRate?: number;
   createdAt: string;
   updatedAt: string;
 };

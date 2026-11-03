@@ -362,6 +362,12 @@ model Reservation {
   note            String?
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
+  // A deposit taken against the booking, in Toman; 0 when none was (see domain/entities/ReservationDeposit).
+  depositAmount   BigInt   @default(0) @map("deposit_amount")
+  // cash | card | transfer, when a deposit was taken
+  depositMethod   String?  @map("deposit_method")
+  // held | returned | kept, when a deposit was taken
+  depositState    String?  @map("deposit_state")
 
   // The floor's day view, and the table-clash check.
   @@index([startsAt])
@@ -390,6 +396,10 @@ model SuiteBooking {
   note       String?
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt @map("updated_at")
+  // The stay's nightly rate in Toman (`nightlyRate` in the domain), snapshotted from
+  // suite_settings when the stay is made (or confirmed); null for a stay from before
+  // the suite had a price. The total is never stored: it's the nights times this.
+  nightRate  BigInt?  @map("nightly_rate")
 
   @@index([checkOut, checkIn])
   @@index([userId, checkIn])
@@ -702,31 +712,68 @@ model RecurringBillRun {
 
 // Money that came in outside an order (see domain/entities/Income).
 model Income {
-  id            String        @id @default(uuid())
-  number        Int           @unique @default(autoincrement())
-  date          DateTime      @db.Date
-  accountCode   String        @map("account_code")
-  account       LedgerAccount @relation(fields: [accountCode], references: [code], onDelete: Restrict)
+  id            String         @id @default(uuid())
+  number        Int            @unique @default(autoincrement())
+  date          DateTime       @db.Date
+  accountCode   String         @map("account_code")
+  account       LedgerAccount  @relation(fields: [accountCode], references: [code], onDelete: Restrict)
   description   String
   amount        BigInt
-  vatAmount     BigInt        @default(0) @map("vat_amount")
+  vatAmount     BigInt         @default(0) @map("vat_amount")
   // cash | card | transfer
   method        String
-  payerName     String?       @map("payer_name")
+  payerName     String?        @map("payer_name")
   // What it was paid for, when it was: eventRegistration | suiteBooking, and its id.
-  sourceType    String?       @map("source_type")
-  sourceId      String?       @map("source_id")
+  sourceType    String?        @map("source_type")
+  sourceId      String?        @map("source_id")
   // received | void
-  status        String        @default("received")
-  createdById   String        @map("created_by_id")
-  createdByName String        @map("created_by_name")
-  createdAt     DateTime      @default(now()) @map("created_at")
-  updatedAt     DateTime      @updatedAt @map("updated_at")
+  status        String         @default("received")
+  createdById   String         @map("created_by_id")
+  createdByName String         @map("created_by_name")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+  refunds       IncomeRefund[]
 
   @@index([date])
   @@index([status])
   @@index([sourceType, sourceId])
   @@map("incomes")
+}
+
+// Money handed back from a payment on a suite stay or an event sign-up, in part or
+// in full (see domain/entities/IncomeRefund). Its entry takes the amount back out of
+// the payment's revenue account and VAT, and out of the cash register or the bank.
+model IncomeRefund {
+  id            String   @id @default(uuid())
+  number        Int      @unique @default(autoincrement())
+  incomeId      String   @map("income_id")
+  income        Income   @relation(fields: [incomeId], references: [id], onDelete: Restrict)
+  // The booking it was paid for, copied from the income: eventRegistration | suiteBooking, and its id.
+  sourceType    String   @map("source_type")
+  sourceId      String   @map("source_id")
+  date          DateTime @db.Date
+  amount        BigInt
+  vatAmount     BigInt   @default(0) @map("vat_amount")
+  // cash | card | transfer
+  method        String
+  reason        String?
+  createdById   String   @map("created_by_id")
+  createdByName String   @map("created_by_name")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([incomeId])
+  @@index([sourceType, sourceId])
+  @@map("income_refunds")
+}
+
+// The suite's price: one row (id 1).
+model SuiteSettings {
+  id          Int      @id @default(1)
+  // What a night costs, in Toman — snapshotted onto each stay as it's made.
+  nightlyRate BigInt   @default(2500000) @map("nightly_rate")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("suite_settings")
 }
 
 // --- Pricing: ingredients, recipes and the advisor's settings.

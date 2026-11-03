@@ -23,7 +23,7 @@ import { prisma } from "@/src/infrastructure/prisma/client";
 import { Prisma } from "@/src/infrastructure/prisma/generated/client";
 import { inTransaction, type PrismaDb } from "@/src/infrastructure/prisma/transaction";
 
-import { paidBySource } from "./readIncomePaid";
+import { paidBySource, refundedBySource } from "./readIncomePaid";
 import { bookingsHoldingTables, eventsHoldingTables, lockTables } from "./tableHolds";
 import { recordAudit } from "./writeActivityEntry";
 
@@ -220,12 +220,16 @@ export class PrismaEventRepository implements IEventRepository {
 
   async listRegistrations(eventId: string): Promise<EventRegistration[]> {
     const rows = await this.db.eventRegistration.findMany({ where: { eventId }, orderBy: { createdAt: "asc" } });
-    const paid = await paidBySource(
-      this.db,
-      "eventRegistration",
-      rows.map((row) => row.id),
-    );
-    return rows.map((row) => ({ ...toRegistration(row), paidAmount: paid.get(row.id) ?? 0 }));
+    const ids = rows.map((row) => row.id);
+    const [paid, refunded] = await Promise.all([
+      paidBySource(this.db, "eventRegistration", ids),
+      refundedBySource(this.db, "eventRegistration", ids),
+    ]);
+    return rows.map((row) => ({
+      ...toRegistration(row),
+      paidAmount: paid.get(row.id) ?? 0,
+      refundedAmount: refunded.get(row.id) ?? 0,
+    }));
   }
 
   async listRegistrationsForUser(userId: string): Promise<EventRegistration[]> {

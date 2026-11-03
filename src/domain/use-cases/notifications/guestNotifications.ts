@@ -129,6 +129,31 @@ export function suiteNotification(booking: SuiteBooking): NewNotification | null
   };
 }
 
+/** What a refund was for, as the guest knows it: their suite stay, or an event they signed up for. */
+export type RefundSubject = { kind: "suite"; reference: number } | { kind: "event"; eventId: string; title: string };
+
+/**
+ * Money went back to the guest. Addressed by the guest's normalized phone — their
+ * account id, whether or not they've signed in yet — and sent once per refund.
+ */
+export function refundNotification(
+  guestPhone: string,
+  subject: RefundSubject,
+  amount: number,
+  refundId: string,
+): NewNotification {
+  return {
+    userId: normalizePhone(guestPhone),
+    kind: "refundIssued",
+    params:
+      subject.kind === "suite"
+        ? { amount, subject: "suite", reference: subject.reference }
+        : { amount, subject: "event", title: subject.title },
+    link: subject.kind === "suite" ? "/suite" : `/events/${subject.eventId}`,
+    dedupeKey: `refund:${refundId}`,
+  };
+}
+
 /** A book went home with a guest: the loan, and when it's due. */
 export function loanStartedNotification(loan: BookLoan): NewNotification | null {
   const to = addressed({ userId: loan.userId, phone: loan.borrowerPhone }, "/loans");

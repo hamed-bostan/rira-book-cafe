@@ -37,6 +37,7 @@ import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
+import { CounterSaleDone } from "./CounterSaleDone";
 import { ordersApi } from "./order-api";
 import { splitParts, splitRemainder, type SplitAmounts } from "./paymentParts";
 import { PaymentPartsFields } from "./PaymentPartsFields";
@@ -81,6 +82,8 @@ export function CounterSaleScreen({ products }: CounterSaleScreenProps) {
   const [amounts, setAmounts] = React.useState<SplitAmounts>({});
   const [complete, setComplete] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  /** The sale just rung up, with the way to it and its receipt, until the next one. */
+  const [lastSale, setLastSale] = React.useState<{ id: string; number: number } | null>(null);
   const [pending, startTransition] = React.useTransition();
 
   const term = query.trim().toLowerCase();
@@ -113,10 +116,12 @@ export function CounterSaleScreen({ products }: CounterSaleScreenProps) {
       complete,
     };
     setError(null);
+    setLastSale(null);
     startTransition(async () => {
       try {
         const order = await ordersApi.createCounterSale(values);
         toast({ tone: "success", title: t("counter.saved", { number: order.orderNumber }) });
+        setLastSale({ id: order.id, number: order.orderNumber });
         setBasket({});
         setQuery("");
         setNote("");
@@ -353,6 +358,7 @@ export function CounterSaleScreen({ products }: CounterSaleScreenProps) {
                   {t("counter.submit")}
                 </Button>
                 {!ready && lines.length > 0 ? <p className={FIELD_HINT}>{t("counter.incomplete")}</p> : null}
+                {lastSale ? <CounterSaleDone orderId={lastSale.id} orderNumber={lastSale.number} /> : null}
               </div>
             </DashboardSection>
           </>

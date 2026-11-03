@@ -31,7 +31,7 @@ export function PublicHeader({ signedIn, unreadNotifications }: PublicHeaderProp
   const pathname = usePathname();
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur print:hidden">
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center gap-4 px-4">
         <Link
           href="/"

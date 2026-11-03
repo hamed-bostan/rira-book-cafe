@@ -73,15 +73,16 @@ const isbnField = z
   .check(z.refine((value) => value === undefined || ISBN_PATTERN.test(value), "isbnInvalid"));
 
 /**
- * Copies the lending shelf has, 1–MAX_BOOK_COPIES. Optional on the wire (a client
- * that predates the field sends none); blank or absent reads as one.
+ * Copies the lending shelf has, 0–MAX_BOOK_COPIES (0 when every copy is lost).
+ * Optional on the wire (a client that predates the field sends none); blank or
+ * absent reads as one.
  */
 const copiesField = z
   .pipe(
     z.optional(z.string().check(z.trim())).check(z.refine((value) => !value || /^\d+$/.test(value), "copiesWhole")),
     z.transform((value) => (value ? Number(value) : undefined)),
   )
-  .check(z.refine((value) => value === undefined || (value >= 1 && value <= MAX_BOOK_COPIES), "copiesRange"));
+  .check(z.refine((value) => value === undefined || (value >= 0 && value <= MAX_BOOK_COPIES), "copiesRange"));
 
 /** Dietary tags: a set of known tags (blank list allowed); the public filter reads these. */
 const dietaryField = z

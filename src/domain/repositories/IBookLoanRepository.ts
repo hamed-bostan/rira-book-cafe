@@ -32,6 +32,12 @@ export type BookLoanFilters = {
 /** How many loans each view holds — every loan, whatever the search. */
 export type BookLoanCounts = Record<BookLoanView, number>;
 
+/** What closing a loan changed: the loan, and its book's copies to lend when they moved (a copy lost or found). */
+export type BookLoanStatusChange = {
+  loan: BookLoan;
+  copies?: { before: number; after: number };
+};
+
 export type IBookLoanRepository = {
   /**
    * Record a loan. Refuses a second open loan of the same book to the same phone
@@ -59,14 +65,16 @@ export type IBookLoanRepository = {
    * Move a loan to a new status, guarded on `expectedStatus` so a concurrent change
    * can't be overwritten (`ConflictError("INVALID_TRANSITION")`). `returnedAt` is
    * set when it becomes `returned`, and a deposit follows the loan: handed back, or
-   * kept. The ledger entries commit with it.
+   * kept. A copy written off comes off the book's copies to lend, and goes back on
+   * if it turns up (`lendingCopiesChange`), under the book's lending lock. The
+   * ledger entries and the audit entry (which sees both changes) commit with it.
    */
   applyStatus(
     id: string,
     expectedStatus: BookLoanStatus,
     status: BookLoanStatus,
     at: Date,
-    audit?: AuditHook<BookLoan>,
+    audit?: AuditHook<BookLoanStatusChange>,
     ledger?: LedgerHook<BookLoan>,
   ): Promise<BookLoan>;
 };

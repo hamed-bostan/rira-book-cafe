@@ -23,7 +23,7 @@ export type BookDetails = {
   /** ISBN-10 or ISBN-13, digits (and a trailing X) only. Optional — not every used book has one. */
   isbn?: string;
   availability: BookAvailability;
-  /** Copies the shelf lends; absent means one. */
+  /** Copies the shelf lends; absent means one, 0 once every copy is lost. */
   copies?: number;
 };
 
@@ -36,6 +36,11 @@ export const MAX_STOCK_QUANTITY = 1_000_000;
 /** Copies of a book the shelf can lend — one unless the book says otherwise. */
 export function lendingCopies(book: Pick<BookDetails, "copies"> | undefined): number {
   return book?.copies ?? 1;
+}
+
+/** Copies to lend once `change` copies come off (negative) or go back on the shelf — never fewer than none, nor more than the shelf tracks. */
+export function shiftLendingCopies(copies: number, change: number): number {
+  return Math.min(MAX_BOOK_COPIES, Math.max(0, copies + change));
 }
 
 export type Product = {

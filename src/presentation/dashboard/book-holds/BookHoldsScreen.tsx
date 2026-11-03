@@ -74,6 +74,8 @@ export async function BookHoldsScreen({ open, closed, books, openLoans, tab, now
         tone: "font-medium text-success-foreground",
       };
     }
+    // Every copy written off: nothing is out to come back.
+    if (copies === 0) return { text: t("noCopiesToLend"), tone: "text-muted-foreground" };
     const next = openLoans
       .filter((loan) => loan.productId === productId)
       .sort((a, b) => a.dueAt.localeCompare(b.dueAt))[0];

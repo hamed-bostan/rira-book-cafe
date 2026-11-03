@@ -1,13 +1,14 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { isBookLoanOverdue, type BookLoan, type BookLoanStatus } from "../../../entities/BookLoan";
+import { isBookLoanOverdue, lendingCopiesChange, type BookLoan, type BookLoanStatus } from "../../../entities/BookLoan";
+import { shiftLendingCopies } from "../../../entities/Product";
 import { ConflictError } from "../../../errors/ConflictError";
 import { NotFoundError } from "../../../errors/NotFoundError";
 import { ValidationError } from "../../../errors/ValidationError";
 import { ChangeBookLoan } from "../ChangeBookLoan";
 import { LendBook } from "../LendBook";
 
-import type { IBookLoanRepository, NewBookLoan } from "../../../repositories/IBookLoanRepository";
+import type { BookLoanStatusChange, IBookLoanRepository, NewBookLoan } from "../../../repositories/IBookLoanRepository";
 import type { IUserRepository } from "../../../repositories/IUserRepository";
 
 // 13:30 in Tehran on 2026-10-20.
@@ -49,7 +50,7 @@ function repoWith(
       _expected: BookLoanStatus,
       status: BookLoanStatus,
       _at: Date,
-      _audit?: (saved: BookLoan) => unknown,
+      _audit?: (change: BookLoanStatusChange) => unknown,
     ) => ({
       ...(current as BookLoan),
       status,
@@ -127,9 +128,24 @@ describe("ChangeBookLoan", () => {
     await new ChangeBookLoan(repo).execute("l1", "returned", STAFF, NOW);
 
     expect(applyStatus.mock.calls[0].slice(0, 4)).toEqual(["l1", "out", "returned", NOW]);
-    const entry = applyStatus.mock.calls[0][4]?.(loan("returned")) as { action: string; changes: unknown[] };
+    const entry = applyStatus.mock.calls[0][4]?.({ loan: loan("returned") }) as { action: string; changes: unknown[] };
     expect(entry.action).toBe("bookLoan.returned");
     expect(entry.changes).toEqual([{ field: "status", before: "out", after: "returned" }]);
+  });
+
+  it("logs a lost copy coming off the shelf with the status change", async () => {
+    const { repo, applyStatus } = repoWith(loan("out"));
+    await new ChangeBookLoan(repo).execute("l1", "lost", STAFF, NOW);
+
+    const entry = applyStatus.mock.calls[0][4]?.({
+      loan: loan("lost"),
+      copies: { before: 2, after: 1 },
+    }) as { action: string; changes: unknown[] };
+    expect(entry.action).toBe("bookLoan.lost");
+    expect(entry.changes).toEqual([
+      { field: "status", before: "out", after: "lost" },
+      { field: "bookCopies", before: "2", after: "1" },
+    ]);
   });
 
   it("lets a lost book come back, but never reopens a returned one", async () => {
@@ -147,6 +163,21 @@ describe("ChangeBookLoan", () => {
     await expect(new ChangeBookLoan(repoWith(null).repo).execute("nope", "returned", STAFF, NOW)).rejects.toThrow(
       NotFoundError,
     );
+  });
+});
+
+describe("lost copies", () => {
+  it("takes a copy off the shelf when it's lost and puts it back when it turns up", () => {
+    expect(lendingCopiesChange("out", "lost")).toBe(-1);
+    expect(lendingCopiesChange("lost", "returned")).toBe(1);
+    expect(lendingCopiesChange("out", "returned")).toBe(0);
+  });
+
+  it("keeps the copies to lend between none and the most the shelf tracks", () => {
+    expect(shiftLendingCopies(1, -1)).toBe(0);
+    expect(shiftLendingCopies(0, -1)).toBe(0);
+    expect(shiftLendingCopies(0, 1)).toBe(1);
+    expect(shiftLendingCopies(20, 1)).toBe(20);
   });
 });
 

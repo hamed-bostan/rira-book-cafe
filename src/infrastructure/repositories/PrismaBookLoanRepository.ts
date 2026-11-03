@@ -3,18 +3,20 @@ import {
   LOAN_DEPOSIT_METHODS,
   LOAN_DEPOSIT_STATES,
   depositStateFor,
+  lendingCopiesChange,
   type BookLoan,
   type BookLoanStatus,
   type LoanDepositMethod,
   type LoanDepositState,
 } from "@/src/domain/entities/BookLoan";
-import { lendingCopies } from "@/src/domain/entities/Product";
+import { lendingCopies, shiftLendingCopies } from "@/src/domain/entities/Product";
 import { ConflictError } from "@/src/domain/errors/ConflictError";
 import { NotFoundError } from "@/src/domain/errors/NotFoundError";
 import type { AuditHook } from "@/src/domain/repositories/AuditHook";
 import type {
   BookLoanCounts,
   BookLoanFilters,
+  BookLoanStatusChange,
   IBookLoanRepository,
   LendableBook,
   NewBookLoan,
@@ -205,31 +207,55 @@ export class PrismaBookLoanRepository implements IBookLoanRepository {
     expectedStatus: BookLoanStatus,
     status: BookLoanStatus,
     at: Date,
-    audit?: AuditHook<BookLoan>,
+    audit?: AuditHook<BookLoanStatusChange>,
     ledger?: LedgerHook<BookLoan>,
   ): Promise<BookLoan> {
     return inTransaction(this.db, async (tx) => {
+      const loan = await tx.bookLoan.findUnique({ where: { id }, select: { productId: true } });
+      if (!loan) throw new NotFoundError("book loan", id);
+      // A lost or found copy moves the book's copies, which lending reads under this lock.
+      await lockBookShelf(tx, loan.productId);
+
       // Guarded on the status the caller read: a concurrent change makes this match nothing.
       const result = await tx.bookLoan.updateMany({
         where: { id, status: expectedStatus },
         data: { status, returnedAt: status === "returned" ? at : null },
       });
       if (result.count === 0) {
-        if (!(await tx.bookLoan.findUnique({ where: { id }, select: { id: true } })))
-          throw new NotFoundError("book loan", id);
         throw new ConflictError("INVALID_TRANSITION", "This loan was just changed by someone else.");
       }
       await tx.bookLoan.updateMany({
         where: { id, depositAmount: { gt: 0 } },
         data: { depositState: depositStateFor(status) },
       });
+      const copies = await moveLendingCopies(tx, loan.productId, lendingCopiesChange(expectedStatus, status));
 
       const saved = toBookLoan(await tx.bookLoan.findUniqueOrThrow({ where: { id } }));
-      await recordAudit(tx, saved, audit);
+      await recordAudit(tx, { loan: saved, copies }, audit);
       await postHook(tx, saved, ledger);
       return saved;
     });
   }
+}
+
+/**
+ * Take copies off (or put them back on) a book's lending shelf; a null count reads
+ * as the default. Nothing to move — no change, a product that's gone or no longer
+ * a book, a count already at its floor or ceiling — moves nothing and says so.
+ */
+async function moveLendingCopies(
+  tx: Prisma.TransactionClient,
+  productId: string,
+  change: number,
+): Promise<BookLoanStatusChange["copies"]> {
+  if (change === 0) return undefined;
+  const book = await tx.product.findFirst({ where: { id: productId, kind: "book" }, select: { bookCopies: true } });
+  if (!book) return undefined;
+  const before = lendingCopies({ copies: book.bookCopies ?? undefined });
+  const after = shiftLendingCopies(before, change);
+  if (after === before) return undefined;
+  await tx.product.update({ where: { id: productId }, data: { bookCopies: after } });
+  return { before, after };
 }
 
 type BookLoanRow = Prisma.BookLoanGetPayload<object>;

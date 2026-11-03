@@ -10,6 +10,7 @@ import { type User } from "../../entities/User";
 import { ConflictError } from "../../errors/ConflictError";
 import { NotFoundError } from "../../errors/NotFoundError";
 import { ValidationError } from "../../errors/ValidationError";
+import { bookAvailableNotification } from "../notifications/guestNotifications";
 
 import type { IBookLoanRepository } from "../../repositories/IBookLoanRepository";
 import type { IBookWaitlistRepository } from "../../repositories/IBookWaitlistRepository";
@@ -81,8 +82,8 @@ export type AddToBookWaitlistInput = {
 
 /**
  * Staff add a guest who asked at the counter or by phone to a book's line. They
- * needn't have an account; when their phone matches one, the hold is linked so the
- * guest sees it and is told when the book is back.
+ * needn't have an account — they're told when the book is back by their phone —
+ * and when their phone matches one, the hold is linked so the guest sees it too.
  */
 export class AddToBookWaitlist {
   constructor(
@@ -113,8 +114,9 @@ export class AddToBookWaitlist {
 
 /**
  * A copy is free for the line: the guest at the front who hasn't been told yet is
- * told it's theirs — in the app when they have an account; a counter or phone hold
- * has none, and staff ring them. `null` when nobody is waiting.
+ * told it's theirs, in their messages on the site — a counter or phone hold by its
+ * phone, so they see it once they sign in with that number. `null` when nobody is
+ * waiting.
  */
 export async function tellNextInLine(
   productId: string,
@@ -123,15 +125,8 @@ export async function tellNextInLine(
   notifier?: ICustomerNotifier,
 ): Promise<BookWaitlistEntry | null> {
   const next = await waitlistRepo.notifyNext(productId, now);
-  if (next?.userId && notifier) {
-    await notifier.notify({
-      userId: next.userId,
-      kind: "bookAvailable",
-      params: { title: next.bookTitle },
-      link: "/loans",
-      dedupeKey: `waitlist:${next.id}:available`,
-    });
-  }
+  const notification = next ? bookAvailableNotification(next) : null;
+  if (notification && notifier) await notifier.notify(notification);
   return next;
 }
 

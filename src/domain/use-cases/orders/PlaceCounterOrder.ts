@@ -36,7 +36,9 @@ export type CounterOrderInput = {
  * Ring up a sale at the counter: a walk-in who has no account, a phone order, a book
  * picked off the shelf. Prices come from the menu, like a guest's order, and it takes
  * units off the shelf the same way, but it belongs to no account — so it earns no
- * points and tells nobody, and promo codes (which are counted per guest) don't apply.
+ * points, and promo codes (which are counted per guest) don't apply. Handed over on
+ * the spot, it tells nobody; one left in the queue is told how it goes by the phone
+ * it was rung up with, like any order (`orderStatusNotification`).
  *
  * Paying and completing go through the same use-cases staff use on the order, so
  * the money and the sale are audited, stocked and booked exactly the same. They run

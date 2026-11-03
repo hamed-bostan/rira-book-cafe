@@ -167,7 +167,7 @@ export function NewStayDialog({ held, today, firstFree }: NewStayDialogProps) {
         }
       >
         <div className={FIELD_GRID}>
-          <DashboardField label={t("guestName")} className="col-span-2">
+          <DashboardField label={t("guestName")} className="col-span-full">
             <Input
               size="control-md"
               value={guestName}
@@ -178,7 +178,7 @@ export function NewStayDialog({ held, today, firstFree }: NewStayDialogProps) {
               required
             />
           </DashboardField>
-          <DashboardField label={t("guestPhone")} className="col-span-2">
+          <DashboardField label={t("guestPhone")} className="col-span-full">
             <Input
               size="control-md"
               type="tel"
@@ -216,7 +216,7 @@ export function NewStayDialog({ held, today, firstFree }: NewStayDialogProps) {
               onChange={(event) => setCheckOut(event.target.value || checkOut)}
             />
           </DashboardField>
-          <DashboardField label={t("guestsLabel")} className="col-span-2">
+          <DashboardField label={t("guestsLabel")} className="col-span-full">
             <Select
               size="control-md"
               value={String(guests)}
@@ -231,7 +231,7 @@ export function NewStayDialog({ held, today, firstFree }: NewStayDialogProps) {
               )}
             </Select>
           </DashboardField>
-          <DashboardField label={t("noteOptional")} className="col-span-2">
+          <DashboardField label={t("noteOptional")} className="col-span-full">
             <Input
               size="control-md"
               value={note}

@@ -22,6 +22,12 @@ const EXIT_MS = 200;
  * Docked at the top on phones — the bottom belongs to the tab bar and the
  * thumb — and at the bottom inline-end from `sm`. Swiping toward the inline-end
  * edge dismisses, so the gesture flips with the reading direction.
+ *
+ * The page is a sibling of Radix's provider, never its child. That provider keeps
+ * state of its own (the viewport node, the toast count) and sets it as the viewport
+ * mounts, mid-hydration. A context changing above a page that is still streaming in
+ * makes React give up on hydrating it and draw a second copy beside the server's.
+ * Our own context sits above the page instead: its value never changes.
  */
 export function Toaster({ children }: { children: React.ReactNode }) {
   const t = useTranslations("ds");
@@ -47,9 +53,9 @@ export function Toaster({ children }: { children: React.ReactNode }) {
 
   return (
     <ToastContext.Provider value={api}>
-      <Toast.Provider swipeDirection={dir === "rtl" ? "left" : "right"} label={t("notification")}>
-        {children}
+      {children}
 
+      <Toast.Provider swipeDirection={dir === "rtl" ? "left" : "right"} label={t("notification")}>
         {toasts.map((item) => (
           <ToastItem
             key={item.id}

@@ -31,7 +31,7 @@ import { storefrontApi } from "../storefront-api";
 
 import { basketToOrderItems, basketTotal } from "./basket";
 import { BasketDiscounts } from "./BasketDiscounts";
-import { useBasket } from "./BasketProvider";
+import { useBasket, useBasketActions } from "./BasketProvider";
 import { useOrderQuote } from "./useOrderQuote";
 
 /** Refusals that are about the promo code: shown under its field, and the code is dropped. */
@@ -60,7 +60,8 @@ export function BasketScreen({ signedIn }: BasketScreenProps) {
   const locale = useLocale();
   const router = useRouter();
   const { toast } = useToast();
-  const { basket, ready, setQuantity, remove, clear } = useBasket();
+  const { basket, ready } = useBasket();
+  const { setQuantity, remove, clear } = useBasketActions();
 
   const [serviceType, setServiceType] = React.useState<ServiceType>("dineIn");
   const [tableLabel, setTableLabel] = React.useState("");

@@ -8,7 +8,7 @@ import type { Product } from "@/src/domain/entities/Product";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 
-import { useBasket } from "../basket/BasketProvider";
+import { useBasketActions } from "../basket/BasketProvider";
 
 type AddToBasketButtonProps = {
   item: Pick<Product, "id" | "name" | "imageUrl" | "kind" | "price">;
@@ -23,7 +23,7 @@ type AddToBasketButtonProps = {
 /** Adds an item to the basket, with a brief "Added" confirmation in place of the label. */
 export function AddToBasketButton({ item, quantity = 1, note, onAdded, size = "sm", label }: AddToBasketButtonProps) {
   const t = useTranslations("site");
-  const { add } = useBasket();
+  const { add } = useBasketActions();
   const [added, setAdded] = React.useState(false);
 
   React.useEffect(() => {

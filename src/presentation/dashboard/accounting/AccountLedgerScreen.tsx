@@ -93,7 +93,7 @@ export async function AccountLedgerScreen({ ledger }: { ledger: AccountLedger })
                       <span className={S.label}>{t("journal.colNumber")}</span>
                       <Link
                         href={`/dashboard/accounting/journal/${line.entryId}`}
-                        className="w-fit font-medium text-primary hover:text-primary-hover"
+                        className="-my-3 w-fit py-3 font-medium text-primary hover:text-primary-hover sm:my-0 sm:py-0"
                       >
                         JE-{line.number}
                       </Link>

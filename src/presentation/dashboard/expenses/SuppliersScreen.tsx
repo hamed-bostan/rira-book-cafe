@@ -48,7 +48,7 @@ export async function SuppliersScreen({ suppliers, balances, canWrite }: Supplie
                       <Link
                         href={`/dashboard/expenses?supplier=${supplier.id}`}
                         className={cn(
-                          "font-semibold transition-colors hover:text-primary",
+                          "-my-3 py-3 font-semibold transition-colors hover:text-primary sm:my-0 sm:py-0",
                           supplier.isActive ? "text-foreground" : "text-muted-foreground",
                         )}
                       >

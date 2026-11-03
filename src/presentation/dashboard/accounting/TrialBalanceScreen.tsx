@@ -50,7 +50,7 @@ export async function TrialBalanceScreen({ report }: { report: TrialBalance }) {
                     <td className={S.lead}>
                       <Link
                         href={`/dashboard/accounting/accounts/${row.account.code}`}
-                        className="text-foreground transition-colors hover:text-primary"
+                        className="-my-3 block w-fit py-3 text-foreground transition-colors hover:text-primary sm:my-0 sm:py-0"
                       >
                         <span className={cn(ROW_CAPTION, "me-2 tabular-nums")}>{row.account.code}</span>
                         {accountName(row.account, locale)}

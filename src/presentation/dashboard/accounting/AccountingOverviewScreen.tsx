@@ -10,6 +10,7 @@ import { moneyUnit } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { cn } from "@/src/lib/utils";
 
+import { TEXT_ACTION } from "../fieldStyles";
 import { MetricCard } from "../MetricCard";
 
 import { AccountingHeader } from "./AccountingHeader";
@@ -145,7 +146,7 @@ export async function AccountingOverviewScreen({
         </dl>
         <Link
           href={`/dashboard/accounting/statements/profit-and-loss?from=${profitAndLoss.fromDay}&to=${profitAndLoss.toDay}`}
-          className="w-fit text-body-default font-medium text-primary underline-offset-4 hover:underline sm:text-body-small"
+          className={cn(TEXT_ACTION, "w-fit text-primary underline-offset-4 hover:underline")}
         >
           {t("overview.fullStatement")}
         </Link>

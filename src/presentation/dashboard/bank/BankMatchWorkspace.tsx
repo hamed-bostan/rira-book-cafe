@@ -51,7 +51,7 @@ const SIDE = cn(
 );
 
 /** A side's tab: a phone's tap target, then the design's height from `sm`. */
-const SIDE_TAB = "group flex min-h-10 items-center justify-center gap-2 sm:min-h-8";
+const SIDE_TAB = "group flex min-h-11 items-center justify-center gap-2 sm:min-h-8";
 
 /** How many lines a side has left to match, beside its name. */
 const SIDE_COUNT =
@@ -333,7 +333,7 @@ export function BankMatchWorkspace({ statement, candidates, suggestions, canWrit
                     <Link
                       key={candidate.lineId}
                       href={`/dashboard/accounting/journal/${candidate.entryId}`}
-                      className="text-primary hover:text-primary-hover"
+                      className="-my-3 py-3 text-primary hover:text-primary-hover sm:my-0 sm:py-0"
                     >
                       JE-{candidate.entryNumber}
                     </Link>

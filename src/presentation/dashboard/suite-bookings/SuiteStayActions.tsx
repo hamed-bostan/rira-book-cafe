@@ -103,9 +103,7 @@ export function SuiteStayActions({
           title: t("statusChanged", { reference, status: t(`status.${next}`) }),
           // Confirming or cancelling sends the guest a message (`suiteNotification`).
           description:
-            next === "confirmed" || next === "cancelled"
-              ? guestToldLine({ name: booking.guestName, phone: booking.guestPhone, userId: booking.userId })
-              : undefined,
+            next === "confirmed" || next === "cancelled" ? guestToldLine({ name: booking.guestName }) : undefined,
           onUndo: undoTo ? () => undo(undoTo) : undefined,
         });
       } catch (err) {

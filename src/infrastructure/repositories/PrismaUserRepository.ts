@@ -30,8 +30,17 @@ export class PrismaUserRepository implements IUserRepository {
         email: input.email ?? null,
         avatarUrl: input.avatarUrl ?? null,
         ...(input.role ? { role: input.role } : {}),
+        ...(input.firstSignedInAt ? { firstSignedInAt: new Date(input.firstSignedInAt) } : {}),
       },
     });
+    return toUser(row);
+  }
+
+  async recordFirstSignIn(id: string, at: Date): Promise<User> {
+    // Only while unset, so a later sign-in (or two at once) keeps the first.
+    await prisma.user.updateMany({ where: { id, firstSignedInAt: null }, data: { firstSignedInAt: at } });
+    const row = await prisma.user.findUnique({ where: { id } });
+    if (!row) throw new NotFoundError("user", id);
     return toUser(row);
   }
 
@@ -126,6 +135,8 @@ function toUser(row: {
   email: string | null;
   avatarUrl: string | null;
   role: string;
+  createdById: string | null;
+  firstSignedInAt: Date | null;
 }): User {
   return {
     id: row.id,
@@ -136,5 +147,7 @@ function toUser(row: {
     // The column is a plain string (the schema is enum-free), so narrow it here
     // rather than trusting the database to hold only known values.
     role: toUserRole(row.role),
+    ...(row.firstSignedInAt ? { firstSignedInAt: row.firstSignedInAt.toISOString() } : {}),
+    ...(row.createdById ? { createdById: row.createdById } : {}),
   };
 }

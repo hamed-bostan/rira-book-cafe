@@ -88,4 +88,11 @@ export type User = {
   avatarUrl: string | null;
   /** Access level. Everyone is a `"customer"` until an admin promotes them. */
   role: UserRole;
+  /**
+   * ISO 8601: when the phone first signed in. Absent on a guest profile staff made
+   * for a guest who hasn't signed in yet (see `GuestProfile.ts`).
+   */
+  firstSignedInAt?: string;
+  /** The staff member who made the profile for a guest; absent for one made by signing in. */
+  createdById?: string;
 };

@@ -1,8 +1,6 @@
 import { CAFE_TABLE_LABELS } from "@/src/domain/entities/CafeTable";
 import { isWallTime } from "@/src/domain/entities/CafeTime";
-import { isPlausiblePhone } from "@/src/domain/entities/Phone";
 import {
-  MAX_GUEST_NAME_LENGTH,
   MAX_PARTY_SIZE,
   MAX_RESERVATION_NOTE_LENGTH,
   MIN_PARTY_SIZE,
@@ -10,6 +8,8 @@ import {
   RESERVATION_STATUSES,
 } from "@/src/domain/entities/Reservation";
 import * as z from "@/src/lib/zod";
+
+import { guestNameField, guestPhoneField } from "./guest-schema";
 
 /**
  * Reservation contracts shared by the route handlers and their clients. Times
@@ -35,12 +35,13 @@ export const requestReservationSchema = z.object({
 
 export type RequestReservationInput = z.input<typeof requestReservationSchema>;
 
-/** Staff booking a table for a guest who rang or walked in; with a table it's confirmed on the spot. */
+/**
+ * Staff booking a table for a guest, found by phone (the name makes them a profile
+ * when the phone has none); with a table it's confirmed on the spot.
+ */
 export const staffReservationSchema = z.extend(requestReservationSchema, {
-  guestName: z
-    .string()
-    .check(z.trim(), z.minLength(1, "nameRequired"), z.maxLength(MAX_GUEST_NAME_LENGTH, "nameTooLong")),
-  guestPhone: z.string().check(z.trim(), z.refine(isPlausiblePhone, "phoneInvalid")),
+  guestPhone: guestPhoneField,
+  guestName: guestNameField,
   tableLabel: z.optional(z.enum(CAFE_TABLE_LABELS, { error: "tableInvalid" })),
 });
 
@@ -72,10 +73,10 @@ export type ReservationUpdateInput = z.input<typeof reservationUpdateSchema>;
 
 /**
  * Staff editing a booking ("Edit booking"): its day and time (cafe wall time, as a
- * new booking's), party, length, the guest's name and phone, the note (blank
- * clears it) and the table (`null` clears it). Each is optional — one left out
- * keeps its value — and the use-case changes only what differs and what the
- * booking's status allows.
+ * new booking's), party, length, the note (blank clears it) and the table (`null`
+ * clears it) — not the guest, who is the booking's profile. Each is optional — one
+ * left out keeps its value — and the use-case changes only what differs and what
+ * the booking's status allows.
  */
 export const reservationDetailsSchema = z.object({
   startsAt: z.optional(z.string().check(z.refine(isWallTime, "dateTimeInvalid"))),
@@ -91,10 +92,6 @@ export const reservationDetailsSchema = z.object({
   durationMinutes: z.optional(
     z.number().check(z.refine((value) => (RESERVATION_LENGTHS as readonly number[]).includes(value), "lengthInvalid")),
   ),
-  guestName: z.optional(
-    z.string().check(z.trim(), z.minLength(1, "nameRequired"), z.maxLength(MAX_GUEST_NAME_LENGTH, "nameTooLong")),
-  ),
-  guestPhone: z.optional(z.string().check(z.trim(), z.refine(isPlausiblePhone, "phoneInvalid"))),
   note: z.optional(z.string().check(z.trim(), z.maxLength(MAX_RESERVATION_NOTE_LENGTH, "noteTooLong"))),
   tableLabel: z.optional(z.nullable(z.enum(CAFE_TABLE_LABELS, { error: "tableInvalid" }))),
 });

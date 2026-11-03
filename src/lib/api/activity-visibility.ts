@@ -29,6 +29,8 @@ const ENTITY_TYPE_NEEDS: Record<(typeof ACTIVITY_ENTITY_TYPES)[number], Permissi
   bookLoan: "activity.view",
   event: "activity.view",
   user: "team.manage",
+  // Who a guest is is on every booking and order the floor reads already.
+  guest: "activity.view",
   ledger: "accounting.view",
   expense: "accounting.view",
   income: "accounting.view",

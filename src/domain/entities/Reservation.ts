@@ -31,7 +31,10 @@ export const DAY_BOOKING_STATUSES = [
 export const TABLE_HOLDING_STATUSES = ["confirmed", "seated"] as const satisfies readonly ReservationStatus[];
 
 export const MIN_PARTY_SIZE = 1;
-/** Bigger groups book by phone — the floor plan has no table for them. */
+/**
+ * The biggest party a booking takes. A bigger group books for this many and says
+ * how many they are in the note; staff answer in the guest's messages.
+ */
 export const MAX_PARTY_SIZE = 12;
 /** How long a table is held for a booking, in minutes, unless staff give it another length. */
 export const DEFAULT_RESERVATION_MINUTES = 90;
@@ -60,14 +63,16 @@ export const BOOKING_TIMES: readonly string[] = Array.from({ length: (24 * 60) /
 });
 
 export const MAX_RESERVATION_NOTE_LENGTH = 300;
-/** A guest's name as staff type it for a phone or walk-in booking. */
-export const MAX_GUEST_NAME_LENGTH = 80;
 
 export type Reservation = {
   id: string;
   /** Short sequential number staff and guests refer to. */
   reference: number;
-  /** The guest's account; absent for a phone or walk-in booking staff made for them. */
+  /**
+   * The guest's profile — theirs when they booked themselves, the one their phone
+   * found (or made) when staff booked for them. Absent only on an old booking
+   * that had no usable phone.
+   */
   userId?: string;
   /** Guest's name and phone, snapshotted when they booked. */
   guestName: string;
@@ -151,16 +156,11 @@ export function isReservationDue(reservation: Pick<Reservation, "startsAt">, now
   return new Date(reservation.startsAt) <= now;
 }
 
-/** The details of a booking staff can edit, in the order the "Edit booking" dialog shows them. */
-export const RESERVATION_DETAILS = [
-  "startsAt",
-  "partySize",
-  "durationMinutes",
-  "guestName",
-  "guestPhone",
-  "note",
-  "tableLabel",
-] as const;
+/**
+ * The details of a booking staff can edit, in the order the "Edit booking" dialog
+ * shows them. Not the guest: a booking's guest is its profile.
+ */
+export const RESERVATION_DETAILS = ["startsAt", "partySize", "durationMinutes", "note", "tableLabel"] as const;
 export type ReservationDetail = (typeof RESERVATION_DETAILS)[number];
 
 /** The details whose change is news to the guest: when, how many, how long. */
@@ -176,18 +176,11 @@ const SEATED_DETAILS: readonly ReservationDetail[] = ["durationMinutes", "tableL
 /**
  * What staff may change on a booking now: everything while it's requested or
  * confirmed, only the length and the table once the party is seated, nothing once
- * it's over. A guest's own booking keeps the phone of the account behind it.
+ * it's over.
  */
-export function editableReservationDetails(
-  reservation: Pick<Reservation, "status" | "userId">,
-): readonly ReservationDetail[] {
-  const details =
-    reservation.status === "requested" || reservation.status === "confirmed"
-      ? RESERVATION_DETAILS
-      : reservation.status === "seated"
-        ? SEATED_DETAILS
-        : [];
-  return reservation.userId ? details.filter((detail) => detail !== "guestPhone") : details;
+export function editableReservationDetails(reservation: Pick<Reservation, "status">): readonly ReservationDetail[] {
+  if (reservation.status === "requested" || reservation.status === "confirmed") return RESERVATION_DETAILS;
+  return reservation.status === "seated" ? SEATED_DETAILS : [];
 }
 
 /** The instant the table is free again. */

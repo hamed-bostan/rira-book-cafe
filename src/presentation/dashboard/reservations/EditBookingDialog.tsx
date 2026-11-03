@@ -10,7 +10,6 @@ import { tableChoicesFor, type Floor } from "@/src/domain/entities/FloorAvailabi
 import {
   BOOKING_TIMES,
   MAX_BOOKING_DAYS_AHEAD,
-  MAX_GUEST_NAME_LENGTH,
   MAX_PARTY_SIZE,
   MAX_RESERVATION_NOTE_LENGTH,
   MIN_PARTY_SIZE,
@@ -57,8 +56,6 @@ const FIELDS = [
   "startsAt",
   "partySize",
   "durationMinutes",
-  "guestName",
-  "guestPhone",
   "note",
   "tableLabel",
 ] as const satisfies readonly (keyof ReservationDetailsInput)[];
@@ -68,9 +65,9 @@ const LOADING_TILES = 9;
 
 /**
  * "Edit booking": move a booking to another day or time, change the party, how
- * long it holds the table, the guest's name and phone, the note, or the table. A
- * seated party can only change its length and table; a guest's own booking keeps
- * its account's phone (`editableReservationDetails`). The floor shown is the one
+ * long it holds the table, the note, or the table — not the guest, who is the
+ * booking's profile. A seated party can only change its length and table
+ * (`editableReservationDetails`). The floor shown is the one
  * the booking would land on — read fresh when the day changes — and a table taken
  * then is flagged before saving; the server re-checks it under its lock. Only what
  * changed is sent. Mounted fresh each time it opens, so it starts from the booking.
@@ -92,8 +89,6 @@ export function EditBookingDialog({ open, onOpenChange, reservation, now, day, f
   const [time, setTime] = React.useState(original.slice(11));
   const [partySize, setPartySize] = React.useState(reservation.partySize);
   const [length, setLength] = React.useState(reservation.durationMinutes);
-  const [guestName, setGuestName] = React.useState(reservation.guestName);
-  const [guestPhone, setGuestPhone] = React.useState(reservation.guestPhone);
   const [note, setNote] = React.useState(reservation.note ?? "");
   const [pick, setPick] = React.useState<string | null>(reservation.tableLabel ?? null);
   const [floors, setFloors] = React.useState<Record<string, Floor>>({ [day]: floor });
@@ -149,8 +144,6 @@ export function EditBookingDialog({ open, onOpenChange, reservation, now, day, f
     ...(wallTime !== original ? { startsAt: wallTime } : {}),
     ...(partySize !== reservation.partySize ? { partySize } : {}),
     ...(length !== reservation.durationMinutes ? { durationMinutes: length } : {}),
-    ...(guestName !== reservation.guestName ? { guestName } : {}),
-    ...(guestPhone !== reservation.guestPhone ? { guestPhone } : {}),
     ...(note !== (reservation.note ?? "") ? { note } : {}),
     ...(showTables && pick !== (reservation.tableLabel ?? null)
       ? { tableLabel: pick && isCafeTable(pick) ? pick : null }
@@ -158,7 +151,7 @@ export function EditBookingDialog({ open, onOpenChange, reservation, now, day, f
   };
   const problem =
     "startsAt" in changes && (bookingDay < today || isPast(time)) ? t("editErrorPast") : (clashMessage ?? null);
-  const blocked = Object.keys(changes).length === 0 || problem !== null || !guestName.trim() || !guestPhone.trim();
+  const blocked = Object.keys(changes).length === 0 || problem !== null;
 
   function submit(): void {
     setError(null);
@@ -263,34 +256,6 @@ export function EditBookingDialog({ open, onOpenChange, reservation, now, day, f
                 </option>
               ))}
             </Select>
-          </DashboardField>
-          <DashboardField label={t("guestName")} className="col-span-full">
-            <Input
-              size="control-md"
-              value={guestName}
-              onChange={(event) => setGuestName(event.target.value)}
-              maxLength={MAX_GUEST_NAME_LENGTH}
-              disabled={!can("guestName")}
-              autoComplete="off"
-              required
-            />
-          </DashboardField>
-          <DashboardField
-            label={t("guestPhone")}
-            hint={reservation.userId ? t("editPhoneFromAccount") : undefined}
-            className="col-span-full"
-          >
-            <Input
-              size="control-md"
-              type="tel"
-              inputMode="tel"
-              value={guestPhone}
-              onChange={(event) => setGuestPhone(event.target.value)}
-              disabled={!can("guestPhone")}
-              autoComplete="off"
-              dir="ltr"
-              required
-            />
           </DashboardField>
           <DashboardField label={t("noteOptional")} className="col-span-full">
             <Input

@@ -108,11 +108,7 @@ export function ReservationRowActions({ reservation, now, day, today, floor }: R
           // Confirming or cancelling sends the guest a message (`reservationNotification`).
           description:
             change.status === "confirmed" || change.status === "cancelled"
-              ? guestToldLine({
-                  name: reservation.guestName,
-                  phone: reservation.guestPhone,
-                  userId: reservation.userId,
-                })
+              ? guestToldLine({ name: reservation.guestName })
               : undefined,
           onUndo: undoTo ? () => undo(undoTo) : undefined,
         });

@@ -44,6 +44,7 @@ import { type Prisma } from "@/src/infrastructure/prisma/generated/client";
 import { inTransaction, type PrismaDb } from "@/src/infrastructure/prisma/transaction";
 
 import { recordAudit } from "./writeActivityEntry";
+import { createGuestProfile } from "./writeGuestProfile";
 import { dateToDay, dayToDate, postHook } from "./writeJournal";
 import { clawBackPoints, earnPoints, redeemPoints, refundPoints } from "./writeLoyalty";
 import { consumeStockForOrder, returnStockForRefund } from "./writeStock";
@@ -74,11 +75,12 @@ export class PrismaOrderRepository implements IOrderRepository {
 
       // The code's limits are re-checked here, under its lock: the use-case priced the
       // order, but two guests racing for the last use must not both get it.
-      if (input.promoCodeId && input.userId) await claimPromoUse(tx, input.promoCodeId, input.userId);
+      if (input.promoCodeId) await claimPromoUse(tx, input.promoCodeId, input.userId);
 
+      await createGuestProfile(tx, input.newGuest);
       const created = await tx.order.create({
         data: {
-          userId: input.userId ?? null,
+          userId: input.userId,
           customerName: input.customerName,
           customerPhone: input.customerPhone,
           serviceType: input.serviceType,

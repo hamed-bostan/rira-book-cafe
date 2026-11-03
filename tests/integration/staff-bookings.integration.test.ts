@@ -8,6 +8,7 @@ import type { CafeEvent } from "@/src/domain/entities/CafeEvent";
 import { cafeDayOf, shiftCafeDay } from "@/src/domain/entities/CafeTime";
 import type { Reservation } from "@/src/domain/entities/Reservation";
 import type { SuiteBooking } from "@/src/domain/entities/SuiteBooking";
+import { prisma } from "@/src/infrastructure/prisma/client";
 
 import { jsonRequest, readError, readJson, routeParams } from "./helpers/http";
 import { signInAs } from "./helpers/session";
@@ -37,13 +38,12 @@ describe("staff table bookings", () => {
     expect((await postTable(walkIn)).status).toBe(401);
   });
 
-  it("saves a request without a table, and a confirmed booking with one", async () => {
+  it("saves a request without a table, and a confirmed booking with one, on the guest's profile", async () => {
     signInAs("staff");
     const request = await postTable(walkIn);
     expect(request.status).toBe(201);
     const saved = await readJson<Reservation>(request);
-    expect(saved).toMatchObject({ status: "requested", guestName: "Sara Ahmadi" });
-    expect(saved).not.toHaveProperty("userId");
+    expect(saved).toMatchObject({ status: "requested", guestName: "Sara Ahmadi", userId: "09301184462" });
 
     const confirmed = await postTable({ ...walkIn, startsAt: `${nextWeek}T12:00`, tableLabel: "3" });
     expect(confirmed.status).toBe(201);
@@ -84,15 +84,22 @@ describe("staff table bookings", () => {
     expect((await readError(held)).code).toBe("TABLE_HELD");
   });
 
-  it("validates the guest's details and the table with 400", async () => {
+  it("validates the guest's phone and the table with 400", async () => {
     signInAs("staff");
     const response = await postTable({ ...walkIn, guestName: " ", guestPhone: "12", tableLabel: "Patio" });
     expect(response.status).toBe(400);
     expect((await readError(response)).fieldErrors).toMatchObject({
-      guestName: "nameRequired",
       guestPhone: "phoneInvalid",
       tableLabel: "tableInvalid",
     });
+  });
+
+  it("needs a new guest's name, and leaves no profile behind without it", async () => {
+    signInAs("staff");
+    const response = await postTable({ ...walkIn, guestName: " " });
+    expect(response.status).toBe(400);
+    expect((await readError(response)).fieldErrors).toEqual({ guestName: "guestNameNeeded" });
+    expect(await prisma.user.count({ where: { id: "09301184462" } })).toBe(0);
   });
 });
 
@@ -106,13 +113,12 @@ describe("staff suite bookings", () => {
     note: "",
   };
 
-  it("confirms the stay straight away, with no guest account", async () => {
+  it("confirms the stay straight away, on the guest's profile", async () => {
     signInAs("staff");
     const response = await postSuite(stay);
     expect(response.status).toBe(201);
     const saved = await readJson<SuiteBooking>(response);
-    expect(saved.status).toBe("confirmed");
-    expect(saved).not.toHaveProperty("userId");
+    expect(saved).toMatchObject({ status: "confirmed", userId: "09356401182", guestName: "Omid Karimi" });
   });
 
   it("refuses nights another stay holds (409 SUITE_TAKEN)", async () => {

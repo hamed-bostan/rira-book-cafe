@@ -8,7 +8,8 @@ import type { OrderRefund } from "../../../entities/OrderRefund";
 const ORDER = {
   id: "o1",
   orderNumber: 42,
-  userId: undefined,
+  // A counter sale, rung up for the guest's profile.
+  userId: "09123456789",
   customerPhone: "0912 345 6789",
   total: 110_000,
   paymentParts: [],
@@ -31,7 +32,7 @@ describe("receipts", () => {
     expect(await new GetOrderReceipt(sources(null)).execute("o1")).toBeNull();
   });
 
-  it("gives the guest their own — a counter sale rung up for their phone too — without the costs", async () => {
+  it("gives the guest their own — a counter sale rung up for their profile too — without the costs", async () => {
     const receipt = await new GetOwnOrderReceipt(sources(ORDER)).execute("o1", "09123456789");
 
     expect(receipt?.order.id).toBe("o1");

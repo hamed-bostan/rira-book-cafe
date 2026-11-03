@@ -64,13 +64,16 @@ async function expectBooksBalance(): Promise<void> {
   expect(sheet.balanced).toBe(true);
 }
 
+/** The guest the counter sales are for: a phone with no profile until the first sale. */
+const COUNTER_GUEST = { customerPhone: "0912 555 0110", customerName: "Nima Rad" };
+
 async function ringUp(body: Record<string, unknown>): Promise<Order> {
   signInAs("staff");
   const response = await ringUpSale(
     jsonRequest("POST", "/api/admin/orders", {
       items: [{ productId: "seed-espresso", quantity: 2 }],
       serviceType: "takeaway",
-      customerName: "Walk-in guest",
+      ...COUNTER_GUEST,
       ...body,
     }),
   );
@@ -84,20 +87,26 @@ async function refund(orderId: string, body: unknown): Promise<Response> {
 }
 
 describe("a counter sale", () => {
-  it("is closed to guests, and needs no account to ring up", async () => {
+  it("is closed to guests, and is rung up for the guest's profile", async () => {
     signInAs("customer");
     const refused = await ringUpSale(
       jsonRequest("POST", "/api/admin/orders", {
         items: [{ productId: "seed-espresso", quantity: 1 }],
         serviceType: "takeaway",
-        customerName: "x",
+        ...COUNTER_GUEST,
       }),
     );
     expect(refused.status).toBe(401);
 
     const order = await ringUp({});
-    expect(order).toMatchObject({ status: "pending", paymentStatus: "unpaid", total: 2 * 95000, customerPhone: "" });
-    expect(order.userId).toBeUndefined();
+    expect(order).toMatchObject({
+      status: "pending",
+      paymentStatus: "unpaid",
+      total: 2 * 95000,
+      userId: "09125550110",
+      customerName: "Nima Rad",
+      customerPhone: "0912 555 0110",
+    });
   });
 
   it("books a split sale handed over on the spot, cash and card each to their own account", async () => {
@@ -118,7 +127,10 @@ describe("a counter sale", () => {
     expect(await balanceOf("1120")).toBe(150000);
     // The receivable the sale raised is settled by the two parts together.
     expect(await balanceOf("1150")).toBe(0);
-    expect(await prisma.loyaltyTransaction.count()).toBe(0);
+    // Handed over, it's served: the guest's profile earns its points, as any member order does.
+    expect(await prisma.loyaltyTransaction.findMany({ select: { userId: true, reason: true, delta: true } })).toEqual([
+      { userId: "09125550110", reason: "earn", delta: 19 },
+    ]);
     await expectBooksBalance();
   });
 
@@ -128,7 +140,7 @@ describe("a counter sale", () => {
       jsonRequest("POST", "/api/admin/orders", {
         items: [{ productId: "seed-espresso", quantity: 2 }],
         serviceType: "takeaway",
-        customerName: "Walk-in guest",
+        ...COUNTER_GUEST,
         paymentParts: [{ method: "cash", amount: 1000 }],
       }),
     );
@@ -136,6 +148,7 @@ describe("a counter sale", () => {
     expect(response.status).toBe(400);
     expect((await readError(response)).fieldErrors).toMatchObject({ paymentParts: "paymentPartsTotal" });
     expect(await prisma.order.count()).toBe(0);
+    expect(await prisma.user.count({ where: { id: "09125550110" } })).toBe(0);
   });
 
   it("takes counted stock like a guest's order, and refuses what's sold out", async () => {
@@ -149,7 +162,7 @@ describe("a counter sale", () => {
       jsonRequest("POST", "/api/admin/orders", {
         items: [{ productId: BOOK, quantity: 50 }],
         serviceType: "takeaway",
-        customerName: "Walk-in guest",
+        ...COUNTER_GUEST,
       }),
     );
     expect(response.status).toBe(409);

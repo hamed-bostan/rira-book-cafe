@@ -17,7 +17,11 @@ import { ValidationError } from "../../../errors/ValidationError";
 import { CancelOwnReservation, ChangeReservation } from "../ChangeReservation";
 import { BookTableForGuest, RequestReservation } from "../RequestReservation";
 
-import type { IReservationRepository, ReservationChange } from "../../../repositories/IReservationRepository";
+import type {
+  IReservationRepository,
+  NewReservation,
+  ReservationChange,
+} from "../../../repositories/IReservationRepository";
 
 const NOW = new Date("2026-10-20T10:00:00Z");
 const GUEST = { id: "g1", name: "Sara", phone: "0912" };
@@ -53,7 +57,7 @@ function repoWith(current: Reservation | null) {
       tableLabel: change.tableLabel ?? undefined,
     }),
   );
-  const create = vi.fn(async (input: Omit<Reservation, "id" | "reference" | "status" | "createdAt" | "updatedAt">) => ({
+  const create = vi.fn(async (input: NewReservation) => ({
     ...reservation("requested"),
     ...input,
   }));
@@ -96,11 +100,12 @@ describe("RequestReservation", () => {
 });
 
 describe("BookTableForGuest", () => {
-  const walkIn = { guestName: "Omid", guestPhone: "09356401182", partySize: 2 };
+  const walkIn = { guestName: "Omid", guestPhone: "0935 640 1182", partySize: 2 };
+  const noProfiles = { getById: async () => null };
 
   it("books staff's late or early guests at any hour, still on a quarter-hour mark", async () => {
     const { repo, create } = repoWith(null);
-    const useCase = new BookTableForGuest(repo);
+    const useCase = new BookTableForGuest(repo, noProfiles);
     for (const time of ["23:30", "02:00"]) {
       await useCase.execute(
         { ...walkIn, startsAt: wallTimeToDate(`2026-10-21T${time}`) },
@@ -113,6 +118,35 @@ describe("BookTableForGuest", () => {
     await expect(
       useCase.execute({ ...walkIn, startsAt: wallTimeToDate("2026-10-21T23:20") }, { id: "s", name: "Ali" }, NOW),
     ).rejects.toMatchObject({ field: "startsAt" });
+  });
+
+  it("books for the profile the phone finds, or makes one with the booking", async () => {
+    const staff = { id: "s", name: "Ali" };
+    const startsAt = wallTimeToDate("2026-10-21T19:00");
+
+    const fresh = repoWith(null);
+    await new BookTableForGuest(fresh.repo, noProfiles).execute({ ...walkIn, startsAt }, staff, NOW);
+    expect(fresh.create.mock.calls[0][0]).toMatchObject({
+      userId: "09356401182",
+      guestName: "Omid",
+      guestPhone: "0935 640 1182",
+      newGuest: { id: "09356401182", name: "Omid", createdBy: staff },
+    });
+
+    const known = repoWith(null);
+    const profile = {
+      id: "09356401182",
+      phone: "09356401182",
+      name: "Omid Karimi",
+      email: null,
+      avatarUrl: null,
+      role: "customer" as const,
+    };
+    const profiles = { getById: async () => profile };
+    await new BookTableForGuest(known.repo, profiles).execute({ ...walkIn, startsAt }, staff, NOW);
+    const booked = known.create.mock.calls[0][0];
+    expect(booked).toMatchObject({ userId: "09356401182", guestName: "Omid Karimi" });
+    expect(booked.newGuest).toBeUndefined();
   });
 });
 

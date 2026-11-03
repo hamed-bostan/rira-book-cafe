@@ -22,6 +22,7 @@ import { inTransaction, type PrismaDb } from "@/src/infrastructure/prisma/transa
 
 import { bookingsHoldingTables, eventsHoldingTables, lockTables } from "./tableHolds";
 import { recordAudit } from "./writeActivityEntry";
+import { createGuestProfile } from "./writeGuestProfile";
 
 /**
  * Reservations backed by PostgreSQL via Prisma. Server-side only, bound through
@@ -38,9 +39,10 @@ export class PrismaReservationRepository implements IReservationRepository {
         const startsAt = new Date(input.startsAt);
         await refuseTakenTable(tx, input.tableLabel, startsAt, reservationEndsAt(input), null);
       }
+      await createGuestProfile(tx, input.newGuest);
       const row = await tx.reservation.create({
         data: {
-          userId: input.userId ?? null,
+          userId: input.userId,
           guestName: input.guestName,
           guestPhone: input.guestPhone,
           partySize: input.partySize,
@@ -153,8 +155,6 @@ export class PrismaReservationRepository implements IReservationRepository {
           startsAt: new Date(edit.startsAt),
           durationMinutes: edit.durationMinutes,
           partySize: edit.partySize,
-          guestName: edit.guestName,
-          guestPhone: edit.guestPhone,
           note: edit.note,
           tableLabel: edit.tableLabel,
         },

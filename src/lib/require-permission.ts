@@ -103,6 +103,13 @@ export async function getSessionWith(permission: Permission): Promise<Session | 
   return (await sessionHas(session, permission)) ? session : null;
 }
 
+/** {@link getSessionWith} for an endpoint that serves whoever holds any one of `permissions`. */
+export async function getSessionWithAny(permissions: readonly Permission[]): Promise<Session | null> {
+  const session = await auth();
+  const role = await sessionRole(session);
+  return role != null && permissions.some((permission) => roleHasPermission(role, permission)) ? session : null;
+}
+
 /**
  * Server-side guard for a dashboard *page*. Returns the session when it carries
  * `permission`. Anonymous visitors go to `/login` (with a `callbackUrl`); signed-in

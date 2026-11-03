@@ -151,7 +151,8 @@ describe("an order", () => {
         jsonRequest("POST", "/api/admin/orders", {
           items: [{ productId: id, quantity }],
           serviceType: "takeaway",
-          customerName: "Walk-in guest",
+          customerPhone: "0912 555 0120",
+          customerName: "Nima Rad",
         }),
       );
     };

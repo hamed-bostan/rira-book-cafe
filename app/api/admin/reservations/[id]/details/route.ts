@@ -17,7 +17,7 @@ type RouteContext = { params: Promise<{ id: string }> };
 
 /**
  * PATCH /api/admin/reservations/:id/details — edit a booking: its day and time,
- * party, length, the guest's name and phone, the note, the table. Requires
+ * party, length, the note, the table (not the guest: that's its profile). Requires
  * `reservations.manage`. 400 for a detail its status won't let change (only the
  * length and the table once seated) or a time in the past; 409 `TABLE_TAKEN` /
  * `TABLE_HELD` when the table is someone else's at the new time, or

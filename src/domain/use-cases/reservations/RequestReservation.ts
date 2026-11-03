@@ -1,20 +1,20 @@
 import { activityValue, type ActivityActor } from "../../entities/ActivityEntry";
 import { isCafeTable } from "../../entities/CafeTable";
-import { isPlausiblePhone } from "../../entities/Phone";
 import {
   BOOKING_SLOT_MINUTES,
   DEFAULT_RESERVATION_MINUTES,
   MAX_BOOKING_DAYS_AHEAD,
-  MAX_GUEST_NAME_LENGTH,
   MAX_PARTY_SIZE,
   MAX_RESERVATION_NOTE_LENGTH,
   MIN_PARTY_SIZE,
   type Reservation,
 } from "../../entities/Reservation";
 import { ValidationError } from "../../errors/ValidationError";
+import { ResolveGuestProfile } from "../guest-profiles/ResolveGuestProfile";
 
 import type { User } from "../../entities/User";
 import type { IReservationRepository } from "../../repositories/IReservationRepository";
+import type { IUserRepository } from "../../repositories/IUserRepository";
 
 export type RequestReservationInput = {
   /** UTC instant of the requested start. */
@@ -59,16 +59,6 @@ export function validateBookingNote(note: string | undefined): string | undefine
   return trimmed;
 }
 
-/** The guest's name and phone as staff type them for a phone or walk-in booking, trimmed. */
-export function validateBookingGuest(guestName: string, guestPhone: string): { guestName: string; guestPhone: string } {
-  const name = guestName.trim();
-  if (!name) throw new ValidationError("guestName", "Enter the guest's name.");
-  if (name.length > MAX_GUEST_NAME_LENGTH) throw new ValidationError("guestName", "That name is too long.");
-  const phone = guestPhone.trim();
-  if (!isPlausiblePhone(phone)) throw new ValidationError("guestPhone", "Enter a phone number.");
-  return { guestName: name, guestPhone: phone };
-}
-
 /**
  * The booking rules both a guest and staff are held to: a quarter-hour start no
  * earlier than `earliest` and within the booking horizon, a party the floor can
@@ -109,32 +99,44 @@ export class RequestReservation {
 }
 
 export type BookTableForGuestInput = RequestReservationInput & {
-  guestName: string;
+  /** The guest's phone, which finds their profile. */
   guestPhone: string;
+  /** The guest's name, for a phone with no profile yet. */
+  guestName?: string;
   /** A floor table to confirm it at now; omit to leave it a request. */
   tableLabel?: string;
 };
 
 /**
- * Staff book a table for a guest who rang or walked in — no account behind it.
- * With a table it's confirmed on the spot (the repository refuses a table a
- * booking or an event already has then); without one it waits as a request. A
- * walk-in may take the quarter hour that's already running.
+ * Staff book a table for a guest at the counter or on the phone. It's the guest's
+ * booking, on the profile their phone finds — or on one made with it, from their
+ * name, when the phone has none — so they see it once they sign in. With a table
+ * it's confirmed on the spot (the repository refuses a table a booking or an event
+ * already has then); without one it waits as a request. A walk-in may take the
+ * quarter hour that's already running.
  */
 export class BookTableForGuest {
-  constructor(private readonly reservationRepo: IReservationRepository) {}
+  constructor(
+    private readonly reservationRepo: IReservationRepository,
+    private readonly userRepo: Pick<IUserRepository, "getById">,
+  ) {}
 
   async execute(input: BookTableForGuestInput, actor: ActivityActor, now: Date): Promise<Reservation> {
     const { note } = validateBooking(input, now, staffEarliestStart(now));
-    const { guestName, guestPhone } = validateBookingGuest(input.guestName, input.guestPhone);
     if (input.tableLabel !== undefined && !isCafeTable(input.tableLabel)) {
       throw new ValidationError("tableLabel", `There's no table "${input.tableLabel}".`);
     }
+    const guest = await new ResolveGuestProfile(this.userRepo).execute(
+      { phone: input.guestPhone, name: input.guestName },
+      actor,
+    );
 
     return this.reservationRepo.create(
       {
-        guestName,
-        guestPhone,
+        userId: guest.userId,
+        newGuest: guest.newProfile,
+        guestName: guest.name,
+        guestPhone: guest.phone,
         partySize: input.partySize,
         startsAt: input.startsAt.toISOString(),
         durationMinutes: DEFAULT_RESERVATION_MINUTES,

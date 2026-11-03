@@ -91,15 +91,4 @@ export class PrismaBookWaitlistRepository implements IBookWaitlistRepository {
       return toEntry(row);
     });
   }
-
-  async fulfill(productId: string, borrower: { userId?: string; phone: string }): Promise<void> {
-    await this.db.bookWaitlistEntry.updateMany({
-      where: {
-        productId,
-        status: OPEN,
-        OR: [{ guestPhone: borrower.phone }, ...(borrower.userId ? [{ userId: borrower.userId }] : [])],
-      },
-      data: { status: "fulfilled" },
-    });
-  }
 }

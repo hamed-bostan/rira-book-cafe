@@ -8,6 +8,7 @@ import { ValidationError } from "../../../errors/ValidationError";
 import { ChangeBookLoan } from "../ChangeBookLoan";
 import { LendBook } from "../LendBook";
 
+import type { BookWaitlistEntry } from "../../../entities/BookWaitlist";
 import type { BookLoanStatusChange, IBookLoanRepository, NewBookLoan } from "../../../repositories/IBookLoanRepository";
 import type { IUserRepository } from "../../../repositories/IUserRepository";
 
@@ -40,10 +41,17 @@ function repoWith(
   current: BookLoan | null,
   book: { title: string; author?: string } | null = { title: "The Blind Owl", author: "Hedayat" },
 ) {
-  const create = vi.fn(async (input: NewBookLoan, _audit?: (saved: BookLoan) => unknown) => ({
-    ...loan("out"),
-    ...input,
-  }));
+  const create = vi.fn(
+    async (
+      input: NewBookLoan,
+      _audit?: (saved: BookLoan) => unknown,
+      _ledger?: unknown,
+      _skipAudit?: (skipped: BookWaitlistEntry) => unknown,
+    ) => ({
+      ...loan("out"),
+      ...input,
+    }),
+  );
   const applyStatus = vi.fn(
     async (
       _id: string,
@@ -92,6 +100,35 @@ describe("LendBook", () => {
     });
     const entry = create.mock.calls[0][1]?.(loan("out", { reference: 9 })) as { action: string; entityLabel: string };
     expect(entry).toMatchObject({ action: "bookLoan.lent", entityLabel: "L-9" });
+  });
+
+  it("logs each told guest the loan skips, by the hold it closed", async () => {
+    const { repo, create } = repoWith(null);
+    await new LendBook(repo, usersWith([])).execute(
+      { productId: "b1", borrowerName: "Reza", borrowerPhone: "09350000000" },
+      STAFF,
+      NOW,
+    );
+
+    const skipped = {
+      id: "w1",
+      productId: "b1",
+      bookTitle: "The Blind Owl",
+      guestName: "Sara",
+      guestPhone: "09351112233",
+      status: "cancelled" as const,
+      createdAt: NOW.toISOString(),
+      updatedAt: NOW.toISOString(),
+    };
+    expect(create.mock.calls[0][3]?.(skipped)).toEqual({
+      actorId: "s1",
+      actorName: "Ali",
+      action: "bookLoan.holdSkipped",
+      entityType: "bookLoan",
+      entityId: "w1",
+      entityLabel: "Sara (The Blind Owl)",
+      changes: [{ field: "status", before: "notified", after: "cancelled" }],
+    });
   });
 
   it("defaults the due date to two weeks and leaves walk-ins unlinked", async () => {

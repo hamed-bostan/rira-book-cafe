@@ -921,7 +921,8 @@
         "returned": "<b>{actor}</b> امانت {entity} را بازگشته ثبت کرد",
         "lost": "<b>{actor}</b> امانت {entity} را گم‌شده ثبت کرد",
         "extended": "<b>{actor}</b> امانت {entity} را تمدید کرد",
-        "extensionUndone": "<b>{actor}</b> تمدید امانت {entity} را لغو کرد"
+        "extensionUndone": "<b>{actor}</b> تمدید امانت {entity} را لغو کرد",
+        "holdSkipped": "<b>{actor}</b> نسخهٔ نگه‌داشته‌شده برای {entity} را به کس دیگری امانت داد"
       },
       "income": {
         "recorded": "<b>{actor}</b> درآمد {entity} را ثبت کرد",

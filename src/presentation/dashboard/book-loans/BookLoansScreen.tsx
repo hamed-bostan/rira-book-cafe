@@ -20,7 +20,7 @@ import { DashboardEmptyState } from "../DashboardEmptyState";
 import { DashboardLinkTabs } from "../DashboardLinkTabs";
 
 import { BookLoanRow } from "./BookLoanRow";
-import { LendBookDialog } from "./LendBookDialog";
+import { LendBookDialog, type HeldCopy } from "./LendBookDialog";
 
 type BookLoansScreenProps = {
   /** Every loan matching the search — the tabs filter from it. */
@@ -84,7 +84,17 @@ export async function BookLoansScreen({
   const ready = waitlist.filter((entry) => entry.status === "notified");
   const waitingCount = waitlist.length - ready.length;
   const booksWithLines = new Set(waitlist.map((entry) => entry.productId)).size;
-  const heldFor = Object.fromEntries(ready.map((entry) => [entry.productId, entry.guestName]));
+  // Each book's copies held for told guests, told longest ago first — the order a loan to someone else skips them in.
+  const heldFor: Record<string, HeldCopy[]> = {};
+  for (const entry of [...ready].sort(
+    (a, b) => (a.notifiedAt ?? "").localeCompare(b.notifiedAt ?? "") || a.createdAt.localeCompare(b.createdAt),
+  )) {
+    (heldFor[entry.productId] ??= []).push({
+      guestName: entry.guestName,
+      guestPhone: entry.guestPhone,
+      userId: entry.userId,
+    });
+  }
 
   const hrefFor = (tab: BookLoanView): string => {
     const params = new URLSearchParams();

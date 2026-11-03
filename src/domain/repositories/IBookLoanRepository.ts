@@ -1,6 +1,7 @@
 import type { AuditHook } from "./AuditHook";
 import type { LedgerHook } from "./ILedgerRepository";
 import type { BookLoan, BookLoanStatus } from "../entities/BookLoan";
+import type { BookWaitlistEntry } from "../entities/BookWaitlist";
 
 /** A loan about to be recorded. Id, reference, status, return time and timestamps are the repository's. */
 export type NewBookLoan = Omit<
@@ -44,8 +45,17 @@ export type IBookLoanRepository = {
    * (`ConflictError("ALREADY_ON_LOAN")`) — enforced in the database, so two staff
    * recording the same hand-over can't both succeed — and a book whose every copy
    * is out (`ConflictError("ALL_COPIES_OUT")`), checked under the same per-book lock.
+   *
+   * The book's line moves with it, under that lock: the borrower's own place in it
+   * (by phone or account) is fulfilled, and a copy held for told guests that this
+   * loan takes skips them (`holdsSkippedByLoan`) — `skipAudit` logs each one.
    */
-  create(input: NewBookLoan, audit?: AuditHook<BookLoan>, ledger?: LedgerHook<BookLoan>): Promise<BookLoan>;
+  create(
+    input: NewBookLoan,
+    audit?: AuditHook<BookLoan>,
+    ledger?: LedgerHook<BookLoan>,
+    skipAudit?: AuditHook<BookWaitlistEntry>,
+  ): Promise<BookLoan>;
   getById(id: string): Promise<BookLoan | null>;
   /** Loans for the dashboard, newest first; `open`/`overdue` soonest-due first. */
   list(filters: BookLoanFilters, now: Date): Promise<BookLoan[]>;

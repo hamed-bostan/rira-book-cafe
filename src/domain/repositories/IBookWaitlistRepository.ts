@@ -29,6 +29,4 @@ export type IBookWaitlistRepository = {
    * `null` when nobody is waiting.
    */
   notifyNext(productId: string, at: Date): Promise<BookWaitlistEntry | null>;
-  /** The book was lent to this guest (by account or phone): their open entry is `fulfilled`. */
-  fulfill(productId: string, borrower: { userId?: string; phone: string }): Promise<void>;
 };

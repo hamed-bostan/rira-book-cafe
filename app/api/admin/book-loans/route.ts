@@ -4,12 +4,7 @@ import { lendBookSchema } from "@/src/contracts/book-loan-schema";
 import { BOOK_LOAN_VIEWS, type BookLoanView } from "@/src/domain/repositories/IBookLoanRepository";
 import { ListBookLoans } from "@/src/domain/use-cases/book-loans/BookLoanQueries";
 import { LendBook } from "@/src/domain/use-cases/book-loans/LendBook";
-import {
-  bookLoanRepository,
-  bookWaitlistRepository,
-  customerNotifier,
-  userRepository,
-} from "@/src/infrastructure/container";
+import { bookLoanRepository, customerNotifier, userRepository } from "@/src/infrastructure/container";
 import { invalidatesCatalog } from "@/src/lib/api/invalidatesCatalog";
 import {
   errorResponse,
@@ -51,7 +46,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 /**
  * POST /api/admin/book-loans — record a book handed to a guest. Requires
  * `loans.manage`. 201 with the loan; 409 `ALREADY_ON_LOAN` when that borrower
- * already has the book.
+ * already has the book, `ALL_COPIES_OUT` when no copy is on the shelf. The
+ * borrower's place in the book's line is fulfilled; a copy held for a guest who was
+ * told it's back, lent to someone else, skips that guest.
  */
 async function handlePost(request: NextRequest): Promise<NextResponse> {
   const session = await getSessionWith("loans.manage");
@@ -70,12 +67,11 @@ async function handlePost(request: NextRequest): Promise<NextResponse> {
   }
 
   try {
-    const loan = await new LendBook(
-      bookLoanRepository,
-      userRepository,
-      bookWaitlistRepository,
-      customerNotifier,
-    ).execute(parsed.data, { id: session.user.id, name: session.user.name ?? session.user.id }, new Date());
+    const loan = await new LendBook(bookLoanRepository, userRepository, customerNotifier).execute(
+      parsed.data,
+      { id: session.user.id, name: session.user.name ?? session.user.id },
+      new Date(),
+    );
     return NextResponse.json(loan, { status: 201 });
   } catch (error) {
     return errorResponseFromException(error, "POST /api/admin/book-loans failed");

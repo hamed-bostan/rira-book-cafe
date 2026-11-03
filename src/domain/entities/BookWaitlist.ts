@@ -1,7 +1,8 @@
 /**
  * A guest waiting for a book from the shelf that's out on loan. The queue is first
  * come, first served: when a copy comes back, the guest at the front is told it's
- * on the shelf, and lending it to them closes their place in line.
+ * on the shelf and it's held for them; lending it to them closes their place in
+ * line, and lending it to anyone else skips them.
  */
 
 /**
@@ -34,6 +35,29 @@ export type BookWaitlistEntry = {
 
 export function isOpenWaitlistEntry(entry: Pick<BookWaitlistEntry, "status">): boolean {
   return (OPEN_WAITLIST_STATUSES as readonly WaitlistStatus[]).includes(entry.status);
+}
+
+/** Who a book is being lent to, as a hold knows them: their phone (normalized), and their account when they have one. */
+export type HoldBorrower = { userId?: string; phone: string };
+
+/** Whether `entry` is the hold of the guest the book is being lent to — the same phone, or the same account. */
+export function isHoldFor(entry: Pick<BookWaitlistEntry, "userId" | "guestPhone">, borrower: HoldBorrower): boolean {
+  return entry.guestPhone === borrower.phone || (borrower.userId !== undefined && entry.userId === borrower.userId);
+}
+
+/**
+ * The told guests a loan leaves without a copy, told longest ago first. Each told
+ * guest holds one of the `free` copies, so lending one to anyone else takes the
+ * copy of the guest told first (more of them, if more were told than copies are
+ * free). The borrower's own hold isn't among them: lending to them fulfils it.
+ */
+export function holdsSkippedByLoan<T extends Pick<BookWaitlistEntry, "userId" | "guestPhone">>(
+  free: number,
+  told: readonly T[],
+  borrower: HoldBorrower,
+): T[] {
+  const others = told.filter((entry) => !isHoldFor(entry, borrower));
+  return others.slice(0, Math.max(0, others.length - (free - 1)));
 }
 
 /** A book's line as a guest sees it: how many copies are out, how long the line is, and their place in it. */

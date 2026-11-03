@@ -9,6 +9,7 @@ import {
   type LoanDepositMethod,
   type LoanDepositState,
 } from "@/src/domain/entities/BookLoan";
+import { holdsSkippedByLoan, type BookWaitlistEntry } from "@/src/domain/entities/BookWaitlist";
 import { lendingCopies, shiftLendingCopies } from "@/src/domain/entities/Product";
 import { ConflictError } from "@/src/domain/errors/ConflictError";
 import { NotFoundError } from "@/src/domain/errors/NotFoundError";
@@ -26,7 +27,7 @@ import { prisma } from "@/src/infrastructure/prisma/client";
 import type { Prisma } from "@/src/infrastructure/prisma/generated/client";
 import { inTransaction, type PrismaDb } from "@/src/infrastructure/prisma/transaction";
 
-import { lockBookShelf } from "./bookShelf";
+import { OPEN_HOLD, lockBookShelf, toWaitlistEntry } from "./bookShelf";
 import { recordAudit } from "./writeActivityEntry";
 import { postHook } from "./writeJournal";
 
@@ -40,10 +41,16 @@ const LIST_LIMIT = 200;
 export class PrismaBookLoanRepository implements IBookLoanRepository {
   constructor(private readonly db: PrismaDb = prisma) {}
 
-  async create(input: NewBookLoan, audit?: AuditHook<BookLoan>, ledger?: LedgerHook<BookLoan>): Promise<BookLoan> {
+  async create(
+    input: NewBookLoan,
+    audit?: AuditHook<BookLoan>,
+    ledger?: LedgerHook<BookLoan>,
+    skipAudit?: AuditHook<BookWaitlistEntry>,
+  ): Promise<BookLoan> {
     return inTransaction(this.db, async (tx) => {
       // Serialize loans of this book so the duplicate check below can't race (the
-      // database trigger takes the same lock and repeats the check as a backstop).
+      // database trigger takes the same lock and repeats the check as a backstop),
+      // and so the line can't move while this loan takes its copy.
       await lockBookShelf(tx, input.productId);
       const existing = await tx.bookLoan.findFirst({
         where: { productId: input.productId, borrowerPhone: input.borrowerPhone, status: "out" },
@@ -52,13 +59,20 @@ export class PrismaBookLoanRepository implements IBookLoanRepository {
         throw new ConflictError("ALREADY_ON_LOAN", `This borrower already has this book (L-${existing.reference}).`);
       }
       // Every copy out: there's nothing on the shelf to hand over.
-      const [book, out] = await Promise.all([
+      const [book, out, told] = await Promise.all([
         tx.product.findUnique({ where: { id: input.productId }, select: { bookCopies: true } }),
         tx.bookLoan.count({ where: { productId: input.productId, status: "out" } }),
+        tx.bookWaitlistEntry.findMany({
+          where: { productId: input.productId, status: "notified" },
+          orderBy: [{ notifiedAt: "asc" }, { createdAt: "asc" }],
+        }),
       ]);
-      if (out >= lendingCopies({ copies: book?.bookCopies ?? undefined })) {
+      const copies = lendingCopies({ copies: book?.bookCopies ?? undefined });
+      if (out >= copies) {
         throw new ConflictError("ALL_COPIES_OUT", "Every copy of this book is out. Add the guest to its line instead.");
       }
+      const borrower = { userId: input.userId, phone: input.borrowerPhone };
+      const skipped = holdsSkippedByLoan(copies - out, told.map(toWaitlistEntry), borrower);
 
       const row = await tx.bookLoan.create({
         data: {
@@ -79,6 +93,28 @@ export class PrismaBookLoanRepository implements IBookLoanRepository {
         },
       });
       const saved = toBookLoan(row);
+
+      // The borrower has the book now: their place in its line is done.
+      await tx.bookWaitlistEntry.updateMany({
+        where: {
+          productId: input.productId,
+          status: OPEN_HOLD,
+          OR: [{ guestPhone: borrower.phone }, ...(borrower.userId ? [{ userId: borrower.userId }] : [])],
+        },
+        data: { status: "fulfilled" },
+      });
+      // The copy held for a told guest went to someone else: they're skipped, as staff
+      // would — nobody new is told, there's no copy left to tell them about.
+      for (const entry of skipped) {
+        const result = await tx.bookWaitlistEntry.updateMany({
+          where: { id: entry.id, status: "notified" },
+          data: { status: "cancelled" },
+        });
+        if (result.count === 0) continue;
+        const cancelled = toWaitlistEntry(await tx.bookWaitlistEntry.findUniqueOrThrow({ where: { id: entry.id } }));
+        await recordAudit(tx, cancelled, skipAudit);
+      }
+
       await recordAudit(tx, saved, audit);
       await postHook(tx, saved, ledger);
       return saved;

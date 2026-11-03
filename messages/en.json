@@ -921,7 +921,8 @@
         "returned": "<b>{actor}</b> marked loan {entity} returned",
         "lost": "<b>{actor}</b> marked loan {entity} lost",
         "extended": "<b>{actor}</b> extended loan {entity}",
-        "extensionUndone": "<b>{actor}</b> took back the extension on loan {entity}"
+        "extensionUndone": "<b>{actor}</b> took back the extension on loan {entity}",
+        "holdSkipped": "<b>{actor}</b> lent the copy held for {entity} to someone else"
       },
       "income": {
         "recorded": "<b>{actor}</b> recorded income {entity}",

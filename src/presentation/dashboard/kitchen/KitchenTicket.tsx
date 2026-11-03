@@ -5,8 +5,10 @@ import { isLateOrder, minutesWaiting } from "@/src/domain/entities/Kitchen";
 import { canServeItems, servedLineCount, type Order } from "@/src/domain/entities/Order";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { cn } from "@/src/lib/utils";
+import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 
+import { KitchenAddedTag } from "./KitchenAddedTag";
 import { KitchenAdvanceButton } from "./KitchenAdvanceButton";
 import { KitchenItemCheck } from "./KitchenItemCheck";
 import { KitchenWaitPill } from "./KitchenWaitPill";
@@ -25,7 +27,8 @@ type KitchenTicketProps = {
  * where it goes and who for, how long it has waited, the guest's note, every line,
  * and the button that moves it on. While it's being made each line is a tick-box
  * ("2 of 3 ready"), and "Mark served" turns primary once all are ticked. A late
- * order gets a red border.
+ * order gets a red border. An order staff changed after it came in says so, and
+ * the lines of a second round are tagged as added.
  */
 export function KitchenTicket({ order, now, service, canFulfill }: KitchenTicketProps) {
   const t = useTranslations("dashKitchen");
@@ -58,7 +61,14 @@ export function KitchenTicket({ order, now, service, canFulfill }: KitchenTicket
             ) : null}
           </span>
         </div>
-        <KitchenWaitPill minutes={waited} placedAt={order.placedAt} />
+        <div className="flex shrink-0 flex-col items-end gap-1.5">
+          <KitchenWaitPill minutes={waited} placedAt={order.placedAt} />
+          {order.changedAt ? (
+            <Badge variant="warning" appearance="outline" size="compact">
+              {t("changed")}
+            </Badge>
+          ) : null}
+        </div>
       </header>
 
       {order.note ? (
@@ -81,6 +91,7 @@ export function KitchenTicket({ order, now, service, canFulfill }: KitchenTicket
                   name={item.name}
                   note={item.note}
                   served={Boolean(item.servedAt)}
+                  added={Boolean(item.addedAt)}
                 />
               ) : (
                 <div className="flex flex-col py-2">
@@ -93,6 +104,7 @@ export function KitchenTicket({ order, now, service, canFulfill }: KitchenTicket
                     <span className="shrink-0 tabular-nums">{quantity}×</span>
                     <span className="min-w-0">{item.name}</span>
                   </span>
+                  {item.addedAt ? <KitchenAddedTag /> : null}
                   {item.note ? (
                     <span className="text-body-default font-medium text-muted-foreground sm:text-body-small">
                       {item.note}

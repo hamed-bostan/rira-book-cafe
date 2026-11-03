@@ -1,10 +1,13 @@
 import { notFound } from "next/navigation";
 
 import { auth } from "@/auth";
+import { canChangeOrderLines } from "@/src/domain/entities/Order";
+import { isSellable } from "@/src/domain/entities/Product";
 import { sessionHas } from "@/src/lib/require-permission";
 import { onlinePaymentsServerApi } from "@/src/presentation/dashboard/orders/online-payment-server-api";
 import { ordersServerApi } from "@/src/presentation/dashboard/orders/order-server-api";
 import { OrderDetailScreen } from "@/src/presentation/dashboard/orders/OrderDetailScreen";
+import { productsServerApi } from "@/src/presentation/dashboard/products/product-server-api";
 
 // The order, its status history, refunds, notes and any online payments it didn't
 // take are fetched over the REST API (BFF) during server render; a missing order
@@ -37,6 +40,13 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
     sessionHas(session, "orders.note"),
   ]);
 
+  // A second round is picked from the menu as it is now — read only when the order
+  // can still take one.
+  const menu =
+    canFulfill && canChangeOrderLines(order)
+      ? (await productsServerApi.list()).filter((product) => product.isPublished && isSellable(product))
+      : [];
+
   return (
     <OrderDetailScreen
       order={order}
@@ -44,6 +54,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
       notes={notes}
       refunds={refunds}
       onlinePayments={onlinePayments}
+      menu={menu}
       canFulfill={canFulfill}
       canRefund={canWriteBooks}
       canWriteOff={canWriteBooks}

@@ -1,6 +1,9 @@
+import { ReceiptText } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import {
+  canChangeOrderLines,
+  canChangeOrderService,
   canRefundOrder,
   canServeItems,
   canWriteOffOrder,
@@ -12,6 +15,7 @@ import type { OrderNote } from "@/src/domain/entities/OrderNote";
 import type { OrderRefund } from "@/src/domain/entities/OrderRefund";
 import type { OrderStatusEvent } from "@/src/domain/entities/OrderStatusEvent";
 import type { OrderPaymentAttempt } from "@/src/domain/entities/PaymentAttempt";
+import { Link } from "@/src/i18n/navigation";
 import { formatCafeDayMedium } from "@/src/lib/formatCafeDay";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
@@ -24,8 +28,14 @@ import { DashboardSection } from "@/src/presentation/dashboard/DashboardSection"
 import { FIELD_HINT, OVERLINE } from "@/src/presentation/dashboard/fieldStyles";
 import { ProductThumbnail } from "@/src/presentation/dashboard/ProductThumbnail";
 import { DashboardPageCrumb } from "@/src/presentation/dashboard/shell/DashboardPageCrumb";
+import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
+import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 import { OrderTotals } from "@/src/presentation/orders/OrderTotals";
 
+import { AddOrderItemsDialog, type MenuPick } from "./AddOrderItemsDialog";
+import { ChangeOrderItemsDialog } from "./ChangeOrderItemsDialog";
+import { ChangeOrderServiceDialog } from "./ChangeOrderServiceDialog";
 import { OrderItemServeToggle } from "./OrderItemServeToggle";
 import { OrderItemStateBadge } from "./OrderItemStateBadge";
 import { OrderNotesPanel } from "./OrderNotesPanel";
@@ -49,6 +59,8 @@ type OrderDetailScreenProps = {
   refunds: OrderRefund[];
   /** Online payments captured after the order was paid another way or cancelled, oldest first. */
   onlinePayments: OrderPaymentAttempt[];
+  /** The menu a second round is picked from; empty when the order can't take one (or the viewer can't add it). */
+  menu: readonly MenuPick[];
   /** Whether the viewer may move the order along and mark it paid. */
   canFulfill: boolean;
   /** Whether the viewer may hand money back. */
@@ -72,6 +84,7 @@ export async function OrderDetailScreen({
   notes,
   refunds,
   onlinePayments,
+  menu,
   canFulfill,
   canRefund,
   canWriteOff,
@@ -83,6 +96,8 @@ export async function OrderDetailScreen({
   const serving = canServeItems(order.status);
   const refundable = canRefund && canRefundOrder(order);
   const writable = canWriteOff && canWriteOffOrder(order);
+  const linesChangeable = canFulfill && canChangeOrderLines(order);
+  const serviceChangeable = canFulfill && canChangeOrderService(order);
 
   return (
     <div className="flex flex-col gap-6">
@@ -94,17 +109,30 @@ export async function OrderDetailScreen({
         backLabel={t("backToOrders")}
         title={t("orderNumber", { number: order.orderNumber })}
         subtitle={t("placedOn", { date: formatOrderDate(order.placedAt, locale) })}
-        badge={<OrderStatusBadge status={order.status} size="compact" />}
+        badge={
+          <>
+            <OrderStatusBadge status={order.status} size="compact" />
+            {order.changedAt ? (
+              <Badge variant="warning" appearance="outline" size="compact">
+                {t("edit.changedBadge")}
+              </Badge>
+            ) : null}
+          </>
+        }
         actions={
-          refundable || writable || canFulfill ? (
-            <>
-              {refundable ? <RefundOrderButton order={order} /> : null}
-              {writable ? <WriteOffOrderButton order={order} /> : null}
-              {canFulfill ? (
-                <OrderStatusActions orderId={order.id} orderNumber={order.orderNumber} status={order.status} />
-              ) : null}
-            </>
-          ) : null
+          <>
+            <Button asChild variant="secondary" size="control-md" className="px-3">
+              <Link href={`/dashboard/orders/${order.id}/receipt`}>
+                <Icon icon={ReceiptText} size="icon-md" className="me-2" />
+                {t("receipt.print")}
+              </Link>
+            </Button>
+            {refundable ? <RefundOrderButton order={order} /> : null}
+            {writable ? <WriteOffOrderButton order={order} /> : null}
+            {canFulfill ? (
+              <OrderStatusActions orderId={order.id} orderNumber={order.orderNumber} status={order.status} />
+            ) : null}
+          </>
         }
       />
 
@@ -139,6 +167,11 @@ export async function OrderDetailScreen({
                         </span>
                       </div>
                       {item.note ? <p className={cn(FIELD_HINT, "text-warning-foreground")}>{item.note}</p> : null}
+                      {item.addedAt ? (
+                        <p className={cn(FIELD_HINT, "tabular-nums")}>
+                          {t("edit.lineAdded", { time: formatOrderTime(item.addedAt, locale) })}
+                        </p>
+                      ) : null}
                       {item.refundedQuantity ? (
                         <p className={cn(FIELD_HINT, "text-error-foreground")}>
                           {t("refund.lineRefunded", { quantity: formatNumber(item.refundedQuantity, locale) })}
@@ -166,6 +199,12 @@ export async function OrderDetailScreen({
                   </li>
                 ))}
               </ul>
+              {linesChangeable ? (
+                <div className="flex flex-wrap gap-2 border-t border-border px-5 py-4">
+                  <AddOrderItemsDialog order={order} products={menu} />
+                  <ChangeOrderItemsDialog order={order} />
+                </div>
+              ) : null}
               <OrderTotals order={order} inset />
             </DashboardSection>
 
@@ -218,8 +257,9 @@ export async function OrderDetailScreen({
               <dl className="flex flex-col gap-5 p-5">
                 <div className="flex flex-col gap-1">
                   <dt className={OVERLINE}>{t("colService")}</dt>
-                  <dd className="font-medium">
+                  <dd className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 font-medium">
                     <OrderServiceLabel order={order} />
+                    {serviceChangeable ? <ChangeOrderServiceDialog order={order} /> : null}
                   </dd>
                 </div>
                 <div className="flex flex-col gap-1">

@@ -165,7 +165,7 @@ test("a guest who joined a book's line at the counter is told it's back", async 
   // The toast and its screen-reader announcement carry the same words.
   await expect(page.getByText(`L-${loan.reference} marked returned`).first()).toBeVisible();
   await expect(
-    page.getByText(`E2E Hamid is first in line for ${title}. The message that it's back went to their profile`).first(),
+    page.getByText(`E2E Hamid is first in line for ${title} and has a message on the site that it's back.`).first(),
   ).toBeVisible();
 
   const guest = await signInAsGuest(browser, phone);

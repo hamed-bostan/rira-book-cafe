@@ -227,6 +227,15 @@ const PAGES: Record<string, MeasuredPage> = {
       await dialog.getByRole("textbox").nth(0).fill(NAME);
     }),
   },
+  // For the guest at the front of the line whose copy came back, with a deposit at the order cap.
+  "lend now": {
+    path: () => "/dashboard/book-holds",
+    dialog: true,
+    prepare: dialogFrom(/^(Lend now|امانت بده)$/, async (dialog) => {
+      await dialog.getByRole("textbox").nth(0).fill(PRICE);
+      await dialog.getByRole("textbox").nth(1).fill(NOTE.slice(0, 300));
+    }),
+  },
 };
 
 let seed: Seed;

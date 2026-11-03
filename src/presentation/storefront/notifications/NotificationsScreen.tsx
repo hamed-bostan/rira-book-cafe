@@ -61,6 +61,7 @@ const ICONS: Record<NotificationKind, LucideIcon> = {
   eventOff: CalendarX,
   eventCancelled: CalendarX,
   eventRegistrationCancelled: CalendarX,
+  orderChanged: ClipboardList,
 };
 
 /** Kinds that ask the guest to do something — drawn in the warning tone. */

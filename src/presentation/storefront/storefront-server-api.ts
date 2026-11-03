@@ -8,6 +8,7 @@ import type { Category } from "@/src/domain/entities/Category";
 import type { GuestLoyaltyOverview } from "@/src/domain/entities/Loyalty";
 import type { Notification } from "@/src/domain/entities/Notification";
 import type { Order } from "@/src/domain/entities/Order";
+import type { OrderReceipt } from "@/src/domain/entities/OrderReceipt";
 import type { Product } from "@/src/domain/entities/Product";
 import type { PublicReview, ReviewEligibility } from "@/src/domain/entities/ProductReview";
 import type { Reservation } from "@/src/domain/entities/Reservation";
@@ -31,7 +32,11 @@ import {
   notificationListResponseSchema,
   unreadCountResponseSchema,
 } from "@/src/presentation/notifications/notification-response-schema";
-import { orderListResponseSchema, orderResponseSchema } from "@/src/presentation/orders/order-response-schema";
+import {
+  orderListResponseSchema,
+  orderReceiptResponseSchema,
+  orderResponseSchema,
+} from "@/src/presentation/orders/order-response-schema";
 import { productListResponseSchema, productResponseSchema } from "@/src/presentation/product/product-response-schema";
 import { reservationListResponseSchema } from "@/src/presentation/reservations/reservation-response-schema";
 import {
@@ -122,6 +127,11 @@ export const storefrontServerApi = {
 
   myOrder(id: string): Promise<Order | null> {
     return orNull(serverApiGet(`/orders/${id}`, orderResponseSchema));
+  },
+
+  /** The receipt for one of the guest's own orders; `null` for anyone else's. */
+  myOrderReceipt(id: string): Promise<OrderReceipt | null> {
+    return orNull(serverApiGet(`/orders/${id}/receipt`, orderReceiptResponseSchema));
   },
 
   myReservations(): Promise<Reservation[]> {

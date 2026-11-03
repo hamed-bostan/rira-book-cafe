@@ -188,6 +188,50 @@ export const orderRefundSchema = z.object({
 
 export type OrderRefundInput = z.input<typeof orderRefundSchema>;
 
+/**
+ * Staff changing an order after it was placed: a second round (`add`, priced from
+ * the menu like a placement), lines lowered or taken off (`lines`, `0` removes one),
+ * and where it's served. Any mix of them; what's left out stays. `version` is the
+ * order's `updatedAt` as staff saw it — the change is refused if it moved since.
+ * Whether the order still takes the change is the server's to say.
+ */
+export const orderChangeSchema = z
+  .object({
+    version: z.optional(z.string().check(z.maxLength(40, "statusInvalid"))),
+    add: z.optional(orderLines),
+    lines: z.optional(
+      z
+        .array(
+          z.object({
+            itemId: z.string().check(z.minLength(1, "refundLineUnknown")),
+            quantity: z
+              .number()
+              .check(z.int("quantityWhole"), z.gte(0, "quantityWhole"), z.lte(MAX_LINE_QUANTITY, "quantityMax")),
+          }),
+        )
+        .check(z.maxLength(MAX_ORDER_LINES, "itemsTooMany")),
+    ),
+    serviceType: z.optional(z.enum(SERVICE_TYPES, { error: "serviceTypeInvalid" })),
+    tableLabel: optionalText(MAX_TABLE_LABEL_LENGTH),
+  })
+  .check(
+    z.refine(
+      (data) =>
+        data.add !== undefined ||
+        (data.lines?.length ?? 0) > 0 ||
+        data.serviceType !== undefined ||
+        data.tableLabel !== undefined,
+      { error: "changeRequired", path: ["add"], when: fieldsParsed("add.*.note", "tableLabel") },
+    ),
+    z.refine((data) => data.serviceType !== "dineIn" || data.tableLabel !== undefined, {
+      path: ["tableLabel"],
+      error: "tableRequired",
+      when: fieldsParsed("add.*.note", "tableLabel"),
+    }),
+  );
+
+export type OrderChangeInput = z.input<typeof orderChangeSchema>;
+
 /** Writing off a served order nobody paid for: why, if staff want to say. */
 export const orderWriteOffSchema = z.object({
   reason: optionalText(MAX_WRITE_OFF_REASON_LENGTH),

@@ -1,5 +1,6 @@
+import { isOrderOf, type Order } from "../../entities/Order";
+
 import type { AdminOrderFilters, AdminOrderSort, OrderStatusCounts } from "../../entities/AdminOrderFilters";
-import type { Order } from "../../entities/Order";
 import type { OrderStatusEvent } from "../../entities/OrderStatusEvent";
 import type { Page, PageRequest } from "../../entities/Pagination";
 import type { IOrderRepository } from "../../repositories/IOrderRepository";
@@ -31,13 +32,17 @@ export class GetOrderById {
   }
 }
 
-/** One of the guest's own orders; someone else's reads as `null` so ids can't be probed. */
+/**
+ * One of the guest's own orders — placed from their account, or rung up at the
+ * counter for their phone (see `isOrderOf`). Someone else's reads as `null` so ids
+ * can't be probed.
+ */
 export class GetOwnOrder {
   constructor(private readonly orderRepo: IOrderRepository) {}
 
   async execute(id: string, userId: string): Promise<Order | null> {
     const order = await this.orderRepo.getById(id);
-    return order?.userId === userId ? order : null;
+    return order && isOrderOf(order, userId) ? order : null;
   }
 }
 

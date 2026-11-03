@@ -28,6 +28,10 @@ import type { IOrderRepository } from "../../repositories/IOrderRepository";
  * already has is a no-op — unless `strict`, for a caller that must know its own
  * mark took effect (an online payment the gateway captured): then it's a
  * `ConflictError` instead.
+ *
+ * A payment is for the bill as it stood: marking paid is refused if the order's
+ * lines changed its total meanwhile — since it was read, or from `expectedTotal`, the
+ * amount a caller already took (what the gateway captured).
  */
 export class SetOrderPayment {
   constructor(private readonly orderRepo: IOrderRepository) {}
@@ -37,7 +41,7 @@ export class SetOrderPayment {
     paymentStatus: SettablePaymentStatus,
     payment: PaymentMethod | readonly PaymentPart[] | undefined,
     actor: ActivityActor,
-    options: { strict?: boolean } = {},
+    options: { strict?: boolean; expectedTotal?: number } = {},
   ): Promise<Order> {
     const order = await this.orderRepo.getById(orderId);
     if (!order) throw new NotFoundError("order", orderId);
@@ -56,11 +60,19 @@ export class SetOrderPayment {
       throw new ConflictError("INVALID_TRANSITION", "A cancelled order can't be marked paid.");
     }
     if (paymentStatus === "paid" && !payment) throw new ValidationError("paymentMethod", "Choose how the guest paid.");
+    if (paymentStatus === "paid" && options.expectedTotal !== undefined && options.expectedTotal !== order.total) {
+      throw new ConflictError("INVALID_TRANSITION", "The order's total changed since the payment was taken.");
+    }
     const parts = paymentStatus === "paid" ? partsFor(payment, order.total) : undefined;
 
     return this.orderRepo.setPaymentStatus(
       orderId,
-      { from: order.paymentStatus, to: paymentStatus, parts },
+      {
+        from: order.paymentStatus,
+        to: paymentStatus,
+        parts,
+        ...(paymentStatus === "paid" ? { total: order.total } : {}),
+      },
       (saved) => ({
         actorId: actor.id,
         actorName: actor.name,

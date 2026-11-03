@@ -84,6 +84,7 @@ const COUNTS: OrderStatusCounts = {
 const EVENT: OrderStatusEvent = {
   id: "ev1",
   orderId: "o1",
+  kind: "status",
   from: null,
   to: "pending",
   actorId: "g1",

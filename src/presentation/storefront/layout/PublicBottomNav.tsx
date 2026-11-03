@@ -26,7 +26,7 @@ export function PublicBottomNav({ unreadNotifications }: PublicBottomNavProps) {
   return (
     <nav
       aria-label={t("navLabel")}
-      className="fixed inset-x-0 bottom-0 z-40 grid h-[calc(4.5rem+env(safe-area-inset-bottom))] grid-cols-5 border-t border-border bg-background pb-[env(safe-area-inset-bottom)] md:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 grid h-[calc(4.5rem+env(safe-area-inset-bottom))] grid-cols-5 border-t border-border bg-background pb-[env(safe-area-inset-bottom)] md:hidden print:hidden"
     >
       {PUBLIC_NAV.map((item) => {
         const active = isPublicNavActive(item.href, pathname);

@@ -1,6 +1,7 @@
 import type { OrderStatusCounts } from "@/src/domain/entities/AdminOrderFilters";
 import type { Order } from "@/src/domain/entities/Order";
 import type { OrderNote } from "@/src/domain/entities/OrderNote";
+import type { OrderReceipt } from "@/src/domain/entities/OrderReceipt";
 import type { OrderRefund } from "@/src/domain/entities/OrderRefund";
 import type { OrderStatusEvent } from "@/src/domain/entities/OrderStatusEvent";
 import type { Page } from "@/src/domain/entities/Pagination";
@@ -9,6 +10,7 @@ import { pageResponseSchema } from "@/src/lib/api/page-response-schema";
 import { serverApiGet } from "@/src/lib/api/server-client";
 import { orderNoteListResponseSchema } from "@/src/presentation/dashboard/orders/order-note-response-schema";
 import {
+  orderReceiptResponseSchema,
   orderRefundListResponseSchema,
   orderResponseSchema,
   orderStatusCountsResponseSchema,
@@ -36,6 +38,16 @@ export const ordersServerApi = {
   async getById(id: string): Promise<Order | null> {
     try {
       return await serverApiGet(`/admin/orders/${id}`, orderResponseSchema);
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 404) return null;
+      throw error;
+    }
+  },
+
+  /** One order's receipt; `null` on 404 so the page can `notFound()`. */
+  async getReceipt(id: string): Promise<OrderReceipt | null> {
+    try {
+      return await serverApiGet(`/admin/orders/${id}/receipt`, orderReceiptResponseSchema);
     } catch (error) {
       if (error instanceof ApiError && error.status === 404) return null;
       throw error;

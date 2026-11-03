@@ -4,6 +4,7 @@ import {
   bookAvailableNotification,
   loanReminder,
   loanStartedNotification,
+  orderChangedNotification,
   orderStatusNotification,
   reservationNotification,
   staffMessageNotification,
@@ -187,6 +188,32 @@ describe("book notices", () => {
       dedupeKey: "waitlist:w1:available",
     });
     expect(bookAvailableNotification(hold({ userId: "g2" }))).toMatchObject({ userId: "g2", link: "/loans" });
+  });
+});
+
+describe("orderChangedNotification", () => {
+  const CHANGED = "2026-10-20T10:05:00.000Z";
+
+  it("tells the guest their order was updated, once per change", () => {
+    expect(orderChangedNotification(order("preparing", { changedAt: CHANGED }))).toEqual({
+      userId: "g1",
+      kind: "orderChanged",
+      params: { orderNumber: 42 },
+      link: "/orders/o1",
+      dedupeKey: `order:o1:changed:${CHANGED}`,
+    });
+  });
+
+  it("reaches a counter sale's guest by the phone staff took, even with no account", () => {
+    const sale = order("pending", { userId: undefined, customerPhone: "0912-345-6789", changedAt: CHANGED });
+    expect(orderChangedNotification(sale)?.userId).toBe("09123456789");
+  });
+
+  it("says nothing without someone to tell, or before anything changed", () => {
+    expect(
+      orderChangedNotification(order("pending", { userId: undefined, customerPhone: "", changedAt: CHANGED })),
+    ).toBeNull();
+    expect(orderChangedNotification(order("pending"))).toBeNull();
   });
 });
 

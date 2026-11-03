@@ -2,6 +2,7 @@ import type { OrderBulkAction } from "@/src/contracts/bulk-action-schema";
 import type { OrderNoteInput } from "@/src/contracts/order-note-schema";
 import type {
   CounterOrderFormInput,
+  OrderChangeInput,
   OrderItemServedInput,
   OrderPaymentInput,
   OrderRefundInput,
@@ -35,6 +36,15 @@ export const ordersApi = {
   /** Write off a served order nobody paid for. 409 if it was paid (or written off) meanwhile. */
   writeOff(id: string, values: OrderWriteOffInput): Promise<Order> {
     return apiPost(`/admin/orders/${id}/write-off`, values, orderResponseSchema);
+  },
+
+  /**
+   * Change an order after it was placed: add a round, lower or take off lines, move
+   * the table or change the service. 409 when it no longer takes the change, an
+   * added item sold out, or someone else changed it first.
+   */
+  update(id: string, values: OrderChangeInput): Promise<Order> {
+    return apiPatch(`/admin/orders/${id}`, values, orderResponseSchema);
   },
 
   /** Move the order along the workflow (or cancel it). 409 if someone else moved it first. */

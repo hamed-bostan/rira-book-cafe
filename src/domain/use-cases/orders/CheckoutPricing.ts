@@ -3,6 +3,7 @@ import { normalizePromoCode, promoDiscount, promoProblem, type PromoCode } from 
 import { ConflictError } from "../../errors/ConflictError";
 
 import type { OrderQuote } from "../../entities/Checkout";
+import type { Order } from "../../entities/Order";
 import type { ILoyaltyRepository } from "../../repositories/ILoyaltyRepository";
 import type { IPromotionRepository } from "../../repositories/IPromotionRepository";
 
@@ -17,6 +18,12 @@ export type CheckoutRequest = {
 
 /** The quote plus the code it applied — the order records which code it used. */
 export type PricedCheckout = OrderQuote & { promo?: Pick<PromoCode, "id" | "code"> };
+
+/** An order's amounts after staff changed its lines. */
+export type RepricedOrder = Pick<
+  OrderQuote,
+  "subtotal" | "promoDiscount" | "pointsRedeemed" | "pointsDiscount" | "total"
+>;
 
 /**
  * How discounts apply to an order, in one place for the basket's preview and the
@@ -76,6 +83,60 @@ export class CheckoutPricing {
       loyaltyEnabled: settings.enabled,
       pointValue: settings.pointValue,
       minRedeemPoints: settings.minRedeemPoints,
+    };
+  }
+
+  /**
+   * Re-price an order whose lines staff changed after it was placed, by the same
+   * rules: its promo code is checked as if the order were placed now — its own use
+   * of the code aside, which it already holds — and taken off the new subtotal, then
+   * the points it already spent come off what's left. It never spends more of the
+   * guest's points: nobody asked them.
+   *
+   * A change these rules can't price is refused rather than guessed at, and the
+   * order is cancelled and placed again instead: a code that no longer applies to
+   * it (`PROMO_NO_LONGER_APPLIES` — its minimum isn't met any more, it ended, or it's
+   * gone), or points spent that are worth more than what's left
+   * (`POINTS_EXCEED_TOTAL`).
+   */
+  async reprice(
+    order: Pick<Order, "userId" | "promoCodeId" | "promoCode" | "pointsRedeemed" | "pointsDiscount">,
+    subtotal: number,
+    now: Date,
+  ): Promise<RepricedOrder> {
+    let promoOff = 0;
+    if (order.promoCodeId) {
+      const promoRepo = this.promoRepo;
+      const promo = promoRepo && order.promoCode ? await promoRepo.getByCode(order.promoCode) : null;
+      if (!promo || !promoRepo || promo.id !== order.promoCodeId) {
+        throw new ConflictError("PROMO_NO_LONGER_APPLIES", `Promo code "${order.promoCode ?? ""}" is gone.`);
+      }
+      // The order is live and carries the code, so it's among the uses counted —
+      // but it's the one asking, and it already holds its use.
+      const usage = await promoRepo.usage(promo.id, order.userId ?? "");
+      const others = { total: Math.max(0, usage.total - 1), byGuest: Math.max(0, usage.byGuest - 1) };
+      if (promoProblem(promo, subtotal, others, now)) {
+        throw new ConflictError(
+          "PROMO_NO_LONGER_APPLIES",
+          `Promo code "${promo.code}" can't be used on the order as it would be.`,
+        );
+      }
+      promoOff = promoDiscount(promo, subtotal);
+    }
+
+    const total = subtotal - promoOff - order.pointsDiscount;
+    if (total < 0) {
+      throw new ConflictError(
+        "POINTS_EXCEED_TOTAL",
+        "The points spent on this order are worth more than it would cost.",
+      );
+    }
+    return {
+      subtotal,
+      promoDiscount: promoOff,
+      pointsRedeemed: order.pointsRedeemed,
+      pointsDiscount: order.pointsDiscount,
+      total,
     };
   }
 }

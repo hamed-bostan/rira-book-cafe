@@ -8,14 +8,44 @@ import type {
   OrderStatus,
   PaymentPart,
   PaymentStatus,
+  ServiceType,
   SettablePaymentStatus,
 } from "../entities/Order";
 import type { NewOrderRefund, OrderRefund } from "../entities/OrderRefund";
 import type { OrderStatusEvent } from "../entities/OrderStatusEvent";
 import type { Page, PageRequest } from "../entities/Pagination";
 
-/** A payment mark: from the status staff saw to the one they chose, and how the guest paid. */
-export type PaymentChange = { from: PaymentStatus; to: SettablePaymentStatus; parts?: readonly PaymentPart[] };
+/**
+ * A payment mark: from the status staff saw to the one they chose, and how the guest
+ * paid. `total`, when given, is the bill the payment was taken for — the mark is
+ * refused if the order's total changed since (its lines were changed meanwhile).
+ */
+export type PaymentChange = {
+  from: PaymentStatus;
+  to: SettablePaymentStatus;
+  parts?: readonly PaymentPart[];
+  total?: number;
+};
+
+/**
+ * A change to an order already placed, as the use-case worked it out: the order as
+ * it read it, the lines to lower or take off, the lines to add, where it's served,
+ * and — when the lines change — its amounts re-priced.
+ */
+export type OrderChange = {
+  orderId: string;
+  /** The order as the change was worked out from; refused if it moved since. */
+  expected: Pick<Order, "updatedAt" | "status" | "paymentStatus">;
+  /** Lines lowered, by id: from the quantity read to the new one. `0` takes the line off. */
+  lower: { itemId: string; from: number; to: number }[];
+  /** New lines — a second round — priced from the menu. */
+  add: Omit<OrderItem, "id" | "refundedQuantity" | "servedAt" | "addedAt">[];
+  serviceType: ServiceType;
+  /** The table, for dine-in only. */
+  tableLabel?: string;
+  /** The order's amounts after the lines change; absent when only the service changes. */
+  amounts?: Pick<Order, "subtotal" | "promoDiscount" | "pointsDiscount" | "total">;
+};
 
 /** An order about to be placed. Id, number, status and timestamps are the repository's to assign. */
 export type NewOrder = Omit<
@@ -31,8 +61,9 @@ export type NewOrder = Omit<
   | "updatedAt"
   | "items"
   | "pointsEarned"
+  | "changedAt"
 > & {
-  items: Omit<OrderItem, "id" | "refundedQuantity">[];
+  items: Omit<OrderItem, "id" | "refundedQuantity" | "addedAt">[];
 };
 
 /** A refund as it went through: the document, the order after it, and the cost that came back to stock. */
@@ -117,6 +148,19 @@ export type IOrderRepository = {
    * moved out of serving meanwhile is a `ConflictError`.
    */
   setItemServed(orderId: string, itemId: string, served: boolean): Promise<Order>;
+  /**
+   * Change an order already placed, all-or-nothing. Under a lock on the order it's
+   * refused if the order moved since `change.expected` was read
+   * (`ConflictError("INVALID_TRANSITION")`) or a line being lowered went out to the
+   * guest meanwhile (`ConflictError("ITEM_SERVED")`). Then it lowers and takes off
+   * lines, putting their counted units back on the shelf; adds the new lines,
+   * taking theirs with the same guarded decrement placing uses
+   * (`InsufficientStockError` when one is short); stores the new amounts, table and
+   * service and stamps `changedAt`; and records a `changed` row on the timeline and
+   * the audit entry. The books aren't touched: an order whose lines can change is
+   * unpaid and unserved, so nothing of it is on them yet.
+   */
+  change(change: OrderChange, actor: ActivityActor, audit?: AuditHook<Order>): Promise<Order>;
   /** The order's status history, oldest first — placement, then each change. */
   listStatusEvents(orderId: string): Promise<OrderStatusEvent[]>;
 };

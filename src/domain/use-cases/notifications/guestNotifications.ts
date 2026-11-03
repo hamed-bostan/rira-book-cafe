@@ -6,12 +6,12 @@ import {
   type NewNotification,
   type NotificationParams,
 } from "../../entities/Notification";
+import { orderGuestId, type Order, type OrderStatus } from "../../entities/Order";
 import { normalizePhone } from "../../entities/Phone";
 import { eveningBefore, isReminderDue, soonBefore } from "../../entities/Reminder";
 
 import type { BookWaitlistEntry } from "../../entities/BookWaitlist";
 import type { CafeEvent, EventRegistration } from "../../entities/CafeEvent";
-import type { Order, OrderStatus } from "../../entities/Order";
 import type { Reservation } from "../../entities/Reservation";
 import type { SuiteBooking } from "../../entities/SuiteBooking";
 
@@ -72,6 +72,23 @@ export function orderStatusNotification(order: Order): NewNotification | null {
     kind,
     params: { orderNumber: order.orderNumber, serviceType: order.serviceType },
     dedupeKey: `order:${order.id}:${order.status}`,
+  };
+}
+
+/**
+ * Staff changed the order after it was placed — a round added, a line taken off,
+ * another table. Addressed by the guest's phone, so a sale rung up at the counter
+ * for a number reaches that guest too, once they sign in with it. One per change.
+ */
+export function orderChangedNotification(order: Order): NewNotification | null {
+  const guestId = orderGuestId(order);
+  if (!guestId || !order.changedAt) return null;
+  return {
+    userId: guestId,
+    kind: "orderChanged",
+    params: { orderNumber: order.orderNumber },
+    link: `/orders/${order.id}`,
+    dedupeKey: `order:${order.id}:changed:${order.changedAt}`,
   };
 }
 

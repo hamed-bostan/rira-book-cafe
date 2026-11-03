@@ -100,3 +100,62 @@ describe("CheckoutPricing", () => {
     expect(quote).toMatchObject({ total: 90_000, loyaltyEnabled: false, pointsToEarn: 0 });
   });
 });
+
+describe("CheckoutPricing.reprice", () => {
+  /** An order placed with BOOKCLUB (20% off) and 100 points. */
+  const PLACED = {
+    userId: "g1",
+    promoCodeId: "promo1",
+    promoCode: "BOOKCLUB",
+    pointsRedeemed: 100,
+    pointsDiscount: 100_000,
+  };
+  const NO_PROMO = { ...PLACED, promoCodeId: undefined, promoCode: undefined };
+
+  it("takes the order's code off the new subtotal, then the points it already spent", async () => {
+    // The order's own use is counted: one in all, one by the guest.
+    const repriced = await pricing({ usage: { total: 1, byGuest: 1 } }).reprice(PLACED, 400_000, NOW);
+    expect(repriced).toEqual({
+      subtotal: 400_000,
+      promoDiscount: 80_000,
+      pointsRedeemed: 100,
+      pointsDiscount: 100_000,
+      total: 220_000,
+    });
+  });
+
+  it("doesn't count the order's own use against the code's limits", async () => {
+    const limited = { ...PROMO, usageLimit: 1, perGuestLimit: 1 };
+    await expect(
+      pricing({ promo: limited, usage: { total: 1, byGuest: 1 } }).reprice(PLACED, 400_000, NOW),
+    ).resolves.toMatchObject({ promoDiscount: 80_000 });
+  });
+
+  it("refuses when the code no longer applies: under its minimum, ended, switched off or gone", async () => {
+    const usage = { total: 1, byGuest: 1 };
+    const cases: Partial<PromoCode>[] = [
+      { minSubtotal: 500_000 },
+      { endsAt: "2026-10-01T00:00:00Z" },
+      { isActive: false },
+      { id: "another-code-with-the-same-word" },
+    ];
+    for (const change of cases) {
+      await expect(
+        pricing({ promo: { ...PROMO, ...change }, usage }).reprice(PLACED, 400_000, NOW),
+      ).rejects.toMatchObject({ code: "PROMO_NO_LONGER_APPLIES" });
+    }
+    await expect(pricing({ promo: null, usage }).reprice(PLACED, 400_000, NOW)).rejects.toMatchObject({
+      code: "PROMO_NO_LONGER_APPLIES",
+    });
+  });
+
+  it("refuses when the points spent are worth more than what's left", async () => {
+    await expect(pricing().reprice(NO_PROMO, 100_000, NOW)).resolves.toMatchObject({ total: 0 });
+    await expect(pricing().reprice(NO_PROMO, 99_000, NOW)).rejects.toMatchObject({ code: "POINTS_EXCEED_TOTAL" });
+  });
+
+  it("never spends more of the guest's points on a bigger order", async () => {
+    const repriced = await pricing({ balance: 5_000 }).reprice(NO_PROMO, 900_000, NOW);
+    expect(repriced).toMatchObject({ pointsRedeemed: 100, pointsDiscount: 100_000, total: 800_000 });
+  });
+});

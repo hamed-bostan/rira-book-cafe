@@ -108,6 +108,9 @@
     "quantityMax": "این تعداد برای یک سفارش زیاد است.",
     "itemsRequired": "حداقل یک آیتم اضافه کنید.",
     "itemsTooMany": "تعداد آیتم‌ها برای یک سفارش زیاد است.",
+    "changeRequired": "دست‌کم یک چیز را تغییر دهید.",
+    "lineDuplicate": "این قلم دو بار آمده است.",
+    "lineRaise": "برای تعداد بیشتر، آن را در دور جدید اضافه کنید.",
     "serviceTypeInvalid": "سرو در کافه یا بیرون‌بر را انتخاب کنید.",
     "tableRequired": "برای سرو در کافه، میز را انتخاب کنید.",
     "statusInvalid": "این وضعیت معتبر نیست.",
@@ -205,6 +208,12 @@
     "inUse": "این مورد هنوز در حال استفاده است و فعلاً حذف نمی‌شود.",
     "insufficientStock": "موجودی یکی از آیتم‌ها کافی نیست.",
     "invalidTransition": "این سفارش همین الان توسط فرد دیگری تغییر کرد. وضعیت فعلی نمایش داده می‌شود.",
+    "orderLinesLocked": "اقلام سفارش فقط تا وقتی پرداخت نشده و در حال آماده‌سازی است تغییر می‌کنند.",
+    "orderClosed": "این سفارش سرو یا لغو شده است و دیگر تغییر نمی‌کند.",
+    "itemServed": "این قلم به دست مهمان رسیده است و روی سفارش می‌ماند.",
+    "orderEmpty": "با این تغییر چیزی روی سفارش نمی‌ماند؛ به‌جایش سفارش را لغو کنید.",
+    "promoNoLongerApplies": "کد تخفیف این سفارش به مبلغ جدید نمی‌خورد؛ حداقل مبلغش پر نمی‌شود یا مهلتش تمام شده است. سفارش را لغو کنید و دوباره ثبت کنید.",
+    "pointsExceedTotal": "امتیازهایی که روی این سفارش خرج شده بیشتر از مبلغ جدید می‌ارزد. سفارش را لغو کنید و دوباره ثبت کنید.",
     "notDueYet": "هنوز زمان آمدن مهمان نرسیده است. پذیرش از روز ورود ممکن است و «نیامد» را پس از شروع رزرو می‌توان ثبت کرد.",
     "tableTaken": "این میز در آن زمان رزرو شده است.",
     "eventFull": "ظرفیت این رویداد تکمیل است.",
@@ -729,6 +738,7 @@
     "timelineEmpty": "تاریخچه‌ای ثبت نشده.",
     "timelinePlaced": "ثبت شد",
     "timelineWrittenOff": "سوخت شد",
+    "timelineChanged": "سفارش تغییر کرد",
     "timelineBy": "توسط {name}",
     "cancelChoice": "انصراف",
     "itemState": {
@@ -795,6 +805,8 @@
       "submit": "ثبت فروش",
       "incomplete": "نام را وارد کنید و برای سفارش سالن، میز را هم مشخص کنید.",
       "saved": "فروش با شماره سفارش #{number} ثبت شد",
+      "done": "فروش #{number} ثبت شد.",
+      "openOrder": "باز کردن سفارش",
       "error": "فروش ثبت نشد. دوباره تلاش کنید."
     },
     "refund": {
@@ -844,6 +856,57 @@
       "giveBackConfirm": "ثبت برگشت",
       "givenBackToast": "برگشت پرداخت سفارش #{number} ثبت شد",
       "giveBackError": "ثبت برگشت پرداخت ممکن نشد. دوباره تلاش کنید."
+    },
+    "edit": {
+      "changedBadge": "تغییر کرده",
+      "lineAdded": "افزوده در {time}",
+      "error": "تغییر سفارش ممکن نشد. دوباره تلاش کنید.",
+      "addOpen": "افزودن اقلام",
+      "addTitle": "افزودن به سفارش #{number}",
+      "addSubtitle": "دور دوم از منو؛ اگر مهمان چیزی خواست، برای هر ردیف یادداشت بگذارید.",
+      "addSubmit": "افزودن به سفارش",
+      "addPreview": "{count, plural, one {{countFormatted} قلم اضافه می‌شود} other {{countFormatted} قلم اضافه می‌شود}} · {amount} به قیمت منو",
+      "addSaved": "به سفارش #{number} اضافه شد",
+      "roundHeading": "این دور",
+      "lineNoteAria": "یادداشت برای {name}",
+      "lineNotePlaceholder": "یادداشت، مثلاً شیر جو دوسر",
+      "linesOpen": "تغییر اقلام",
+      "linesTitle": "تغییر اقلام سفارش #{number}",
+      "linesSubtitle": "تعداد یک ردیف را کم کنید یا آن را بردارید. ردیفی که سرو شده روی سفارش می‌ماند.",
+      "linesSubmit": "ذخیرهٔ تغییرات",
+      "linesPreview": "{count, plural, one {{countFormatted} قلم کم می‌شود} other {{countFormatted} قلم کم می‌شود}} · {amount} به قیمت منو",
+      "linesEmpty": "با این تغییر چیزی روی سفارش نمی‌ماند. برای برداشتن همه‌چیز، سفارش را لغو کنید.",
+      "linesSaved": "سفارش #{number} به‌روز شد",
+      "quantityAria": "تعداد {name}",
+      "remove": "حذف",
+      "lineServed": "سرو شده؛ روی سفارش می‌ماند.",
+      "serviceOpen": "جابه‌جایی",
+      "serviceTitle": "جابه‌جایی سفارش #{number}",
+      "serviceSubtitle": "میز دیگر، یا تغییر بین سرو در کافه و بیرون‌بر. جای سرو، مبلغ سفارش را تغییر نمی‌دهد.",
+      "serviceSubmit": "ذخیره",
+      "serviceSaved": "سفارش #{number} جابه‌جا شد"
+    },
+    "receipt": {
+      "print": "چاپ رسید",
+      "title": "رسید سفارش #{number}",
+      "subtitle": "روی کاغذ صندوق یا A4 چاپ کنید؛ فقط خود رسید روی کاغذ می‌آید.",
+      "backToOrder": "سفارش #{number}",
+      "aria": "رسید سفارش #{number}",
+      "heading": "رسید",
+      "date": "تاریخ",
+      "time": "ساعت",
+      "colItem": "قلم",
+      "colAmount": "تومان",
+      "each": "هر عدد {price}",
+      "total": "مبلغ کل",
+      "vatIncluded": "شامل مالیات بر ارزش افزوده ({rate}٪)",
+      "paidBy": "پرداخت · {method}",
+      "refundLine": "بازپرداخت R-{number} · {method} · {date}",
+      "paymentStatus": "پرداخت",
+      "due": "قابل پرداخت",
+      "cancelled": "لغو شده",
+      "thanks": "سپاس از آمدنتان — به امید دیدار.",
+      "addressSeparator": "، "
     }
   },
   "dashOrderNotes": {
@@ -922,7 +985,8 @@
         "counterSale": "<b>{actor}</b> سفارش {entity} را در صندوق ثبت کرد",
         "refunded": "<b>{actor}</b> سفارش {entity} را بازپرداخت کرد",
         "writtenOff": "<b>{actor}</b> سفارش {entity} را سوخت کرد",
-        "onlinePaymentRefunded": "<b>{actor}</b> پرداخت آنلاین سفارش {entity} را برگرداند"
+        "onlinePaymentRefunded": "<b>{actor}</b> پرداخت آنلاین سفارش {entity} را برگرداند",
+        "changed": "<b>{actor}</b> سفارش {entity} را تغییر داد"
       },
       "review": {
         "moderated": "<b>{actor}</b> نظر {entity} را بررسی کرد",
@@ -1072,6 +1136,8 @@
       "closingBalance": "ماندهٔ پایان دوره",
       "linesAdded": "ردیف‌های افزوده",
       "linesRemoved": "ردیف‌های حذف‌شده",
+      "quantities": "تعدادها",
+      "serviceType": "سرویس",
       "matched": "تطبیق‌ها",
       "unmatched": "تطبیق‌های برداشته‌شده",
       "tableLabels": "میزهای نگه‌داشته",
@@ -1592,6 +1658,8 @@
       "heading": "سفارش‌های من",
       "empty": "هنوز سفارشی نداده‌اید.",
       "back": "سفارش‌های من",
+      "backToOrder": "بازگشت به سفارش",
+      "receipt": "رسید",
       "yourNumber": "شمارهٔ سفارش شما",
       "itemCount": "{count, plural, other {{formatted} آیتم}}",
       "cancelled": "این سفارش لغو شد.",
@@ -1750,6 +1818,10 @@
         "orderCancelled": {
           "title": "سفارش #{orderNumber} لغو شد",
           "body": "اگر پرداخت کرده بودید، مبلغ از همان راه برمی‌گردد."
+        },
+        "orderChanged": {
+          "title": "سفارش #{orderNumber} شما به‌روز شد",
+          "body": "چیزی روی آن تغییر کرد؛ سفارش را باز کنید تا ببینید الان چه چیزهایی دارد."
         },
         "reservationConfirmed": {
           "title": "میزتان تأیید شد",
@@ -3190,7 +3262,10 @@
     "markServed": "سرو شد",
     "movedToast": "#{number} به «در حال آماده‌سازی» رفت",
     "servedToast": "#{number} سرو شد",
-    "newOrderToast": "سفارش جدید #{number} · {service}"
+    "newOrderToast": "سفارش جدید #{number} · {service}",
+    "changedToast": "سفارش #{number} تغییر کرد · {service}",
+    "changed": "تغییر کرده",
+    "added": "افزوده"
   },
   "dashBank": {
     "heading": "صورت‌حساب‌های بانکی",

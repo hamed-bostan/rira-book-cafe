@@ -1,3 +1,5 @@
+import { isPlausiblePhone, normalizePhone } from "./Phone";
+
 import type { ProductKind } from "./Product";
 
 /**
@@ -126,6 +128,11 @@ export type OrderItem = {
    * table or handed over. Absent while it's still being prepared.
    */
   servedAt?: string;
+  /**
+   * ISO 8601 timestamp (UTC) of when staff added the line to an order already
+   * placed — a second round. Absent for the lines the order was placed with.
+   */
+  addedAt?: string;
 };
 
 export type Order = {
@@ -170,6 +177,12 @@ export type Order = {
   placedAt: string;
   /** ISO 8601 timestamp (UTC) of the last change. */
   updatedAt: string;
+  /**
+   * ISO 8601 timestamp (UTC) of when staff last changed the lines, the table or the
+   * service after it was placed — the bar display marks such a ticket. Absent while
+   * the order is as it was placed.
+   */
+  changedAt?: string;
 };
 
 /**
@@ -329,4 +342,40 @@ export function orderItemCount(order: Pick<Order, "items">): number {
 /** The sum of the lines, in Toman. */
 export function orderSubtotal(items: readonly Pick<OrderItem, "unitPrice" | "quantity">[]): number {
   return items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
+}
+
+/**
+ * Whether staff may still change the order's lines — add a round, lower or remove
+ * one: while it's being worked, and only before anything is paid, since a payment
+ * settled the bill as it stood. Nothing is on the books for such an order yet (the
+ * sale is booked when it's served), so a change has nothing there to undo.
+ */
+export function canChangeOrderLines(order: Pick<Order, "status" | "paymentStatus">): boolean {
+  return isActiveOrder(order.status) && order.paymentStatus === "unpaid";
+}
+
+/** Whether staff may still move the order to another table or change how it's served: until it's served. */
+export function canChangeOrderService(order: Pick<Order, "status">): boolean {
+  return isActiveOrder(order.status);
+}
+
+/** Whether a line may be lowered or taken off: not once it has gone out to the guest. */
+export function canLowerOrderItem(item: Pick<OrderItem, "servedAt">): boolean {
+  return !item.servedAt;
+}
+
+/**
+ * Who the order belongs to, as a guest id (a guest's id is their normalized phone):
+ * the account that placed it, or for a sale rung up at the counter, the phone staff
+ * took — the guest reads it once they sign in with that number. `null` for a
+ * counter sale without one.
+ */
+export function orderGuestId(order: Pick<Order, "userId" | "customerPhone">): string | null {
+  if (order.userId) return order.userId;
+  return isPlausiblePhone(order.customerPhone) ? normalizePhone(order.customerPhone) : null;
+}
+
+/** Whether the guest may read the order (and its receipt) as their own. */
+export function isOrderOf(order: Pick<Order, "userId" | "customerPhone">, guestId: string): boolean {
+  return orderGuestId(order) === guestId;
 }

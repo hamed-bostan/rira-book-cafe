@@ -15,7 +15,8 @@ export type KitchenNewOrderNotice = {
  * brings the "New" lane again, and any order that wasn't in it last time gets a
  * toast. The first render only takes note of what's there — the board was opened
  * on those, they aren't news. An order someone moved on between two refreshes
- * never shows here, and neither does one the bar moved on itself.
+ * never shows here, and neither does one the bar moved on itself. Changes to an
+ * order already on the board come the same way, each keyed by when it was made.
  */
 export function KitchenNewOrderToasts({ notices }: { notices: readonly KitchenNewOrderNotice[] }) {
   const { toast } = useToast();

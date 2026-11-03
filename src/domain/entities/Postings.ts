@@ -77,12 +77,15 @@ function moneyLines(parts: readonly PaymentPart[], side: "debit" | "credit"): Jo
 const methodsLabel = (parts: readonly PaymentPart[]) => parts.map((part) => part.method).join(" + ");
 
 /**
- * Revenue for a completed order. Prices are VAT-inclusive, so the VAT inside the
- * taxable lines goes to VAT payable — exempt lines (books) carry none — and the
- * rest is revenue by kind. Everything is allocated in whole Toman (the total over
- * the lines, then the VAT over the taxable ones), so the lines add up exactly.
+ * How an order's total splits for the books: each line's share of what the guest
+ * pays (the total allocated over the lines in whole Toman), the taxable part of
+ * each (exempt lines — books — carry none), and the VAT inside those. The sale's
+ * entry books this, and a receipt prints the same VAT.
  */
-export function saleEntry(order: Order, vatRateBps: number, date: string, actor: Actor): NewJournalEntry {
+export function saleSplit(
+  order: Pick<Order, "total" | "items">,
+  vatRateBps: number,
+): { lineTotals: number[]; taxable: number[]; vat: number } {
   const lineTotals = allocate(
     order.total,
     order.items.map((item) => item.unitPrice * item.quantity),
@@ -92,6 +95,17 @@ export function saleEntry(order: Order, vatRateBps: number, date: string, actor:
     taxable.reduce((sum, amount) => sum + amount, 0),
     vatRateBps,
   );
+  return { lineTotals, taxable, vat };
+}
+
+/**
+ * Revenue for a completed order. Prices are VAT-inclusive, so the VAT inside the
+ * taxable lines goes to VAT payable — exempt lines (books) carry none — and the
+ * rest is revenue by kind. Everything is allocated in whole Toman (the total over
+ * the lines, then the VAT over the taxable ones), so the lines add up exactly.
+ */
+export function saleEntry(order: Order, vatRateBps: number, date: string, actor: Actor): NewJournalEntry {
+  const { lineTotals, taxable, vat } = saleSplit(order, vatRateBps);
   const lineVat = allocate(vat, taxable);
 
   const netByKind = new Map<ProductKind, number>();

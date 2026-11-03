@@ -87,6 +87,9 @@ export const ACTIVITY_ACTIONS = [
   "order.writtenOff",
   // An online payment the order couldn't take, given back to the guest from the gateway's panel.
   "order.onlinePaymentRefunded",
+  // Staff changed an order after it was placed: lines added, lowered or removed, the
+  // table or the service. The diff says which.
+  "order.changed",
   // Staff wrote to the guest about their order: the message went to their profile,
   // and the entry commits with it (see `MessageGuest`). The `*.guestMessaged`
   // actions below are the same for the other things a message can be about.

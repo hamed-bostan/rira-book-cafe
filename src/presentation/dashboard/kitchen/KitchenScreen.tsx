@@ -47,10 +47,26 @@ export async function KitchenScreen({ orders, now, canFulfill }: KitchenScreenPr
     <div className="flex min-w-0 flex-col gap-6">
       <AutoRefresh intervalSeconds={REFRESH_SECONDS} />
       <KitchenNewOrderToasts
-        notices={lanes.new.map((order) => ({
-          id: order.id,
-          text: t("newOrderToast", { number: formatNumber(order.orderNumber, locale), service: serviceOf(order) }),
-        }))}
+        notices={[
+          ...lanes.new.map((order) => ({
+            id: order.id,
+            text: t("newOrderToast", { number: formatNumber(order.orderNumber, locale), service: serviceOf(order) }),
+          })),
+          // A change is news once: keyed by when it happened, a later change is news again.
+          ...orders.flatMap((order) =>
+            order.changedAt
+              ? [
+                  {
+                    id: `changed:${order.id}:${order.changedAt}`,
+                    text: t("changedToast", {
+                      number: formatNumber(order.orderNumber, locale),
+                      service: serviceOf(order),
+                    }),
+                  },
+                ]
+              : [],
+          ),
+        ]}
       />
 
       <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">

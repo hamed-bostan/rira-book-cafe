@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   counterOrderSchema,
+  orderChangeSchema,
   orderPaymentSchema,
   orderRefundSchema,
   orderWriteOffSchema,
@@ -85,5 +86,37 @@ describe("a payment staff record", () => {
     expect(
       orderRefundSchema.safeParse({ lines: [{ itemId: "i1", quantity: 1, restock: false }], method: "online" }).success,
     ).toBe(true);
+  });
+});
+
+describe("orderChangeSchema", () => {
+  it("takes a round, lowered lines and a move together, trimming notes and the table", () => {
+    expect(
+      orderChangeSchema.parse({
+        version: "2026-11-03T09:00:00.000Z",
+        add: [{ productId: "p1", quantity: 2, note: " oat milk " }],
+        lines: [{ itemId: "i1", quantity: 0 }],
+        serviceType: "dineIn",
+        tableLabel: " 9 ",
+      }),
+    ).toMatchObject({ add: [{ note: "oat milk" }], lines: [{ quantity: 0 }], tableLabel: "9" });
+  });
+
+  it("needs something to change", () => {
+    expect(messagesAt(orderChangeSchema.safeParse({ version: "v" }), "add")).toEqual(["changeRequired"]);
+    expect(messagesAt(orderChangeSchema.safeParse({ lines: [] }), "add")).toEqual(["changeRequired"]);
+  });
+
+  it("refuses an empty round, a negative or fractional quantity, and dine-in without a table", () => {
+    expect(messagesAt(orderChangeSchema.safeParse({ add: [] }), "add")).toEqual(["itemsRequired"]);
+    expect(
+      messagesAt(orderChangeSchema.safeParse({ lines: [{ itemId: "i1", quantity: -1 }] }), "lines.0.quantity"),
+    ).toEqual(["quantityWhole"]);
+    expect(
+      messagesAt(orderChangeSchema.safeParse({ lines: [{ itemId: "i1", quantity: 1.5 }] }), "lines.0.quantity"),
+    ).toEqual(["quantityWhole"]);
+    expect(messagesAt(orderChangeSchema.safeParse({ serviceType: "dineIn", tableLabel: " " }), "tableLabel")).toEqual([
+      "tableRequired",
+    ]);
   });
 });

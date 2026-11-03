@@ -108,6 +108,9 @@
     "quantityMax": "That's more than one order can take.",
     "itemsRequired": "Add at least one item.",
     "itemsTooMany": "That's too many items for one order.",
+    "changeRequired": "Change at least one thing.",
+    "lineDuplicate": "That item is listed twice.",
+    "lineRaise": "To add more of an item, add it as a new round.",
     "serviceTypeInvalid": "Choose dine-in or takeaway.",
     "tableRequired": "Choose a table for a dine-in order.",
     "statusInvalid": "That status isn't valid.",
@@ -199,6 +202,12 @@
     "inUse": "That's still in use and can't be removed yet.",
     "insufficientStock": "Not enough stock for one of the items.",
     "invalidTransition": "This order was just changed by someone else. Showing its current state.",
+    "orderLinesLocked": "Items can only change while the order is unpaid and still being made.",
+    "orderClosed": "This order has been served or cancelled, so it can't be changed.",
+    "itemServed": "That item has already gone out to the guest, so it stays on the order.",
+    "orderEmpty": "That would leave nothing on the order — cancel the order instead.",
+    "promoNoLongerApplies": "The order's promo code wouldn't apply to the new total — its minimum isn't met, or the code has ended. Cancel the order and place it again instead.",
+    "pointsExceedTotal": "The points spent on this order are worth more than the new total. Cancel the order and place it again instead.",
     "notDueYet": "The guest isn't due yet. Check-ins open on the arrival day, and a no-show can be marked once the booking has started.",
     "tableTaken": "That table is already booked at that time.",
     "eventFull": "This event is full.",
@@ -729,6 +738,7 @@
     "timelineEmpty": "No history recorded.",
     "timelinePlaced": "Placed",
     "timelineWrittenOff": "Written off",
+    "timelineChanged": "Order changed",
     "timelineBy": "by {name}",
     "cancelChoice": "Cancel",
     "itemState": {
@@ -795,6 +805,8 @@
       "submit": "Record sale",
       "incomplete": "Fill in the name, and the table for a dine-in order.",
       "saved": "Sale recorded as order #{number}",
+      "done": "Sale #{number} is in.",
+      "openOrder": "Open order",
       "error": "Couldn't record the sale. Please try again."
     },
     "refund": {
@@ -844,6 +856,57 @@
       "giveBackConfirm": "Mark given back",
       "givenBackToast": "Payment on order #{number} marked given back",
       "giveBackError": "Couldn't mark the payment given back. Please try again."
+    },
+    "edit": {
+      "changedBadge": "Changed",
+      "lineAdded": "Added at {time}",
+      "error": "Couldn't change the order. Please try again.",
+      "addOpen": "Add items",
+      "addTitle": "Add to order #{number}",
+      "addSubtitle": "A second round from the menu, with a note on a line if the guest asks for something.",
+      "addSubmit": "Add to order",
+      "addPreview": "{count, plural, one {Adds {countFormatted} item} other {Adds {countFormatted} items}} · {amount} at menu prices",
+      "addSaved": "Added to order #{number}",
+      "roundHeading": "This round",
+      "lineNoteAria": "Note for {name}",
+      "lineNotePlaceholder": "Note, e.g. oat milk",
+      "linesOpen": "Change items",
+      "linesTitle": "Change items on order #{number}",
+      "linesSubtitle": "Lower a line or take it off. A line already served stays on the order.",
+      "linesSubmit": "Save changes",
+      "linesPreview": "{count, plural, one {Takes off {countFormatted} item} other {Takes off {countFormatted} items}} · {amount} at menu prices",
+      "linesEmpty": "That leaves nothing on the order. To take everything off, cancel the order instead.",
+      "linesSaved": "Order #{number} updated",
+      "quantityAria": "How many {name}",
+      "remove": "Remove",
+      "lineServed": "Served — it stays on the order.",
+      "serviceOpen": "Move",
+      "serviceTitle": "Move order #{number}",
+      "serviceSubtitle": "Another table, or switch between dine-in and takeaway. Where it goes doesn't change what it costs.",
+      "serviceSubmit": "Save",
+      "serviceSaved": "Order #{number} moved"
+    },
+    "receipt": {
+      "print": "Print receipt",
+      "title": "Receipt for order #{number}",
+      "subtitle": "Print it on the till roll or on A4 — only the receipt goes on paper.",
+      "backToOrder": "Order #{number}",
+      "aria": "Receipt for order #{number}",
+      "heading": "Receipt",
+      "date": "Date",
+      "time": "Time",
+      "colItem": "Item",
+      "colAmount": "Toman",
+      "each": "{price} each",
+      "total": "Total",
+      "vatIncluded": "Including VAT ({rate}%)",
+      "paidBy": "Paid · {method}",
+      "refundLine": "Refund R-{number} · {method} · {date}",
+      "paymentStatus": "Payment",
+      "due": "To pay",
+      "cancelled": "Cancelled",
+      "thanks": "Thank you — see you again soon.",
+      "addressSeparator": ", "
     }
   },
   "dashOrderNotes": {
@@ -922,7 +985,8 @@
         "counterSale": "<b>{actor}</b> rang up order {entity} at the counter",
         "refunded": "<b>{actor}</b> refunded order {entity}",
         "writtenOff": "<b>{actor}</b> wrote off order {entity}",
-        "onlinePaymentRefunded": "<b>{actor}</b> gave back an online payment on order {entity}"
+        "onlinePaymentRefunded": "<b>{actor}</b> gave back an online payment on order {entity}",
+        "changed": "<b>{actor}</b> changed order {entity}"
       },
       "review": {
         "moderated": "<b>{actor}</b> moderated {entity}’s review",
@@ -1072,6 +1136,8 @@
       "closingBalance": "Closing balance",
       "linesAdded": "Lines added",
       "linesRemoved": "Lines removed",
+      "quantities": "Quantities",
+      "serviceType": "Service",
       "matched": "Matches made",
       "unmatched": "Matches undone",
       "tableLabels": "Held tables",
@@ -1592,6 +1658,8 @@
       "heading": "My orders",
       "empty": "You haven't ordered yet.",
       "back": "My orders",
+      "backToOrder": "Back to the order",
+      "receipt": "Receipt",
       "yourNumber": "Your order number",
       "itemCount": "{count, plural, one {{formatted} item} other {{formatted} items}}",
       "cancelled": "This order was cancelled.",
@@ -1750,6 +1818,10 @@
         "orderCancelled": {
           "title": "Order #{orderNumber} was cancelled",
           "body": "If you'd paid, the money goes back the way it came."
+        },
+        "orderChanged": {
+          "title": "Your order #{orderNumber} was updated",
+          "body": "Something on it changed — open the order to see what's on it now."
         },
         "reservationConfirmed": {
           "title": "Your table is confirmed",
@@ -3190,7 +3262,10 @@
     "markServed": "Mark served",
     "movedToast": "#{number} moved to Being made",
     "servedToast": "#{number} served",
-    "newOrderToast": "New order #{number} · {service}"
+    "newOrderToast": "New order #{number} · {service}",
+    "changedToast": "Order #{number} changed · {service}",
+    "changed": "Changed",
+    "added": "Added"
   },
   "dashBank": {
     "heading": "Bank statements",

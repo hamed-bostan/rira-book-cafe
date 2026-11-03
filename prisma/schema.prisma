@@ -192,6 +192,8 @@ model Order {
   paymentAttempts PaymentAttempt[]
   placedAt        DateTime           @default(now()) @map("placed_at")
   updatedAt       DateTime           @updatedAt @map("updated_at")
+  // When staff last changed its lines, table or service after it was placed.
+  changedAt       DateTime?          @map("changed_at")
 
   @@index([status, placedAt])
   @@index([userId, placedAt])
@@ -222,6 +224,8 @@ model OrderItem {
   position         Int
   // When staff marked the line served; null while it's still being prepared.
   servedAt         DateTime?         @map("served_at")
+  // When staff added the line to an order already placed (a second round); null for the lines it was placed with.
+  addedAt          DateTime?         @map("added_at")
   refundLines      OrderRefundLine[]
 
   @@index([orderId])
@@ -315,6 +319,8 @@ model PaymentAttempt {
 model OrderStatusEvent {
   id         String   @id @default(uuid())
   orderId    String   @map("order_id")
+  // status | changed — a move along the workflow, or staff changing the order without moving it.
+  kind       String   @default("status")
   fromStatus String?  @map("from_status")
   toStatus   String   @map("to_status")
   actorId    String   @map("actor_id")

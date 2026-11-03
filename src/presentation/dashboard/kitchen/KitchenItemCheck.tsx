@@ -13,6 +13,8 @@ import { useToast } from "@/src/presentation/design-system/components/Toast/useT
 
 import { ordersApi } from "../orders/order-api";
 
+import { KitchenAddedTag } from "./KitchenAddedTag";
+
 type KitchenItemCheckProps = {
   orderId: string;
   itemId: string;
@@ -23,6 +25,8 @@ type KitchenItemCheckProps = {
   note?: string;
   /** Whether the line is already ticked off — the order's per-line served mark. */
   served: boolean;
+  /** Whether the line came in a second round, after the order was placed. */
+  added?: boolean;
 };
 
 /**
@@ -30,7 +34,15 @@ type KitchenItemCheckProps = {
  * tick the line off (it's marked served) or take a mistaken tick back. Writes,
  * then refreshes the server render, which draws the new state.
  */
-export function KitchenItemCheck({ orderId, itemId, quantity, name, note, served }: KitchenItemCheckProps) {
+export function KitchenItemCheck({
+  orderId,
+  itemId,
+  quantity,
+  name,
+  note,
+  served,
+  added = false,
+}: KitchenItemCheckProps) {
   const tOrders = useTranslations("dashOrders");
   const tApiErrors = useTranslations("apiErrors");
   const router = useRouter();
@@ -76,6 +88,7 @@ export function KitchenItemCheck({ orderId, itemId, quantity, name, note, served
         {note ? (
           <span className="text-body-default font-medium text-muted-foreground sm:text-body-small">{note}</span>
         ) : null}
+        {added ? <KitchenAddedTag /> : null}
       </span>
     </CheckboxPrimitive.Root>
   );

@@ -68,4 +68,14 @@ export type ConflictCode =
   | "ALREADY_MATCHED"
   | "MATCH_UNBALANCED"
   | "NOT_RECONCILED"
-  | "PREVIOUS_NOT_RECONCILED";
+  | "PREVIOUS_NOT_RECONCILED"
+  // Changing an order after it was placed. Lines change only while it's unpaid and
+  // being worked; table and service until it's served. A line that went out stays,
+  // an order can't be left empty, and a change its promo code or the points it spent
+  // can't price is refused — the order is cancelled and placed again instead.
+  | "ORDER_LINES_LOCKED"
+  | "ORDER_CLOSED"
+  | "ITEM_SERVED"
+  | "ORDER_EMPTY"
+  | "PROMO_NO_LONGER_APPLIES"
+  | "POINTS_EXCEED_TOTAL";

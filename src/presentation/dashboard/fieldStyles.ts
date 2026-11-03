@@ -25,6 +25,13 @@ export const FIELD_PICKER = "w-full justify-between border-border-strong";
 /** Fields sharing a row where they fit, each at least 192px wide. */
 export const FIELD_GRID = "grid grid-cols-[repeat(auto-fit,minmax(12rem,1fr))] gap-4";
 
+/**
+ * The floor's tables as tiles to pick from, as many abreast as fit at 7.5rem: two
+ * across a phone's dialog, three across a wider one. Narrower, "Long table" broke
+ * over two lines and the reason a table can't be had was cut to a word.
+ */
+export const TABLE_TILE_GRID = "grid grid-cols-[repeat(auto-fill,minmax(7.5rem,1fr))] gap-2";
+
 /** The two languages' copy: stacked, then side by side from `md`. */
 export const LANGUAGE_GRID = "grid grid-cols-1 gap-6 md:grid-cols-2";
 

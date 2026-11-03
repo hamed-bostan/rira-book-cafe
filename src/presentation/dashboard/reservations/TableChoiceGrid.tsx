@@ -8,6 +8,7 @@ import { formatNumber } from "@/src/lib/formatNumber";
 import { cn } from "@/src/lib/utils";
 import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 
+import { TABLE_TILE_GRID } from "../fieldStyles";
 import { tableNameValues } from "../floor/tableName";
 
 type TableChoiceGridProps = {
@@ -20,7 +21,7 @@ type TableChoiceGridProps = {
 };
 
 /**
- * The floor as a 3-column grid of tables to pick one from. A table another
+ * The floor as a grid of tables to pick one from. A table another
  * booking or an event has then, or one too small for the party, is shown but
  * can't be chosen, with the reason under its name.
  */
@@ -48,7 +49,7 @@ export function TableChoiceGrid({ choices, value, onChange, clearable = false }:
       aria-label={t("tableGroupLabel")}
       value={value ?? ""}
       onValueChange={(label) => onChange(label)}
-      className="grid grid-cols-3 gap-2"
+      className={TABLE_TILE_GRID}
     >
       {choices.map((choice) => {
         const on = choice.label === value;
@@ -67,7 +68,7 @@ export function TableChoiceGrid({ choices, value, onChange, clearable = false }:
               focusRing,
             )}
           >
-            <span className="text-body-default font-semibold sm:text-body-small">
+            <span className="max-w-full truncate text-body-default font-semibold sm:text-body-small">
               {tFloor("tableName", tableNameValues(choice.label, locale))}
             </span>
             <span

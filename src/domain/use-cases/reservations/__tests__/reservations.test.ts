@@ -1,9 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { wallTimeToDate } from "../../../entities/CafeTime";
 import {
+  BOOKING_TIMES,
   RESERVATION_STATUSES,
   canUndoReservationStatus,
   isGuestCancellableReservation,
+  isWithinBookingHours,
   rangesOverlap,
   type Reservation,
   type ReservationStatus,
@@ -12,7 +15,7 @@ import { ConflictError } from "../../../errors/ConflictError";
 import { NotFoundError } from "../../../errors/NotFoundError";
 import { ValidationError } from "../../../errors/ValidationError";
 import { CancelOwnReservation, ChangeReservation } from "../ChangeReservation";
-import { RequestReservation } from "../RequestReservation";
+import { BookTableForGuest, RequestReservation } from "../RequestReservation";
 
 import type { IReservationRepository, ReservationChange } from "../../../repositories/IReservationRepository";
 
@@ -80,6 +83,53 @@ describe("RequestReservation", () => {
     ]) {
       await expect(useCase.execute(input, GUEST, NOW)).rejects.toThrow(ValidationError);
     }
+  });
+
+  it("takes the first and last booking times, and refuses either side of them", async () => {
+    const { repo, create } = repoWith(null);
+    const useCase = new RequestReservation(repo);
+    for (const time of ["08:00", "21:00"]) {
+      await useCase.execute({ startsAt: wallTimeToDate(`2026-10-21T${time}`), partySize: 2 }, GUEST, NOW);
+    }
+    expect(create).toHaveBeenCalledTimes(2);
+
+    for (const time of ["07:45", "21:15", "22:00", "00:00"]) {
+      await expect(
+        useCase.execute({ startsAt: wallTimeToDate(`2026-10-21T${time}`), partySize: 2 }, GUEST, NOW),
+      ).rejects.toMatchObject({ field: "startsAt", message: "outsideBookingHours" });
+    }
+  });
+});
+
+describe("BookTableForGuest", () => {
+  const walkIn = { guestName: "Omid", guestPhone: "09356401182", partySize: 2 };
+
+  it("holds staff to the same booking hours as guests", async () => {
+    const { repo, create } = repoWith(null);
+    const useCase = new BookTableForGuest(repo);
+    await useCase.execute({ ...walkIn, startsAt: wallTimeToDate("2026-10-21T21:00") }, { id: "s", name: "Ali" }, NOW);
+    expect(create).toHaveBeenCalledOnce();
+
+    await expect(
+      useCase.execute({ ...walkIn, startsAt: wallTimeToDate("2026-10-21T21:30") }, { id: "s", name: "Ali" }, NOW),
+    ).rejects.toMatchObject({ field: "startsAt", message: "outsideBookingHours" });
+  });
+});
+
+describe("booking hours", () => {
+  it("offers every quarter hour from the first booking time to the last", () => {
+    expect(BOOKING_TIMES[0]).toBe("08:00");
+    expect(BOOKING_TIMES.at(-1)).toBe("21:00");
+    expect(BOOKING_TIMES).toHaveLength(53);
+    expect(BOOKING_TIMES.every((time) => isWithinBookingHours(wallTimeToDate(`2026-10-21T${time}`)))).toBe(true);
+  });
+
+  it("reads the cafe's wall clock, not UTC", () => {
+    // 04:30 UTC is 08:00 in Tehran; 17:30 UTC is 21:00.
+    expect(isWithinBookingHours(new Date("2026-10-21T04:30:00Z"))).toBe(true);
+    expect(isWithinBookingHours(new Date("2026-10-21T04:15:00Z"))).toBe(false);
+    expect(isWithinBookingHours(new Date("2026-10-21T17:30:00Z"))).toBe(true);
+    expect(isWithinBookingHours(new Date("2026-10-21T17:45:00Z"))).toBe(false);
   });
 });
 

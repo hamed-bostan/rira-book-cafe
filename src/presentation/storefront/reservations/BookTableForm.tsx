@@ -5,7 +5,7 @@ import * as React from "react";
 
 import { shiftCafeDay } from "@/src/domain/entities/CafeTime";
 import {
-  BOOKING_SLOT_MINUTES,
+  BOOKING_TIMES,
   MAX_BOOKING_DAYS_AHEAD,
   MAX_PARTY_SIZE,
   MAX_RESERVATION_NOTE_LENGTH,
@@ -24,24 +24,6 @@ import { Textarea } from "@/src/presentation/design-system/components/form/Texta
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { storefrontApi } from "../storefront-api";
-
-/**
- * The hours a guest can pick. The cafe has no opening-hours setting yet, so this is
- * a sensible daytime window on the quarter hour; staff confirm or decline each
- * request anyway.
- */
-const FIRST_SLOT_MINUTES = 8 * 60;
-const LAST_SLOT_MINUTES = 22 * 60;
-
-function slots(): string[] {
-  const out: string[] = [];
-  for (let minutes = FIRST_SLOT_MINUTES; minutes <= LAST_SLOT_MINUTES; minutes += BOOKING_SLOT_MINUTES) {
-    out.push(`${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`);
-  }
-  return out;
-}
-
-const SLOTS = slots();
 
 type BookTableFormProps = {
   /** Today on the cafe calendar — the earliest bookable day. */
@@ -113,7 +95,8 @@ export function BookTableForm({ today }: BookTableFormProps) {
         <label className="flex flex-col gap-1.5 text-body-small-emphasis text-foreground">
           {t("book.time")}
           <Select value={time} onChange={(event) => setTime(event.target.value)} dir="ltr">
-            {SLOTS.map((slot) => (
+            {/* The cafe's booking hours, the same ones staff book within and the server holds both to. */}
+            {BOOKING_TIMES.map((slot) => (
               <option key={slot} value={slot}>
                 {slot}
               </option>

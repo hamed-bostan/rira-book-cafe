@@ -9,6 +9,7 @@ import {
   MAX_PARTY_SIZE,
   MAX_RESERVATION_NOTE_LENGTH,
   MIN_PARTY_SIZE,
+  isWithinBookingHours,
   type Reservation,
 } from "../../entities/Reservation";
 import { ValidationError } from "../../errors/ValidationError";
@@ -25,8 +26,9 @@ export type RequestReservationInput = {
 
 /**
  * The booking rules both a guest and staff are held to: a quarter-hour start no
- * earlier than `earliest` and within the booking horizon, a party the floor can
- * seat, a short note. Returns the note trimmed (or dropped when blank).
+ * earlier than `earliest`, within the booking horizon and the booking hours, a
+ * party the floor can seat, a short note. Returns the note trimmed (or dropped
+ * when blank).
  */
 function validateBooking(input: RequestReservationInput, now: Date, earliest: Date): { note?: string } {
   const startsAt = input.startsAt;
@@ -38,6 +40,8 @@ function validateBooking(input: RequestReservationInput, now: Date, earliest: Da
   if (startsAt.getUTCMinutes() % BOOKING_SLOT_MINUTES !== 0 || startsAt.getUTCSeconds() !== 0) {
     throw new ValidationError("startsAt", `Choose a time on a ${BOOKING_SLOT_MINUTES}-minute mark.`);
   }
+  // A `formErrors` key, so both forms show it in the reader's language.
+  if (!isWithinBookingHours(startsAt)) throw new ValidationError("startsAt", "outsideBookingHours");
   if (!Number.isInteger(input.partySize) || input.partySize < MIN_PARTY_SIZE || input.partySize > MAX_PARTY_SIZE) {
     throw new ValidationError("partySize", `Party size must be ${MIN_PARTY_SIZE}–${MAX_PARTY_SIZE}.`);
   }

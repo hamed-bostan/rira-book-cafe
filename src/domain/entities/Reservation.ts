@@ -1,3 +1,5 @@
+import { dateToWallTime } from "./CafeTime";
+
 /**
  * A table reservation: a guest asks for a time and a party size; staff confirm it
  * (assigning a table), seat the party when they arrive, and close it out.
@@ -26,9 +28,35 @@ export const DEFAULT_RESERVATION_MINUTES = 90;
 export const MAX_BOOKING_DAYS_AHEAD = 60;
 /** Booking times fall on quarter hours. */
 export const BOOKING_SLOT_MINUTES = 15;
-/** The first and last hour staff can book a table at (cafe wall clock). */
+/**
+ * The first and last hour a table can be booked for (cafe wall clock), by a guest
+ * or by staff: both forms offer only `BOOKING_TIMES`, and the use-cases refuse
+ * anything outside them. The `outsideBookingHours` message names these hours.
+ */
 export const FIRST_BOOKING_HOUR = 8;
 export const LAST_BOOKING_HOUR = 21;
+
+const pad = (n: number): string => String(n).padStart(2, "0");
+
+/** Every bookable start of a day, `HH:mm` on the cafe's wall clock: each quarter hour from first to last. */
+export const BOOKING_TIMES: readonly string[] = Array.from(
+  { length: ((LAST_BOOKING_HOUR - FIRST_BOOKING_HOUR) * 60) / BOOKING_SLOT_MINUTES + 1 },
+  (_, index) => {
+    const minutes = FIRST_BOOKING_HOUR * 60 + index * BOOKING_SLOT_MINUTES;
+    return `${pad(Math.floor(minutes / 60))}:${pad(minutes % 60)}`;
+  },
+);
+
+/**
+ * Whether an instant falls within the booking hours on the cafe's wall clock, the
+ * last hour itself included. Whether it's on a quarter-hour mark is checked apart.
+ */
+export function isWithinBookingHours(startsAt: Date): boolean {
+  const [hours, minutes] = dateToWallTime(startsAt).slice(11).split(":").map(Number);
+  const at = hours * 60 + minutes;
+  return at >= FIRST_BOOKING_HOUR * 60 && at <= LAST_BOOKING_HOUR * 60;
+}
+
 export const MAX_RESERVATION_NOTE_LENGTH = 300;
 /** A guest's name as staff type it for a phone or walk-in booking. */
 export const MAX_GUEST_NAME_LENGTH = 80;

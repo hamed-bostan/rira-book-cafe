@@ -67,3 +67,29 @@ describe("the staff list of reservations", () => {
     expect((await listReservations(getRequest(`/api/admin/reservations?from=${today}`))).status).toBe(401);
   });
 });
+
+describe("booking hours", () => {
+  it("refuses a guest's request outside them, with a message key both languages have", async () => {
+    signInAs("customer");
+    const late = await askForTable({ startsAt: `${nextWeek}T22:00`, partySize: 2 });
+
+    expect(late.status).toBe(400);
+    expect((await readError(late)).fieldErrors).toEqual({ startsAt: "outsideBookingHours" });
+    expect((await askForTable({ startsAt: `${nextWeek}T21:00`, partySize: 2 })).status).toBe(201);
+  });
+
+  it("holds staff bookings to the same hours", async () => {
+    signInAs("staff");
+    const early = await bookTable(
+      jsonRequest("POST", "/api/admin/reservations", {
+        guestName: "Sara Ahmadi",
+        guestPhone: "09301184462",
+        startsAt: `${nextWeek}T07:30`,
+        partySize: 2,
+      }),
+    );
+
+    expect(early.status).toBe(400);
+    expect((await readError(early)).fieldErrors).toEqual({ startsAt: "outsideBookingHours" });
+  });
+});

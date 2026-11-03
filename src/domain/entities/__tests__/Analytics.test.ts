@@ -58,10 +58,11 @@ describe("series", () => {
   it("fills days without sales with zeros", () => {
     const range = dayRange("2026-10-19", "2026-10-21");
     expect(daysOf(range)).toEqual(["2026-10-19", "2026-10-20", "2026-10-21"]);
-    expect(fillDailySeries(range, [{ day: "2026-10-20", revenue: 500000, orders: 3 }])).toEqual([
-      { day: "2026-10-19", revenue: 0, orders: 0 },
-      { day: "2026-10-20", revenue: 500000, orders: 3 },
-      { day: "2026-10-21", revenue: 0, orders: 0 },
+    const sales = { day: "2026-10-20", revenue: 500000, orders: 3, unpaidOrders: 1, unpaidValue: 120000 };
+    expect(fillDailySeries(range, [sales])).toEqual([
+      { day: "2026-10-19", revenue: 0, orders: 0, unpaidOrders: 0, unpaidValue: 0 },
+      sales,
+      { day: "2026-10-21", revenue: 0, orders: 0, unpaidOrders: 0, unpaidValue: 0 },
     ]);
   });
 

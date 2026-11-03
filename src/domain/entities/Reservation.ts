@@ -14,6 +14,17 @@
 export const RESERVATION_STATUSES = ["requested", "confirmed", "seated", "completed", "cancelled", "noShow"] as const;
 export type ReservationStatus = (typeof RESERVATION_STATUSES)[number];
 
+/**
+ * The bookings a day counts: every one that is on or has happened — waiting for an
+ * answer, booked, at the table, or finished. Cancelled and no-show ones aren't.
+ */
+export const DAY_BOOKING_STATUSES = [
+  "requested",
+  "confirmed",
+  "seated",
+  "completed",
+] as const satisfies readonly ReservationStatus[];
+
 /** Statuses that hold a table — the ones a double booking is checked against. */
 export const TABLE_HOLDING_STATUSES = ["confirmed", "seated"] as const satisfies readonly ReservationStatus[];
 

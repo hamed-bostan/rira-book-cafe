@@ -30,9 +30,8 @@ function repo(overrides: Partial<IAnalyticsRepository> = {}): IAnalyticsReposito
     guestCounts: vi.fn(),
     topGuests: vi.fn(),
     reservationStats: vi.fn(),
-    activeOrderCount: vi.fn(async () => 3),
     reservationsOn: vi.fn(async () => ({ bookings: 2, covers: 6, awaitingConfirmation: 1 })),
-    publishedEventsBetween: vi.fn(async () => 1),
+    publishedEventsDuring: vi.fn(async () => 1),
     ...overrides,
   };
 }
@@ -145,9 +144,16 @@ describe("GetDashboardOverview", () => {
     const overview = await new GetDashboardOverview(repo()).execute(new Date("2026-10-20T23:00:00Z"));
     expect(overview).toEqual({
       today: "2026-10-21",
-      activeOrders: 3,
       todayReservations: { bookings: 2, covers: 6, awaitingConfirmation: 1 },
       upcomingEvents: 1,
     });
+  });
+
+  it("counts events from now, so one already under way is still in the week", async () => {
+    const publishedEventsDuring = vi.fn(async () => 2);
+    await new GetDashboardOverview(repo({ publishedEventsDuring })).execute(NOW);
+
+    // From this moment — not from the start of each event — to the start of the eighth day.
+    expect(publishedEventsDuring).toHaveBeenCalledWith(NOW, new Date("2026-10-27T20:30:00Z"));
   });
 });

@@ -1,22 +1,24 @@
 import { Check } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
-import type { Reservation, ReservationStatus } from "@/src/domain/entities/Reservation";
+import type { Reservation } from "@/src/domain/entities/Reservation";
+import { Link } from "@/src/i18n/navigation";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { formatOrderTime } from "@/src/lib/formatOrderDate";
+import { cn } from "@/src/lib/utils";
 import { DashboardEmptyState } from "@/src/presentation/dashboard/DashboardEmptyState";
 import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 
 import { ConfirmReservationButton } from "./ConfirmReservationButton";
 import { OverviewPanel, OverviewPanelRow } from "./OverviewPanel";
-
-/** The bookings still ahead of the floor today; finished, cancelled and no-show ones drop off. */
-const SHOWN_STATUSES: readonly ReservationStatus[] = ["requested", "confirmed", "seated"];
+import { OverviewReadError } from "./OverviewReadError";
+import { FINISHED_BOOKING_STATUS, splitTodaysBookings } from "./todaysBookings";
 
 type ReservationsPanelProps = {
-  /** Today's reservations, in start order. */
-  reservations: Reservation[];
+  /** Today's reservations, in start order; `null` when they couldn't be read. */
+  reservations: Reservation[] | null;
   /** Draws the Confirm button on requested bookings (`reservations.manage`). */
   canManage: boolean;
 };
@@ -24,22 +26,26 @@ type ReservationsPanelProps = {
 /**
  * Today's bookings in time order: when, where, who and how many — with a one-tap
  * Confirm on the ones still waiting for an answer. A table can be assigned later
- * from the reservations page; confirming doesn't need one.
+ * from the reservations page; confirming doesn't need one. Finished bookings drop
+ * off the list but not out of sight: a line under it counts them, so the list and
+ * the Bookings today card add up.
  */
 export async function ReservationsPanel({ reservations, canManage }: ReservationsPanelProps) {
   const t = await getTranslations("dashOverview");
   const tRes = await getTranslations("dashReservations");
   const locale = await getLocale();
-  const shown = reservations.filter((reservation) => SHOWN_STATUSES.includes(reservation.status));
+  const { ahead: shown, finished } = splitTodaysBookings(reservations ?? []);
 
   return (
     <OverviewPanel
       id="overview-reservations"
       title={t("reservationsHeading")}
-      count={formatNumber(shown.length, locale)}
+      count={reservations ? formatNumber(shown.length, locale) : undefined}
       action={{ href: "/dashboard/reservations", label: t("viewAll") }}
     >
-      {shown.length === 0 ? (
+      {!reservations ? (
+        <OverviewReadError className="border-t border-border py-10" />
+      ) : shown.length === 0 ? (
         <DashboardEmptyState
           title={t("reservationsEmptyTitle")}
           body={t("reservationsEmptyBody")}
@@ -96,6 +102,20 @@ export async function ReservationsPanel({ reservations, canManage }: Reservation
           );
         })
       )}
+      {finished > 0 ? (
+        <div className="flex border-t border-border px-5 py-3">
+          <Link
+            href={`/dashboard/reservations?status=${FINISHED_BOOKING_STATUS}`}
+            // 44px tall to the touch on a phone, without moving the line.
+            className={cn(
+              "-my-3 py-3 text-body-default font-medium text-primary transition-colors hover:text-primary-hover sm:my-0 sm:py-0 sm:text-body-small",
+              focusRing,
+            )}
+          >
+            {t("finishedBookings", { count: finished, formatted: formatNumber(finished, locale) })}
+          </Link>
+        </div>
+      ) : null}
     </OverviewPanel>
   );
 }

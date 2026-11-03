@@ -13,14 +13,9 @@ import {
   type UnpaidOrder,
 } from "@/src/domain/entities/Analytics";
 import { CAFE_TIME_ZONE } from "@/src/domain/entities/CafeTime";
-import {
-  ACTIVE_ORDER_STATUSES,
-  PAYMENT_METHODS,
-  SERVICE_TYPES,
-  type PaymentMethod,
-  type ServiceType,
-} from "@/src/domain/entities/Order";
+import { PAYMENT_METHODS, SERVICE_TYPES, type PaymentMethod, type ServiceType } from "@/src/domain/entities/Order";
 import { PRODUCT_KINDS, type ProductKind } from "@/src/domain/entities/Product";
+import { DAY_BOOKING_STATUSES } from "@/src/domain/entities/Reservation";
 import type { IAnalyticsRepository } from "@/src/domain/repositories/IAnalyticsRepository";
 import { prisma } from "@/src/infrastructure/prisma/client";
 import { Prisma } from "@/src/infrastructure/prisma/generated/client";
@@ -78,16 +73,26 @@ export class PrismaAnalyticsRepository implements IAnalyticsRepository {
   }
 
   async dailySales(range: DateRange): Promise<DailySales[]> {
-    const rows = await prisma.$queryRaw<{ day: string; orders: bigint; revenue: bigint | null }[]>`
+    const rows = await prisma.$queryRaw<
+      { day: string; orders: bigint; revenue: bigint | null; unpaid: bigint; unpaid_value: bigint | null }[]
+    >`
       SELECT
         to_char(${localTime(Prisma.sql`placed_at`)}, 'YYYY-MM-DD') AS day,
         COUNT(*) AS orders,
-        SUM(total - refunded_total) AS revenue
+        SUM(total - refunded_total) AS revenue,
+        COUNT(*) FILTER (WHERE payment_status = 'unpaid') AS unpaid,
+        SUM(total - refunded_total) FILTER (WHERE payment_status = 'unpaid') AS unpaid_value
       FROM orders
       WHERE status = 'completed' AND placed_at >= ${range.from} AND placed_at < ${range.to}
       GROUP BY 1
       ORDER BY 1`;
-    return rows.map((row) => ({ day: row.day, orders: Number(row.orders), revenue: Number(row.revenue ?? 0) }));
+    return rows.map((row) => ({
+      day: row.day,
+      orders: Number(row.orders),
+      revenue: Number(row.revenue ?? 0),
+      unpaidOrders: Number(row.unpaid),
+      unpaidValue: Number(row.unpaid_value ?? 0),
+    }));
   }
 
   async hourlySales(range: DateRange): Promise<HourlySales[]> {
@@ -312,16 +317,12 @@ export class PrismaAnalyticsRepository implements IAnalyticsRepository {
     };
   }
 
-  async activeOrderCount(): Promise<number> {
-    return prisma.order.count({ where: { status: { in: [...ACTIVE_ORDER_STATUSES] } } });
-  }
-
   async reservationsOn(range: DateRange): Promise<{ bookings: number; covers: number; awaitingConfirmation: number }> {
     const groups = await prisma.reservation.groupBy({
       by: ["status"],
       where: {
         startsAt: { gte: range.from, lt: range.to },
-        status: { in: ["requested", "confirmed", "seated", "completed"] },
+        status: { in: [...DAY_BOOKING_STATUSES] },
       },
       _count: { _all: true },
       _sum: { partySize: true },
@@ -333,8 +334,8 @@ export class PrismaAnalyticsRepository implements IAnalyticsRepository {
     };
   }
 
-  async publishedEventsBetween(from: Date, to: Date): Promise<number> {
-    return prisma.event.count({ where: { isPublished: true, startsAt: { gte: from, lt: to } } });
+  async publishedEventsDuring(from: Date, to: Date): Promise<number> {
+    return prisma.event.count({ where: { isPublished: true, endsAt: { gt: from }, startsAt: { lt: to } } });
   }
 }
 

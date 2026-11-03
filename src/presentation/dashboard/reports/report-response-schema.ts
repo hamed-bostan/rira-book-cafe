@@ -37,7 +37,16 @@ export const salesReportResponseSchema = z.object({
   previousRange: rangeSchema,
   summary: salesSummarySchema,
   previousSummary: salesSummarySchema,
-  daily: z.array(z.object({ day: z.string(), revenue: z.number(), orders: z.number() })),
+  daily: z.array(
+    z.object({
+      day: z.string(),
+      revenue: z.number(),
+      orders: z.number(),
+      /** Of those completed orders, the ones not yet marked paid, and what they're worth. */
+      unpaidOrders: z.number(),
+      unpaidValue: z.number(),
+    }),
+  ),
   hourly: z.array(z.object({ hour: z.number(), orders: z.number(), revenue: z.number() })),
   byKind: z.array(z.object({ kind: z.enum(PRODUCT_KINDS), revenue: z.number(), quantity: z.number() })),
   topItems: z.array(topItemSchema),
@@ -90,7 +99,6 @@ export type GuestReportWire = z.infer<typeof guestReportResponseSchema>;
 
 export const dashboardOverviewResponseSchema = z.object({
   today: z.string(),
-  activeOrders: z.number(),
   todayReservations: z.object({ bookings: z.number(), covers: z.number(), awaitingConfirmation: z.number() }),
   upcomingEvents: z.number(),
 });

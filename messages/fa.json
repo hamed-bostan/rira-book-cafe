@@ -1216,8 +1216,9 @@
     "awaitingConfirmation": "{count, plural, other {# در انتظار تأیید}}",
     "covers": "{count, plural, other {{formatted} مهمان}}",
     "upcomingEvents": "رویدادهای این هفته",
-    "upcomingEventsHint": "منتشرشده، در ۷ روز آینده",
+    "upcomingEventsHint": "منتشرشده، در جریان یا در ۷ روز آینده",
     "todayRevenue": "فروش امروز",
+    "todayUnpaid": "{count, plural, other {{formatted} سفارش پرداخت‌نشده}} · {value}",
     "weekRevenue": "{value} در ۷ روز گذشته",
     "todayOrders": "سفارش‌های تحویل‌شدهٔ امروز",
     "weekOrders": "{count, plural, other {{formatted} سفارش}} در ۷ روز گذشته",
@@ -1237,6 +1238,10 @@
     "queueEmptyBody": "سفارش‌های تازه همین‌جا نمایش داده می‌شوند.",
     "reservationsEmptyTitle": "امروز رزرو دیگری نیست",
     "reservationsEmptyBody": "رزروهای امروز با ثبت شدن همین‌جا نمایش داده می‌شوند.",
+    "readErrorTitle": "این بخش بارگذاری نشد",
+    "readErrorBody": "بقیهٔ صفحه به‌روز است؛ این بخش هر دقیقه دوباره خوانده می‌شود.",
+    "statUnavailable": "بارگذاری نشد",
+    "finishedBookings": "{count, plural, other {+{formatted} رزرو پایان‌یافته}}",
     "unconfirmed": "تأییدنشده",
     "reservationConfirmed": "رزرو {name} تأیید شد",
     "reservationError": "تأیید رزرو ممکن نشد. دوباره تلاش کنید.",
@@ -2458,7 +2463,8 @@
       "title": "{count, plural, other {# قلم رو به اتمام یا ناموجود}}",
       "open": "باز کردن انبار",
       "left": "{amount} مانده",
-      "more": "و {count} مورد دیگر"
+      "more": "و {count} مورد دیگر",
+      "unavailable": "بررسی اقلام رو به اتمام یا ناموجود ممکن نشد"
     },
     "lines": {
       "label": "اقلام",

@@ -1,4 +1,4 @@
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, CloudOff } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import type { StockItem } from "@/src/domain/entities/Inventory";
@@ -8,6 +8,8 @@ import { cn } from "@/src/lib/utils";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 
+import { RetryReadButton } from "../overview/RetryReadButton";
+
 /** How many items the dashboard names before "and N more". */
 const SHOWN = 6;
 
@@ -15,11 +17,30 @@ const SHOWN = 6;
  * The dashboard's stock warning, so the owner sees what to order without opening
  * Inventory. One red-tinted band for the whole warning; each item is a chip whose
  * dot says which kind of trouble — red for out, amber for low — beside the words
- * that say it too. Renders nothing when everything is stocked.
+ * that say it too. Renders nothing when everything is stocked. When the stock
+ * couldn't be read (`items` is `null`) a plain band says so, with a retry —
+ * silence there would read as "nothing to order".
  */
-export async function LowStockAlert({ items }: { items: StockItem[] }) {
+export async function LowStockAlert({ items }: { items: StockItem[] | null }) {
   const t = await getTranslations("dashInventory");
   const locale = await getLocale();
+  if (!items) {
+    return (
+      <section
+        aria-labelledby="low-stock-alert"
+        className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-card-lg border border-border bg-background px-5 py-4 shadow-xs"
+      >
+        <Icon icon={CloudOff} size="icon-lg" className="text-muted-foreground" />
+        <h2
+          id="low-stock-alert"
+          className="min-w-0 flex-[1_1_12rem] text-body-strong text-foreground sm:text-body-small-strong"
+        >
+          {t("alert.unavailable")}
+        </h2>
+        <RetryReadButton />
+      </section>
+    );
+  }
   const alerts = items
     .filter((item) => item.isActive && item.level !== "ok")
     .sort((a, b) => (a.level === b.level ? a.name.localeCompare(b.name) : a.level === "out" ? -1 : 1));
@@ -36,7 +57,9 @@ export async function LowStockAlert({ items }: { items: StockItem[] }) {
           {t("alert.title", { count: alerts.length })}
         </h2>
         <Link
-          href="/dashboard/inventory?level=low"
+          // The whole list, which puts what's out first and what's low next — the
+          // Running low tab alone would hide the items this band names first.
+          href="/dashboard/inventory"
           // 44px tall to the touch on a phone, without moving the line.
           className={cn(
             "-my-3 ms-auto py-3 text-body-default font-medium whitespace-nowrap text-foreground underline underline-offset-4 transition-colors hover:text-error-foreground sm:my-0 sm:py-0 sm:text-body-small",

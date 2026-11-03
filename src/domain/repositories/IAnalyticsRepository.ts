@@ -21,6 +21,7 @@ import type {
  */
 export type IAnalyticsRepository = {
   salesSummary(range: DateRange): Promise<SalesSummary>;
+  /** Completed sales per cafe day, each with the part still unpaid. */
   dailySales(range: DateRange): Promise<DailySales[]>;
   hourlySales(range: DateRange): Promise<HourlySales[]>;
   salesByKind(range: DateRange): Promise<KindSales[]>;
@@ -43,10 +44,8 @@ export type IAnalyticsRepository = {
   topGuests(range: DateRange, limit: number): Promise<TopGuest[]>;
   reservationStats(range: DateRange): Promise<GuestReport["reservations"]>;
 
-  /** Orders currently in the queue (pending … ready), regardless of range. */
-  activeOrderCount(): Promise<number>;
-  /** Today's bookings, guests across them, and how many still await confirmation. */
+  /** The day's bookings (`DAY_BOOKING_STATUSES`), guests across them, and how many still await confirmation. */
   reservationsOn(range: DateRange): Promise<{ bookings: number; covers: number; awaitingConfirmation: number }>;
-  /** Published events starting in `[from, to)`. */
-  publishedEventsBetween(from: Date, to: Date): Promise<number>;
+  /** Published events on at some point in `[from, to)`: not over by `from`, and starting before `to`. */
+  publishedEventsDuring(from: Date, to: Date): Promise<number>;
 };

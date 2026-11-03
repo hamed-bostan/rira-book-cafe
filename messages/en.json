@@ -1216,8 +1216,9 @@
     "awaitingConfirmation": "{count, plural, one {# awaiting confirmation} other {# awaiting confirmation}}",
     "covers": "{count, plural, one {{formatted} guest} other {{formatted} guests}}",
     "upcomingEvents": "Events this week",
-    "upcomingEventsHint": "Published, in the next 7 days",
-    "todayRevenue": "Today's takings",
+    "upcomingEventsHint": "Published, on now or in the next 7 days",
+    "todayRevenue": "Today's sales",
+    "todayUnpaid": "{count, plural, one {{formatted} order unpaid} other {{formatted} orders unpaid}} · {value}",
     "weekRevenue": "{value} over the last 7 days",
     "todayOrders": "Orders served today",
     "weekOrders": "{count, plural, one {{formatted} order} other {{formatted} orders}} over the last 7 days",
@@ -1237,6 +1238,10 @@
     "queueEmptyBody": "New orders appear here as they come in.",
     "reservationsEmptyTitle": "No more bookings today",
     "reservationsEmptyBody": "Today's bookings appear here as they come in.",
+    "readErrorTitle": "Couldn't load this part",
+    "readErrorBody": "The rest of the page is up to date; this part is tried again every minute.",
+    "statUnavailable": "Couldn't load",
+    "finishedBookings": "{count, plural, one {+{formatted} finished booking} other {+{formatted} finished bookings}}",
     "unconfirmed": "Unconfirmed",
     "reservationConfirmed": "Reservation for {name} confirmed",
     "reservationError": "Couldn't confirm the reservation. Please try again.",
@@ -2458,7 +2463,8 @@
       "title": "{count, plural, one {# item low or out of stock} other {# items low or out of stock}}",
       "open": "Open inventory",
       "left": "{amount} left",
-      "more": "and {count} more"
+      "more": "and {count} more",
+      "unavailable": "Couldn't check what's low or out of stock"
     },
     "lines": {
       "label": "Items",

@@ -1,15 +1,12 @@
 "use client";
 
 import { X } from "lucide-react";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import * as React from "react";
 
-import { DEFAULT_LOAN_DAYS } from "@/src/domain/entities/BookLoan";
 import type { BookWaitlistEntry } from "@/src/domain/entities/BookWaitlist";
-import { cafeDayOf, shiftCafeDay } from "@/src/domain/entities/CafeTime";
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
-import { formatCafeDayShort } from "@/src/lib/formatCafeDay";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
@@ -18,26 +15,27 @@ import { bookLoansApi } from "../book-loans/book-loan-api";
 import { DashboardDialog } from "../DashboardDialog";
 import { MessageGuestButton } from "../guest-messages/MessageGuestButton";
 
+import { LendHoldDialog } from "./LendHoldDialog";
+
 type BookHoldActionsProps = {
   entry: Pick<BookWaitlistEntry, "id" | "productId" | "status" | "guestName" | "guestPhone">;
   /** The book's title, for the confirmations and toasts. */
   title: string;
-  /** Who's told next if this guest is skipped — on the site; one with no account sees it when they sign in. */
-  nextInLine: Pick<BookWaitlistEntry, "guestName" | "guestPhone" | "userId"> | undefined;
-  /** Today on the cafe calendar — "Lend now" runs the standard length from here. */
+  /** Who's told next, in their Messages, if this guest is skipped. */
+  nextInLine: Pick<BookWaitlistEntry, "guestName"> | undefined;
+  /** Today on the cafe calendar — "Lend now" runs the loan from here. */
   today: string;
 };
 
 /**
- * One hold's controls. The guest who was told the book is back: "Lend now" records
- * the loan for them (the standard length), "Skip" passes the copy to the next in
- * line. A guest still waiting can be taken off the line. Skipping and removing ask
- * first, in red. Each writes over the REST API and `router.refresh()`es.
+ * One hold's controls. The guest whose book is held for them: "Lend now" hands it
+ * over (`LendHoldDialog` — length, deposit, note), "Skip" passes the copy to the
+ * next in line. A guest still waiting can be taken off the line. Skipping and
+ * removing ask first, in red. Each writes over the REST API and `router.refresh()`es.
  */
 export function BookHoldActions({ entry, title, nextInLine, today }: BookHoldActionsProps) {
   const t = useTranslations("dashBookHolds");
   const tApiErrors = useTranslations("apiErrors");
-  const locale = useLocale();
   const router = useRouter();
   const { toast } = useToast();
   const [pending, startTransition] = React.useTransition();
@@ -52,31 +50,6 @@ export function BookHoldActions({ entry, title, nextInLine, today }: BookHoldAct
     setConfirming(true);
   }
 
-  function lend(): void {
-    startTransition(async () => {
-      try {
-        const loan = await bookLoansApi.create({
-          productId: entry.productId,
-          borrowerName: entry.guestName,
-          borrowerPhone: entry.guestPhone,
-          dueOn: shiftCafeDay(today, DEFAULT_LOAN_DAYS),
-        });
-        toast({
-          tone: "success",
-          title: t("lentToast", {
-            title,
-            name: entry.guestName,
-            reference: loan.reference,
-            date: formatCafeDayShort(cafeDayOf(new Date(loan.dueAt)), locale),
-          }),
-        });
-      } catch (err) {
-        toast({ tone: "error", title: localizeApiError(err, tApiErrors, t("actionError")) });
-      }
-      router.refresh();
-    });
-  }
-
   // Asked first; a failure stays in the dialog so it can be tried again.
   function drop(): void {
     setError(null);
@@ -86,12 +59,7 @@ export function BookHoldActions({ entry, title, nextInLine, today }: BookHoldAct
         toast({
           tone: "success",
           title: t("removedToast", { name: entry.guestName, title }),
-          description:
-            ready && nextInLine
-              ? nextInLine.userId
-                ? t("nextToldToast", { name: nextInLine.guestName })
-                : t("nextOnSignInToast", { name: nextInLine.guestName, phone: nextInLine.guestPhone })
-              : undefined,
+          description: ready && nextInLine ? t("nextToldToast", { name: nextInLine.guestName }) : undefined,
         });
         setConfirming(false);
       } catch (err) {
@@ -120,9 +88,7 @@ export function BookHoldActions({ entry, title, nextInLine, today }: BookHoldAct
           >
             {t("skip")}
           </Button>
-          <Button type="button" variant="secondary" size="control-md" className="px-3" loading={pending} onClick={lend}>
-            {t("lendNow")}
-          </Button>
+          <LendHoldDialog entry={entry} title={title} today={today} disabled={pending} />
         </>
       ) : (
         <Button
@@ -147,9 +113,7 @@ export function BookHoldActions({ entry, title, nextInLine, today }: BookHoldAct
         subtitle={
           ready
             ? nextInLine
-              ? nextInLine.userId
-                ? t("skipNext", { name: nextInLine.guestName, title })
-                : t("skipNextOnSignIn", { name: nextInLine.guestName, title, phone: nextInLine.guestPhone })
+              ? t("skipNext", { name: nextInLine.guestName, title })
               : t("skipNobody", { title })
             : t("removeBody", { title })
         }

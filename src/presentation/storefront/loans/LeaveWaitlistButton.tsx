@@ -10,8 +10,14 @@ import { useToast } from "@/src/presentation/design-system/components/Toast/useT
 
 import { storefrontApi } from "../storefront-api";
 
-/** Leave a book's line from the guest's loans page. */
-export function LeaveWaitlistButton({ entryId }: { entryId: string }) {
+type LeaveWaitlistButtonProps = {
+  entryId: string;
+  /** The book is held for them to collect: giving it up cancels the hold rather than leaving a line. */
+  ready: boolean;
+};
+
+/** Leave a book's line, or cancel a hold that's ready, from the guest's loans page. */
+export function LeaveWaitlistButton({ entryId, ready }: LeaveWaitlistButtonProps) {
   const t = useTranslations("site");
   const tApiErrors = useTranslations("apiErrors");
   const router = useRouter();
@@ -22,7 +28,7 @@ export function LeaveWaitlistButton({ entryId }: { entryId: string }) {
     startTransition(async () => {
       try {
         await storefrontApi.leaveBookWaitlist(entryId);
-        toast({ tone: "success", title: t("waitlist.left") });
+        toast({ tone: "success", title: ready ? t("waitlist.cancelled") : t("waitlist.left") });
       } catch (err) {
         toast({ tone: "error", title: localizeApiError(err, tApiErrors, t("waitlist.error")) });
       }
@@ -32,7 +38,7 @@ export function LeaveWaitlistButton({ entryId }: { entryId: string }) {
 
   return (
     <Button type="button" size="sm" variant="outline" loading={pending} onClick={leave}>
-      {t("waitlist.leave")}
+      {ready ? t("waitlist.cancel") : t("waitlist.leave")}
     </Button>
   );
 }

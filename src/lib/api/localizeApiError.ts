@@ -68,6 +68,8 @@ type ApiErrorKey =
   | "alreadyWaiting"
   | "bookOnShelf"
   | "allCopiesOut"
+  | "noFreeCopy"
+  | "holdNotReady"
   | "bookInUse"
   | "copiesBelowOnLoan"
   | "shiftAlreadyOpen"
@@ -138,6 +140,8 @@ const CODE_KEYS: Readonly<Record<string, ApiErrorKey>> = {
   ALREADY_WAITING: "alreadyWaiting",
   BOOK_ON_SHELF: "bookOnShelf",
   ALL_COPIES_OUT: "allCopiesOut",
+  NO_FREE_COPY: "noFreeCopy",
+  HOLD_NOT_READY: "holdNotReady",
   BOOK_IN_USE: "bookInUse",
   COPIES_BELOW_ON_LOAN: "copiesBelowOnLoan",
   SHIFT_ALREADY_OPEN: "shiftAlreadyOpen",

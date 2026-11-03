@@ -28,6 +28,8 @@ type HoldableBook = {
   free: number;
   /** Guests already in its line. */
   inLine: number;
+  /** A copy is free that nobody holds or waits for (`canBorrowBook`): it has no line to join. */
+  onShelf: boolean;
 };
 
 type AddHoldDialogProps = {
@@ -40,8 +42,9 @@ const OPEN_HOLDS_HREF = "/dashboard/book-holds";
 
 /**
  * "Add a hold" for a guest who asks at the counter or by phone. A book with a copy
- * free and nobody waiting can't be picked — lend it instead. Says up front which
- * place in line they'll take. Writes over the REST API, then shows the Open tab.
+ * free that nobody holds or waits for can't be picked — lend it instead. Says up
+ * front which place in line they'll take. Writes over the REST API, then shows the
+ * Open tab.
  */
 export function AddHoldDialog({ books }: AddHoldDialogProps) {
   const t = useTranslations("dashBookHolds");
@@ -51,8 +54,7 @@ export function AddHoldDialog({ books }: AddHoldDialogProps) {
   const router = useRouter();
   const { toast } = useToast();
 
-  const onShelf = (book: HoldableBook): boolean => book.free > 0 && book.inLine === 0;
-  const firstHoldable = (books.find((book) => book.free < 1) ?? books.find((book) => !onShelf(book)))?.id ?? "";
+  const firstHoldable = (books.find((book) => book.free < 1) ?? books.find((book) => !book.onShelf))?.id ?? "";
 
   const [open, setOpen] = React.useState(false);
   const [productId, setProductId] = React.useState(firstHoldable);
@@ -70,7 +72,7 @@ export function AddHoldDialog({ books }: AddHoldDialogProps) {
   }
 
   const book = books.find((candidate) => candidate.id === productId);
-  const blocked = !book || onShelf(book) || !guestName.trim() || !guestPhone.trim();
+  const blocked = !book || book.onShelf || !guestName.trim() || !guestPhone.trim();
 
   function submit(): void {
     if (!book) return;
@@ -117,9 +119,9 @@ export function AddHoldDialog({ books }: AddHoldDialogProps) {
         <DashboardField label={t("book")}>
           <Select size="control-md" value={productId} onChange={(event) => setProductId(event.target.value)}>
             {books.map((option) => (
-              <option key={option.id} value={option.id} disabled={onShelf(option)}>
+              <option key={option.id} value={option.id} disabled={option.onShelf}>
                 {option.title} ·{" "}
-                {onShelf(option)
+                {option.onShelf
                   ? t("onShelfLendInstead")
                   : t("inLine", { count: option.inLine, formatted: formatNumber(option.inLine, locale) })}
               </option>
@@ -148,7 +150,7 @@ export function AddHoldDialog({ books }: AddHoldDialogProps) {
             dir="ltr"
           />
         </DashboardField>
-        {book && !onShelf(book) ? (
+        {book && !book.onShelf ? (
           <p className={FIELD_HINT}>{t("placeInLine", { position: formatNumber(book.inLine + 1, locale) })}</p>
         ) : null}
       </DashboardDialog>

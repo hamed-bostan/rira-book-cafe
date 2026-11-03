@@ -1,10 +1,10 @@
 "use client";
 
-import { BellRing } from "lucide-react";
+import { BellRing, BookOpen } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import * as React from "react";
 
-import type { BookWaitlistStatus } from "@/src/domain/entities/BookWaitlist";
+import { HOLD_PICKUP_DAYS, type BookWaitlistStatus } from "@/src/domain/entities/BookWaitlist";
 import { Link, useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatNumber } from "@/src/lib/formatNumber";
@@ -22,11 +22,12 @@ type BookWaitlistPanelProps = {
 };
 
 /**
- * For a book that's out on loan: how many copies are out and how long the line
- * is, and a button to get in line (or leave it). The button shows only when the
- * line takes guests (`canJoin`); with a copy free and nobody waiting, the panel
- * says it's on the shelf instead. The guest at the front is told on their account
- * when a copy comes back.
+ * A book's lending on its page. With a copy on the shelf that nobody holds or
+ * waits for (`canBorrow`), the guest borrows it: it's held at the counter for them
+ * to collect. With every copy out or held (`canJoin`), how many are out and how
+ * long the line is, and a button to get in line — the guest at the front is told
+ * when a copy comes back. Once they hold it or are in line, their place, and a way
+ * to give it up. Signed out, a link to sign in instead.
  */
 export function BookWaitlistPanel({ productId, status, signedIn }: BookWaitlistPanelProps) {
   const t = useTranslations("site");
@@ -37,10 +38,9 @@ export function BookWaitlistPanel({ productId, status, signedIn }: BookWaitlistP
   const [pending, startTransition] = React.useTransition();
 
   const entry = status.entry;
-  // On the shelf with nobody waiting and none out: nothing to wait for.
-  if (!entry && status.onLoan === 0 && !status.canJoin) return null;
+  const ready = entry?.status === "notified";
 
-  /** Joins or leaves the line; `success` is toasted when the refreshed panel doesn't make the outcome obvious. */
+  /** Borrows, joins or leaves; `success` is toasted when the refreshed panel doesn't make the outcome obvious. */
   function run(action: () => Promise<unknown>, success?: string): void {
     startTransition(async () => {
       try {
@@ -53,10 +53,28 @@ export function BookWaitlistPanel({ productId, status, signedIn }: BookWaitlistP
     });
   }
 
+  const signInLink = (label: string): React.ReactNode => (
+    <Link
+      href={`/login?callbackUrl=${encodeURIComponent(`/menu/${productId}`)}`}
+      className="text-body-small-emphasis text-primary underline-offset-4 hover:underline"
+    >
+      {label}
+    </Link>
+  );
+
   return (
     <div className="flex flex-col gap-3 rounded-card-md border border-border px-4 py-3">
-      {/* Nothing out and nobody waiting (every copy lost): just the button. */}
-      {status.onLoan > 0 || status.queueLength > 0 ? (
+      {/* A copy to borrow, or what's out and how long the line is — nothing once a copy is
+          held for them, or with every copy lost and nobody waiting. */}
+      {ready ? null : !entry && status.canBorrow ? (
+        <p className="flex items-start gap-2 text-body-small text-foreground">
+          <Icon icon={BookOpen} size="xs" className="mt-0.5 shrink-0 text-primary" />
+          <span>
+            {t("waitlist.onShelf")}{" "}
+            {t("waitlist.borrowHint", { days: HOLD_PICKUP_DAYS, formatted: formatNumber(HOLD_PICKUP_DAYS, locale) })}
+          </span>
+        </p>
+      ) : status.onLoan > 0 || status.queueLength > 0 ? (
         <p className="flex items-start gap-2 text-body-small text-foreground">
           <Icon icon={BellRing} size="xs" className="mt-0.5 shrink-0 text-primary" />
           <span>
@@ -77,11 +95,11 @@ export function BookWaitlistPanel({ productId, status, signedIn }: BookWaitlistP
         <div className="flex flex-wrap items-center justify-between gap-2">
           <span className="flex min-w-0 flex-col">
             <span className="text-body-small-strong text-primary">
-              {entry.status === "notified"
+              {ready
                 ? t("waitlist.yourTurn")
                 : t("waitlist.position", { position: formatNumber(status.position ?? 1, locale) })}
             </span>
-            {entry.status === "notified" && entry.pickupBy ? (
+            {ready && entry.pickupBy ? (
               <span className="text-body-caption text-muted-foreground">
                 {t("waitlist.collectBy", { date: formatOrderDate(entry.pickupBy, locale) })}
               </span>
@@ -92,13 +110,27 @@ export function BookWaitlistPanel({ productId, status, signedIn }: BookWaitlistP
             size="sm"
             variant="outline"
             loading={pending}
-            onClick={() => run(() => storefrontApi.leaveBookWaitlist(entry.id), t("waitlist.left"))}
+            onClick={() =>
+              run(() => storefrontApi.leaveBookWaitlist(entry.id), ready ? t("waitlist.cancelled") : t("waitlist.left"))
+            }
           >
-            {t("waitlist.leave")}
+            {ready ? t("waitlist.cancel") : t("waitlist.leave")}
           </Button>
         </div>
-      ) : !status.canJoin ? (
-        <span className="text-body-small-strong text-primary">{t("waitlist.onShelf")}</span>
+      ) : status.canBorrow ? (
+        signedIn ? (
+          <Button
+            type="button"
+            size="sm"
+            className="self-start"
+            loading={pending}
+            onClick={() => run(() => storefrontApi.borrowBook(productId))}
+          >
+            {t("waitlist.borrow")}
+          </Button>
+        ) : (
+          signInLink(t("waitlist.signInToBorrow"))
+        )
       ) : signedIn ? (
         <Button
           type="button"
@@ -110,12 +142,7 @@ export function BookWaitlistPanel({ productId, status, signedIn }: BookWaitlistP
           {t("waitlist.join")}
         </Button>
       ) : (
-        <Link
-          href={`/login?callbackUrl=${encodeURIComponent(`/menu/${productId}`)}`}
-          className="text-body-small-emphasis text-primary underline-offset-4 hover:underline"
-        >
-          {t("waitlist.signIn")}
-        </Link>
+        signInLink(t("waitlist.signIn"))
       )}
     </div>
   );

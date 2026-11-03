@@ -1,6 +1,7 @@
 import { z } from "zod/mini";
 
 import { RESERVATION_STATUSES, type Reservation } from "@/src/domain/entities/Reservation";
+import { RESERVATION_DEPOSIT_METHODS, RESERVATION_DEPOSIT_STATES } from "@/src/domain/entities/ReservationDeposit";
 
 /** What the reservation endpoints return, validated at the typed-service boundary. */
 export const reservationResponseSchema = z.object({
@@ -15,6 +16,13 @@ export const reservationResponseSchema = z.object({
   status: z.enum(RESERVATION_STATUSES),
   tableLabel: z.optional(z.string()),
   note: z.optional(z.string()),
+  deposit: z.optional(
+    z.object({
+      amount: z.number(),
+      method: z.enum(RESERVATION_DEPOSIT_METHODS),
+      state: z.enum(RESERVATION_DEPOSIT_STATES),
+    }),
+  ),
   createdAt: z.string(),
   updatedAt: z.string(),
 }) satisfies z.ZodMiniType<Reservation>;

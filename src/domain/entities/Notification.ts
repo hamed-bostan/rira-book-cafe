@@ -23,6 +23,7 @@ export const NOTIFICATION_KINDS = [
   "bookAvailable",
   "pointsEarned",
   "reviewApproved",
+  "refundIssued",
 ] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 

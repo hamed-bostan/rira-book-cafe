@@ -1,4 +1,4 @@
-import { Bell, BedDouble, BookOpen, CalendarClock, ClipboardList, Gift, Star } from "lucide-react";
+import { Bell, BedDouble, BookOpen, CalendarClock, ClipboardList, Gift, Star, Wallet } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import type { Notification, NotificationKind } from "@/src/domain/entities/Notification";
@@ -35,6 +35,7 @@ const ICONS: Record<NotificationKind, LucideIcon> = {
   bookAvailable: BookOpen,
   pointsEarned: Gift,
   reviewApproved: Star,
+  refundIssued: Wallet,
 };
 
 /** Kinds that ask the guest to do something — drawn in the warning tone. */

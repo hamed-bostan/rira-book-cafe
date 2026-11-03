@@ -103,6 +103,13 @@ export const ACTIVITY_ACTIONS = [
   "reservation.booked",
   "suiteBooking.changed",
   "suiteBooking.booked",
+  // Money held against a table booking: taken, then handed back or kept.
+  "reservation.depositTaken",
+  "reservation.depositReturned",
+  "reservation.depositKept",
+  // One stay's nightly rate changed, or the suite's price for new stays.
+  "suiteBooking.rateChanged",
+  "suiteBooking.priceChanged",
   // A book handed over, brought back, or written off.
   "bookLoan.lent",
   "bookLoan.returned",
@@ -139,6 +146,8 @@ export const ACTIVITY_ACTIONS = [
   "expense.recurringSkipped",
   "income.recorded",
   "income.voided",
+  // Money handed back from a payment on a suite stay or an event sign-up.
+  "income.refunded",
   "payroll.recorded",
   "payroll.paid",
   "payroll.voided",

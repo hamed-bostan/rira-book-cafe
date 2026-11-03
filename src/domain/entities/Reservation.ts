@@ -1,5 +1,7 @@
 import { dateToWallTime } from "./CafeTime";
 
+import type { ReservationDeposit } from "./ReservationDeposit";
+
 /**
  * A table reservation: a guest asks for a time and a party size; staff confirm it
  * (assigning a table), seat the party when they arrive, and close it out.
@@ -91,6 +93,8 @@ export type Reservation = {
   tableLabel?: string;
   /** The guest's request, e.g. "window seat, it's a birthday". */
   note?: string;
+  /** Money left against the booking, when staff took some (see `ReservationDeposit.ts`). */
+  deposit?: ReservationDeposit;
   createdAt: string;
   updatedAt: string;
 };

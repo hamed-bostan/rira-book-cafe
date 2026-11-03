@@ -17,6 +17,8 @@ export const suiteBookingResponseSchema = z.object({
   createdAt: z.string(),
   updatedAt: z.string(),
   paidAmount: z.optional(z.number()),
+  refundedAmount: z.optional(z.number()),
+  nightlyRate: z.optional(z.number()),
 }) satisfies z.ZodMiniType<SuiteBooking>;
 
 export const suiteBookingListResponseSchema = z.array(suiteBookingResponseSchema);

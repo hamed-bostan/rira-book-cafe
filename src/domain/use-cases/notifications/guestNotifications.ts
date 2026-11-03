@@ -1,5 +1,6 @@
 import { isBookLoanOverdue, type BookLoan } from "../../entities/BookLoan";
 import { LOAN_REMINDER_HOURS, type NewNotification } from "../../entities/Notification";
+import { normalizePhone } from "../../entities/Phone";
 
 import type { Order, OrderStatus } from "../../entities/Order";
 import type { Reservation } from "../../entities/Reservation";
@@ -81,6 +82,31 @@ export function suiteNotification(booking: SuiteBooking): NewNotification | null
     params: { reference: booking.reference, checkIn: booking.checkIn, checkOut: booking.checkOut },
     link: "/suite",
     dedupeKey: `suite:${booking.id}:${booking.status}`,
+  };
+}
+
+/** What a refund was for, as the guest knows it: their suite stay, or an event they signed up for. */
+export type RefundSubject = { kind: "suite"; reference: number } | { kind: "event"; eventId: string; title: string };
+
+/**
+ * Money went back to the guest. Addressed by the guest's normalized phone — their
+ * account id, whether or not they've signed in yet — and sent once per refund.
+ */
+export function refundNotification(
+  guestPhone: string,
+  subject: RefundSubject,
+  amount: number,
+  refundId: string,
+): NewNotification {
+  return {
+    userId: normalizePhone(guestPhone),
+    kind: "refundIssued",
+    params:
+      subject.kind === "suite"
+        ? { amount, subject: "suite", reference: subject.reference }
+        : { amount, subject: "event", title: subject.title },
+    link: subject.kind === "suite" ? "/suite" : `/events/${subject.eventId}`,
+    dedupeKey: `refund:${refundId}`,
   };
 }
 

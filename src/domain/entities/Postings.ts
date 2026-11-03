@@ -12,10 +12,12 @@ import type { BookLoan, BookLoanStatus } from "./BookLoan";
 import type { CashShift } from "./CashShift";
 import type { Expense, PaymentSource } from "./Expense";
 import type { Income } from "./Income";
+import type { IncomeRefund } from "./IncomeRefund";
 import type { Order, PaymentMethod, PaymentPart } from "./Order";
 import type { OrderRefund } from "./OrderRefund";
 import type { PayRun } from "./Payroll";
 import type { ProductKind } from "./Product";
+import type { Reservation } from "./Reservation";
 
 /**
  * The posting rules: how each money event becomes a balanced journal entry.
@@ -336,6 +338,98 @@ export function loanDepositSettledEntry(
     return moved("deposit returned", "depositRepaid", SYSTEM_ACCOUNTS.otherIncome, money);
   }
   return null;
+}
+
+type DepositBooking = Pick<Reservation, "id" | "reference" | "guestName" | "deposit">;
+
+/** A deposit left against a table booking: held for the guest, so a liability — like a book loan's. */
+export function reservationDepositEntry(
+  reservation: DepositBooking,
+  date: string,
+  actor: Actor,
+): NewJournalEntry | null {
+  const deposit = reservation.deposit;
+  if (!deposit || deposit.amount <= 0) return null;
+  return {
+    date,
+    description: `R-${reservation.reference} — deposit taken (${deposit.method})`,
+    source: "reservationDeposit",
+    sourceId: reservation.id,
+    uniqueKey: `reservation:${reservation.id}:deposit`,
+    lines: [
+      { accountCode: PAYMENT_ACCOUNT[deposit.method], debit: deposit.amount, credit: 0 },
+      {
+        accountCode: SYSTEM_ACCOUNTS.depositsHeld,
+        debit: 0,
+        credit: deposit.amount,
+        memo: reservation.guestName,
+      },
+    ],
+    createdById: actor.id,
+    createdByName: actor.name,
+  };
+}
+
+/**
+ * A table deposit settled once the booking is over: handed back the way it came, or
+ * kept — a no-show fee, a late cancellation, or towards the bill — as other income,
+ * where a book loan's kept deposit goes too. `null` while it's held, or without one.
+ */
+export function reservationDepositSettledEntry(
+  reservation: DepositBooking,
+  date: string,
+  actor: Actor,
+): NewJournalEntry | null {
+  const deposit = reservation.deposit;
+  if (!deposit || deposit.amount <= 0 || deposit.state === "held") return null;
+  const kept = deposit.state === "kept";
+  return {
+    date,
+    description: `R-${reservation.reference} — deposit ${kept ? "kept" : "returned"}`,
+    source: "reservationDeposit",
+    sourceId: reservation.id,
+    uniqueKey: `reservation:${reservation.id}:deposit${kept ? "Kept" : "Returned"}`,
+    lines: [
+      { accountCode: SYSTEM_ACCOUNTS.depositsHeld, debit: deposit.amount, credit: 0, memo: reservation.guestName },
+      {
+        accountCode: kept ? SYSTEM_ACCOUNTS.otherIncome : PAYMENT_ACCOUNT[deposit.method],
+        debit: 0,
+        credit: deposit.amount,
+      },
+    ],
+    createdById: actor.id,
+    createdByName: actor.name,
+  };
+}
+
+/**
+ * Money handed back from a payment on a booking, in part or in full: the payment's
+ * entry undone for that much — out of its revenue account (net) and VAT payable,
+ * and out of the account the refund was paid from. Filed under the payment, so
+ * voiding the payment later reverses its refunds with it.
+ */
+export function incomeRefundEntry(refund: IncomeRefund, actor: Actor): NewJournalEntry {
+  return {
+    date: refund.date,
+    description:
+      `IN-${refund.incomeNumber} — refund RF-${refund.number} (${refund.method})` +
+      (refund.reason ? `: ${refund.reason}` : ""),
+    source: "incomeRefund",
+    sourceId: refund.incomeId,
+    uniqueKey: `incomeRefund:${refund.id}`,
+    lines: [
+      {
+        accountCode: refund.accountCode,
+        debit: refund.amount - refund.vatAmount,
+        credit: 0,
+        memo: refund.payerName,
+      },
+      { accountCode: SYSTEM_ACCOUNTS.vatPayable, debit: refund.vatAmount, credit: 0 },
+      { accountCode: PAYMENT_ACCOUNT[refund.method], debit: 0, credit: refund.amount },
+    ],
+    createdById: actor.id,
+    createdByName: actor.name,
+  };
 }
 
 /**

@@ -13,7 +13,8 @@ import { prisma } from "@/src/infrastructure/prisma/client";
 import type { Prisma } from "@/src/infrastructure/prisma/generated/client";
 import { inTransaction, type PrismaDb } from "@/src/infrastructure/prisma/transaction";
 
-import { paidBySource } from "./readIncomePaid";
+import { paidBySource, refundedBySource } from "./readIncomePaid";
+import { readSuiteSettings } from "./readSuiteSettings";
 import { recordAudit } from "./writeActivityEntry";
 
 /**
@@ -42,6 +43,8 @@ export class PrismaSuiteBookingRepository implements ISuiteBookingRepository {
           checkOut: fromDay(input.checkOut),
           status,
           note: input.note ?? null,
+          // Priced at the suite's rate as it's made; the total is always nights × this.
+          nightRate: BigInt(input.nightlyRate ?? (await readSuiteSettings(tx)).nightlyRate),
         },
       });
       const saved = toSuiteBooking(row);
@@ -65,12 +68,16 @@ export class PrismaSuiteBookingRepository implements ISuiteBookingRepository {
       where: { checkOut: { gt: fromDay(day) }, ...(status ? { status } : {}) },
       orderBy: [{ checkIn: "asc" }, { reference: "asc" }],
     });
-    const paid = await paidBySource(
-      this.db,
-      "suiteBooking",
-      rows.map((row) => row.id),
-    );
-    return rows.map((row) => ({ ...toSuiteBooking(row), paidAmount: paid.get(row.id) ?? 0 }));
+    const ids = rows.map((row) => row.id);
+    const [paid, refunded] = await Promise.all([
+      paidBySource(this.db, "suiteBooking", ids),
+      refundedBySource(this.db, "suiteBooking", ids),
+    ]);
+    return rows.map((row) => ({
+      ...toSuiteBooking(row),
+      paidAmount: paid.get(row.id) ?? 0,
+      refundedAmount: refunded.get(row.id) ?? 0,
+    }));
   }
 
   async listBusyFrom(day: string): Promise<SuiteBusyRange[]> {
@@ -97,8 +104,16 @@ export class PrismaSuiteBookingRepository implements ISuiteBookingRepository {
         await refuseClash(tx, id, { checkIn: toDay(current.checkIn), checkOut: toDay(current.checkOut) });
       }
 
+      // A stay from before the suite had a price takes today's when it's confirmed.
+      const nightRate =
+        status === "confirmed" && current.nightRate === null
+          ? BigInt((await readSuiteSettings(tx)).nightlyRate)
+          : undefined;
       // Guarded on the status the caller read: a concurrent change makes this match nothing.
-      const result = await tx.suiteBooking.updateMany({ where: { id, status: expectedStatus }, data: { status } });
+      const result = await tx.suiteBooking.updateMany({
+        where: { id, status: expectedStatus },
+        data: { status, ...(nightRate === undefined ? {} : { nightRate }) },
+      });
       if (result.count === 0) {
         throw new ConflictError("INVALID_TRANSITION", "This booking was just changed by someone else.");
       }
@@ -148,7 +163,7 @@ function toStatus(value: string): SuiteBookingStatus {
   return (SUITE_BOOKING_STATUSES as readonly string[]).includes(value) ? (value as SuiteBookingStatus) : "requested";
 }
 
-function toSuiteBooking(row: SuiteBookingRow): SuiteBooking {
+export function toSuiteBooking(row: SuiteBookingRow): SuiteBooking {
   return {
     id: row.id,
     reference: row.reference,
@@ -160,6 +175,7 @@ function toSuiteBooking(row: SuiteBookingRow): SuiteBooking {
     checkOut: toDay(row.checkOut),
     status: toStatus(row.status),
     note: row.note ?? undefined,
+    nightlyRate: row.nightRate === null ? undefined : Number(row.nightRate),
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };

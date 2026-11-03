@@ -6,6 +6,7 @@ import {
   type Reservation,
   type ReservationStatus,
 } from "@/src/domain/entities/Reservation";
+import { RESERVATION_DEPOSIT_METHODS, RESERVATION_DEPOSIT_STATES } from "@/src/domain/entities/ReservationDeposit";
 import { ConflictError } from "@/src/domain/errors/ConflictError";
 import { NotFoundError } from "@/src/domain/errors/NotFoundError";
 import type { AuditHook } from "@/src/domain/repositories/AuditHook";
@@ -146,12 +147,21 @@ async function refuseTakenTable(
   }
 }
 
+/** The booking's deposit, when one was taken; nothing to spread otherwise. */
+function toDeposit(row: ReservationRow): Pick<Reservation, "deposit"> {
+  const method = RESERVATION_DEPOSIT_METHODS.find((value) => value === row.depositMethod);
+  const state = RESERVATION_DEPOSIT_STATES.find((value) => value === row.depositState);
+  if (row.depositAmount <= BigInt(0) || !method || !state) return {};
+  return { deposit: { amount: Number(row.depositAmount), method, state } };
+}
+
 function toStatus(value: string): ReservationStatus {
   return (RESERVATION_STATUSES as readonly string[]).includes(value) ? (value as ReservationStatus) : "requested";
 }
 
-function toReservation(row: ReservationRow): Reservation {
+export function toReservation(row: ReservationRow): Reservation {
   return {
+    ...toDeposit(row),
     id: row.id,
     reference: row.reference,
     userId: row.userId ?? undefined,

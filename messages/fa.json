@@ -173,6 +173,7 @@
     "refundQuantityInvalid": "بیشتر از مقدار باقی‌مانده نمی‌توان بازپرداخت کرد.",
     "refundNothing": "برای این اقلام مبلغی برای بازپرداخت نیست.",
     "paymentOverOwed": "این مبلغ از بدهی این صورت‌حساب بیشتر است.",
+    "refundOverPaid": "این مبلغ از آنچه پرداخت شده و هنوز بازپرداخت نشده بیشتر است.",
     "billDayInvalid": "یک روز از ماه را انتخاب کنید.",
     "billNotDue": "این ماه از صورت‌حساب سررسید نشده است.",
     "payRunMonthInvalid": "یک ماه را انتخاب کنید.",
@@ -923,7 +924,10 @@
       },
       "reservation": {
         "changed": "<b>{actor}</b> رزرو {entity} را به‌روزرسانی کرد",
-        "booked": "<b>{actor}</b> رزرو میز {entity} را ثبت کرد"
+        "booked": "<b>{actor}</b> رزرو میز {entity} را ثبت کرد",
+        "depositTaken": "<b>{actor}</b> برای رزرو {entity} بیعانه گرفت",
+        "depositReturned": "<b>{actor}</b> بیعانهٔ رزرو {entity} را پس داد",
+        "depositKept": "<b>{actor}</b> بیعانهٔ رزرو {entity} را ضبط کرد"
       },
       "event": {
         "created": "<b>{actor}</b> رویداد {entity} را ایجاد کرد",
@@ -951,7 +955,9 @@
       },
       "suiteBooking": {
         "changed": "<b>{actor}</b> رزرو سوئیت {entity} را به‌روز کرد",
-        "booked": "<b>{actor}</b> اقامت سوئیت {entity} را ثبت کرد"
+        "booked": "<b>{actor}</b> اقامت سوئیت {entity} را ثبت کرد",
+        "rateChanged": "<b>{actor}</b> نرخ شبانهٔ اقامت سوئیت {entity} را تغییر داد",
+        "priceChanged": "<b>{actor}</b> قیمت شبانهٔ سوئیت را تغییر داد"
       },
       "bookLoan": {
         "lent": "<b>{actor}</b> کتابی به امانت داد ({entity})",
@@ -963,7 +969,8 @@
       },
       "income": {
         "recorded": "<b>{actor}</b> درآمد {entity} را ثبت کرد",
-        "voided": "<b>{actor}</b> درآمد {entity} را باطل کرد"
+        "voided": "<b>{actor}</b> درآمد {entity} را باطل کرد",
+        "refunded": "<b>{actor}</b> از درآمد {entity} مبلغی را بازپرداخت کرد"
       },
       "payroll": {
         "recorded": "<b>{actor}</b> حقوق {entity} را ثبت کرد",
@@ -1035,6 +1042,10 @@
       "costPrice": "قیمت تمام‌شده",
       "total": "مبلغ کل",
       "refundedTotal": "بازپرداخت‌شده",
+      "refunded": "بازپرداخت‌شده",
+      "deposit": "بیعانه",
+      "depositState": "بیعانه",
+      "nightlyRate": "نرخ هر شب",
       "paymentMethod": "روش پرداخت",
       "reversedBy": "برگشت با",
       "vatRateBps": "نرخ مالیات بر ارزش افزوده (واحد پایه)",
@@ -1065,6 +1076,34 @@
     "allFields": "همه فیلدها"
   },
   "dashReservations": {
+    "deposit": {
+      "take": "گرفتن بیعانه",
+      "takeTitle": "بیعانهٔ R-{reference}",
+      "takeSubtitle": "تا پایان رزرو برای {name} نگه داشته می‌شود؛ بعد پس داده یا نگه داشته می‌شود.",
+      "amountLabel": "مبلغ (تومان)",
+      "methodLabel": "روش پرداخت",
+      "method": {
+        "cash": "نقدی",
+        "card": "کارت",
+        "transfer": "انتقال"
+      },
+      "takePreview": "{amount} در «ودیعه‌های دریافتی» نگه داشته می‌شود — درآمد نیست.",
+      "taken": "بیعانهٔ R-{reference} گرفته شد",
+      "return": "پس دادن بیعانه",
+      "returnTitle": "بیعانهٔ R-{reference} پس داده شود؟",
+      "returnMessage": "{amount} از همان راهی که پرداخت شده بود ({method}) به {name} برمی‌گردد.",
+      "returned": "بیعانهٔ R-{reference} پس داده شد",
+      "keep": "ضبط بیعانه",
+      "keepTitle": "بیعانهٔ R-{reference} ضبط شود؟",
+      "keepMessage": "{amount} درآمد کافه می‌شود — جریمهٔ نیامدن یا بخشی از صورت‌حساب. این کار برگشت‌پذیر نیست.",
+      "kept": "بیعانهٔ R-{reference} ضبط شد",
+      "error": "به‌روزرسانی بیعانه انجام نشد. دوباره تلاش کنید.",
+      "state": {
+        "held": "بیعانه نزد کافه: {amount}",
+        "returned": "بیعانه پس داده شد: {amount}",
+        "kept": "بیعانه ضبط شد: {amount}"
+      }
+    },
     "heading": "رزرو میز",
     "summary": "{bookings, plural, =0 {بدون رزرو} other {{bookingsFormatted} رزرو}} · {covers, plural, other {{coversFormatted} مهمان}}",
     "today": "امروز",
@@ -1252,7 +1291,8 @@
     "sectionVisibility": "نمایش",
     "noImage": "هنوز تصویری نیست",
     "registrationPaid": "پرداخت‌شده {amount}",
-    "registrationRefundDue": "اگر مبلغ برگشت داده شد، پرداخت را در درآمدها باطل کنید"
+    "registrationRefunded": "بازپرداخت‌شده {amount}",
+    "registrationRefundDue": "بازپرداخت مانده"
   },
   "dashOverview": {
     "heading": "امروز",
@@ -1727,6 +1767,10 @@
         "reviewApproved": {
           "title": "نظرتان منتشر شد",
           "body": "ممنون که درباره‌ی {productName} نوشتید."
+        },
+        "refundIssued": {
+          "title": "{amount} تومان به شما بازپرداخت شد",
+          "body": "{subject, select, suite {بابت اقامت سوئیت S-{reference}.} event {بابت «{title}».} other {بابت رزروتان.}}"
         }
       }
     },
@@ -1905,6 +1949,8 @@
       "orderWriteOff": "سوخت سفارش",
       "income": "درآمد",
       "loanDeposit": "ودیعهٔ کتاب",
+      "incomeRefund": "بازپرداخت رزرو",
+      "reservationDeposit": "بیعانهٔ میز",
       "payroll": "حقوق و دستمزد",
       "payrollPayment": "پرداخت حقوق"
     },
@@ -2325,6 +2371,14 @@
     }
   },
   "dashPricing": {
+    "suite": {
+      "heading": "سوئیت",
+      "description": "هزینهٔ هر شب اقامت در سوئیت. اقامت‌های تازه با این قیمت ثبت می‌شوند و اقامت‌های رزروشده نرخ خودشان را نگه می‌دارند.",
+      "rateLabel": "هر شب (تومان)",
+      "save": "ذخیرهٔ قیمت سوئیت",
+      "saved": "قیمت سوئیت ذخیره شد",
+      "error": "ذخیرهٔ قیمت سوئیت ممکن نشد. دوباره تلاش کنید."
+    },
     "heading": "قیمت‌گذاری",
     "subtitle": "بهای واقعی هر قلم، و قیمت منویی که سود دلخواه شما را از آن می‌دهد.",
     "tabsLabel": "بخش‌های قیمت‌گذاری",
@@ -2796,6 +2850,27 @@
     "confirmStay": "تأیید اقامت",
     "stayBooked": "S-{reference} برای {name} تأیید شد · {range}",
     "bookError": "ذخیرهٔ اقامت ممکن نشد. دوباره تلاش کنید.",
+    "money": {
+      "total": "جمع {amount}",
+      "rate": "شبی {amount}",
+      "noRate": "هنوز قیمتی ندارد",
+      "refunded": "بازپرداخت‌شده {amount}",
+      "due": "مانده {amount}",
+      "settled": "کامل پرداخت شده",
+      "overpaid": "اضافه‌پرداخت {amount}",
+      "refundDue": "بازپرداخت مانده {amount}"
+    },
+    "rate": {
+      "button": "تغییر نرخ",
+      "aria": "تغییر نرخ شبانهٔ S-{reference}",
+      "title": "نرخ شبانهٔ S-{reference}",
+      "subtitle": "{nights} · جمع با نرخ تغییر می‌کند.",
+      "label": "هر شب (تومان)",
+      "preview": "{nights} × {rate} = {total}",
+      "save": "ذخیرهٔ نرخ",
+      "error": "تغییر نرخ ممکن نشد. دوباره تلاش کنید.",
+      "saved": "نرخ S-{reference} شد شبی {amount}"
+    },
     "paid": "پرداخت‌شده {amount}",
     "paymentDescription": "اقامت سوئیت S-{reference}، {range}"
   },
@@ -3299,6 +3374,23 @@
       "save": "ثبت درآمد",
       "error": "درآمد ثبت نشد. دوباره تلاش کنید.",
       "saved": "درآمد IN-{number} ثبت شد"
+    },
+    "refund": {
+      "button": "بازپرداخت",
+      "buttonAria": "بازپرداخت به {name}",
+      "title": "بازپرداخت به {name}",
+      "subtitle": "پرداخت‌شده {paid}{refunded, select, none {} other {، {refunded} پیش‌تر بازپرداخت شده}}. تا {left} را می‌توان برگرداند.",
+      "amountLabel": "مبلغ (با مالیات)",
+      "methodLabel": "روش بازپرداخت",
+      "reasonLabel": "دلیل (اختیاری)",
+      "reasonPlaceholder": "مثلاً دو روز زودتر لغو شد",
+      "preview": "{amount} به {name} برمی‌گردد و از درآمدی که ثبت شده بود کم می‌شود.",
+      "save": "بازپرداخت",
+      "error": "بازپرداخت انجام نشد. دوباره تلاش کنید.",
+      "done": "{amount} به {name} بازپرداخت شد",
+      "offerLabel": "همین حالا به مهمان بازپرداخت شود",
+      "offerHint": "{left} پرداخت شده و هنوز بازپرداخت نشده.",
+      "offerFailed": "بازپرداخت انجام نشد: {message}"
     },
     "void": "باطل کردن",
     "voidTitle": "IN-{number} باطل شود؟",

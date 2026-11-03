@@ -47,7 +47,7 @@ export async function SuiteScreen({ busy, bookings, today }: SuiteScreenProps) {
             {` · S-${formatNumber(booking.reference, locale)}`}
           </p>
         </div>
-        <SuiteBookingStatusBadge status={booking.status} />
+        <SuiteBookingStatusBadge status={booking.status} expired={booking.expiredAt !== undefined} />
         {isGuestCancellableSuiteBooking(booking, today) ? <CancelMySuiteBookingButton bookingId={booking.id} /> : null}
       </li>
     );

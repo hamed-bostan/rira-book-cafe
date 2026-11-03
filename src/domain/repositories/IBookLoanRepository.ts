@@ -70,6 +70,8 @@ export type IBookLoanRepository = {
   countByView(now: Date): Promise<BookLoanCounts>;
   /** One guest's loans (matched by account), newest first. */
   listForUser(userId: string): Promise<BookLoan[]>;
+  /** Every loan still out that's due before `before` — overdue ones included — soonest due first. */
+  listOutDueBefore(before: Date): Promise<BookLoan[]>;
   /** Every book in the catalog, published or not, with how many copies are out and which is due back first. */
   listLendableBooks(): Promise<LendableBook[]>;
   /** How many copies of the book are out right now. */

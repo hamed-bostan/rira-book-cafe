@@ -6,9 +6,10 @@ import type { IBookLoanRepository } from "../../repositories/IBookLoanRepository
 import type { ICustomerNotifier, INotificationRepository } from "../../repositories/INotificationRepository";
 
 /**
- * Send the guest any loan reminders that have come due. There's no scheduler: the
- * reminders are worked out whenever the guest's notifications are read (the list,
- * the unread badge), and each is keyed so it's only ever sent once.
+ * Send the guest any loan reminders that have come due. The background jobs send
+ * them on the clock (`dueLoanReminder`); this works them out again whenever the
+ * guest's notifications are read (the list, the unread badge), so one that's due
+ * shows at once. Both use the same keys, so each is only ever sent once.
  */
 export class SyncLoanReminders {
   constructor(

@@ -140,6 +140,7 @@ variable. The important ones:
 | `SMTP_*`                                                          | —        | Team emails; without SMTP they are logged                                                   |
 | `ZARINPAL_MERCHANT_ID`, `ZARINPAL_SANDBOX`                        | —        | Online payments (sandbox without a merchant id)                                             |
 | `LOG_LEVEL`                                                       | —        | `debug` (dev default), `info` (prod default), … `silent`                                    |
+| `JOBS_ENABLED`, `JOBS_INTERVAL_MINUTES`                           | —        | Background jobs on/off (default on) and minutes between runs (default 5, at most 30)        |
 | `SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN`                            | —        | Error tracking (Sentry or GlitchTip); empty = off. The public one is read at **build** time |
 | `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT`, `SENTRY_URL` | —        | Build-time source-map upload; skipped without the token                                     |
 
@@ -154,6 +155,27 @@ variable. The important ones:
   headers, IPs, the user and phone numbers are scrubbed (`src/lib/observability`).
 - **Health** — `GET /api/health`: 200 with version and DB status, 503 when the DB
   is down. Used by the Docker `HEALTHCHECK`.
+
+## Background jobs
+
+There's no separate scheduler: a small runner (`src/infrastructure/jobs/`) runs inside
+the server process every `JOBS_INTERVAL_MINUTES` (5), started from `instrumentation.ts`
+on the Node runtime. Each run takes a Postgres advisory lock, so two instances or an
+overlapping tick never run the jobs twice, then works through them in order:
+
+| Job                   | What it does                                                                                                        |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `expireTableRequests` | Cancels a table request nobody answered by its start (`expired_at`), logged under the System actor; tells the guest |
+| `expireSuiteRequests` | The same for a stay request still unanswered once its arrival day is over                                           |
+| `expireBookHolds`     | Skips a guest told their book is back who didn't collect it within `HOLD_PICKUP_DAYS`; the next in line is told     |
+| `…Reminders`          | Tables (the evening before, ~2 h before), suite stays and event sign-ups (the evening before), loans, held books    |
+
+Every job is a domain use-case (`src/domain/use-cases/jobs/`): its writes are guarded in
+the repository and every message is keyed, so running it again sends and changes nothing
+new. Messages go to the guest's inbox by phone, account or not. A reminder the jobs reach
+more than an hour after its moment is skipped, not sent late. A failing job is logged
+(and reported to the error tracker) and the next one still runs. Tests turn the runner
+off (`JOBS_ENABLED=false`) and call the jobs directly.
 
 ## Deploying
 

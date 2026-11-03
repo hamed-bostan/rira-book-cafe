@@ -41,6 +41,12 @@ export type IReservationRepository = {
   /** Reservations starting at or after `from`, in start order, optionally narrowed to one status. */
   listFrom(from: Date, status?: ReservationStatus): Promise<Reservation[]>;
   /**
+   * Cancel a request nobody answered as expired at `at` (`expiredAt`) — only while
+   * it's still `requested` and starts at or before `at`, so one answered or moved
+   * meanwhile is left alone (`null`). The audit entry commits with it.
+   */
+  expireRequest(id: string, at: Date, audit?: AuditHook<Reservation>): Promise<Reservation | null>;
+  /**
    * Apply a staff change, guarded on `expectedStatus` so a concurrent change can't
    * be overwritten (`ConflictError("INVALID_TRANSITION")`). When the result holds a
    * table, the repository refuses a table already held by another overlapping

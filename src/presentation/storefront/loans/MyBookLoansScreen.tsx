@@ -2,9 +2,10 @@ import { BookOpen } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { isBookLoanOverdue, type BookLoan } from "@/src/domain/entities/BookLoan";
-import { isOpenWaitlistEntry, type BookWaitlistEntry } from "@/src/domain/entities/BookWaitlist";
+import { holdPickupState, isOpenWaitlistEntry, type BookWaitlistEntry } from "@/src/domain/entities/BookWaitlist";
 import { Link } from "@/src/i18n/navigation";
 import { formatOrderDate } from "@/src/lib/formatOrderDate";
+import { cn } from "@/src/lib/utils";
 import { BookLoanStatusBadge } from "@/src/presentation/dashboard/book-loans/BookLoanStatusBadge";
 import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
@@ -83,9 +84,22 @@ export async function MyBookLoansScreen({ loans, waitlist, now }: MyBookLoansScr
                   >
                     {entry.bookTitle}
                   </Link>
-                  <p className="text-body-caption text-muted-foreground">
-                    {t("waitlist.joinedOn", { date: formatOrderDate(entry.createdAt, locale) })}
-                  </p>
+                  {entry.status === "notified" && entry.pickupBy ? (
+                    <p
+                      className={cn(
+                        "text-body-caption",
+                        holdPickupState(entry.pickupBy, nowDate) === "open"
+                          ? "text-muted-foreground"
+                          : "font-semibold text-warning-foreground",
+                      )}
+                    >
+                      {t("waitlist.collectBy", { date: formatOrderDate(entry.pickupBy, locale) })}
+                    </p>
+                  ) : (
+                    <p className="text-body-caption text-muted-foreground">
+                      {t("waitlist.joinedOn", { date: formatOrderDate(entry.createdAt, locale) })}
+                    </p>
+                  )}
                 </div>
                 <Badge variant={entry.status === "notified" ? "success" : "info"}>
                   {entry.status === "notified" ? t("waitlist.yourTurn") : t("waitlist.waiting")}

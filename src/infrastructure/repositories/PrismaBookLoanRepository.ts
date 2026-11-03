@@ -201,6 +201,14 @@ export class PrismaBookLoanRepository implements IBookLoanRepository {
     return rows.map(toBookLoan);
   }
 
+  async listOutDueBefore(before: Date): Promise<BookLoan[]> {
+    const rows = await this.db.bookLoan.findMany({
+      where: { status: "out", dueAt: { lt: before } },
+      orderBy: DUE_FIRST,
+    });
+    return rows.map(toBookLoan);
+  }
+
   async listLendableBooks(): Promise<LendableBook[]> {
     // Every loan still out, soonest due first: no more than the shelf has copies.
     const [books, open] = await Promise.all([

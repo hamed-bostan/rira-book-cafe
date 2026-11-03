@@ -39,7 +39,7 @@ export async function MyReservationsScreen({ reservations, now }: MyReservations
             {` · R-${formatNumber(reservation.reference, locale)}`}
           </p>
         </div>
-        <ReservationStatusBadge status={reservation.status} />
+        <ReservationStatusBadge status={reservation.status} expired={reservation.expiredAt !== undefined} />
         {isGuestCancellableReservation(reservation, nowDate) ? (
           <CancelMyReservationButton reservationId={reservation.id} />
         ) : null}

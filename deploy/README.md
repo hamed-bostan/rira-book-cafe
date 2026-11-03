@@ -64,6 +64,21 @@ docker compose logs -f app | npx pino-pretty    # human-readable
 request with an `X-Request-Id` (echoed on the response); app log lines and
 error-tracker events for that request carry it as `requestId` / `request_id`.
 
+## Background jobs
+
+Reminders, expiring unanswered requests and skipping uncollected book holds run inside
+the `app` container every 5 minutes (see the main README). There's nothing to install
+or schedule. Each run takes a Postgres advisory lock, so a second container would skip
+its turn rather than run them twice.
+
+- **Check they run** — `docker compose logs app | grep '"module":"jobs"'` shows
+  `Background jobs started` at boot; set `LOG_LEVEL=debug` to see each job's run.
+- **Failures** — a failing job logs `Background job failed` (with the job's name) at
+  error level, which also reaches the error tracker; the other jobs still run, and the
+  next run retries.
+- **Turn them off** — `JOBS_ENABLED=false` in `.env.production`, then recreate `app`.
+  `JOBS_INTERVAL_MINUTES` (1–30) changes how often they run.
+
 ## Error tracking (optional)
 
 The app uses the Sentry SDK, which speaks the same protocol to Sentry SaaS and to a

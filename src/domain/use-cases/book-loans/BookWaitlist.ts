@@ -142,9 +142,22 @@ async function leaveLine(
   waitlistRepo: Pick<IBookWaitlistRepository, "cancel" | "notifyNext">,
   notifier?: ICustomerNotifier,
 ): Promise<BookWaitlistEntry | null> {
-  const removed = await waitlistRepo.cancel(id);
-  if (removed?.notifiedAt) await tellNextInLine(removed.productId, now, waitlistRepo, notifier);
-  return removed;
+  return passCopyOn(await waitlistRepo.cancel(id), now, waitlistRepo, notifier);
+}
+
+/**
+ * After a hold closed — the guest left, was skipped, or didn't come in time — a
+ * guest who'd been told passes their copy on: the next in line is told it's theirs.
+ * Hands back the closed hold (`null` when nothing closed).
+ */
+export async function passCopyOn(
+  closed: BookWaitlistEntry | null,
+  now: Date,
+  waitlistRepo: Pick<IBookWaitlistRepository, "notifyNext">,
+  notifier?: ICustomerNotifier,
+): Promise<BookWaitlistEntry | null> {
+  if (closed?.notifiedAt) await tellNextInLine(closed.productId, now, waitlistRepo, notifier);
+  return closed;
 }
 
 /**

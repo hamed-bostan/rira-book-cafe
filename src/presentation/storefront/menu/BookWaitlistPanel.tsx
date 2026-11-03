@@ -8,6 +8,7 @@ import type { BookWaitlistStatus } from "@/src/domain/entities/BookWaitlist";
 import { Link, useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatNumber } from "@/src/lib/formatNumber";
+import { formatOrderDate } from "@/src/lib/formatOrderDate";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
@@ -74,10 +75,17 @@ export function BookWaitlistPanel({ productId, status, signedIn }: BookWaitlistP
 
       {entry ? (
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <span className="text-body-small-strong text-primary">
-            {entry.status === "notified"
-              ? t("waitlist.yourTurn")
-              : t("waitlist.position", { position: formatNumber(status.position ?? 1, locale) })}
+          <span className="flex min-w-0 flex-col">
+            <span className="text-body-small-strong text-primary">
+              {entry.status === "notified"
+                ? t("waitlist.yourTurn")
+                : t("waitlist.position", { position: formatNumber(status.position ?? 1, locale) })}
+            </span>
+            {entry.status === "notified" && entry.pickupBy ? (
+              <span className="text-body-caption text-muted-foreground">
+                {t("waitlist.collectBy", { date: formatOrderDate(entry.pickupBy, locale) })}
+              </span>
+            ) : null}
           </span>
           <Button
             type="button"

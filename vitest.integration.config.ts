@@ -42,6 +42,8 @@ export default defineConfig({
       ZARINPAL_MERCHANT_ID: "",
       // Uploaded images go to a scratch folder, never ./storage.
       UPLOADS_DIR: mkdtempSync(join(tmpdir(), "rira-uploads-")),
+      // No background jobs on a timer: tests run the jobs' use-cases themselves.
+      JOBS_ENABLED: "false",
     },
   },
 });

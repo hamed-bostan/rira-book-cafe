@@ -1,7 +1,7 @@
 import { ArrowUpRight } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
-import type { ActivityChange } from "@/src/domain/entities/ActivityEntry";
+import { SYSTEM_ACTOR, type ActivityChange } from "@/src/domain/entities/ActivityEntry";
 import { ROLE_CHANGE_FIELD, roleChangeKind, roleMove } from "@/src/domain/entities/RoleChange";
 import { USER_ROLES, type UserRole } from "@/src/domain/entities/User";
 import { Link } from "@/src/i18n/navigation";
@@ -91,6 +91,8 @@ export async function ActivityEntryRow({ entry, time, showEntity = true, timelin
 
   const href = showEntity ? activityEntityHref(entry.entityType, entry.entityId, entry.action) : null;
   const label = entry.entityLabel ?? entry.entityId;
+  // The background jobs' changes name the system in the reader's language.
+  const actorName = entry.actorId === SYSTEM_ACTOR.id ? t("systemActor") : entry.actorName;
   const actor = (chunks: ReactNode) => <span className="font-semibold">{chunks}</span>;
 
   // Role changes get the sentences the team page uses ("X gave Y Support access",
@@ -102,7 +104,7 @@ export async function ActivityEntryRow({ entry, time, showEntity = true, timelin
   const sentence =
     entry.action === "user.roleChanged"
       ? t.rich(`role.${roleChangeKind({ userId: entry.entityId, actorId: entry.actorId, changes: entry.changes })}`, {
-          actor: entry.actorName,
+          actor: actorName,
           user: label,
           role: roleName(move?.toRole),
           from: roleName(move?.fromRole),
@@ -111,12 +113,12 @@ export async function ActivityEntryRow({ entry, time, showEntity = true, timelin
         })
       : entry.action === "promoCode.activeChanged"
         ? t.rich("action.promoCode.activeChanged", {
-            actor: entry.actorName,
+            actor: actorName,
             entity: label,
             state: switchedTo(entry.changes),
             b: actor,
           })
-        : t.rich(`action.${entry.action}`, { actor: entry.actorName, entity: label, b: actor });
+        : t.rich(`action.${entry.action}`, { actor: actorName, entity: label, b: actor });
 
   const timeElement = (
     <time
@@ -167,7 +169,7 @@ export async function ActivityEntryRow({ entry, time, showEntity = true, timelin
         aria-hidden
         className="flex size-8 shrink-0 items-center justify-center rounded-full bg-accent text-body-caption-bold text-accent-foreground"
       >
-        {initials(entry.actorName)}
+        {initials(actorName)}
       </span>
       <div className="flex min-w-0 flex-1 flex-col gap-2">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">

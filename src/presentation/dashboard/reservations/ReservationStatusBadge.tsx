@@ -15,6 +15,8 @@ const VARIANT: Record<ReservationStatus, NonNullable<BadgeProps["variant"]>> = {
 
 type ReservationStatusBadgeProps = {
   status: ReservationStatus;
+  /** Cancelled by the jobs because nobody answered the request in time: reads "Expired", quietly. */
+  expired?: boolean;
   /**
    * The dashboard's look: a 24px tinted pill with a border and a leading dot, a
    * cancellation as quiet as a finished booking. The guest's own list keeps the
@@ -23,13 +25,14 @@ type ReservationStatusBadgeProps = {
   outlined?: boolean;
 };
 
-export function ReservationStatusBadge({ status, outlined = false }: ReservationStatusBadgeProps) {
+export function ReservationStatusBadge({ status, expired = false, outlined = false }: ReservationStatusBadgeProps) {
   const t = useTranslations("dashReservations");
+  const label = expired ? t("status.expired") : t(`status.${status}`);
   return outlined ? (
     <Badge variant={status === "cancelled" ? "neutral" : VARIANT[status]} appearance="outline" size="compact" dot>
-      {t(`status.${status}`)}
+      {label}
     </Badge>
   ) : (
-    <Badge variant={VARIANT[status]}>{t(`status.${status}`)}</Badge>
+    <Badge variant={expired ? "neutral" : VARIANT[status]}>{label}</Badge>
   );
 }

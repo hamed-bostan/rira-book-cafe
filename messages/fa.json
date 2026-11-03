@@ -870,6 +870,7 @@
   },
   "dashActivity": {
     "heading": "فعالیت‌ها",
+    "systemActor": "سیستم",
     "summary": "هر تغییری که از داشبورد انجام شده، از جدیدترین. برای همیشه نگه داشته می‌شود.",
     "empty": "هنوز فعالیتی نیست",
     "emptyBody": "تغییرهایی که از داشبورد انجام شود اینجا می‌آید.",
@@ -942,7 +943,8 @@
       "reservation": {
         "changed": "<b>{actor}</b> رزرو {entity} را به‌روزرسانی کرد",
         "booked": "<b>{actor}</b> رزرو میز {entity} را ثبت کرد",
-        "guestMessaged": "<b>{actor}</b> دربارهٔ رزرو {entity} به مهمان پیام داد"
+        "guestMessaged": "<b>{actor}</b> دربارهٔ رزرو {entity} به مهمان پیام داد",
+        "expired": "<b>{actor}</b> درخواست {entity} را لغو کرد؛ کسی به‌موقع پاسخ نداد"
       },
       "event": {
         "created": "<b>{actor}</b> رویداد {entity} را ایجاد کرد",
@@ -973,7 +975,8 @@
       "suiteBooking": {
         "changed": "<b>{actor}</b> رزرو سوئیت {entity} را به‌روز کرد",
         "booked": "<b>{actor}</b> اقامت سوئیت {entity} را ثبت کرد",
-        "guestMessaged": "<b>{actor}</b> دربارهٔ اقامت سوئیت {entity} به مهمان پیام داد"
+        "guestMessaged": "<b>{actor}</b> دربارهٔ اقامت سوئیت {entity} به مهمان پیام داد",
+        "expired": "<b>{actor}</b> درخواست سوئیت {entity} را لغو کرد؛ کسی به‌موقع پاسخ نداد"
       },
       "bookLoan": {
         "lent": "<b>{actor}</b> کتابی به امانت داد ({entity})",
@@ -982,7 +985,8 @@
         "extended": "<b>{actor}</b> امانت {entity} را تمدید کرد",
         "extensionUndone": "<b>{actor}</b> تمدید امانت {entity} را لغو کرد",
         "holdSkipped": "<b>{actor}</b> نسخهٔ نگه‌داشته‌شده برای {entity} را به کس دیگری امانت داد",
-        "guestMessaged": "<b>{actor}</b> دربارهٔ {entity} به مهمان پیام داد"
+        "guestMessaged": "<b>{actor}</b> دربارهٔ {entity} به مهمان پیام داد",
+        "holdExpired": "<b>{actor}</b> نوبت {entity} را رد کرد؛ کتاب به‌موقع تحویل گرفته نشد"
       },
       "income": {
         "recorded": "<b>{actor}</b> درآمد {entity} را ثبت کرد",
@@ -1112,6 +1116,7 @@
       "seated": "نشسته",
       "completed": "پایان‌یافته",
       "cancelled": "لغوشده",
+      "expired": "منقضی‌شده",
       "noShow": "نیامد"
     },
     "action": {
@@ -1754,6 +1759,18 @@
           "title": "رزروتان لغو شد",
           "body": "رزرو R-{reference} برای {startsAt} دیگر برقرار نیست."
         },
+        "reservationTomorrow": {
+          "title": "میزتان برای فرداست",
+          "body": "R-{reference}: {startsAt}، برای {partySize} نفر. منتظرتان هستیم!"
+        },
+        "reservationSoon": {
+          "title": "حدود دو ساعت دیگر میزتان آماده است",
+          "body": "R-{reference}: {startsAt}، برای {partySize} نفر."
+        },
+        "reservationExpired": {
+          "title": "نتوانستیم درخواستتان را به‌موقع تأیید کنیم",
+          "body": "به درخواست R-{reference} برای {startsAt} پیش از شروعش پاسخی داده نشد و لغو شد. پوزش می‌خواهیم — لطفاً دوباره رزرو کنید یا با ما تماس بگیرید."
+        },
         "suiteConfirmed": {
           "title": "اقامت در سوئیت تأیید شد",
           "body": "S-{reference}: {checkIn} ← {checkOut}."
@@ -1761,6 +1778,18 @@
         "suiteCancelled": {
           "title": "اقامت در سوئیت لغو شد",
           "body": "رزرو S-{reference} ({checkIn} ← {checkOut}) دیگر برقرار نیست."
+        },
+        "suiteTomorrow": {
+          "title": "اقامتتان در سوئیت از فردا شروع می‌شود",
+          "body": "S-{reference}: {checkIn} ← {checkOut}. سوئیت را برایتان آماده می‌کنیم."
+        },
+        "suiteExpired": {
+          "title": "نتوانستیم درخواستتان را به‌موقع تأیید کنیم",
+          "body": "به درخواست S-{reference} ({checkIn} ← {checkOut}) تا روز ورودتان پاسخی داده نشد و لغو شد. پوزش می‌خواهیم — لطفاً دوباره درخواست بدهید یا با ما تماس بگیرید."
+        },
+        "eventTomorrow": {
+          "title": "«{title}» فرداست",
+          "body": "شروع: {startsAt}. صندلی‌های رزروشده: {seats}."
         },
         "loanStarted": {
           "title": "«{title}» را امانت گرفتید",
@@ -1777,6 +1806,18 @@
         "bookAvailable": {
           "title": "«{title}» به قفسه برگشت",
           "body": "نفر اول صف شمایید — برای امانت گرفتن سر پیشخوان بپرسید."
+        },
+        "holdCollectBy": {
+          "title": "«{title}» منتظر شماست",
+          "body": "تا {dueAt} سر پیشخوان برایتان نگهش می‌داریم. بعد از آن به نفر بعدی صف می‌رسد."
+        },
+        "holdLastDay": {
+          "title": "امروز آخرین روز تحویل «{title}» است",
+          "body": "تا پایان امروز برایتان نگه داشته می‌شود. بعد از آن به نفر بعدی صف می‌رسد."
+        },
+        "holdExpired": {
+          "title": "«{title}» را به‌موقع تحویل نگرفتید",
+          "body": "به نفر بعدی صف رسید. هر وقت خواستید می‌توانید دوباره در صف بایستید."
         },
         "pointsEarned": {
           "title": "{points} امتیاز گرفتید",
@@ -1850,6 +1891,7 @@
       "signIn": "برای رفتن به صف انتظار وارد شوید",
       "position": "نفر {position} صف هستید",
       "yourTurn": "برگشته — سر پیشخوان بپرسید",
+      "collectBy": "تا {date} تحویلش بگیرید",
       "onShelf": "یک نسخه همین حالا در قفسه است — سر پیشخوان بپرسید",
       "waiting": "در انتظار",
       "heading": "کتاب‌هایی که منتظرشان هستم",
@@ -2819,6 +2861,7 @@
       "checkedIn": "پذیرش‌شده",
       "checkedOut": "تسویه‌شده",
       "cancelled": "لغوشده",
+      "expired": "منقضی‌شده",
       "noShow": "نیامد"
     },
     "action": {
@@ -3324,11 +3367,14 @@
       "waiting": "در انتظار",
       "notified": "آمادهٔ تحویل",
       "fulfilled": "امانت گرفت",
-      "cancelled": "لغوشده"
+      "cancelled": "لغوشده",
+      "expired": "تحویل گرفته نشد"
     },
     "toldOn": "خبر داده شد {date}",
     "toldAgo": "خبر داده شد {date}، {days, plural, other {{formatted} روز}} پیش",
     "joinedOn": "پیوست {date}",
+    "collectBy": "تحویل تا {date}",
+    "collectByPassed": "تا {date} تحویل گرفته نشد",
     "skip": "رد کردن",
     "lendNow": "امانت بده",
     "remove": "حذف",

@@ -86,6 +86,33 @@ export class PrismaSuiteBookingRepository implements ISuiteBookingRepository {
     return rows.map((row) => ({ checkIn: toDay(row.checkIn), checkOut: toDay(row.checkOut) }));
   }
 
+  async listRequestsArrivingBefore(day: string): Promise<SuiteBooking[]> {
+    const rows = await this.db.suiteBooking.findMany({
+      where: { status: "requested", checkIn: { lt: fromDay(day) } },
+      orderBy: [{ checkIn: "asc" }, { reference: "asc" }],
+    });
+    return rows.map(toSuiteBooking);
+  }
+
+  async expireRequest(
+    id: string,
+    day: string,
+    at: Date,
+    audit?: AuditHook<SuiteBooking>,
+  ): Promise<SuiteBooking | null> {
+    return inTransaction(this.db, async (tx) => {
+      // Guarded: a request the desk answered, or moved later, a moment ago matches nothing.
+      const result = await tx.suiteBooking.updateMany({
+        where: { id, status: "requested", checkIn: { lt: fromDay(day) } },
+        data: { status: "cancelled", expiredAt: at },
+      });
+      if (result.count === 0) return null;
+      const saved = toSuiteBooking(await tx.suiteBooking.findUniqueOrThrow({ where: { id } }));
+      await recordAudit(tx, saved, audit);
+      return saved;
+    });
+  }
+
   async applyStatus(
     id: string,
     expectedStatus: SuiteBookingStatus,
@@ -193,6 +220,7 @@ function toSuiteBooking(row: SuiteBookingRow): SuiteBooking {
     checkIn: toDay(row.checkIn),
     checkOut: toDay(row.checkOut),
     status: toStatus(row.status),
+    expiredAt: row.expiredAt?.toISOString(),
     note: row.note ?? undefined,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),

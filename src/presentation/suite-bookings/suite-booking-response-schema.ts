@@ -13,6 +13,7 @@ export const suiteBookingResponseSchema = z.object({
   checkIn: z.string(),
   checkOut: z.string(),
   status: z.enum(SUITE_BOOKING_STATUSES),
+  expiredAt: z.optional(z.string()),
   note: z.optional(z.string()),
   createdAt: z.string(),
   updatedAt: z.string(),

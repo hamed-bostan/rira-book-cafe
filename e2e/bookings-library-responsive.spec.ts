@@ -87,6 +87,11 @@ const PAGES: Record<string, MeasuredPage> = {
     tabs: true,
   },
   "reservations today": { path: () => "/dashboard/reservations", tabs: true },
+  // Requests nobody answered in time, after Cancelled near the end of the tab row.
+  "expired reservations": {
+    path: (s) => `/dashboard/reservations?day=${s.tomorrow}&status=expired`,
+    tabs: true,
+  },
   "new booking": {
     path: (s) => `/dashboard/reservations?day=${s.tomorrow}`,
     dialog: true,

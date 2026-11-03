@@ -30,6 +30,7 @@ const flag = z.pipe(
 );
 
 const MIN_AUTH_SECRET_LENGTH = 32;
+const MAX_JOBS_INTERVAL_MINUTES = 30;
 
 const baseSchema = z.object({
   NODE_ENV: z._default(z.enum(["development", "production", "test"]), "development"),
@@ -84,6 +85,23 @@ const baseSchema = z.object({
 
   /** Reverse proxies in front of the app whose `X-Forwarded-For` entry is trusted (the host nginx = 1). */
   TRUSTED_PROXY_HOPS: positiveIntOr(1),
+
+  /**
+   * The background jobs (reminders, expiring requests and holds) run inside the
+   * server process: on unless `false` — the tests turn them off and run them by hand.
+   */
+  JOBS_ENABLED: z.pipe(
+    z.pipe(z.transform(emptyToUndefined), z.optional(z.enum(["true", "false"]))),
+    z.transform((value) => value !== "false"),
+  ),
+  /**
+   * Minutes between runs. At most 30, so every reminder's hour-long window
+   * (`REMINDER_LATE_LIMIT_MINUTES`) sees at least two runs.
+   */
+  JOBS_INTERVAL_MINUTES: z.pipe(
+    z.transform(emptyToUndefined),
+    z._default(z.coerce.number().check(z.int(), z.positive(), z.maximum(MAX_JOBS_INTERVAL_MINUTES)), 5),
+  ),
 });
 
 export type Env = z.output<typeof baseSchema>;

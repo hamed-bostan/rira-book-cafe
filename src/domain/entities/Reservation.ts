@@ -76,6 +76,11 @@ export type Reservation = {
   /** How long the table is held, in minutes. */
   durationMinutes: number;
   status: ReservationStatus;
+  /**
+   * ISO 8601 (UTC): when the jobs cancelled it, a request nobody answered before it
+   * began ({@link isRequestUnanswered}). Only on a `cancelled` booking.
+   */
+  expiredAt?: string;
   /** The table staff assigned, once confirmed. */
   tableLabel?: string;
   /** The guest's request, e.g. "window seat, it's a birthday". */
@@ -127,6 +132,14 @@ export function isGuestCancellableReservation(
   return (
     (reservation.status === "requested" || reservation.status === "confirmed") && new Date(reservation.startsAt) > now
   );
+}
+
+/**
+ * Whether a request has gone unanswered past its start: nobody confirmed or
+ * declined it by the time it was for, so the jobs cancel it as expired.
+ */
+export function isRequestUnanswered(reservation: Pick<Reservation, "status" | "startsAt">, now: Date): boolean {
+  return reservation.status === "requested" && new Date(reservation.startsAt) <= now;
 }
 
 /** Whether the party is due — their booking has started — so staff may mark them a no-show. */

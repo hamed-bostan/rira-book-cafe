@@ -350,6 +350,8 @@ model Reservation {
   // How long the table is held; never over six hours (a CHECK in the migration).
   durationMinutes Int      @map("duration_minutes")
   status          String   @default("requested")
+  // Set when the jobs cancelled a request nobody answered before it began.
+  expiredAt       DateTime? @map("expired_at")
   tableLabel      String?  @map("table_label")
   note            String?
   createdAt       DateTime @default(now()) @map("created_at")
@@ -377,6 +379,8 @@ model SuiteBooking {
   checkIn    DateTime @map("check_in") @db.Date
   checkOut   DateTime @map("check_out") @db.Date
   status     String   @default("requested")
+  // Set when the jobs cancelled a request nobody answered by its arrival day.
+  expiredAt  DateTime? @map("expired_at")
   note       String?
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt @map("updated_at")
@@ -853,11 +857,16 @@ model BookWaitlistEntry {
   guestPhone String    @map("guest_phone")
   status     String    @default("waiting")
   notifiedAt DateTime? @map("notified_at")
+  // Told guests collect by this instant (the end of a cafe day); after it the jobs skip them.
+  pickupBy   DateTime? @map("pickup_by")
+  // Set when the jobs skipped a told guest who didn't collect the book in time.
+  expiredAt  DateTime? @map("expired_at")
   createdAt  DateTime  @default(now()) @map("created_at")
   updatedAt  DateTime  @updatedAt @map("updated_at")
 
   @@index([productId, status, createdAt])
   @@index([userId, createdAt])
+  @@index([status, pickupBy])
   @@map("book_waitlist")
 }
 

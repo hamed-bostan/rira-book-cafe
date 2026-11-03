@@ -50,6 +50,11 @@ export type SuiteBooking = {
   checkIn: string;
   checkOut: string;
   status: SuiteBookingStatus;
+  /**
+   * ISO 8601 (UTC): when the jobs cancelled it, a request nobody answered by its
+   * arrival day ({@link isStayRequestUnanswered}). Only on a `cancelled` stay.
+   */
+  expiredAt?: string;
   note?: string;
   /** Paid towards the stay, in Toman, on the staff list; absent where it isn't read. */
   paidAmount?: number;
@@ -114,6 +119,16 @@ export function isGuestCancellableSuiteBooking(
   today: string,
 ): boolean {
   return (booking.status === "requested" || booking.status === "confirmed") && booking.checkIn > today;
+}
+
+/**
+ * Whether a stay request has gone unanswered past its arrival day: nobody
+ * confirmed or declined it by the end of the day the guest meant to arrive, so
+ * the jobs cancel it as expired. (A guest may ask for a stay starting today, so
+ * the arrival day itself still leaves the desk time to answer.)
+ */
+export function isStayRequestUnanswered(booking: Pick<SuiteBooking, "status" | "checkIn">, today: string): boolean {
+  return booking.status === "requested" && booking.checkIn < today;
 }
 
 /** Whether the guest is due — their check-in day has come — so the desk may check them in or mark a no-show. */

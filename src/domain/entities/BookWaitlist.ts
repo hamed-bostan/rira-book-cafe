@@ -1,3 +1,5 @@
+import { cafeDayOf, cafeDayRange, cafeDaysBetween, shiftCafeDay } from "./CafeTime";
+
 /**
  * A guest waiting for a book from the shelf that's out on loan. The queue is first
  * come, first served: when a copy comes back, the guest at the front is told it's
@@ -29,12 +31,51 @@ export type BookWaitlistEntry = {
   status: WaitlistStatus;
   /** ISO 8601 (UTC): when they were told it's back. */
   notifiedAt?: string;
+  /** ISO 8601 (UTC): once told, the last instant they can collect it ({@link holdPickupDeadline}). */
+  pickupBy?: string;
+  /** ISO 8601 (UTC): when the jobs skipped them for not collecting it in time — the hold is `cancelled`. */
+  expiredAt?: string;
   createdAt: string;
   updatedAt: string;
 };
 
 export function isOpenWaitlistEntry(entry: Pick<BookWaitlistEntry, "status">): boolean {
   return (OPEN_WAITLIST_STATUSES as readonly WaitlistStatus[]).includes(entry.status);
+}
+
+/**
+ * How long a guest told their book is back has to collect it: until the end of
+ * this many cafe days after the day they were told. Then the copy passes to the
+ * next guest in line.
+ */
+export const HOLD_PICKUP_DAYS = 3;
+
+/** The last instant a guest told at `notifiedAt` can collect the book: the end of the {@link HOLD_PICKUP_DAYS}th cafe day after. */
+export function holdPickupDeadline(notifiedAt: Date): Date {
+  const lastDay = shiftCafeDay(cafeDayOf(notifiedAt), HOLD_PICKUP_DAYS);
+  return new Date(cafeDayRange(lastDay).to.getTime() - 1);
+}
+
+/**
+ * Where a told guest's pickup deadline stands, for staff and the guest:
+ * - `open` — days to go;
+ * - `closing` — it's the last day or the one before it;
+ * - `passed` — the deadline has gone and the jobs are about to skip them.
+ */
+export type HoldPickupState = "open" | "closing" | "passed";
+
+/** Within this many cafe days of its last day a hold reads as `closing`. */
+const HOLD_CLOSING_DAYS = 1;
+
+export function holdPickupState(pickupBy: string, now: Date): HoldPickupState {
+  const deadline = new Date(pickupBy);
+  if (deadline < now) return "passed";
+  return cafeDaysBetween(cafeDayOf(now), cafeDayOf(deadline)) <= HOLD_CLOSING_DAYS ? "closing" : "open";
+}
+
+/** Whether a told guest's time to collect has run out at `now`. */
+export function isHoldPickupPassed(entry: Pick<BookWaitlistEntry, "status" | "pickupBy">, now: Date): boolean {
+  return entry.status === "notified" && entry.pickupBy !== undefined && new Date(entry.pickupBy) < now;
 }
 
 /** Who a book is being lent to, as a hold knows them: their phone (normalized), and their account when they have one. */

@@ -12,6 +12,8 @@ export const bookWaitlistEntryResponseSchema = z.object({
   guestPhone: z.string(),
   status: z.enum(WAITLIST_STATUSES),
   notifiedAt: z.optional(z.string()),
+  pickupBy: z.optional(z.string()),
+  expiredAt: z.optional(z.string()),
   createdAt: z.string(),
   updatedAt: z.string(),
 }) satisfies z.ZodMiniType<BookWaitlistEntry>;

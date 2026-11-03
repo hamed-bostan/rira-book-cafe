@@ -5,11 +5,13 @@ import { PATCH as setPayment } from "@/app/api/admin/orders/[id]/payment/route";
 import { PATCH as changeStatus } from "@/app/api/admin/orders/[id]/status/route";
 import { GET as listOrders } from "@/app/api/admin/orders/route";
 import { GET as getSalesReport } from "@/app/api/admin/reports/sales/route";
+import { GET as listReservations } from "@/app/api/admin/reservations/route";
 import { POST as placeOrder } from "@/app/api/orders/route";
 import type { DailySales, DashboardOverview, SalesReport } from "@/src/domain/entities/Analytics";
-import { cafeDayOf, cafeDayRange, shiftCafeDay } from "@/src/domain/entities/CafeTime";
+import { cafeDayOf, cafeDayRange, shiftCafeDay, wallTimeToDate } from "@/src/domain/entities/CafeTime";
 import type { Order } from "@/src/domain/entities/Order";
 import type { Page } from "@/src/domain/entities/Pagination";
+import { RESERVATION_STATUSES, type Reservation } from "@/src/domain/entities/Reservation";
 import { prisma } from "@/src/infrastructure/prisma/client";
 
 import { getRequest, jsonRequest, readJson, routeParams } from "./helpers/http";
@@ -95,6 +97,39 @@ describe("the dashboard overview", () => {
     await eventAt(new Date(now - HOUR_MS), new Date(now + HOUR_MS), false);
 
     expect((await overview()).upcomingEvents).toBe(before + 2);
+  });
+
+  it("counts today's bookings finished ones included, and the day's list holds every one of them", async () => {
+    const today = cafeDayOf(new Date());
+    const before = (await overview()).todayReservations;
+
+    // One booking of each status at noon today, a party of 2 more each time.
+    for (const [index, status] of RESERVATION_STATUSES.entries()) {
+      await prisma.reservation.create({
+        data: {
+          guestName: "Sara",
+          guestPhone: "09120000000",
+          partySize: 2 + index * 2,
+          startsAt: wallTimeToDate(`${today}T12:00`),
+          durationMinutes: 90,
+          status,
+        },
+      });
+    }
+
+    // Requested, confirmed, seated and completed — not the cancelled one (10) or the no-show (12).
+    expect((await overview()).todayReservations).toEqual({
+      bookings: before.bookings + 4,
+      covers: before.covers + 2 + 4 + 6 + 8,
+      awaitingConfirmation: before.awaitingConfirmation + 1,
+    });
+
+    // The overview lists the day from here and counts the finished ones under it,
+    // linking to the Completed tab — which this same read fills.
+    signInAs("staff");
+    const response = await listReservations(getRequest(`/api/admin/reservations?day=${today}&status=completed`));
+    expect(response.status).toBe(200);
+    expect((await readJson<Reservation[]>(response)).map((reservation) => reservation.partySize)).toContain(8);
   });
 });
 

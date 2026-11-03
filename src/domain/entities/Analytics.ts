@@ -216,6 +216,7 @@ export type GuestReport = {
  */
 export type DashboardOverview = {
   today: string;
+  /** Every booking the day counts (`DAY_BOOKING_STATUSES`), finished ones included. */
   todayReservations: { bookings: number; covers: number; awaitingConfirmation: number };
   /** Published events on now or in the next 7 days — one already under way counts until it ends. */
   upcomingEvents: number;

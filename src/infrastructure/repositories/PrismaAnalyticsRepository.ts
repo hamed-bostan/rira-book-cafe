@@ -15,6 +15,7 @@ import {
 import { CAFE_TIME_ZONE } from "@/src/domain/entities/CafeTime";
 import { PAYMENT_METHODS, SERVICE_TYPES, type PaymentMethod, type ServiceType } from "@/src/domain/entities/Order";
 import { PRODUCT_KINDS, type ProductKind } from "@/src/domain/entities/Product";
+import { DAY_BOOKING_STATUSES } from "@/src/domain/entities/Reservation";
 import type { IAnalyticsRepository } from "@/src/domain/repositories/IAnalyticsRepository";
 import { prisma } from "@/src/infrastructure/prisma/client";
 import { Prisma } from "@/src/infrastructure/prisma/generated/client";
@@ -321,7 +322,7 @@ export class PrismaAnalyticsRepository implements IAnalyticsRepository {
       by: ["status"],
       where: {
         startsAt: { gte: range.from, lt: range.to },
-        status: { in: ["requested", "confirmed", "seated", "completed"] },
+        status: { in: [...DAY_BOOKING_STATUSES] },
       },
       _count: { _all: true },
       _sum: { partySize: true },

@@ -44,7 +44,7 @@ export type IAnalyticsRepository = {
   topGuests(range: DateRange, limit: number): Promise<TopGuest[]>;
   reservationStats(range: DateRange): Promise<GuestReport["reservations"]>;
 
-  /** Today's bookings, guests across them, and how many still await confirmation. */
+  /** The day's bookings (`DAY_BOOKING_STATUSES`), guests across them, and how many still await confirmation. */
   reservationsOn(range: DateRange): Promise<{ bookings: number; covers: number; awaitingConfirmation: number }>;
   /** Published events on at some point in `[from, to)`: not over by `from`, and starting before `to`. */
   publishedEventsDuring(from: Date, to: Date): Promise<number>;

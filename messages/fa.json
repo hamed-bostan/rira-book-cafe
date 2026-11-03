@@ -1238,6 +1238,7 @@
     "queueEmptyBody": "سفارش‌های تازه همین‌جا نمایش داده می‌شوند.",
     "reservationsEmptyTitle": "امروز رزرو دیگری نیست",
     "reservationsEmptyBody": "رزروهای امروز با ثبت شدن همین‌جا نمایش داده می‌شوند.",
+    "finishedBookings": "{count, plural, other {+{formatted} رزرو پایان‌یافته}}",
     "unconfirmed": "تأییدنشده",
     "reservationConfirmed": "رزرو {name} تأیید شد",
     "reservationError": "تأیید رزرو ممکن نشد. دوباره تلاش کنید.",

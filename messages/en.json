@@ -1238,6 +1238,7 @@
     "queueEmptyBody": "New orders appear here as they come in.",
     "reservationsEmptyTitle": "No more bookings today",
     "reservationsEmptyBody": "Today's bookings appear here as they come in.",
+    "finishedBookings": "{count, plural, one {+{formatted} finished booking} other {+{formatted} finished bookings}}",
     "unconfirmed": "Unconfirmed",
     "reservationConfirmed": "Reservation for {name} confirmed",
     "reservationError": "Couldn't confirm the reservation. Please try again.",

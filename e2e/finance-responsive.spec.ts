@@ -1,4 +1,4 @@
-import { expect, request, test, type APIRequestContext, type Page } from "@playwright/test";
+import { expect, request, test, type APIRequestContext, type Locator, type Page } from "@playwright/test";
 
 import { cafeDayOf } from "../src/domain/entities/CafeTime";
 import { jalaliPeriod, toJalali } from "../src/domain/entities/JalaliCalendar";
@@ -11,6 +11,8 @@ import {
   measureCurrentTabHidden,
   measurePageOverflow,
   measureSidewaysTables,
+  measureSmallTargets,
+  measureSpilledFigures,
   openWithFonts,
   PHONE,
   VIEWPORTS,
@@ -19,8 +21,9 @@ import { storageStatePath } from "./fixtures/sessions";
 
 /**
  * The Finance pages at a phone's, a tablet's and a laptop's width, in both
- * languages: nothing pushes the page sideways, tables fit without scrolling, and
- * the tab you're on is in view.
+ * languages: nothing pushes the page sideways, no figure splits or runs into the
+ * next column, tables fit without scrolling, the tab you're on is in view, and on
+ * a phone every control is big enough for a finger.
  *
  * The books are filled first with ten-digit figures and long descriptions — the
  * widest a cafe's real numbers get — so a layout that only fits small sums fails here.
@@ -45,9 +48,21 @@ type FinancePage = {
   table?: boolean;
   /** Has the row of tabs along its top. */
   tabs?: boolean;
+  /** Opens a dialog, which is measured rather than the page under it. */
+  dialog?: boolean;
   /** Something to do before measuring, like picking lines to match. */
   prepare?: (page: Page) => Promise<void>;
 };
+
+/** The open dialog, once it has finished zooming in: mid-animation it's drawn smaller than it is. */
+async function openedDialog(page: Page): Promise<Locator> {
+  const dialog = page.getByRole("dialog");
+  await dialog.waitFor();
+  await dialog.evaluate((element) =>
+    Promise.allSettled(element.getAnimations({ subtree: true }).map((animation) => animation.finished)),
+  );
+  return dialog;
+}
 
 const PAGES: Record<string, FinancePage> = {
   "cash shifts": { path: () => "/dashboard/cash-shifts" },
@@ -101,9 +116,10 @@ const PAGES: Record<string, FinancePage> = {
   // Lands on the list with the form open, by way of a redirect.
   "new expense": {
     path: () => "/dashboard/expenses/new",
+    dialog: true,
     prepare: async (page) => {
       await page.waitForURL(/\/dashboard\/expenses\?record=1$/);
-      await page.getByRole("dialog").waitFor();
+      await openedDialog(page);
     },
   },
   "recurring bills": { path: () => "/dashboard/expenses/recurring" },
@@ -229,15 +245,42 @@ async function seedCashShifts(api: APIRequestContext): Promise<void> {
   openShiftId = open.id;
 }
 
-test.beforeAll(async () => {
-  const api = await request.newContext({ baseURL: E2E_BASE_URL, storageState: storageStatePath("admin") });
-  const today = cafeDayOf(new Date());
-  // Tells this run's rows apart, in letters and digits so a name doesn't end in what reads as a figure.
-  const stamp = Date.now().toString(36);
+/** The seeded supplier's name, before the stamp that tells one seed's rows from another's. */
+const SUPPLIER = "E2E Espresso Machine Services";
+
+/** The owner's capital entry's description, before the same stamp. */
+const CAPITAL = "E2E owner's capital paid into the bank for the new reading room";
+
+/**
+ * A supplier's bill part-paid from the bank, venue hire paid in by transfer, the
+ * owner's capital posted by hand, and an ingredient — once per database. A failed
+ * test starts a fresh worker, which runs this again: it finds the supplier already
+ * there and picks up the bill and the entry seeded with it, rather than paying
+ * another bill from the bank (a second line the matching test can't tell apart).
+ */
+async function seedBooks(
+  api: APIRequestContext,
+  today: string,
+  stamp: string,
+): Promise<{ expenseId: string; entryId: string }> {
+  const suppliers = await jsonOf<{ id: string; name: string }[]>(await api.get("/api/admin/suppliers?all=true"));
+  const seeded = suppliers.find((supplier) => supplier.name.startsWith(`${SUPPLIER} `));
+  if (seeded) {
+    const seededStamp = seeded.name.slice(SUPPLIER.length + 1);
+    const expenses = await jsonOf<{ items: { id: string }[] }>(
+      await api.get(`/api/admin/expenses?supplier=${seeded.id}`),
+    );
+    const entries = await jsonOf<{ items: { id: string; description: string }[] }>(
+      await api.get("/api/admin/accounting/journal?source=manual&account=3100"),
+    );
+    const entry = entries.items.find((item) => item.description === `${CAPITAL} ${seededStamp}`);
+    if (!entry) throw new Error(`The seeded capital entry for ${seeded.name} isn't in the journal.`);
+    return { expenseId: expenses.items[0].id, entryId: entry.id };
+  }
 
   const supplier = await jsonOf<{ id: string }>(
     await api.post("/api/admin/suppliers", {
-      data: { name: `E2E Espresso Machine Services ${stamp}`, phone: "021 8800 1234", note: "", isActive: true },
+      data: { name: `${SUPPLIER} ${stamp}`, phone: "021 8800 1234", note: "", isActive: true },
     }),
   );
   const expense = await jsonOf<{ id: string }>(
@@ -277,7 +320,7 @@ test.beforeAll(async () => {
     await api.post("/api/admin/accounting/journal", {
       data: {
         date: today,
-        description: `E2E owner's capital paid into the bank for the new reading room ${stamp}`,
+        description: `${CAPITAL} ${stamp}`,
         lines: [
           { accountCode: "1120", debit: BIG, credit: "", memo: "Transfer from the owner's personal account" },
           { accountCode: "3100", debit: "", credit: BIG, memo: "Capital for the reading room fit-out" },
@@ -285,9 +328,6 @@ test.beforeAll(async () => {
       },
     }),
   );
-
-  const statementId = await seedBankStatement(api, today);
-  const payRunId = await seedPayRun(api, today, stamp);
 
   await jsonOf(
     await api.post("/api/admin/ingredients", {
@@ -300,18 +340,25 @@ test.beforeAll(async () => {
       },
     }),
   );
+
+  return { expenseId: expense.id, entryId: entry.id };
+}
+
+test.beforeAll(async () => {
+  const api = await request.newContext({ baseURL: E2E_BASE_URL, storageState: storageStatePath("admin") });
+  const today = cafeDayOf(new Date());
+  // Tells this run's rows apart, in letters and digits so a name doesn't end in what reads as a figure.
+  const stamp = Date.now().toString(36);
+
+  const { expenseId, entryId } = await seedBooks(api, today, stamp);
+  const statementId = await seedBankStatement(api, today);
+  const payRunId = await seedPayRun(api, today, stamp);
   const pricing = await jsonOf<{ rows: { productId: string }[] }>(await api.get("/api/admin/pricing"));
 
   await seedCashShifts(api);
   await api.dispose();
 
-  seed = {
-    entryId: entry.id,
-    expenseId: expense.id,
-    statementId,
-    payRunId,
-    productId: pricing.rows[0].productId,
-  };
+  seed = { entryId, expenseId, statementId, payRunId, productId: pricing.rows[0].productId };
 });
 
 test.afterAll(async () => {
@@ -339,20 +386,32 @@ for (const locale of LOCALES) {
     });
 
     for (const [name, financePage] of Object.entries(PAGES)) {
+      const root = financePage.dialog ? '[role="dialog"]' : "main";
+
       test(`${name} fits the screen at every width`, async ({ page }) => {
         await open(page, financePage);
 
         const overflows: { width: number; by: number; culprits: string[] }[] = [];
         const broken: { width: number; figures: string[] }[] = [];
+        const spilled: { width: number; figures: string[] }[] = [];
         for (const viewport of VIEWPORTS) {
           await page.setViewportSize(viewport);
           const { by, culprits } = await page.evaluate(measurePageOverflow);
           if (by > 0) overflows.push({ width: viewport.width, by, culprits });
-          const figures = await page.evaluate(measureBrokenFigures, "main");
-          if (figures.length > 0) broken.push({ width: viewport.width, figures });
+          const split = await page.evaluate(measureBrokenFigures, root);
+          if (split.length > 0) broken.push({ width: viewport.width, figures: split });
+          const over = await page.evaluate(measureSpilledFigures, root);
+          if (over.length > 0) spilled.push({ width: viewport.width, figures: over });
         }
         expect.soft(overflows, "the page scrolls sideways").toEqual([]);
         expect.soft(broken, "a figure splits across lines").toEqual([]);
+        expect.soft(spilled, "a figure runs out of its column").toEqual([]);
+      });
+
+      test(`${name} has controls a finger can hit on a phone`, async ({ page }) => {
+        await open(page, financePage);
+
+        expect(await page.evaluate(measureSmallTargets, root), "a control is under 44px").toEqual([]);
       });
 
       if (financePage.table) {

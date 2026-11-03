@@ -110,8 +110,9 @@ export function measureBrokenFigures(within = "main"): string[] {
  * than its grid or table cell doesn't split; it spills over the next column
  * instead, as can the unit beside it, so the whole text a figure sits in is
  * measured. A column is the nearest box laid out by a grid or a table, looking
- * through `display: contents` wrappers to the grid they join. Looks in the page's
- * `main` unless told where (an open dialog).
+ * through `display: contents` wrappers to the grid they join. A screen reader's
+ * copy (`sr-only`), clipped to a pixel, shows nothing to spill. Looks in the
+ * page's `main` unless told where (an open dialog).
  */
 export function measureSpilledFigures(within = "main"): string[] {
   const FIGURE = /(?<![\p{L}\p{N}_\-/.])[+\-−‎‏؜]*[\d۰-۹][\d۰-۹,٬.٫‎‏؜]{3,}%?(?![\p{L}_])/gu;
@@ -129,13 +130,20 @@ export function measureSpilledFigures(within = "main"): string[] {
     }
     return null;
   };
+  const clippedAway = (element: Element): boolean => {
+    for (let node: Element | null = element; node; node = node.parentElement) {
+      const box = node.getBoundingClientRect();
+      if ((box.width <= 1 || box.height <= 1) && getComputedStyle(node).overflow !== "visible") return true;
+    }
+    return false;
+  };
   const spilled: string[] = [];
   const walker = document.createTreeWalker(document.querySelector(within) ?? document.body, NodeFilter.SHOW_TEXT);
   for (let node = walker.nextNode(); node; node = walker.nextNode()) {
     const text = (node.textContent ?? "").trim();
     if (!text.match(FIGURE)) continue;
     const column = columnOf(node.parentElement);
-    if (!column || !node.parentElement?.checkVisibility()) continue;
+    if (!column || !node.parentElement?.checkVisibility() || clippedAway(node.parentElement)) continue;
     // The figure with whatever shares its text, such as its unit ("1,850,000,000 Toman").
     const range = document.createRange();
     range.selectNodeContents(node);

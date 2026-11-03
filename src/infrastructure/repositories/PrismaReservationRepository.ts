@@ -72,6 +72,14 @@ export class PrismaReservationRepository implements IReservationRepository {
     return rows.map(toReservation);
   }
 
+  async listFrom(from: Date, status?: ReservationStatus): Promise<Reservation[]> {
+    const rows = await this.db.reservation.findMany({
+      where: { startsAt: { gte: from }, ...(status ? { status } : {}) },
+      orderBy: [{ startsAt: "asc" }, { reference: "asc" }],
+    });
+    return rows.map(toReservation);
+  }
+
   async applyChange(
     id: string,
     expectedStatus: ReservationStatus,

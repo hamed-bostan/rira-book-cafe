@@ -6,7 +6,7 @@ import {
   reservationEndsAt,
   type Reservation,
 } from "../../../entities/Reservation";
-import { ListOwnReservations, ListReservationsForDay } from "../ReservationQueries";
+import { ListOwnReservations, ListReservationsForDay, ListReservationsFrom } from "../ReservationQueries";
 
 import type { IReservationRepository } from "../../../repositories/IReservationRepository";
 
@@ -27,13 +27,20 @@ const RESERVATION: Reservation = {
 type Fake = {
   repo: IReservationRepository;
   listBetween: ReturnType<typeof vi.fn<IReservationRepository["listBetween"]>>;
+  listFrom: ReturnType<typeof vi.fn<IReservationRepository["listFrom"]>>;
   listForUser: ReturnType<typeof vi.fn<IReservationRepository["listForUser"]>>;
 };
 
 function reservations(): Fake {
   const listBetween = vi.fn<IReservationRepository["listBetween"]>(async () => [RESERVATION]);
+  const listFrom = vi.fn<IReservationRepository["listFrom"]>(async () => [RESERVATION]);
   const listForUser = vi.fn<IReservationRepository["listForUser"]>(async () => [RESERVATION]);
-  return { repo: { listBetween, listForUser } as unknown as IReservationRepository, listBetween, listForUser };
+  return {
+    repo: { listBetween, listFrom, listForUser } as unknown as IReservationRepository,
+    listBetween,
+    listFrom,
+    listForUser,
+  };
 }
 
 describe("ListReservationsForDay", () => {
@@ -51,6 +58,16 @@ describe("ListReservationsForDay", () => {
     const { repo, listBetween } = reservations();
     await new ListReservationsForDay(repo).execute("2026-10-21");
     expect(listBetween.mock.calls[0][2]).toBeUndefined();
+  });
+});
+
+describe("ListReservationsFrom", () => {
+  it("reads from the start of the cafe day on, with no end", async () => {
+    const { repo, listFrom } = reservations();
+    expect(await new ListReservationsFrom(repo).execute("2026-10-21", "requested")).toEqual([RESERVATION]);
+    const [from, status] = listFrom.mock.calls[0];
+    expect(from.toISOString()).toBe("2026-10-20T20:30:00.000Z");
+    expect(status).toBe("requested");
   });
 });
 

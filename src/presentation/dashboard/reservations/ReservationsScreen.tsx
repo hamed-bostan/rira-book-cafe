@@ -16,6 +16,7 @@ import { DashboardLinkTabs } from "../DashboardLinkTabs";
 
 import { EventBookingRow } from "./EventBookingRow";
 import { NewBookingDialog } from "./NewBookingDialog";
+import { OtherDayRequests } from "./OtherDayRequests";
 import { ReservationDayPicker } from "./ReservationDayPicker";
 import { ReservationRow } from "./ReservationRow";
 
@@ -24,6 +25,8 @@ const REFRESH_SECONDS = 30;
 type ReservationsScreenProps = {
   /** Every booking of the day, any status — the tabs count them all. */
   reservations: Reservation[];
+  /** Requests from today on that are for some other day, so they aren't missed. */
+  otherDayRequests: Reservation[];
   /** Events running that day, shown at their time with the tables they hold. */
   events: CafeEvent[];
   /** The day on screen and today, `YYYY-MM-DD` on the cafe calendar. */
@@ -43,12 +46,13 @@ type Row =
 /**
  * The floor's book for one day: every booking in time order with the day's events
  * between them, status tabs to narrow it, and — on today — a line where "now"
- * falls. Presentational: the page fetches the day over the REST API (BFF); the day
- * and tab live in the URL, the list re-reads itself while open, and every action
- * `router.refresh()`es.
+ * falls; over it, the requests still waiting on other days. Presentational: the
+ * page fetches over the REST API (BFF); the day and tab live in the URL, the list
+ * re-reads itself while open, and every action `router.refresh()`es.
  */
 export async function ReservationsScreen({
   reservations,
+  otherDayRequests,
   events,
   day,
   today,
@@ -121,6 +125,8 @@ export async function ReservationsScreen({
           <NewBookingDialog day={day} dayLabel={dayLabel} now={now} bookings={reservations} events={events} />
         ) : null}
       </div>
+
+      <OtherDayRequests requests={otherDayRequests} today={today} />
 
       <ReservationDayPicker day={day} today={today} />
 

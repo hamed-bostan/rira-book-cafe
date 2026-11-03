@@ -15,7 +15,7 @@ import { ProductRowActions } from "./ProductRowActions";
  * stock, on menu, actions — shared with the header row so the two line up. The
  * price column holds the dearest an order allows, with its unit.
  */
-export const PRODUCT_ROW_GRID = "gap-x-4 @4xl/menu:grid-cols-[minmax(0,1fr)_10rem_10rem_7rem_2.5rem]";
+export const PRODUCT_ROW_GRID = "gap-x-4 @4xl/menu:grid-cols-[minmax(0,1fr)_11rem_10rem_7rem_2.5rem]";
 
 type ProductRowProps = {
   product: ProductListItem;

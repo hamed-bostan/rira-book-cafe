@@ -1,11 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  MAX_PARTY_SIZE,
-  MAX_RESERVATION_NOTE_LENGTH,
-  MAX_TABLE_LABEL_LENGTH,
-  MIN_PARTY_SIZE,
-} from "@/src/domain/entities/Reservation";
+import { MAX_PARTY_SIZE, MAX_RESERVATION_NOTE_LENGTH, MIN_PARTY_SIZE } from "@/src/domain/entities/Reservation";
 
 import { requestReservationSchema, reservationUpdateSchema } from "../reservation-schema";
 
@@ -48,13 +43,14 @@ describe("requestReservationSchema", () => {
 });
 
 describe("reservationUpdateSchema", () => {
-  it("accepts a status, a trimmed table, or both", () => {
+  it("accepts a status, a table, or both, and clears the table with null", () => {
     expect(reservationUpdateSchema.parse({ status: "confirmed" })).toEqual({ status: "confirmed" });
-    expect(reservationUpdateSchema.parse({ tableLabel: " T4 " })).toEqual({ tableLabel: "T4" });
-    expect(reservationUpdateSchema.parse({ status: "seated", tableLabel: "T4" })).toEqual({
+    expect(reservationUpdateSchema.parse({ tableLabel: "long" })).toEqual({ tableLabel: "long" });
+    expect(reservationUpdateSchema.parse({ status: "seated", tableLabel: "4" })).toEqual({
       status: "seated",
-      tableLabel: "T4",
+      tableLabel: "4",
     });
+    expect(reservationUpdateSchema.parse({ tableLabel: null })).toEqual({ tableLabel: null });
   });
 
   it("reports an empty change on the form, not a field", () => {
@@ -69,21 +65,22 @@ describe("reservationUpdateSchema", () => {
       undo: true,
     });
     for (const body of [
-      { undo: true, tableLabel: "T4" },
-      { status: "confirmed", tableLabel: "T4", undo: true },
+      { undo: true, tableLabel: "4" },
+      { status: "confirmed", tableLabel: "4", undo: true },
     ]) {
       expect(flattened(reservationUpdateSchema.safeParse(body).error)?.fieldErrors.status).toEqual(["statusInvalid"]);
     }
     expect(reservationUpdateSchema.safeParse({ status: "confirmed", undo: false }).success).toBe(false);
   });
 
-  it("refuses an unknown status and an oversized table label", () => {
+  it("refuses an unknown status and a table off the floor plan, as a new booking does", () => {
     expect(flattened(reservationUpdateSchema.safeParse({ status: "late" }).error)?.fieldErrors.status).toEqual([
       "statusInvalid",
     ]);
-    expect(
-      flattened(reservationUpdateSchema.safeParse({ tableLabel: "t".repeat(MAX_TABLE_LABEL_LENGTH + 1) }).error)
-        ?.fieldErrors.tableLabel,
-    ).toEqual(["tableTooLong"]);
+    for (const tableLabel of ["Patio", "T4", " 4 ", ""]) {
+      expect(flattened(reservationUpdateSchema.safeParse({ tableLabel }).error)?.fieldErrors.tableLabel).toEqual([
+        "tableInvalid",
+      ]);
+    }
   });
 });

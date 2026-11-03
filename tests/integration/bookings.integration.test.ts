@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { PATCH as changeReservation } from "@/app/api/admin/reservations/[id]/route";
 import { GET as listReservations, POST as bookTable } from "@/app/api/admin/reservations/route";
 import { POST as requestTable } from "@/app/api/reservations/route";
 import { cafeDayOf, shiftCafeDay, wallTimeToDate } from "@/src/domain/entities/CafeTime";
@@ -8,7 +9,7 @@ import { prisma } from "@/src/infrastructure/prisma/client";
 
 import { TEST_USERS } from "../fixtures/users";
 
-import { getRequest, jsonRequest, readError, readJson } from "./helpers/http";
+import { getRequest, jsonRequest, readError, readJson, routeParams } from "./helpers/http";
 import { signInAs } from "./helpers/session";
 
 const today = cafeDayOf(new Date());
@@ -16,6 +17,26 @@ const nextWeek = shiftCafeDay(today, 7);
 
 function askForTable(body: unknown): Promise<Response> {
   return requestTable(jsonRequest("POST", "/api/reservations", body));
+}
+
+function patchReservation(id: string, body: unknown): Promise<Response> {
+  return changeReservation(jsonRequest("PATCH", `/api/admin/reservations/${id}`, body), routeParams({ id }));
+}
+
+/** A booking staff confirmed at table 3, starting at `startsAt` — written straight to the floor's book. */
+function confirmedAt(startsAt: Date): Promise<{ id: string }> {
+  return prisma.reservation.create({
+    data: {
+      guestName: "Sara Ahmadi",
+      guestPhone: "09301184462",
+      partySize: 2,
+      startsAt,
+      durationMinutes: 90,
+      status: "confirmed",
+      tableLabel: "3",
+    },
+    select: { id: true },
+  });
 }
 
 describe("the staff list of reservations", () => {
@@ -91,5 +112,20 @@ describe("booking hours", () => {
 
     expect(early.status).toBe(400);
     expect((await readError(early)).fieldErrors).toEqual({ startsAt: "outsideBookingHours" });
+  });
+});
+
+describe("changing a booking's table", () => {
+  it("takes only a table on the floor plan, as a new booking does", async () => {
+    const booking = await confirmedAt(wallTimeToDate(`${nextWeek}T12:00`));
+    signInAs("staff");
+
+    const patio = await patchReservation(booking.id, { tableLabel: "Patio" });
+    expect(patio.status).toBe(400);
+    expect((await readError(patio)).fieldErrors).toEqual({ tableLabel: "tableInvalid" });
+
+    const moved = await patchReservation(booking.id, { tableLabel: "5" });
+    expect(moved.status).toBe(200);
+    expect((await readJson<Reservation>(moved)).tableLabel).toBe("5");
   });
 });

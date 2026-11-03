@@ -60,7 +60,6 @@ export function isWithinBookingHours(startsAt: Date): boolean {
 export const MAX_RESERVATION_NOTE_LENGTH = 300;
 /** A guest's name as staff type it for a phone or walk-in booking. */
 export const MAX_GUEST_NAME_LENGTH = 80;
-export const MAX_TABLE_LABEL_LENGTH = 20;
 
 export type Reservation = {
   id: string;

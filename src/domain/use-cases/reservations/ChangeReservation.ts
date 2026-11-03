@@ -1,6 +1,6 @@
 import { activityValue, type ActivityActor, type ActivityChange } from "../../entities/ActivityEntry";
+import { isCafeTable } from "../../entities/CafeTable";
 import {
-  MAX_TABLE_LABEL_LENGTH,
   canTransitionReservation,
   canUndoReservationStatus,
   isGuestCancellableReservation,
@@ -18,7 +18,7 @@ import type { IReservationRepository } from "../../repositories/IReservationRepo
 export type ReservationUpdate = {
   /** The new status; omit to keep the current one (e.g. only moving the table). */
   status?: ReservationStatus;
-  /** The table to hold; `null` clears it; omit to keep it. */
+  /** The table to hold, a label from the floor plan; `null` clears it; omit to keep it. */
   tableLabel?: string | null;
   /**
    * Take back a Seat or Complete from its toast (`canUndoReservationStatus`)
@@ -68,8 +68,10 @@ export class ChangeReservation {
     // table (`TABLE_HOLDING_STATUSES`) are checked for clashes by the repository.
     const tableLabel =
       update.tableLabel === undefined ? (current.tableLabel ?? null) : update.tableLabel?.trim() || null;
-    if (tableLabel && tableLabel.length > MAX_TABLE_LABEL_LENGTH) {
-      throw new ValidationError("tableLabel", "That table label is too long.");
+    // A table being given must be on the floor plan, as for a new booking; the one
+    // a booking already has stays whatever it's called.
+    if (update.tableLabel !== undefined && tableLabel && !isCafeTable(tableLabel)) {
+      throw new ValidationError("tableLabel", `There's no table "${tableLabel}".`);
     }
     if (status === "seated" && !tableLabel) {
       throw new ValidationError("tableLabel", "Choose the table the party is seated at.");

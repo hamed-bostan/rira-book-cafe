@@ -115,7 +115,6 @@
     "dateTimeInvalid": "Choose a valid date and time.",
     "partySizeInvalid": "Choose a party size from 1 to 12.",
     "outsideBookingHours": "Tables can be booked from 08:00 to 21:00.",
-    "tableTooLong": "That table label is too long.",
     "nothingToChange": "Nothing to change.",
     "capacityWhole": "Seats must be a whole number.",
     "seatsInvalid": "Choose 1 to 6 seats.",

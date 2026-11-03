@@ -156,6 +156,22 @@ describe("ChangeReservation", () => {
     expect(entry.changes.map((c) => c.field)).toEqual(["status", "tableLabel"]);
   });
 
+  it("moves a booking only to a table on the floor plan, as a new booking takes", async () => {
+    for (const tableLabel of ["Patio", "T4", "9"]) {
+      const { repo, applyChange } = repoWith(reservation("confirmed", { tableLabel: "4" }));
+      await expect(new ChangeReservation(repo).execute("r1", { tableLabel }, { id: "s", name: "Ali" })).rejects.toThrow(
+        expect.objectContaining({ field: "tableLabel" }),
+      );
+      expect(applyChange).not.toHaveBeenCalled();
+    }
+  });
+
+  it("keeps a table a booking already has, even one off today's floor plan", async () => {
+    const { repo, applyChange } = repoWith(reservation("confirmed", { tableLabel: "Patio" }));
+    await new ChangeReservation(repo).execute("r1", { status: "seated" }, { id: "s", name: "Ali" });
+    expect(applyChange.mock.calls[0][2]).toEqual({ status: "seated", tableLabel: "Patio" });
+  });
+
   it("requires a table to seat a party", async () => {
     const { repo } = repoWith(reservation("confirmed"));
     await expect(

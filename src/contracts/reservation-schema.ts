@@ -5,7 +5,6 @@ import {
   MAX_GUEST_NAME_LENGTH,
   MAX_PARTY_SIZE,
   MAX_RESERVATION_NOTE_LENGTH,
-  MAX_TABLE_LABEL_LENGTH,
   MIN_PARTY_SIZE,
   RESERVATION_STATUSES,
 } from "@/src/domain/entities/Reservation";
@@ -47,14 +46,15 @@ export const staffReservationSchema = z.extend(requestReservationSchema, {
 export type StaffReservationInput = z.input<typeof staffReservationSchema>;
 
 /**
- * Staff acting on a reservation: a new status, a table, or both — or, with
- * `undo`, taking back a Seat or Complete from its toast: just the `status` to go
- * back to (the use-case allows only `seated → confirmed` and `completed → seated`).
+ * Staff acting on a reservation: a new status, a table from the floor plan (as a
+ * new booking takes), or both — `null` clears the table — or, with `undo`, taking
+ * back a Seat or Complete from its toast: just the `status` to go back to (the
+ * use-case allows only `seated → confirmed` and `completed → seated`).
  */
 export const reservationUpdateSchema = z
   .object({
     status: z.optional(z.enum(RESERVATION_STATUSES, { error: "statusInvalid" })),
-    tableLabel: z.optional(z.nullable(z.string().check(z.trim(), z.maxLength(MAX_TABLE_LABEL_LENGTH, "tableTooLong")))),
+    tableLabel: z.optional(z.nullable(z.enum(CAFE_TABLE_LABELS, { error: "tableInvalid" }))),
     undo: z.optional(z.literal(true)),
   })
   .check(

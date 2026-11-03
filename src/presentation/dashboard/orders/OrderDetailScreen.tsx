@@ -22,6 +22,7 @@ import { DashboardColumns } from "@/src/presentation/dashboard/DashboardColumns"
 import { DashboardPageHeader } from "@/src/presentation/dashboard/DashboardPageHeader";
 import { DashboardSection } from "@/src/presentation/dashboard/DashboardSection";
 import { FIELD_HINT, OVERLINE } from "@/src/presentation/dashboard/fieldStyles";
+import { MessageGuestButton } from "@/src/presentation/dashboard/guest-messages/MessageGuestButton";
 import { ProductThumbnail } from "@/src/presentation/dashboard/ProductThumbnail";
 import { DashboardPageCrumb } from "@/src/presentation/dashboard/shell/DashboardPageCrumb";
 import { OrderTotals } from "@/src/presentation/orders/OrderTotals";
@@ -229,6 +230,15 @@ export async function OrderDetailScreen({
                     {order.customerPhone ? (
                       <span dir="ltr" className="self-start text-muted-foreground tabular-nums">
                         {order.customerPhone}
+                      </span>
+                    ) : null}
+                    {canFulfill && order.customerPhone ? (
+                      <span className="mt-2 self-start">
+                        <MessageGuestButton
+                          appearance="secondary"
+                          guest={{ name: order.customerName, phone: order.customerPhone }}
+                          about={{ kind: "order", id: order.id, label: `#${order.orderNumber}` }}
+                        />
                       </span>
                     ) : null}
                   </dd>

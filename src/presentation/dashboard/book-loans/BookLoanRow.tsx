@@ -12,6 +12,8 @@ import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 
+import { MessageGuestButton } from "../guest-messages/MessageGuestButton";
+
 import { BookLoanRowActions } from "./BookLoanRowActions";
 import { BookLoanStatusBadge } from "./BookLoanStatusBadge";
 
@@ -94,6 +96,12 @@ export async function BookLoanRow({ loan, now, waiting, firstInLine, canManage }
             <Icon icon={Phone} size="icon-md" className="text-muted-foreground" />
             {loan.borrowerPhone}
           </a>
+          {canManage && loan.status !== "returned" ? (
+            <MessageGuestButton
+              guest={{ name: loan.borrowerName, phone: loan.borrowerPhone }}
+              about={{ kind: "bookLoan", id: loan.id, label: `L-${loan.reference} · ${loan.bookTitle}` }}
+            />
+          ) : null}
         </div>
         <p className="flex flex-wrap gap-x-1.5 text-body-small text-muted-foreground tabular-nums sm:text-body-caption">
           <span>

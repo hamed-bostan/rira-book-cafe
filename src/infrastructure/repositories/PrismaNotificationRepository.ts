@@ -5,10 +5,13 @@ import {
   type NotificationKind,
   type NotificationParams,
 } from "@/src/domain/entities/Notification";
+import type { AuditHook } from "@/src/domain/repositories/AuditHook";
 import type { INotificationRepository } from "@/src/domain/repositories/INotificationRepository";
 import { prisma } from "@/src/infrastructure/prisma/client";
 import { Prisma } from "@/src/infrastructure/prisma/generated/client";
-import type { PrismaDb } from "@/src/infrastructure/prisma/transaction";
+import { inTransaction, type PrismaDb } from "@/src/infrastructure/prisma/transaction";
+
+import { recordAudit } from "./writeActivityEntry";
 
 /**
  * Guest notifications backed by PostgreSQL via Prisma. Server-side only, bound
@@ -17,9 +20,9 @@ import type { PrismaDb } from "@/src/infrastructure/prisma/transaction";
 export class PrismaNotificationRepository implements INotificationRepository {
   constructor(private readonly db: PrismaDb = prisma) {}
 
-  async create(input: NewNotification): Promise<Notification | null> {
-    try {
-      const row = await this.db.notification.create({
+  async create(input: NewNotification, audit?: AuditHook<Notification>): Promise<Notification | null> {
+    const write = async (db: PrismaDb): Promise<Notification> => {
+      const row = await db.notification.create({
         data: {
           userId: input.userId,
           kind: input.kind,
@@ -29,6 +32,15 @@ export class PrismaNotificationRepository implements INotificationRepository {
         },
       });
       return toNotification(row);
+    };
+    try {
+      if (!audit) return await write(this.db);
+      // A message staff wrote: its activity entry commits with it or not at all.
+      return await inTransaction(this.db, async (tx) => {
+        const notification = await write(tx);
+        await recordAudit(tx, notification, audit);
+        return notification;
+      });
     } catch (error) {
       // Already sent once (same dedupe key): that's the point of the key, not a failure.
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") return null;

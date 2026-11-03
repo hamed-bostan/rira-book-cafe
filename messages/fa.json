@@ -112,6 +112,8 @@
     "tableRequired": "برای سرو در کافه، میز را انتخاب کنید.",
     "statusInvalid": "این وضعیت معتبر نیست.",
     "noteRequired": "ابتدا یادداشت را بنویسید.",
+    "messageRequired": "ابتدا متن پیام را بنویسید.",
+    "messageAboutInvalid": "مشخص کنید پیام دربارهٔ چیست.",
     "dateTimeInvalid": "تاریخ و ساعت معتبر انتخاب کنید.",
     "partySizeInvalid": "تعداد نفرات را از ۱ تا ۱۲ انتخاب کنید.",
     "outsideBookingHours": "رزرو میز از ساعت ۸:۰۰ تا ۲۱:۰۰ ممکن است.",
@@ -208,6 +210,7 @@
     "eventFull": "ظرفیت این رویداد تکمیل است.",
     "eventClosed": "ثبت‌نام این رویداد بسته شده است.",
     "alreadyRegistered": "قبلاً در این رویداد ثبت‌نام شده است.",
+    "guestChanged": "شمارهٔ مهمان از وقتی این صفحه باز شده عوض شده است. صفحه را دوباره بارگذاری کنید و دوباره تلاش کنید.",
     "notPayable": "این سفارش را نمی‌توان آنلاین پرداخت کرد — قبلاً پرداخت یا لغو شده است.",
     "paymentInProgress": "پرداخت این سفارش در حال تأیید است. لطفاً کمی صبر کنید.",
     "gatewayUnavailable": "درگاه پرداخت در حال حاضر در دسترس نیست. لطفاً کمی بعد دوباره تلاش کنید.",
@@ -850,6 +853,21 @@
     "addError": "افزودن یادداشت ممکن نشد. دوباره تلاش کنید.",
     "empty": "هنوز یادداشتی ثبت نشده."
   },
+  "dashGuestMessages": {
+    "action": "پیام",
+    "actionAria": "پیام به {name}",
+    "title": "پیام به {name}",
+    "subtitle": "دربارهٔ {about}. به پیام‌های او در سایت می‌رود و وقتی با {phone} وارد شود آن را می‌بیند. نمی‌تواند به آن پاسخ دهد.",
+    "label": "متن پیام",
+    "placeholder": "مثلاً میز کنار پنجره را برایتان نگه داشتیم.",
+    "count": "{used} / {max}",
+    "send": "ارسال",
+    "sentToast": "پیام برای {name} فرستاده شد",
+    "sentToastBody": "وقتی با {phone} وارد سایت شود، آن را در پیام‌هایش می‌بیند.",
+    "sendError": "ارسال پیام ممکن نشد. دوباره تلاش کنید.",
+    "toldToast": "{name} پیامی دربارهٔ آن در سایت دارد.",
+    "toldOnSignInToast": "پیامی دربارهٔ آن به حساب {name} در سایت رفت. وقتی با {phone} وارد شود آن را می‌بیند."
+  },
   "dashActivity": {
     "heading": "فعالیت‌ها",
     "summary": "هر تغییری که از داشبورد انجام شده، از جدیدترین. برای همیشه نگه داشته می‌شود.",
@@ -923,13 +941,15 @@
       },
       "reservation": {
         "changed": "<b>{actor}</b> رزرو {entity} را به‌روزرسانی کرد",
-        "booked": "<b>{actor}</b> رزرو میز {entity} را ثبت کرد"
+        "booked": "<b>{actor}</b> رزرو میز {entity} را ثبت کرد",
+        "guestMessaged": "<b>{actor}</b> دربارهٔ رزرو {entity} به مهمان پیام داد"
       },
       "event": {
         "created": "<b>{actor}</b> رویداد {entity} را ایجاد کرد",
         "updated": "<b>{actor}</b> رویداد {entity} را ویرایش کرد",
         "deleted": "<b>{actor}</b> رویداد {entity} را حذف کرد",
-        "registrationCancelled": "<b>{actor}</b> یک ثبت‌نام در {entity} را لغو کرد"
+        "registrationCancelled": "<b>{actor}</b> یک ثبت‌نام در {entity} را لغو کرد",
+        "guestMessaged": "<b>{actor}</b> به یکی از ثبت‌نام‌کنندگان {entity} پیام داد"
       },
       "ledger": {
         "entryPosted": "<b>{actor}</b> سند {entity} را ثبت کرد",
@@ -951,7 +971,8 @@
       },
       "suiteBooking": {
         "changed": "<b>{actor}</b> رزرو سوئیت {entity} را به‌روز کرد",
-        "booked": "<b>{actor}</b> اقامت سوئیت {entity} را ثبت کرد"
+        "booked": "<b>{actor}</b> اقامت سوئیت {entity} را ثبت کرد",
+        "guestMessaged": "<b>{actor}</b> دربارهٔ اقامت سوئیت {entity} به مهمان پیام داد"
       },
       "bookLoan": {
         "lent": "<b>{actor}</b> کتابی به امانت داد ({entity})",
@@ -959,7 +980,8 @@
         "lost": "<b>{actor}</b> امانت {entity} را گم‌شده ثبت کرد",
         "extended": "<b>{actor}</b> امانت {entity} را تمدید کرد",
         "extensionUndone": "<b>{actor}</b> تمدید امانت {entity} را لغو کرد",
-        "holdSkipped": "<b>{actor}</b> نسخهٔ نگه‌داشته‌شده برای {entity} را به کس دیگری امانت داد"
+        "holdSkipped": "<b>{actor}</b> نسخهٔ نگه‌داشته‌شده برای {entity} را به کس دیگری امانت داد",
+        "guestMessaged": "<b>{actor}</b> دربارهٔ {entity} به مهمان پیام داد"
       },
       "income": {
         "recorded": "<b>{actor}</b> درآمد {entity} را ثبت کرد",
@@ -1058,6 +1080,8 @@
       "supplierId": "تأمین‌کننده",
       "monthlySalary": "حقوق معمول (ارقام نمایش داده نمی‌شود)",
       "phone": "تلفن",
+      "guest": "مهمان",
+      "message": "پیام",
       "reason": "دلیل",
       "refId": "کد پیگیری زرین‌پال"
     },
@@ -1628,7 +1652,7 @@
       "signOut": "خروج",
       "mySuiteStays": "اقامت‌های من در سوئیت",
       "myBookLoans": "کتاب‌های امانتی من",
-      "notifications": "اعلان‌ها",
+      "notifications": "پیام‌ها",
       "rewards": "باشگاه مشتریان",
       "pointsBalance": "{points} امتیاز"
     },
@@ -1666,11 +1690,13 @@
       "returnedOn": "بازگشت {date}"
     },
     "notifications": {
-      "heading": "اعلان‌ها",
-      "subtitle": "خبرهای سفارش‌ها، رزروها و کتاب‌هایی که امانت گرفته‌اید.",
-      "empty": "فعلاً خبری نیست. هر تغییری باشد، همین‌جا خبرتان می‌کنیم.",
+      "heading": "پیام‌ها",
+      "subtitle": "خبرهای سفارش‌ها، رزروها و کتاب‌های امانتی‌تان، و پیام‌هایی که کافه برایتان می‌فرستد.",
+      "empty": "هنوز پیامی ندارید. هر تغییری باشد، همین‌جا خبرتان می‌کنیم.",
       "unread": "خوانده‌نشده",
-      "bellAria": "{count, plural, =0 {اعلان‌ها} other {اعلان‌ها، # خوانده‌نشده}}",
+      "bellAria": "{count, plural, =0 {پیام‌ها} other {پیام‌ها، # خوانده‌نشده}}",
+      "markAllRead": "همه را خواندم",
+      "replyNote": "برای پاسخ، با کافه تماس بگیرید.",
       "kinds": {
         "orderAccepted": {
           "title": "سفارش #{orderNumber} در حال آماده‌سازی است",
@@ -1727,6 +1753,10 @@
         "reviewApproved": {
           "title": "نظرتان منتشر شد",
           "body": "ممنون که درباره‌ی {productName} نوشتید."
+        },
+        "staffMessage": {
+          "title": "پیامی از کافه",
+          "about": "{about, select, reservation {دربارهٔ رزرو میز R-{reference}} suiteBooking {دربارهٔ اقامت سوئیت S-{reference}} eventRegistration {دربارهٔ {subject}} bookLoan {دربارهٔ «{subject}»} bookHold {دربارهٔ «{subject}»} order {دربارهٔ سفارش #{reference}} other {}}"
         }
       }
     },
@@ -2645,7 +2675,7 @@
     "borrowerPhone": "تلفن امانت‌گیرنده",
     "note": "یادداشت (اختیاری)",
     "notePlaceholder": "مثلاً وضعیت کتاب",
-    "phoneHint": "اگر این شماره حساب کاربری داشته باشد، مهمان این امانت را در صفحهٔ حسابش می‌بیند.",
+    "phoneHint": "پیامی دربارهٔ این امانت به حساب مهمان در سایت می‌رود. اگر این شماره حساب کاربری داشته باشد، خود امانت را هم در صفحهٔ حسابش می‌بیند.",
     "lendSubmit": "ثبت امانت",
     "lendError": "ثبت امانت ممکن نشد. دوباره تلاش کنید.",
     "searchLabel": "جست‌وجوی امانت‌ها",
@@ -2702,8 +2732,8 @@
     "extend": "تمدید {days, plural, other {{formatted} روز}}",
     "markLost": "ثبت گم‌شدن",
     "confirmLostBody": "{title} · {name}. اگر کتاب بعداً پیدا شد، هنوز می‌توانید آن را بازگشته ثبت کنید.",
-    "firstInLineTold": "{name} نفر اول صف {title} است و با اعلان در سایت به او خبر داده شد.",
-    "firstInLineCall": "{name} نفر اول صف {title} است اما حساب کاربری ندارد — با {phone} تماس بگیرید.",
+    "firstInLineTold": "{name} نفر اول صف {title} است و در سایت پیام گرفت که کتاب برگشته است.",
+    "firstInLineOnSignIn": "{name} نفر اول صف {title} است. پیام برگشتن کتاب به حسابش در سایت رفت — وقتی با {phone} وارد شود آن را می‌بیند.",
     "extendedToast": "موعد L-{reference} شد {date}",
     "extendUndoneToast": "موعد L-{reference} دوباره {date} شد",
     "dueOverdue": "موعد {date} · {days, plural, other {{formatted} روز}} دیرکرد",
@@ -3185,7 +3215,7 @@
     "loans": "بارگذاری امانت‌های کتاب شما ممکن نشد",
     "menu": "بارگذاری منو ممکن نشد",
     "product": "بارگذاری این مورد ممکن نشد",
-    "notifications": "بارگذاری اعلان‌های شما ممکن نشد",
+    "notifications": "بارگذاری پیام‌های شما ممکن نشد",
     "orders": "بارگذاری سفارش‌های شما ممکن نشد",
     "order": "بارگذاری این سفارش ممکن نشد",
     "reservations": "بارگذاری رزروهای شما ممکن نشد",
@@ -3240,17 +3270,17 @@
     "remove": "حذف",
     "removeAria": "حذف {name} از صف",
     "skipTitle": "{name} رد شود؟",
-    "skipNext": "نفر بعد {name} است و با اعلان در سایت به او خبر داده می‌شود که {title} منتظرش است.",
-    "skipNextCall": "نفر بعد {name} است. حساب کاربری ندارد، پس با {phone} تماس بگیرید و بگویید {title} منتظرش است.",
+    "skipNext": "نفر بعد {name} است و در سایت پیام می‌گیرد که {title} منتظرش است.",
+    "skipNextOnSignIn": "نفر بعد {name} است. پیامی که {title} منتظرش است به حسابش در سایت می‌رود — وقتی با {phone} وارد شود آن را می‌بیند.",
     "skipNobody": "کس دیگری در صف نیست. {title} به قفسه برمی‌گردد.",
     "removeTitle": "{name} از صف حذف شود؟",
     "removeBody": "جایش در صف {title} را از دست می‌دهد.",
     "lentToast": "{title} به {name} امانت داده شد · L-{reference}، موعد {date}",
     "removedToast": "{name} از صف {title} خارج شد.",
-    "nextToldToast": "با اعلان در سایت به {name} خبر داده شد که منتظرش است.",
-    "nextCallToast": "نفر بعد {name} است اما حساب کاربری ندارد — با {phone} تماس بگیرید.",
-    "callToTell": "تماس برای خبر دادن",
-    "callToTellAria": "تماس با {name} به شمارهٔ {phone} برای خبر دادن که منتظرش است",
+    "nextToldToast": "به {name} در سایت پیام داده شد که منتظرش است.",
+    "nextOnSignInToast": "نفر بعد {name} است. پیام به حسابش در سایت رفت — وقتی با {phone} وارد شود آن را می‌بیند.",
+    "callToTell": "با او هم تماس بگیرید",
+    "callToTellAria": "تماس با {name} به شمارهٔ {phone} — پیام تا وقتی وارد سایت شود همان‌جا می‌ماند",
     "emptyOpenTitle": "کسی منتظر نیست",
     "emptyOpenBody": "وقتی مهمانی کتابی را می‌خواهد که بیرون است، او را به صف اضافه کنید.",
     "emptyClosedTitle": "رزرو بسته‌ای نیست",

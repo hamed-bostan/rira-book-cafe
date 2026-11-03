@@ -30,6 +30,7 @@ type ApiErrorKey =
   | "eventFull"
   | "eventClosed"
   | "alreadyRegistered"
+  | "guestChanged"
   | "inUse"
   | "revokeSelf"
   | "revokeOwner"
@@ -88,6 +89,7 @@ const CODE_KEYS: Readonly<Record<string, ApiErrorKey>> = {
   EVENT_FULL: "eventFull",
   EVENT_CLOSED: "eventClosed",
   ALREADY_REGISTERED: "alreadyRegistered",
+  GUEST_CHANGED: "guestChanged",
   IN_USE: "inUse",
   REVOKE_SELF: "revokeSelf",
   REVOKE_OWNER: "revokeOwner",

@@ -24,6 +24,8 @@ export type ConflictCode =
   | "EVENT_FULL"
   | "EVENT_CLOSED"
   | "ALREADY_REGISTERED"
+  // A message to a guest whose phone on the booking, loan or order isn't the one staff saw.
+  | "GUEST_CHANGED"
   | "INVALID_TRANSITION"
   // A no-show or a check-in before the guest was due (a booking's start, a stay's arrival day).
   | "NOT_DUE_YET"

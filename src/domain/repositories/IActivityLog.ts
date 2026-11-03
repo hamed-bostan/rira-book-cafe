@@ -68,8 +68,9 @@ export type IActivityLog = {
   listActors(visibleEntityTypes?: readonly string[]): Promise<ActivityActorOption[]>;
 
   /**
-   * Record an admin action that *isn't* a change to anything stored — currently
-   * only a message sent to a customer about their order.
+   * Record an admin action that *isn't* a change to anything stored. (A message
+   * staff write to a guest is stored — it's a row in their inbox — so its entry
+   * rides that row's transaction through an {@link AuditHook} instead.)
    *
    * This is the one write on this port, and it is a carve-out rather than a
    * loophole. Everything above argues that an entry must commit inside the

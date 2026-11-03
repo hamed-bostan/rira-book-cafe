@@ -19,6 +19,11 @@ export function signInAs(user: TestUserKey | null): void {
   current = { user: { id, name }, expires: new Date(Date.now() + 60 * 60 * 1000).toISOString() };
 }
 
+/** Signed in as someone outside `TEST_USERS` — a guest who just signed in for the first time, say. */
+export function signInAsUser(user: { id: string; name: string }): void {
+  current = { user: { id: user.id, name: user.name }, expires: new Date(Date.now() + 60 * 60 * 1000).toISOString() };
+}
+
 export function currentSession(): Session | null {
   return current;
 }

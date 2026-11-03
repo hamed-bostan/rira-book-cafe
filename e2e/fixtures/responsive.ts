@@ -154,6 +154,32 @@ export function measureSpilledFigures(within = "main"): string[] {
   return spilled;
 }
 
+/**
+ * The fields squeezed too narrow to type in: under 10rem. A dialog's fields stack
+ * into one column on a phone rather than share a row (`FIELD_GRID` never makes one
+ * narrower than 12rem), but a field pushed into a second, implicit column — by
+ * `col-span-2` on a grid of one — is left a sliver, without the page or the dialog
+ * scrolling. Looks in the page's `main` unless told where (an open dialog).
+ */
+export function measureNarrowFields(within = "main"): string[] {
+  const MIN = 160;
+  const fields = (document.querySelector(within) ?? document.body).querySelectorAll<HTMLElement>(
+    'input:not([type="hidden"], [type="checkbox"], [type="radio"], [type="file"]), select, textarea',
+  );
+  const narrow: string[] = [];
+  for (const field of fields) {
+    if (!field.checkVisibility()) continue;
+    const { width } = field.getBoundingClientRect();
+    if (width > 1 && width < MIN - 0.5) {
+      // A label wrapping a select holds its options' text too.
+      const label = (field as HTMLInputElement).labels?.[0]?.textContent?.replace(field.textContent ?? "", "").trim();
+      const name = label || field.getAttribute("aria-label") || field.tagName.toLowerCase();
+      narrow.push(`${name} ${Math.round(width)}px`);
+    }
+  }
+  return narrow;
+}
+
 /** How far each visible table scrolls sideways inside its card. */
 export function measureSidewaysTables(): number[] {
   return [...document.querySelectorAll("main table")].flatMap((table) => {

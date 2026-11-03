@@ -51,11 +51,21 @@ export type SettablePaymentStatus = (typeof SETTABLE_PAYMENT_STATUSES)[number];
 export const PAYMENT_METHODS = ["cash", "card", "transfer", "online"] as const;
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 
-/** What a bill can be split between at the counter. */
+/**
+ * How staff may record a payment — at the counter, from the list, on the order, and
+ * what a bill can be split between. Everything but `online`: only the gateway's
+ * callback books that, once the gateway has confirmed the money. A hand-marked
+ * online payment would put money in the gateway clearing account with nothing
+ * behind it.
+ */
 export const COUNTER_PAYMENT_METHODS = ["cash", "card", "transfer"] as const satisfies readonly PaymentMethod[];
+export type CounterPaymentMethod = (typeof COUNTER_PAYMENT_METHODS)[number];
 
 /** One part of how an order was paid. A bill split between cash and card has two. */
 export type PaymentPart = { method: PaymentMethod; amount: number };
+
+/** A part staff recorded — never online. */
+export type CounterPaymentPart = PaymentPart & { method: CounterPaymentMethod };
 
 /**
  * The order as its guest may see it: without the cost snapshotted on each line,

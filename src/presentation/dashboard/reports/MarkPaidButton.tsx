@@ -4,7 +4,7 @@ import { ChevronDown } from "lucide-react";
 import { useTranslations } from "next-intl";
 import * as React from "react";
 
-import { PAYMENT_METHODS, type PaymentMethod } from "@/src/domain/entities/Order";
+import { COUNTER_PAYMENT_METHODS, type CounterPaymentMethod } from "@/src/domain/entities/Order";
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { ordersApi } from "@/src/presentation/dashboard/orders/order-api";
@@ -39,7 +39,7 @@ export function MarkPaidButton({ orderId, orderNumber, describedBy }: MarkPaidBu
   const { toast } = useToast();
   const [pending, startTransition] = React.useTransition();
 
-  function markPaid(method: PaymentMethod): void {
+  function markPaid(method: CounterPaymentMethod): void {
     startTransition(async () => {
       try {
         await ordersApi.setPayment(orderId, { paymentStatus: "paid", paymentMethod: method });
@@ -80,7 +80,7 @@ export function MarkPaidButton({ orderId, orderNumber, describedBy }: MarkPaidBu
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" aria-label={tOrders("paymentMethodLabel")}>
-        {PAYMENT_METHODS.map((method) => (
+        {COUNTER_PAYMENT_METHODS.map((method) => (
           <DropdownMenuItem key={method} onSelect={() => markPaid(method)}>
             {tOrders(`paymentMethod.${method}`)}
           </DropdownMenuItem>

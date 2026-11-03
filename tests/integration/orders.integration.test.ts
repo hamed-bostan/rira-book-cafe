@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import { PATCH as setPayment } from "@/app/api/admin/orders/[id]/payment/route";
 import { GET as getAdminOrder } from "@/app/api/admin/orders/[id]/route";
 import { PATCH as changeStatus } from "@/app/api/admin/orders/[id]/status/route";
+import { PATCH as bulkUpdate } from "@/app/api/admin/orders/bulk/route";
+import { POST as ringUpSale } from "@/app/api/admin/orders/route";
 import { POST as cancelOrder } from "@/app/api/orders/[id]/cancel/route";
 import { GET as getOwnOrder } from "@/app/api/orders/[id]/route";
 import { POST as quoteOrder } from "@/app/api/orders/quote/route";
@@ -265,5 +267,48 @@ describe("staff working an order", () => {
 
     expect(response.status).toBe(400);
     expect((await readError(response)).fieldErrors).toMatchObject({ paymentMethod: "methodRequired" });
+  });
+
+  it("won't take an online payment from staff — only the gateway's callback books one (400)", async () => {
+    const order = await placeAs("customer");
+    signInAs("staff");
+    const pay = (body: unknown): Promise<Response> =>
+      setPayment(jsonRequest("PATCH", `/api/admin/orders/${order.id}/payment`, body), routeParams({ id: order.id }));
+
+    const online = await pay({ paymentStatus: "paid", paymentMethod: "online" });
+    expect(online.status).toBe(400);
+    expect((await readError(online)).fieldErrors).toMatchObject({ paymentMethod: "methodInvalid" });
+
+    const split = await pay({
+      paymentStatus: "paid",
+      paymentParts: [
+        { method: "cash", amount: 100000 },
+        { method: "online", amount: 90000 },
+      ],
+    });
+    expect(split.status).toBe(400);
+
+    const bulk = await bulkUpdate(
+      jsonRequest("PATCH", "/api/admin/orders/bulk", {
+        ids: [order.id],
+        action: { type: "markPaid", paymentMethod: "online" },
+      }),
+    );
+    expect(bulk.status).toBe(400);
+
+    const sale = await ringUpSale(
+      jsonRequest("POST", "/api/admin/orders", {
+        items: [{ productId: "seed-espresso", quantity: 1 }],
+        serviceType: "takeaway",
+        customerName: "Walk-in guest",
+        paymentParts: [{ method: "online", amount: 95000 }],
+      }),
+    );
+    expect(sale.status).toBe(400);
+
+    // Nothing reached the order or the gateway's clearing account.
+    expect((await prisma.order.findUniqueOrThrow({ where: { id: order.id } })).paymentStatus).toBe("unpaid");
+    expect(await prisma.order.count()).toBe(1);
+    expect(await prisma.journalLine.count({ where: { accountCode: "1130" } })).toBe(0);
   });
 });

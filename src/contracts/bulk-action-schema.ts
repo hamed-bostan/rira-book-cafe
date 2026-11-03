@@ -1,4 +1,4 @@
-import { MAX_BULK_ORDERS, PAYMENT_METHODS } from "@/src/domain/entities/Order";
+import { COUNTER_PAYMENT_METHODS, MAX_BULK_ORDERS } from "@/src/domain/entities/Order";
 import * as z from "@/src/lib/zod";
 
 /**
@@ -77,7 +77,8 @@ export type ReviewBulkRequest = z.infer<typeof reviewBulkRequestSchema>;
 /**
  * What to do to the selected orders (see `BULK_ORDER_ACTIONS`): serve them, record
  * their payment, or cancel them. Marking paid names the method, as it does on one
- * order — the method decides which account the money lands in.
+ * order — the method decides which account the money lands in — and, as there,
+ * never `online`: only the gateway's callback books that.
  *
  * Orders are capped tighter than products (see `MAX_BULK_ORDERS`): each one of
  * these moves stock and money, where a product bulk change moves a column.
@@ -86,7 +87,7 @@ export const orderBulkActionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("serve") }),
   z.object({
     type: z.literal("markPaid"),
-    paymentMethod: z.enum(PAYMENT_METHODS, { error: "methodInvalid" }),
+    paymentMethod: z.enum(COUNTER_PAYMENT_METHODS, { error: "methodInvalid" }),
   }),
   z.object({ type: z.literal("cancel") }),
 ]);

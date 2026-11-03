@@ -6,7 +6,7 @@ import * as React from "react";
 
 import type { OrderBulkAction } from "@/src/contracts/bulk-action-schema";
 import {
-  PAYMENT_METHODS,
+  COUNTER_PAYMENT_METHODS,
   canApplyBulkOrderAction,
   type BulkOrderActionType,
   type Order,
@@ -126,7 +126,8 @@ export function OrderBulkActions({ orders }: OrderBulkActionsProps) {
       </Button>
 
       {/* How the guests paid decides which account the money lands in, so this
-          one opens a choice of method rather than acting straight away. */}
+          one opens a choice of method rather than acting straight away — never
+          "online", which only the gateway's callback books. */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild disabled={pending || payCount === 0}>
           <Button variant="secondary" size="control-md" className={ACTION} loading={pending && active === "markPaid"}>
@@ -135,7 +136,7 @@ export function OrderBulkActions({ orders }: OrderBulkActionsProps) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" aria-label={t("paymentMethodLabel")}>
-          {PAYMENT_METHODS.map((paymentMethod) => (
+          {COUNTER_PAYMENT_METHODS.map((paymentMethod) => (
             <DropdownMenuItem key={paymentMethod} onSelect={() => apply({ type: "markPaid", paymentMethod })}>
               {t(`paymentMethod.${paymentMethod}`)}
             </DropdownMenuItem>

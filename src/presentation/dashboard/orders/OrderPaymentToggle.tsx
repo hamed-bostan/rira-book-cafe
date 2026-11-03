@@ -1,10 +1,16 @@
 "use client";
 
-import { ArrowLeftRight, Banknote, CreditCard, Globe, type LucideIcon } from "lucide-react";
+import { ArrowLeftRight, Banknote, CreditCard, type LucideIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import * as React from "react";
 
-import { PAYMENT_METHODS, type PaymentMethod, type PaymentPart, type PaymentStatus } from "@/src/domain/entities/Order";
+import {
+  COUNTER_PAYMENT_METHODS,
+  type CounterPaymentMethod,
+  type PaymentMethod,
+  type PaymentPart,
+  type PaymentStatus,
+} from "@/src/domain/entities/Order";
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatMoney } from "@/src/lib/formatMoney";
@@ -20,11 +26,11 @@ import { ordersApi } from "./order-api";
 import { splitParts, splitRemainder, type SplitAmounts } from "./paymentParts";
 import { PaymentPartsFields } from "./PaymentPartsFields";
 
-const METHOD_ICON: Record<PaymentMethod, LucideIcon> = {
+/** The ways staff may record a payment — never online, which only the gateway's callback books. */
+const METHOD_ICON: Record<CounterPaymentMethod, LucideIcon> = {
   cash: Banknote,
   card: CreditCard,
   transfer: ArrowLeftRight,
-  online: Globe,
 };
 
 type OrderPaymentToggleProps = {
@@ -42,7 +48,8 @@ type OrderPaymentToggleProps = {
 
 /**
  * Record a counter payment and how it was made — the method decides which account
- * the money lands in (till, bank, gateway), and a bill can be split between them. A
+ * the money lands in (till or bank), and a bill can be split between them. An online
+ * payment is only ever booked by the gateway's callback, so it isn't offered. A
  * mistaken mark can be undone, which reverses it on the books. Writes, then refreshes
  * the server render.
  */
@@ -156,13 +163,14 @@ export function OrderPaymentToggle({
             </>
           ) : (
             <div role="group" aria-label={t("paymentMethodLabel")} className="grid grid-cols-2 gap-2">
-              {PAYMENT_METHODS.map((method) => (
+              {COUNTER_PAYMENT_METHODS.map((method) => (
                 <Button
                   key={method}
                   type="button"
                   variant="secondary"
                   size="control-md"
-                  className="px-3"
+                  // Two to a row; an odd one out takes the whole row.
+                  className="px-3 last:odd:col-span-2"
                   loading={pending && active === method}
                   disabled={pending}
                   onClick={() => save({ paymentStatus: "paid", paymentMethod: method }, method)}

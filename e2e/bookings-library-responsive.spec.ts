@@ -105,7 +105,43 @@ const PAGES: Record<string, MeasuredPage> = {
     dialog: true,
     prepare: menuItemFrom(/^(More actions for|کارهای بیشتر برای) R-/, /^(Cancel booking|لغو رزرو)$/),
   },
+  "take a deposit": {
+    path: (s) => `/dashboard/reservations?day=${s.tomorrow}&status=confirmed`,
+    dialog: true,
+    prepare: dialogFrom(/^(Take deposit|گرفتن بیعانه)$/, async (dialog) => {
+      await dialog.getByRole("textbox").nth(0).fill(PRICE);
+    }),
+  },
+  "return a deposit": {
+    path: (s) => `/dashboard/reservations?day=${s.tomorrow}&status=cancelled`,
+    dialog: true,
+    prepare: dialogFrom(/^(Return deposit|پس دادن بیعانه)$/),
+  },
+  "keep a deposit": {
+    path: (s) => `/dashboard/reservations?day=${s.tomorrow}&status=cancelled`,
+    dialog: true,
+    prepare: dialogFrom(/^(Keep deposit|ضبط بیعانه)$/),
+  },
   suite: { path: () => "/dashboard/suite", tabs: true },
+  "refund a stay": {
+    path: () => "/dashboard/suite",
+    dialog: true,
+    prepare: dialogFrom(/^(Refund|بازپرداخت به) /),
+  },
+  "change a stay's rate": {
+    path: () => "/dashboard/suite",
+    dialog: true,
+    prepare: dialogFrom(/^(Change the nightly rate of|تغییر نرخ شبانهٔ) S-/),
+  },
+  "cancel a paid stay": {
+    path: () => "/dashboard/suite",
+    dialog: true,
+    prepare: async (page) => {
+      await menuItemFrom(/^(More actions for|کارهای بیشتر برای) S-/, /^(Cancel booking|لغو رزرو)$/)(page);
+      // Offered a refund, and taking it up: the amount and how it goes back.
+      await page.getByRole("dialog").getByRole("checkbox").click();
+    },
+  },
   "suite past": { path: () => "/dashboard/suite?tab=past", tabs: true },
   "new stay": {
     path: () => "/dashboard/suite",
@@ -118,6 +154,11 @@ const PAGES: Record<string, MeasuredPage> = {
   "events past": { path: () => "/dashboard/events?tab=past", tabs: true },
   "new event": { path: () => "/dashboard/events/create" },
   event: { path: (s) => `/dashboard/events/${s.eventId}/edit` },
+  "refund a sign-up": {
+    path: (s) => `/dashboard/events/${s.eventId}/edit`,
+    dialog: true,
+    prepare: dialogFrom(/^(Refund|بازپرداخت به) /),
+  },
   "hold tables": {
     path: () => "/dashboard/events",
     dialog: true,
@@ -217,6 +258,32 @@ async function seedAll(api: APIRequestContext): Promise<Seed> {
       },
     }),
   );
+
+  // Deposits at the order cap: one held on a booking that's still on, one on a
+  // booking that was cancelled, waiting to be handed back or kept.
+  for (const [time, tableLabel, cancel] of [
+    ["12:00", "1", false],
+    ["13:00", "2", true],
+  ] as const) {
+    const booking = await jsonOf<{ id: string }>(
+      await api.post("/api/admin/reservations", {
+        data: {
+          startsAt: `${tomorrow}T${time}`,
+          partySize: 8,
+          guestName: `${NAME.slice(0, 70)} deposit`,
+          guestPhone: "0912 345 6784",
+          note: "",
+          tableLabel,
+        },
+      }),
+    );
+    await jsonOf(
+      await api.post(`/api/admin/reservations/${booking.id}/deposit`, { data: { amount: PRICE, method: "transfer" } }),
+    );
+    if (cancel) {
+      await jsonOf(await api.patch(`/api/admin/reservations/${booking.id}`, { data: { status: "cancelled" } }));
+    }
+  }
 
   // An event that evening, holding most of the floor, with a guest who has paid part of it.
   const event = await jsonOf<{ id: string }>(

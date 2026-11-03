@@ -7,6 +7,8 @@ import * as Sentry from "@sentry/nextjs";
  *    throws here, so the server refuses to start rather than half-working — and
  *    configurations that run but shouldn't in production are logged loudly.
  * 2. Boots the error tracker for whichever runtime this instance is.
+ * 3. On Node, starts the background jobs (reminders, expiring requests and holds)
+ *    unless `JOBS_ENABLED=false` — not while `next build` collects page data.
  */
 export async function register(): Promise<void> {
   if (process.env.NEXT_RUNTIME === "nodejs") {
@@ -14,6 +16,10 @@ export async function register(): Promise<void> {
     const env = getEnv();
     for (const warning of envWarnings(env)) console.warn(`[env] ${warning}`);
     await import("./sentry.server.config");
+    if (env.JOBS_ENABLED && process.env.NEXT_PHASE !== "phase-production-build") {
+      const { startJobRunner } = await import("./src/infrastructure/jobs/backgroundJobs");
+      startJobRunner(env.JOBS_INTERVAL_MINUTES);
+    }
   }
   if (process.env.NEXT_RUNTIME === "edge") await import("./sentry.edge.config");
 }

@@ -31,4 +31,7 @@ export const E2E_SERVER_ENV: Record<string, string> = {
   SMTP_HOST: "",
   ZARINPAL_SANDBOX: "true",
   UPLOADS_DIR: E2E_UPLOADS_DIR,
+  // No background jobs on a timer: a spec runs them itself (`e2e/run-background-jobs.ts`),
+  // so nothing changes under a test while it looks.
+  JOBS_ENABLED: "false",
 };

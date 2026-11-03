@@ -56,6 +56,26 @@ describe("parseEnv", () => {
     expect(() => parseEnv({ ...DEV, ...overrides })).toThrow(new RegExp(`${name}:`));
   });
 
+  it("runs the background jobs every five minutes unless they're switched off", () => {
+    expect(parseEnv(DEV)).toMatchObject({ JOBS_ENABLED: true, JOBS_INTERVAL_MINUTES: 5 });
+    expect(parseEnv({ ...DEV, JOBS_ENABLED: "", JOBS_INTERVAL_MINUTES: "" })).toMatchObject({
+      JOBS_ENABLED: true,
+      JOBS_INTERVAL_MINUTES: 5,
+    });
+    expect(parseEnv({ ...DEV, JOBS_ENABLED: "false", JOBS_INTERVAL_MINUTES: "30" })).toMatchObject({
+      JOBS_ENABLED: false,
+      JOBS_INTERVAL_MINUTES: 30,
+    });
+  });
+
+  it.each([["0"], ["31"], ["2.5"], ["often"]])("refuses a jobs interval of %s minutes", (interval) => {
+    expect(() => parseEnv({ ...DEV, JOBS_INTERVAL_MINUTES: interval })).toThrow(/JOBS_INTERVAL_MINUTES:/);
+  });
+
+  it("refuses a JOBS_ENABLED that isn't true or false", () => {
+    expect(() => parseEnv({ ...DEV, JOBS_ENABLED: "no" })).toThrow(/JOBS_ENABLED:/);
+  });
+
   it("lists every problem at once", () => {
     expect(() => parseEnv({ ...DEV, APP_URL: "nope", SMTP_PORT: "abc" })).toThrow(/APP_URL:[\s\S]*SMTP_PORT:/);
     expect(() => parseEnv({ NODE_ENV: "production" })).toThrow(/DATABASE_URL:[\s\S]*AUTH_SECRET:/);

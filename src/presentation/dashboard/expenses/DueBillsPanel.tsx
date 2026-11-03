@@ -7,7 +7,7 @@ import { formatNumber } from "@/src/lib/formatNumber";
 import { cn } from "@/src/lib/utils";
 
 import { DashboardSection } from "../DashboardSection";
-import { AMOUNT, ROW_CAPTION } from "../pageStyles";
+import { AMOUNT, ROW_CAPTION, ROW_END } from "../pageStyles";
 
 import { DueBillActions } from "./DueBillActions";
 
@@ -36,10 +36,12 @@ export async function DueBillsPanel({ dueBills }: { dueBills: DueBill[] }) {
                   {due.bill.supplierName ? ` · ${due.bill.supplierName}` : ""}
                 </span>
               </span>
-              <span className={cn(AMOUNT, "font-semibold text-foreground")}>
-                {formatMoney(due.bill.amount, locale)}
+              <span className={ROW_END}>
+                <span className={cn(AMOUNT, "font-semibold text-foreground")}>
+                  {formatMoney(due.bill.amount, locale)}
+                </span>
+                <DueBillActions due={due} date={date} />
               </span>
-              <DueBillActions due={due} date={date} />
             </li>
           );
         })}

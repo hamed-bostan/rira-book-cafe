@@ -1,4 +1,4 @@
-import { PAGE_CARD } from "@/src/presentation/dashboard/pageStyles";
+import { PAGE_CARD, ROW_END } from "@/src/presentation/dashboard/pageStyles";
 import { DashboardPageHeaderSkeleton } from "@/src/presentation/dashboard/skeletons";
 import { LoadingRegion } from "@/src/presentation/design-system/components/Skeleton/LoadingRegion";
 import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
@@ -19,11 +19,13 @@ export default function SuppliersLoading() {
               <Skeleton className="h-3.5 w-32 rounded-pill" />
             </div>
             <Skeleton className="h-4 w-24 rounded-pill" />
-            <div className="flex min-w-32 flex-col items-end gap-1.5">
-              <Skeleton className="h-4 w-24 rounded-pill" />
-              <Skeleton className="h-3.5 w-16 rounded-pill" />
+            <div className={ROW_END}>
+              <div className="flex min-w-32 flex-col items-end gap-1.5">
+                <Skeleton className="h-4 w-24 rounded-pill" />
+                <Skeleton className="h-3.5 w-16 rounded-pill" />
+              </div>
+              <Skeleton className="h-11 w-14 shrink-0 rounded-button sm:h-8" />
             </div>
-            <Skeleton className="h-11 w-14 shrink-0 rounded-button sm:h-8" />
           </li>
         ))}
       </ul>

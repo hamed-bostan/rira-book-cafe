@@ -6,7 +6,7 @@ import { cn } from "@/src/lib/utils";
 import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
 
 import { DashboardPageHeader } from "../DashboardPageHeader";
-import { AMOUNT, PAGE_CARD, ROW_CAPTION, ROW_TEXT } from "../pageStyles";
+import { AMOUNT, PAGE_CARD, ROW_CAPTION, ROW_END, ROW_TEXT } from "../pageStyles";
 import { DashboardPageCrumb } from "../shell/DashboardPageCrumb";
 
 import { EmployeeDialog } from "./EmployeeDialog";
@@ -54,10 +54,12 @@ export async function EmployeesScreen({ employees }: { employees: Employee[] }) 
                     </span>
                   ) : null}
                 </span>
-                <span className={cn(AMOUNT, employee.monthlySalary ? "text-foreground" : ROW_CAPTION)}>
-                  {employee.monthlySalary ? formatMoney(employee.monthlySalary, locale) : t("staff.noSalary")}
+                <span className={ROW_END}>
+                  <span className={cn(AMOUNT, employee.monthlySalary ? "text-foreground" : ROW_CAPTION)}>
+                    {employee.monthlySalary ? formatMoney(employee.monthlySalary, locale) : t("staff.noSalary")}
+                  </span>
+                  <EmployeeDialog employee={employee} />
                 </span>
-                <EmployeeDialog employee={employee} />
               </li>
             ))}
           </ul>

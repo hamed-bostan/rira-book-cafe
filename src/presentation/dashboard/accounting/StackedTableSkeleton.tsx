@@ -13,6 +13,8 @@ type StackedTableSkeletonProps = {
   rows?: number;
   /** Reserve the totals row under the table. */
   totals?: boolean;
+  /** Reserve the ruled title over the table, for one in a `DashboardSection`. */
+  title?: boolean;
   className?: string;
 };
 
@@ -26,12 +28,18 @@ export function StackedTableSkeleton({
   columns,
   rows = 8,
   totals = false,
+  title = false,
   className,
 }: StackedTableSkeletonProps) {
   const [, ...rest] = columns;
 
   return (
     <section className={cn(PAGE_CARD, layout.frame, "overflow-hidden", className)}>
+      {title ? (
+        <div className="border-b border-border px-5 py-4">
+          <Skeleton className="h-6 w-32 rounded-pill" />
+        </div>
+      ) : null}
       <table aria-hidden className={cn(ROW_TEXT, layout.table)}>
         <thead className={cn(TABLE_HEAD, layout.head)}>
           <tr>

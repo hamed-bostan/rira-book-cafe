@@ -10,7 +10,7 @@ import { accountLabel } from "@/src/presentation/dashboard/accounting/accounting
 import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
 
 import { DashboardPageHeader } from "../DashboardPageHeader";
-import { AMOUNT, PAGE_CARD, ROW_CAPTION, ROW_TEXT } from "../pageStyles";
+import { AMOUNT, PAGE_CARD, ROW_CAPTION, ROW_END, ROW_TEXT } from "../pageStyles";
 import { DashboardPageCrumb } from "../shell/DashboardPageCrumb";
 
 import { RecurringBillDialog } from "./RecurringBillDialog";
@@ -73,15 +73,17 @@ export async function RecurringBillsScreen({ bills, accounts, suppliers, canWrit
                       {bill.supplierName ? ` · ${bill.supplierName}` : ""}
                     </span>
                   </span>
-                  <span className="flex min-w-32 flex-col items-end gap-0.5">
-                    <span className={cn(AMOUNT, "font-semibold text-foreground")}>
-                      {formatMoney(bill.amount, locale)}
+                  <span className={ROW_END}>
+                    <span className="flex min-w-32 flex-col items-end gap-0.5">
+                      <span className={cn(AMOUNT, "font-semibold text-foreground")}>
+                        {formatMoney(bill.amount, locale)}
+                      </span>
+                      <span className={ROW_CAPTION}>
+                        {t("recurring.every", { day: formatNumber(bill.dayOfMonth, locale) })}
+                      </span>
                     </span>
-                    <span className={ROW_CAPTION}>
-                      {t("recurring.every", { day: formatNumber(bill.dayOfMonth, locale) })}
-                    </span>
+                    {canWrite ? <RecurringBillDialog bill={bill} accounts={accounts} suppliers={suppliers} /> : null}
                   </span>
-                  {canWrite ? <RecurringBillDialog bill={bill} accounts={accounts} suppliers={suppliers} /> : null}
                 </li>
               );
             })}

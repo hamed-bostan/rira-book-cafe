@@ -20,6 +20,7 @@ import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/S
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { DashboardDialog } from "../DashboardDialog";
+import { TABLE_TILE_GRID } from "../fieldStyles";
 import { tableNameValues } from "../floor/tableName";
 import { FormAlert } from "../FormAlert";
 
@@ -173,7 +174,7 @@ export function HoldTablesButton({ eventId, title, subtitle, capacity, hasTables
               </button>
             </div>
 
-            <div role="group" aria-label={t("tablesHeld")} className="grid grid-cols-3 gap-2">
+            <div role="group" aria-label={t("tablesHeld")} className={TABLE_TILE_GRID}>
               {options
                 ? options.map((option) => {
                     const on = picked.includes(option.label);
@@ -190,7 +191,7 @@ export function HoldTablesButton({ eventId, title, subtitle, capacity, hasTables
                           focusRing,
                         )}
                       >
-                        <span className="text-body-default font-semibold sm:text-body-small">
+                        <span className="max-w-full truncate text-body-default font-semibold sm:text-body-small">
                           {tFloor("tableName", tableNameValues(option.label, locale))}
                         </span>
                         <span

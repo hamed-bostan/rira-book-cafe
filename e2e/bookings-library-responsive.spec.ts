@@ -366,6 +366,7 @@ for (const locale of LOCALES) {
         const spilled: { width: number; figures: string[] }[] = [];
         const dialogOverflow: { width: number; by: number }[] = [];
         const narrow: { width: number; fields: string[] }[] = [];
+        const tiles: { width: number; lines: string[] }[] = [];
         for (const viewport of VIEWPORTS) {
           await page.setViewportSize(viewport);
           const { by, culprits } = await page.evaluate(measurePageOverflow);
@@ -383,11 +384,26 @@ for (const locale of LOCALES) {
             if (inside > 1) dialogOverflow.push({ width: viewport.width, by: inside });
             const squeezed = await page.evaluate(measureNarrowFields, root);
             if (squeezed.length > 0) narrow.push({ width: viewport.width, fields: squeezed });
+            // A table tile keeps its name whole and each of its lines on one line; only the reason under it may be cut short.
+            const cramped = await page.evaluate(() =>
+              [...document.querySelectorAll('[role="dialog"] :is([role="radio"], [role="checkbox"])')].flatMap((tile) =>
+                [...tile.querySelectorAll(":scope > span")]
+                  .filter((line, index) => {
+                    const range = document.createRange();
+                    range.selectNodeContents(line);
+                    const wraps = new Set([...range.getClientRects()].map((box) => Math.round(box.top))).size > 1;
+                    return wraps || (index === 0 && line.scrollWidth > line.clientWidth + 1);
+                  })
+                  .map((line) => line.textContent ?? ""),
+              ),
+            );
+            if (cramped.length > 0) tiles.push({ width: viewport.width, lines: cramped });
           }
         }
         expect.soft(overflows, "the page scrolls sideways").toEqual([]);
         expect.soft(dialogOverflow, "the dialog scrolls sideways").toEqual([]);
         expect.soft(narrow, "a field is too narrow to type in").toEqual([]);
+        expect.soft(tiles, "a table tile's name is cut or a line wraps").toEqual([]);
         expect.soft(broken, "a figure splits across lines").toEqual([]);
         expect.soft(spilled, "a figure runs out of its column").toEqual([]);
       });

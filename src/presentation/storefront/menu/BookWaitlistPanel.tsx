@@ -54,17 +54,23 @@ export function BookWaitlistPanel({ productId, status, signedIn }: BookWaitlistP
 
   return (
     <div className="flex flex-col gap-3 rounded-card-md border border-border px-4 py-3">
-      <p className="flex items-start gap-2 text-body-small text-foreground">
-        <Icon icon={BellRing} size="xs" className="mt-0.5 shrink-0 text-primary" />
-        <span>
-          {status.onLoan > 0
-            ? `${t("waitlist.onLoan", { count: status.onLoan, formatted: formatNumber(status.onLoan, locale) })} `
-            : null}
-          {status.queueLength > 0
-            ? t("waitlist.inLine", { count: status.queueLength, formatted: formatNumber(status.queueLength, locale) })
-            : null}
-        </span>
-      </p>
+      {/* Nothing out and nobody waiting (every copy lost): just the button. */}
+      {status.onLoan > 0 || status.queueLength > 0 ? (
+        <p className="flex items-start gap-2 text-body-small text-foreground">
+          <Icon icon={BellRing} size="xs" className="mt-0.5 shrink-0 text-primary" />
+          <span>
+            {status.onLoan > 0
+              ? `${t("waitlist.onLoan", { count: status.onLoan, formatted: formatNumber(status.onLoan, locale) })} `
+              : null}
+            {status.queueLength > 0
+              ? t("waitlist.inLine", {
+                  count: status.queueLength,
+                  formatted: formatNumber(status.queueLength, locale),
+                })
+              : null}
+          </span>
+        </p>
+      ) : null}
 
       {entry ? (
         <div className="flex flex-wrap items-center justify-between gap-2">

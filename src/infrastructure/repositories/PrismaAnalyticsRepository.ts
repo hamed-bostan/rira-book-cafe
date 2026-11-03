@@ -72,16 +72,26 @@ export class PrismaAnalyticsRepository implements IAnalyticsRepository {
   }
 
   async dailySales(range: DateRange): Promise<DailySales[]> {
-    const rows = await prisma.$queryRaw<{ day: string; orders: bigint; revenue: bigint | null }[]>`
+    const rows = await prisma.$queryRaw<
+      { day: string; orders: bigint; revenue: bigint | null; unpaid: bigint; unpaid_value: bigint | null }[]
+    >`
       SELECT
         to_char(${localTime(Prisma.sql`placed_at`)}, 'YYYY-MM-DD') AS day,
         COUNT(*) AS orders,
-        SUM(total - refunded_total) AS revenue
+        SUM(total - refunded_total) AS revenue,
+        COUNT(*) FILTER (WHERE payment_status = 'unpaid') AS unpaid,
+        SUM(total - refunded_total) FILTER (WHERE payment_status = 'unpaid') AS unpaid_value
       FROM orders
       WHERE status = 'completed' AND placed_at >= ${range.from} AND placed_at < ${range.to}
       GROUP BY 1
       ORDER BY 1`;
-    return rows.map((row) => ({ day: row.day, orders: Number(row.orders), revenue: Number(row.revenue ?? 0) }));
+    return rows.map((row) => ({
+      day: row.day,
+      orders: Number(row.orders),
+      revenue: Number(row.revenue ?? 0),
+      unpaidOrders: Number(row.unpaid),
+      unpaidValue: Number(row.unpaid_value ?? 0),
+    }));
   }
 
   async hourlySales(range: DateRange): Promise<HourlySales[]> {

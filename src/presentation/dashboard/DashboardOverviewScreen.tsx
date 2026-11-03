@@ -55,10 +55,11 @@ type DashboardOverviewScreenProps = {
 /**
  * The dashboard's front page — today at a glance. What the floor needs now leads:
  * stock that's run out, the headline numbers, the order queue and today's
- * bookings, each acting in place. Money (today's takings, the week's trend, best
- * sellers) is drawn only for viewers who may see revenue. Presentational: the page
- * reads everything over the REST API during server render; actions write and
- * `router.refresh()`, and the page re-reads itself every minute.
+ * bookings, each acting in place. Money (today's sales and what's still unpaid of
+ * them, the week's trend, best sellers) is drawn only for viewers who may see
+ * revenue. Presentational: the page reads everything over the REST API during
+ * server render; actions write and `router.refresh()`, and the page re-reads
+ * itself every minute.
  */
 export async function DashboardOverviewScreen({
   overview,
@@ -164,8 +165,23 @@ export async function DashboardOverviewScreen({
               icon={Coins}
               value={formatNumber(today.revenue, locale)}
               unit={moneyUnit(locale)}
-              hint={t("weekRevenue", { value: `${formatNumber(week.summary.revenue, locale)} ${moneyUnit(locale)}` })}
-              href="/dashboard/reports?range=7d"
+              // A sale counts once the order is served, paid or not — so what's
+              // still to collect is called out, and the card opens those orders.
+              alert={today.unpaidOrders > 0}
+              hint={
+                today.unpaidOrders > 0
+                  ? t("todayUnpaid", {
+                      count: today.unpaidOrders,
+                      formatted: formatNumber(today.unpaidOrders, locale),
+                      value: `${formatNumber(today.unpaidValue, locale)} ${moneyUnit(locale)}`,
+                    })
+                  : t("weekRevenue", { value: `${formatNumber(week.summary.revenue, locale)} ${moneyUnit(locale)}` })
+              }
+              href={
+                today.unpaidOrders > 0
+                  ? "/dashboard/orders?status=completed&payment=unpaid"
+                  : "/dashboard/reports?range=7d"
+              }
               className={moneySpan}
             />
             <OverviewStat

@@ -21,6 +21,7 @@ import type {
  */
 export type IAnalyticsRepository = {
   salesSummary(range: DateRange): Promise<SalesSummary>;
+  /** Completed sales per cafe day, each with the part still unpaid. */
   dailySales(range: DateRange): Promise<DailySales[]>;
   hourlySales(range: DateRange): Promise<HourlySales[]>;
   salesByKind(range: DateRange): Promise<KindSales[]>;

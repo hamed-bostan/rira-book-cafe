@@ -97,8 +97,11 @@ export type SalesSummary = {
   cancelledValue: number;
 };
 
-/** One cafe day's completed sales. */
-export type DailySales = { day: string; revenue: number; orders: number };
+/**
+ * One cafe day's completed sales, and how many of those orders — and how much of
+ * that revenue — are still waiting to be marked paid.
+ */
+export type DailySales = { day: string; revenue: number; orders: number; unpaidOrders: number; unpaidValue: number };
 
 /** Completed orders, and what they took, by the hour they were placed (cafe clock, 0–23). */
 export type HourlySales = { hour: number; orders: number; revenue: number };
@@ -227,7 +230,7 @@ export function percentChange(current: number, previous: number): number | null 
 /** Fill gaps so the series has one point per day of the range (days with no sales read 0). */
 export function fillDailySeries(range: DateRange, rows: readonly DailySales[]): DailySales[] {
   const byDay = new Map(rows.map((row) => [row.day, row]));
-  return daysOf(range).map((day) => byDay.get(day) ?? { day, revenue: 0, orders: 0 });
+  return daysOf(range).map((day) => byDay.get(day) ?? { day, revenue: 0, orders: 0, unpaidOrders: 0, unpaidValue: 0 });
 }
 
 /** One point per hour 0–23, filled. */

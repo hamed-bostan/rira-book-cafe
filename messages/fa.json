@@ -1218,6 +1218,7 @@
     "upcomingEvents": "رویدادهای این هفته",
     "upcomingEventsHint": "منتشرشده، در جریان یا در ۷ روز آینده",
     "todayRevenue": "فروش امروز",
+    "todayUnpaid": "{count, plural, other {{formatted} سفارش پرداخت‌نشده}} · {value}",
     "weekRevenue": "{value} در ۷ روز گذشته",
     "todayOrders": "سفارش‌های تحویل‌شدهٔ امروز",
     "weekOrders": "{count, plural, other {{formatted} سفارش}} در ۷ روز گذشته",

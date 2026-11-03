@@ -10,7 +10,9 @@ import {
   MAX_LOAN_NOTE_LENGTH,
   type LoanDepositMethod,
 } from "@/src/domain/entities/BookLoan";
+import { holdsSkippedByLoan, type BookWaitlistEntry } from "@/src/domain/entities/BookWaitlist";
 import { shiftCafeDay } from "@/src/domain/entities/CafeTime";
+import { normalizePhone } from "@/src/domain/entities/Phone";
 import type { LendableBook } from "@/src/domain/repositories/IBookLoanRepository";
 import { useRouter } from "@/src/i18n/navigation";
 import { ApiError } from "@/src/lib/api/ApiError";
@@ -32,10 +34,13 @@ import { FIELD_GRID, FIELD_HINT, FIELD_LABEL } from "../fieldStyles";
 
 import { bookLoansApi } from "./book-loan-api";
 
+/** A guest told a copy is back, whom it's held for. */
+export type HeldCopy = Pick<BookWaitlistEntry, "guestName" | "guestPhone" | "userId">;
+
 type LendBookDialogProps = {
   books: LendableBook[];
-  /** Books whose free copy is held for the guest at the front of the line: product id → their name. */
-  heldFor: Readonly<Record<string, string>>;
+  /** Books with copies held for guests who were told: product id → those guests, told longest ago first. */
+  heldFor: Readonly<Record<string, readonly HeldCopy[]>>;
   /** Today on the cafe calendar — loans run from here. */
   today: string;
 };
@@ -52,8 +57,8 @@ const LOANS_HREF = "/dashboard/book-loans";
  * Record a book going out: which book (one with every copy out can't be lent —
  * that guest joins its line instead, and the dialog says so), who took it (they
  * needn't have an account), for how long, and an optional note. Lending a copy
- * that's held for the guest at the front of its line warns first. Writes over the
- * REST API, then shows the On loan tab.
+ * that's held for a guest who was told it's back warns first — the loan skips
+ * them. Writes over the REST API, then shows the On loan tab.
  */
 export function LendBookDialog({ books, heldFor, today }: LendBookDialogProps) {
   const t = useTranslations("dashBookLoans");
@@ -94,11 +99,13 @@ export function LendBookDialog({ books, heldFor, today }: LendBookDialogProps) {
   const dueOn = shiftCafeDay(today, Number(length));
   const book = books.find((candidate) => candidate.id === productId);
   const allOut = book !== undefined && free(book) < 1;
-  const holder = heldFor[productId];
-  const warning =
-    !allOut && holder && borrowerName.trim().toLowerCase() !== holder.toLowerCase()
-      ? t("heldForWarning", { name: holder })
-      : null;
+  // The guest this loan would skip, by the server's own rule: a copy held for
+  // someone told it's back, going to a different phone.
+  const skipped =
+    book && !allOut
+      ? holdsSkippedByLoan(free(book), heldFor[productId] ?? [], { phone: normalizePhone(borrowerPhone) })
+      : [];
+  const warning = skipped.length > 0 ? t("heldForWarning", { name: skipped[0].guestName }) : null;
   const blocked = !book || allOut || !borrowerName.trim() || !borrowerPhone.trim();
 
   function submit(): void {

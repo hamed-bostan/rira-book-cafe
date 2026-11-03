@@ -1,12 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { holdsSkippedByLoan, type BookWaitlistEntry } from "../../../entities/BookWaitlist";
 import { NotFoundError } from "../../../errors/NotFoundError";
 import { ValidationError } from "../../../errors/ValidationError";
 import { AddToBookWaitlist, JoinBookWaitlist, RemoveFromBookWaitlist } from "../BookWaitlist";
 import { ExtendBookLoan, UndoBookLoanExtension } from "../ChangeBookLoan";
 
 import type { BookLoan } from "../../../entities/BookLoan";
-import type { BookWaitlistEntry } from "../../../entities/BookWaitlist";
 import type { IBookLoanRepository } from "../../../repositories/IBookLoanRepository";
 import type { IBookWaitlistRepository } from "../../../repositories/IBookWaitlistRepository";
 
@@ -91,6 +91,31 @@ describe("holding a book", () => {
   });
 });
 
+describe("lending a copy held for a told guest", () => {
+  const sara = entry({ id: "w1", guestName: "Sara", guestPhone: "09351112233", userId: "09351112233" });
+  const hamid = entry({ id: "w2", guestName: "Hamid", guestPhone: "09124041180" });
+
+  it("skips the guest told longest ago when the copy goes to someone else", () => {
+    expect(holdsSkippedByLoan(1, [sara], { phone: "09121110006" })).toEqual([sara]);
+    expect(holdsSkippedByLoan(2, [sara, hamid], { phone: "09121110006" })).toEqual([sara]);
+  });
+
+  it("skips nobody when the copy goes to the told guest, by phone or account", () => {
+    expect(holdsSkippedByLoan(1, [sara], { phone: "09351112233" })).toEqual([]);
+    expect(holdsSkippedByLoan(1, [sara], { userId: "09351112233", phone: "09120000000" })).toEqual([]);
+    expect(holdsSkippedByLoan(2, [sara, hamid], { phone: "09124041180" })).toEqual([]);
+  });
+
+  it("skips nobody while a copy is free beyond the held ones", () => {
+    expect(holdsSkippedByLoan(2, [sara], { phone: "09121110006" })).toEqual([]);
+    expect(holdsSkippedByLoan(3, [], { phone: "09121110006" })).toEqual([]);
+  });
+
+  it("skips every told guest the loan leaves without a copy", () => {
+    expect(holdsSkippedByLoan(1, [sara, hamid], { phone: "09121110006" })).toEqual([sara, hamid]);
+  });
+});
+
 describe("skipping and removing", () => {
   function repo(current: BookWaitlistEntry, next: BookWaitlistEntry | null) {
     const notifyNext = vi.fn(async () => next);
@@ -103,7 +128,10 @@ describe("skipping and removing", () => {
   }
 
   it("passes the copy on when the guest who was told is skipped", async () => {
-    const { waitlist, notifyNext } = repo(entry({ status: "notified" }), entry({ id: "w2", userId: "g2" }));
+    const { waitlist, notifyNext } = repo(
+      entry({ status: "notified", notifiedAt: NOW.toISOString() }),
+      entry({ id: "w2", userId: "g2" }),
+    );
     const notify = vi.fn(async () => undefined);
 
     await new RemoveFromBookWaitlist(waitlist, { notify }).execute("w1", NOW);

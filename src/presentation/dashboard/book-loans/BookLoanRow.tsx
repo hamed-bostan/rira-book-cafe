@@ -2,6 +2,7 @@ import { BookOpen, Bookmark, MessageSquare, Phone, Wallet } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { isBookLoanOverdue, type BookLoan } from "@/src/domain/entities/BookLoan";
+import type { BookWaitlistEntry } from "@/src/domain/entities/BookWaitlist";
 import { cafeDayOf, cafeDaysBetween } from "@/src/domain/entities/CafeTime";
 import { formatCafeDayShort } from "@/src/lib/formatCafeDay";
 import { formatMoney } from "@/src/lib/formatMoney";
@@ -21,7 +22,7 @@ type BookLoanRowProps = {
   /** Guests in line for this book (waiting or told it's back). */
   waiting: number;
   /** The guest at the front of this book's line, told when the copy comes back. */
-  firstInLine: string | undefined;
+  firstInLine: Pick<BookWaitlistEntry, "guestName" | "guestPhone" | "userId"> | undefined;
   canManage: boolean;
 };
 

@@ -8,7 +8,7 @@ const TABS = 5;
 
 /**
  * Mirrors `BookLoansScreen`: heading with the lend button, the Book holds card,
- * then the loans card — tabs, search, rows.
+ * then the loans card — tabs, search, rows, pager.
  */
 export default function BookLoansLoading() {
   return (
@@ -53,6 +53,10 @@ export default function BookLoansLoading() {
             </li>
           ))}
         </ul>
+        <div className="flex items-center justify-between gap-3 border-t border-border px-4 py-3">
+          <Skeleton className="h-4 w-28 rounded-pill" />
+          <Skeleton className="h-11 w-36 rounded-button sm:h-9" />
+        </div>
       </div>
     </LoadingRegion>
   );

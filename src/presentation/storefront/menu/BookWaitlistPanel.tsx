@@ -22,8 +22,10 @@ type BookWaitlistPanelProps = {
 
 /**
  * For a book that's out on loan: how many copies are out and how long the line
- * is, and a button to get in line (or leave it). The guest at the front is told
- * on their account when a copy comes back.
+ * is, and a button to get in line (or leave it). The button shows only when the
+ * line takes guests (`canJoin`); with a copy free and nobody waiting, the panel
+ * says it's on the shelf instead. The guest at the front is told on their account
+ * when a copy comes back.
  */
 export function BookWaitlistPanel({ productId, status, signedIn }: BookWaitlistPanelProps) {
   const t = useTranslations("site");
@@ -34,7 +36,8 @@ export function BookWaitlistPanel({ productId, status, signedIn }: BookWaitlistP
   const [pending, startTransition] = React.useTransition();
 
   const entry = status.entry;
-  if (status.onLoan === 0 && !entry) return null;
+  // On the shelf with nobody waiting and none out: nothing to wait for.
+  if (!entry && status.onLoan === 0 && !status.canJoin) return null;
 
   /** Joins or leaves the line; `success` is toasted when the refreshed panel doesn't make the outcome obvious. */
   function run(action: () => Promise<unknown>, success?: string): void {
@@ -51,15 +54,23 @@ export function BookWaitlistPanel({ productId, status, signedIn }: BookWaitlistP
 
   return (
     <div className="flex flex-col gap-3 rounded-card-md border border-border px-4 py-3">
-      <p className="flex items-start gap-2 text-body-small text-foreground">
-        <Icon icon={BellRing} size="xs" className="mt-0.5 shrink-0 text-primary" />
-        <span>
-          {t("waitlist.onLoan", { count: status.onLoan, formatted: formatNumber(status.onLoan, locale) })}{" "}
-          {status.queueLength > 0
-            ? t("waitlist.inLine", { count: status.queueLength, formatted: formatNumber(status.queueLength, locale) })
-            : null}
-        </span>
-      </p>
+      {/* Nothing out and nobody waiting (every copy lost): just the button. */}
+      {status.onLoan > 0 || status.queueLength > 0 ? (
+        <p className="flex items-start gap-2 text-body-small text-foreground">
+          <Icon icon={BellRing} size="xs" className="mt-0.5 shrink-0 text-primary" />
+          <span>
+            {status.onLoan > 0
+              ? `${t("waitlist.onLoan", { count: status.onLoan, formatted: formatNumber(status.onLoan, locale) })} `
+              : null}
+            {status.queueLength > 0
+              ? t("waitlist.inLine", {
+                  count: status.queueLength,
+                  formatted: formatNumber(status.queueLength, locale),
+                })
+              : null}
+          </span>
+        </p>
+      ) : null}
 
       {entry ? (
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -78,6 +89,8 @@ export function BookWaitlistPanel({ productId, status, signedIn }: BookWaitlistP
             {t("waitlist.leave")}
           </Button>
         </div>
+      ) : !status.canJoin ? (
+        <span className="text-body-small-strong text-primary">{t("waitlist.onShelf")}</span>
       ) : signedIn ? (
         <Button
           type="button"

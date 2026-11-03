@@ -20,7 +20,9 @@ export const bookWaitlistEntryListResponseSchema = z.array(bookWaitlistEntryResp
 
 export const bookWaitlistStatusResponseSchema = z.object({
   onLoan: z.number(),
+  onShelf: z.number(),
   queueLength: z.number(),
+  canJoin: z.boolean(),
   entry: z.nullable(bookWaitlistEntryResponseSchema),
   position: z.nullable(z.number()),
 }) satisfies z.ZodMiniType<BookWaitlistStatus>;

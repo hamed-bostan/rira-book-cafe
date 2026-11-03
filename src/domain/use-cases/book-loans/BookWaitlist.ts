@@ -1,5 +1,10 @@
 import { MAX_BORROWER_NAME_LENGTH } from "../../entities/BookLoan";
-import { isOpenWaitlistEntry, type BookWaitlistEntry, type BookWaitlistStatus } from "../../entities/BookWaitlist";
+import {
+  bookHasLine,
+  isOpenWaitlistEntry,
+  type BookWaitlistEntry,
+  type BookWaitlistStatus,
+} from "../../entities/BookWaitlist";
 import { isPlausiblePhone, normalizePhone } from "../../entities/Phone";
 import { type User } from "../../entities/User";
 import { ConflictError } from "../../errors/ConflictError";
@@ -16,23 +21,33 @@ export const CLOSED_HOLDS_LOOKBACK_DAYS = 60;
 
 type BookLookup = Pick<IBookLoanRepository, "getBook" | "countOpenForBook">;
 
-/**
- * The book a guest wants to queue for, if it can have a line: a copy free on the
- * shelf with nobody waiting is a question for the counter, not a hold
- * (`BOOK_ON_SHELF`). A free copy that's already held for someone still has a line.
- */
-async function bookWithLine(
+/** A book, its copies out, and its line — what deciding whether the line takes a guest reads. */
+async function readLine(
   productId: string,
   loanRepo: BookLookup,
   waitlistRepo: Pick<IBookWaitlistRepository, "listOpenForBook">,
-): Promise<{ title: string }> {
+): Promise<{ book: { title: string; copies: number }; onLoan: number; line: BookWaitlistEntry[] }> {
   const book = await loanRepo.getBook(productId);
   if (!book) throw new NotFoundError("book", productId);
   const [onLoan, line] = await Promise.all([
     loanRepo.countOpenForBook(productId),
     waitlistRepo.listOpenForBook(productId),
   ]);
-  if (onLoan < book.copies && line.length === 0) {
+  return { book, onLoan, line };
+}
+
+/**
+ * The book a guest wants to queue for, if it can have a line ({@link bookHasLine}):
+ * a copy free on the shelf with nobody waiting is a question for the counter, not
+ * a hold (`BOOK_ON_SHELF`).
+ */
+async function bookWithLine(
+  productId: string,
+  loanRepo: BookLookup,
+  waitlistRepo: Pick<IBookWaitlistRepository, "listOpenForBook">,
+): Promise<{ title: string }> {
+  const { book, onLoan, line } = await readLine(productId, loanRepo, waitlistRepo);
+  if (!bookHasLine(book.copies - onLoan, line.length)) {
     throw new ConflictError("BOOK_ON_SHELF", "This book is on the shelf — lend it instead.");
   }
   return book;
@@ -96,15 +111,62 @@ export class AddToBookWaitlist {
   }
 }
 
-/** A guest leaves the line. Someone else's entry reads as not found. */
-export class LeaveBookWaitlist {
-  constructor(private readonly waitlistRepo: IBookWaitlistRepository) {}
+/**
+ * A copy is free for the line: the guest at the front who hasn't been told yet is
+ * told it's theirs — in the app when they have an account; a counter or phone hold
+ * has none, and staff ring them. `null` when nobody is waiting.
+ */
+export async function tellNextInLine(
+  productId: string,
+  now: Date,
+  waitlistRepo: Pick<IBookWaitlistRepository, "notifyNext">,
+  notifier?: ICustomerNotifier,
+): Promise<BookWaitlistEntry | null> {
+  const next = await waitlistRepo.notifyNext(productId, now);
+  if (next?.userId && notifier) {
+    await notifier.notify({
+      userId: next.userId,
+      kind: "bookAvailable",
+      params: { title: next.bookTitle },
+      link: "/loans",
+      dedupeKey: `waitlist:${next.id}:available`,
+    });
+  }
+  return next;
+}
 
-  async execute(id: string, guestId: string): Promise<BookWaitlistEntry> {
+/**
+ * Take an entry out of line, however it leaves. A guest who'd been told passes
+ * their copy on: the next guest in line is told it's theirs. Whether they'd been
+ * told is read off the entry the cancel closed, so one told a moment before still
+ * passes it on. `null` when it was no longer open.
+ */
+async function leaveLine(
+  id: string,
+  now: Date,
+  waitlistRepo: Pick<IBookWaitlistRepository, "cancel" | "notifyNext">,
+  notifier?: ICustomerNotifier,
+): Promise<BookWaitlistEntry | null> {
+  const removed = await waitlistRepo.cancel(id);
+  if (removed?.notifiedAt) await tellNextInLine(removed.productId, now, waitlistRepo, notifier);
+  return removed;
+}
+
+/**
+ * A guest leaves the line from the site. Leaving after being told passes the copy
+ * on, as staff skipping them would. Someone else's entry reads as not found.
+ */
+export class LeaveBookWaitlist {
+  constructor(
+    private readonly waitlistRepo: IBookWaitlistRepository,
+    private readonly notifier?: ICustomerNotifier,
+  ) {}
+
+  async execute(id: string, guestId: string, now: Date = new Date()): Promise<BookWaitlistEntry> {
     const entry = await this.waitlistRepo.getById(id);
     if (entry?.userId !== guestId) throw new NotFoundError("waitlist entry", id);
     if (!isOpenWaitlistEntry(entry)) return entry;
-    return (await this.waitlistRepo.cancel(id)) ?? entry;
+    return (await leaveLine(id, now, this.waitlistRepo, this.notifier)) ?? entry;
   }
 }
 
@@ -125,40 +187,30 @@ export class RemoveFromBookWaitlist {
     if (!isOpenWaitlistEntry(entry)) {
       throw new ConflictError("INVALID_TRANSITION", "This guest is no longer in line.");
     }
-    const removed = (await this.waitlistRepo.cancel(id)) ?? entry;
-
-    if (entry.status === "notified") {
-      const next = await this.waitlistRepo.notifyNext(entry.productId, now);
-      if (next?.userId && this.notifier) {
-        await this.notifier.notify({
-          userId: next.userId,
-          kind: "bookAvailable",
-          params: { title: next.bookTitle },
-          link: "/loans",
-          dedupeKey: `waitlist:${next.id}:available`,
-        });
-      }
-    }
-    return removed;
+    return (await leaveLine(id, now, this.waitlistRepo, this.notifier)) ?? entry;
   }
 }
 
-/** A book's line as the guest sees it — copies out, line length, and their place in it. */
+/**
+ * A book's line as the guest sees it — copies out and on the shelf, line length,
+ * whether it takes them, and their place in it. Not found for something that isn't
+ * a book.
+ */
 export class GetBookWaitlistStatus {
   constructor(
     private readonly waitlistRepo: IBookWaitlistRepository,
-    private readonly loanRepo: Pick<IBookLoanRepository, "countOpenForBook">,
+    private readonly loanRepo: BookLookup,
   ) {}
 
   async execute(productId: string, guestId?: string): Promise<BookWaitlistStatus> {
-    const [onLoan, line] = await Promise.all([
-      this.loanRepo.countOpenForBook(productId),
-      this.waitlistRepo.listOpenForBook(productId),
-    ]);
+    const { book, onLoan, line } = await readLine(productId, this.loanRepo, this.waitlistRepo);
+    const free = book.copies - onLoan;
     const index = guestId ? line.findIndex((entry) => entry.userId === guestId) : -1;
     return {
       onLoan,
+      onShelf: Math.max(free, 0),
       queueLength: line.length,
+      canJoin: bookHasLine(free, line.length),
       entry: index >= 0 ? line[index] : null,
       position: index >= 0 ? index + 1 : null,
     };

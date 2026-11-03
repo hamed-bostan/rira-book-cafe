@@ -7,7 +7,8 @@
 /**
  * - `out` — the guest has the book. Overdue is derived (past `dueAt`), not stored.
  * - `returned` — back on the shelf. Terminal.
- * - `lost` — written off. Can still turn into `returned` if it reappears.
+ * - `lost` — written off, and its copy off the shelf. Can still turn into
+ *   `returned` if it reappears, which puts the copy back.
  */
 export const BOOK_LOAN_STATUSES = ["out", "returned", "lost"] as const;
 export type BookLoanStatus = (typeof BOOK_LOAN_STATUSES)[number];
@@ -78,6 +79,17 @@ const TRANSITIONS: Record<BookLoanStatus, readonly BookLoanStatus[]> = {
 
 export function canTransitionBookLoan(from: BookLoanStatus, to: BookLoanStatus): boolean {
   return TRANSITIONS[from].includes(to);
+}
+
+/**
+ * How closing a loan moves its book's copies to lend: a copy written off comes off
+ * the shelf (-1), and one that turns up after being written off goes back on (+1).
+ * A book that simply comes back was never taken off, so it moves nothing.
+ */
+export function lendingCopiesChange(from: BookLoanStatus, to: BookLoanStatus): number {
+  if (from === "out" && to === "lost") return -1;
+  if (from === "lost" && to === "returned") return 1;
+  return 0;
 }
 
 /** The statuses staff may move a loan to from here, in the order the UI offers them. */

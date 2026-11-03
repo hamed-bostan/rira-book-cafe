@@ -1,21 +1,16 @@
-import {
-  OPEN_WAITLIST_STATUSES,
-  WAITLIST_STATUSES,
-  type BookWaitlistEntry,
-  type WaitlistStatus,
-} from "@/src/domain/entities/BookWaitlist";
+import { OPEN_WAITLIST_STATUSES, type BookWaitlistEntry } from "@/src/domain/entities/BookWaitlist";
 import { ConflictError } from "@/src/domain/errors/ConflictError";
 import type { IBookWaitlistRepository, NewWaitlistEntry } from "@/src/domain/repositories/IBookWaitlistRepository";
 import { prisma } from "@/src/infrastructure/prisma/client";
 import { Prisma } from "@/src/infrastructure/prisma/generated/client";
 import { inTransaction, type PrismaDb } from "@/src/infrastructure/prisma/transaction";
 
-const OPEN = { in: [...OPEN_WAITLIST_STATUSES] };
+import { OPEN_HOLD as OPEN, lockBookShelf, toWaitlistEntry as toEntry } from "./bookShelf";
 
 /**
  * The book waitlist backed by PostgreSQL via Prisma. A partial unique index keeps
  * a guest in a book's line at most once; telling the next guest is serialized per
- * book with an advisory lock (the same one lending takes).
+ * book with the lock lending takes (`lockBookShelf`).
  */
 export class PrismaBookWaitlistRepository implements IBookWaitlistRepository {
   constructor(private readonly db: PrismaDb = prisma) {}
@@ -55,10 +50,11 @@ export class PrismaBookWaitlistRepository implements IBookWaitlistRepository {
   }
 
   async listOpen(): Promise<BookWaitlistEntry[]> {
+    // Uncapped: a cap would drop guests from the end of a line without a word, and
+    // the open lines stay small — one place per guest per book that's out.
     const rows = await this.db.bookWaitlistEntry.findMany({
       where: { status: OPEN },
       orderBy: [{ bookTitle: "asc" }, { productId: "asc" }, { createdAt: "asc" }],
-      take: 200,
     });
     return rows.map(toEntry);
   }
@@ -73,17 +69,23 @@ export class PrismaBookWaitlistRepository implements IBookWaitlistRepository {
   }
 
   async cancel(id: string): Promise<BookWaitlistEntry | null> {
-    const result = await this.db.bookWaitlistEntry.updateMany({
-      where: { id, status: OPEN },
-      data: { status: "cancelled" },
+    return inTransaction(this.db, async (tx) => {
+      const entry = await tx.bookWaitlistEntry.findUnique({ where: { id }, select: { productId: true } });
+      if (!entry) return null;
+      // Under the book's lock, so a loan deciding whose held copy it takes sees the line as it is.
+      await lockBookShelf(tx, entry.productId);
+      const result = await tx.bookWaitlistEntry.updateMany({
+        where: { id, status: OPEN },
+        data: { status: "cancelled" },
+      });
+      if (result.count === 0) return null;
+      return toEntry(await tx.bookWaitlistEntry.findUniqueOrThrow({ where: { id } }));
     });
-    if (result.count === 0) return null;
-    return toEntry(await this.db.bookWaitlistEntry.findUniqueOrThrow({ where: { id } }));
   }
 
   async notifyNext(productId: string, at: Date): Promise<BookWaitlistEntry | null> {
     return inTransaction(this.db, async (tx) => {
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`book-waitlist:${productId}`}))`;
+      await lockBookShelf(tx, productId);
       const next = await tx.bookWaitlistEntry.findFirst({
         where: { productId, status: "waiting" },
         orderBy: { createdAt: "asc" },
@@ -96,36 +98,4 @@ export class PrismaBookWaitlistRepository implements IBookWaitlistRepository {
       return toEntry(row);
     });
   }
-
-  async fulfill(productId: string, borrower: { userId?: string; phone: string }): Promise<void> {
-    await this.db.bookWaitlistEntry.updateMany({
-      where: {
-        productId,
-        status: OPEN,
-        OR: [{ guestPhone: borrower.phone }, ...(borrower.userId ? [{ userId: borrower.userId }] : [])],
-      },
-      data: { status: "fulfilled" },
-    });
-  }
-}
-
-type EntryRow = Prisma.BookWaitlistEntryGetPayload<object>;
-
-function toStatus(value: string): WaitlistStatus {
-  return (WAITLIST_STATUSES as readonly string[]).includes(value) ? (value as WaitlistStatus) : "waiting";
-}
-
-function toEntry(row: EntryRow): BookWaitlistEntry {
-  return {
-    id: row.id,
-    productId: row.productId,
-    bookTitle: row.bookTitle,
-    userId: row.userId ?? undefined,
-    guestName: row.guestName,
-    guestPhone: row.guestPhone,
-    status: toStatus(row.status),
-    notifiedAt: row.notifiedAt?.toISOString(),
-    createdAt: row.createdAt.toISOString(),
-    updatedAt: row.updatedAt.toISOString(),
-  };
 }

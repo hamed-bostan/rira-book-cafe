@@ -41,11 +41,13 @@ describe("loan queries", () => {
     ["  Sara ", "Sara"],
     ["  ", undefined],
     [undefined, undefined],
-  ])("lists the loan book with the search %j trimmed", async (q, expected) => {
-    const list = vi.fn<IBookLoanRepository["list"]>(async () => [LOAN]);
+  ])("lists a page of the loan book with the search %j trimmed", async (q, expected) => {
+    const page = { page: 2, pageSize: 25 };
+    const result = { items: [LOAN], total: 26, ...page };
+    const list = vi.fn<IBookLoanRepository["list"]>(async () => result);
     const repo = { list } as unknown as IBookLoanRepository;
-    expect(await new ListBookLoans(repo).execute({ view: "overdue", q }, NOW)).toEqual([LOAN]);
-    expect(list).toHaveBeenCalledWith({ view: "overdue", q: expected }, NOW);
+    expect(await new ListBookLoans(repo).execute({ view: "overdue", q }, page, NOW)).toBe(result);
+    expect(list).toHaveBeenCalledWith({ view: "overdue", q: expected }, page, NOW);
   });
 
   it("counts each view over every loan, as of now", async () => {
@@ -114,6 +116,29 @@ describe("LeaveBookWaitlist", () => {
     expect(cancel).toHaveBeenCalledWith("w1");
   });
 
+  it("passes the copy on when a guest who'd been told leaves", async () => {
+    const told = entry({ status: "notified", notifiedAt: NOW.toISOString() });
+    const { repo } = waitlist(told, { ...told, status: "cancelled" });
+    const next = entry({ id: "w2", userId: "g2", status: "notified" });
+    vi.mocked(repo.notifyNext).mockResolvedValueOnce(next);
+    const notify = vi.fn(async () => undefined);
+
+    await new LeaveBookWaitlist(repo, { notify }).execute("w1", "g1", NOW);
+
+    expect(repo.notifyNext).toHaveBeenCalledWith("b1", NOW);
+    expect(notify).toHaveBeenCalledWith(expect.objectContaining({ userId: "g2", kind: "bookAvailable" }));
+  });
+
+  it("passes it on for a guest told between reading and leaving, and not for one still waiting", async () => {
+    const toldMeanwhile = waitlist(entry(), entry({ status: "cancelled", notifiedAt: NOW.toISOString() }));
+    await new LeaveBookWaitlist(toldMeanwhile.repo).execute("w1", "g1", NOW);
+    expect(toldMeanwhile.repo.notifyNext).toHaveBeenCalledWith("b1", NOW);
+
+    const waiting = waitlist(entry(), entry({ status: "cancelled" }));
+    await new LeaveBookWaitlist(waiting.repo).execute("w1", "g1", NOW);
+    expect(waiting.repo.notifyNext).not.toHaveBeenCalled();
+  });
+
   it("returns a closed entry as it is", async () => {
     const done = entry({ status: "fulfilled" });
     const { repo, cancel } = waitlist(done);
@@ -161,12 +186,43 @@ describe("RemoveFromBookWaitlist", () => {
 });
 
 describe("GetBookWaitlistStatus", () => {
-  const loans = { countOpenForBook: vi.fn(async () => 2) };
+  function shelf(copies: number, onLoan: number) {
+    return {
+      getBook: vi.fn(async () => ({ title: "The Blind Owl", copies })),
+      countOpenForBook: vi.fn(async () => onLoan),
+    };
+  }
+  const loans = shelf(2, 2);
 
   it("gives the guest their place in line", async () => {
     const status = await new GetBookWaitlistStatus(waitlist(null).repo, loans).execute("b1", "g1");
-    expect(status).toMatchObject({ onLoan: 2, queueLength: 2, position: 2 });
+    expect(status).toMatchObject({ onLoan: 2, onShelf: 0, queueLength: 2, canJoin: true, position: 2 });
     expect(status.entry?.id).toBe("w1");
+  });
+
+  it("takes guests exactly when joining would: not with a copy free and nobody waiting", async () => {
+    const empty = { listOpenForBook: vi.fn(async () => []) } as unknown as IBookWaitlistRepository;
+    expect(await new GetBookWaitlistStatus(empty, shelf(2, 1)).execute("b1")).toMatchObject({
+      onLoan: 1,
+      onShelf: 1,
+      canJoin: false,
+    });
+    expect(await new GetBookWaitlistStatus(empty, shelf(1, 1)).execute("b1")).toMatchObject({ canJoin: true });
+    // Every copy lost: none out, none to lend — the line still waits for one to turn up.
+    expect(await new GetBookWaitlistStatus(empty, shelf(0, 0)).execute("b1")).toMatchObject({
+      onShelf: 0,
+      canJoin: true,
+    });
+    // A free copy held for the guest who was told: others queue behind them.
+    expect(await new GetBookWaitlistStatus(waitlist(null).repo, shelf(2, 1)).execute("b1")).toMatchObject({
+      onShelf: 1,
+      canJoin: true,
+    });
+  });
+
+  it("is not found for something that isn't a book", async () => {
+    const loans = { getBook: vi.fn(async () => null), countOpenForBook: vi.fn(async () => 0) };
+    await expect(new GetBookWaitlistStatus(waitlist(null).repo, loans).execute("x")).rejects.toThrow(NotFoundError);
   });
 
   it("has no place for a guest who isn't in line, or nobody signed in", async () => {

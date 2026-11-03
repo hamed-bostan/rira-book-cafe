@@ -5,10 +5,15 @@ import { GET as countLoans } from "@/app/api/admin/book-loans/counts/route";
 import { POST as lend } from "@/app/api/admin/book-loans/route";
 import { DELETE as removeHold } from "@/app/api/admin/book-waitlist/[id]/route";
 import { GET as listHolds, POST as addHold } from "@/app/api/admin/book-waitlist/route";
+import { DELETE as leaveLine } from "@/app/api/book-waitlist/[id]/route";
+import { GET as lineStatus, POST as joinLine } from "@/app/api/products/[id]/waitlist/route";
 import type { BookLoan } from "@/src/domain/entities/BookLoan";
-import type { BookWaitlistEntry } from "@/src/domain/entities/BookWaitlist";
+import type { BookWaitlistEntry, BookWaitlistStatus } from "@/src/domain/entities/BookWaitlist";
 import { cafeDayOf, shiftCafeDay } from "@/src/domain/entities/CafeTime";
 import type { BookLoanCounts } from "@/src/domain/repositories/IBookLoanRepository";
+import { prisma } from "@/src/infrastructure/prisma/client";
+import { lockBookShelf } from "@/src/infrastructure/repositories/bookShelf";
+import { PrismaBookWaitlistRepository } from "@/src/infrastructure/repositories/PrismaBookWaitlistRepository";
 
 import { getRequest, jsonRequest, readError, readJson, routeParams } from "./helpers/http";
 import { signInAs } from "./helpers/session";
@@ -98,6 +103,148 @@ describe("book copies and holds", () => {
       await listHolds(getRequest("/api/admin/book-waitlist?view=closed")),
     );
     expect(closed.find((e) => e.id === first.id)?.status).toBe("cancelled");
+  });
+
+  it("skips the told guest when their copy is lent to someone else, and logs it", async () => {
+    signInAs("admin");
+    const loan = await readJson<BookLoan>(await lendTo(BLIND_OWL, "Niloofar", "09121110005"));
+    const told = await readJson<BookWaitlistEntry>(await hold(BLIND_OWL, "Sara", "09351112233"));
+    const next = await readJson<BookWaitlistEntry>(await hold(BLIND_OWL, "Hamid", "09124041180"));
+    await changeLoan(
+      jsonRequest("PATCH", `/api/admin/book-loans/${loan.id}`, { status: "returned" }),
+      routeParams({ id: loan.id }),
+    );
+
+    expect((await lendTo(BLIND_OWL, "Reza", "09121110006")).status).toBe(201);
+    // Nobody new is told: the copy that was held is out again.
+    expect((await openLine(BLIND_OWL)).map((e) => [e.id, e.status])).toEqual([[next.id, "waiting"]]);
+    const closed = await readJson<BookWaitlistEntry[]>(
+      await listHolds(getRequest("/api/admin/book-waitlist?view=closed")),
+    );
+    expect(closed.find((e) => e.id === told.id)?.status).toBe("cancelled");
+    const entry = await prisma.activityEntry.findFirstOrThrow({ where: { action: "bookLoan.holdSkipped" } });
+    expect(entry).toMatchObject({ entityType: "bookLoan", entityId: told.id, entityLabel: "Sara (The Blind Owl)" });
+  });
+
+  it("fulfils the told guest's hold when the copy is lent to them, by phone however it's typed", async () => {
+    signInAs("admin");
+    const loan = await readJson<BookLoan>(await lendTo(BLIND_OWL, "Niloofar", "09121110005"));
+    const told = await readJson<BookWaitlistEntry>(await hold(BLIND_OWL, "Sara", "09351112233"));
+    const next = await readJson<BookWaitlistEntry>(await hold(BLIND_OWL, "Hamid", "09124041180"));
+    await changeLoan(
+      jsonRequest("PATCH", `/api/admin/book-loans/${loan.id}`, { status: "returned" }),
+      routeParams({ id: loan.id }),
+    );
+
+    expect((await lendTo(BLIND_OWL, "Sara Ahmadi", "+98 935 111 2233")).status).toBe(201);
+    expect((await openLine(BLIND_OWL)).map((e) => [e.id, e.status])).toEqual([[next.id, "waiting"]]);
+    const closed = await readJson<BookWaitlistEntry[]>(
+      await listHolds(getRequest("/api/admin/book-waitlist?view=closed")),
+    );
+    expect(closed.find((e) => e.id === told.id)?.status).toBe("fulfilled");
+    expect(await prisma.activityEntry.count({ where: { action: "bookLoan.holdSkipped" } })).toBe(0);
+  });
+
+  it("leaves told guests alone while a copy is free beyond theirs", async () => {
+    signInAs("admin");
+    await prisma.product.update({ where: { id: BLIND_OWL }, data: { bookCopies: 2 } });
+    const first = await readJson<BookLoan>(await lendTo(BLIND_OWL, "Niloofar", "09121110005"));
+    await lendTo(BLIND_OWL, "Parisa", "09121110007");
+    const told = await readJson<BookWaitlistEntry>(await hold(BLIND_OWL, "Sara", "09351112233"));
+    await changeLoan(
+      jsonRequest("PATCH", `/api/admin/book-loans/${first.id}`, { status: "returned" }),
+      routeParams({ id: first.id }),
+    );
+    // One copy back and held for Sara, and a third bought: lending that one leaves hers.
+    await prisma.product.update({ where: { id: BLIND_OWL }, data: { bookCopies: 3 } });
+
+    expect((await lendTo(BLIND_OWL, "Reza", "09121110006")).status).toBe(201);
+    expect((await openLine(BLIND_OWL)).map((e) => [e.id, e.status])).toEqual([[told.id, "notified"]]);
+  });
+
+  it("passes the copy on when a guest who'd been told leaves the line from the site", async () => {
+    signInAs("admin");
+    const loan = await readJson<BookLoan>(await lendTo(BLIND_OWL, "Niloofar", "09121110005"));
+    signInAs("customer");
+    const joined = await joinLine(
+      jsonRequest("POST", `/api/products/${BLIND_OWL}/waitlist`),
+      routeParams({ id: BLIND_OWL }),
+    );
+    expect(joined.status).toBe(201);
+    const told = await readJson<BookWaitlistEntry>(joined);
+    signInAs("admin");
+    const next = await readJson<BookWaitlistEntry>(await hold(BLIND_OWL, "Hamid", "09124041180"));
+    await changeLoan(
+      jsonRequest("PATCH", `/api/admin/book-loans/${loan.id}`, { status: "returned" }),
+      routeParams({ id: loan.id }),
+    );
+    expect((await openLine(BLIND_OWL)).map((e) => [e.id, e.status])).toEqual([
+      [told.id, "notified"],
+      [next.id, "waiting"],
+    ]);
+
+    signInAs("customer");
+    const left = await leaveLine(jsonRequest("DELETE", `/api/book-waitlist/${told.id}`), routeParams({ id: told.id }));
+    expect(left.status).toBe(204);
+    signInAs("admin");
+    expect((await openLine(BLIND_OWL)).map((e) => [e.id, e.status])).toEqual([[next.id, "notified"]]);
+  });
+
+  it("offers the line to a guest exactly when joining it would work", async () => {
+    signInAs("admin");
+    await prisma.product.update({ where: { id: BLIND_OWL }, data: { bookCopies: 2 } });
+    await lendTo(BLIND_OWL, "Niloofar", "09121110005");
+
+    signInAs("customer");
+    const join = (): Promise<Response> =>
+      joinLine(jsonRequest("POST", `/api/products/${BLIND_OWL}/waitlist`), routeParams({ id: BLIND_OWL }));
+    const status = async (): Promise<BookWaitlistStatus> =>
+      readJson<BookWaitlistStatus>(
+        await lineStatus(getRequest(`/api/products/${BLIND_OWL}/waitlist`), routeParams({ id: BLIND_OWL })),
+      );
+    expect(await status()).toMatchObject({ onLoan: 1, onShelf: 1, queueLength: 0, canJoin: false });
+    const refused = await join();
+    expect(refused.status).toBe(409);
+    expect((await readError(refused)).code).toBe("BOOK_ON_SHELF");
+
+    signInAs("admin");
+    await lendTo(BLIND_OWL, "Parisa", "09121110007");
+    signInAs("customer");
+    expect(await status()).toMatchObject({ onLoan: 2, onShelf: 0, canJoin: true });
+    expect((await join()).status).toBe(201);
+  });
+
+  it("tells the next guest only once lending has let go of the book", async () => {
+    signInAs("admin");
+    await lendTo(BLIND_OWL, "Niloofar", "09121110005");
+    await hold(BLIND_OWL, "Sara", "09351112233");
+
+    // A loan of the book in flight: its transaction holds the book's lock until released.
+    let release = (): void => undefined;
+    const released = new Promise<void>((resolve) => (release = resolve));
+    let locked = (): void => undefined;
+    const lockTaken = new Promise<void>((resolve) => (locked = resolve));
+    const lending = prisma.$transaction(
+      async (tx) => {
+        await lockBookShelf(tx, BLIND_OWL);
+        locked();
+        await released;
+      },
+      { timeout: 10_000 },
+    );
+    await lockTaken;
+
+    let told = false;
+    const telling = new PrismaBookWaitlistRepository().notifyNext(BLIND_OWL, new Date()).then(() => {
+      told = true;
+    });
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    expect(told).toBe(false);
+
+    release();
+    await lending;
+    await telling;
+    expect(told).toBe(true);
   });
 
   it("extends a loan that's out by seven days, and only that", async () => {

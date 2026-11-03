@@ -1,4 +1,6 @@
 import { diffFields } from "../../entities/ActivityEntry";
+import { lendingCopies } from "../../entities/Product";
+import { ConflictError } from "../../errors/ConflictError";
 import { NotFoundError } from "../../errors/NotFoundError";
 import { ValidationError } from "../../errors/ValidationError";
 
@@ -7,10 +9,19 @@ import { validateProduct } from "./validateProduct";
 
 import type { ActivityActor } from "../../entities/ActivityEntry";
 import type { Product } from "../../entities/Product";
+import type { IBookLoanRepository } from "../../repositories/IBookLoanRepository";
 import type { IProductRepository, NewProduct } from "../../repositories/IProductRepository";
 
+/**
+ * Save a menu item's edit form. A book's copies to lend can't go below the copies
+ * of it out on loan right now, and a book with copies out can't stop being one
+ * (`COPIES_BELOW_ON_LOAN`) — those loans need a copy to come back to.
+ */
 export class UpdateProduct {
-  constructor(private readonly productRepo: IProductRepository) {}
+  constructor(
+    private readonly productRepo: IProductRepository,
+    private readonly loanRepo: Pick<IBookLoanRepository, "countOpenForBook">,
+  ) {}
 
   /** `actor` is the admin saving the form, and is required — it attributes the activity entry. */
   async execute(id: string, input: NewProduct, actor: ActivityActor): Promise<Product> {
@@ -19,6 +30,14 @@ export class UpdateProduct {
 
     const existing = await this.productRepo.getById(id);
     if (!existing) throw new NotFoundError("product", id);
+
+    const copies = valid.kind === "book" ? lendingCopies(valid.book) : 0;
+    if (copies < (await this.loanRepo.countOpenForBook(id))) {
+      throw new ConflictError(
+        "COPIES_BELOW_ON_LOAN",
+        "More copies of this book are out on loan than that. Copies to lend can't go below the number out.",
+      );
+    }
 
     // The entry is written by the repository inside the transaction that saves the
     // item, diffed against the row the write actually produced. Returning `null`

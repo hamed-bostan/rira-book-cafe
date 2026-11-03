@@ -1,7 +1,6 @@
-import { BookOpen } from "lucide-react";
+import { BookOpen, Phone } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
-import type { BookLoan } from "@/src/domain/entities/BookLoan";
 import type { BookWaitlistEntry } from "@/src/domain/entities/BookWaitlist";
 import { cafeDayOf, cafeDaysBetween } from "@/src/domain/entities/CafeTime";
 import type { LendableBook } from "@/src/domain/repositories/IBookLoanRepository";
@@ -10,6 +9,7 @@ import { formatNumber } from "@/src/lib/formatNumber";
 import { cn } from "@/src/lib/utils";
 import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 
 import { DashboardEmptyState } from "../DashboardEmptyState";
 import { DashboardLinkTabs } from "../DashboardLinkTabs";
@@ -25,9 +25,8 @@ type BookHoldsScreenProps = {
   open: BookWaitlistEntry[];
   /** Holds that closed lately (borrowed or cancelled). */
   closed: BookWaitlistEntry[];
+  /** Every book, with its copies out and the loan of it due back first. */
   books: LendableBook[];
-  /** Loans still out — when each book's next copy is due back. */
-  openLoans: BookLoan[];
   tab: HoldTab;
   now: string;
   canManage: boolean;
@@ -38,11 +37,12 @@ const STATUS_VARIANT = { waiting: "neutral", notified: "success", fulfilled: "ne
 /**
  * The lines for books that are out, one group per book: the copy's state (on the
  * shelf and held for someone, or out and when it's next back — or how late), then
- * the guests in order. The guest who was told it's back can be lent it or skipped;
- * anyone waiting can be taken off. Presentational: the page fetches over the REST
- * API (BFF); every action `router.refresh()`es.
+ * the guests in order. The guest who was told it's back can be lent it or skipped
+ * — one with no account was told nothing, so a link rings them; anyone waiting can
+ * be taken off. Presentational: the page fetches over the REST API (BFF); every
+ * action `router.refresh()`es.
  */
-export async function BookHoldsScreen({ open, closed, books, openLoans, tab, now, canManage }: BookHoldsScreenProps) {
+export async function BookHoldsScreen({ open, closed, books, tab, now, canManage }: BookHoldsScreenProps) {
   const t = await getTranslations("dashBookHolds");
   const locale = await getLocale();
   const nowDate = new Date(now);
@@ -74,9 +74,9 @@ export async function BookHoldsScreen({ open, closed, books, openLoans, tab, now
         tone: "font-medium text-success-foreground",
       };
     }
-    const next = openLoans
-      .filter((loan) => loan.productId === productId)
-      .sort((a, b) => a.dueAt.localeCompare(b.dueAt))[0];
+    // Every copy written off: nothing is out to come back.
+    if (copies === 0) return { text: t("noCopiesToLend"), tone: "text-muted-foreground" };
+    const next = book?.nextDue;
     const out =
       copies === 1 ? t("outOnLoan") : t("allCopiesOut", { count: copies, formatted: formatNumber(copies, locale) });
     if (!next) return { text: out, tone: "text-muted-foreground" };
@@ -150,7 +150,7 @@ export async function BookHoldsScreen({ open, closed, books, openLoans, tab, now
                     const ago = cafeDaysBetween(toldDay, today);
                     const nextInLine = lineFor(productId).find(
                       (other) => other.id !== entry.id && other.status === "waiting",
-                    )?.guestName;
+                    );
                     return (
                       <li
                         key={entry.id}
@@ -194,6 +194,21 @@ export async function BookHoldsScreen({ open, closed, books, openLoans, tab, now
                                   date: formatCafeDayShort(cafeDayOf(new Date(entry.createdAt)), locale),
                                 })}
                           </span>
+                          {/* Only guests with an account are told in the app; a counter or phone hold needs a call. */}
+                          {tab === "open" && told && !entry.userId ? (
+                            <a
+                              href={`tel:${entry.guestPhone}`}
+                              aria-label={t("callToTellAria", { name: entry.guestName, phone: entry.guestPhone })}
+                              // 44px to the touch on a phone without moving the row.
+                              className={cn(
+                                "-my-3 flex w-fit items-center gap-1.5 py-3 text-body-default font-medium text-primary underline-offset-4 hover:underline sm:my-0 sm:py-0 sm:text-body-small",
+                                focusRing,
+                              )}
+                            >
+                              <Icon icon={Phone} size="icon-md" />
+                              {t("callToTell")}
+                            </a>
+                          ) : null}
                         </span>
                         {canManage && tab === "open" ? (
                           <BookHoldActions

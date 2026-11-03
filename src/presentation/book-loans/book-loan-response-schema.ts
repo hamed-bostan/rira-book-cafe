@@ -41,5 +41,6 @@ export const lendableBookListResponseSchema = z.array(
     author: z.optional(z.string()),
     onLoan: z.number(),
     copies: z.number(),
+    nextDue: z.optional(z.object({ reference: z.number(), dueAt: z.string() })),
   }) satisfies z.ZodMiniType<LendableBook>,
 );

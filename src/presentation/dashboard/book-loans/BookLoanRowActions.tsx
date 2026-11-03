@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import * as React from "react";
 
 import type { BookLoan, BookLoanStatus } from "@/src/domain/entities/BookLoan";
+import type { BookWaitlistEntry } from "@/src/domain/entities/BookWaitlist";
 import { cafeDayOf } from "@/src/domain/entities/CafeTime";
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
@@ -29,8 +30,11 @@ const EXTEND_DAYS = 7;
 
 type BookLoanRowActionsProps = {
   loan: Pick<BookLoan, "id" | "reference" | "status" | "bookTitle" | "borrowerName" | "dueAt">;
-  /** Told the copy is theirs when it comes back — named in the toast. */
-  firstInLine: string | undefined;
+  /**
+   * Told the copy is theirs when it comes back — named in the toast, which says
+   * whether they were told in the app or have no account and need a call.
+   */
+  firstInLine: Pick<BookWaitlistEntry, "guestName" | "guestPhone" | "userId"> | undefined;
 };
 
 /**
@@ -69,7 +73,13 @@ export function BookLoanRowActions({ loan, firstInLine }: BookLoanRowActionsProp
             title: t(`updated.${change.status}`, { reference: loan.reference }),
             description:
               change.status === "returned" && firstInLine
-                ? t("firstInLineTold", { name: firstInLine, title: loan.bookTitle })
+                ? firstInLine.userId
+                  ? t("firstInLineTold", { name: firstInLine.guestName, title: loan.bookTitle })
+                  : t("firstInLineCall", {
+                      name: firstInLine.guestName,
+                      title: loan.bookTitle,
+                      phone: firstInLine.guestPhone,
+                    })
                 : undefined,
           });
         }

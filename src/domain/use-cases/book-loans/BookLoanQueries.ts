@@ -1,4 +1,5 @@
 import type { BookLoan } from "../../entities/BookLoan";
+import type { Page, PageRequest } from "../../entities/Pagination";
 import type {
   BookLoanCounts,
   BookLoanFilters,
@@ -6,12 +7,12 @@ import type {
   LendableBook,
 } from "../../repositories/IBookLoanRepository";
 
-/** The loan book for the dashboard. A cross-guest read: gate to staff. */
+/** One page of a tab of the loan book for the dashboard. A cross-guest read: gate to staff. */
 export class ListBookLoans {
   constructor(private readonly loanRepo: IBookLoanRepository) {}
 
-  execute(filters: BookLoanFilters, now: Date): Promise<BookLoan[]> {
-    return this.loanRepo.list({ view: filters.view, q: filters.q?.trim() || undefined }, now);
+  execute(filters: BookLoanFilters, page: PageRequest, now: Date): Promise<Page<BookLoan>> {
+    return this.loanRepo.list({ view: filters.view, q: filters.q?.trim() || undefined }, page, now);
   }
 }
 

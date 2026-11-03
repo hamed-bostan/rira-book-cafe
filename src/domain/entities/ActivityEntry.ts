@@ -110,6 +110,9 @@ export const ACTIVITY_ACTIONS = [
   "bookLoan.extended",
   // An extension taken back from its toast: the due date returns to what it was.
   "bookLoan.extensionUndone",
+  // A copy held for a guest who was told it's back, lent to someone else: their
+  // hold is skipped. The entry is about the hold, not the loan beside it.
+  "bookLoan.holdSkipped",
   "event.created",
   "event.updated",
   "event.deleted",

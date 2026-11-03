@@ -1,6 +1,8 @@
 import type { AuditHook } from "./AuditHook";
 import type { LedgerHook } from "./ILedgerRepository";
 import type { BookLoan, BookLoanStatus } from "../entities/BookLoan";
+import type { BookWaitlistEntry } from "../entities/BookWaitlist";
+import type { Page, PageRequest } from "../entities/Pagination";
 
 /** A loan about to be recorded. Id, reference, status, return time and timestamps are the repository's. */
 export type NewBookLoan = Omit<
@@ -17,6 +19,8 @@ export type LendableBook = {
   onLoan: number;
   /** Copies the shelf lends (`lendingCopies`). */
   copies: number;
+  /** The loan of it due back soonest, while a copy is out — when the line can next expect one. */
+  nextDue?: { reference: number; dueAt: string };
 };
 
 /** Which loans a list shows. `open` is everything still out, overdue or not. */
@@ -32,22 +36,41 @@ export type BookLoanFilters = {
 /** How many loans each view holds — every loan, whatever the search. */
 export type BookLoanCounts = Record<BookLoanView, number>;
 
+/** What closing a loan changed: the loan, and its book's copies to lend when they moved (a copy lost or found). */
+export type BookLoanStatusChange = {
+  loan: BookLoan;
+  copies?: { before: number; after: number };
+};
+
 export type IBookLoanRepository = {
   /**
    * Record a loan. Refuses a second open loan of the same book to the same phone
    * (`ConflictError("ALREADY_ON_LOAN")`) — enforced in the database, so two staff
    * recording the same hand-over can't both succeed — and a book whose every copy
    * is out (`ConflictError("ALL_COPIES_OUT")`), checked under the same per-book lock.
+   *
+   * The book's line moves with it, under that lock: the borrower's own place in it
+   * (by phone or account) is fulfilled, and a copy held for told guests that this
+   * loan takes skips them (`holdsSkippedByLoan`) — `skipAudit` logs each one.
    */
-  create(input: NewBookLoan, audit?: AuditHook<BookLoan>, ledger?: LedgerHook<BookLoan>): Promise<BookLoan>;
+  create(
+    input: NewBookLoan,
+    audit?: AuditHook<BookLoan>,
+    ledger?: LedgerHook<BookLoan>,
+    skipAudit?: AuditHook<BookWaitlistEntry>,
+  ): Promise<BookLoan>;
   getById(id: string): Promise<BookLoan | null>;
-  /** Loans for the dashboard, newest first; `open`/`overdue` soonest-due first. */
-  list(filters: BookLoanFilters, now: Date): Promise<BookLoan[]>;
+  /**
+   * One page of a view of the lending book. `open`/`overdue` soonest-due first,
+   * `returned` latest back first, `lost` newest first, and `all` every loan still
+   * out (soonest due, so the late ones lead) before the closed ones, newest first.
+   */
+  list(filters: BookLoanFilters, page: PageRequest, now: Date): Promise<Page<BookLoan>>;
   /** How many loans each view holds, uncapped and unsearched — the tabs' counts. */
   countByView(now: Date): Promise<BookLoanCounts>;
   /** One guest's loans (matched by account), newest first. */
   listForUser(userId: string): Promise<BookLoan[]>;
-  /** Every book in the catalog, published or not, with how many copies are out. */
+  /** Every book in the catalog, published or not, with how many copies are out and which is due back first. */
   listLendableBooks(): Promise<LendableBook[]>;
   /** How many copies of the book are out right now. */
   countOpenForBook(productId: string): Promise<number>;
@@ -59,14 +82,16 @@ export type IBookLoanRepository = {
    * Move a loan to a new status, guarded on `expectedStatus` so a concurrent change
    * can't be overwritten (`ConflictError("INVALID_TRANSITION")`). `returnedAt` is
    * set when it becomes `returned`, and a deposit follows the loan: handed back, or
-   * kept. The ledger entries commit with it.
+   * kept. A copy written off comes off the book's copies to lend, and goes back on
+   * if it turns up (`lendingCopiesChange`), under the book's lending lock. The
+   * ledger entries and the audit entry (which sees both changes) commit with it.
    */
   applyStatus(
     id: string,
     expectedStatus: BookLoanStatus,
     status: BookLoanStatus,
     at: Date,
-    audit?: AuditHook<BookLoan>,
+    audit?: AuditHook<BookLoanStatusChange>,
     ledger?: LedgerHook<BookLoan>,
   ): Promise<BookLoan>;
 };

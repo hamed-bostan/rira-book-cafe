@@ -1,3 +1,4 @@
+import { activityValue } from "../../entities/ActivityEntry";
 import { MAX_LOAN_DAYS, canTransitionBookLoan, type BookLoan, type BookLoanStatus } from "../../entities/BookLoan";
 import { cafeDayOf, cafeDayRange, shiftCafeDay } from "../../entities/CafeTime";
 import { loanDepositSettledEntry } from "../../entities/Postings";
@@ -5,15 +6,19 @@ import { ConflictError } from "../../errors/ConflictError";
 import { NotFoundError } from "../../errors/NotFoundError";
 import { ValidationError } from "../../errors/ValidationError";
 
+import { tellNextInLine } from "./BookWaitlist";
+
 import type { ActivityActor } from "../../entities/ActivityEntry";
 import type { IBookLoanRepository } from "../../repositories/IBookLoanRepository";
 import type { IBookWaitlistRepository } from "../../repositories/IBookWaitlistRepository";
 import type { ICustomerNotifier } from "../../repositories/INotificationRepository";
 
 /**
- * Staff close a loan: the book came back, or it's written off as lost. A book
- * coming back tells the guest at the front of its waitlist. A deposit follows the
- * loan: handed back with the book, kept as income when it's lost.
+ * Staff close a loan: the book came back, or it's written off as lost. A lost
+ * copy comes off the book's copies to lend, and goes back on if it turns up — the
+ * log entry records both moves. A book coming back, lost or not, tells the guest at
+ * the front of its waitlist. A deposit follows the loan: handed back with the book,
+ * kept as income when it's lost.
  */
 export class ChangeBookLoan {
   constructor(
@@ -35,14 +40,19 @@ export class ChangeBookLoan {
       current.status,
       status,
       now,
-      (saved) => ({
+      ({ loan: saved, copies }) => ({
         actorId: staff.id,
         actorName: staff.name,
         action: status === "lost" ? "bookLoan.lost" : "bookLoan.returned",
         entityType: "bookLoan",
         entityId: saved.id,
         entityLabel: `L-${saved.reference}`,
-        changes: [{ field: "status", before: current.status, after: saved.status }],
+        changes: [
+          { field: "status", before: current.status, after: saved.status },
+          ...(copies
+            ? [{ field: "bookCopies", before: activityValue(copies.before), after: activityValue(copies.after) }]
+            : []),
+        ],
       }),
       (saved) => {
         const entry = loanDepositSettledEntry(saved, current.status, cafeDayOf(now), staff);
@@ -51,17 +61,7 @@ export class ChangeBookLoan {
     );
 
     if (saved.status === "returned" && this.waitlistRepo) {
-      const next = await this.waitlistRepo.notifyNext(saved.productId, now);
-      // A counter hold has no account to tell — staff ring them.
-      if (next?.userId && this.notifier) {
-        await this.notifier.notify({
-          userId: next.userId,
-          kind: "bookAvailable",
-          params: { title: next.bookTitle },
-          link: "/loans",
-          dedupeKey: `waitlist:${next.id}:available`,
-        });
-      }
+      await tellNextInLine(saved.productId, now, this.waitlistRepo, this.notifier);
     }
     return saved;
   }

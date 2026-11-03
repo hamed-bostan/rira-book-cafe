@@ -17,11 +17,15 @@ export type IBookWaitlistRepository = {
   listForUser(userId: string): Promise<BookWaitlistEntry[]>;
   /** Everyone in line for one book, front of the line first. */
   listOpenForBook(productId: string): Promise<BookWaitlistEntry[]>;
-  /** Everyone in line for anything, grouped by book, front of each line first — the dashboard's view. */
+  /** Everyone in line for anything, grouped by book, front of each line first — the dashboard's view. Never capped. */
   listOpen(): Promise<BookWaitlistEntry[]>;
   /** Lines that closed (borrowed or cancelled) since `since`, newest first — the dashboard's Closed tab. */
   listClosedSince(since: Date): Promise<BookWaitlistEntry[]>;
-  /** Take an open entry out of line. Returns `null` when it was no longer open. */
+  /**
+   * Take an open entry out of line, under the book's lending lock. Returns the
+   * cancelled entry — its `notifiedAt` says whether they'd been told — or `null`
+   * when it was no longer open.
+   */
   cancel(id: string): Promise<BookWaitlistEntry | null>;
   /**
    * A copy came back: move the guest at the front of the line who hasn't been told
@@ -29,6 +33,4 @@ export type IBookWaitlistRepository = {
    * `null` when nobody is waiting.
    */
   notifyNext(productId: string, at: Date): Promise<BookWaitlistEntry | null>;
-  /** The book was lent to this guest (by account or phone): their open entry is `fulfilled`. */
-  fulfill(productId: string, borrower: { userId?: string; phone: string }): Promise<void>;
 };

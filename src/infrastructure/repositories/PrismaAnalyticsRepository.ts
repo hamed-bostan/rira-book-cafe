@@ -45,6 +45,8 @@ const SERVED_ORDER = Prisma.sql`(
  */
 export class PrismaAnalyticsRepository implements IAnalyticsRepository {
   async salesSummary(range: DateRange): Promise<SalesSummary> {
+    // A served order written off (nobody paid) is `cancelled`: its sale came back off
+    // the books, so it leaves revenue and counts with the other orders that never paid.
     const [orders] = await prisma.$queryRaw<
       { orders: bigint; revenue: bigint | null; cancelled: bigint; cancelled_value: bigint | null }[]
     >`

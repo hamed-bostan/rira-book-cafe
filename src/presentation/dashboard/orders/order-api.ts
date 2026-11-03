@@ -6,6 +6,7 @@ import type {
   OrderPaymentInput,
   OrderRefundInput,
   OrderStatusChangeInput,
+  OrderWriteOffInput,
 } from "@/src/contracts/order-schema";
 import type { Order } from "@/src/domain/entities/Order";
 import type { OrderNote } from "@/src/domain/entities/OrderNote";
@@ -29,6 +30,11 @@ export const ordersApi = {
   async refund(id: string, values: OrderRefundInput): Promise<Order> {
     const { order } = await apiPost(`/admin/orders/${id}/refunds`, values, orderRefundResultResponseSchema);
     return order;
+  },
+
+  /** Write off a served order nobody paid for. 409 if it was paid (or written off) meanwhile. */
+  writeOff(id: string, values: OrderWriteOffInput): Promise<Order> {
+    return apiPost(`/admin/orders/${id}/write-off`, values, orderResponseSchema);
   },
 
   /** Move the order along the workflow (or cancel it). 409 if someone else moved it first. */

@@ -12,9 +12,19 @@ import { GET as getInventory } from "@/app/api/admin/inventory/route";
 import { PATCH as setPayment } from "@/app/api/admin/orders/[id]/payment/route";
 import { GET as listRefunds, POST as refundOrder } from "@/app/api/admin/orders/[id]/refunds/route";
 import { PATCH as changeStatus } from "@/app/api/admin/orders/[id]/status/route";
-import { POST as ringUpSale } from "@/app/api/admin/orders/route";
+import { POST as writeOffOrder } from "@/app/api/admin/orders/[id]/write-off/route";
+import { GET as listAdminOrders, POST as ringUpSale } from "@/app/api/admin/orders/route";
+import { GET as paymentReport } from "@/app/api/admin/reports/payments/route";
+import { GET as salesReport } from "@/app/api/admin/reports/sales/route";
 import { POST as placeOrder } from "@/app/api/orders/route";
-import type { BalanceSheet, ProfitAndLoss, TrialBalance, VatReport } from "@/src/domain/entities/AccountingReports";
+import type {
+  BalanceSheet,
+  MarginReport,
+  ProfitAndLoss,
+  TrialBalance,
+  VatReport,
+} from "@/src/domain/entities/AccountingReports";
+import type { PaymentReport, SalesReport } from "@/src/domain/entities/Analytics";
 import type { BookLoan } from "@/src/domain/entities/BookLoan";
 import { cafeDayOf } from "@/src/domain/entities/CafeTime";
 import type { Expense } from "@/src/domain/entities/Expense";
@@ -265,6 +275,125 @@ describe("refunding a completed order", () => {
     const total = await prisma.loyaltyTransaction.aggregate({ _sum: { delta: true } });
     expect(earned).toBeGreaterThan(0);
     expect(total._sum.delta).toBe(0);
+  });
+});
+
+describe("writing off a served order nobody paid for", () => {
+  async function writeOff(orderId: string, body: unknown = {}, as: "admin" | "staff" = "admin"): Promise<Response> {
+    signInAs(as);
+    return writeOffOrder(
+      jsonRequest("POST", `/api/admin/orders/${orderId}/write-off`, body),
+      routeParams({ id: orderId }),
+    );
+  }
+
+  it("is for the books' people, not the floor", async () => {
+    const order = await ringUp({ complete: true });
+
+    expect((await writeOff(order.id, {}, "staff")).status).toBe(401);
+  });
+
+  it("cancels it without restocking, and takes the sale's revenue and VAT back off the receivable", async () => {
+    const shelf = (await prisma.product.findUniqueOrThrow({ where: { id: BOOK } })).stockQuantity;
+    const order = await ringUp({
+      items: [
+        { productId: "seed-espresso", quantity: 2 },
+        { productId: BOOK, quantity: 1 },
+      ],
+      complete: true,
+    });
+    expect(order).toMatchObject({ status: "completed", paymentStatus: "unpaid" });
+    expect(await balanceOf("1150")).toBe(order.total);
+    const cost = await balanceOf("5100");
+    expect(cost).toBeGreaterThan(0);
+
+    const response = await writeOff(order.id, { reason: " Walked out " });
+    expect(response.status).toBe(200);
+    expect(await readJson<Order>(response)).toMatchObject({ status: "cancelled", paymentStatus: "unpaid" });
+
+    // The money that will never come is off the books, and so is the sale it was for.
+    expect(await balanceOf("1150")).toBe(0);
+    expect(await balanceOf("4100")).toBe(0);
+    expect(await balanceOf("4300")).toBe(0);
+    expect(await balanceOf("2200")).toBe(0);
+    expect((await report<VatReport>("vat", `from=${today}&to=${today}`)).outputVat).toBe(0);
+    // The goods were consumed: their cost stays, and nothing goes back on the shelf.
+    expect(await balanceOf("5100")).toBe(cost);
+    expect((await prisma.product.findUniqueOrThrow({ where: { id: BOOK } })).stockQuantity).toBe(shelf - 1);
+    await expectBooksBalance();
+
+    const entry = await prisma.journalEntry.findFirstOrThrow({
+      where: { source: "orderWriteOff", sourceId: order.id },
+    });
+    expect(entry.description).toBe(`Order #${order.orderNumber} — written off: Walked out`);
+    const events = await prisma.orderStatusEvent.findMany({
+      where: { orderId: order.id },
+      orderBy: { createdAt: "asc" },
+    });
+    expect(events.at(-1)).toMatchObject({ fromStatus: "completed", toStatus: "cancelled", actorName: "Test Admin" });
+    const logged = await prisma.activityEntry.findFirstOrThrow({ where: { action: "order.writtenOff" } });
+    expect(logged).toMatchObject({ entityId: order.id, actorName: "Test Admin" });
+    expect(logged.changes).toEqual([
+      { field: "status", before: "completed", after: "cancelled" },
+      { field: "reason", before: null, after: "Walked out" },
+    ]);
+
+    // Done for good: a second write-off is refused.
+    expect((await writeOff(order.id)).status).toBe(409);
+  });
+
+  it("leaves revenue, the margins and every unpaid list", async () => {
+    const order = await ringUp({ complete: true });
+    await writeOff(order.id);
+
+    signInAs("admin");
+    const unpaid = await listAdminOrders(getRequest("/api/admin/orders?payment=unpaid"));
+    expect((await readJson<{ items: Order[] }>(unpaid)).items).toEqual([]);
+    const payments = await readJson<PaymentReport>(
+      await paymentReport(getRequest(`/api/admin/reports/payments?from=${today}&to=${today}`)),
+    );
+    expect(payments.unpaid).toEqual([]);
+    expect(payments.summary).toMatchObject({ revenue: 0, unpaidOrders: 0 });
+    const sales = await readJson<SalesReport>(
+      await salesReport(getRequest(`/api/admin/reports/sales?from=${today}&to=${today}`)),
+    );
+    expect(sales.summary).toMatchObject({ revenue: 0, orders: 0, cancelledOrders: 1, cancelledValue: order.total });
+    const margins = await report<MarginReport>("margins", `from=${today}&to=${today}`);
+    expect(margins.rows).toEqual([]);
+    expect((await report<ProfitAndLoss>("profit-and-loss", `from=${today}&to=${today}`)).revenueWithoutCost).toBe(0);
+  });
+
+  it("takes back the points a guest's order earned", async () => {
+    signInAs("customer");
+    const placed = await readJson<Order>(
+      await placeOrder(
+        jsonRequest("POST", "/api/orders", {
+          items: [{ productId: "seed-espresso", quantity: 2 }],
+          serviceType: "takeaway",
+        }),
+      ),
+    );
+    signInAs("staff");
+    for (const status of ["preparing", "completed"]) {
+      await changeStatus(
+        jsonRequest("PATCH", `/api/admin/orders/${placed.id}/status`, { status }),
+        routeParams({ id: placed.id }),
+      );
+    }
+    expect(await prisma.loyaltyTransaction.count({ where: { reason: "earn" } })).toBe(1);
+
+    expect((await writeOff(placed.id)).status).toBe(200);
+    const total = await prisma.loyaltyTransaction.aggregate({ _sum: { delta: true } });
+    expect(total._sum.delta).toBe(0);
+  });
+
+  it("refuses an order that was paid, or isn't served yet (409)", async () => {
+    const paid = await ringUp({ paymentParts: [{ method: "cash", amount: 190000 }], complete: true });
+    const making = await ringUp({});
+
+    expect((await writeOff(paid.id)).status).toBe(409);
+    expect((await writeOff(making.id)).status).toBe(409);
+    expect(await prisma.journalEntry.count({ where: { source: "orderWriteOff" } })).toBe(0);
   });
 });
 

@@ -25,6 +25,7 @@ export type AdminOrderFilters = {
   query?: string;
   status?: AdminOrderStatusFilter;
   serviceType?: ServiceType;
+  /** `unpaid` is what's still owed, so it leaves out cancelled orders — written-off ones included. */
   paymentStatus?: PaymentStatus;
 };
 

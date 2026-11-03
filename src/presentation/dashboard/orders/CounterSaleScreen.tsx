@@ -9,7 +9,7 @@ import {
   COUNTER_PAYMENT_METHODS,
   MAX_LINE_QUANTITY,
   MAX_TABLE_LABEL_LENGTH,
-  type PaymentPart,
+  type CounterPaymentPart,
   type ServiceType,
 } from "@/src/domain/entities/Order";
 import type { Product } from "@/src/domain/entities/Product";
@@ -91,7 +91,7 @@ export function CounterSaleScreen({ products }: CounterSaleScreenProps) {
   });
   const total = lines.reduce((sum, line) => sum + line.product.price * line.quantity, 0);
 
-  const parts: PaymentPart[] | undefined =
+  const parts: CounterPaymentPart[] | undefined =
     payment === "later" ? undefined : payment === "split" ? splitParts(amounts) : [{ method: payment, amount: total }];
   const paymentReady = payment !== "split" || (splitRemainder(parts ?? [], total) === 0 && (parts?.length ?? 0) > 0);
   const ready =

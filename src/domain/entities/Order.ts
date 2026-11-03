@@ -51,11 +51,21 @@ export type SettablePaymentStatus = (typeof SETTABLE_PAYMENT_STATUSES)[number];
 export const PAYMENT_METHODS = ["cash", "card", "transfer", "online"] as const;
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 
-/** What a bill can be split between at the counter. */
+/**
+ * How staff may record a payment — at the counter, from the list, on the order, and
+ * what a bill can be split between. Everything but `online`: only the gateway's
+ * callback books that, once the gateway has confirmed the money. A hand-marked
+ * online payment would put money in the gateway clearing account with nothing
+ * behind it.
+ */
 export const COUNTER_PAYMENT_METHODS = ["cash", "card", "transfer"] as const satisfies readonly PaymentMethod[];
+export type CounterPaymentMethod = (typeof COUNTER_PAYMENT_METHODS)[number];
 
 /** One part of how an order was paid. A bill split between cash and card has two. */
 export type PaymentPart = { method: PaymentMethod; amount: number };
+
+/** A part staff recorded — never online. */
+export type CounterPaymentPart = PaymentPart & { method: CounterPaymentMethod };
 
 /**
  * The order as its guest may see it: without the cost snapshotted on each line,
@@ -237,6 +247,20 @@ export function refundableQuantity(item: Pick<OrderItem, "quantity" | "refundedQ
 /** Whether staff may refund any of the order: served, paid for, and not all handed back yet. */
 export function canRefundOrder(order: Pick<Order, "status" | "paymentStatus" | "total" | "refundedTotal">): boolean {
   return order.status === "completed" && order.paymentStatus === "paid" && order.refundedTotal < order.total;
+}
+
+/** Longest reason staff can give for writing an order off. */
+export const MAX_WRITE_OFF_REASON_LENGTH = 200;
+
+/**
+ * Whether the cafe may write the order off: served, and nobody paid for it — a
+ * guest who walked out. `completed` is otherwise terminal and a refund needs a
+ * payment, so without this such an order would sit unpaid for ever. Writing off
+ * cancels it (a step the workflow table doesn't offer anyone else) without putting
+ * anything back on the shelf: the goods were consumed.
+ */
+export function canWriteOffOrder(order: Pick<Order, "status" | "paymentStatus">): boolean {
+  return order.status === "completed" && order.paymentStatus === "unpaid";
 }
 
 /**

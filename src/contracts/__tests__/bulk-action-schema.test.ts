@@ -109,6 +109,15 @@ describe("orderBulkRequestSchema", () => {
     ).toEqual(["methodInvalid"]);
   });
 
+  it("never marks orders paid online — only the gateway's callback books that", () => {
+    expect(
+      messagesAt(
+        orderBulkRequestSchema.safeParse({ ids: ["o1"], action: { type: "markPaid", paymentMethod: "online" } }),
+        "action.paymentMethod",
+      ),
+    ).toEqual(["methodInvalid"]);
+  });
+
   it("refuses an action it doesn't know", () => {
     expect(orderBulkRequestSchema.safeParse({ ids: ["o1"], action: { type: "refund" } }).success).toBe(false);
   });

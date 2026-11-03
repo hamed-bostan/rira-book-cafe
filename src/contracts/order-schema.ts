@@ -1,9 +1,11 @@
 import {
+  COUNTER_PAYMENT_METHODS,
   MAX_COUNTER_CUSTOMER_LENGTH,
   MAX_LINE_QUANTITY,
   MAX_ORDER_LINES,
   MAX_ORDER_NOTE_TEXT_LENGTH,
   MAX_TABLE_LABEL_LENGTH,
+  MAX_WRITE_OFF_REASON_LENGTH,
   ORDER_STATUSES,
   PAYMENT_METHODS,
   SERVICE_TYPES,
@@ -95,17 +97,23 @@ export const orderItemServedSchema = z.object({
 
 export type OrderItemServedInput = z.infer<typeof orderItemServedSchema>;
 
+/**
+ * A way staff may say the guest paid. Never `online`: only the gateway's callback
+ * books that (see `COUNTER_PAYMENT_METHODS`), so every staff route refuses it.
+ */
+const counterPaymentMethod = z.enum(COUNTER_PAYMENT_METHODS, { error: "methodInvalid" });
+
 /** How much came in by which method. The use-case checks the parts add up to the bill. */
 const paymentParts = z
   .array(
     z.object({
-      method: z.enum(PAYMENT_METHODS, { error: "methodInvalid" }),
+      method: counterPaymentMethod,
       amount: z
         .number()
         .check(z.int("amountInvalid"), z.gt(0, "amountInvalid"), z.lte(MAX_MONEY_AMOUNT, "amountInvalid")),
     }),
   )
-  .check(z.minLength(1, "methodRequired"), z.maxLength(PAYMENT_METHODS.length, "paymentPartsDuplicate"));
+  .check(z.minLength(1, "methodRequired"), z.maxLength(COUNTER_PAYMENT_METHODS.length, "paymentPartsDuplicate"));
 
 /**
  * Staff marking an order paid (and how) or unpaid. `refunded` isn't settable — it
@@ -116,7 +124,7 @@ const paymentParts = z
 export const orderPaymentSchema = z
   .object({
     paymentStatus: z.enum(SETTABLE_PAYMENT_STATUSES, { error: "statusInvalid" }),
-    paymentMethod: z.optional(z.enum(PAYMENT_METHODS, { error: "methodInvalid" })),
+    paymentMethod: z.optional(counterPaymentMethod),
     paymentParts: z.optional(paymentParts),
   })
   .check(
@@ -179,3 +187,10 @@ export const orderRefundSchema = z.object({
 });
 
 export type OrderRefundInput = z.input<typeof orderRefundSchema>;
+
+/** Writing off a served order nobody paid for: why, if staff want to say. */
+export const orderWriteOffSchema = z.object({
+  reason: optionalText(MAX_WRITE_OFF_REASON_LENGTH),
+});
+
+export type OrderWriteOffInput = z.input<typeof orderWriteOffSchema>;

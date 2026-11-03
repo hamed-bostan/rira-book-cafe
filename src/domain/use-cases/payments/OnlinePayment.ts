@@ -138,7 +138,8 @@ export class VerifyOnlinePayment {
   /**
    * The money is captured: mark the order paid — strictly, so a mark that lost a
    * race with a staff "paid" or a cancellation ends `unapplied` (to refund) rather
-   * than booking the order's payment twice.
+   * than booking the order's payment twice. The dashboard lists it until staff give
+   * it back (see `UnappliedPayments`).
    */
   private async book(
     attempt: PaymentAttempt,

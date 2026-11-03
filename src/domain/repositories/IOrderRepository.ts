@@ -102,6 +102,15 @@ export type IOrderRepository = {
   /** Refunds on an order, oldest first. */
   listRefunds(orderId: string): Promise<OrderRefund[]>;
   /**
+   * Write off a served order nobody paid for: `completed` → `cancelled`, guarded on
+   * it still being completed and unpaid (the loser of a race with a payment gets
+   * `ConflictError("INVALID_TRANSITION")`). Unlike a cancellation nothing goes back
+   * on the shelf — the goods were consumed — and the points it spent stay spent;
+   * the points it earned are taken back as far as the guest still has them. Writes
+   * the status event, the audit entry and the ledger postings in the same transaction.
+   */
+  writeOff(id: string, actor: ActivityActor, audit?: AuditHook<Order>, ledger?: LedgerHook<Order>): Promise<Order>;
+  /**
    * Mark one line served (stamped now) or take the mark back, guarded so it only
    * lands while the order is in a serving status. Setting the state a line already
    * has changes nothing. An unknown order or line is `NotFoundError`; an order that

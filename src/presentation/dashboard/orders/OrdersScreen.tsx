@@ -10,6 +10,7 @@ import {
 } from "@/src/domain/entities/AdminOrderFilters";
 import { PAYMENT_STATUSES, SERVICE_TYPES, type Order } from "@/src/domain/entities/Order";
 import type { Page } from "@/src/domain/entities/Pagination";
+import type { OrderPaymentAttempt } from "@/src/domain/entities/PaymentAttempt";
 import { Link } from "@/src/i18n/navigation";
 import { AutoRefresh } from "@/src/presentation/components/AutoRefresh";
 import { BulkActionBar, BulkSelectionProvider } from "@/src/presentation/dashboard/bulk";
@@ -29,6 +30,7 @@ import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 import { OrderBulkActions } from "./OrderBulkActions";
 import { OrdersTable } from "./OrdersTable";
 import { OrderStatusTabs } from "./OrderStatusTabs";
+import { UnappliedPaymentsAlert } from "./UnappliedPaymentsAlert";
 
 /** How often an open order list re-reads — short enough that the counter sees new orders promptly. */
 const REFRESH_SECONDS = 20;
@@ -39,6 +41,8 @@ const FILTER_PARAMS = ["q", "service", "payment"];
 type OrdersScreenProps = {
   orders: Page<Order>;
   counts: OrderStatusCounts;
+  /** Online payments the gateway took that no order could, still to give back — warned of above the list. */
+  unappliedPayments: OrderPaymentAttempt[];
   /** The filters this page was fetched with, to tell "no orders yet" from "no matches". */
   filters: AdminOrderFilters;
   /** The page's query string, for the status tabs' links and "Clear filters". */
@@ -64,7 +68,14 @@ function withoutFilters(params: URLSearchParams): string {
  * sorting and paging all live in the URL; the list re-reads itself every few
  * seconds while open, and the row and bulk actions `router.refresh()`.
  */
-export async function OrdersScreen({ orders, counts, filters, params, canFulfill }: OrdersScreenProps) {
+export async function OrdersScreen({
+  orders,
+  counts,
+  unappliedPayments,
+  filters,
+  params,
+  canFulfill,
+}: OrdersScreenProps) {
   const t = await getTranslations("dashOrders");
   const tList = await getTranslations("dashList");
   const searched = filters.query != null || filters.serviceType != null || filters.paymentStatus != null;
@@ -128,6 +139,8 @@ export async function OrdersScreen({ orders, counts, filters, params, canFulfill
           {t("activeSummary", { count: counts.active })}
         </p>
       </div>
+
+      <UnappliedPaymentsAlert payments={unappliedPayments} />
 
       <BulkSelectionProvider ids={orders.items.map((order) => order.id)}>
         <OrdersTable

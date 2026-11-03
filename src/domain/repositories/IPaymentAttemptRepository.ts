@@ -1,4 +1,5 @@
-import type { PaymentAttempt, PaymentFailureReason } from "../entities/PaymentAttempt";
+import type { AuditHook } from "./AuditHook";
+import type { OrderPaymentAttempt, PaymentAttempt, PaymentFailureReason } from "../entities/PaymentAttempt";
 
 export type NewPaymentAttempt = Pick<PaymentAttempt, "orderId" | "provider" | "authority" | "amount">;
 
@@ -32,4 +33,17 @@ export type IPaymentAttemptRepository = {
   release(id: string, captured?: { refId: string; cardPan?: string }): Promise<void>;
   /** Settle a claimed attempt (`verifying` → its result). */
   finish(id: string, result: PaymentAttemptResult): Promise<PaymentAttempt>;
+
+  /** One attempt with its order's number, or `null`. */
+  getById(id: string): Promise<OrderPaymentAttempt | null>;
+  /** Captured payments no order took and nobody has given back yet (`unapplied`), across every order, oldest first. */
+  listUnapplied(): Promise<OrderPaymentAttempt[]>;
+  /** One order's captured payments it didn't take — still to give back, or given back — oldest first. */
+  listUnappliedForOrder(orderId: string): Promise<OrderPaymentAttempt[]>;
+  /**
+   * Record that an unapplied payment was given back in the gateway's panel:
+   * `unapplied` → `refunded`, guarded so two staff can't both mark it (the loser gets
+   * `ConflictError("INVALID_TRANSITION")`). The audit entry commits with it.
+   */
+  markRefunded(id: string, audit?: AuditHook<OrderPaymentAttempt>): Promise<OrderPaymentAttempt>;
 };

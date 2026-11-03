@@ -1,11 +1,15 @@
 import {
   PAYMENT_ATTEMPT_STATUSES,
   PAYMENT_FAILURE_REASONS,
+  UNAPPLIED_ATTEMPT_STATUSES,
+  type OrderPaymentAttempt,
   type PaymentAttempt,
   type PaymentAttemptStatus,
   type PaymentFailureReason,
 } from "@/src/domain/entities/PaymentAttempt";
 import { ConflictError } from "@/src/domain/errors/ConflictError";
+import { NotFoundError } from "@/src/domain/errors/NotFoundError";
+import type { AuditHook } from "@/src/domain/repositories/AuditHook";
 import type {
   IPaymentAttemptRepository,
   NewPaymentAttempt,
@@ -15,6 +19,8 @@ import { prisma } from "@/src/infrastructure/prisma/client";
 import { Prisma, type PaymentAttempt as PaymentAttemptRow } from "@/src/infrastructure/prisma/generated/client";
 
 import { inTransaction, type PrismaDb } from "../prisma/transaction";
+
+import { recordAudit } from "./writeActivityEntry";
 
 /**
  * Payment attempts in PostgreSQL. Every state change is a guarded `updateMany` on
@@ -84,6 +90,58 @@ export class PrismaPaymentAttemptRepository implements IPaymentAttemptRepository
     await this.db.paymentAttempt.updateMany({ where: { id, status: "verifying" }, data });
     return toPaymentAttempt(await this.db.paymentAttempt.findUniqueOrThrow({ where: { id } }));
   }
+
+  async getById(id: string): Promise<OrderPaymentAttempt | null> {
+    const row = await this.db.paymentAttempt.findUnique({ where: { id }, include: WITH_ORDER_NUMBER });
+    return row ? toOrderPaymentAttempt(row) : null;
+  }
+
+  async listUnapplied(): Promise<OrderPaymentAttempt[]> {
+    const rows = await this.db.paymentAttempt.findMany({
+      where: { status: "unapplied" },
+      orderBy: { createdAt: "asc" },
+      include: WITH_ORDER_NUMBER,
+    });
+    return rows.map(toOrderPaymentAttempt);
+  }
+
+  async listUnappliedForOrder(orderId: string): Promise<OrderPaymentAttempt[]> {
+    const rows = await this.db.paymentAttempt.findMany({
+      where: { orderId, status: { in: [...UNAPPLIED_ATTEMPT_STATUSES] } },
+      orderBy: { createdAt: "asc" },
+      include: WITH_ORDER_NUMBER,
+    });
+    return rows.map(toOrderPaymentAttempt);
+  }
+
+  async markRefunded(id: string, audit?: AuditHook<OrderPaymentAttempt>): Promise<OrderPaymentAttempt> {
+    return inTransaction(this.db, async (tx) => {
+      // Guarded on still being owed back: a double click or a second tab can't mark it twice.
+      const result = await tx.paymentAttempt.updateMany({
+        where: { id, status: "unapplied" },
+        data: { status: "refunded" },
+      });
+      if (result.count === 0) {
+        const current = await tx.paymentAttempt.findUnique({ where: { id }, select: { id: true } });
+        if (!current) throw new NotFoundError("payment", id);
+        throw new ConflictError("INVALID_TRANSITION", "That payment isn't waiting to be given back.");
+      }
+      const attempt = toOrderPaymentAttempt(
+        await tx.paymentAttempt.findUniqueOrThrow({ where: { id }, include: WITH_ORDER_NUMBER }),
+      );
+      await recordAudit(tx, attempt, audit);
+      return attempt;
+    });
+  }
+}
+
+/** The order's number comes with an attempt the dashboard lists, to name it by ("order #42"). */
+const WITH_ORDER_NUMBER = { order: { select: { orderNumber: true } } } satisfies Prisma.PaymentAttemptInclude;
+
+type AttemptWithOrderRow = Prisma.PaymentAttemptGetPayload<{ include: typeof WITH_ORDER_NUMBER }>;
+
+function toOrderPaymentAttempt(row: AttemptWithOrderRow): OrderPaymentAttempt {
+  return { ...toPaymentAttempt(row), orderNumber: row.order.orderNumber };
 }
 
 function inProgress(cause?: unknown): ConflictError {

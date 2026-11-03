@@ -721,6 +721,7 @@
     "timelineHeading": "History",
     "timelineEmpty": "No history recorded.",
     "timelinePlaced": "Placed",
+    "timelineWrittenOff": "Written off",
     "timelineBy": "by {name}",
     "cancelChoice": "Cancel",
     "itemState": {
@@ -805,6 +806,37 @@
       "restocked": "back in stock",
       "lineRefunded": "{quantity} refunded",
       "totalLabel": "Refunded"
+    },
+    "writeOff": {
+      "open": "Write off",
+      "title": "Write off order #{number}?",
+      "subtitle": "For a guest who left without paying. The order is cancelled and its sale comes off revenue and VAT; nothing goes back on the shelf. This can't be undone.",
+      "reasonLabel": "Reason (optional)",
+      "preview": "{amount} won't be collected.",
+      "submit": "Write off",
+      "saved": "Order #{number} written off",
+      "error": "Couldn't write the order off. Please try again."
+    },
+    "onlinePayments": {
+      "alertTitle": "{count, plural, one {# online payment to give back} other {# online payments to give back}}",
+      "alertBody": "Zarinpal took these after the order was paid another way or cancelled. Refund each from Zarinpal's panel, then mark it on the order.",
+      "heading": "Online payments to give back",
+      "headingDone": "Online payments given back",
+      "hint": "Taken by Zarinpal after the order was paid another way or cancelled",
+      "status": {
+        "unapplied": "To give back",
+        "refunded": "Given back"
+      },
+      "refLabel": "Zarinpal ref",
+      "cardLabel": "Card",
+      "paidAt": "Paid {time}",
+      "givenBackAt": "Given back {time}",
+      "giveBack": "Given back in Zarinpal",
+      "giveBackTitle": "Mark {amount} as given back?",
+      "giveBackSubtitle": "Do this once you've refunded the payment from Zarinpal's panel. Nothing is booked: the payment never reached the books.",
+      "giveBackConfirm": "Mark given back",
+      "givenBackToast": "Payment on order #{number} marked given back",
+      "giveBackError": "Couldn't mark the payment given back. Please try again."
     }
   },
   "dashOrderNotes": {
@@ -865,7 +897,9 @@
         "placed": "<b>{actor}</b> placed order {entity}",
         "paymentChanged": "<b>{actor}</b> changed the payment of order {entity}",
         "counterSale": "<b>{actor}</b> rang up order {entity} at the counter",
-        "refunded": "<b>{actor}</b> refunded order {entity}"
+        "refunded": "<b>{actor}</b> refunded order {entity}",
+        "writtenOff": "<b>{actor}</b> wrote off order {entity}",
+        "onlinePaymentRefunded": "<b>{actor}</b> gave back an online payment on order {entity}"
       },
       "review": {
         "moderated": "<b>{actor}</b> moderated {entity}’s review",
@@ -1017,7 +1051,9 @@
       "accountCode": "Booked to",
       "supplierId": "Supplier",
       "monthlySalary": "Usual pay (figures not shown)",
-      "phone": "Phone"
+      "phone": "Phone",
+      "reason": "Reason",
+      "refId": "Zarinpal ref"
     },
     "filterField": "Field",
     "allFields": "Any field"
@@ -1856,6 +1892,7 @@
       "bankInterest": "Bank interest",
       "orderReturn": "Refund",
       "orderReturnCost": "Cost back in stock",
+      "orderWriteOff": "Written off",
       "income": "Income",
       "loanDeposit": "Book deposit",
       "payroll": "Payroll",

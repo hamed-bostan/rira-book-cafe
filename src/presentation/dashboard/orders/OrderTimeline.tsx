@@ -19,7 +19,12 @@ export async function OrderTimeline({ events }: { events: OrderStatusEvent[] }) 
         return (
           <DashboardTimelineItem key={event.id} current={last} last={last}>
             <p className="font-medium text-foreground">
-              {event.from === null ? t("timelinePlaced") : t(`status.${event.to}`)}
+              {event.from === null
+                ? t("timelinePlaced")
+                : // The one way a served order is cancelled: written off.
+                  event.from === "completed" && event.to === "cancelled"
+                  ? t("timelineWrittenOff")
+                  : t(`status.${event.to}`)}
             </p>
             <p className={FIELD_HINT}>
               <time dateTime={event.at} className="tabular-nums">

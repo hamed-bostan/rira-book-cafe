@@ -17,3 +17,14 @@ export const gatewaySettlementSchema = z.object({
 
 export type GatewaySettlementInput = z.input<typeof gatewaySettlementSchema>;
 export type GatewaySettlementValues = z.output<typeof gatewaySettlementSchema>;
+
+/**
+ * Staff marking an online payment no order took as given back to the guest from the
+ * gateway's panel. The one change staff make to a payment: the callback decides
+ * everything else.
+ */
+export const onlinePaymentUpdateSchema = z.object({
+  status: z.literal("refunded", { error: "statusInvalid" }),
+});
+
+export type OnlinePaymentUpdateInput = z.input<typeof onlinePaymentUpdateSchema>;

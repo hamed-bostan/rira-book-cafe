@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { gatewaySettlementSchema, type GatewaySettlementInput } from "../payment-schema";
+import { gatewaySettlementSchema, onlinePaymentUpdateSchema, type GatewaySettlementInput } from "../payment-schema";
 
 import { flattened } from "./zod-issues";
 
@@ -41,5 +41,16 @@ describe("gatewaySettlementSchema", () => {
     expect(
       flattened(gatewaySettlementSchema.safeParse({ ...SETTLEMENT, deposited: "" }).error)?.fieldErrors.deposited,
     ).toContain("amountRequired");
+  });
+});
+
+describe("onlinePaymentUpdateSchema", () => {
+  it("only marks a payment given back — the callback decides everything else", () => {
+    expect(onlinePaymentUpdateSchema.parse({ status: "refunded" })).toEqual({ status: "refunded" });
+    for (const status of ["paid", "unapplied", "failed", undefined]) {
+      expect(flattened(onlinePaymentUpdateSchema.safeParse({ status }).error)?.fieldErrors.status).toEqual([
+        "statusInvalid",
+      ]);
+    }
   });
 });

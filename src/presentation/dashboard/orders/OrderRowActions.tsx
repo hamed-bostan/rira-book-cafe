@@ -5,13 +5,13 @@ import { useTranslations } from "next-intl";
 import * as React from "react";
 
 import {
-  PAYMENT_METHODS,
+  COUNTER_PAYMENT_METHODS,
   canMarkPaid,
   isStaffCancellable,
   nextOrderStatus,
+  type CounterPaymentMethod,
   type Order,
   type OrderStatus,
-  type PaymentMethod,
 } from "@/src/domain/entities/Order";
 import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
@@ -84,7 +84,7 @@ export function OrderRowActions({ order }: OrderRowActionsProps) {
     });
   }
 
-  function markPaid(paymentMethod: PaymentMethod): void {
+  function markPaid(paymentMethod: CounterPaymentMethod): void {
     startTransition(async () => {
       try {
         await ordersApi.setPayment(order.id, { paymentStatus: "paid", paymentMethod });
@@ -121,14 +121,15 @@ export function OrderRowActions({ order }: OrderRowActionsProps) {
           ) : null}
           {payable ? (
             // The method decides which account the money lands in, so marking
-            // paid is a choice of method rather than a bare toggle.
+            // paid is a choice of method rather than a bare toggle. Never
+            // "online": only the gateway's callback books that.
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>
                 <Icon icon={CreditCard} size="icon-md" />
                 {t("markAsPaid")}
               </DropdownMenuSubTrigger>
               <DropdownMenuSubContent>
-                {PAYMENT_METHODS.map((method) => (
+                {COUNTER_PAYMENT_METHODS.map((method) => (
                   <DropdownMenuItem key={method} onSelect={() => markPaid(method)}>
                     {t(`paymentMethod.${method}`)}
                   </DropdownMenuItem>

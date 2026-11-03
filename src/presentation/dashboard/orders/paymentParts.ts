@@ -1,11 +1,16 @@
-import { COUNTER_PAYMENT_METHODS, type PaymentMethod, type PaymentPart } from "@/src/domain/entities/Order";
+import {
+  COUNTER_PAYMENT_METHODS,
+  type CounterPaymentMethod,
+  type CounterPaymentPart,
+  type PaymentPart,
+} from "@/src/domain/entities/Order";
 import { normalizeAmount } from "@/src/presentation/dashboard/expenses/expenseFormat";
 
 /** What's typed against each method while a bill is being split. */
-export type SplitAmounts = Partial<Record<PaymentMethod, string>>;
+export type SplitAmounts = Partial<Record<CounterPaymentMethod, string>>;
 
 /** The typed amounts as parts; methods left blank or at zero are out of the split. */
-export function splitParts(amounts: SplitAmounts): PaymentPart[] {
+export function splitParts(amounts: SplitAmounts): CounterPaymentPart[] {
   return COUNTER_PAYMENT_METHODS.flatMap((method) => {
     const amount = Number(normalizeAmount(amounts[method] ?? ""));
     return Number.isSafeInteger(amount) && amount > 0 ? [{ method, amount }] : [];

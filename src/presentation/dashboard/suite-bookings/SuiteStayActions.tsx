@@ -23,11 +23,12 @@ import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { DashboardDialog } from "../DashboardDialog";
+import { useGuestToldLine } from "../guest-messages/useGuestToldLine";
 
 import { suiteBookingsApi } from "./suite-booking-api";
 
 type SuiteStayActionsProps = {
-  booking: Pick<SuiteBooking, "id" | "reference" | "status" | "checkIn" | "guestName">;
+  booking: Pick<SuiteBooking, "id" | "reference" | "status" | "checkIn" | "guestName" | "guestPhone" | "userId">;
   today: string;
   /** The held stay a request overlaps — Confirm stays off, and says why. */
   clashReference: number | undefined;
@@ -53,6 +54,7 @@ export function SuiteStayActions({ booking, today, clashReference, checkInLabel,
   const tApiErrors = useTranslations("apiErrors");
   const router = useRouter();
   const { toast } = useToast();
+  const guestToldLine = useGuestToldLine();
   const [pending, startTransition] = React.useTransition();
   // Which ending was asked about stays set while the dialog closes, so its words don't change mid-fade.
   const [ending, setEnding] = React.useState<Ending>("cancelled");
@@ -74,6 +76,11 @@ export function SuiteStayActions({ booking, today, clashReference, checkInLabel,
         toast({
           tone: "success",
           title: t("statusChanged", { reference, status: t(`status.${next}`) }),
+          // Confirming or cancelling sends the guest a message (`suiteNotification`).
+          description:
+            next === "confirmed" || next === "cancelled"
+              ? guestToldLine({ name: booking.guestName, phone: booking.guestPhone, userId: booking.userId })
+              : undefined,
           onUndo: undoTo ? () => undo(undoTo) : undefined,
         });
       } catch (err) {

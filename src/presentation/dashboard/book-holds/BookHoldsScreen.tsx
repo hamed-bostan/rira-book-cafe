@@ -194,7 +194,8 @@ export async function BookHoldsScreen({ open, closed, books, tab, now, canManage
                                   date: formatCafeDayShort(cafeDayOf(new Date(entry.createdAt)), locale),
                                 })}
                           </span>
-                          {/* Only guests with an account are told in the app; a counter or phone hold needs a call. */}
+                          {/* Every guest is told on the site; one with no account yet only sees it once
+                              they sign in, so a call is worth making too. */}
                           {tab === "open" && told && !entry.userId ? (
                             <a
                               href={`tel:${entry.guestPhone}`}

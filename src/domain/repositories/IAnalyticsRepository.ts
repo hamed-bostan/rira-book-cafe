@@ -45,6 +45,6 @@ export type IAnalyticsRepository = {
 
   /** Today's bookings, guests across them, and how many still await confirmation. */
   reservationsOn(range: DateRange): Promise<{ bookings: number; covers: number; awaitingConfirmation: number }>;
-  /** Published events starting in `[from, to)`. */
-  publishedEventsBetween(from: Date, to: Date): Promise<number>;
+  /** Published events on at some point in `[from, to)`: not over by `from`, and starting before `to`. */
+  publishedEventsDuring(from: Date, to: Date): Promise<number>;
 };

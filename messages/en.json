@@ -1216,7 +1216,7 @@
     "awaitingConfirmation": "{count, plural, one {# awaiting confirmation} other {# awaiting confirmation}}",
     "covers": "{count, plural, one {{formatted} guest} other {{formatted} guests}}",
     "upcomingEvents": "Events this week",
-    "upcomingEventsHint": "Published, in the next 7 days",
+    "upcomingEventsHint": "Published, on now or in the next 7 days",
     "todayRevenue": "Today's takings",
     "weekRevenue": "{value} over the last 7 days",
     "todayOrders": "Orders served today",

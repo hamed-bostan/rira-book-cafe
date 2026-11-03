@@ -323,8 +323,8 @@ export class PrismaAnalyticsRepository implements IAnalyticsRepository {
     };
   }
 
-  async publishedEventsBetween(from: Date, to: Date): Promise<number> {
-    return prisma.event.count({ where: { isPublished: true, startsAt: { gte: from, lt: to } } });
+  async publishedEventsDuring(from: Date, to: Date): Promise<number> {
+    return prisma.event.count({ where: { isPublished: true, endsAt: { gt: from }, startsAt: { lt: to } } });
   }
 }
 

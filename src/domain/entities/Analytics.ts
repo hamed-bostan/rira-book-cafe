@@ -214,7 +214,7 @@ export type GuestReport = {
 export type DashboardOverview = {
   today: string;
   todayReservations: { bookings: number; covers: number; awaitingConfirmation: number };
-  /** Published events in the next 7 days. */
+  /** Published events on now or in the next 7 days — one already under way counts until it ends. */
   upcomingEvents: number;
 };
 

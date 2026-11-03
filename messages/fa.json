@@ -1216,7 +1216,7 @@
     "awaitingConfirmation": "{count, plural, other {# در انتظار تأیید}}",
     "covers": "{count, plural, other {{formatted} مهمان}}",
     "upcomingEvents": "رویدادهای این هفته",
-    "upcomingEventsHint": "منتشرشده، در ۷ روز آینده",
+    "upcomingEventsHint": "منتشرشده، در جریان یا در ۷ روز آینده",
     "todayRevenue": "فروش امروز",
     "weekRevenue": "{value} در ۷ روز گذشته",
     "todayOrders": "سفارش‌های تحویل‌شدهٔ امروز",

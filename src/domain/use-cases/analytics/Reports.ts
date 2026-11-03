@@ -96,7 +96,7 @@ export class GetDashboardOverview {
 
     const [todayReservations, upcomingEvents] = await Promise.all([
       this.analytics.reservationsOn(dayRange(today, today)),
-      this.analytics.publishedEventsBetween(now, nextWeekEnd),
+      this.analytics.publishedEventsDuring(now, nextWeekEnd),
     ]);
 
     return { today, todayReservations, upcomingEvents };

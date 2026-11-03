@@ -30,7 +30,7 @@ export default async function DashboardReservationsPage({ searchParams }: Dashbo
   const status = statusParam && STATUS_SET.has(statusParam) ? (statusParam as ReservationStatus) : undefined;
 
   const { from, to } = cafeDayRange(day);
-  const [reservations, requests, events, canManage] = await Promise.all([
+  const [reservations, requests, events, session] = await Promise.all([
     reservationsServerApi.listForDay(day),
     reservationsServerApi.listFrom(today, "requested"),
     eventsServerApi
@@ -40,7 +40,11 @@ export default async function DashboardReservationsPage({ searchParams }: Dashbo
           .filter((event) => new Date(event.startsAt) < to && new Date(event.endsAt) > from)
           .sort((a, b) => a.startsAt.localeCompare(b.startsAt)),
       ),
-    auth().then((session) => sessionHas(session, "reservations.manage")),
+    auth(),
+  ]);
+  const [canManage, canManageEvents] = await Promise.all([
+    sessionHas(session, "reservations.manage"),
+    sessionHas(session, "events.manage"),
   ]);
 
   return (
@@ -53,6 +57,7 @@ export default async function DashboardReservationsPage({ searchParams }: Dashbo
       status={status}
       now={now.toISOString()}
       canManage={canManage}
+      canManageEvents={canManageEvents}
     />
   );
 }

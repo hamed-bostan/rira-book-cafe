@@ -11,17 +11,23 @@ import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 
+import { dashboardEventHref } from "../events/eventLinks";
 import { tableNameValues } from "../floor/tableName";
 
 type EventBookingRowProps = {
   event: CafeEvent;
+  /** Today on the cafe calendar: an event from an earlier day is under the events list's Past tab. */
+  today: string;
+  /** Whether the viewer may open the event itself (`events.manage`), not just its card on the list. */
+  canManageEvents: boolean;
 };
 
 /**
  * An event in the day's list, at its time: what it is, which tables it holds (so
- * the floor sees why they can't be booked) and how full it is, with a way to it.
+ * the floor sees why they can't be booked) and how full it is, with a way to it —
+ * the event's own page, or its card on the events list.
  */
-export async function EventBookingRow({ event }: EventBookingRowProps) {
+export async function EventBookingRow({ event, today, canManageEvents }: EventBookingRowProps) {
   const t = await getTranslations("dashReservations");
   const tEvents = await getTranslations("dashEvents");
   const tFloor = await getTranslations("floorTables");
@@ -73,7 +79,7 @@ export async function EventBookingRow({ event }: EventBookingRowProps) {
       </div>
 
       <Link
-        href="/dashboard/events"
+        href={dashboardEventHref(event, today, canManageEvents)}
         className={cn(
           "ms-auto flex h-11 shrink-0 items-center justify-center rounded-button border border-info-border bg-background px-3 text-body-default font-medium whitespace-nowrap text-foreground transition-colors hover:bg-muted sm:h-9 sm:text-body-small",
           focusRing,

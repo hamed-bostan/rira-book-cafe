@@ -37,6 +37,8 @@ type ReservationsScreenProps = {
   /** "Now", from the page — the Now line and late parties, without a client clock. */
   now: string;
   canManage: boolean;
+  /** Whether "Open event" can open the event itself (`events.manage`), not just its card on the list. */
+  canManageEvents: boolean;
 };
 
 type Row =
@@ -59,6 +61,7 @@ export async function ReservationsScreen({
   status,
   now,
   canManage,
+  canManageEvents,
 }: ReservationsScreenProps) {
   const t = await getTranslations("dashReservations");
   const locale = await getLocale();
@@ -175,7 +178,7 @@ export async function ReservationsScreen({
                     events={events}
                   />
                 ) : (
-                  <EventBookingRow event={row.event} />
+                  <EventBookingRow event={row.event} today={today} canManageEvents={canManageEvents} />
                 )}
               </li>
             ))}

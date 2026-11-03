@@ -14,6 +14,7 @@ import { focusRing } from "@/src/presentation/design-system/components/shared/fo
 
 import { tableNameValues } from "../floor/tableName";
 
+import { eventCardId } from "./eventLinks";
 import { HoldTablesButton } from "./HoldTablesButton";
 import { TableFit } from "./TableFit";
 
@@ -47,9 +48,11 @@ export async function EventCard({ event, upcoming, today, over, canManage }: Eve
 
   return (
     <article
+      id={eventCardId(event.id)}
       aria-label={event.title}
+      // A link from the reservations day view lands here, clear of the top bar.
       className={cn(
-        "flex min-w-0 flex-col gap-4 rounded-card-lg border border-border bg-background p-5 shadow-xs",
+        "flex min-w-0 scroll-mt-24 flex-col gap-4 rounded-card-lg border border-border bg-background p-5 shadow-xs",
         !upcoming && "opacity-70",
       )}
     >

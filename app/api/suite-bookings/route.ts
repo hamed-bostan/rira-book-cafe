@@ -4,6 +4,7 @@ import { requestSuiteBookingSchema } from "@/src/contracts/suite-booking-schema"
 import { RequestSuiteBooking } from "@/src/domain/use-cases/suite-bookings/RequestSuiteBooking";
 import { ListOwnSuiteBookings } from "@/src/domain/use-cases/suite-bookings/SuiteBookingQueries";
 import { suiteBookingRepository, userRepository } from "@/src/infrastructure/container";
+import { enforceRateLimit, RATE_LIMITS } from "@/src/lib/api/rate-limit";
 import {
   errorResponse,
   errorResponseFromException,
@@ -29,11 +30,15 @@ export async function GET(): Promise<NextResponse> {
 
 /**
  * POST /api/suite-bookings — ask for the suite. 201 with the booking, which stays
- * `requested` until staff confirm it; 409 `SUITE_TAKEN` for nights already held.
+ * `requested` until staff confirm it; 409 `SUITE_TAKEN` for nights already held;
+ * 429 past the `suiteRequest` rate limit.
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const session = await getUserSession();
   if (!session?.user.id) return unauthorizedResponse();
+
+  const limited = await enforceRateLimit(request, RATE_LIMITS.suiteRequest, session.user.id);
+  if (limited) return limited;
 
   const body = await parseJsonBody(request);
   if (!body.ok) return errorResponse(400, { message: "Expected a JSON body.", code: "BAD_REQUEST" });

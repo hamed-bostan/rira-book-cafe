@@ -4,11 +4,14 @@ import { PATCH as changeReservation } from "@/app/api/admin/reservations/[id]/ro
 import { GET as listReservations, POST as bookTable } from "@/app/api/admin/reservations/route";
 import { PATCH as changeStay } from "@/app/api/admin/suite-bookings/[id]/route";
 import { POST as bookSuite } from "@/app/api/admin/suite-bookings/route";
+import { POST as signUp } from "@/app/api/events/[id]/registrations/route";
 import { POST as requestTable } from "@/app/api/reservations/route";
+import { POST as requestSuite } from "@/app/api/suite-bookings/route";
 import { cafeDayOf, shiftCafeDay, wallTimeToDate } from "@/src/domain/entities/CafeTime";
 import type { Reservation } from "@/src/domain/entities/Reservation";
 import type { SuiteBooking } from "@/src/domain/entities/SuiteBooking";
 import { prisma } from "@/src/infrastructure/prisma/client";
+import { RATE_LIMITS } from "@/src/lib/api/rate-limit";
 
 import { TEST_USERS } from "../fixtures/users";
 
@@ -186,4 +189,41 @@ describe("before the guest is due", () => {
     expect(response.status).toBe(200);
     expect((await readJson<SuiteBooking>(response)).status).toBe("checkedIn");
   });
+});
+
+describe("a guest's booking requests", () => {
+  const routes = [
+    { name: "a table", policy: RATE_LIMITS.tableRequest, send: askForTable },
+    {
+      name: "the suite",
+      policy: RATE_LIMITS.suiteRequest,
+      send: (body: unknown) => requestSuite(jsonRequest("POST", "/api/suite-bookings", body)),
+    },
+    {
+      name: "an event",
+      policy: RATE_LIMITS.eventSignUp,
+      send: (body: unknown) =>
+        signUp(
+          jsonRequest("POST", "/api/events/seed-event-book-club/registrations", body),
+          routeParams({ id: "seed-event-book-club" }),
+        ),
+    },
+  ];
+
+  for (const { name, policy, send } of routes) {
+    it(`asking for ${name} is rate-limited per guest (429 RATE_LIMITED)`, async () => {
+      signInAs("customer");
+      // Every attempt counts, even one the form would have refused.
+      for (let attempt = 0; attempt < policy.perSubject.limit; attempt++) expect((await send({})).status).toBe(400);
+
+      const limited = await send({});
+      expect(limited.status).toBe(429);
+      expect((await readError(limited)).code).toBe("RATE_LIMITED");
+      expect(Number(limited.headers.get("Retry-After"))).toBeGreaterThan(0);
+
+      // Another guest on the same connection still gets through.
+      signInAs("staff");
+      expect((await send({})).status).toBe(400);
+    });
+  }
 });

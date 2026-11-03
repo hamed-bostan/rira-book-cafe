@@ -9,7 +9,8 @@ import type { NextResponse } from "next/server";
 
 /**
  * Rate-limit policies for the endpoints worth abusing: the ones that cost money
- * (SMS, email), guard a secret (the OTP), or write to disk and stock.
+ * (SMS, email), guard a secret (the OTP), write to disk and stock, or put work in
+ * front of staff (a guest's table, suite and event requests).
  *
  * Every policy limits per IP, and optionally per *subject* — the signed-in user,
  * or the phone a code is for — so neither rotating IPs nor rotating accounts gets
@@ -59,6 +60,28 @@ export const RATE_LIMITS = {
     name: "team-notice",
     perIp: { limit: 30, windowMs: 60 * MINUTE },
     perSubject: { limit: 20, windowMs: 60 * MINUTE },
+  },
+  /**
+   * A guest asking for a table: each request waits on the floor's list for staff
+   * to answer by hand. A guest books one or two; a handful an hour leaves room to
+   * fix a mistake.
+   */
+  tableRequest: {
+    name: "table-request",
+    perIp: { limit: 50, windowMs: 60 * MINUTE },
+    perSubject: { limit: 5, windowMs: 60 * MINUTE },
+  },
+  /** A guest asking for the suite — answered by hand at the desk, and a clash with held nights counts too. */
+  suiteRequest: {
+    name: "suite-request",
+    perIp: { limit: 30, windowMs: 60 * MINUTE },
+    perSubject: { limit: 5, windowMs: 60 * MINUTE },
+  },
+  /** A guest signing up for an event — announced in the cafe, a room of guests may sign up at once. */
+  eventSignUp: {
+    name: "event-sign-up",
+    perIp: { limit: 100, windowMs: 10 * MINUTE },
+    perSubject: { limit: 10, windowMs: 10 * MINUTE },
   },
 } as const satisfies Record<string, RateLimitPolicy>;
 

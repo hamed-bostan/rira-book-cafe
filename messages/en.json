@@ -211,6 +211,7 @@
     "notPayable": "This order can't be paid online — it's already paid or was cancelled.",
     "paymentInProgress": "A payment for this order is being confirmed. Please wait a moment.",
     "gatewayUnavailable": "The payment gateway isn't available right now. Please try again shortly.",
+    "rateLimited": "Too many attempts. Please wait a moment and try again.",
     "stockUsed": "Some of this delivery has already been used, so it can't be voided. Record a count or waste instead.",
     "yearNotEnded": "That fiscal year hasn't ended yet.",
     "suiteTaken": "The suite is already booked for some of those nights.",

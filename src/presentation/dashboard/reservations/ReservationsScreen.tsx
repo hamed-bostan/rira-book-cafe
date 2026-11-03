@@ -16,6 +16,7 @@ import { DashboardLinkTabs } from "../DashboardLinkTabs";
 
 import { EventBookingRow } from "./EventBookingRow";
 import { NewBookingDialog } from "./NewBookingDialog";
+import { OtherDayRequests } from "./OtherDayRequests";
 import { ReservationDayPicker } from "./ReservationDayPicker";
 import { ReservationRow } from "./ReservationRow";
 
@@ -24,6 +25,8 @@ const REFRESH_SECONDS = 30;
 type ReservationsScreenProps = {
   /** Every booking of the day, any status — the tabs count them all. */
   reservations: Reservation[];
+  /** Requests from today on that are for some other day, so they aren't missed. */
+  otherDayRequests: Reservation[];
   /** Events running that day, shown at their time with the tables they hold. */
   events: CafeEvent[];
   /** The day on screen and today, `YYYY-MM-DD` on the cafe calendar. */
@@ -34,6 +37,8 @@ type ReservationsScreenProps = {
   /** "Now", from the page — the Now line and late parties, without a client clock. */
   now: string;
   canManage: boolean;
+  /** Whether "Open event" can open the event itself (`events.manage`), not just its card on the list. */
+  canManageEvents: boolean;
 };
 
 type Row =
@@ -43,18 +48,20 @@ type Row =
 /**
  * The floor's book for one day: every booking in time order with the day's events
  * between them, status tabs to narrow it, and — on today — a line where "now"
- * falls. Presentational: the page fetches the day over the REST API (BFF); the day
- * and tab live in the URL, the list re-reads itself while open, and every action
- * `router.refresh()`es.
+ * falls; over it, the requests still waiting on other days. Presentational: the
+ * page fetches over the REST API (BFF); the day and tab live in the URL, the list
+ * re-reads itself while open, and every action `router.refresh()`es.
  */
 export async function ReservationsScreen({
   reservations,
+  otherDayRequests,
   events,
   day,
   today,
   status,
   now,
   canManage,
+  canManageEvents,
 }: ReservationsScreenProps) {
   const t = await getTranslations("dashReservations");
   const locale = await getLocale();
@@ -122,6 +129,8 @@ export async function ReservationsScreen({
         ) : null}
       </div>
 
+      <OtherDayRequests requests={otherDayRequests} today={today} />
+
       <ReservationDayPicker day={day} today={today} />
 
       <section
@@ -169,7 +178,7 @@ export async function ReservationsScreen({
                     events={events}
                   />
                 ) : (
-                  <EventBookingRow event={row.event} />
+                  <EventBookingRow event={row.event} today={today} canManageEvents={canManageEvents} />
                 )}
               </li>
             ))}

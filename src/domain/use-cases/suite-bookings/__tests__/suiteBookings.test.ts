@@ -90,9 +90,11 @@ describe("RequestSuiteBooking", () => {
 });
 
 describe("ChangeSuiteBooking", () => {
+  const STAFF = { id: "st", name: "Ali" };
+
   it("confirms a request and audits it", async () => {
     const { repo, applyStatus } = repoWith(booking("requested"));
-    await new ChangeSuiteBooking(repo).execute("s1", "confirmed", { id: "st", name: "Ali" });
+    await new ChangeSuiteBooking(repo).execute("s1", "confirmed", STAFF, NOW);
 
     expect(applyStatus.mock.calls[0].slice(0, 3)).toEqual(["s1", "requested", "confirmed"]);
     const entry = applyStatus.mock.calls[0][3]?.(booking("confirmed")) as { entityLabel: string; action: string };
@@ -101,22 +103,38 @@ describe("ChangeSuiteBooking", () => {
 
   it("refuses a step the workflow doesn't allow", async () => {
     await expect(
-      new ChangeSuiteBooking(repoWith(booking("requested")).repo).execute("s1", "checkedOut", {
-        id: "st",
-        name: "Ali",
-      }),
+      new ChangeSuiteBooking(repoWith(booking("requested")).repo).execute("s1", "checkedOut", STAFF, NOW),
     ).rejects.toThrow(ConflictError);
+  });
+
+  it("refuses a check-in or a no-show before the arrival day, on the cafe's calendar", async () => {
+    for (const status of ["checkedIn", "noShow"] as const) {
+      const { repo, applyStatus } = repoWith(booking("confirmed", { checkIn: "2026-10-21" }));
+      await expect(new ChangeSuiteBooking(repo).execute("s1", status, STAFF, NOW)).rejects.toMatchObject({
+        code: "NOT_DUE_YET",
+      });
+      expect(applyStatus).not.toHaveBeenCalled();
+    }
+    // 21:00 UTC on the 20th is already the 21st in Tehran (00:30): the guest is due.
+    const { repo, applyStatus } = repoWith(booking("confirmed", { checkIn: "2026-10-21" }));
+    await new ChangeSuiteBooking(repo).execute("s1", "checkedIn", STAFF, new Date("2026-10-20T21:00:00Z"));
+    expect(applyStatus.mock.calls[0].slice(1, 3)).toEqual(["confirmed", "checkedIn"]);
+  });
+
+  it("checks a guest in, or marks a no-show, from the arrival day on", async () => {
+    for (const checkIn of ["2026-10-20", "2026-10-18"]) {
+      for (const status of ["checkedIn", "noShow"] as const) {
+        const { repo, applyStatus } = repoWith(booking("confirmed", { checkIn }));
+        await new ChangeSuiteBooking(repo).execute("s1", status, STAFF, NOW);
+        expect(applyStatus).toHaveBeenCalledOnce();
+      }
+    }
   });
 
   it("takes back a Check in, logging it and telling the guest nothing", async () => {
     const { repo, applyStatus } = repoWith(booking("checkedIn"));
     const notifier = { notify: vi.fn() };
-    const saved = await new ChangeSuiteBooking(repo, notifier).execute(
-      "s1",
-      "confirmed",
-      { id: "st", name: "Ali" },
-      { undo: true },
-    );
+    const saved = await new ChangeSuiteBooking(repo, notifier).execute("s1", "confirmed", STAFF, NOW, { undo: true });
 
     expect(saved.status).toBe("confirmed");
     expect(applyStatus.mock.calls[0].slice(0, 3)).toEqual(["s1", "checkedIn", "confirmed"]);
@@ -136,22 +154,19 @@ describe("ChangeSuiteBooking", () => {
       ["confirmed", "confirmed"],
     ] as const) {
       const { repo, applyStatus } = repoWith(booking(from));
-      await expect(
-        new ChangeSuiteBooking(repo).execute("s1", to, { id: "st", name: "Ali" }, { undo: true }),
-      ).rejects.toThrow(ConflictError);
+      await expect(new ChangeSuiteBooking(repo).execute("s1", to, STAFF, NOW, { undo: true })).rejects.toThrow(
+        ConflictError,
+      );
       expect(applyStatus).not.toHaveBeenCalled();
     }
     await expect(
-      new ChangeSuiteBooking(repoWith(booking("checkedIn")).repo).execute("s1", "confirmed", { id: "st", name: "Ali" }),
+      new ChangeSuiteBooking(repoWith(booking("checkedIn")).repo).execute("s1", "confirmed", STAFF, NOW),
     ).rejects.toThrow(ConflictError);
   });
 
   it("still tells the guest when a request is confirmed", async () => {
     const notifier = { notify: vi.fn() };
-    await new ChangeSuiteBooking(repoWith(booking("requested")).repo, notifier).execute("s1", "confirmed", {
-      id: "st",
-      name: "Ali",
-    });
+    await new ChangeSuiteBooking(repoWith(booking("requested")).repo, notifier).execute("s1", "confirmed", STAFF, NOW);
     expect(notifier.notify).toHaveBeenCalledWith(expect.objectContaining({ kind: "suiteConfirmed" }));
   });
 });

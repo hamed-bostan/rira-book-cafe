@@ -4,6 +4,7 @@ import { eventRegistrationSchema } from "@/src/contracts/event-schema";
 import { RegisterForEvent } from "@/src/domain/use-cases/events/EventRegistrations";
 import { eventRepository, userRepository } from "@/src/infrastructure/container";
 import { invalidatesCatalog } from "@/src/lib/api/invalidatesCatalog";
+import { enforceRateLimit, RATE_LIMITS } from "@/src/lib/api/rate-limit";
 import {
   errorResponse,
   errorResponseFromException,
@@ -18,11 +19,15 @@ type RouteContext = { params: Promise<{ id: string }> };
 
 /**
  * POST /api/events/:id/registrations — the signed-in guest signs up. 201 with the
- * registration; 409 when the event is full, closed, or they're already in.
+ * registration; 409 when the event is full, closed, or they're already in; 429
+ * past the `eventSignUp` rate limit.
  */
 async function handlePost(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   const session = await getUserSession();
   if (!session?.user.id) return unauthorizedResponse();
+
+  const limited = await enforceRateLimit(request, RATE_LIMITS.eventSignUp, session.user.id);
+  if (limited) return limited;
 
   const { id } = await params;
   const body = await parseJsonBody(request);

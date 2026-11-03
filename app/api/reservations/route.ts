@@ -5,6 +5,7 @@ import { wallTimeToDate } from "@/src/domain/entities/CafeTime";
 import { RequestReservation } from "@/src/domain/use-cases/reservations/RequestReservation";
 import { ListOwnReservations } from "@/src/domain/use-cases/reservations/ReservationQueries";
 import { reservationRepository, userRepository } from "@/src/infrastructure/container";
+import { enforceRateLimit, RATE_LIMITS } from "@/src/lib/api/rate-limit";
 import {
   errorResponse,
   errorResponseFromException,
@@ -30,11 +31,15 @@ export async function GET(): Promise<NextResponse> {
 
 /**
  * POST /api/reservations — ask for a table. 201 with the reservation, which stays
- * `requested` until staff confirm it. `startsAt` is cafe wall time.
+ * `requested` until staff confirm it. `startsAt` is cafe wall time. 429 past the
+ * `tableRequest` rate limit.
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const session = await getUserSession();
   if (!session?.user.id) return unauthorizedResponse();
+
+  const limited = await enforceRateLimit(request, RATE_LIMITS.tableRequest, session.user.id);
+  if (limited) return limited;
 
   const body = await parseJsonBody(request);
   if (!body.ok) return errorResponse(400, { message: "Expected a JSON body.", code: "BAD_REQUEST" });

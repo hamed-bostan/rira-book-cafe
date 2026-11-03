@@ -1,9 +1,10 @@
 import { activityValue, type ActivityActor, type ActivityChange } from "../../entities/ActivityEntry";
+import { isCafeTable } from "../../entities/CafeTable";
 import {
-  MAX_TABLE_LABEL_LENGTH,
   canTransitionReservation,
   canUndoReservationStatus,
   isGuestCancellableReservation,
+  isReservationDue,
   type Reservation,
   type ReservationStatus,
 } from "../../entities/Reservation";
@@ -18,7 +19,7 @@ import type { IReservationRepository } from "../../repositories/IReservationRepo
 export type ReservationUpdate = {
   /** The new status; omit to keep the current one (e.g. only moving the table). */
   status?: ReservationStatus;
-  /** The table to hold; `null` clears it; omit to keep it. */
+  /** The table to hold, a label from the floor plan; `null` clears it; omit to keep it. */
   tableLabel?: string | null;
   /**
    * Take back a Seat or Complete from its toast (`canUndoReservationStatus`)
@@ -32,7 +33,8 @@ export type ReservationUpdate = {
  * Staff act on a reservation: confirm (with a table), seat, complete, mark a
  * no-show, cancel — or just move it to another table — and take back a Seat or
  * Complete from its toast. The workflow table in `Reservation.ts` is the whole
- * rule, with `canUndoReservationStatus` its one way back; the repository refuses a
+ * rule, with `canUndoReservationStatus` its one way back and a no-show waiting
+ * until the booking has started (`isReservationDue`); the repository refuses a
  * table another overlapping booking already holds.
  */
 export class ChangeReservation {
@@ -42,7 +44,7 @@ export class ChangeReservation {
     private readonly notifier?: ICustomerNotifier,
   ) {}
 
-  async execute(id: string, update: ReservationUpdate, actor: ActivityActor): Promise<Reservation> {
+  async execute(id: string, update: ReservationUpdate, actor: ActivityActor, now: Date): Promise<Reservation> {
     const current = await this.reservationRepo.getById(id);
     if (!current) throw new NotFoundError("reservation", id);
 
@@ -57,19 +59,26 @@ export class ChangeReservation {
           `A reservation can't go back from "${current.status}" to "${status}".`,
         );
       }
-    } else if (status !== current.status && !canTransitionReservation(current.status, status)) {
-      throw new ConflictError(
-        "INVALID_TRANSITION",
-        `A reservation can't move from "${current.status}" to "${status}".`,
-      );
+    } else if (status !== current.status) {
+      if (!canTransitionReservation(current.status, status)) {
+        throw new ConflictError(
+          "INVALID_TRANSITION",
+          `A reservation can't move from "${current.status}" to "${status}".`,
+        );
+      }
+      if (status === "noShow" && !isReservationDue(current, now)) {
+        throw new ConflictError("NOT_DUE_YET", "A party can't be a no-show before their booking starts.");
+      }
     }
 
     // A finished booking keeps its table as history; only bookings that hold a
     // table (`TABLE_HOLDING_STATUSES`) are checked for clashes by the repository.
     const tableLabel =
       update.tableLabel === undefined ? (current.tableLabel ?? null) : update.tableLabel?.trim() || null;
-    if (tableLabel && tableLabel.length > MAX_TABLE_LABEL_LENGTH) {
-      throw new ValidationError("tableLabel", "That table label is too long.");
+    // A table being given must be on the floor plan, as for a new booking; the one
+    // a booking already has stays whatever it's called.
+    if (update.tableLabel !== undefined && tableLabel && !isCafeTable(tableLabel)) {
+      throw new ValidationError("tableLabel", `There's no table "${tableLabel}".`);
     }
     if (status === "seated" && !tableLabel) {
       throw new ValidationError("tableLabel", "Choose the table the party is seated at.");

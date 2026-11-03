@@ -8,7 +8,8 @@ import { reservationsServerApi } from "@/src/presentation/dashboard/reservations
 import { ReservationsScreen } from "@/src/presentation/dashboard/reservations/ReservationsScreen";
 
 // One cafe day's bookings, and the events running that day, are fetched over the
-// REST API (BFF) during server render. The day (`?day=`, default today) and the
+// REST API (BFF) during server render — with every request from today on, so
+// those waiting on other days show too. The day (`?day=`, default today) and the
 // status tab (`?status=`) live in the query string; the whole day is always
 // fetched so every tab can show its count.
 export const dynamic = "force-dynamic";
@@ -29,8 +30,9 @@ export default async function DashboardReservationsPage({ searchParams }: Dashbo
   const status = statusParam && STATUS_SET.has(statusParam) ? (statusParam as ReservationStatus) : undefined;
 
   const { from, to } = cafeDayRange(day);
-  const [reservations, events, canManage] = await Promise.all([
+  const [reservations, requests, events, session] = await Promise.all([
     reservationsServerApi.listForDay(day),
+    reservationsServerApi.listFrom(today, "requested"),
     eventsServerApi
       .listAll()
       .then((all) =>
@@ -38,18 +40,24 @@ export default async function DashboardReservationsPage({ searchParams }: Dashbo
           .filter((event) => new Date(event.startsAt) < to && new Date(event.endsAt) > from)
           .sort((a, b) => a.startsAt.localeCompare(b.startsAt)),
       ),
-    auth().then((session) => sessionHas(session, "reservations.manage")),
+    auth(),
+  ]);
+  const [canManage, canManageEvents] = await Promise.all([
+    sessionHas(session, "reservations.manage"),
+    sessionHas(session, "events.manage"),
   ]);
 
   return (
     <ReservationsScreen
       reservations={reservations}
+      otherDayRequests={requests.filter((request) => cafeDayOf(new Date(request.startsAt)) !== day)}
       events={events}
       day={day}
       today={today}
       status={status}
       now={now.toISOString()}
       canManage={canManage}
+      canManageEvents={canManageEvents}
     />
   );
 }

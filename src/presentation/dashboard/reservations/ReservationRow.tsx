@@ -19,7 +19,7 @@ const LATE_AFTER_MINUTES = 15;
 
 type ReservationRowProps = {
   reservation: Reservation;
-  /** "Now", from the page — whether a confirmed party is running late. */
+  /** "Now", from the page — whether a confirmed party is running late, and whether it can be a no-show yet. */
   now: string;
   canManage: boolean;
   /** The day's bookings and events, for the table picker. */
@@ -103,7 +103,9 @@ export async function ReservationRow({ reservation, now, canManage, bookings, ev
         ) : null}
       </div>
 
-      {canManage ? <ReservationRowActions reservation={reservation} bookings={bookings} events={events} /> : null}
+      {canManage ? (
+        <ReservationRowActions reservation={reservation} now={now} bookings={bookings} events={events} />
+      ) : null}
     </article>
   );
 }

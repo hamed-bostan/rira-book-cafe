@@ -116,6 +116,11 @@ export function isGuestCancellableSuiteBooking(
   return (booking.status === "requested" || booking.status === "confirmed") && booking.checkIn > today;
 }
 
+/** Whether the guest is due — their check-in day has come — so the desk may check them in or mark a no-show. */
+export function isSuiteStayDue(booking: Pick<SuiteBooking, "checkIn">, today: string): boolean {
+  return booking.checkIn <= today;
+}
+
 type StayOnCalendar = Pick<SuiteBooking, "id" | "status" | "checkIn" | "checkOut">;
 
 /** Whether a stay holds the suite (and so blocks its nights for everyone else). */

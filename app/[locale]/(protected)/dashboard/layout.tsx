@@ -51,16 +51,17 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   const permissions = await sessionPermissions(session);
 
   // The counts beside the nav links — what needs someone: orders in the queue,
-  // today's table requests, suite requests, overdue books, holds ready to
-  // collect, stock running low or out, reviews waiting — and the bell's new
-  // orders. Chrome, not content: a failed read drops that count, not the page.
-  // Inventory and reviews are only asked for by someone whose sidebar shows them.
+  // table and suite requests from today on (whichever day they're for), overdue
+  // books, holds ready to collect, stock running low or out, reviews waiting —
+  // and the bell's new orders. Chrome, not content: a failed read drops that
+  // count, not the page. Inventory and reviews are only asked for by someone
+  // whose sidebar shows them.
   const today = cafeDayOf(new Date());
   const [counts, tableRequests, suiteRequests, overdueLoans, readyHolds, lowStock, waitingReviews, newOrders] =
     await Promise.all([
       ordersServerApi.counts().catch(() => null),
       reservationsServerApi
-        .listForDay(today, "requested")
+        .listFrom(today, "requested")
         .then((list) => list.length)
         .catch(() => undefined),
       suiteBookingsServerApi

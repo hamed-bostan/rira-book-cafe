@@ -8,10 +8,8 @@ import { isCafeTable } from "@/src/domain/entities/CafeTable";
 import { wallTimeToDate } from "@/src/domain/entities/CafeTime";
 import { tableChoicesFor, type FloorBooking, type FloorEvent } from "@/src/domain/entities/FloorAvailability";
 import {
-  BOOKING_SLOT_MINUTES,
+  BOOKING_TIMES,
   DEFAULT_RESERVATION_MINUTES,
-  FIRST_BOOKING_HOUR,
-  LAST_BOOKING_HOUR,
   MAX_GUEST_NAME_LENGTH,
   MAX_PARTY_SIZE,
   MAX_RESERVATION_NOTE_LENGTH,
@@ -54,14 +52,8 @@ const DEFAULT_PARTY = 2;
 
 const pad = (n: number): string => String(n).padStart(2, "0");
 
-/** Every bookable quarter hour of a day, as `HH:mm`. */
-const SLOTS: readonly string[] = Array.from(
-  { length: ((LAST_BOOKING_HOUR - FIRST_BOOKING_HOUR) * 60) / BOOKING_SLOT_MINUTES + 1 },
-  (_, index) => {
-    const minutes = FIRST_BOOKING_HOUR * 60 + index * BOOKING_SLOT_MINUTES;
-    return `${pad(Math.floor(minutes / 60))}:${pad(minutes % 60)}`;
-  },
-);
+/** Every bookable quarter hour of a day, as `HH:mm` — the hours a guest's request is held to as well. */
+const SLOTS = BOOKING_TIMES;
 
 /**
  * "New booking" for a guest who rang or walked in. Pick a table to confirm it on

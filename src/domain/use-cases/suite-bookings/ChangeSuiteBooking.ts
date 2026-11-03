@@ -3,6 +3,7 @@ import {
   canTransitionSuiteBooking,
   canUndoSuiteBookingStatus,
   isGuestCancellableSuiteBooking,
+  isSuiteStayDue,
   type SuiteBooking,
   type SuiteBookingStatus,
 } from "../../entities/SuiteBooking";
@@ -17,7 +18,8 @@ import type { ISuiteBookingRepository } from "../../repositories/ISuiteBookingRe
 /**
  * Staff act on a stay: confirm, check in, check out, cancel, or mark a no-show —
  * and take back a Check in from its toast. The workflow table in `SuiteBooking.ts`
- * is the whole rule, with `canUndoSuiteBookingStatus` its one way back; the
+ * is the whole rule, with `canUndoSuiteBookingStatus` its one way back and a
+ * check-in or no-show waiting for the arrival day (`isSuiteStayDue`); the
  * repository refuses to confirm nights another stay already holds.
  */
 export class ChangeSuiteBooking {
@@ -35,6 +37,7 @@ export class ChangeSuiteBooking {
     id: string,
     status: SuiteBookingStatus,
     staff: ActivityActor,
+    now: Date,
     { undo = false }: { undo?: boolean } = {},
   ): Promise<SuiteBooking> {
     const current = await this.suiteRepo.getById(id);
@@ -53,6 +56,9 @@ export class ChangeSuiteBooking {
           "INVALID_TRANSITION",
           `A suite booking can't move from "${current.status}" to "${status}".`,
         );
+      }
+      if ((status === "checkedIn" || status === "noShow") && !isSuiteStayDue(current, cafeDayOf(now))) {
+        throw new ConflictError("NOT_DUE_YET", "A guest can't check in, or be a no-show, before their arrival day.");
       }
     }
 

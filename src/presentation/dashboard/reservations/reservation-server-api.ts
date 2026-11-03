@@ -10,4 +10,11 @@ export const reservationsServerApi = {
       params: status ? { day, status } : { day },
     });
   },
+
+  /** Every reservation from `from` (cafe day) on, in start order — e.g. all the requests still waiting. */
+  listFrom(from: string, status?: ReservationStatus): Promise<Reservation[]> {
+    return serverApiGet("/admin/reservations", reservationListResponseSchema, {
+      params: status ? { from, status } : { from },
+    });
+  },
 };

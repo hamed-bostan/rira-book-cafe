@@ -26,6 +26,8 @@ export type IReservationRepository = {
   listForUser(userId: string): Promise<Reservation[]>;
   /** Reservations starting within `[from, to)`, in start order, optionally narrowed to one status. */
   listBetween(from: Date, to: Date, status?: ReservationStatus): Promise<Reservation[]>;
+  /** Reservations starting at or after `from`, in start order, optionally narrowed to one status. */
+  listFrom(from: Date, status?: ReservationStatus): Promise<Reservation[]>;
   /**
    * Apply a staff change, guarded on `expectedStatus` so a concurrent change can't
    * be overwritten (`ConflictError("INVALID_TRANSITION")`). When the result holds a

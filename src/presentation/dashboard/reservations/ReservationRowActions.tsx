@@ -4,9 +4,11 @@ import { MoreHorizontal } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import * as React from "react";
 
+import { isCafeTable, type CafeTableLabel } from "@/src/domain/entities/CafeTable";
 import { tableChoicesFor, type FloorBooking, type FloorEvent } from "@/src/domain/entities/FloorAvailability";
 import {
   canUndoReservationStatus,
+  isReservationDue,
   reservationEndsAt,
   type Reservation,
   type ReservationStatus,
@@ -36,6 +38,8 @@ type ReservationRowActionsProps = {
     Reservation,
     "id" | "reference" | "status" | "tableLabel" | "startsAt" | "durationMinutes" | "partySize" | "guestName"
   >;
+  /** "Now", from the page — Mark no-show waits until the booking has started. */
+  now: string;
   /** The day's bookings and events, for which tables the picker can offer. */
   bookings: readonly FloorBooking[];
   events: readonly FloorEvent[];
@@ -51,12 +55,12 @@ type Ending = "cancelled" | "noShow";
  * One booking's controls on the day view, as the design lays them out: the next
  * step as a button (Confirm opens the table picker; Seat and Complete act at
  * once), Cancel beside a request, and a "⋯" menu with Change table, Mark no-show
- * and Cancel booking. Cancelling and no-shows ask first; a one-click Seat or
- * Complete offers Undo in its toast. Each writes over the REST API and
- * `router.refresh()`es; a failure (a 409 when the table was just taken) shows in
- * the open dialog, else as a toast.
+ * (once the booking has started) and Cancel booking. Cancelling and no-shows ask
+ * first; a one-click Seat or Complete offers Undo in its toast. Each writes over
+ * the REST API and `router.refresh()`es; a failure (a 409 when the table was just
+ * taken) shows in the open dialog, else as a toast.
  */
-export function ReservationRowActions({ reservation, bookings, events }: ReservationRowActionsProps) {
+export function ReservationRowActions({ reservation, now, bookings, events }: ReservationRowActionsProps) {
   const t = useTranslations("dashReservations");
   const tFloor = useTranslations("floorTables");
   const tApiErrors = useTranslations("apiErrors");
@@ -76,7 +80,7 @@ export function ReservationRowActions({ reservation, bookings, events }: Reserva
   const tableName = (label: string): string => tFloor("tableName", tableNameValues(label, locale));
   const dialogOpen = picking || confirming;
 
-  function save(change: { status?: ReservationStatus; tableLabel?: string }): void {
+  function save(change: { status?: ReservationStatus; tableLabel?: CafeTableLabel }): void {
     setError(null);
     // A one-click Seat or Complete can be taken back; a Seat that also picked a
     // table can't (the undo keeps the table, so it wouldn't undo all of it).
@@ -159,7 +163,7 @@ export function ReservationRowActions({ reservation, bookings, events }: Reserva
   const until = reservationEndsAt(reservation).toISOString();
 
   function saveTable(): void {
-    if (!pick) return;
+    if (!pick || !isCafeTable(pick)) return;
     if (tableMode === "confirm") save({ status: "confirmed", tableLabel: pick });
     else if (tableMode === "seat") save({ status: "seated", tableLabel: pick });
     else save({ tableLabel: pick });
@@ -202,9 +206,11 @@ export function ReservationRowActions({ reservation, bookings, events }: Reserva
             <DropdownMenuItem onSelect={() => openTable("change")}>{t("changeTable")}</DropdownMenuItem>
             {status === "confirmed" ? (
               <>
-                <DropdownMenuItem destructive onSelect={() => ask("noShow")}>
-                  {t("markNoShow")}
-                </DropdownMenuItem>
+                {isReservationDue(reservation, new Date(now)) ? (
+                  <DropdownMenuItem destructive onSelect={() => ask("noShow")}>
+                    {t("markNoShow")}
+                  </DropdownMenuItem>
+                ) : null}
                 <DropdownMenuItem destructive onSelect={() => ask("cancelled")}>
                   {t("cancelBooking")}
                 </DropdownMenuItem>

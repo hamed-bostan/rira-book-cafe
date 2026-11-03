@@ -575,19 +575,21 @@ function planReservations(): void {
     if (plan.flow === "requested") return;
     if (plan.flow === "cancelled") {
       step(at(plan.day - 1, "10:00"), "cancel table", (r) =>
-        changeReservation.execute(r, { status: "cancelled" }, STAFF),
+        changeReservation.execute(r, { status: "cancelled" }, STAFF, new Date()),
       );
       return;
     }
     step(at(plan.day - 1, "10:00"), "confirm table", (r) =>
-      changeReservation.execute(r, { status: "confirmed", tableLabel: table }, STAFF),
+      changeReservation.execute(r, { status: "confirmed", tableLabel: table }, STAFF, new Date()),
     );
     if (plan.flow === "noShow") {
-      step(plusMinutes(startsAt, 45), "no-show", (r) => changeReservation.execute(r, { status: "noShow" }, STAFF));
+      step(plusMinutes(startsAt, 45), "no-show", (r) =>
+        changeReservation.execute(r, { status: "noShow" }, STAFF, new Date()),
+      );
     } else if (plan.flow === "completed") {
-      step(startsAt, "seat table", (r) => changeReservation.execute(r, { status: "seated" }, STAFF));
+      step(startsAt, "seat table", (r) => changeReservation.execute(r, { status: "seated" }, STAFF, new Date()));
       step(plusMinutes(startsAt, 90), "free table", (r) =>
-        changeReservation.execute(r, { status: "completed" }, STAFF),
+        changeReservation.execute(r, { status: "completed" }, STAFF, new Date()),
       );
     }
   });
@@ -625,7 +627,9 @@ function planSuite(): void {
     for (const status of stay.flow) {
       const moment = when[status];
       if (moment)
-        schedule(moment, `suite ${status}`, async () => (id ? changeSuite.execute(id, status, STAFF) : undefined));
+        schedule(moment, `suite ${status}`, async () =>
+          id ? changeSuite.execute(id, status, STAFF, new Date()) : undefined,
+        );
     }
   });
 }

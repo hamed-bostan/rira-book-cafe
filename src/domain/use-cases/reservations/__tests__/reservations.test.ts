@@ -1,9 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { wallTimeToDate } from "../../../entities/CafeTime";
 import {
+  BOOKING_TIMES,
   RESERVATION_STATUSES,
   canUndoReservationStatus,
   isGuestCancellableReservation,
+  isWithinBookingHours,
   rangesOverlap,
   type Reservation,
   type ReservationStatus,
@@ -12,7 +15,7 @@ import { ConflictError } from "../../../errors/ConflictError";
 import { NotFoundError } from "../../../errors/NotFoundError";
 import { ValidationError } from "../../../errors/ValidationError";
 import { CancelOwnReservation, ChangeReservation } from "../ChangeReservation";
-import { RequestReservation } from "../RequestReservation";
+import { BookTableForGuest, RequestReservation } from "../RequestReservation";
 
 import type { IReservationRepository, ReservationChange } from "../../../repositories/IReservationRepository";
 
@@ -81,6 +84,53 @@ describe("RequestReservation", () => {
       await expect(useCase.execute(input, GUEST, NOW)).rejects.toThrow(ValidationError);
     }
   });
+
+  it("takes the first and last booking times, and refuses either side of them", async () => {
+    const { repo, create } = repoWith(null);
+    const useCase = new RequestReservation(repo);
+    for (const time of ["08:00", "21:00"]) {
+      await useCase.execute({ startsAt: wallTimeToDate(`2026-10-21T${time}`), partySize: 2 }, GUEST, NOW);
+    }
+    expect(create).toHaveBeenCalledTimes(2);
+
+    for (const time of ["07:45", "21:15", "22:00", "00:00"]) {
+      await expect(
+        useCase.execute({ startsAt: wallTimeToDate(`2026-10-21T${time}`), partySize: 2 }, GUEST, NOW),
+      ).rejects.toMatchObject({ field: "startsAt", message: "outsideBookingHours" });
+    }
+  });
+});
+
+describe("BookTableForGuest", () => {
+  const walkIn = { guestName: "Omid", guestPhone: "09356401182", partySize: 2 };
+
+  it("holds staff to the same booking hours as guests", async () => {
+    const { repo, create } = repoWith(null);
+    const useCase = new BookTableForGuest(repo);
+    await useCase.execute({ ...walkIn, startsAt: wallTimeToDate("2026-10-21T21:00") }, { id: "s", name: "Ali" }, NOW);
+    expect(create).toHaveBeenCalledOnce();
+
+    await expect(
+      useCase.execute({ ...walkIn, startsAt: wallTimeToDate("2026-10-21T21:30") }, { id: "s", name: "Ali" }, NOW),
+    ).rejects.toMatchObject({ field: "startsAt", message: "outsideBookingHours" });
+  });
+});
+
+describe("booking hours", () => {
+  it("offers every quarter hour from the first booking time to the last", () => {
+    expect(BOOKING_TIMES[0]).toBe("08:00");
+    expect(BOOKING_TIMES.at(-1)).toBe("21:00");
+    expect(BOOKING_TIMES).toHaveLength(53);
+    expect(BOOKING_TIMES.every((time) => isWithinBookingHours(wallTimeToDate(`2026-10-21T${time}`)))).toBe(true);
+  });
+
+  it("reads the cafe's wall clock, not UTC", () => {
+    // 04:30 UTC is 08:00 in Tehran; 17:30 UTC is 21:00.
+    expect(isWithinBookingHours(new Date("2026-10-21T04:30:00Z"))).toBe(true);
+    expect(isWithinBookingHours(new Date("2026-10-21T04:15:00Z"))).toBe(false);
+    expect(isWithinBookingHours(new Date("2026-10-21T17:30:00Z"))).toBe(true);
+    expect(isWithinBookingHours(new Date("2026-10-21T17:45:00Z"))).toBe(false);
+  });
 });
 
 describe("ChangeReservation", () => {
@@ -90,6 +140,7 @@ describe("ChangeReservation", () => {
       "r1",
       { status: "confirmed", tableLabel: " 4 " },
       { id: "s", name: "Ali" },
+      NOW,
     );
 
     expect(applyChange.mock.calls[0].slice(0, 3)).toEqual([
@@ -106,17 +157,57 @@ describe("ChangeReservation", () => {
     expect(entry.changes.map((c) => c.field)).toEqual(["status", "tableLabel"]);
   });
 
+  it("moves a booking only to a table on the floor plan, as a new booking takes", async () => {
+    for (const tableLabel of ["Patio", "T4", "9"]) {
+      const { repo, applyChange } = repoWith(reservation("confirmed", { tableLabel: "4" }));
+      await expect(
+        new ChangeReservation(repo).execute("r1", { tableLabel }, { id: "s", name: "Ali" }, NOW),
+      ).rejects.toThrow(expect.objectContaining({ field: "tableLabel" }));
+      expect(applyChange).not.toHaveBeenCalled();
+    }
+  });
+
+  it("keeps a table a booking already has, even one off today's floor plan", async () => {
+    const { repo, applyChange } = repoWith(reservation("confirmed", { tableLabel: "Patio" }));
+    await new ChangeReservation(repo).execute("r1", { status: "seated" }, { id: "s", name: "Ali" }, NOW);
+    expect(applyChange.mock.calls[0][2]).toEqual({ status: "seated", tableLabel: "Patio" });
+  });
+
+  it("refuses a no-show before the booking starts, and marks one from its start on", async () => {
+    // The booking starts at 16:00 UTC on the 21st; NOW is a day earlier.
+    for (const now of [NOW, new Date("2026-10-21T15:59:00Z")]) {
+      const { repo, applyChange } = repoWith(reservation("confirmed", { tableLabel: "4" }));
+      await expect(
+        new ChangeReservation(repo).execute("r1", { status: "noShow" }, { id: "s", name: "Ali" }, now),
+      ).rejects.toMatchObject({ code: "NOT_DUE_YET" });
+      expect(applyChange).not.toHaveBeenCalled();
+    }
+    for (const now of [new Date("2026-10-21T16:00:00Z"), new Date("2026-10-21T16:45:00Z")]) {
+      const { repo, applyChange } = repoWith(reservation("confirmed", { tableLabel: "4" }));
+      await new ChangeReservation(repo).execute("r1", { status: "noShow" }, { id: "s", name: "Ali" }, now);
+      expect(applyChange.mock.calls[0][2]).toMatchObject({ status: "noShow" });
+    }
+  });
+
+  it("still seats or cancels a party ahead of their time", async () => {
+    for (const status of ["seated", "cancelled"] as const) {
+      const { repo, applyChange } = repoWith(reservation("confirmed", { tableLabel: "4" }));
+      await new ChangeReservation(repo).execute("r1", { status }, { id: "s", name: "Ali" }, NOW);
+      expect(applyChange).toHaveBeenCalledOnce();
+    }
+  });
+
   it("requires a table to seat a party", async () => {
     const { repo } = repoWith(reservation("confirmed"));
     await expect(
-      new ChangeReservation(repo).execute("r1", { status: "seated" }, { id: "s", name: "Ali" }),
+      new ChangeReservation(repo).execute("r1", { status: "seated" }, { id: "s", name: "Ali" }, NOW),
     ).rejects.toThrow(ValidationError);
   });
 
   it("refuses transitions the workflow doesn't allow", async () => {
     const { repo, applyChange } = repoWith(reservation("completed"));
     await expect(
-      new ChangeReservation(repo).execute("r1", { status: "seated", tableLabel: "4" }, { id: "s", name: "Ali" }),
+      new ChangeReservation(repo).execute("r1", { status: "seated", tableLabel: "4" }, { id: "s", name: "Ali" }, NOW),
     ).rejects.toThrow(ConflictError);
     expect(applyChange).not.toHaveBeenCalled();
   });
@@ -124,7 +215,7 @@ describe("ChangeReservation", () => {
   it("does nothing when nothing changes", async () => {
     const current = reservation("confirmed", { tableLabel: "4" });
     const { repo, applyChange } = repoWith(current);
-    expect(await new ChangeReservation(repo).execute("r1", { tableLabel: "4" }, { id: "s", name: "Ali" })).toBe(
+    expect(await new ChangeReservation(repo).execute("r1", { tableLabel: "4" }, { id: "s", name: "Ali" }, NOW)).toBe(
       current,
     );
     expect(applyChange).not.toHaveBeenCalled();
@@ -137,6 +228,7 @@ describe("ChangeReservation", () => {
       "r1",
       { status: "confirmed", undo: true },
       { id: "s", name: "Ali" },
+      NOW,
     );
 
     expect(saved).toMatchObject({ status: "confirmed", tableLabel: "4" });
@@ -153,7 +245,7 @@ describe("ChangeReservation", () => {
 
   it("takes back a Complete", async () => {
     const { repo, applyChange } = repoWith(reservation("completed", { tableLabel: "4" }));
-    await new ChangeReservation(repo).execute("r1", { status: "seated", undo: true }, { id: "s", name: "Ali" });
+    await new ChangeReservation(repo).execute("r1", { status: "seated", undo: true }, { id: "s", name: "Ali" }, NOW);
     expect(applyChange.mock.calls[0].slice(1, 3)).toEqual(["completed", { status: "seated", tableLabel: "4" }]);
   });
 
@@ -167,7 +259,7 @@ describe("ChangeReservation", () => {
     ] as const) {
       const { repo, applyChange } = repoWith(reservation(from, { tableLabel: "4" }));
       await expect(
-        new ChangeReservation(repo).execute("r1", { status: to, undo: true }, { id: "s", name: "Ali" }),
+        new ChangeReservation(repo).execute("r1", { status: to, undo: true }, { id: "s", name: "Ali" }, NOW),
       ).rejects.toThrow(ConflictError);
       expect(applyChange).not.toHaveBeenCalled();
     }
@@ -176,6 +268,7 @@ describe("ChangeReservation", () => {
         "r1",
         { status: "confirmed", tableLabel: "5", undo: true },
         { id: "s", name: "Ali" },
+        NOW,
       ),
     ).rejects.toThrow(ValidationError);
   });
@@ -186,6 +279,7 @@ describe("ChangeReservation", () => {
         "r1",
         { status: "confirmed" },
         { id: "s", name: "Ali" },
+        NOW,
       ),
     ).rejects.toThrow(ConflictError);
   });
@@ -196,6 +290,7 @@ describe("ChangeReservation", () => {
       "r1",
       { status: "confirmed", tableLabel: "4" },
       { id: "s", name: "Ali" },
+      NOW,
     );
     expect(notifier.notify).toHaveBeenCalledWith(expect.objectContaining({ kind: "reservationConfirmed" }));
   });

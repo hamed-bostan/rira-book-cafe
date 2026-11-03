@@ -6,6 +6,7 @@ import * as React from "react";
 
 import {
   canUndoSuiteBookingStatus,
+  isSuiteStayDue,
   type SuiteBooking,
   type SuiteBookingStatus,
 } from "@/src/domain/entities/SuiteBooking";
@@ -59,7 +60,8 @@ export function SuiteStayActions({ booking, today, clashReference, checkInLabel,
   const [error, setError] = React.useState<string | null>(null);
 
   const { status, reference } = booking;
-  const arrived = booking.checkIn <= today;
+  // The server refuses a check-in or no-show before the arrival day too.
+  const arrived = isSuiteStayDue(booking, today);
 
   function save(next: SuiteBookingStatus): void {
     setError(null);

@@ -13,6 +13,18 @@ export class ListReservationsForDay {
   }
 }
 
+/**
+ * Reservations from `fromDay` (cafe calendar) on, in start order — every request
+ * still waiting for a reply, whichever day it's for. A cross-guest read: gate to staff.
+ */
+export class ListReservationsFrom {
+  constructor(private readonly reservationRepo: IReservationRepository) {}
+
+  execute(fromDay: string, status?: ReservationStatus): Promise<Reservation[]> {
+    return this.reservationRepo.listFrom(cafeDayRange(fromDay).from, status);
+  }
+}
+
 /** The guest's own reservations. */
 export class ListOwnReservations {
   constructor(private readonly reservationRepo: IReservationRepository) {}

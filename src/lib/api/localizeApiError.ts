@@ -22,6 +22,7 @@ type ApiErrorKey =
   | "conflict"
   | "insufficientStock"
   | "invalidTransition"
+  | "notDueYet"
   | "tableTaken"
   | "tableHeld"
   | "suiteTaken"
@@ -63,6 +64,7 @@ type ApiErrorKey =
   | "shiftAlreadyOpen"
   | "noOpenShift"
   | "gatewayUnavailable"
+  | "rateLimited"
   | "timeout"
   | "network"
   | "server";
@@ -76,6 +78,7 @@ const CODE_KEYS: Readonly<Record<string, ApiErrorKey>> = {
   UNIQUE_CONSTRAINT: "conflict",
   INSUFFICIENT_STOCK: "insufficientStock",
   INVALID_TRANSITION: "invalidTransition",
+  NOT_DUE_YET: "notDueYet",
   TABLE_TAKEN: "tableTaken",
   TABLE_HELD: "tableHeld",
   SUITE_TAKEN: "suiteTaken",
@@ -120,6 +123,8 @@ const CODE_KEYS: Readonly<Record<string, ApiErrorKey>> = {
   ALL_COPIES_OUT: "allCopiesOut",
   SHIFT_ALREADY_OPEN: "shiftAlreadyOpen",
   NO_OPEN_SHIFT: "noOpenShift",
+  // A 429 from `enforceRateLimit` (orders, payments, booking requests).
+  RATE_LIMITED: "rateLimited",
   INTERNAL: "server",
   EBADRESPONSE: "server",
   // Transport failures normalized by the Axios interceptor / server client.

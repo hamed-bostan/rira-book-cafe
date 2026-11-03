@@ -1,6 +1,7 @@
-import { AccountingTableSkeleton } from "@/src/presentation/dashboard/accounting/AccountingTableSkeleton";
+import { StackedTableSkeleton } from "@/src/presentation/dashboard/accounting/StackedTableSkeleton";
 import { PAGE_CARD } from "@/src/presentation/dashboard/pageStyles";
 import { DashboardFieldSkeleton, DashboardPageHeaderSkeleton } from "@/src/presentation/dashboard/skeletons";
+import { STACKED_TABLE } from "@/src/presentation/dashboard/stackedTableStyles";
 import { LoadingRegion } from "@/src/presentation/design-system/components/Skeleton/LoadingRegion";
 import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
@@ -15,8 +16,8 @@ export default function StockCountLoading() {
           <DashboardFieldSkeleton hint />
           <DashboardFieldSkeleton />
         </div>
-        {/* Item · expected · counted · difference. */}
-        <AccountingTableSkeleton columns={COUNT_COLUMNS} rows={8} className="shadow-none" />
+        {/* Item · expected · counted · difference, stacked on a phone as the form's are. */}
+        <StackedTableSkeleton layout={STACKED_TABLE.compact} columns={COUNT_COLUMNS} rows={8} className="shadow-none" />
         <div className="flex gap-2">
           <Skeleton className="h-11 w-32 rounded-button sm:h-9" />
           <Skeleton className="h-11 w-20 rounded-button sm:h-9" />

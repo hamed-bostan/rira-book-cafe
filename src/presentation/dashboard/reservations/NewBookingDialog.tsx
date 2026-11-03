@@ -175,7 +175,7 @@ export function NewBookingDialog({ day, dayLabel, now, bookings, events }: NewBo
         {/* The design spaces the fields, the table heading and the floor a block apart. */}
         <div className="flex flex-col gap-5">
           <div className={FIELD_GRID}>
-            <DashboardField label={t("guestName")} className="col-span-2">
+            <DashboardField label={t("guestName")} className="col-span-full">
               <Input
                 size="control-md"
                 value={guestName}
@@ -186,7 +186,7 @@ export function NewBookingDialog({ day, dayLabel, now, bookings, events }: NewBo
                 required
               />
             </DashboardField>
-            <DashboardField label={t("guestPhone")} className="col-span-2">
+            <DashboardField label={t("guestPhone")} className="col-span-full">
               <Input
                 size="control-md"
                 type="tel"
@@ -236,7 +236,7 @@ export function NewBookingDialog({ day, dayLabel, now, bookings, events }: NewBo
                 )}
               </Select>
             </DashboardField>
-            <DashboardField label={t("noteOptional")} className="col-span-2">
+            <DashboardField label={t("noteOptional")} className="col-span-full">
               <Input
                 size="control-md"
                 value={note}

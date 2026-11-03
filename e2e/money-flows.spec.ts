@@ -99,7 +99,9 @@ test("a deposit left against a book shows on the loan", async ({ page }) => {
   await page.goto("/dashboard/book-loans");
   await page.getByRole("button", { name: "Lend a book" }).click();
   const dialog = page.getByRole("dialog");
-  await dialog.getByRole("combobox").first().selectOption({ index: 1 });
+  // A book with a copy on the shelf: another spec may have lent every copy of one.
+  const book = dialog.getByRole("combobox").first();
+  await book.selectOption((await book.locator("option:not([disabled])").first().getAttribute("value")) ?? "");
   await dialog.getByLabel("Borrower's name").fill("Sara Ahmadi");
   await dialog.getByLabel("Borrower's phone").fill("09121234567");
   await dialog.getByLabel("Deposit (optional)").fill("500000");

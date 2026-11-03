@@ -3,7 +3,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 
 import type { AnalyticsRangePreset, TopItemSort } from "@/src/domain/entities/Analytics";
 import { PRODUCT_KINDS, type ProductKind } from "@/src/domain/entities/Product";
-import { formatCafeDayHeader, formatCafeDayShort, formatPercent } from "@/src/lib/formatCafeDay";
+import { formatCafeDayShort, formatCafeDayWeekdayName, formatPercent } from "@/src/lib/formatCafeDay";
 import { formatMoney, moneyUnit } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
 
@@ -66,7 +66,7 @@ export async function SalesReportScreen({ report, selected, sort, rangeQuery, no
     if (!point.labelled) return "";
     if (point.hour !== undefined) return formatHourTick(point.hour, locale);
     if (chart.kind === "daily" && chart.points.length <= WEEKDAY_LABEL_DAYS) {
-      return formatCafeDayHeader(point.day, locale).weekday;
+      return formatCafeDayWeekdayName(point.day, locale);
     }
     return formatCafeDayShort(point.day, locale);
   };

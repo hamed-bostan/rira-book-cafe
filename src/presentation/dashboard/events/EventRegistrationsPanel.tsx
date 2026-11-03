@@ -8,6 +8,7 @@ import { formatOrderDateShort } from "@/src/lib/formatOrderDate";
 import { DashboardSection } from "@/src/presentation/dashboard/DashboardSection";
 import { FIELD_HINT } from "@/src/presentation/dashboard/fieldStyles";
 import { TakePaymentButton } from "@/src/presentation/dashboard/income/TakePaymentButton";
+import { ROW_END } from "@/src/presentation/dashboard/pageStyles";
 import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
 
 import { CancelRegistrationButton } from "./CancelRegistrationButton";
@@ -58,7 +59,7 @@ export async function EventRegistrationsPanel({
                   · <span className="whitespace-nowrap">{formatOrderDateShort(registration.createdAt, locale)}</span>
                 </span>
               </div>
-              <div className="ms-auto flex flex-none items-center gap-3">
+              <div className={ROW_END}>
                 <span className="whitespace-nowrap text-foreground/80 tabular-nums">
                   {t("seatCount", { count: registration.seats, formatted: formatNumber(registration.seats, locale) })}
                 </span>

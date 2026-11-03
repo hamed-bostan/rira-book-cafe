@@ -192,6 +192,33 @@ const PAGES: Record<string, MeasuredPage> = {
     dialog: true,
     prepare: dialogFrom(/^(Cancel order|لغو سفارش)$/),
   },
+  // A second round of both items, each with a note as long as the form takes.
+  "add items to an order": {
+    path: (s) => `/dashboard/orders/${s.pendingOrderId}`,
+    dialog: true,
+    prepare: dialogFrom(/^(Add items|افزودن اقلام)$/, async (dialog) => {
+      await dialog.getByRole("button", { name: new RegExp(`^(Add|افزودن) (${BIG.en}|${BIG.fa})`) }).click();
+      await dialog.getByRole("button", { name: new RegExp(`^(Add|افزودن) (${SMALL.en}|${SMALL.fa})`) }).click();
+      const notes = dialog.getByRole("textbox", { name: /^(Note for|یادداشت برای) / });
+      await notes.first().fill(NOTE);
+      await notes.last().fill(NOTE);
+    }),
+  },
+  "change an order's items": {
+    path: (s) => `/dashboard/orders/${s.pendingOrderId}`,
+    dialog: true,
+    prepare: dialogFrom(/^(Change items|تغییر اقلام)$/, async (dialog) => {
+      await dialog.getByRole("combobox").last().selectOption({ index: 1 });
+    }),
+  },
+  "move an order": {
+    path: (s) => `/dashboard/orders/${s.pendingOrderId}`,
+    dialog: true,
+    prepare: dialogFrom(/^(Move|جابه‌جایی)$/),
+  },
+  // Paid in three parts and part refunded: the receipt at its longest.
+  receipt: { path: (s) => `/dashboard/orders/${s.fullOrderId}/receipt`, table: true },
+  "pending order's receipt": { path: (s) => `/dashboard/orders/${s.pendingOrderId}/receipt` },
   "new sale": {
     path: () => "/dashboard/orders/new",
     form: true,

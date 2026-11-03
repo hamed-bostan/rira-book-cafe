@@ -68,7 +68,9 @@ test("staff take a deposit on a table and hand it back once the party has left",
   await expect(page.getByRole("dialog").getByText(/500,000 Toman goes back to .* \(Card\)\./)).toBeVisible();
   await page.getByRole("dialog").getByRole("button", { name: "Return deposit" }).click();
   await expect(row.getByText("Deposit returned: 500,000 Toman")).toBeVisible();
-  await expect(row.getByRole("button", { name: /deposit/i })).toHaveCount(0);
+  // Settled: no deposit control is left (the guest's name has "Deposit" in it, so
+  // the row's Message button is matched out by the verbs).
+  await expect(row.getByRole("button", { name: /^(Take|Return|Keep) deposit/i })).toHaveCount(0);
 
   // Held, then handed back: two entries in the books, netting Deposits held to nothing for it.
   const journal = await jsonOf<{ items: { sourceId?: string; lines: { accountCode: string; debit: number }[] }[] }>(

@@ -43,7 +43,12 @@ test("a guest books a table for 23:30 and sees it in their bookings", async ({ b
   const page = await pageAs(browser, "customer");
 
   await page.goto("/book");
-  await page.getByLabel("Day", { exact: true }).fill(day);
+  // A fill made before the form hydrates is reset to today by it: fill until it holds.
+  const dayField = page.getByLabel("Day", { exact: true });
+  await expect(async () => {
+    await dayField.fill(day);
+    await expect(dayField).toHaveValue(day, { timeout: 1_000 });
+  }).toPass();
   await page.getByRole("combobox", { name: "Time", exact: true }).selectOption("23:30");
   await page.getByRole("button", { name: "Request a table" }).click();
 

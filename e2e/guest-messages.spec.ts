@@ -100,7 +100,10 @@ test("staff message a guest who booked by phone, and the guest reads it in Messa
 
 test("a guest who joined a book's line at the counter is told it's back", async ({ page, browser }) => {
   const phone = freshPhone();
-  const title = `E2E Messages: The Blind Owl, copy ${phone.slice(-4)}`;
+  // Unique per run, in letters: a run of digits in a name reads as a figure to the
+  // responsive specs, which then fault New sale for cutting the name short.
+  const copy = [...phone.slice(-4)].map((digit) => "ABCDEFGHIJ"[Number(digit)]).join("");
+  const title = `E2E Messages: The Blind Owl, copy ${copy}`;
   const api = await staffApi();
   const categories = await jsonOf<{ id: string }[]>(await api.get("/api/categories"));
   const { items } = await jsonOf<{ items: { imageUrl: string }[] }>(await api.get("/api/admin/products?pageSize=1"));

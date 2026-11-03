@@ -5,7 +5,7 @@ import { cafeDayOf, isCafeDay } from "@/src/domain/entities/CafeTime";
 import { SUITE_BOOKING_STATUSES, type SuiteBookingStatus } from "@/src/domain/entities/SuiteBooking";
 import { BookSuiteForGuest } from "@/src/domain/use-cases/suite-bookings/RequestSuiteBooking";
 import { ListSuiteBookings } from "@/src/domain/use-cases/suite-bookings/SuiteBookingQueries";
-import { suiteBookingRepository } from "@/src/infrastructure/container";
+import { suiteBookingRepository, userRepository } from "@/src/infrastructure/container";
 import {
   errorResponse,
   errorResponseFromException,
@@ -48,9 +48,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 }
 
 /**
- * POST /api/admin/suite-bookings — staff book the suite for a guest who rang or
- * asked at the counter; it's confirmed straight away (409 `SUITE_TAKEN` when
- * another stay holds any of those nights). Requires `reservations.manage`.
+ * POST /api/admin/suite-bookings — staff book the suite for a guest, on the profile
+ * `guestPhone` finds (made from `guestName`, with the stay, when it has none); it's
+ * confirmed straight away (409 `SUITE_TAKEN` when another stay holds any of those
+ * nights, 400 `guestName` when a new guest has no name). Requires `reservations.manage`.
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const session = await getSessionWith("reservations.manage");
@@ -69,7 +70,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   try {
-    const booking = await new BookSuiteForGuest(suiteBookingRepository).execute(
+    const booking = await new BookSuiteForGuest(suiteBookingRepository, userRepository).execute(
       parsed.data,
       { id: session.user.id, name: session.user.name ?? session.user.id },
       new Date(),

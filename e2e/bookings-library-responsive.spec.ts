@@ -72,6 +72,24 @@ function dialogFrom(button: RegExp, fill?: (dialog: Locator) => Promise<void>): 
   };
 }
 
+/** A number no seed gives a profile, so the guest field asks for a new guest's name. */
+const NEW_GUEST_PHONE = "0935 700 0001";
+
+/**
+ * Type a guest's phone into the dialog's guest field and wait for what looking it
+ * up says: a new guest (then their name, as long as it may be) or whose profile it is.
+ */
+async function findGuest(dialog: Locator, phone: string): Promise<void> {
+  await dialog.getByLabel(/^(Guest's phone|تلفن مهمان)$/).fill(phone);
+  const says = (text: RegExp): Locator => dialog.getByRole("status").filter({ hasText: text });
+  if (phone === NEW_GUEST_PHONE) {
+    await expect(says(/^(New guest|مهمان جدید)/)).toBeVisible();
+    await dialog.getByLabel(/^(Guest's name|نام مهمان)$/).fill(NAME);
+  } else {
+    await expect(says(/(has a profile|حساب دارد)/)).toBeVisible();
+  }
+}
+
 function menuItemFrom(actions: RegExp, item: RegExp): (page: Page) => Promise<void> {
   return async (page) => {
     await page.getByRole("button", { name: actions }).first().click();
@@ -92,12 +110,21 @@ const PAGES: Record<string, MeasuredPage> = {
     path: (s) => `/dashboard/reservations?day=${s.tomorrow}&status=expired`,
     tabs: true,
   },
-  "new booking": {
+  "new booking for a new guest": {
     path: (s) => `/dashboard/reservations?day=${s.tomorrow}`,
     dialog: true,
     prepare: dialogFrom(/^(New booking|رزرو جدید)$/, async (dialog) => {
-      await dialog.getByRole("textbox").nth(0).fill(NAME);
+      await findGuest(dialog, NEW_GUEST_PHONE);
       await dialog.getByRole("textbox").nth(2).fill(NOTE);
+    }),
+  },
+  // The longest name, said back with "has a profile · hasn't signed in yet".
+  "new booking for a guest with a profile": {
+    path: (s) => `/dashboard/reservations?day=${s.tomorrow}`,
+    dialog: true,
+    prepare: dialogFrom(/^(New booking|رزرو جدید)$/, async (dialog) => {
+      await findGuest(dialog, "0912 345 6789");
+      await dialog.getByRole("textbox").nth(1).fill(NOTE);
     }),
   },
   "confirm booking with a table": {
@@ -171,9 +198,7 @@ const PAGES: Record<string, MeasuredPage> = {
   "new stay": {
     path: () => "/dashboard/suite",
     dialog: true,
-    prepare: dialogFrom(/^(New stay|اقامت جدید)$/, async (dialog) => {
-      await dialog.getByRole("textbox").nth(0).fill(NAME);
-    }),
+    prepare: dialogFrom(/^(New stay|اقامت جدید)$/, (dialog) => findGuest(dialog, NEW_GUEST_PHONE)),
   },
   "edit stay": {
     path: () => "/dashboard/suite",

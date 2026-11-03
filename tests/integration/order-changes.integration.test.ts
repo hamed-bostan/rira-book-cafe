@@ -310,7 +310,7 @@ describe("re-pricing a changed order", () => {
 });
 
 describe("a counter sale's guest", () => {
-  it("hears of a change by the phone staff took, and can open the order it links to", async () => {
+  it("hears of a change on the profile the phone found, and can open the order it links to", async () => {
     signInAs("staff");
     const sale = await readJson<Order>(
       await ringUpSale(

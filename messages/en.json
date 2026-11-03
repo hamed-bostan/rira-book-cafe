@@ -186,7 +186,8 @@
     "payRunDuplicate": "Someone is on this run twice.",
     "payRunDeductionsTooHigh": "Deductions can't be more than gross pay.",
     "payRunDateBeforeMonth": "That date is before the month starts.",
-    "payRunPaidBeforeBooked": "A run can't be paid before it was booked."
+    "payRunPaidBeforeBooked": "A run can't be paid before it was booked.",
+    "guestNameNeeded": "Enter the guest's name: this number has no profile yet."
   },
   "apiErrors": {
     "badRequest": "The request couldn't be read. Please try again.",
@@ -794,9 +795,6 @@
       "decreaseAria": "One less {name}",
       "increaseAria": "One more {name}",
       "detailsHeading": "Who it's for",
-      "customerLabel": "Name",
-      "walkIn": "Walk-in guest",
-      "phoneLabel": "Phone (optional)",
       "tableLabel": "Table",
       "noteLabel": "Note for the bar (optional)",
       "payment": {
@@ -806,7 +804,7 @@
       "completeLabel": "Hand over now",
       "completeHint": "For something ready to go, like a book. Switch off to send it to the bar's queue.",
       "submit": "Record sale",
-      "incomplete": "Fill in the name, and the table for a dine-in order.",
+      "incomplete": "Add the guest's phone (and their name if they're new), and the table for a dine-in order.",
       "saved": "Sale recorded as order #{number}",
       "done": "Sale #{number} is in.",
       "openOrder": "Open order",
@@ -923,16 +921,26 @@
     "action": "Message",
     "actionAria": "Message {name}",
     "title": "Message {name}",
-    "subtitle": "About {about}. It goes to their messages on the site, where they'll see it when they sign in with {phone}. They can't reply to it.",
+    "subtitle": "About {about}. It goes to their messages on the site. They can't reply to it.",
     "label": "Message",
     "placeholder": "e.g. We've kept the table by the window for you.",
     "count": "{used} / {max}",
     "send": "Send",
     "sentToast": "Message sent to {name}",
-    "sentToastBody": "They'll see it in their messages on the site when they sign in with {phone}.",
     "sendError": "Couldn't send the message. Please try again.",
-    "toldToast": "{name} has a message about it on the site.",
-    "toldOnSignInToast": "A message about it went to {name}'s profile on the site. They'll see it when they sign in with {phone}."
+    "toldToast": "{name} has a message about it on the site."
+  },
+  "dashGuestProfiles": {
+    "phoneLabel": "Guest's phone",
+    "phoneHint": "The number they sign in with. It finds their profile.",
+    "checking": "Looking up this number…",
+    "found": "{name} · has a profile",
+    "foundNotSignedIn": "{name} · has a profile · hasn't signed in yet",
+    "foundNoName": "Has a profile, with no name on it yet",
+    "newGuest": "New guest: saving makes them a profile.",
+    "failed": "Couldn't look up this number. Add their name in case they're new.",
+    "nameLabel": "Guest's name",
+    "namePlaceholder": "Full name"
   },
   "dashActivity": {
     "heading": "Activity",
@@ -963,6 +971,7 @@
       "review": "Reviews",
       "promoCode": "Promo codes",
       "user": "Team access",
+      "guest": "Guest profiles",
       "unknown": "Other",
       "category": "Categories",
       "reservation": "Reservations",
@@ -990,6 +999,9 @@
         "writtenOff": "<b>{actor}</b> wrote off order {entity}",
         "onlinePaymentRefunded": "<b>{actor}</b> gave back an online payment on order {entity}",
         "changed": "<b>{actor}</b> changed order {entity}"
+      },
+      "guest": {
+        "profileCreated": "<b>{actor}</b> made a profile for guest {entity}"
       },
       "review": {
         "moderated": "<b>{actor}</b> moderated {entity}’s review",
@@ -1278,10 +1290,7 @@
     "tableDialogSub": "{name} · {party} · {from}–{to}",
     "confirmBooking": "Confirm booking",
     "newBooking": "New booking",
-    "newBookingSub": "A phone or walk-in booking for {day}. Pick a table to confirm it now, or leave it as a request.",
-    "guestName": "Guest name",
-    "guestNamePlaceholder": "Full name",
-    "guestPhone": "Phone",
+    "newBookingSub": "For {day}: find the guest by their phone, or add them. Pick a table to confirm it now, or leave it as a request.",
     "time": "Time",
     "party": "Party",
     "noteOptional": "Note (optional)",
@@ -1300,7 +1309,6 @@
     "editDay": "Day",
     "length": "Length",
     "lengthOption": "{minutes} min",
-    "editPhoneFromAccount": "From the guest's account, so it stays as it is.",
     "editTableTaken": "{table} is booked then (R-{reference}). Pick another table, or another time.",
     "editTableHeld": "{table} is held for “{title}” then. Pick another table, or another time.",
     "editErrorPast": "That time has passed. Choose a later one.",
@@ -1742,7 +1750,7 @@
       "guests": "{count, plural, one {{formatted} guest} other {{formatted} guests}}",
       "note": "Anything we should know? (optional)",
       "notePlaceholder": "e.g. a quiet corner, it's a birthday",
-      "hint": "For more than {max} guests, please call us.",
+      "hint": "For a bigger group, book for {max} and tell us how many you are in the note — we'll reply in your messages.",
       "submit": "Request a table",
       "sending": "Sending…",
       "error": "Couldn't send your request. Please try again.",
@@ -1843,7 +1851,7 @@
       "unread": "Unread",
       "bellAria": "{count, plural, =0 {Messages} one {Messages, # unread} other {Messages, # unread}}",
       "markAllRead": "Mark all as read",
-      "replyNote": "To reply, contact the cafe.",
+      "replyNote": "You can't reply here. Tell us in a booking's note, or when you're next in.",
       "kinds": {
         "orderAccepted": {
           "title": "Order #{orderNumber} is being prepared",
@@ -1883,7 +1891,7 @@
         },
         "reservationExpired": {
           "title": "We couldn't confirm your request in time",
-          "body": "Nobody answered R-{reference} for {startsAt} before it began, so it's been cancelled. Sorry — please book again or give us a call."
+          "body": "Nobody answered R-{reference} for {startsAt} before it began, so it's been cancelled. Sorry — please book again."
         },
         "suiteConfirmed": {
           "title": "Your suite stay is confirmed",
@@ -1899,7 +1907,7 @@
         },
         "suiteExpired": {
           "title": "We couldn't confirm your request in time",
-          "body": "Nobody answered S-{reference} ({checkIn} → {checkOut}) by the day you meant to arrive, so it's been cancelled. Sorry — please ask again or give us a call."
+          "body": "Nobody answered S-{reference} ({checkIn} → {checkOut}) by the day you meant to arrive, so it's been cancelled. Sorry — please ask again."
         },
         "eventTomorrow": {
           "title": "“{title}” is tomorrow",
@@ -3040,10 +3048,7 @@
     "emptyUpcomingBody": "Stays guests book will show up here.",
     "emptyPastTitle": "No past stays",
     "emptyPastBody": "Finished, cancelled and no-show stays from the last two months land here.",
-    "newStaySub": "For a guest who books by phone or at the counter. It's confirmed straight away.",
-    "guestName": "Guest name",
-    "guestNamePlaceholder": "Full name",
-    "guestPhone": "Phone",
+    "newStaySub": "Find the guest by their phone, or add them. It's confirmed straight away.",
     "checkIn": "Check-in",
     "checkOut": "Check-out",
     "guestsLabel": "Guests",

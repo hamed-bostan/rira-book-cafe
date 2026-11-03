@@ -42,6 +42,8 @@ export type NewUser = {
   email?: string | null;
   avatarUrl?: string | null;
   role?: UserRole;
+  /** ISO 8601, for a user made by signing in: when they did. */
+  firstSignedInAt?: string;
 };
 
 /** The mutable slice of a profile a user can edit. Phone/id are identity and never change here. */
@@ -54,6 +56,11 @@ export type ProfileUpdate = {
 export type IUserRepository = {
   getById(id: string): Promise<User | null>;
   create(input: NewUser): Promise<User>;
+  /**
+   * The phone signed in: note when, the first time only (a profile staff made for
+   * the guest, or one from before this was kept). Resolves the user as it is after.
+   */
+  recordFirstSignIn(id: string, at: Date): Promise<User>;
   update(id: string, input: ProfileUpdate): Promise<User>;
   /** Every user holding one of `roles`, oldest first — the team is small enough to read whole. */
   listByRoles(roles: readonly UserRole[]): Promise<User[]>;

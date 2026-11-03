@@ -1,8 +1,16 @@
 import type { AuditHook } from "./AuditHook";
+import type { NewGuestProfile } from "../entities/GuestProfile";
 import type { SuiteBooking, SuiteBookingStatus, SuiteBusyRange } from "../entities/SuiteBooking";
 
-/** A stay about to be requested. Id, reference, status and timestamps are the repository's. */
-export type NewSuiteBooking = Omit<SuiteBooking, "id" | "reference" | "status" | "createdAt" | "updatedAt">;
+/** A stay about to be made, always for a guest's profile. Id, reference, status and timestamps are the repository's. */
+export type NewSuiteBooking = Omit<
+  SuiteBooking,
+  "id" | "reference" | "status" | "createdAt" | "updatedAt" | "userId"
+> & {
+  userId: string;
+  /** Staff booking for a guest whose phone has no profile yet: the profile, made with the stay. */
+  newGuest?: NewGuestProfile;
+};
 
 /** A stay's days and party as staff edit them — the whole set, as it's to be after the save. */
 export type SuiteStayEdit = Pick<SuiteBooking, "checkIn" | "checkOut" | "guests">;
@@ -12,7 +20,8 @@ export type ISuiteBookingRepository = {
    * Record a stay — a guest's request, or (`confirmed`) one staff booked for a
    * guest. Refuses dates that overlap a stay already holding the suite
    * (`ConflictError("SUITE_TAKEN")`), under the suite's lock — nobody can ask for or
-   * be given nights that are already gone.
+   * be given nights that are already gone. With `newGuest`, the guest's profile is
+   * made in the same transaction.
    */
   create(
     input: NewSuiteBooking,

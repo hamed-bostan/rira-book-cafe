@@ -134,15 +134,18 @@ describe("orderStatusNotification", () => {
     expect(orderStatusNotification(order("completed"))?.kind).toBe("orderCompleted");
   });
 
-  it("tells a counter sale's guest by the phone it was rung up with, with no link to an account page", () => {
-    const counter = order("cancelled", { userId: undefined, customerPhone: "0912 123 4567" });
-    const notification = orderStatusNotification(counter);
-    expect(notification).toMatchObject({ userId: "09121234567", kind: "orderCancelled" });
-    expect(notification).not.toHaveProperty("link");
+  it("tells a counter sale's guest on their profile, with a link to the order", () => {
+    const counter = order("cancelled", { userId: "09121234567", customerPhone: "0912 123 4567" });
+    expect(orderStatusNotification(counter)).toMatchObject({
+      userId: "09121234567",
+      kind: "orderCancelled",
+      link: `/orders/${counter.id}`,
+    });
   });
 
-  it("has nobody to tell for a counter sale without a phone", () => {
+  it("has nobody to tell for an old counter sale with no profile", () => {
     expect(orderStatusNotification(order("preparing", { userId: undefined, customerPhone: "" }))).toBeNull();
+    expect(orderStatusNotification(order("cancelled", { userId: undefined, customerPhone: "12" }))).toBeNull();
   });
 });
 
@@ -204,8 +207,8 @@ describe("orderChangedNotification", () => {
     });
   });
 
-  it("reaches a counter sale's guest by the phone staff took, even with no account", () => {
-    const sale = order("pending", { userId: undefined, customerPhone: "0912-345-6789", changedAt: CHANGED });
+  it("reaches a counter sale's guest on the profile it was rung up for", () => {
+    const sale = order("pending", { userId: "09123456789", customerPhone: "0912-345-6789", changedAt: CHANGED });
     expect(orderChangedNotification(sale)?.userId).toBe("09123456789");
   });
 

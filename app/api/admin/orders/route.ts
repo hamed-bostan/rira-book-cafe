@@ -8,7 +8,7 @@ import {
 } from "@/src/domain/entities/AdminOrderFilters";
 import { ListOrders } from "@/src/domain/use-cases/orders/OrderQueries";
 import { PlaceCounterOrder } from "@/src/domain/use-cases/orders/PlaceCounterOrder";
-import { orderRepository, productRepository } from "@/src/infrastructure/container";
+import { orderRepository, productRepository, userRepository } from "@/src/infrastructure/container";
 import { parseAdminOrderFilters } from "@/src/lib/api/admin-order-params";
 import { invalidatesCatalog } from "@/src/lib/api/invalidatesCatalog";
 import { parsePageRequest } from "@/src/lib/api/pagination-params";
@@ -46,9 +46,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 }
 
 /**
- * POST /api/admin/orders — ring up a sale at the counter, for a guest with no account.
+ * POST /api/admin/orders — ring up a sale at the counter, on the profile
+ * `customerPhone` finds (made from `customerName`, with the sale, when it has none).
  * Prices come from the menu; it can be paid and handed over in the same request.
- * 201 with the order; 409 when an item sold out. Requires `orders.fulfill`.
+ * 201 with the order; 400 without a phone, or a name for a new guest; 409 when an
+ * item sold out. Requires `orders.fulfill`.
  */
 async function handlePost(request: NextRequest): Promise<NextResponse> {
   const session = await getSessionWith("orders.fulfill");
@@ -66,7 +68,7 @@ async function handlePost(request: NextRequest): Promise<NextResponse> {
   }
 
   try {
-    const order = await new PlaceCounterOrder(orderRepository, productRepository).execute(parsed.data, {
+    const order = await new PlaceCounterOrder(orderRepository, productRepository, userRepository).execute(parsed.data, {
       id: session.user.id,
       name: session.user.name ?? session.user.id,
     });

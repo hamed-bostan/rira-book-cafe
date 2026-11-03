@@ -148,11 +148,18 @@ describe("editing a table booking", () => {
     ]);
   });
 
-  it("tells a phone guest by their number, though they have no account", async () => {
+  it("tells a phone guest on the profile made for them, and keeps the guest as booked", async () => {
     const booked = await readJson<Reservation>(await staffBooking({ startsAt: `${nextWeek}T12:00` }));
-    const response = await patchDetails(booked.id, { partySize: 5, guestPhone: "0935 640 9999" });
+    // The guest isn't a detail to edit: a guest's name or phone sent along is ignored.
+    const response = await patchDetails(booked.id, { partySize: 5, guestPhone: "0935 640 9999", guestName: "X" });
     expect(response.status).toBe(200);
-    expect(await noticesFor("09356409999", "reservationChanged")).toHaveLength(1);
+    expect(await readJson<Reservation>(response)).toMatchObject({
+      userId: "09356401182",
+      guestName: "Omid Karimi",
+      guestPhone: "0935 640 1182",
+      partySize: 5,
+    });
+    expect(await noticesFor("09356401182", "reservationChanged")).toHaveLength(1);
   });
 
   it("refuses a table someone else has at the new time, and leaves the booking as it was", async () => {
@@ -190,12 +197,11 @@ describe("editing a table booking", () => {
 
   it("validates the details with message keys, and refuses a finished booking", async () => {
     const booked = await readJson<Reservation>(await staffBooking({ startsAt: `${nextWeek}T12:00` }));
-    const bad = await patchDetails(booked.id, { durationMinutes: 45, partySize: 13, guestPhone: "12" });
+    const bad = await patchDetails(booked.id, { durationMinutes: 45, partySize: 13 });
     expect(bad.status).toBe(400);
     expect((await readError(bad)).fieldErrors).toEqual({
       durationMinutes: "lengthInvalid",
       partySize: "partySizeInvalid",
-      guestPhone: "phoneInvalid",
     });
 
     const past = await patchDetails(booked.id, { startsAt: `${shiftCafeDay(today, -1)}T12:00` });

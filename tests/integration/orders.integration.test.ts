@@ -300,7 +300,8 @@ describe("staff working an order", () => {
       jsonRequest("POST", "/api/admin/orders", {
         items: [{ productId: "seed-espresso", quantity: 1 }],
         serviceType: "takeaway",
-        customerName: "Walk-in guest",
+        customerPhone: "0912 555 0130",
+        customerName: "Nima Rad",
         paymentParts: [{ method: "online", amount: 95000 }],
       }),
     );

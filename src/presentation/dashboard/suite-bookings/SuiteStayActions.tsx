@@ -32,10 +32,7 @@ import { EditStayDialog } from "./EditStayDialog";
 import { suiteBookingsApi } from "./suite-booking-api";
 
 type SuiteStayActionsProps = {
-  booking: Pick<
-    SuiteBooking,
-    "id" | "reference" | "status" | "checkIn" | "checkOut" | "guests" | "guestName" | "guestPhone" | "userId"
-  >;
+  booking: Pick<SuiteBooking, "id" | "reference" | "status" | "checkIn" | "checkOut" | "guests" | "guestName">;
   /** Stays holding the suite — "Edit stay" warns before moving onto their nights. */
   held: readonly Pick<SuiteBooking, "id" | "reference" | "checkIn" | "checkOut">[];
   today: string;
@@ -103,9 +100,7 @@ export function SuiteStayActions({
           title: t("statusChanged", { reference, status: t(`status.${next}`) }),
           // Confirming or cancelling sends the guest a message (`suiteNotification`).
           description:
-            next === "confirmed" || next === "cancelled"
-              ? guestToldLine({ name: booking.guestName, phone: booking.guestPhone, userId: booking.userId })
-              : undefined,
+            next === "confirmed" || next === "cancelled" ? guestToldLine({ name: booking.guestName }) : undefined,
           onUndo: undoTo ? () => undo(undoTo) : undefined,
         });
       } catch (err) {

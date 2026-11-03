@@ -10,7 +10,6 @@ import { tableChoicesFor, type FloorBooking, type FloorEvent } from "@/src/domai
 import {
   BOOKING_TIMES,
   DEFAULT_RESERVATION_MINUTES,
-  MAX_GUEST_NAME_LENGTH,
   MAX_PARTY_SIZE,
   MAX_RESERVATION_NOTE_LENGTH,
   MIN_PARTY_SIZE,
@@ -31,6 +30,7 @@ import { DashboardDialog } from "../DashboardDialog";
 import { DashboardField } from "../DashboardField";
 import { FIELD_GRID } from "../fieldStyles";
 import { tableNameValues } from "../floor/tableName";
+import { GuestField, type GuestFieldValue } from "../guest-profiles/GuestField";
 
 import { reservationsApi } from "./reservation-api";
 import { TableChoiceGrid } from "./TableChoiceGrid";
@@ -46,7 +46,7 @@ type NewBookingDialogProps = {
   events: readonly FloorEvent[];
 };
 
-const FIELDS = ["guestName", "guestPhone", "startsAt", "partySize", "note", "tableLabel"] as const;
+const FIELDS = ["guestPhone", "guestName", "startsAt", "partySize", "note", "tableLabel"] as const;
 const DEFAULT_HOUR = 18;
 const DEFAULT_PARTY = 2;
 
@@ -56,8 +56,9 @@ const pad = (n: number): string => String(n).padStart(2, "0");
 const SLOTS = BOOKING_TIMES;
 
 /**
- * "New booking" for a guest who rang or walked in. Pick a table to confirm it on
- * the spot, or leave it as a request to answer later. The floor shown is what
+ * "New booking" for a guest at the counter or on the phone, found — or given a
+ * profile — by their phone (`GuestField`). Pick a table to confirm it on the spot,
+ * or leave it as a request to answer later. The floor shown is what
  * holds the tables around the day (a late booking the night before included);
  * the server re-checks the table when it saves.
  */
@@ -78,8 +79,7 @@ export function NewBookingDialog({ day, dayLabel, now, bookings, events }: NewBo
     SLOTS.some(isPast) ? (SLOTS.find((slot) => !isPast(slot)) ?? SLOTS[SLOTS.length - 1]) : `${pad(DEFAULT_HOUR)}:00`;
 
   const [open, setOpen] = React.useState(false);
-  const [guestName, setGuestName] = React.useState("");
-  const [guestPhone, setGuestPhone] = React.useState("");
+  const [guest, setGuest] = React.useState<GuestFieldValue | null>(null);
   const [time, setTime] = React.useState(`${pad(DEFAULT_HOUR)}:00`);
   const [partySize, setPartySize] = React.useState(DEFAULT_PARTY);
   const [note, setNote] = React.useState("");
@@ -88,8 +88,7 @@ export function NewBookingDialog({ day, dayLabel, now, bookings, events }: NewBo
   const [pending, startTransition] = React.useTransition();
 
   function openDialog(): void {
-    setGuestName("");
-    setGuestPhone("");
+    setGuest(null);
     setTime(defaultSlot());
     setPartySize(DEFAULT_PARTY);
     setNote("");
@@ -103,15 +102,14 @@ export function NewBookingDialog({ day, dayLabel, now, bookings, events }: NewBo
     bookings,
     events,
   );
-  const blocked = !guestName.trim() || !guestPhone.trim();
-
   function submit(): void {
+    if (!guest) return;
     setError(null);
     startTransition(async () => {
       try {
         const saved = await reservationsApi.create({
-          guestName,
-          guestPhone,
+          guestPhone: guest.phone,
+          guestName: guest.name,
           startsAt: `${day}T${time}`,
           partySize,
           note,
@@ -160,7 +158,7 @@ export function NewBookingDialog({ day, dayLabel, now, bookings, events }: NewBo
         title={t("newBooking")}
         subtitle={t("newBookingSub", { day: dayLabel })}
         submitLabel={pick ? t("confirmBooking") : t("saveAsRequest")}
-        blocked={blocked}
+        blocked={!guest}
         pending={pending}
         onSubmit={submit}
         error={error}
@@ -168,30 +166,7 @@ export function NewBookingDialog({ day, dayLabel, now, bookings, events }: NewBo
         {/* The design spaces the fields, the table heading and the floor a block apart. */}
         <div className="flex flex-col gap-5">
           <div className={FIELD_GRID}>
-            <DashboardField label={t("guestName")} className="col-span-full">
-              <Input
-                size="control-md"
-                value={guestName}
-                onChange={(event) => setGuestName(event.target.value)}
-                maxLength={MAX_GUEST_NAME_LENGTH}
-                placeholder={t("guestNamePlaceholder")}
-                autoComplete="off"
-                required
-              />
-            </DashboardField>
-            <DashboardField label={t("guestPhone")} className="col-span-full">
-              <Input
-                size="control-md"
-                type="tel"
-                inputMode="tel"
-                value={guestPhone}
-                onChange={(event) => setGuestPhone(event.target.value)}
-                placeholder="0912 345 6789"
-                autoComplete="off"
-                dir="ltr"
-                required
-              />
-            </DashboardField>
+            <GuestField className="col-span-full" onChange={setGuest} disabled={pending} />
             <DashboardField label={t("time")}>
               <Select
                 size="control-md"

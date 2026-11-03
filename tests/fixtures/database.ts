@@ -6,12 +6,13 @@ import { TEST_USERS } from "./users";
 /**
  * The test database's starting state: the migrations' own rows (chart of accounts,
  * settings), the dev seed's sample menu and events, and one account per role
- * (`TEST_USERS`). Expects a freshly migrated database (`migrateTestDatabase`).
+ * (`TEST_USERS`), each signed in already. Expects a freshly migrated database
+ * (`migrateTestDatabase`).
  */
 export async function seedTestDatabase(): Promise<void> {
   await seedSampleData();
   for (const user of Object.values(TEST_USERS)) {
-    await prisma.user.create({ data: user });
+    await prisma.user.create({ data: { ...user, firstSignedInAt: new Date() } });
   }
 }
 

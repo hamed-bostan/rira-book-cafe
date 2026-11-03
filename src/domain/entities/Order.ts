@@ -1,5 +1,3 @@
-import { isPlausiblePhone, normalizePhone } from "./Phone";
-
 import type { ProductKind } from "./Product";
 
 /**
@@ -77,8 +75,6 @@ export function withoutCosts(order: Order): Order {
   return { ...order, items: order.items.map(({ unitCost: _unitCost, ...item }) => item) };
 }
 
-/** Longest name staff can put on a counter sale. */
-export const MAX_COUNTER_CUSTOMER_LENGTH = 80;
 /** Longest table label accepted, e.g. "12" or "Terrace 3". */
 export const MAX_TABLE_LABEL_LENGTH = 20;
 /** Longest note a guest can attach to an order or a line. */
@@ -139,11 +135,15 @@ export type Order = {
   id: string;
   /** Short sequential number staff call out ("order 42"). */
   orderNumber: number;
-  /** The guest who placed it; absent for a sale staff rang up at the counter. */
+  /**
+   * The guest's profile: theirs when they ordered, the one their phone found (or
+   * made) when staff rang it up at the counter. Absent only on an old counter sale
+   * that had no usable phone.
+   */
   userId?: string;
   /** The guest's name and phone, snapshotted at placement so the queue reads without a lookup. */
   customerName: string;
-  /** Empty when a guest at the counter didn't give one. */
+  /** Empty only on an old counter sale whose guest didn't give one. */
   customerPhone: string;
   status: OrderStatus;
   serviceType: ServiceType;
@@ -365,17 +365,11 @@ export function canLowerOrderItem(item: Pick<OrderItem, "servedAt">): boolean {
 }
 
 /**
- * Who the order belongs to, as a guest id (a guest's id is their normalized phone):
- * the account that placed it, or for a sale rung up at the counter, the phone staff
- * took — the guest reads it once they sign in with that number. `null` for a
- * counter sale without one.
+ * Whether the guest may read the order (and its receipt) as their own: it's on
+ * their profile. A sale rung up at the counter is on the profile of the phone it
+ * was rung up for, as every old one with a usable phone is since the backfill
+ * (`20261108000000_guest_profiles_backfill`).
  */
-export function orderGuestId(order: Pick<Order, "userId" | "customerPhone">): string | null {
-  if (order.userId) return order.userId;
-  return isPlausiblePhone(order.customerPhone) ? normalizePhone(order.customerPhone) : null;
-}
-
-/** Whether the guest may read the order (and its receipt) as their own. */
-export function isOrderOf(order: Pick<Order, "userId" | "customerPhone">, guestId: string): boolean {
-  return orderGuestId(order) === guestId;
+export function isOrderOf(order: Pick<Order, "userId">, guestId: string): boolean {
+  return order.userId === guestId;
 }

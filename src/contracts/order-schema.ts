@@ -1,6 +1,5 @@
 import {
   COUNTER_PAYMENT_METHODS,
-  MAX_COUNTER_CUSTOMER_LENGTH,
   MAX_LINE_QUANTITY,
   MAX_ORDER_LINES,
   MAX_ORDER_NOTE_TEXT_LENGTH,
@@ -15,6 +14,7 @@ import { MAX_REFUND_REASON_LENGTH } from "@/src/domain/entities/OrderRefund";
 import * as z from "@/src/lib/zod";
 
 import { fieldsParsed } from "./fields-parsed";
+import { guestNameField, guestPhoneField } from "./guest-schema";
 import { MAX_MONEY_AMOUNT } from "./money-fields";
 
 /**
@@ -30,9 +30,6 @@ function optionalText(max: number) {
     z.transform((value) => (value ? value : undefined)),
   );
 }
-
-/** Longest phone number staff can type on a counter sale. */
-const MAX_COUNTER_PHONE_LENGTH = 30;
 
 /** Longest promo code accepted as typed (codes themselves are 3–20 characters). */
 const MAX_PROMO_INPUT_LENGTH = 30;
@@ -138,9 +135,10 @@ export const orderPaymentSchema = z
 export type OrderPaymentInput = z.infer<typeof orderPaymentSchema>;
 
 /**
- * A sale staff ring up at the counter. Only *which* items, like a guest's order: the
- * prices come from the menu. Paid now when it carries `paymentParts`; handed over on
- * the spot with `complete`.
+ * A sale staff ring up at the counter, for a guest: the phone finds their profile,
+ * and the name makes one when it has none (see `guest-schema`). Only *which* items,
+ * like a guest's order: the prices come from the menu. Paid now when it carries
+ * `paymentParts`; handed over on the spot with `complete`.
  */
 export const counterOrderSchema = z
   .object({
@@ -148,10 +146,8 @@ export const counterOrderSchema = z
     serviceType: z.enum(SERVICE_TYPES, { error: "serviceTypeInvalid" }),
     tableLabel: optionalText(MAX_TABLE_LABEL_LENGTH),
     note: optionalText(MAX_ORDER_NOTE_TEXT_LENGTH),
-    customerName: z
-      .string()
-      .check(z.trim(), z.minLength(1, "nameRequired"), z.maxLength(MAX_COUNTER_CUSTOMER_LENGTH, "nameTooLong")),
-    customerPhone: z.optional(z.string().check(z.trim(), z.maxLength(MAX_COUNTER_PHONE_LENGTH, "phoneInvalid"))),
+    customerPhone: guestPhoneField,
+    customerName: guestNameField,
     paymentParts: z.optional(paymentParts),
     complete: z.optional(z.boolean()),
   })

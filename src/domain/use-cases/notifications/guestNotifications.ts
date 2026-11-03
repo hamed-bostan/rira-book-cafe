@@ -6,12 +6,12 @@ import {
   type NewNotification,
   type NotificationParams,
 } from "../../entities/Notification";
-import { orderGuestId, type Order, type OrderStatus } from "../../entities/Order";
 import { normalizePhone } from "../../entities/Phone";
 import { eveningBefore, isReminderDue, soonBefore } from "../../entities/Reminder";
 
 import type { BookWaitlistEntry } from "../../entities/BookWaitlist";
 import type { CafeEvent, EventRegistration } from "../../entities/CafeEvent";
+import type { Order, OrderStatus } from "../../entities/Order";
 import type { Reservation } from "../../entities/Reservation";
 import type { SuiteBooking } from "../../entities/SuiteBooking";
 
@@ -20,12 +20,12 @@ import type { SuiteBooking } from "../../entities/SuiteBooking";
  * change — `null` when it isn't news to them. The use-cases decide *when* to send;
  * these decide *what*.
  *
- * Every notice is addressed by {@link guestRecipient}: the guest's account when
- * the record has one, else their normalized phone — so a guest who booked by
- * phone, borrowed at the counter or gave a number with a counter sale finds it in
- * their messages once they sign in with that number. The link is only kept for a
- * record on their account: the page it opens lists their own bookings, loans and
- * orders, and one made for them by phone isn't among those.
+ * Every notice goes to the guest's profile — the record's `userId`, which staff
+ * acting for a guest find or make by the phone they gave — so it's in their
+ * messages whether or not they've signed in yet, and its link opens the record
+ * among their own. {@link guestRecipient} still reads a record without a profile
+ * by its phone (the same id, normalized), with no link: the page it would open
+ * lists only what's on their profile.
  */
 
 /** Who the notice goes to and where tapping it leads — `null` when there's nobody to tell. */
@@ -51,11 +51,12 @@ const ORDER_KINDS: Partial<Record<OrderStatus, NewNotification["kind"]>> = {
 
 /**
  * An order moved. A served order that earned points says so instead of a plain
- * "served". A counter sale is told by the phone it was rung up with; one with no
- * number has nobody to tell.
+ * "served" — a counter sale's too, since it's on the guest's profile. An old sale
+ * with no profile has nobody to tell.
  */
 export function orderStatusNotification(order: Order): NewNotification | null {
-  if (order.status === "completed" && order.pointsEarned > 0 && order.userId) {
+  if (!order.userId) return null;
+  if (order.status === "completed" && order.pointsEarned > 0) {
     return {
       userId: order.userId,
       kind: "pointsEarned",
@@ -65,10 +66,10 @@ export function orderStatusNotification(order: Order): NewNotification | null {
     };
   }
   const kind = ORDER_KINDS[order.status];
-  const to = kind ? addressed({ userId: order.userId, phone: order.customerPhone }, `/orders/${order.id}`) : null;
-  if (!kind || !to) return null;
+  if (!kind) return null;
   return {
-    ...to,
+    userId: order.userId,
+    link: `/orders/${order.id}`,
     kind,
     params: { orderNumber: order.orderNumber, serviceType: order.serviceType },
     dedupeKey: `order:${order.id}:${order.status}`,
@@ -77,14 +78,12 @@ export function orderStatusNotification(order: Order): NewNotification | null {
 
 /**
  * Staff changed the order after it was placed — a round added, a line taken off,
- * another table. Addressed by the guest's phone, so a sale rung up at the counter
- * for a number reaches that guest too, once they sign in with it. One per change.
+ * another table. Told to the guest's profile, a counter sale's too. One per change.
  */
 export function orderChangedNotification(order: Order): NewNotification | null {
-  const guestId = orderGuestId(order);
-  if (!guestId || !order.changedAt) return null;
+  if (!order.userId || !order.changedAt) return null;
   return {
-    userId: guestId,
+    userId: order.userId,
     kind: "orderChanged",
     params: { orderNumber: order.orderNumber },
     link: `/orders/${order.id}`,

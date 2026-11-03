@@ -5,6 +5,7 @@ import { PlaceCounterOrder, type CounterOrderInput } from "../PlaceCounterOrder"
 
 import type { Order, OrderStatus } from "../../../entities/Order";
 import type { Product } from "../../../entities/Product";
+import type { User } from "../../../entities/User";
 import type { IOrderRepository } from "../../../repositories/IOrderRepository";
 
 const STAFF = { id: "staff", name: "Sara" };
@@ -20,10 +21,14 @@ const LATTE = {
 
 const productRepo = { getByIds: vi.fn(async () => [LATTE]) };
 
+/** Nobody has a profile yet. */
+const noProfiles = { getById: vi.fn(async (): Promise<User | null> => null) };
+
 const SALE: CounterOrderInput = {
   items: [{ productId: "latte", quantity: 2 }],
   serviceType: "takeaway",
-  customerName: "Walk-in guest",
+  customerPhone: "+98 912 345 6789",
+  customerName: "Sara Ahmadi",
 };
 
 /** An order repository that applies each write, as the real one does. */
@@ -62,23 +67,62 @@ function orderStore() {
 }
 
 describe("PlaceCounterOrder", () => {
-  it("prices from the menu, belongs to no account, and logs who rang it up", async () => {
+  it("prices from the menu, makes a new guest's profile with the sale, and logs who rang it up", async () => {
     const { repo, place } = orderStore();
-    const order = await new PlaceCounterOrder(repo, productRepo).execute(SALE, STAFF);
+    const order = await new PlaceCounterOrder(repo, productRepo, noProfiles).execute(SALE, STAFF);
 
     expect(order).toMatchObject({ status: "pending", paymentStatus: "unpaid", total: 240_000 });
-    expect(order.userId).toBeUndefined();
+    expect(order.userId).toBe("09123456789");
     expect(place.mock.calls[0][0]).toMatchObject({
-      customerName: "Walk-in guest",
-      customerPhone: "",
+      userId: "09123456789",
+      newGuest: { id: "09123456789", phone: "+98 912 345 6789", name: "Sara Ahmadi", createdBy: STAFF },
+      customerName: "Sara Ahmadi",
+      customerPhone: "+98 912 345 6789",
       promoDiscount: 0,
     });
     expect(place.mock.calls[0][2]?.(order)).toMatchObject({ action: "order.counterSale", actorName: "Sara" });
   });
 
+  it("rings a guest with a profile up under its own name, making nothing", async () => {
+    const { repo, place } = orderStore();
+    const profiles = {
+      getById: vi.fn(async (): Promise<User | null> => ({
+        id: "09123456789",
+        phone: "09123456789",
+        name: "Sara A.",
+        email: null,
+        avatarUrl: null,
+        role: "customer",
+      })),
+    };
+    await new PlaceCounterOrder(repo, productRepo, profiles).execute(
+      { ...SALE, customerPhone: "۰۹۱۲ ۳۴۵ ۶۷۸۹", customerName: undefined },
+      STAFF,
+    );
+
+    expect(profiles.getById).toHaveBeenCalledWith("09123456789");
+    expect(place.mock.calls[0][0]).toMatchObject({ userId: "09123456789", customerName: "Sara A." });
+    expect(place.mock.calls[0][0].newGuest).toBeUndefined();
+  });
+
+  it("needs the guest's phone on every sale, and a new guest's name, before placing anything", async () => {
+    const { repo, place } = orderStore();
+    const useCase = new PlaceCounterOrder(repo, productRepo, noProfiles);
+
+    await expect(useCase.execute({ ...SALE, customerPhone: "" }, STAFF)).rejects.toMatchObject({
+      field: "customerPhone",
+      message: "phoneInvalid",
+    });
+    await expect(useCase.execute({ ...SALE, customerName: " " }, STAFF)).rejects.toMatchObject({
+      field: "customerName",
+      message: "guestNameNeeded",
+    });
+    expect(place).not.toHaveBeenCalled();
+  });
+
   it("takes payment and hands over in one go", async () => {
     const { repo, setPaymentStatus, transition } = orderStore();
-    const order = await new PlaceCounterOrder(repo, productRepo).execute(
+    const order = await new PlaceCounterOrder(repo, productRepo, noProfiles).execute(
       {
         ...SALE,
         paymentParts: [
@@ -100,7 +144,7 @@ describe("PlaceCounterOrder", () => {
     const { repo, place } = orderStore();
 
     await expect(
-      new PlaceCounterOrder(repo, productRepo).execute(
+      new PlaceCounterOrder(repo, productRepo, noProfiles).execute(
         { ...SALE, paymentParts: [{ method: "cash", amount: 100_000 }] },
         STAFF,
       ),
@@ -108,11 +152,10 @@ describe("PlaceCounterOrder", () => {
     expect(place).not.toHaveBeenCalled();
   });
 
-  it("needs a name, and a table for dine-in", async () => {
+  it("needs a table for dine-in", async () => {
     const { repo } = orderStore();
-    const useCase = new PlaceCounterOrder(repo, productRepo);
+    const useCase = new PlaceCounterOrder(repo, productRepo, noProfiles);
 
-    await expect(useCase.execute({ ...SALE, customerName: "  " }, STAFF)).rejects.toThrow(ValidationError);
     await expect(useCase.execute({ ...SALE, serviceType: "dineIn" }, STAFF)).rejects.toThrow(ValidationError);
   });
 });

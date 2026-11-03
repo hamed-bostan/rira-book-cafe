@@ -11,7 +11,6 @@ import {
   isOrderOf,
   isStaffCancellable,
   nextOrderStatus,
-  orderGuestId,
   orderSubtotal,
 } from "../Order";
 
@@ -73,21 +72,12 @@ describe("changing an order after it's placed", () => {
 });
 
 describe("whose order it is", () => {
-  it("is the account that placed it", () => {
-    expect(orderGuestId({ userId: "09120000004", customerPhone: "0912 000 0004" })).toBe("09120000004");
-    expect(isOrderOf({ userId: "09120000004", customerPhone: "" }, "09120000005")).toBe(false);
+  it("is the profile it's on, and nobody else's", () => {
+    expect(isOrderOf({ userId: "09120000004" }, "09120000004")).toBe(true);
+    expect(isOrderOf({ userId: "09120000004" }, "09120000005")).toBe(false);
   });
 
-  it("is the phone a counter sale was rung up for, however it was typed", () => {
-    const sale = { userId: undefined, customerPhone: "+98 912 345 6789" };
-    expect(orderGuestId(sale)).toBe("09123456789");
-    expect(isOrderOf(sale, "09123456789")).toBe(true);
-    expect(isOrderOf(sale, "09120000004")).toBe(false);
-  });
-
-  it("is nobody's for a counter sale without a phone", () => {
-    expect(orderGuestId({ userId: undefined, customerPhone: "" })).toBeNull();
-    expect(orderGuestId({ userId: undefined, customerPhone: "12" })).toBeNull();
-    expect(isOrderOf({ userId: undefined, customerPhone: "" }, "")).toBe(false);
+  it("is nobody's for an old counter sale without a usable phone", () => {
+    expect(isOrderOf({ userId: undefined }, "")).toBe(false);
   });
 });

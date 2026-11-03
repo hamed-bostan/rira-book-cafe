@@ -33,9 +33,9 @@ export class GetOrderById {
 }
 
 /**
- * One of the guest's own orders — placed from their account, or rung up at the
- * counter for their phone (see `isOrderOf`). Someone else's reads as `null` so ids
- * can't be probed.
+ * One of the guest's own orders — placed by them, or rung up at the counter for
+ * their profile (see `isOrderOf`). Someone else's reads as `null` so ids can't be
+ * probed.
  */
 export class GetOwnOrder {
   constructor(private readonly orderRepo: IOrderRepository) {}

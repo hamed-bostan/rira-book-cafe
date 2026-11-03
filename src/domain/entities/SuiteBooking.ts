@@ -33,14 +33,16 @@ export const MAX_SUITE_NIGHTS = 14;
 /** How far ahead a guest may book. */
 export const MAX_SUITE_DAYS_AHEAD = 120;
 export const MAX_SUITE_NOTE_LENGTH = 300;
-/** A guest's name as staff type it for a phone or counter booking. */
-export const MAX_SUITE_GUEST_NAME_LENGTH = 80;
 
 export type SuiteBooking = {
   id: string;
   /** Short sequential number staff and guests refer to (`S-12`). */
   reference: number;
-  /** The guest's account; absent for a stay staff booked for them by phone or at the counter. */
+  /**
+   * The guest's profile — theirs when they asked themselves, the one their phone
+   * found (or made) when staff booked for them. Absent only on an old stay that
+   * had no usable phone.
+   */
   userId?: string;
   /** Guest's name and phone, snapshotted when they booked. */
   guestName: string;

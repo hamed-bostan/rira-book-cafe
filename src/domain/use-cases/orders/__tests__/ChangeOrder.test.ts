@@ -342,8 +342,8 @@ describe("ChangeOrder", () => {
     await expect(useCase.execute("o1", { tableLabel: "9" }, STAFF, NOW)).rejects.toBeInstanceOf(NotFoundError);
   });
 
-  it("tells a counter sale's guest by the phone staff took, and nobody when there's none", async () => {
-    const counter = setup({ current: order({ userId: undefined, customerPhone: "0912 345 6789" }) });
+  it("tells a counter sale's guest on its profile, and nobody on an old sale without one", async () => {
+    const counter = setup({ current: order({ userId: "09123456789", customerPhone: "0912 345 6789" }) });
     await counter.useCase.execute("o1", { tableLabel: "9" }, STAFF, NOW);
     expect(counter.notify).toHaveBeenCalledWith(expect.objectContaining({ userId: "09123456789" }));
 

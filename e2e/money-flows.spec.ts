@@ -24,6 +24,11 @@ test("staff ring up a split sale at the counter, then refund part of it", async 
   await espresso.click();
   await espresso.click();
 
+  // Every sale is a guest's: one the cafe hasn't met gets a profile with it.
+  await page.getByLabel("Guest's phone").fill(`0938${String(Date.now()).slice(-7)}`);
+  await expect(page.getByRole("status").filter({ hasText: "New guest" })).toBeVisible();
+  await page.getByLabel("Guest's name").fill("E2E Split Sale Guest");
+
   await page.getByRole("button", { name: "Split", exact: true }).click();
   await page.getByLabel("Cash", { exact: true }).fill("90000");
   await page.getByLabel("Card (POS)", { exact: true }).fill("100000");

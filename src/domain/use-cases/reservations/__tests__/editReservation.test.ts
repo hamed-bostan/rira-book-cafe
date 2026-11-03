@@ -23,6 +23,8 @@ function reservation(status: ReservationStatus, overrides: Partial<Reservation> 
   return {
     id: "r1",
     reference: 12,
+    // Booked by staff for the guest's profile: its id is their phone, normalized.
+    userId: "09356401182",
     guestName: "Omid Karimi",
     guestPhone: "0935 640 1182",
     partySize: 4,
@@ -65,15 +67,10 @@ describe("editableReservationDetails", () => {
       expect(editableReservationDetails({ status })).toEqual([]);
     }
   });
-
-  it("keeps a guest's own booking on their account's phone", () => {
-    expect(editableReservationDetails({ status: "confirmed", userId: "09120000004" })).not.toContain("guestPhone");
-    expect(editableReservationDetails({ status: "confirmed", userId: "09120000004" })).toContain("guestName");
-  });
 });
 
 describe("EditReservation", () => {
-  it("moves a booking to another day and time, logs both sides, and tells the guest by phone", async () => {
+  it("moves a booking to another day and time, logs both sides, and tells the guest's profile", async () => {
     const { useCase, applyEdit, notifier, entries } = setup(reservation("confirmed"));
     const saved = await useCase.execute(
       "r1",
@@ -89,8 +86,6 @@ describe("EditReservation", () => {
         startsAt: "2026-10-23T20:00:00.000Z",
         partySize: 4,
         durationMinutes: 120,
-        guestName: "Omid Karimi",
-        guestPhone: "0935 640 1182",
         note: null,
         tableLabel: "4",
       },
@@ -109,22 +104,22 @@ describe("EditReservation", () => {
     });
     expect(notifier.notify).toHaveBeenCalledOnce();
     expect(notifier.notify).toHaveBeenCalledWith({
-      // A phone booking has no account: the notice waits under the guest's phone,
-      // with no link — their reservations page lists only an account's bookings.
+      // On the guest's profile, signed in or not, with a link to their reservations.
       userId: "09356401182",
+      link: "/reservations",
       kind: "reservationChanged",
       params: { reference: 12, startsAt: saved.startsAt, partySize: 4, durationMinutes: 120 },
       dedupeKey: `reservation:r1:changed:${SAVED_AT}`,
     });
   });
 
-  it("tells the guest about a new party size or length, but not a new name, note or table", async () => {
+  it("tells the guest about a new party size or length, but not a new note or table", async () => {
     for (const input of [{ partySize: 6 }, { durationMinutes: 60 }]) {
       const { useCase, notifier } = setup(reservation("confirmed"));
       await useCase.execute("r1", input, STAFF, NOW);
       expect(notifier.notify).toHaveBeenCalledWith(expect.objectContaining({ kind: "reservationChanged" }));
     }
-    for (const input of [{ guestName: "Omid K." }, { note: "Window seat" }, { tableLabel: "5" }]) {
+    for (const input of [{ note: "Window seat" }, { tableLabel: "5" }]) {
       const { useCase, applyEdit, notifier } = setup(reservation("confirmed"));
       await useCase.execute("r1", input, STAFF, NOW);
       expect(applyEdit).toHaveBeenCalledOnce();
@@ -134,13 +129,7 @@ describe("EditReservation", () => {
 
   it("lets a seated party change only its length and table", async () => {
     const seated = reservation("seated", { startsAt: "2026-10-20T09:30:00.000Z" });
-    for (const input of [
-      { startsAt: wallTimeToDate("2026-10-20T14:00") },
-      { partySize: 5 },
-      { guestName: "Someone else" },
-      { guestPhone: "0912 000 0000" },
-      { note: "Late" },
-    ]) {
+    for (const input of [{ startsAt: wallTimeToDate("2026-10-20T14:00") }, { partySize: 5 }, { note: "Late" }]) {
       const { useCase, applyEdit } = setup(seated);
       await expect(useCase.execute("r1", input, STAFF, NOW)).rejects.toThrow(ValidationError);
       expect(applyEdit).not.toHaveBeenCalled();
@@ -162,24 +151,6 @@ describe("EditReservation", () => {
     await expect(useCase.execute("r1", { tableLabel: null }, STAFF, NOW)).rejects.toMatchObject({
       field: "tableLabel",
     });
-  });
-
-  it("keeps the phone of a guest's own booking, and lets their name be corrected", async () => {
-    const own = reservation("requested", { userId: "09120000004", guestPhone: "09120000004" });
-    await expect(setup(own).useCase.execute("r1", { guestPhone: "09350000000" }, STAFF, NOW)).rejects.toMatchObject({
-      field: "guestPhone",
-    });
-
-    const { useCase, applyEdit } = setup(own);
-    await useCase.execute("r1", { guestName: "  Sara Ahmadi ", guestPhone: "09120000004" }, STAFF, NOW);
-    expect(applyEdit.mock.calls[0][2]).toMatchObject({ guestName: "Sara Ahmadi", guestPhone: "09120000004" });
-  });
-
-  it("changes a walk-in's phone, and tells them at the new number", async () => {
-    const { useCase, applyEdit, notifier } = setup(reservation("confirmed"));
-    await useCase.execute("r1", { guestPhone: " +98 912 111 2233 ", partySize: 3 }, STAFF, NOW);
-    expect(applyEdit.mock.calls[0][2]).toMatchObject({ guestPhone: "+98 912 111 2233" });
-    expect(notifier.notify).toHaveBeenCalledWith(expect.objectContaining({ userId: "09121112233" }));
   });
 
   it("holds a new time to the booking rules: any quarter hour, not in the past, within the horizon", async () => {
@@ -204,7 +175,6 @@ describe("EditReservation", () => {
       [{ durationMinutes: 600 }, "durationMinutes"],
       [{ partySize: 13 }, "partySize"],
       [{ tableLabel: "Patio" }, "tableLabel"],
-      [{ guestName: "  " }, "guestName"],
     ] as const) {
       const { useCase, applyEdit } = setup(reservation("confirmed"));
       await expect(useCase.execute("r1", input, STAFF, NOW)).rejects.toMatchObject({ field });
@@ -222,12 +192,7 @@ describe("EditReservation", () => {
     const current = reservation("confirmed");
     const { useCase, applyEdit, notifier } = setup(current);
     expect(
-      await useCase.execute(
-        "r1",
-        { startsAt: new Date(current.startsAt), partySize: 4, guestName: "Omid Karimi ", tableLabel: "4" },
-        STAFF,
-        NOW,
-      ),
+      await useCase.execute("r1", { startsAt: new Date(current.startsAt), partySize: 4, tableLabel: "4" }, STAFF, NOW),
     ).toBe(current);
     expect(applyEdit).not.toHaveBeenCalled();
     expect(notifier.notify).not.toHaveBeenCalled();

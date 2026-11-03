@@ -7,6 +7,7 @@ import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { cn } from "@/src/lib/utils";
 import { DashboardEmptyState } from "@/src/presentation/dashboard/DashboardEmptyState";
+import { PAGE_START_TEXT } from "@/src/presentation/dashboard/pageStyles";
 import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 
 /** How many best sellers the card lists. */
@@ -92,19 +93,29 @@ export async function TopItemsPanel({ items, sort }: TopItemsPanelProps) {
             const money = formatMoney(item.revenue, locale);
             const sold = t("sold", { count: item.quantity });
             return (
-              <li key={item.productId} className="flex items-center gap-3 border-t border-border py-3">
+              // The figures drop under a name that would be left under 10rem, at the row's end.
+              <li
+                key={item.productId}
+                className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border py-3"
+              >
                 <span className="w-5 shrink-0 text-body-default text-muted-foreground tabular-nums sm:text-body-small">
                   {formatNumber(index + 1, locale)}
                 </span>
-                <span className="flex min-w-0 flex-1 flex-col">
-                  <span dir="auto" className="truncate text-body-emphasis text-foreground sm:text-body-small-emphasis">
+                <span className="flex min-w-0 flex-[1_1_10rem] flex-col">
+                  <span
+                    dir="auto"
+                    className={cn(PAGE_START_TEXT, "text-body-emphasis text-foreground sm:text-body-small-emphasis")}
+                  >
                     {item.name}
                   </span>
-                  <span dir="auto" className="text-body-small text-muted-foreground sm:text-body-caption">
+                  <span
+                    dir="auto"
+                    className={cn(PAGE_START_TEXT, "text-body-small text-muted-foreground sm:text-body-caption")}
+                  >
                     {item.categoryName ?? tKind(item.kind)}
                   </span>
                 </span>
-                <span className="flex flex-col items-end whitespace-nowrap tabular-nums">
+                <span className="ms-auto flex flex-col items-end whitespace-nowrap tabular-nums">
                   <span className="text-body-strong text-foreground sm:text-body-small-strong">
                     {byRevenue ? money : sold}
                   </span>

@@ -54,6 +54,7 @@ const longFormatters = new Map<
     full: Intl.DateTimeFormat;
     weekday: Intl.DateTimeFormat;
     weekdayName: Intl.DateTimeFormat;
+    dayOfMonth: Intl.DateTimeFormat;
     long: Intl.DateTimeFormat;
   }
 >();
@@ -65,6 +66,7 @@ function longFormattersFor(locale: Locale) {
     full: new Intl.DateTimeFormat(TAG[locale], { dateStyle: "full", timeZone: CAFE_TIME_ZONE }),
     weekday: new Intl.DateTimeFormat(TAG[locale], { weekday: "short", day: "numeric", timeZone: CAFE_TIME_ZONE }),
     weekdayName: new Intl.DateTimeFormat(TAG[locale], { weekday: "short", timeZone: CAFE_TIME_ZONE }),
+    dayOfMonth: new Intl.DateTimeFormat(TAG[locale], { day: "numeric", timeZone: CAFE_TIME_ZONE }),
     long: new Intl.DateTimeFormat(TAG[locale], {
       weekday: "long",
       day: "numeric",
@@ -89,6 +91,11 @@ export function formatCafeDayWeekday(day: string, locale: Locale): string {
 /** "Thu" / «پنجشنبه» — a week chart's axis, where each day has a bar's width to itself. */
 export function formatCafeDayWeekdayName(day: string, locale: Locale): string {
   return longFormattersFor(locale).weekdayName.format(noonOf(day));
+}
+
+/** "15" / «۲۴» — a week chart's axis on a phone, where a bar is too narrow for the weekday too. */
+export function formatCafeDayOfMonth(day: string, locale: Locale): string {
+  return longFormattersFor(locale).dayOfMonth.format(noonOf(day));
 }
 
 /** "Thursday, Oct 15" — a bar's tooltip title. */

@@ -15,6 +15,8 @@ import { OverviewSegmented } from "./OverviewSegmented";
 export type WeekSalesDay = {
   /** Under the bar: "Thu 15", or "Today" for the last one. */
   label: string;
+  /** Under the bar where it's too narrow for the label: the day of the month alone, "15". */
+  shortLabel: string;
   /** The tooltip's heading: "Thursday, Oct 15". */
   title: string;
   revenue: number;
@@ -167,7 +169,8 @@ export function WeekSalesChart({ days }: WeekSalesChartProps) {
               })}
             </div>
           </div>
-          <div className="flex gap-2">
+          {/* The day of the month alone until each bar has room for "Thu 15" (a phone's has 27px). */}
+          <div className="@container/days flex gap-2">
             {days.map((day, index) => (
               <span
                 key={day.label}
@@ -176,7 +179,8 @@ export function WeekSalesChart({ days }: WeekSalesChartProps) {
                   index === days.length - 1 ? "font-semibold text-foreground" : "text-muted-foreground",
                 )}
               >
-                {day.label}
+                <span className="hidden @min-[29rem]/days:inline">{day.label}</span>
+                <span className="@min-[29rem]/days:hidden">{day.shortLabel}</span>
               </span>
             ))}
           </div>

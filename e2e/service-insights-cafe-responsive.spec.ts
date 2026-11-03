@@ -430,8 +430,8 @@ async function seedAll(api: APIRequestContext, owner: APIRequestContext): Promis
   );
   await jsonOf(await api.patch(`/api/admin/inventory/items/${ingredient.id}`, { data: { reorderLevel: "5000000" } }));
 
-  // A booking later today, for the overview's list. Past the last seating it's
-  // refused, which only leaves that list empty.
+  // A booking later today, for the overview's list. Once 22:30 has gone it's
+  // refused as in the past, which only leaves that list empty.
   await api.post("/api/admin/reservations", {
     data: { startsAt: `${today}T22:30`, partySize: 12, guestName: NAME, guestPhone: "0912 345 6789", note: NOTE },
   });

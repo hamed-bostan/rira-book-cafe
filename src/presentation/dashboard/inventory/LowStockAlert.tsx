@@ -36,7 +36,9 @@ export async function LowStockAlert({ items }: { items: StockItem[] }) {
           {t("alert.title", { count: alerts.length })}
         </h2>
         <Link
-          href="/dashboard/inventory?level=low"
+          // The whole list, which puts what's out first and what's low next — the
+          // Running low tab alone would hide the items this band names first.
+          href="/dashboard/inventory"
           // 44px tall to the touch on a phone, without moving the line.
           className={cn(
             "-my-3 ms-auto py-3 text-body-default font-medium whitespace-nowrap text-foreground underline underline-offset-4 transition-colors hover:text-error-foreground sm:my-0 sm:py-0 sm:text-body-small",

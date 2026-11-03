@@ -64,6 +64,8 @@ export async function SuiteBookingsScreen({
   const shown = tab === "upcoming" ? upcoming : past;
   const requests = bookings.filter((b) => b.status === "requested").length;
   const held = bookings.filter(holdsSuite);
+  // What each row's "Edit stay" needs of the held stays to warn of a clash — no names or phones.
+  const heldNights = held.map(({ id, reference, checkIn, checkOut }) => ({ id, reference, checkIn, checkOut }));
 
   const home = shiftCafeDay(today, -WINDOW_LEAD_DAYS);
   const hrefFor = ({ start, toTab, focus }: { start: string; toTab: SuiteTab; focus?: string }): string => {
@@ -128,7 +130,7 @@ export async function SuiteBookingsScreen({
                 <SuiteStayRow
                   booking={booking}
                   clash={heldClashFor(booking, bookings)}
-                  held={held}
+                  held={heldNights}
                   today={today}
                   focused={booking.id === focusId}
                   canManage={canManage}

@@ -20,7 +20,7 @@ type SuiteStayRowProps = {
   /** The held stay this request overlaps, if any — it can't be confirmed as asked. */
   clash: SuiteBooking | undefined;
   /** Stays holding the suite, so "Edit stay" can warn before moving onto their nights. */
-  held: readonly SuiteBooking[];
+  held: readonly Pick<SuiteBooking, "id" | "reference" | "checkIn" | "checkOut">[];
   today: string;
   /** Picked from the calendar: tinted so the eye lands on it. */
   focused: boolean;

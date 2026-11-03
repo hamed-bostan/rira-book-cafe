@@ -1,9 +1,20 @@
-import { expect, request, test, type APIRequestContext, type APIResponse, type Page } from "@playwright/test";
+import { expect, request, test, type APIRequestContext, type Page } from "@playwright/test";
 
 import { cafeDayOf } from "../src/domain/entities/CafeTime";
 import { jalaliPeriod, toJalali } from "../src/domain/entities/JalaliCalendar";
 
 import { E2E_BASE_URL } from "./fixtures/env";
+import {
+  jsonOf,
+  LOCALES,
+  measureBrokenFigures,
+  measureCurrentTabHidden,
+  measurePageOverflow,
+  measureSidewaysTables,
+  openWithFonts,
+  PHONE,
+  VIEWPORTS,
+} from "./fixtures/responsive";
 import { storageStatePath } from "./fixtures/sessions";
 
 /**
@@ -16,16 +27,6 @@ import { storageStatePath } from "./fixtures/sessions";
  */
 
 test.use({ storageState: storageStatePath("admin") });
-
-const VIEWPORTS = [
-  { width: 360, height: 800 },
-  { width: 768, height: 1024 },
-  { width: 1280, height: 800 },
-] as const;
-
-const PHONE = VIEWPORTS[0];
-
-const LOCALES = ["fa", "en"] as const;
 
 /** A figure as wide as a year's turnover gets. */
 const BIG = "1250000000";
@@ -79,11 +80,15 @@ const PAGES: Record<string, FinancePage> = {
   "new bank statement": { path: () => "/dashboard/accounting/bank/new" },
   reconciliation: {
     path: (seed) => `/dashboard/accounting/bank/${seed.statementId}`,
+    // A line picked on each side, so the bar's totals are as wide as they get. On a
+    // phone one side shows at a time, so each is brought up by its tab first.
     prepare: async (page) => {
-      for (const side of [
-        /^(On the statement, not in the books|در صورت‌حساب، نه در دفاتر)/,
-        /^(In the books, not on the statement|در دفاتر، نه در صورت‌حساب)/,
+      for (const [tab, side] of [
+        [/^(Statement|صورت‌حساب)/, /^(On the statement, not in the books|در صورت‌حساب، نه در دفاتر)/],
+        [/^(Books|دفاتر)/, /^(In the books, not on the statement|در دفاتر، نه در صورت‌حساب)/],
       ]) {
+        const switcher = page.getByRole("tab", { name: tab });
+        if (await switcher.isVisible()) await switcher.click();
         const list = page.locator("section").filter({ has: page.getByRole("heading", { name: side }) });
         await list.getByRole("checkbox").first().check();
       }
@@ -115,12 +120,6 @@ const PAGES: Record<string, FinancePage> = {
 
 let seed: Seed;
 let openShiftId: string | null = null;
-
-/** The body of a call that has to succeed for the pages to have anything on them. */
-async function jsonOf<T>(response: APIResponse): Promise<T> {
-  expect(response.ok(), `${response.url()} answered ${response.status()}: ${await response.text()}`).toBe(true);
-  return (await response.json()) as T;
-}
 
 /**
  * Today's bank statement. Statements can't overlap, so setting up again on the same
@@ -166,7 +165,7 @@ async function seedBankStatement(api: APIRequestContext, today: string): Promise
  * last year: a month has one run, and this one's is the payroll spec's to record.
  * The person on it is inactive, so that spec's new run doesn't pick them up either.
  */
-async function seedPayRun(api: APIRequestContext, today: string, stamp: number): Promise<string> {
+async function seedPayRun(api: APIRequestContext, today: string, stamp: string): Promise<string> {
   const { jy, jm } = toJalali(today);
   const period = jalaliPeriod(jy - 1, jm);
   const runs = await jsonOf<{ id: string; period: string }[]>(await api.get("/api/admin/payroll/runs"));
@@ -233,7 +232,8 @@ async function seedCashShifts(api: APIRequestContext): Promise<void> {
 test.beforeAll(async () => {
   const api = await request.newContext({ baseURL: E2E_BASE_URL, storageState: storageStatePath("admin") });
   const today = cafeDayOf(new Date());
-  const stamp = Date.now();
+  // Tells this run's rows apart, in letters and digits so a name doesn't end in what reads as a figure.
+  const stamp = Date.now().toString(36);
 
   const supplier = await jsonOf<{ id: string }>(
     await api.post("/api/admin/suppliers", {
@@ -326,90 +326,10 @@ test.afterAll(async () => {
   await api.dispose();
 });
 
-/**
- * Opens a page at a phone's width, with its fonts in, so text is measured at its
- * real size. `document.fonts.ready` alone can settle before a face has even started
- * loading, leaving the fallback font's narrower text on screen, so every declared
- * face is loaded first.
- */
+/** Opens a page at a phone's width with its fonts in, then readies it for measuring. */
 async function open(page: Page, financePage: FinancePage): Promise<void> {
-  await page.setViewportSize(PHONE);
-  await page.goto(financePage.path(seed));
-  await page.evaluate(async () => {
-    await Promise.allSettled([...document.fonts].map((face) => face.load()));
-    await document.fonts.ready;
-  });
+  await openWithFonts(page, financePage.path(seed));
   await financePage.prepare?.(page);
-}
-
-/** How far the page reaches past the screen's edge, and the first few things doing it. */
-function measurePageOverflow(): { by: number; culprits: string[] } {
-  const root = document.documentElement;
-  const edge = root.clientWidth;
-  const by = root.scrollWidth - edge;
-  if (by <= 0) return { by: 0, culprits: [] };
-
-  // Something inside a scroller or a clipped box can't push the page out.
-  const contained = (element: Element): boolean => {
-    for (let node = element.parentElement; node && node !== root; node = node.parentElement) {
-      if (getComputedStyle(node).overflowX !== "visible") return true;
-    }
-    return false;
-  };
-  const culprits = [...document.body.querySelectorAll("*")]
-    .filter((element) => {
-      const box = element.getBoundingClientRect();
-      return box.width > 0 && (box.right > edge + 1 || box.left < -1) && !contained(element);
-    })
-    .slice(0, 3)
-    .map(
-      (element) =>
-        `<${element.tagName.toLowerCase()} class="${element.getAttribute("class") ?? ""}"> ${(element.textContent ?? "").trim().slice(0, 80)}`,
-    );
-  return { by, culprits };
-}
-
-/**
- * The figures broken across two lines. The page lets any long word wrap anywhere
- * rather than spill over, so a number too wide for its box splits instead of
- * pushing the page out — readable to nobody.
- */
-function measureBrokenFigures(): string[] {
-  const FIGURE = /^[+\-−‎‏؜]*[\d۰-۹][\d۰-۹,٬.٫‎‏؜]{3,}%?$/;
-  const broken: string[] = [];
-  const walker = document.createTreeWalker(document.querySelector("main") ?? document.body, NodeFilter.SHOW_TEXT);
-  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-    const text = (node.textContent ?? "").trim();
-    if (!FIGURE.test(text)) continue;
-    const range = document.createRange();
-    range.selectNodeContents(node);
-    const lines = new Set([...range.getClientRects()].map((box) => Math.round(box.top)));
-    if (lines.size > 1) broken.push(text);
-  }
-  return broken;
-}
-
-/** How far each visible table scrolls sideways inside its card. */
-function measureSidewaysTables(): number[] {
-  return [...document.querySelectorAll("main table")].flatMap((table) => {
-    if (!table.checkVisibility()) return [];
-    let scroller = table.parentElement;
-    while (scroller && !["auto", "scroll"].includes(getComputedStyle(scroller).overflowX)) {
-      scroller = scroller.parentElement;
-    }
-    const by = scroller ? scroller.scrollWidth - scroller.clientWidth : 0;
-    return by > 1 ? [by] : [];
-  });
-}
-
-/** Whether the tab for the page on screen is cut off by its row's edge. */
-function measureCurrentTabHidden(): boolean {
-  const tab = document.querySelector('main nav a[aria-current="page"]');
-  const row = tab?.closest("nav");
-  if (!tab || !row) return false;
-  const tabBox = tab.getBoundingClientRect();
-  const rowBox = row.getBoundingClientRect();
-  return tabBox.left < rowBox.left - 1 || tabBox.right > rowBox.right + 1;
 }
 
 for (const locale of LOCALES) {
@@ -428,7 +348,7 @@ for (const locale of LOCALES) {
           await page.setViewportSize(viewport);
           const { by, culprits } = await page.evaluate(measurePageOverflow);
           if (by > 0) overflows.push({ width: viewport.width, by, culprits });
-          const figures = await page.evaluate(measureBrokenFigures);
+          const figures = await page.evaluate(measureBrokenFigures, "main");
           if (figures.length > 0) broken.push({ width: viewport.width, figures });
         }
         expect.soft(overflows, "the page scrolls sideways").toEqual([]);
@@ -459,3 +379,53 @@ for (const locale of LOCALES) {
     }
   });
 }
+
+test("on a phone, matching shows one side at a time, keeps what's picked, and keeps Match in reach", async ({
+  page,
+}) => {
+  await page.setViewportSize(PHONE);
+  await page.goto(`/dashboard/accounting/bank/${seed.statementId}`);
+
+  const statementTab = page.getByRole("tab", { name: /^Statement/ });
+  const booksTab = page.getByRole("tab", { name: /^Books/ });
+  const bankSide = page.locator("section").filter({ has: page.getByRole("heading", { name: /^On the statement/ }) });
+  const bookSide = page.locator("section").filter({ has: page.getByRole("heading", { name: /^In the books/ }) });
+  const payment = "E2E payment to the espresso machine service company";
+  const bankLine = page.getByRole("checkbox", { name: `Pick ${payment}` });
+
+  await expect(bookSide).toBeHidden();
+
+  // At every width a line's description gets most of the row, and the date line
+  // under it room to read, whether the amount sits beside the description or under it.
+  const squeezed: { width: number; description: number; reference: number; list: number }[] = [];
+  for (const viewport of VIEWPORTS) {
+    await page.setViewportSize(viewport);
+    const list = (await bankSide.boundingBox())!.width;
+    const description = (await bankSide.getByText(payment, { exact: true }).boundingBox())!.width;
+    const reference = (await bankSide.getByText("TRX-2026-000184-77").boundingBox())!.width;
+    if (description < list * 0.5 || reference < 64)
+      squeezed.push({ width: viewport.width, description, reference, list });
+  }
+  expect(squeezed, "a line's description or date line is squeezed").toEqual([]);
+  await page.setViewportSize(PHONE);
+
+  await bankLine.check();
+  await booksTab.click();
+  await expect(bankSide).toBeHidden();
+  await bookSide.getByRole("listitem").filter({ hasText: "-400,000,000" }).getByRole("checkbox").check();
+  await statementTab.click();
+  await expect(bankLine).toBeChecked();
+
+  // The same amount picked on both sides, so it can be matched, from the bar along
+  // the foot of the screen that the phone's tab bar mustn't cover.
+  await page.evaluate(() => window.scrollTo(0, 0));
+  const match = page.getByRole("button", { name: "Match", exact: true });
+  await expect(match).toBeEnabled();
+  await expect(match).toBeInViewport();
+  const covered = await match.evaluate((button) => {
+    const box = button.getBoundingClientRect();
+    const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+    return !(hit && button.contains(hit));
+  });
+  expect(covered, "the Match button is under the tab bar").toBe(false);
+});

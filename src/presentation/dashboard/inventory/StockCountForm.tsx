@@ -18,7 +18,8 @@ import { DashboardEmptyState } from "../DashboardEmptyState";
 import { DashboardField } from "../DashboardField";
 import { FIELD_INPUT } from "../fieldStyles";
 import { FormAlert } from "../FormAlert";
-import { AMOUNT, AMOUNT_INPUT, PAGE_CARD, ROW_TEXT, TABLE_HEAD, TABLE_TD, TABLE_TH } from "../pageStyles";
+import { AMOUNT_INPUT, PAGE_CARD, ROW_TEXT, TABLE_HEAD, TABLE_TH } from "../pageStyles";
+import { STACKED_TABLE } from "../stackedTableStyles";
 
 import { inventoryApi } from "./inventory-api";
 import { UNIT_INSIDE, UNIT_SUFFIX } from "./stockFieldStyles";
@@ -26,10 +27,15 @@ import { formatStockQuantity } from "./stockFormat";
 
 const NUMBER = /^\d+(\.\d{1,3})?$/;
 
+/** Four columns: stacked rows under a tablet's card, the table from there up. */
+const S = STACKED_TABLE.compact;
+
 /**
  * A physical count: type what's on the shelves for the items you counted (blank
  * ones are left alone). The difference from the system is shown as you type, and
- * on saving it's posted to Inventory variance.
+ * on saving it's posted to Inventory variance. A table from a tablet's width; on a
+ * phone each item leads its row, with what's expected and the difference beside
+ * each other and the count under them.
  */
 export function StockCountForm({
   items,
@@ -111,7 +117,7 @@ export function StockCountForm({
         </DashboardField>
       </div>
 
-      <div className="overflow-hidden rounded-card-lg border border-border">
+      <div className={cn(S.frame, "overflow-hidden rounded-card-lg border border-border")}>
         {items.length === 0 ? (
           <DashboardEmptyState
             title={t("empty")}
@@ -123,77 +129,85 @@ export function StockCountForm({
             }
           />
         ) : (
-          <div className="overflow-x-auto">
-            <table className={cn(ROW_TEXT, "w-full min-w-xl table-fixed")}>
-              <thead className={TABLE_HEAD}>
-                <tr>
-                  <th scope="col" className={TABLE_TH}>
-                    {t("col.item")}
-                  </th>
-                  <th scope="col" className={cn(TABLE_TH, "w-36 text-end")}>
-                    {t("count.expected")}
-                  </th>
-                  <th scope="col" className={cn(TABLE_TH, "w-40 text-end")}>
-                    {t("count.counted")}
-                  </th>
-                  <th scope="col" className={cn(TABLE_TH, "w-40 text-end")}>
-                    {t("count.difference")}
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {items.map((item) => {
-                  const raw = (counted[item.id] ?? "").trim();
-                  const difference = NUMBER.test(raw) ? Number(raw) - item.onHand : null;
-                  const unit = t(`unit.${item.unit}`);
-                  return (
-                    <tr key={item.id}>
-                      <td className={cn(TABLE_TD, "py-2 align-middle font-medium text-foreground")} dir="auto">
-                        {item.name}
-                      </td>
-                      <td className={cn(TABLE_TD, AMOUNT, "py-2 align-middle")}>
-                        {formatStockQuantity(item.onHand, locale)} {unit}
-                      </td>
-                      <td className={cn(TABLE_TD, "py-2 align-middle")}>
-                        <div className="relative">
-                          <Input
-                            size="control-md"
-                            value={counted[item.id] ?? ""}
-                            onChange={(event) =>
-                              setCounted((current) => ({ ...current, [item.id]: event.target.value }))
-                            }
-                            inputMode="decimal"
-                            aria-label={t("count.countedFor", { name: item.name })}
-                            inputClassName={cn(FIELD_INPUT, AMOUNT_INPUT, UNIT_INSIDE, "sm:min-h-8 sm:py-1")}
-                            dir="ltr"
-                          />
-                          <span aria-hidden className={UNIT_SUFFIX}>
-                            {unit}
-                          </span>
-                        </div>
-                      </td>
-                      <td
-                        className={cn(
-                          TABLE_TD,
-                          AMOUNT,
-                          "py-2 align-middle font-semibold",
-                          difference === null || Math.abs(difference) < 0.0005
-                            ? "text-muted-foreground"
-                            : difference < 0
-                              ? "text-error-foreground"
-                              : "text-success-foreground",
-                        )}
-                      >
-                        {difference === null
-                          ? ""
-                          : `${difference > 0 ? "+" : ""}${formatStockQuantity(difference, locale)} ${unit}`}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <table className={cn(ROW_TEXT, S.table)}>
+            <thead className={cn(TABLE_HEAD, S.head)}>
+              <tr>
+                <th scope="col" className={TABLE_TH}>
+                  {t("col.item")}
+                </th>
+                <th scope="col" className={cn(TABLE_TH, "w-36 text-end")}>
+                  {t("count.expected")}
+                </th>
+                <th scope="col" className={cn(TABLE_TH, "w-40 text-end")}>
+                  {t("count.counted")}
+                </th>
+                <th scope="col" className={cn(TABLE_TH, "w-40 text-end")}>
+                  {t("count.difference")}
+                </th>
+              </tr>
+            </thead>
+            <tbody className={cn(S.body, "divide-y divide-border")}>
+              {items.map((item) => {
+                const raw = (counted[item.id] ?? "").trim();
+                const difference = NUMBER.test(raw) ? Number(raw) - item.onHand : null;
+                const unit = t(`unit.${item.unit}`);
+                return (
+                  <tr key={item.id} className={S.row}>
+                    <td className={cn(S.lead, "align-middle font-medium text-foreground @xl/sheet:py-2")} dir="auto">
+                      {item.name}
+                    </td>
+                    <td className={cn(S.cell, S.amount, "align-middle @xl/sheet:py-2")}>
+                      <span className={S.label}>{t("count.expected")}</span>
+                      {formatStockQuantity(item.onHand, locale)} {unit}
+                    </td>
+                    {/* Stacked, the count gets a line of its own under the figures, as wide as the row. */}
+                    <td className={cn(S.cell, "order-last basis-full align-middle @xl/sheet:py-2")}>
+                      <span className={S.label}>{t("count.counted")}</span>
+                      <div className="relative">
+                        <Input
+                          size="control-md"
+                          value={counted[item.id] ?? ""}
+                          onChange={(event) => setCounted((current) => ({ ...current, [item.id]: event.target.value }))}
+                          inputMode="decimal"
+                          aria-label={t("count.countedFor", { name: item.name })}
+                          inputClassName={cn(FIELD_INPUT, AMOUNT_INPUT, UNIT_INSIDE, "sm:min-h-8 sm:py-1")}
+                          dir="ltr"
+                        />
+                        <span aria-hidden className={UNIT_SUFFIX}>
+                          {unit}
+                        </span>
+                      </div>
+                    </td>
+                    {/* Stacked, the difference shows once there's a count to compare. */}
+                    <td
+                      className={cn(
+                        S.cell,
+                        S.amount,
+                        "align-middle font-semibold @xl/sheet:py-2",
+                        difference === null && "hidden",
+                        difference === null || Math.abs(difference) < 0.0005
+                          ? "text-muted-foreground"
+                          : difference < 0
+                            ? "text-error-foreground"
+                            : "text-success-foreground",
+                      )}
+                    >
+                      <span className={S.label}>{t("count.difference")}</span>
+                      {difference === null ? null : (
+                        <span>
+                          <span dir="ltr">
+                            {difference > 0 ? "+" : ""}
+                            {formatStockQuantity(difference, locale)}
+                          </span>{" "}
+                          {unit}
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         )}
       </div>
 

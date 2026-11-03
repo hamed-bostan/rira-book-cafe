@@ -2,6 +2,7 @@
 
 import { ClipboardList, Coffee, LayoutDashboard, MoreHorizontal } from "lucide-react";
 import { useTranslations } from "next-intl";
+import * as React from "react";
 
 import { Link, usePathname } from "@/src/i18n/navigation";
 import { cn } from "@/src/lib/utils";
@@ -12,6 +13,9 @@ import { HIDDEN_IN_FULL_SCREEN } from "./fullScreen";
 import { isSectionActive } from "./sections";
 
 import type { LucideIcon } from "lucide-react";
+
+/** The custom property on `<html>` that carries the bar's height (see `BottomNav`). */
+const BOTTOM_NAV_HEIGHT = "--dashboard-bottom-nav-height";
 
 type BottomNavItem = {
   href: string;
@@ -47,13 +51,33 @@ type BottomNavProps = {
  *
  * Hidden at the breakpoint the persistent rail takes over at, so exactly one of the
  * two navigations is ever on screen.
+ *
+ * Its height, safe-area inset included, is published as `--dashboard-bottom-nav-height`
+ * (0px while it's hidden), so a page's sticky bottom bar can sit just above it rather
+ * than under it.
  */
 export function BottomNav({ onOpenMore }: BottomNavProps) {
   const t = useTranslations("dashboard.bottomNav");
   const pathname = usePathname();
+  const ref = React.useRef<HTMLElement>(null);
+
+  React.useLayoutEffect(() => {
+    const nav = ref.current;
+    if (!nav) return;
+    const root = document.documentElement;
+    const publish = (): void => root.style.setProperty(BOTTOM_NAV_HEIGHT, `${nav.offsetHeight}px`);
+    publish();
+    const resized = new ResizeObserver(publish);
+    resized.observe(nav);
+    return () => {
+      resized.disconnect();
+      root.style.removeProperty(BOTTOM_NAV_HEIGHT);
+    };
+  }, []);
 
   return (
     <nav
+      ref={ref}
       className={cn(
         "fixed inset-x-0 bottom-0 z-40 mx-auto flex w-full max-w-[40.75rem] items-stretch justify-around border-x border-t border-border bg-background xl:hidden dashboard-landscape:hidden dashboard-short:hidden",
         "pb-[env(safe-area-inset-bottom)] print:hidden!",

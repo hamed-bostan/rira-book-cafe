@@ -46,3 +46,11 @@ export const LINE_HEAD =
 
 /** A form line stacks on a phone, ruled off from the next, and sits on one row from `md`. */
 export const LINE_ROW = "grid items-start gap-x-3 gap-y-2 border-b border-border pb-3 md:border-0 md:pb-0";
+
+/**
+ * Three figure cards across the top of a page: stacked on a phone, two abreast
+ * from `sm` with the third across the row under them, all three from `xl`. Three
+ * abreast any narrower splits a ten-digit figure.
+ */
+export const METRIC_GRID_OF_THREE =
+  "grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 sm:max-xl:[&>:last-child]:col-span-2";

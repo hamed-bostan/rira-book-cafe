@@ -17,9 +17,10 @@ import { useRouter } from "@/src/i18n/navigation";
 import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
+import { cn } from "@/src/lib/utils";
 import { DashboardDialog } from "@/src/presentation/dashboard/DashboardDialog";
 import { DashboardField } from "@/src/presentation/dashboard/DashboardField";
-import { FIELD_HINT, FIELD_LABEL } from "@/src/presentation/dashboard/fieldStyles";
+import { FIELD_GRID, FIELD_HINT, FIELD_LABEL } from "@/src/presentation/dashboard/fieldStyles";
 import { OverviewSegmented } from "@/src/presentation/dashboard/overview/OverviewSegmented";
 import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
 import { Switch } from "@/src/presentation/design-system/components/Switch/Switch";
@@ -208,8 +209,8 @@ export function PromoCodeDialog({ open, onOpenChange, promo, takenCodes, today }
       onSubmit={submit}
       error={problem ?? serverError}
     >
-      <div className="grid grid-cols-2 gap-4">
-        <DashboardField label={label("code")} hint={t("codeHint")} className="col-span-2">
+      <div className={FIELD_GRID}>
+        <DashboardField label={label("code")} hint={t("codeHint")} className="col-span-full">
           <Input
             size="control-md"
             value={values.code}
@@ -226,7 +227,7 @@ export function PromoCodeDialog({ open, onOpenChange, promo, takenCodes, today }
         </DashboardField>
 
         {/* Not a <label>: it would hand a click on its text to the first segment. */}
-        <div className="col-span-2 flex flex-col gap-1.5">
+        <div className="col-span-full flex flex-col gap-1.5">
           <span className={FIELD_LABEL}>{label("kind")}</span>
           <OverviewSegmented
             fill
@@ -257,12 +258,12 @@ export function PromoCodeDialog({ open, onOpenChange, promo, takenCodes, today }
         {limit("perGuestLimit", t("noLimit"))}
         {limit("usageLimit", t("noLimit"))}
 
-        <div className="col-span-2 grid grid-cols-2 gap-4">
+        <div className={cn("col-span-full", FIELD_GRID)}>
           {day("startsOn")}
           {day("endsOn", today)}
         </div>
 
-        <DashboardField label={t("optionalField", { label: label("description") })} className="col-span-2">
+        <DashboardField label={t("optionalField", { label: label("description") })} className="col-span-full">
           <Input
             size="control-md"
             value={values.description}
@@ -273,7 +274,7 @@ export function PromoCodeDialog({ open, onOpenChange, promo, takenCodes, today }
           />
         </DashboardField>
 
-        <label htmlFor={activeId} className="col-span-2 flex min-h-11 cursor-pointer items-center gap-3 sm:min-h-8">
+        <label htmlFor={activeId} className="col-span-full flex min-h-11 cursor-pointer items-center gap-3 sm:min-h-8">
           <Switch
             id={activeId}
             size="sm"

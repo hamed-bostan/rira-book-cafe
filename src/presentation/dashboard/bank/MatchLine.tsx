@@ -23,7 +23,14 @@ type MatchLineProps = {
   end?: ReactNode;
 };
 
-/** One unmatched line on either side of the workspace; the whole row ticks its box. */
+/**
+ * One unmatched line on either side of the workspace; the whole row ticks its box.
+ *
+ * In a narrow list (a phone, or one side of the two-up workspace beside the summary)
+ * it reads down like a bank app's: the description, the amount, then the date and
+ * reference, each across the row, so none is squeezed beside another. From a 24rem
+ * list the amount sits beside the description. The list is the `side` container.
+ */
 export function MatchLine({
   description,
   meta,
@@ -40,29 +47,45 @@ export function MatchLine({
     <div className={cn("flex items-center gap-2 py-2 ps-2 pe-3", picked && "bg-accent")}>
       <label
         className={cn(
-          "flex min-h-11 min-w-0 flex-1 items-center gap-3 px-2 py-1 sm:min-h-10",
+          "grid min-h-11 min-w-0 flex-1 grid-cols-[auto_minmax(0,1fr)_auto] content-center items-baseline gap-x-3 gap-y-0.5 px-2 py-1 sm:min-h-10",
           disabled ? "cursor-default" : "cursor-pointer",
         )}
       >
+        {/* Every cell names its grid lines: a `span` would reset the start and set
+            the cell loose to wherever auto-placement puts it. */}
         <Checkbox
           checked={picked}
           disabled={disabled}
           onCheckedChange={(checked) => onPickedChange(checked === true)}
           aria-label={pickLabel}
+          className="col-start-1 row-start-1 row-end-4 self-center @sm/side:row-end-3"
         />
-        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span className="font-medium [overflow-wrap:anywhere] text-foreground" dir="auto">
-            {description}
-          </span>
-          <span className={cn(ROW_CAPTION, late && "text-warning-foreground")}>{meta}</span>
-        </span>
         <span
+          className="col-start-2 col-end-4 row-start-1 font-medium [overflow-wrap:anywhere] text-foreground @sm/side:col-end-3"
+          dir="auto"
+        >
+          {description}
+        </span>
+        {/* Left to right, so the sign leads the figure in Persian as well; placed by
+            the grid's own direction, at the row's start or, beside the description, its end. */}
+        <span
+          dir="ltr"
           className={cn(
-            "font-semibold whitespace-nowrap tabular-nums",
+            "col-start-2 col-end-4 row-start-2 justify-self-start font-semibold whitespace-nowrap tabular-nums",
+            "@sm/side:col-start-3 @sm/side:row-start-1 @sm/side:justify-self-end",
             moneyIn ? "text-success-foreground" : "text-foreground",
           )}
         >
           {amount}
+        </span>
+        <span
+          className={cn(
+            ROW_CAPTION,
+            "col-start-2 col-end-4 row-start-3 @sm/side:col-end-3 @sm/side:row-start-2",
+            late && "text-warning-foreground",
+          )}
+        >
+          {meta}
         </span>
       </label>
       {end}

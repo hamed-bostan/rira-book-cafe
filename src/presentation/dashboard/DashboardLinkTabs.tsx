@@ -54,7 +54,9 @@ export async function DashboardLinkTabs({ tabs, current, label, className }: Das
                   : "border-b-transparent font-medium text-muted-foreground hover:text-foreground",
               )}
             >
-              {tab.label}
+              {/* A label someone named (a category) can outrun a phone's row; it ends
+                  in an ellipsis instead, so the tab still fits in view whole. */}
+              <span className="max-w-48 truncate sm:max-w-64">{tab.label}</span>
               {tab.count !== undefined ? (
                 <span
                   className={cn(

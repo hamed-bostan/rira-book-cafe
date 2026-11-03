@@ -31,6 +31,7 @@ import { useToast } from "@/src/presentation/design-system/components/Toast/useT
 
 import { DashboardDialog } from "../DashboardDialog";
 import { DashboardField } from "../DashboardField";
+import { FIELD_GRID } from "../fieldStyles";
 import { tableNameValues } from "../floor/tableName";
 
 import { reservationsApi } from "./reservation-api";
@@ -173,7 +174,7 @@ export function NewBookingDialog({ day, dayLabel, now, bookings, events }: NewBo
       >
         {/* The design spaces the fields, the table heading and the floor a block apart. */}
         <div className="flex flex-col gap-5">
-          <div className="grid grid-cols-2 gap-4">
+          <div className={FIELD_GRID}>
             <DashboardField label={t("guestName")} className="col-span-2">
               <Input
                 size="control-md"

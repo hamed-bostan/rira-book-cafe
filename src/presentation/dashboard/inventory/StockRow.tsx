@@ -22,13 +22,14 @@ const QUANTITY_TONE: Record<StockLevel, string> = {
 };
 
 /**
- * Column tracks for the stock list on a wide frame — the item, on hand, reorder
- * level, value (with access to costs) and the "⋯". Shared by the heading row and
- * every item so they line up.
+ * Column tracks for the stock list on a wide frame (from a 56rem card) — the item,
+ * on hand, reorder level, value (with access to costs) and the "⋯". Shared by the
+ * heading row and every item so they line up. The quantities hold a seven-digit
+ * count with the longest unit («میلی‌لیتر»), the value a ten-digit figure in Toman.
  */
 export const STOCK_COLUMNS = {
-  withCosts: "@2xl/stock:grid-cols-[minmax(0,1fr)_8rem_7rem_9rem_2.5rem]",
-  withoutCosts: "@2xl/stock:grid-cols-[minmax(0,1fr)_8rem_7rem_2.5rem]",
+  withCosts: "@4xl/stock:grid-cols-[minmax(0,1fr)_9rem_9rem_11rem_2.5rem]",
+  withoutCosts: "@4xl/stock:grid-cols-[minmax(0,1fr)_9rem_9rem_2.5rem]",
 } as const;
 
 /**
@@ -42,8 +43,8 @@ export async function StockRow({ item, costsVisible, canManage }: StockRowProps)
   const unit = t(`unit.${item.unit}`);
   const amount = (value: number): string => t("quick.quantity", { quantity: formatStockQuantity(value, locale), unit });
 
-  const figure = "flex min-w-0 flex-col text-start @2xl/stock:text-end";
-  const inlineLabel = "text-body-small text-muted-foreground sm:text-body-caption @2xl/stock:hidden";
+  const figure = "flex min-w-0 flex-col text-start @4xl/stock:text-end";
+  const inlineLabel = "text-body-small text-muted-foreground sm:text-body-caption @4xl/stock:hidden";
 
   return (
     <article
@@ -69,7 +70,7 @@ export async function StockRow({ item, costsVisible, canManage }: StockRowProps)
 
       {/* The figures: their own wrapped line under the name on a narrow frame,
           columns of the row's grid on a wide one. */}
-      <div className="order-1 col-span-full flex flex-wrap gap-x-8 gap-y-2 @2xl/stock:contents">
+      <div className="order-1 col-span-full flex flex-wrap gap-x-8 gap-y-2 @4xl/stock:contents">
         <div className={figure}>
           <span className={inlineLabel}>{t("col.onHand")}</span>
           <span className={cn("whitespace-nowrap tabular-nums", QUANTITY_TONE[item.level])}>{amount(item.onHand)}</span>
@@ -90,7 +91,7 @@ export async function StockRow({ item, costsVisible, canManage }: StockRowProps)
         ) : null}
       </div>
 
-      <div className="flex justify-end @2xl/stock:order-1">
+      <div className="flex justify-end @4xl/stock:order-1">
         <StockRowActions id={item.id} name={item.name} canManage={canManage} />
       </div>
     </article>

@@ -11,10 +11,11 @@ import { ProductOnMenuSwitch } from "./ProductOnMenuSwitch";
 import { ProductRowActions } from "./ProductRowActions";
 
 /**
- * The list's columns from `md` up — item, price, stock, on menu, actions — shared
- * with the header row so the two line up.
+ * The list's columns on a wide card (`@container/menu`, from 56rem) — item, price,
+ * stock, on menu, actions — shared with the header row so the two line up. The
+ * price column holds the dearest an order allows, with its unit.
  */
-export const PRODUCT_ROW_GRID = "gap-x-4 md:grid-cols-[minmax(0,1fr)_8rem_10rem_7rem_2.5rem]";
+export const PRODUCT_ROW_GRID = "gap-x-4 @4xl/menu:grid-cols-[minmax(0,1fr)_11rem_10rem_7rem_2.5rem]";
 
 type ProductRowProps = {
   product: ProductListItem;
@@ -29,9 +30,9 @@ function lowerFirst(text: string, locale: string): string {
 }
 
 /**
- * One menu item. From `md` up it's a row of the list's columns; below that the
- * price, stock and switch wrap under the name, lined up with it, and the ⋯ menu
- * stays beside the name.
+ * One menu item. On a wide card it's a row of the list's columns; on a narrower
+ * one the price, stock and switch wrap under the name, lined up with it, and the
+ * ⋯ menu stays beside the name.
  *
  * A counted item's stock column is its count; a made-to-order item's is its
  * recipe's worst ingredient when one is out or running low, otherwise just
@@ -72,10 +73,10 @@ export async function ProductRow({ product, categoryName, canWrite }: ProductRow
         </div>
       </div>
 
-      {/* Below `md` this wraps under the name, indented past the picture; from
-          `md` up it dissolves so its three cells are the row's own columns. */}
-      <div className="order-1 col-span-full flex flex-wrap items-center gap-x-5 gap-y-2 ps-13 md:contents">
-        <div className="flex flex-col whitespace-nowrap tabular-nums md:text-end">
+      {/* On a narrow card this wraps under the name, indented past the picture; on
+          a wide one it dissolves so its three cells are the row's own columns. */}
+      <div className="order-1 col-span-full flex flex-wrap items-center gap-x-5 gap-y-2 ps-13 @4xl/menu:contents">
+        <div className="flex flex-col whitespace-nowrap tabular-nums @4xl/menu:text-end">
           <span className="text-body-strong text-foreground sm:text-body-small-strong">
             {formatMoney(product.price, locale)}
           </span>
@@ -123,7 +124,7 @@ export async function ProductRow({ product, categoryName, canWrite }: ProductRow
         </div>
       </div>
 
-      <div className="flex justify-end md:order-1">
+      <div className="flex justify-end @4xl/menu:order-1">
         {canWrite ? <ProductRowActions id={product.id} name={product.name} isFeatured={product.isFeatured} /> : null}
       </div>
     </article>

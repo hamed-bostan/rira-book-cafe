@@ -184,12 +184,43 @@ describe("RemoveFromBookWaitlist", () => {
 });
 
 describe("GetBookWaitlistStatus", () => {
-  const loans = { countOpenForBook: vi.fn(async () => 2) };
+  function shelf(copies: number, onLoan: number) {
+    return {
+      getBook: vi.fn(async () => ({ title: "The Blind Owl", copies })),
+      countOpenForBook: vi.fn(async () => onLoan),
+    };
+  }
+  const loans = shelf(2, 2);
 
   it("gives the guest their place in line", async () => {
     const status = await new GetBookWaitlistStatus(waitlist(null).repo, loans).execute("b1", "g1");
-    expect(status).toMatchObject({ onLoan: 2, queueLength: 2, position: 2 });
+    expect(status).toMatchObject({ onLoan: 2, onShelf: 0, queueLength: 2, canJoin: true, position: 2 });
     expect(status.entry?.id).toBe("w1");
+  });
+
+  it("takes guests exactly when joining would: not with a copy free and nobody waiting", async () => {
+    const empty = { listOpenForBook: vi.fn(async () => []) } as unknown as IBookWaitlistRepository;
+    expect(await new GetBookWaitlistStatus(empty, shelf(2, 1)).execute("b1")).toMatchObject({
+      onLoan: 1,
+      onShelf: 1,
+      canJoin: false,
+    });
+    expect(await new GetBookWaitlistStatus(empty, shelf(1, 1)).execute("b1")).toMatchObject({ canJoin: true });
+    // Every copy lost: none out, none to lend — the line still waits for one to turn up.
+    expect(await new GetBookWaitlistStatus(empty, shelf(0, 0)).execute("b1")).toMatchObject({
+      onShelf: 0,
+      canJoin: true,
+    });
+    // A free copy held for the guest who was told: others queue behind them.
+    expect(await new GetBookWaitlistStatus(waitlist(null).repo, shelf(2, 1)).execute("b1")).toMatchObject({
+      onShelf: 1,
+      canJoin: true,
+    });
+  });
+
+  it("is not found for something that isn't a book", async () => {
+    const loans = { getBook: vi.fn(async () => null), countOpenForBook: vi.fn(async () => 0) };
+    await expect(new GetBookWaitlistStatus(waitlist(null).repo, loans).execute("x")).rejects.toThrow(NotFoundError);
   });
 
   it("has no place for a guest who isn't in line, or nobody signed in", async () => {

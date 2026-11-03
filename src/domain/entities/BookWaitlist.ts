@@ -60,11 +60,24 @@ export function holdsSkippedByLoan<T extends Pick<BookWaitlistEntry, "userId" | 
   return others.slice(0, Math.max(0, others.length - (free - 1)));
 }
 
+/**
+ * Whether a book's line takes another guest. A copy free on the shelf with nobody
+ * in line is a question for the counter, not a hold; a free copy held for someone
+ * who was told it's back still has a line, and so does a book with every copy out.
+ */
+export function bookHasLine(free: number, queueLength: number): boolean {
+  return free <= 0 || queueLength > 0;
+}
+
 /** A book's line as a guest sees it: how many copies are out, how long the line is, and their place in it. */
 export type BookWaitlistStatus = {
   onLoan: number;
+  /** Copies free on the shelf right now — some may be held for guests who were told. */
+  onShelf: number;
   /** Guests in line (waiting or notified). */
   queueLength: number;
+  /** Whether the line takes another guest ({@link bookHasLine}) — joining is refused exactly when it doesn't. */
+  canJoin: boolean;
   /** The signed-in guest's open entry, if they're in line. */
   entry: BookWaitlistEntry | null;
   /** 1-based place in line of that entry. */

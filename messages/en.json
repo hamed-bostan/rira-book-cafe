@@ -1715,6 +1715,7 @@
       "signIn": "Sign in to join the waitlist",
       "position": "You're number {position} in line",
       "yourTurn": "It's back — ask at the counter",
+      "onShelf": "A copy is on the shelf right now — ask at the counter",
       "waiting": "Waiting",
       "heading": "Books I'm waiting for",
       "joinedOn": "Joined {date}",

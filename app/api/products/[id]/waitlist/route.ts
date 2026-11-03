@@ -10,8 +10,10 @@ export const dynamic = "force-dynamic";
 type RouteContext = { params: Promise<{ id: string }> };
 
 /**
- * GET /api/products/:id/waitlist — the book's line: `{ onLoan, queueLength, entry,
- * position }`. Public; `entry`/`position` are the signed-in guest's place, if any.
+ * GET /api/products/:id/waitlist — the book's line: `{ onLoan, onShelf, queueLength,
+ * canJoin, entry, position }`. Public; `canJoin` says whether POST would take a
+ * guest, `entry`/`position` are the signed-in guest's place, if any. 404 for
+ * something that isn't a book.
  */
 export async function GET(_request: Request, { params }: RouteContext): Promise<NextResponse> {
   const { id } = await params;
@@ -29,8 +31,8 @@ export async function GET(_request: Request, { params }: RouteContext): Promise<
 
 /**
  * POST /api/products/:id/waitlist — join the line for a book that's out. 201 with
- * the entry. 409 `ALREADY_WAITING` when already in line, `BOOK_ON_SHELF` when no
- * copy is out.
+ * the entry. 409 `ALREADY_WAITING` when already in line, `BOOK_ON_SHELF` when a
+ * copy is free and nobody waits.
  */
 export async function POST(_request: Request, { params }: RouteContext): Promise<NextResponse> {
   const session = await getUserSession();

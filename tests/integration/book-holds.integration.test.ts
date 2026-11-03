@@ -6,9 +6,9 @@ import { POST as lend } from "@/app/api/admin/book-loans/route";
 import { DELETE as removeHold } from "@/app/api/admin/book-waitlist/[id]/route";
 import { GET as listHolds, POST as addHold } from "@/app/api/admin/book-waitlist/route";
 import { DELETE as leaveLine } from "@/app/api/book-waitlist/[id]/route";
-import { POST as joinLine } from "@/app/api/products/[id]/waitlist/route";
+import { GET as lineStatus, POST as joinLine } from "@/app/api/products/[id]/waitlist/route";
 import type { BookLoan } from "@/src/domain/entities/BookLoan";
-import type { BookWaitlistEntry } from "@/src/domain/entities/BookWaitlist";
+import type { BookWaitlistEntry, BookWaitlistStatus } from "@/src/domain/entities/BookWaitlist";
 import { cafeDayOf, shiftCafeDay } from "@/src/domain/entities/CafeTime";
 import type { BookLoanCounts } from "@/src/domain/repositories/IBookLoanRepository";
 import { prisma } from "@/src/infrastructure/prisma/client";
@@ -188,6 +188,30 @@ describe("book copies and holds", () => {
     expect(left.status).toBe(204);
     signInAs("admin");
     expect((await openLine(BLIND_OWL)).map((e) => [e.id, e.status])).toEqual([[next.id, "notified"]]);
+  });
+
+  it("offers the line to a guest exactly when joining it would work", async () => {
+    signInAs("admin");
+    await prisma.product.update({ where: { id: BLIND_OWL }, data: { bookCopies: 2 } });
+    await lendTo(BLIND_OWL, "Niloofar", "09121110005");
+
+    signInAs("customer");
+    const join = (): Promise<Response> =>
+      joinLine(jsonRequest("POST", `/api/products/${BLIND_OWL}/waitlist`), routeParams({ id: BLIND_OWL }));
+    const status = async (): Promise<BookWaitlistStatus> =>
+      readJson<BookWaitlistStatus>(
+        await lineStatus(getRequest(`/api/products/${BLIND_OWL}/waitlist`), routeParams({ id: BLIND_OWL })),
+      );
+    expect(await status()).toMatchObject({ onLoan: 1, onShelf: 1, queueLength: 0, canJoin: false });
+    const refused = await join();
+    expect(refused.status).toBe(409);
+    expect((await readError(refused)).code).toBe("BOOK_ON_SHELF");
+
+    signInAs("admin");
+    await lendTo(BLIND_OWL, "Parisa", "09121110007");
+    signInAs("customer");
+    expect(await status()).toMatchObject({ onLoan: 2, onShelf: 0, canJoin: true });
+    expect((await join()).status).toBe(201);
   });
 
   it("tells the next guest only once lending has let go of the book", async () => {

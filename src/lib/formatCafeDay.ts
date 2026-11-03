@@ -50,7 +50,12 @@ export function formatPercent(share: number, locale: Locale): string {
 
 const longFormatters = new Map<
   Locale,
-  { full: Intl.DateTimeFormat; weekday: Intl.DateTimeFormat; long: Intl.DateTimeFormat }
+  {
+    full: Intl.DateTimeFormat;
+    weekday: Intl.DateTimeFormat;
+    weekdayName: Intl.DateTimeFormat;
+    long: Intl.DateTimeFormat;
+  }
 >();
 
 function longFormattersFor(locale: Locale) {
@@ -59,6 +64,7 @@ function longFormattersFor(locale: Locale) {
   const created = {
     full: new Intl.DateTimeFormat(TAG[locale], { dateStyle: "full", timeZone: CAFE_TIME_ZONE }),
     weekday: new Intl.DateTimeFormat(TAG[locale], { weekday: "short", day: "numeric", timeZone: CAFE_TIME_ZONE }),
+    weekdayName: new Intl.DateTimeFormat(TAG[locale], { weekday: "short", timeZone: CAFE_TIME_ZONE }),
     long: new Intl.DateTimeFormat(TAG[locale], {
       weekday: "long",
       day: "numeric",
@@ -80,6 +86,11 @@ export function formatCafeDayWeekday(day: string, locale: Locale): string {
   return longFormattersFor(locale).weekday.format(noonOf(day));
 }
 
+/** "Thu" / «پنجشنبه» — a week chart's axis, where each day has a bar's width to itself. */
+export function formatCafeDayWeekdayName(day: string, locale: Locale): string {
+  return longFormattersFor(locale).weekdayName.format(noonOf(day));
+}
+
 /** "Thursday, Oct 15" — a bar's tooltip title. */
 export function formatCafeDayLong(day: string, locale: Locale): string {
   return longFormattersFor(locale).long.format(noonOf(day));
@@ -87,12 +98,20 @@ export function formatCafeDayLong(day: string, locale: Locale): string {
 
 const headerFormatters = new Map<Locale, { weekday: Intl.DateTimeFormat; day: Intl.DateTimeFormat }>();
 
-/** "Thu" over "22" — a day column's head in a calendar strip. */
+/**
+ * How a calendar strip names its days. Persian's short names are the whole word
+ * («چهارشنبه»), too wide for a column a few characters across, so it takes the
+ * one-letter names Persian calendars print («چ»); English's one letter would be
+ * ambiguous (T, T), and "Thu" fits.
+ */
+const HEADER_WEEKDAY: Record<Locale, "short" | "narrow"> = { en: "short", fa: "narrow" };
+
+/** "Thu" / «پ» over "22" — a day column's head in a calendar strip. */
 export function formatCafeDayHeader(day: string, locale: Locale): { weekday: string; day: string } {
   let formatters = headerFormatters.get(locale);
   if (!formatters) {
     formatters = {
-      weekday: new Intl.DateTimeFormat(TAG[locale], { weekday: "short", timeZone: CAFE_TIME_ZONE }),
+      weekday: new Intl.DateTimeFormat(TAG[locale], { weekday: HEADER_WEEKDAY[locale], timeZone: CAFE_TIME_ZONE }),
       day: new Intl.DateTimeFormat(TAG[locale], { day: "numeric", timeZone: CAFE_TIME_ZONE }),
     };
     headerFormatters.set(locale, formatters);

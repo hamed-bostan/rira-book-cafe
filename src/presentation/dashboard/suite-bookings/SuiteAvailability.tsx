@@ -13,8 +13,6 @@ import { WINDOW_DAYS, WINDOW_LEAD_DAYS, WINDOW_STEP_DAYS } from "./suiteCalendar
 
 /** The cafe's weekend day (Friday), shaded on the strip. */
 const WEEKEND_DAY = 5;
-/** Grid column of the first day (the first column holds the row labels). */
-const FIRST_DAY_COLUMN = 2;
 
 /** Bar colours by status: the same tones as the status badges. */
 const TONE: Partial<Record<SuiteBookingStatus, string>> = {
@@ -75,6 +73,7 @@ export async function SuiteAvailability({
     "flex h-11 items-center justify-center text-foreground/80 transition-colors hover:bg-muted sm:h-9",
     focusRing,
   );
+  const rowLabel = "flex h-12 items-center text-body-small font-medium text-foreground/80 sm:text-body-caption";
 
   return (
     <section
@@ -122,87 +121,91 @@ export async function SuiteAvailability({
         </nav>
       </div>
 
+      {/* Too narrow for three weeks (a phone, a tablet), the days scroll under their
+          row labels, which stay put. The labels sit beside the day grid rather than in
+          it, as a sticky grid cell can't leave its own column. The row around both is
+          as wide as every day at its narrowest: a step narrower on a laptop, so the
+          strip fits there. */}
       <div className="overflow-x-auto">
-        <div className="grid grid-cols-[6rem_repeat(21,minmax(2.5rem,1fr))] grid-rows-[auto_3rem_3rem]">
-          {days.map((day, index) => {
-            const head = formatCafeDayHeader(day, locale);
-            const isToday = day === today;
-            return (
+        <div className="flex min-w-[calc(6rem_+_21_*_var(--day))] [--day:2.5rem] xl:[--day:2.25rem]">
+          <div className="sticky start-0 z-20 flex w-24 flex-none flex-col bg-background">
+            {/* As tall as the day headings beside it. */}
+            <span aria-hidden className="flex-1" />
+            <span className={rowLabel}>{t("rowHeld")}</span>
+            <span className={rowLabel}>{t("rowRequests")}</span>
+          </div>
+          <div className="grid min-w-0 flex-1 grid-cols-[repeat(21,minmax(0,1fr))] grid-rows-[auto_3rem_3rem]">
+            {days.map((day, index) => {
+              const head = formatCafeDayHeader(day, locale);
+              const isToday = day === today;
+              return (
+                <div
+                  key={`head-${day}`}
+                  style={{ gridRow: 1, gridColumn: index + 1 }}
+                  className={cn("flex flex-col items-center rounded-t-button pt-1 pb-2", isToday && "bg-accent")}
+                >
+                  <span
+                    className={cn("text-body-caption", isToday ? "text-accent-foreground" : "text-muted-foreground")}
+                  >
+                    {head.weekday}
+                  </span>
+                  <span
+                    className={cn(
+                      "text-body-small font-semibold tabular-nums sm:text-body-caption",
+                      isToday ? "text-accent-foreground" : "text-foreground",
+                    )}
+                  >
+                    {head.day}
+                  </span>
+                </div>
+              );
+            })}
+            {days.map((day, index) => (
               <div
-                key={`head-${day}`}
-                style={{ gridRow: 1, gridColumn: index + FIRST_DAY_COLUMN }}
-                className={cn("flex flex-col items-center rounded-t-button pt-1 pb-2", isToday && "bg-accent")}
-              >
-                <span className={cn("text-body-caption", isToday ? "text-accent-foreground" : "text-muted-foreground")}>
-                  {head.weekday}
-                </span>
-                <span
+                key={`col-${day}`}
+                aria-hidden
+                style={{ gridRow: "2 / span 2", gridColumn: index + 1 }}
+                className={cn(
+                  "border-s border-t border-border",
+                  day === today ? "bg-accent" : new Date(`${day}T12:00:00Z`).getUTCDay() === WEEKEND_DAY && "bg-canvas",
+                )}
+              />
+            ))}
+            {bars.map((booking) => {
+              const start = booking.checkIn > windowStart ? booking.checkIn : windowStart;
+              const end = booking.checkOut < windowEnd ? booking.checkOut : windowEnd;
+              const title = t("barTitle", {
+                reference: booking.reference,
+                name: booking.guestName,
+                from: formatCafeDayShort(booking.checkIn, locale),
+                to: formatCafeDayShort(booking.checkOut, locale),
+                status: t(`status.${booking.status}`),
+              });
+              return (
+                <Link
+                  key={booking.id}
+                  href={hrefForStay(booking)}
+                  title={title}
+                  aria-label={title}
+                  style={{
+                    gridRow: booking.status === "requested" ? 3 : 2,
+                    // Grid lines count from 1: a stay from the strip's first night starts on line 1.
+                    gridColumn: `${suiteNights(windowStart, start) + 1} / span ${suiteNights(start, end)}`,
+                  }}
                   className={cn(
-                    "text-body-small font-semibold tabular-nums sm:text-body-caption",
-                    isToday ? "text-accent-foreground" : "text-foreground",
+                    "z-10 mx-0.5 flex h-11 min-w-0 items-center self-center overflow-hidden rounded-button border px-2 text-label-compact whitespace-nowrap transition-colors sm:h-8",
+                    TONE[booking.status],
+                    booking.id === focusId && FOCUSED[booking.status],
+                    focusRing,
                   )}
                 >
-                  {head.day}
-                </span>
-              </div>
-            );
-          })}
-          <span
-            style={{ gridRow: 2, gridColumn: 1 }}
-            className="self-center text-body-small font-medium text-foreground/80 sm:text-body-caption"
-          >
-            {t("rowHeld")}
-          </span>
-          <span
-            style={{ gridRow: 3, gridColumn: 1 }}
-            className="self-center text-body-small font-medium text-foreground/80 sm:text-body-caption"
-          >
-            {t("rowRequests")}
-          </span>
-          {days.map((day, index) => (
-            <div
-              key={`col-${day}`}
-              aria-hidden
-              style={{ gridRow: "2 / span 2", gridColumn: index + FIRST_DAY_COLUMN }}
-              className={cn(
-                "border-s border-t border-border",
-                day === today ? "bg-accent" : new Date(`${day}T12:00:00Z`).getUTCDay() === WEEKEND_DAY && "bg-canvas",
-              )}
-            />
-          ))}
-          {bars.map((booking) => {
-            const start = booking.checkIn > windowStart ? booking.checkIn : windowStart;
-            const end = booking.checkOut < windowEnd ? booking.checkOut : windowEnd;
-            const title = t("barTitle", {
-              reference: booking.reference,
-              name: booking.guestName,
-              from: formatCafeDayShort(booking.checkIn, locale),
-              to: formatCafeDayShort(booking.checkOut, locale),
-              status: t(`status.${booking.status}`),
-            });
-            return (
-              <Link
-                key={booking.id}
-                href={hrefForStay(booking)}
-                title={title}
-                aria-label={title}
-                style={{
-                  gridRow: booking.status === "requested" ? 3 : 2,
-                  gridColumn: `${suiteNights(windowStart, start) + FIRST_DAY_COLUMN} / span ${suiteNights(start, end)}`,
-                }}
-                className={cn(
-                  "z-10 mx-0.5 flex h-11 min-w-0 items-center self-center overflow-hidden rounded-button border px-2 text-label-compact whitespace-nowrap transition-colors sm:h-8",
-                  TONE[booking.status],
-                  booking.id === focusId && FOCUSED[booking.status],
-                  focusRing,
-                )}
-              >
-                <span className="truncate">
-                  S-{booking.reference} · {booking.guestName}
-                </span>
-              </Link>
-            );
-          })}
+                  <span className="truncate">
+                    S-{booking.reference} · {booking.guestName}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
         </div>
       </div>
 

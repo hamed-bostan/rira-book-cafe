@@ -153,11 +153,17 @@ describe("the reminder jobs", () => {
     const loan = await readJson<BookLoan>(await lendTo("0935 111 2233", dueOn));
     expect(loan.userId).toBeUndefined();
 
+    // Lending already told them, by their phone, that the book went home with them.
+    expect(await kindsFor(PHONE_ONLY)).toEqual(["loanStarted"]);
+
     await runJobs(eveningBefore(dueOn));
-    expect(await inbox(PHONE_ONLY)).toEqual([{ kind: "loanDueSoon", dedupeKey: `loan:${loan.id}:loanDueSoon` }]);
+    expect(await inbox(PHONE_ONLY)).toEqual([
+      { kind: "loanStarted", dedupeKey: `loan:${loan.id}:started` },
+      { kind: "loanDueSoon", dedupeKey: `loan:${loan.id}:loanDueSoon` },
+    ]);
 
     await runJobs(new Date(new Date(loan.dueAt).getTime() + 1));
-    expect(await kindsFor(PHONE_ONLY)).toEqual(["loanDueSoon", "loanOverdue"]);
+    expect(await kindsFor(PHONE_ONLY)).toEqual(["loanStarted", "loanDueSoon", "loanOverdue"]);
   });
 
   it("share the loan reminder's key with the inbox's own, so an account holder gets it once", async () => {

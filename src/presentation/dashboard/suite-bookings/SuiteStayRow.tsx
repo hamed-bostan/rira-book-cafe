@@ -1,19 +1,22 @@
 import { CircleAlert, MessageSquare, Phone, Users } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
+import { netPaid } from "@/src/domain/entities/IncomeRefund";
 import { SYSTEM_ACCOUNTS } from "@/src/domain/entities/Ledger";
 import { suiteNights, type SuiteBooking } from "@/src/domain/entities/SuiteBooking";
+import { suiteStayMoney } from "@/src/domain/entities/SuitePricing";
 import { formatCafeDayShort } from "@/src/lib/formatCafeDay";
-import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { cn } from "@/src/lib/utils";
+import { RefundButton } from "@/src/presentation/dashboard/income/RefundButton";
 import { TakePaymentButton } from "@/src/presentation/dashboard/income/TakePaymentButton";
-import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
+import type { RefundOffer } from "@/src/presentation/dashboard/income/useRefundOffer";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 
 import { SuiteBookingStatusBadge } from "./SuiteBookingStatusBadge";
 import { SuiteStayActions } from "./SuiteStayActions";
+import { SuiteStayMoney } from "./SuiteStayMoney";
 
 type SuiteStayRowProps = {
   booking: SuiteBooking;
@@ -41,6 +44,14 @@ export async function SuiteStayRow({ booking, clash, today, focused, canManage, 
   const range = (stay: Pick<SuiteBooking, "checkIn" | "checkOut">): string =>
     `${formatCafeDayShort(stay.checkIn, locale)} → ${formatCafeDayShort(stay.checkOut, locale)}`;
   const nights = suiteNights(booking.checkIn, booking.checkOut);
+  // What's left to pay (nights × rate, less what's been paid and not handed back).
+  const { balance } = suiteStayMoney(booking);
+  const left = netPaid(booking);
+  // A viewer who keeps the books can hand back what's been paid.
+  const refund: RefundOffer | undefined =
+    payment && left > 0
+      ? { target: { kind: "suiteBooking", stayId: booking.id }, guestName: booking.guestName, left }
+      : undefined;
   const hint =
     booking.status === "checkedIn" && booking.checkOut === today
       ? { text: t("checksOutToday"), tone: "text-warning-foreground" }
@@ -73,11 +84,6 @@ export async function SuiteStayRow({ booking, clash, today, focused, canManage, 
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className="text-body-strong text-foreground">{booking.guestName}</span>
           <SuiteBookingStatusBadge status={booking.status} outlined />
-          {booking.paidAmount ? (
-            <Badge variant="success" appearance="outline" size="compact">
-              {t("paid", { amount: formatMoney(booking.paidAmount, locale) })}
-            </Badge>
-          ) : null}
           {hint ? (
             <span className={cn("text-body-small font-semibold whitespace-nowrap sm:text-body-caption", hint.tone)}>
               {hint.text}
@@ -102,6 +108,11 @@ export async function SuiteStayRow({ booking, clash, today, focused, canManage, 
             {booking.guestPhone}
           </a>
         </div>
+        <SuiteStayMoney
+          booking={booking}
+          nightsLabel={`${t("nights", { count: nights, formatted: formatNumber(nights, locale) })} · ${range(booking)}`}
+          canSetRate={payment !== undefined}
+        />
         {booking.note ? (
           <p className="flex items-start gap-1.5 text-body-default text-pretty text-muted-foreground sm:text-body-small">
             <Icon icon={MessageSquare} size="icon-md" className="mt-0.5 shrink-0" />“{booking.note}”
@@ -115,17 +126,39 @@ export async function SuiteStayRow({ booking, clash, today, focused, canManage, 
         ) : null}
       </div>
 
-      {payment && booking.status !== "cancelled" && booking.status !== "noShow" && booking.status !== "requested" ? (
+      {payment &&
+      booking.status !== "cancelled" &&
+      booking.status !== "noShow" &&
+      booking.status !== "requested" &&
+      // Nothing left to pay on a priced stay: no button. One with no price yet still takes money.
+      (balance === undefined || balance > 0) ? (
         <TakePaymentButton
           today={today}
           vatRateBps={payment.vatRateBps}
           preset={{
             accountCode: SYSTEM_ACCOUNTS.salesSuite,
             description: t("paymentDescription", { reference: booking.reference, range: range(booking) }),
+            amount: balance,
             payerName: booking.guestName,
             sourceType: "suiteBooking",
             sourceId: booking.id,
           }}
+        />
+      ) : null}
+      {refund ? (
+        <RefundButton
+          target={refund.target}
+          guestName={booking.guestName}
+          paid={booking.paidAmount ?? 0}
+          refunded={booking.refundedAmount ?? 0}
+          // What's due back: all of it on a stay that ended unstayed, what was overpaid otherwise.
+          suggested={
+            booking.status === "cancelled" || booking.status === "noShow"
+              ? refund.left
+              : balance !== undefined && balance < 0
+                ? -balance
+                : undefined
+          }
         />
       ) : null}
 
@@ -136,6 +169,7 @@ export async function SuiteStayRow({ booking, clash, today, focused, canManage, 
           clashReference={clash?.reference}
           checkInLabel={formatCafeDayShort(booking.checkIn, locale)}
           rangeLabel={range(booking)}
+          refund={refund}
         />
       ) : null}
     </article>

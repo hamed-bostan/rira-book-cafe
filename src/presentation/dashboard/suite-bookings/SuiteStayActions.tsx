@@ -23,6 +23,8 @@ import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { DashboardDialog } from "../DashboardDialog";
+import { RefundOfferFields } from "../income/RefundOfferFields";
+import { useRefundOffer, type RefundOffer } from "../income/useRefundOffer";
 
 import { suiteBookingsApi } from "./suite-booking-api";
 
@@ -35,6 +37,8 @@ type SuiteStayActionsProps = {
   checkInLabel: string;
   /** The stay's nights, formatted — "Oct 22 → Oct 24" — for the confirmation. */
   rangeLabel: string;
+  /** Money paid and not yet handed back, for a viewer who may refund it: cancelling offers to. */
+  refund?: RefundOffer;
 };
 
 /** The moves that end a stay early, each asked about first. */
@@ -48,12 +52,20 @@ type Ending = "cancelled" | "noShow";
  * REST API and `router.refresh()`es; a failure shows in the confirmation when one
  * is open, else as a toast.
  */
-export function SuiteStayActions({ booking, today, clashReference, checkInLabel, rangeLabel }: SuiteStayActionsProps) {
+export function SuiteStayActions({
+  booking,
+  today,
+  clashReference,
+  checkInLabel,
+  rangeLabel,
+  refund,
+}: SuiteStayActionsProps) {
   const t = useTranslations("dashSuite");
   const tApiErrors = useTranslations("apiErrors");
   const router = useRouter();
   const { toast } = useToast();
   const [pending, startTransition] = React.useTransition();
+  const refundOffer = useRefundOffer(refund);
   // Which ending was asked about stays set while the dialog closes, so its words don't change mid-fade.
   const [ending, setEnding] = React.useState<Ending>("cancelled");
   const [confirming, setConfirming] = React.useState(false);
@@ -70,6 +82,8 @@ export function SuiteStayActions({ booking, today, clashReference, checkInLabel,
     startTransition(async () => {
       try {
         await suiteBookingsApi.update(booking.id, { status: next });
+        // A paid stay's cancel can hand the money back in the same click.
+        if (next === "cancelled") await refundOffer?.run();
         setConfirming(false);
         toast({
           tone: "success",
@@ -178,11 +192,14 @@ export function SuiteStayActions({ booking, today, clashReference, checkInLabel,
         title={t(`confirmTitle.${ending}`, { reference })}
         subtitle={t("confirmMessage", { name: booking.guestName, range: rangeLabel })}
         submitLabel={ending === "noShow" ? t("markNoShow") : t("cancelBooking")}
+        blocked={ending === "cancelled" && Boolean(refundOffer?.blocked)}
         pending={pending}
         onSubmit={() => save(ending)}
         error={error}
         danger
-      />
+      >
+        {ending === "cancelled" && refundOffer ? <RefundOfferFields state={refundOffer} /> : null}
+      </DashboardDialog>
     </div>
   );
 }

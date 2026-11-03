@@ -30,7 +30,6 @@ function repo(overrides: Partial<IAnalyticsRepository> = {}): IAnalyticsReposito
     guestCounts: vi.fn(),
     topGuests: vi.fn(),
     reservationStats: vi.fn(),
-    activeOrderCount: vi.fn(async () => 3),
     reservationsOn: vi.fn(async () => ({ bookings: 2, covers: 6, awaitingConfirmation: 1 })),
     publishedEventsBetween: vi.fn(async () => 1),
     ...overrides,
@@ -145,7 +144,6 @@ describe("GetDashboardOverview", () => {
     const overview = await new GetDashboardOverview(repo()).execute(new Date("2026-10-20T23:00:00Z"));
     expect(overview).toEqual({
       today: "2026-10-21",
-      activeOrders: 3,
       todayReservations: { bookings: 2, covers: 6, awaitingConfirmation: 1 },
       upcomingEvents: 1,
     });

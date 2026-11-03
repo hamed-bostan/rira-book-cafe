@@ -13,13 +13,7 @@ import {
   type UnpaidOrder,
 } from "@/src/domain/entities/Analytics";
 import { CAFE_TIME_ZONE } from "@/src/domain/entities/CafeTime";
-import {
-  ACTIVE_ORDER_STATUSES,
-  PAYMENT_METHODS,
-  SERVICE_TYPES,
-  type PaymentMethod,
-  type ServiceType,
-} from "@/src/domain/entities/Order";
+import { PAYMENT_METHODS, SERVICE_TYPES, type PaymentMethod, type ServiceType } from "@/src/domain/entities/Order";
 import { PRODUCT_KINDS, type ProductKind } from "@/src/domain/entities/Product";
 import type { IAnalyticsRepository } from "@/src/domain/repositories/IAnalyticsRepository";
 import { prisma } from "@/src/infrastructure/prisma/client";
@@ -310,10 +304,6 @@ export class PrismaAnalyticsRepository implements IAnalyticsRepository {
       noShows,
       noShowRate: resolved > 0 ? noShows / resolved : 0,
     };
-  }
-
-  async activeOrderCount(): Promise<number> {
-    return prisma.order.count({ where: { status: { in: [...ACTIVE_ORDER_STATUSES] } } });
   }
 
   async reservationsOn(range: DateRange): Promise<{ bookings: number; covers: number; awaitingConfirmation: number }> {

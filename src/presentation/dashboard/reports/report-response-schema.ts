@@ -90,7 +90,6 @@ export type GuestReportWire = z.infer<typeof guestReportResponseSchema>;
 
 export const dashboardOverviewResponseSchema = z.object({
   today: z.string(),
-  activeOrders: z.number(),
   todayReservations: z.object({ bookings: z.number(), covers: z.number(), awaitingConfirmation: z.number() }),
   upcomingEvents: z.number(),
 });

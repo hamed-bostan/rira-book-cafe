@@ -213,8 +213,6 @@ export type GuestReport = {
  */
 export type DashboardOverview = {
   today: string;
-  /** Orders still in the queue right now. */
-  activeOrders: number;
   todayReservations: { bookings: number; covers: number; awaitingConfirmation: number };
   /** Published events in the next 7 days. */
   upcomingEvents: number;

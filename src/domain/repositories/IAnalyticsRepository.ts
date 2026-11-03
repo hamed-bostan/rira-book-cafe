@@ -43,8 +43,6 @@ export type IAnalyticsRepository = {
   topGuests(range: DateRange, limit: number): Promise<TopGuest[]>;
   reservationStats(range: DateRange): Promise<GuestReport["reservations"]>;
 
-  /** Orders currently in the queue (pending … ready), regardless of range. */
-  activeOrderCount(): Promise<number>;
   /** Today's bookings, guests across them, and how many still await confirmation. */
   reservationsOn(range: DateRange): Promise<{ bookings: number; covers: number; awaitingConfirmation: number }>;
   /** Published events starting in `[from, to)`. */

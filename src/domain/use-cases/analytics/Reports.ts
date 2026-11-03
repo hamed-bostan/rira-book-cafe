@@ -86,7 +86,7 @@ export class GetGuestReport {
   }
 }
 
-/** The dashboard's front page, operational half: the queue, today's bookings, the week's events. */
+/** The dashboard's front page, operational half: today's bookings and the week's events. */
 export class GetDashboardOverview {
   constructor(private readonly analytics: IAnalyticsRepository) {}
 
@@ -94,12 +94,11 @@ export class GetDashboardOverview {
     const today = cafeDayOf(now);
     const nextWeekEnd = cafeDayRange(shiftCafeDay(today, 7)).from;
 
-    const [activeOrders, todayReservations, upcomingEvents] = await Promise.all([
-      this.analytics.activeOrderCount(),
+    const [todayReservations, upcomingEvents] = await Promise.all([
       this.analytics.reservationsOn(dayRange(today, today)),
       this.analytics.publishedEventsBetween(now, nextWeekEnd),
     ]);
 
-    return { today, activeOrders, todayReservations, upcomingEvents };
+    return { today, todayReservations, upcomingEvents };
   }
 }

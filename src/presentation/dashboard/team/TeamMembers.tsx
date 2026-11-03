@@ -83,7 +83,10 @@ export function TeamMembers({ members }: TeamMembersProps) {
                 />
                 <div className="flex min-w-0 flex-col gap-0.5">
                   <span className="text-body-default [overflow-wrap:anywhere] sm:text-body-small">
-                    <span className="font-semibold text-foreground">{name}</span>
+                    {/* A number standing in for a name reads left to right, "+" first, on a Persian page too. */}
+                    <span dir={name === phone ? "ltr" : "auto"} className="font-semibold text-foreground">
+                      {name}
+                    </span>
                     {member.isSelf ? <span className="ms-1 text-muted-foreground">{t("youSuffix")}</span> : null}
                   </span>
                   {name !== phone ? (

@@ -8,8 +8,9 @@ import {
   SERVICE_TYPES,
   type Order,
 } from "@/src/domain/entities/Order";
+import type { OrderReceipt } from "@/src/domain/entities/OrderReceipt";
 import type { OrderRefund } from "@/src/domain/entities/OrderRefund";
-import type { OrderStatusEvent } from "@/src/domain/entities/OrderStatusEvent";
+import { ORDER_EVENT_KINDS, type OrderStatusEvent } from "@/src/domain/entities/OrderStatusEvent";
 import { PRODUCT_KINDS } from "@/src/domain/entities/Product";
 
 /**
@@ -47,6 +48,7 @@ export const orderResponseSchema = z.object({
       refundedQuantity: z.optional(z.number()),
       note: z.optional(z.string()),
       servedAt: z.optional(z.string()),
+      addedAt: z.optional(z.string()),
     }),
   ),
   subtotal: z.number(),
@@ -59,6 +61,7 @@ export const orderResponseSchema = z.object({
   total: z.number(),
   placedAt: z.string(),
   updatedAt: z.string(),
+  changedAt: z.optional(z.string()),
 }) satisfies z.ZodMiniType<Order>;
 
 export const orderListResponseSchema = z.array(orderResponseSchema);
@@ -96,6 +99,7 @@ export const orderStatusEventListResponseSchema = z.array(
   z.object({
     id: z.string(),
     orderId: z.string(),
+    kind: z.enum(ORDER_EVENT_KINDS),
     from: z.nullable(z.enum(ORDER_STATUSES)),
     to: z.enum(ORDER_STATUSES),
     actorId: z.string(),
@@ -103,6 +107,17 @@ export const orderStatusEventListResponseSchema = z.array(
     at: z.string(),
   }) satisfies z.ZodMiniType<OrderStatusEvent>,
 );
+
+/** An order's receipt, for staff to print or for the guest whose order it is. */
+export const orderReceiptResponseSchema = z.object({
+  order: orderResponseSchema,
+  payments: z.array(z.object({ method: z.enum(PAYMENT_METHODS), amount: z.number() })),
+  refunds: z.array(
+    z.object({ number: z.number(), date: z.string(), method: z.enum(PAYMENT_METHODS), amount: z.number() }),
+  ),
+  vatRateBps: z.number(),
+  vatIncluded: z.number(),
+}) satisfies z.ZodMiniType<OrderReceipt>;
 
 export const orderStatusCountsResponseSchema = z.object({
   active: z.number(),

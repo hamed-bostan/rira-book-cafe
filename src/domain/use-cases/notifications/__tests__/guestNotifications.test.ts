@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { loanReminder, orderStatusNotification } from "../guestNotifications";
+import { loanReminder, orderChangedNotification, orderStatusNotification } from "../guestNotifications";
 
 import type { BookLoan } from "../../../entities/BookLoan";
 import type { Order, OrderStatus } from "../../../entities/Order";
@@ -73,6 +73,32 @@ describe("orderStatusNotification", () => {
       params: { points: 10 },
     });
     expect(orderStatusNotification(order("completed"))?.kind).toBe("orderCompleted");
+  });
+});
+
+describe("orderChangedNotification", () => {
+  const CHANGED = "2026-10-20T10:05:00.000Z";
+
+  it("tells the guest their order was updated, once per change", () => {
+    expect(orderChangedNotification(order("preparing", { changedAt: CHANGED }))).toEqual({
+      userId: "g1",
+      kind: "orderChanged",
+      params: { orderNumber: 42 },
+      link: "/orders/o1",
+      dedupeKey: `order:o1:changed:${CHANGED}`,
+    });
+  });
+
+  it("reaches a counter sale's guest by the phone staff took, even with no account", () => {
+    const sale = order("pending", { userId: undefined, customerPhone: "0912-345-6789", changedAt: CHANGED });
+    expect(orderChangedNotification(sale)?.userId).toBe("09123456789");
+  });
+
+  it("says nothing without someone to tell, or before anything changed", () => {
+    expect(
+      orderChangedNotification(order("pending", { userId: undefined, customerPhone: "", changedAt: CHANGED })),
+    ).toBeNull();
+    expect(orderChangedNotification(order("pending"))).toBeNull();
   });
 });
 

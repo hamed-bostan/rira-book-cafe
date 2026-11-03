@@ -35,6 +35,7 @@ import type { LedgerHook } from "@/src/domain/repositories/ILedgerRepository";
 import type {
   IOrderRepository,
   NewOrder,
+  OrderChange,
   OrderRefundResult,
   PaymentChange,
 } from "@/src/domain/repositories/IOrderRepository";
@@ -68,34 +69,8 @@ export class PrismaOrderRepository implements IOrderRepository {
 
   async place(input: NewOrder, placedBy: ActivityActor, audit?: AuditHook<Order>): Promise<Order> {
     return inTransaction(this.db, async (tx) => {
-      // Take the units first, each with a guarded decrement: the guard and the
-      // write are one statement, so two orders can't both take the last slice.
-      // Lines are merged per item and sorted by id so concurrent orders lock rows
-      // in the same order and can't deadlock each other. Made-to-order items aren't
-      // counted, so they're neither checked nor taken — the guard leaves them out,
-      // and the flag is re-read here, in the transaction, to tell one from a shortfall.
-      const shortfalls: StockShortfall[] = [];
-      for (const line of mergeLines(input.items)) {
-        const result = await tx.product.updateMany({
-          where: { id: line.productId, madeToOrder: false, stockQuantity: { gte: line.quantity } },
-          data: { stockQuantity: { decrement: line.quantity } },
-        });
-        if (result.count === 0) {
-          const current = await tx.product.findUnique({
-            where: { id: line.productId },
-            select: { stockQuantity: true, madeToOrder: true },
-          });
-          if (current?.madeToOrder) continue;
-          shortfalls.push({
-            productId: line.productId,
-            name: line.name,
-            available: current?.stockQuantity ?? 0,
-            requested: line.quantity,
-          });
-        }
-      }
-      // Throwing aborts the transaction, so decrements already applied roll back.
-      if (shortfalls.length > 0) throw new InsufficientStockError(shortfalls);
+      // Take the units first; a shortfall aborts the transaction, so nothing is placed.
+      await moveShelfStock(tx, input.items);
 
       // The code's limits are re-checked here, under its lock: the use-case priced the
       // order, but two guests racing for the last use must not both get it.
@@ -261,10 +236,11 @@ export class PrismaOrderRepository implements IOrderRepository {
   ): Promise<Order> {
     return inTransaction(this.db, async (tx) => {
       // Guarded on the status staff saw: a double click or a second tab can't book
-      // the same payment twice. Unmarking clears the method with the status.
+      // the same payment twice — and on the bill it was taken for, so a payment
+      // can't land on lines changed meanwhile. Unmarking clears the method with the status.
       const parts = change.to === "paid" ? (change.parts ?? []) : [];
       const result = await tx.order.updateMany({
-        where: { id, paymentStatus: change.from },
+        where: { id, paymentStatus: change.from, ...(change.total === undefined ? {} : { total: change.total }) },
         data: {
           paymentStatus: change.to,
           paymentMethod: parts.length > 0 ? largestPaymentPart(parts).method : null,
@@ -273,6 +249,9 @@ export class PrismaOrderRepository implements IOrderRepository {
       if (result.count === 0) {
         const current = await tx.order.findUnique({ where: { id }, select: { paymentStatus: true } });
         if (!current) throw new NotFoundError("order", id);
+        if (current.paymentStatus === change.from) {
+          throw new ConflictError("INVALID_TRANSITION", "The order's total changed before the payment landed.");
+        }
         throw new ConflictError("INVALID_TRANSITION", `The payment is already ${current.paymentStatus}.`);
       }
       await tx.orderPaymentPart.deleteMany({ where: { orderId: id } });
@@ -451,11 +430,107 @@ export class PrismaOrderRepository implements IOrderRepository {
     });
   }
 
+  async change(change: OrderChange, actor: ActivityActor, audit?: AuditHook<Order>): Promise<Order> {
+    return inTransaction(this.db, async (tx) => {
+      // Lock the order: a payment, a status move or another change racing this one
+      // waits, then is judged against the order as this leaves it.
+      await tx.$queryRaw`SELECT "id" FROM "orders" WHERE "id" = ${change.orderId} FOR UPDATE`;
+      const before = await tx.order.findUnique({ where: { id: change.orderId }, include: WITH_ITEMS });
+      if (!before) throw new NotFoundError("order", change.orderId);
+      // Every write to the order moves `updated_at`: if it moved since the use-case
+      // read it, someone else changed it, and this change was worked out from a stale copy.
+      if (
+        before.updatedAt.toISOString() !== change.expected.updatedAt ||
+        before.status !== change.expected.status ||
+        before.paymentStatus !== change.expected.paymentStatus
+      ) {
+        throw new ConflictError("INVALID_TRANSITION", "This order was changed by someone else just now.");
+      }
+
+      // Lines lowered or taken off, guarded on the quantity read and on not being
+      // served: a tick from the bar (which doesn't touch the order row) that landed
+      // meanwhile wins, and the line stays.
+      const returned: { productId: string; name: string; quantity: number }[] = [];
+      for (const line of change.lower) {
+        const where = { id: line.itemId, orderId: change.orderId, quantity: line.from, servedAt: null };
+        const result =
+          line.to === 0
+            ? await tx.orderItem.deleteMany({ where })
+            : await tx.orderItem.updateMany({ where, data: { quantity: line.to } });
+        const item = before.items.find((candidate) => candidate.id === line.itemId);
+        if (result.count === 0 || !item) {
+          if (item?.servedAt || (await tx.orderItem.findUnique({ where: { id: line.itemId } }))?.servedAt) {
+            throw new ConflictError("ITEM_SERVED", "That line went out to the guest just now.");
+          }
+          throw new ConflictError("INVALID_TRANSITION", "This order was changed by someone else just now.");
+        }
+        returned.push({ productId: item.productId, name: item.name, quantity: line.to - line.from });
+      }
+
+      // The shelf follows the lines: units taken off go back, a new round takes its own.
+      await moveShelfStock(tx, [...returned, ...change.add]);
+
+      const now = new Date();
+      const next = before.items.reduce((most, item) => Math.max(most, item.position + 1), 0);
+      if (change.add.length > 0) {
+        await tx.orderItem.createMany({
+          data: change.add.map((item, index) => ({
+            orderId: change.orderId,
+            productId: item.productId,
+            kind: item.kind,
+            name: item.name,
+            imageUrl: item.imageUrl,
+            unitPrice: item.unitPrice,
+            unitCost: item.unitCost ?? null,
+            taxExempt: item.taxExempt ?? false,
+            quantity: item.quantity,
+            note: item.note ?? null,
+            position: next + index,
+            addedAt: now,
+          })),
+        });
+      }
+
+      await tx.order.update({
+        where: { id: change.orderId },
+        data: {
+          serviceType: change.serviceType,
+          tableLabel: change.tableLabel ?? null,
+          changedAt: now,
+          ...(change.amounts
+            ? {
+                subtotal: change.amounts.subtotal,
+                promoDiscount: change.amounts.promoDiscount,
+                pointsDiscount: change.amounts.pointsDiscount,
+                total: change.amounts.total,
+              }
+            : {}),
+        },
+      });
+
+      await tx.orderStatusEvent.create({
+        data: {
+          orderId: change.orderId,
+          kind: "changed",
+          fromStatus: before.status,
+          toStatus: before.status,
+          actorId: actor.id,
+          actorName: actor.name,
+        },
+      });
+
+      const order = toOrder(await tx.order.findUniqueOrThrow({ where: { id: change.orderId }, include: WITH_ITEMS }));
+      await recordAudit(tx, order, audit);
+      return order;
+    });
+  }
+
   async listStatusEvents(orderId: string): Promise<OrderStatusEvent[]> {
     const rows = await this.db.orderStatusEvent.findMany({ where: { orderId }, orderBy: { createdAt: "asc" } });
     return rows.map((row) => ({
       id: row.id,
       orderId: row.orderId,
+      kind: row.kind === "changed" ? "changed" : "status",
       from: row.fromStatus == null ? null : toStatus(row.fromStatus),
       to: toStatus(row.toStatus),
       actorId: row.actorId,
@@ -463,6 +538,52 @@ export class PrismaOrderRepository implements IOrderRepository {
       at: row.createdAt.toISOString(),
     }));
   }
+}
+
+/**
+ * Take counted items' units off the shelf (a positive `quantity`) or put them back
+ * (a negative one), netted per item. Taking is a guarded decrement: the guard and
+ * the write are one statement, so two orders can't both take the last slice. Lines
+ * are merged per item and sorted by id so concurrent orders lock rows in the same
+ * order and can't deadlock each other. Made-to-order items aren't counted, so
+ * they're neither checked nor moved — the guard leaves them out, and the flag is
+ * re-read here, in the transaction, to tell one from a shortfall. A shortfall throws
+ * `InsufficientStockError` naming every short line, which aborts the caller's
+ * transaction, so units already moved roll back.
+ */
+async function moveShelfStock(
+  tx: Prisma.TransactionClient,
+  lines: readonly { productId: string; name: string; quantity: number }[],
+): Promise<void> {
+  const shortfalls: StockShortfall[] = [];
+  for (const line of mergeLines(lines)) {
+    if (line.quantity < 0) {
+      await tx.product.updateMany({
+        where: { id: line.productId, madeToOrder: false },
+        data: { stockQuantity: { increment: -line.quantity } },
+      });
+      continue;
+    }
+    if (line.quantity === 0) continue;
+    const result = await tx.product.updateMany({
+      where: { id: line.productId, madeToOrder: false, stockQuantity: { gte: line.quantity } },
+      data: { stockQuantity: { decrement: line.quantity } },
+    });
+    if (result.count === 0) {
+      const current = await tx.product.findUnique({
+        where: { id: line.productId },
+        select: { stockQuantity: true, madeToOrder: true },
+      });
+      if (current?.madeToOrder) continue;
+      shortfalls.push({
+        productId: line.productId,
+        name: line.name,
+        available: current?.stockQuantity ?? 0,
+        requested: line.quantity,
+      });
+    }
+  }
+  if (shortfalls.length > 0) throw new InsufficientStockError(shortfalls);
 }
 
 /** Collapse lines to one per item, sorted by id — one lock per row, always in the same order. */
@@ -605,6 +726,7 @@ function toOrder(row: OrderRow): Order {
       refundedQuantity: item.refundedQuantity,
       note: item.note ?? undefined,
       servedAt: item.servedAt?.toISOString(),
+      addedAt: item.addedAt?.toISOString(),
     })),
     subtotal: row.subtotal,
     promoCode: row.promoCode ?? undefined,
@@ -616,5 +738,6 @@ function toOrder(row: OrderRow): Order {
     total: row.total,
     placedAt: row.placedAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
+    changedAt: row.changedAt?.toISOString(),
   };
 }

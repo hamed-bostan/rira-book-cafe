@@ -211,7 +211,7 @@ describe("VerifyOnlinePayment", () => {
     expect(verify).toHaveBeenCalledWith({ authority: CALLBACK.authority, amount: 300_000 });
     expect(orders.setPaymentStatus).toHaveBeenCalledWith(
       "o1",
-      { from: "unpaid", to: "paid", parts: [{ method: "online", amount: 300_000 }] },
+      { from: "unpaid", to: "paid", parts: [{ method: "online", amount: 300_000 }], total: 300_000 },
       expect.any(Function),
       expect.any(Function),
     );

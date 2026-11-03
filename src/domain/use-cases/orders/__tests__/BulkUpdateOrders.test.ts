@@ -84,7 +84,7 @@ describe("BulkUpdateOrders", () => {
     expect(updated.map((o) => o.id)).toEqual(["o1"]);
     expect(setPaymentStatus).toHaveBeenCalledWith(
       "o1",
-      { from: "unpaid", to: "paid", parts: [{ method: "card", amount: 0 }] },
+      { from: "unpaid", to: "paid", parts: [{ method: "card", amount: 0 }], total: 0 },
       expect.any(Function),
       expect.any(Function),
     );

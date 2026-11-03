@@ -2,11 +2,16 @@ import { describe, expect, it } from "vitest";
 
 import {
   ORDER_STATUSES,
+  canChangeOrderLines,
+  canChangeOrderService,
+  canLowerOrderItem,
   canTransition,
   canWriteOffOrder,
   isGuestCancellable,
+  isOrderOf,
   isStaffCancellable,
   nextOrderStatus,
+  orderGuestId,
   orderSubtotal,
 } from "../Order";
 
@@ -46,5 +51,43 @@ describe("order workflow", () => {
         { unitPrice: 95000, quantity: 1 },
       ]),
     ).toBe(465000);
+  });
+});
+
+describe("changing an order after it's placed", () => {
+  it("changes lines only while it's being worked and nothing is paid", () => {
+    const unpaid = ORDER_STATUSES.filter((status) => canChangeOrderLines({ status, paymentStatus: "unpaid" }));
+    expect(unpaid).toEqual(["pending", "preparing"]);
+    expect(canChangeOrderLines({ status: "pending", paymentStatus: "paid" })).toBe(false);
+    expect(canChangeOrderLines({ status: "preparing", paymentStatus: "refunded" })).toBe(false);
+  });
+
+  it("moves the table or the service until it's served, paid or not", () => {
+    expect(ORDER_STATUSES.filter((status) => canChangeOrderService({ status }))).toEqual(["pending", "preparing"]);
+  });
+
+  it("keeps a line that has gone out to the guest", () => {
+    expect(canLowerOrderItem({ servedAt: undefined })).toBe(true);
+    expect(canLowerOrderItem({ servedAt: "2026-11-03T10:00:00.000Z" })).toBe(false);
+  });
+});
+
+describe("whose order it is", () => {
+  it("is the account that placed it", () => {
+    expect(orderGuestId({ userId: "09120000004", customerPhone: "0912 000 0004" })).toBe("09120000004");
+    expect(isOrderOf({ userId: "09120000004", customerPhone: "" }, "09120000005")).toBe(false);
+  });
+
+  it("is the phone a counter sale was rung up for, however it was typed", () => {
+    const sale = { userId: undefined, customerPhone: "+98 912 345 6789" };
+    expect(orderGuestId(sale)).toBe("09123456789");
+    expect(isOrderOf(sale, "09123456789")).toBe(true);
+    expect(isOrderOf(sale, "09120000004")).toBe(false);
+  });
+
+  it("is nobody's for a counter sale without a phone", () => {
+    expect(orderGuestId({ userId: undefined, customerPhone: "" })).toBeNull();
+    expect(orderGuestId({ userId: undefined, customerPhone: "12" })).toBeNull();
+    expect(isOrderOf({ userId: undefined, customerPhone: "" }, "")).toBe(false);
   });
 });

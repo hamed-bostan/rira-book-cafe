@@ -35,6 +35,7 @@ const ICONS: Record<NotificationKind, LucideIcon> = {
   bookAvailable: BookOpen,
   pointsEarned: Gift,
   reviewApproved: Star,
+  orderChanged: ClipboardList,
 };
 
 /** Kinds that ask the guest to do something — drawn in the warning tone. */

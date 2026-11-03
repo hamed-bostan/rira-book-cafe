@@ -143,7 +143,7 @@ describe("SetOrderPayment", () => {
     await new SetOrderPayment(repo).execute("o1", "paid", "transfer", STAFF);
     expect(setPaymentStatus).toHaveBeenCalledWith(
       "o1",
-      { from: "unpaid", to: "paid", parts: [{ method: "transfer", amount: 550_000 }] },
+      { from: "unpaid", to: "paid", parts: [{ method: "transfer", amount: 550_000 }], total: 550_000 },
       expect.any(Function),
       expect.any(Function),
     );
@@ -152,6 +152,15 @@ describe("SetOrderPayment", () => {
   it("needs a method to mark paid", async () => {
     const { repo } = repoWith(order());
     await expect(new SetOrderPayment(repo).execute("o1", "paid", undefined, STAFF)).rejects.toThrow(ValidationError);
+  });
+
+  // An online payment the gateway captured for the bill as it was, before staff changed the lines.
+  it("refuses a payment taken for a total the order no longer has", async () => {
+    const { repo, setPaymentStatus } = repoWith(order());
+    await expect(
+      new SetOrderPayment(repo).execute("o1", "paid", "online", STAFF, { strict: true, expectedTotal: 600_000 }),
+    ).rejects.toThrow(ConflictError);
+    expect(setPaymentStatus).not.toHaveBeenCalled();
   });
 
   it("won't touch a refunded order or take payment for a cancelled one", async () => {

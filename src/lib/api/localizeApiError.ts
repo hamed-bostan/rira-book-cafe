@@ -22,6 +22,12 @@ type ApiErrorKey =
   | "conflict"
   | "insufficientStock"
   | "invalidTransition"
+  | "orderLinesLocked"
+  | "orderClosed"
+  | "itemServed"
+  | "orderEmpty"
+  | "promoNoLongerApplies"
+  | "pointsExceedTotal"
   | "notDueYet"
   | "tableTaken"
   | "tableHeld"
@@ -80,6 +86,13 @@ const CODE_KEYS: Readonly<Record<string, ApiErrorKey>> = {
   UNIQUE_CONSTRAINT: "conflict",
   INSUFFICIENT_STOCK: "insufficientStock",
   INVALID_TRANSITION: "invalidTransition",
+  // Changing an order after it was placed.
+  ORDER_LINES_LOCKED: "orderLinesLocked",
+  ORDER_CLOSED: "orderClosed",
+  ITEM_SERVED: "itemServed",
+  ORDER_EMPTY: "orderEmpty",
+  PROMO_NO_LONGER_APPLIES: "promoNoLongerApplies",
+  POINTS_EXCEED_TOTAL: "pointsExceedTotal",
   NOT_DUE_YET: "notDueYet",
   TABLE_TAKEN: "tableTaken",
   TABLE_HELD: "tableHeld",

@@ -23,6 +23,8 @@ export const NOTIFICATION_KINDS = [
   "bookAvailable",
   "pointsEarned",
   "reviewApproved",
+  // Staff changed an order after it was placed: a round added, a line taken off, another table.
+  "orderChanged",
 ] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 

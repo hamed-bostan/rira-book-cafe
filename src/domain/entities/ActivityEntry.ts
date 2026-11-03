@@ -87,6 +87,9 @@ export const ACTIVITY_ACTIONS = [
   "order.writtenOff",
   // An online payment the order couldn't take, given back to the guest from the gateway's panel.
   "order.onlinePaymentRefunded",
+  // Staff changed an order after it was placed: lines added, lowered or removed, the
+  // table or the service. The diff says which.
+  "order.changed",
   // The one action here that isn't a change to anything stored — an admin sent the
   // customer a message about their order. Recorded through
   // `IActivityLog.recordEvent` rather than an audit hook, because there is no

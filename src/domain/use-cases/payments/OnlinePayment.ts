@@ -153,7 +153,8 @@ export class VerifyOnlinePayment {
         "paid",
         "online",
         { id: order.userId ?? order.id, name: order.customerName },
-        { strict: true },
+        // Captured for the attempt's amount: an order whose lines changed since can't take it.
+        { strict: true, expectedTotal: attempt.amount },
       );
     } catch (error) {
       if (error instanceof ConflictError) return finish({ status: "unapplied", ...captured });

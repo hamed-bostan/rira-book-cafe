@@ -17,14 +17,21 @@ export function AccountActiveSwitch({ code, isActive }: { code: string; isActive
   const router = useRouter();
   const { toast } = useToast();
   const [pending, startTransition] = React.useTransition();
+  const switchId = React.useId();
 
+  // The label names the switch and toggles it too, so a phone's 44px square
+  // reaches past the switch's 36×20.
   return (
-    <span className="flex min-h-11 items-center sm:min-h-8">
+    <label
+      htmlFor={switchId}
+      className="flex min-h-11 min-w-11 cursor-pointer items-center justify-end sm:min-h-8 sm:min-w-0"
+    >
+      <span className="sr-only">{t("accounts.activeLabel", { code })}</span>
       <Switch
+        id={switchId}
         size="sm"
         checked={isActive}
         disabled={pending}
-        aria-label={t("accounts.activeLabel", { code })}
         onCheckedChange={(next) => {
           startTransition(async () => {
             try {
@@ -36,6 +43,6 @@ export function AccountActiveSwitch({ code, isActive }: { code: string; isActive
           });
         }}
       />
-    </span>
+    </label>
   );
 }

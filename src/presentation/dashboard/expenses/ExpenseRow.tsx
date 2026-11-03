@@ -49,7 +49,7 @@ export async function ExpenseRow({ expense, accountName, canWrite }: ExpenseRowP
           href={`/dashboard/expenses/${expense.id}`}
           dir="auto"
           className={cn(
-            "w-fit max-w-full text-body-strong [overflow-wrap:anywhere] text-foreground transition-colors hover:text-primary sm:text-body-small-strong sm:leading-5",
+            "-my-3 w-fit max-w-full py-3 text-body-strong [overflow-wrap:anywhere] text-foreground transition-colors hover:text-primary sm:my-0 sm:py-0 sm:text-body-small-strong sm:leading-5",
             focusRing,
           )}
         >

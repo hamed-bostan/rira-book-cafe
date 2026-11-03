@@ -62,7 +62,7 @@ export async function JournalRow({ entry, accounts, reversible, today }: Journal
             href={`/dashboard/accounting/journal/${entry.id}`}
             dir="auto"
             className={cn(
-              "text-body-strong [overflow-wrap:anywhere] text-foreground transition-colors hover:text-primary sm:text-body-small-strong",
+              "-my-3 py-3 text-body-strong [overflow-wrap:anywhere] text-foreground transition-colors hover:text-primary sm:my-0 sm:py-0 sm:text-body-small-strong",
               focusRing,
             )}
           >

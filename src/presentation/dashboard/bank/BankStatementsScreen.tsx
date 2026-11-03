@@ -84,7 +84,7 @@ export async function BankStatementsScreen({
                     <td className={cn(S.lead, "align-middle")}>
                       <Link
                         href={`/dashboard/accounting/bank/${statement.id}`}
-                        className="font-medium text-primary hover:text-primary-hover"
+                        className="-my-3 block w-fit py-3 font-medium text-primary hover:text-primary-hover sm:my-0 sm:py-0"
                       >
                         {formatCafeDayMedium(statement.fromDay, locale)} –{" "}
                         {formatCafeDayMedium(statement.toDay, locale)}

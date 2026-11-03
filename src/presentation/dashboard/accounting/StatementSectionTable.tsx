@@ -46,7 +46,7 @@ export async function StatementSectionTable({
           <li key={row.account.code} className={ROW}>
             <Link
               href={`/dashboard/accounting/accounts/${row.account.code}`}
-              className="min-w-0 text-foreground transition-colors hover:text-primary"
+              className="-my-3 min-w-0 py-3 text-foreground transition-colors hover:text-primary sm:my-0 sm:py-0"
             >
               <span className={cn(ROW_CAPTION, "me-2 tabular-nums")}>{row.account.code}</span>
               {accountName(row.account, locale)}

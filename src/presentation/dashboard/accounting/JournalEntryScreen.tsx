@@ -131,7 +131,7 @@ export async function JournalEntryScreen({ entry, accounts, canWrite, today }: J
                     <td className={S.lead}>
                       <Link
                         href={`/dashboard/accounting/accounts/${line.accountCode}`}
-                        className="font-medium text-primary hover:text-primary-hover"
+                        className="-my-3 block w-fit py-3 font-medium text-primary hover:text-primary-hover sm:my-0 sm:py-0"
                       >
                         {account ? accountLabel(account, locale) : line.accountCode}
                       </Link>

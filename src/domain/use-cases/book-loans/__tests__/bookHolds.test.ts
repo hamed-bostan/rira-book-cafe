@@ -128,7 +128,10 @@ describe("skipping and removing", () => {
   }
 
   it("passes the copy on when the guest who was told is skipped", async () => {
-    const { waitlist, notifyNext } = repo(entry({ status: "notified" }), entry({ id: "w2", userId: "g2" }));
+    const { waitlist, notifyNext } = repo(
+      entry({ status: "notified", notifiedAt: NOW.toISOString() }),
+      entry({ id: "w2", userId: "g2" }),
+    );
     const notify = vi.fn(async () => undefined);
 
     await new RemoveFromBookWaitlist(waitlist, { notify }).execute("w1", NOW);

@@ -6,6 +6,8 @@ import { ConflictError } from "../../errors/ConflictError";
 import { NotFoundError } from "../../errors/NotFoundError";
 import { ValidationError } from "../../errors/ValidationError";
 
+import { tellNextInLine } from "./BookWaitlist";
+
 import type { ActivityActor } from "../../entities/ActivityEntry";
 import type { IBookLoanRepository } from "../../repositories/IBookLoanRepository";
 import type { IBookWaitlistRepository } from "../../repositories/IBookWaitlistRepository";
@@ -59,17 +61,7 @@ export class ChangeBookLoan {
     );
 
     if (saved.status === "returned" && this.waitlistRepo) {
-      const next = await this.waitlistRepo.notifyNext(saved.productId, now);
-      // A counter hold has no account to tell — staff ring them.
-      if (next?.userId && this.notifier) {
-        await this.notifier.notify({
-          userId: next.userId,
-          kind: "bookAvailable",
-          params: { title: next.bookTitle },
-          link: "/loans",
-          dedupeKey: `waitlist:${next.id}:available`,
-        });
-      }
+      await tellNextInLine(saved.productId, now, this.waitlistRepo, this.notifier);
     }
     return saved;
   }

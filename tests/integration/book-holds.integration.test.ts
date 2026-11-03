@@ -5,6 +5,8 @@ import { GET as countLoans } from "@/app/api/admin/book-loans/counts/route";
 import { POST as lend } from "@/app/api/admin/book-loans/route";
 import { DELETE as removeHold } from "@/app/api/admin/book-waitlist/[id]/route";
 import { GET as listHolds, POST as addHold } from "@/app/api/admin/book-waitlist/route";
+import { DELETE as leaveLine } from "@/app/api/book-waitlist/[id]/route";
+import { POST as joinLine } from "@/app/api/products/[id]/waitlist/route";
 import type { BookLoan } from "@/src/domain/entities/BookLoan";
 import type { BookWaitlistEntry } from "@/src/domain/entities/BookWaitlist";
 import { cafeDayOf, shiftCafeDay } from "@/src/domain/entities/CafeTime";
@@ -158,6 +160,34 @@ describe("book copies and holds", () => {
 
     expect((await lendTo(BLIND_OWL, "Reza", "09121110006")).status).toBe(201);
     expect((await openLine(BLIND_OWL)).map((e) => [e.id, e.status])).toEqual([[told.id, "notified"]]);
+  });
+
+  it("passes the copy on when a guest who'd been told leaves the line from the site", async () => {
+    signInAs("admin");
+    const loan = await readJson<BookLoan>(await lendTo(BLIND_OWL, "Niloofar", "09121110005"));
+    signInAs("customer");
+    const joined = await joinLine(
+      jsonRequest("POST", `/api/products/${BLIND_OWL}/waitlist`),
+      routeParams({ id: BLIND_OWL }),
+    );
+    expect(joined.status).toBe(201);
+    const told = await readJson<BookWaitlistEntry>(joined);
+    signInAs("admin");
+    const next = await readJson<BookWaitlistEntry>(await hold(BLIND_OWL, "Hamid", "09124041180"));
+    await changeLoan(
+      jsonRequest("PATCH", `/api/admin/book-loans/${loan.id}`, { status: "returned" }),
+      routeParams({ id: loan.id }),
+    );
+    expect((await openLine(BLIND_OWL)).map((e) => [e.id, e.status])).toEqual([
+      [told.id, "notified"],
+      [next.id, "waiting"],
+    ]);
+
+    signInAs("customer");
+    const left = await leaveLine(jsonRequest("DELETE", `/api/book-waitlist/${told.id}`), routeParams({ id: told.id }));
+    expect(left.status).toBe(204);
+    signInAs("admin");
+    expect((await openLine(BLIND_OWL)).map((e) => [e.id, e.status])).toEqual([[next.id, "notified"]]);
   });
 
   it("tells the next guest only once lending has let go of the book", async () => {

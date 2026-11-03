@@ -114,6 +114,29 @@ describe("LeaveBookWaitlist", () => {
     expect(cancel).toHaveBeenCalledWith("w1");
   });
 
+  it("passes the copy on when a guest who'd been told leaves", async () => {
+    const told = entry({ status: "notified", notifiedAt: NOW.toISOString() });
+    const { repo } = waitlist(told, { ...told, status: "cancelled" });
+    const next = entry({ id: "w2", userId: "g2", status: "notified" });
+    vi.mocked(repo.notifyNext).mockResolvedValueOnce(next);
+    const notify = vi.fn(async () => undefined);
+
+    await new LeaveBookWaitlist(repo, { notify }).execute("w1", "g1", NOW);
+
+    expect(repo.notifyNext).toHaveBeenCalledWith("b1", NOW);
+    expect(notify).toHaveBeenCalledWith(expect.objectContaining({ userId: "g2", kind: "bookAvailable" }));
+  });
+
+  it("passes it on for a guest told between reading and leaving, and not for one still waiting", async () => {
+    const toldMeanwhile = waitlist(entry(), entry({ status: "cancelled", notifiedAt: NOW.toISOString() }));
+    await new LeaveBookWaitlist(toldMeanwhile.repo).execute("w1", "g1", NOW);
+    expect(toldMeanwhile.repo.notifyNext).toHaveBeenCalledWith("b1", NOW);
+
+    const waiting = waitlist(entry(), entry({ status: "cancelled" }));
+    await new LeaveBookWaitlist(waiting.repo).execute("w1", "g1", NOW);
+    expect(waiting.repo.notifyNext).not.toHaveBeenCalled();
+  });
+
   it("returns a closed entry as it is", async () => {
     const done = entry({ status: "fulfilled" });
     const { repo, cancel } = waitlist(done);

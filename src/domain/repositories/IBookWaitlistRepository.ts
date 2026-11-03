@@ -21,7 +21,11 @@ export type IBookWaitlistRepository = {
   listOpen(): Promise<BookWaitlistEntry[]>;
   /** Lines that closed (borrowed or cancelled) since `since`, newest first — the dashboard's Closed tab. */
   listClosedSince(since: Date): Promise<BookWaitlistEntry[]>;
-  /** Take an open entry out of line. Returns `null` when it was no longer open. */
+  /**
+   * Take an open entry out of line, under the book's lending lock. Returns the
+   * cancelled entry — its `notifiedAt` says whether they'd been told — or `null`
+   * when it was no longer open.
+   */
   cancel(id: string): Promise<BookWaitlistEntry | null>;
   /**
    * A copy came back: move the guest at the front of the line who hasn't been told

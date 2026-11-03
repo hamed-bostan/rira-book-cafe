@@ -68,12 +68,18 @@ export class PrismaBookWaitlistRepository implements IBookWaitlistRepository {
   }
 
   async cancel(id: string): Promise<BookWaitlistEntry | null> {
-    const result = await this.db.bookWaitlistEntry.updateMany({
-      where: { id, status: OPEN },
-      data: { status: "cancelled" },
+    return inTransaction(this.db, async (tx) => {
+      const entry = await tx.bookWaitlistEntry.findUnique({ where: { id }, select: { productId: true } });
+      if (!entry) return null;
+      // Under the book's lock, so a loan deciding whose held copy it takes sees the line as it is.
+      await lockBookShelf(tx, entry.productId);
+      const result = await tx.bookWaitlistEntry.updateMany({
+        where: { id, status: OPEN },
+        data: { status: "cancelled" },
+      });
+      if (result.count === 0) return null;
+      return toEntry(await tx.bookWaitlistEntry.findUniqueOrThrow({ where: { id } }));
     });
-    if (result.count === 0) return null;
-    return toEntry(await this.db.bookWaitlistEntry.findUniqueOrThrow({ where: { id } }));
   }
 
   async notifyNext(productId: string, at: Date): Promise<BookWaitlistEntry | null> {

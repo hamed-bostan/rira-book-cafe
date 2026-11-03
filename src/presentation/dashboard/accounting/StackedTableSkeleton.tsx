@@ -1,11 +1,9 @@
 import { cn } from "@/src/lib/utils";
-import { ListPagerSkeleton } from "@/src/presentation/dashboard/skeletons";
 import { Skeleton } from "@/src/presentation/design-system/components/Skeleton/Skeleton";
 
 import { PAGE_CARD, ROW_TEXT, TABLE_HEAD, TABLE_TH } from "../pageStyles";
 
 import type { StackedTableStyles } from "../stackedTableStyles";
-import type { ReactNode } from "react";
 
 type StackedTableSkeletonProps = {
   /** The screen's table layout, so the placeholder stacks at the same width it does. */
@@ -15,10 +13,6 @@ type StackedTableSkeletonProps = {
   rows?: number;
   /** Reserve the totals row under the table. */
   totals?: boolean;
-  /** What sits over the table inside the card, such as its filters. */
-  toolbar?: ReactNode;
-  /** Reserve the `ListPager` row under the table (stock movements). */
-  pager?: boolean;
   className?: string;
 };
 
@@ -32,15 +26,12 @@ export function StackedTableSkeleton({
   columns,
   rows = 8,
   totals = false,
-  toolbar,
-  pager = false,
   className,
 }: StackedTableSkeletonProps) {
   const [, ...rest] = columns;
 
   return (
     <section className={cn(PAGE_CARD, layout.frame, "overflow-hidden", className)}>
-      {toolbar}
       <table aria-hidden className={cn(ROW_TEXT, layout.table)}>
         <thead className={cn(TABLE_HEAD, layout.head)}>
           <tr>
@@ -79,11 +70,6 @@ export function StackedTableSkeleton({
           </tfoot>
         ) : null}
       </table>
-      {pager ? (
-        <div className="border-t border-border px-5 py-3">
-          <ListPagerSkeleton />
-        </div>
-      ) : null}
     </section>
   );
 }

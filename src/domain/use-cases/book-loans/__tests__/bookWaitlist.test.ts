@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { ConflictError } from "../../../errors/ConflictError";
-import { JoinBookWaitlist } from "../BookWaitlist";
+import { NotFoundError } from "../../../errors/NotFoundError";
+import { BorrowBook, JoinBookWaitlist } from "../BookWaitlist";
 import { ChangeBookLoan } from "../ChangeBookLoan";
 
 import type { BookLoan } from "../../../entities/BookLoan";
@@ -52,6 +53,67 @@ describe("JoinBookWaitlist", () => {
       code: "BOOK_ON_SHELF",
     });
     expect(ConflictError).toBeDefined();
+  });
+});
+
+describe("BorrowBook", () => {
+  const book = { title: "The Blind Owl", copies: 1 };
+  // Borrowed at 13:30 in Tehran on 20 Oct: theirs to collect until the end of the 23rd.
+  const held = entry({
+    userId: GUEST.id,
+    guestName: GUEST.name,
+    guestPhone: GUEST.id,
+    notifiedAt: NOW.toISOString(),
+    pickupBy: "2026-10-23T20:29:59.999Z",
+  });
+
+  function setUp(borrow: IBookWaitlistRepository["borrow"]) {
+    const repo = { borrow: vi.fn(borrow) };
+    const loans = { getBook: vi.fn(async () => book) };
+    const notifier: ICustomerNotifier = { notify: vi.fn(async () => undefined) };
+    return { repo, loans, notifier };
+  }
+
+  it("holds a free copy for the guest under their account and normalized phone, and says to collect it", async () => {
+    const { repo, loans, notifier } = setUp(async () => held);
+
+    expect(await new BorrowBook(repo, loans, notifier).execute("b1", GUEST, NOW)).toBe(held);
+
+    expect(repo.borrow).toHaveBeenCalledWith(
+      {
+        productId: "b1",
+        bookTitle: "The Blind Owl",
+        userId: GUEST.id,
+        guestName: "Sara",
+        guestPhone: "09121234567",
+      },
+      NOW,
+    );
+    // The "collect it by …" message, keyed as the jobs' reminder is.
+    expect(notifier.notify).toHaveBeenCalledWith({
+      userId: "09121234567",
+      kind: "holdCollectBy",
+      params: { title: "The Blind Owl", dueAt: "2026-10-23T20:29:59.999Z" },
+      link: "/loans",
+      dedupeKey: "waitlist:w1:holdCollectBy",
+    });
+  });
+
+  it("refuses as the shelf does — every copy out or held, already in line, already lent — and tells nobody", async () => {
+    for (const code of ["NO_FREE_COPY", "ALREADY_WAITING", "ALREADY_ON_LOAN"] as const) {
+      const { repo, loans, notifier } = setUp(async () => {
+        throw new ConflictError(code, code);
+      });
+      await expect(new BorrowBook(repo, loans, notifier).execute("b1", GUEST, NOW)).rejects.toMatchObject({ code });
+      expect(notifier.notify).not.toHaveBeenCalled();
+    }
+  });
+
+  it("is not found for something that isn't a book", async () => {
+    const { repo, notifier } = setUp(async () => held);
+    const loans = { getBook: vi.fn(async () => null) };
+    await expect(new BorrowBook(repo, loans, notifier).execute("x", GUEST, NOW)).rejects.toThrow(NotFoundError);
+    expect(repo.borrow).not.toHaveBeenCalled();
   });
 });
 

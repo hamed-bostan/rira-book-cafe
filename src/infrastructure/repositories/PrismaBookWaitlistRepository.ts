@@ -1,4 +1,11 @@
-import { OPEN_WAITLIST_STATUSES, holdPickupDeadline, type BookWaitlistEntry } from "@/src/domain/entities/BookWaitlist";
+import {
+  OPEN_WAITLIST_STATUSES,
+  canBorrowBook,
+  holdPickupDeadline,
+  isHoldFor,
+  type BookWaitlistEntry,
+} from "@/src/domain/entities/BookWaitlist";
+import { lendingCopies } from "@/src/domain/entities/Product";
 import { ConflictError } from "@/src/domain/errors/ConflictError";
 import type { AuditHook } from "@/src/domain/repositories/AuditHook";
 import type { IBookWaitlistRepository, NewWaitlistEntry } from "@/src/domain/repositories/IBookWaitlistRepository";
@@ -9,10 +16,19 @@ import { inTransaction, type PrismaDb } from "@/src/infrastructure/prisma/transa
 import { OPEN_HOLD as OPEN, lockBookShelf, toWaitlistEntry as toEntry } from "./bookShelf";
 import { recordAudit } from "./writeActivityEntry";
 
+/** A unique-index refusal as the guest already in line; anything else as it was. */
+function alreadyWaiting(error: unknown): unknown {
+  if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+    return new ConflictError("ALREADY_WAITING", "This guest is already in line for this book.", { cause: error });
+  }
+  return error;
+}
+
 /**
  * The book waitlist backed by PostgreSQL via Prisma. A partial unique index keeps
- * a guest in a book's line at most once; telling the next guest is serialized per
- * book with the lock lending takes (`lockBookShelf`).
+ * a guest in a book's line at most once; telling the next guest, and borrowing a
+ * copy from the site, are serialized per book with the lock lending takes
+ * (`lockBookShelf`).
  */
 export class PrismaBookWaitlistRepository implements IBookWaitlistRepository {
   constructor(private readonly db: PrismaDb = prisma) {}
@@ -22,10 +38,54 @@ export class PrismaBookWaitlistRepository implements IBookWaitlistRepository {
       const row = await this.db.bookWaitlistEntry.create({ data: { ...input, userId: input.userId ?? null } });
       return toEntry(row);
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-        throw new ConflictError("ALREADY_WAITING", "This guest is already in line for this book.", { cause: error });
-      }
-      throw error;
+      throw alreadyWaiting(error);
+    }
+  }
+
+  async borrow(input: NewWaitlistEntry, at: Date): Promise<BookWaitlistEntry> {
+    const borrower = { userId: input.userId, phone: input.guestPhone };
+    try {
+      return await inTransaction(this.db, async (tx) => {
+        // Under the book's lock, like a loan: the copy this hold takes is decided
+        // against the shelf as it is, so two guests can't borrow the last one.
+        await lockBookShelf(tx, input.productId);
+        const [book, out, theirs, line] = await Promise.all([
+          tx.product.findUnique({ where: { id: input.productId }, select: { bookCopies: true } }),
+          tx.bookLoan.count({ where: { productId: input.productId, status: "out" } }),
+          tx.bookLoan.findFirst({
+            where: {
+              productId: input.productId,
+              status: "out",
+              OR: [{ borrowerPhone: borrower.phone }, ...(borrower.userId ? [{ userId: borrower.userId }] : [])],
+            },
+            select: { reference: true },
+          }),
+          tx.bookWaitlistEntry.findMany({ where: { productId: input.productId, status: OPEN } }),
+        ]);
+        if (theirs) {
+          throw new ConflictError("ALREADY_ON_LOAN", `This guest already has this book (L-${theirs.reference}).`);
+        }
+        const entries = line.map(toEntry);
+        if (entries.some((entry) => isHoldFor(entry, borrower))) {
+          throw new ConflictError("ALREADY_WAITING", "This guest is already in line for this book.");
+        }
+        if (!canBorrowBook(lendingCopies({ copies: book?.bookCopies ?? undefined }) - out, entries)) {
+          throw new ConflictError("NO_FREE_COPY", "Every copy of this book is out or held. Join its line instead.");
+        }
+        const row = await tx.bookWaitlistEntry.create({
+          data: {
+            ...input,
+            userId: input.userId ?? null,
+            status: "notified",
+            notifiedAt: at,
+            pickupBy: holdPickupDeadline(at),
+          },
+        });
+        return toEntry(row);
+      });
+    } catch (error) {
+      // A place in line taken a moment ago outside the lock (joining doesn't take it).
+      throw alreadyWaiting(error);
     }
   }
 

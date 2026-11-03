@@ -10,7 +10,7 @@ import { type User } from "../../entities/User";
 import { ConflictError } from "../../errors/ConflictError";
 import { NotFoundError } from "../../errors/NotFoundError";
 import { ValidationError } from "../../errors/ValidationError";
-import { bookAvailableNotification } from "../notifications/guestNotifications";
+import { bookAvailableNotification, dueHoldReminder } from "../notifications/guestNotifications";
 
 import type { IBookLoanRepository } from "../../repositories/IBookLoanRepository";
 import type { IBookWaitlistRepository } from "../../repositories/IBookWaitlistRepository";
@@ -39,8 +39,8 @@ async function readLine(
 
 /**
  * The book a guest wants to queue for, if it can have a line ({@link bookHasLine}):
- * a copy free on the shelf with nobody waiting is a question for the counter, not
- * a hold (`BOOK_ON_SHELF`).
+ * a copy on the shelf that nobody holds or waits for is borrowed or lent, not
+ * queued for (`BOOK_ON_SHELF`).
  */
 async function bookWithLine(
   productId: string,
@@ -48,7 +48,7 @@ async function bookWithLine(
   waitlistRepo: Pick<IBookWaitlistRepository, "listOpenForBook">,
 ): Promise<{ title: string }> {
   const { book, onLoan, line } = await readLine(productId, loanRepo, waitlistRepo);
-  if (!bookHasLine(book.copies - onLoan, line.length)) {
+  if (!bookHasLine(book.copies - onLoan, line)) {
     throw new ConflictError("BOOK_ON_SHELF", "This book is on the shelf — lend it instead.");
   }
   return book;
@@ -71,6 +71,47 @@ export class JoinBookWaitlist {
       // Normalized like a loan's borrower phone, so lending to them matches the entry.
       guestPhone: normalizePhone(guest.phone),
     });
+  }
+}
+
+/**
+ * A signed-in guest borrows a book from the site while a copy is free that nobody
+ * holds or waits for. Their hold starts ready to collect — told now, with the
+ * usual days to come for it — and holds that copy, as a told guest's is held:
+ * lending it to anyone else skips them, and if they don't come the jobs pass it on.
+ * Whether a copy is free is decided under the book's lending lock
+ * (`IBookWaitlistRepository.borrow`), so two guests can't take the same one. They
+ * get the "collect it by …" message straight away.
+ */
+export class BorrowBook {
+  constructor(
+    private readonly waitlistRepo: Pick<IBookWaitlistRepository, "borrow">,
+    private readonly loanRepo: Pick<IBookLoanRepository, "getBook">,
+    private readonly notifier?: ICustomerNotifier,
+  ) {}
+
+  async execute(
+    productId: string,
+    guest: Pick<User, "id" | "name" | "phone">,
+    now: Date = new Date(),
+  ): Promise<BookWaitlistEntry> {
+    const book = await this.loanRepo.getBook(productId);
+    if (!book) throw new NotFoundError("book", productId);
+    const entry = await this.waitlistRepo.borrow(
+      {
+        productId,
+        bookTitle: book.title,
+        userId: guest.id,
+        guestName: guest.name,
+        // Normalized like a loan's borrower phone, so lending to them matches the hold.
+        guestPhone: normalizePhone(guest.phone),
+      },
+      now,
+    );
+    // Keyed like the jobs' reminder, so they don't send it again.
+    const notification = dueHoldReminder(entry, now);
+    if (notification && this.notifier) await this.notifier.notify(notification);
+    return entry;
   }
 }
 
@@ -201,8 +242,8 @@ export class RemoveFromBookWaitlist {
 
 /**
  * A book's line as the guest sees it — copies out and on the shelf, line length,
- * whether it takes them, and their place in it. Not found for something that isn't
- * a book.
+ * whether it takes them or a copy is theirs to borrow, and their place in it. Not
+ * found for something that isn't a book.
  */
 export class GetBookWaitlistStatus {
   constructor(
@@ -214,11 +255,13 @@ export class GetBookWaitlistStatus {
     const { book, onLoan, line } = await readLine(productId, this.loanRepo, this.waitlistRepo);
     const free = book.copies - onLoan;
     const index = guestId ? line.findIndex((entry) => entry.userId === guestId) : -1;
+    const hasLine = bookHasLine(free, line);
     return {
       onLoan,
       onShelf: Math.max(free, 0),
       queueLength: line.length,
-      canJoin: bookHasLine(free, line.length),
+      canJoin: hasLine,
+      canBorrow: !hasLine,
       entry: index >= 0 ? line[index] : null,
       position: index >= 0 ? index + 1 : null,
     };

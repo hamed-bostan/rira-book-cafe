@@ -13,6 +13,15 @@ export type IBookWaitlistRepository = {
    * by phone — is refused (`ConflictError("ALREADY_WAITING")`), enforced by unique indexes.
    */
   join(input: NewWaitlistEntry): Promise<BookWaitlistEntry>;
+  /**
+   * A guest borrows a copy from the site: their hold starts told — `notified` at
+   * `at`, to collect by `holdPickupDeadline(at)` — and holds that copy. Decided
+   * under the book's lending lock against the shelf as it is: refused with
+   * `ConflictError("NO_FREE_COPY")` unless a copy is free that nobody holds or
+   * waits for (`canBorrowBook`), `ALREADY_WAITING` for a guest already in its line,
+   * and `ALREADY_ON_LOAN` for one who has it out — by phone, or by account.
+   */
+  borrow(input: NewWaitlistEntry, at: Date): Promise<BookWaitlistEntry>;
   getById(id: string): Promise<BookWaitlistEntry | null>;
   /** One guest's entries, newest first. */
   listForUser(userId: string): Promise<BookWaitlistEntry[]>;

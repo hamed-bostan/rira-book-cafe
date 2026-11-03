@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { HOLD_PICKUP_DAYS, holdPickupDeadline, holdPickupState, isHoldPickupPassed } from "../BookWaitlist";
+import {
+  HOLD_PICKUP_DAYS,
+  bookHasLine,
+  canBorrowBook,
+  holdPickupDeadline,
+  holdPickupState,
+  isHoldPickupPassed,
+} from "../BookWaitlist";
 import { wallTimeToDate } from "../CafeTime";
 
 describe("holdPickupDeadline", () => {
@@ -49,5 +56,32 @@ describe("isHoldPickupPassed", () => {
     const later = new Date("2026-11-10T10:00:00Z");
     expect(isHoldPickupPassed({ status: "fulfilled", pickupBy }, later)).toBe(false);
     expect(isHoldPickupPassed({ status: "waiting" }, later)).toBe(false);
+  });
+});
+
+describe("bookHasLine and canBorrowBook", () => {
+  const told = { status: "notified" as const };
+  const waiting = { status: "waiting" as const };
+
+  it("offers a copy nobody holds or waits for to borrow, with no line", () => {
+    expect(canBorrowBook(1, [])).toBe(true);
+    expect(bookHasLine(1, [])).toBe(false);
+    // Two free, one held for a told guest: the other is still free to borrow.
+    expect(canBorrowBook(2, [told])).toBe(true);
+  });
+
+  it("has a line once every copy is out or held", () => {
+    expect(canBorrowBook(0, [])).toBe(false);
+    expect(bookHasLine(0, [])).toBe(true);
+    // The one free copy is held for the guest who was told — or who borrowed it.
+    expect(canBorrowBook(1, [told])).toBe(false);
+    expect(bookHasLine(1, [told])).toBe(true);
+    // More told than free (copies written off since): still a line.
+    expect(canBorrowBook(1, [told, told])).toBe(false);
+  });
+
+  it("keeps a free copy for guests already waiting: they come first", () => {
+    expect(canBorrowBook(1, [waiting])).toBe(false);
+    expect(bookHasLine(2, [told, waiting])).toBe(true);
   });
 });

@@ -17,31 +17,41 @@ import { optionalMoneyField } from "./money-fields";
  * date travels as a cafe day (`YYYY-MM-DD`). Messages are `formErrors` keys.
  */
 
-/** Staff lending a book. A deposit, when one was taken, says how it was paid. */
+/** How a book goes out, whoever takes it: when it's due back, a note, and a deposit if one was taken. */
+const loanTermsFields = z.object({
+  dueOn: z.string().check(z.refine(isCafeDay, "dateInvalid")),
+  note: z.pipe(
+    z.optional(z.string().check(z.trim(), z.maxLength(MAX_LOAN_NOTE_LENGTH, "noteTooLong"))),
+    z.transform((value) => (value ? value : undefined)),
+  ),
+  depositAmount: z._default(optionalMoneyField, 0),
+  depositMethod: z.optional(z.enum(LOAN_DEPOSIT_METHODS, { error: "paymentInvalid" })),
+});
+
+/** A deposit, when one was taken, says how it was paid. */
+const depositNeedsMethod = {
+  check: (value: { depositAmount: number; depositMethod?: string }): boolean =>
+    value.depositAmount === 0 || value.depositMethod !== undefined,
+  issue: { path: ["depositMethod"], error: "paymentInvalid", when: fieldsParsed("depositAmount", "depositMethod") },
+};
+
+/** Staff lending a book. */
 export const lendBookSchema = z
-  .object({
+  .extend(loanTermsFields, {
     productId: z.string().check(z.minLength(1, "bookRequired")),
     borrowerName: z
       .string()
       .check(z.trim(), z.minLength(1, "nameRequired"), z.maxLength(MAX_BORROWER_NAME_LENGTH, "nameTooLong")),
     borrowerPhone: z.string().check(z.trim(), z.refine(isPlausiblePhone, "phoneInvalid")),
-    dueOn: z.string().check(z.refine(isCafeDay, "dateInvalid")),
-    note: z.pipe(
-      z.optional(z.string().check(z.trim(), z.maxLength(MAX_LOAN_NOTE_LENGTH, "noteTooLong"))),
-      z.transform((value) => (value ? value : undefined)),
-    ),
-    depositAmount: z._default(optionalMoneyField, 0),
-    depositMethod: z.optional(z.enum(LOAN_DEPOSIT_METHODS, { error: "paymentInvalid" })),
   })
-  .check(
-    z.refine((value) => value.depositAmount === 0 || value.depositMethod !== undefined, {
-      path: ["depositMethod"],
-      error: "paymentInvalid",
-      when: fieldsParsed("depositAmount", "depositMethod"),
-    }),
-  );
+  .check(z.refine(depositNeedsMethod.check, depositNeedsMethod.issue));
 
 export type LendBookInput = z.input<typeof lendBookSchema>;
+
+/** Staff handing a told guest the book held for them ("Lend now"): the guest is the hold's. */
+export const lendHoldSchema = loanTermsFields.check(z.refine(depositNeedsMethod.check, depositNeedsMethod.issue));
+
+export type LendHoldInput = z.input<typeof lendHoldSchema>;
 
 /**
  * Staff closing a loan (`status`), giving the borrower more time (`extendDays`),

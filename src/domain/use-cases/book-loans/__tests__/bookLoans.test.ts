@@ -6,7 +6,7 @@ import { ConflictError } from "../../../errors/ConflictError";
 import { NotFoundError } from "../../../errors/NotFoundError";
 import { ValidationError } from "../../../errors/ValidationError";
 import { ChangeBookLoan } from "../ChangeBookLoan";
-import { LendBook } from "../LendBook";
+import { LendBook, LendHeldBook } from "../LendBook";
 
 import type { BookWaitlistEntry } from "../../../entities/BookWaitlist";
 import type { BookLoanStatusChange, IBookLoanRepository, NewBookLoan } from "../../../repositories/IBookLoanRepository";
@@ -156,6 +156,74 @@ describe("LendBook", () => {
     await expect(new LendBook(repoWith(null, null).repo, usersWith([])).execute(base, STAFF, NOW)).rejects.toThrow(
       ValidationError,
     );
+  });
+});
+
+describe("LendHeldBook", () => {
+  const hold: BookWaitlistEntry = {
+    id: "w1",
+    productId: "b1",
+    bookTitle: "The Blind Owl",
+    userId: "09351112233",
+    guestName: "Sara Ahmadi",
+    guestPhone: "09351112233",
+    status: "notified",
+    notifiedAt: NOW.toISOString(),
+    pickupBy: "2026-10-23T20:29:59.999Z",
+    createdAt: NOW.toISOString(),
+    updatedAt: NOW.toISOString(),
+  };
+  const holds = (current: BookWaitlistEntry | null) => ({ getById: vi.fn(async () => current) });
+
+  it("lends the book to the hold's guest, by their phone so their profile, on the terms staff chose", async () => {
+    const { repo, create } = repoWith(null);
+    const lendBook = new LendBook(repo, usersWith(["09351112233"]));
+    await new LendHeldBook(holds(hold), lendBook).execute(
+      "w1",
+      { dueOn: "2026-11-10", note: " Spine creased ", depositAmount: 500000, depositMethod: "cash" },
+      STAFF,
+      NOW,
+    );
+
+    expect(create.mock.calls[0][0]).toMatchObject({
+      productId: "b1",
+      borrowerName: "Sara Ahmadi",
+      borrowerPhone: "09351112233",
+      userId: "09351112233",
+      note: "Spine creased",
+      depositAmount: 500000,
+      depositMethod: "cash",
+      // 21 days: the end of 10 Nov in Tehran.
+      dueAt: "2026-11-10T20:29:59.999Z",
+    });
+    // Logged and booked as any loan is: the deposit held, not earned.
+    expect(create.mock.calls[0][1]?.(loan("out", { reference: 4 }))).toMatchObject({ action: "bookLoan.lent" });
+    const ledger = create.mock.calls[0][2] as (saved: BookLoan) => { lines: { accountCode: string }[] }[];
+    const [entry] = ledger(loan("out", { id: "l9", reference: 4, depositAmount: 500000, depositMethod: "cash" }));
+    expect(entry.lines.map((line) => line.accountCode)).toEqual(["1110", "2400"]);
+  });
+
+  it("refuses a hold that's no longer ready to collect, and one that's gone", async () => {
+    for (const status of ["waiting", "fulfilled", "cancelled"] as const) {
+      const { repo, create } = repoWith(null);
+      await expect(
+        new LendHeldBook(holds({ ...hold, status }), new LendBook(repo, usersWith([]))).execute(
+          "w1",
+          { dueOn: "2026-11-03" },
+          STAFF,
+          NOW,
+        ),
+      ).rejects.toMatchObject({ code: "HOLD_NOT_READY" });
+      expect(create).not.toHaveBeenCalled();
+    }
+    await expect(
+      new LendHeldBook(holds(null), new LendBook(repoWith(null).repo, usersWith([]))).execute(
+        "w9",
+        { dueOn: "2026-11-03" },
+        STAFF,
+        NOW,
+      ),
+    ).rejects.toThrow(NotFoundError);
   });
 });
 

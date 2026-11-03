@@ -66,7 +66,7 @@ export function NavDrawer({ open, onOpenChange, permissions, badges }: NavDrawer
           <div className="flex items-center justify-between border-b border-border">
             <SidebarBrand />
             <Dialog.Close asChild>
-              <Button variant="ghost" iconOnly size="sm" aria-label={tDs("close")} className="me-3">
+              <Button variant="ghost" iconOnly size="sm" aria-label={tDs("close")} className="me-3 size-11">
                 <Icon icon={X} size="sm" />
               </Button>
             </Dialog.Close>

@@ -43,7 +43,7 @@ export function DashboardTopBar({ viewer, permissions, newOrders, onOpenNav }: D
     >
       <Link
         href="/dashboard"
-        className="flex shrink-0 items-center gap-2 text-heading-subsection text-foreground xl:hidden dashboard-landscape:hidden"
+        className="flex min-h-11 shrink-0 items-center gap-2 text-heading-subsection text-foreground xl:hidden dashboard-landscape:hidden"
       >
         <BrandMark />
         <span>{t("brand")}</span>

@@ -13,6 +13,7 @@ import { cn } from "@/src/lib/utils";
 import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 
 import { MetricCard } from "../MetricCard";
+import { ROW_END } from "../pageStyles";
 
 import { MarkPaidButton } from "./MarkPaidButton";
 import { ReportPanel } from "./ReportPanel";
@@ -166,7 +167,8 @@ export async function PaymentReportScreen({
                         id={titleId}
                         href={`/dashboard/orders/${order.id}`}
                         className={cn(
-                          "text-body-strong text-foreground transition-colors hover:text-primary sm:text-body-small-strong",
+                          // 44px tall to the touch on a phone, without moving the lines.
+                          "-my-3 py-3 text-body-strong text-foreground transition-colors hover:text-primary sm:my-0 sm:py-0 sm:text-body-small-strong",
                           focusRing,
                         )}
                       >
@@ -176,7 +178,7 @@ export async function PaymentReportScreen({
                         {when(order.placedAt)}
                       </span>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className={ROW_END}>
                       <span className="text-body-strong whitespace-nowrap text-foreground tabular-nums sm:text-body-small-strong">
                         {formatMoney(order.total, locale)}
                       </span>

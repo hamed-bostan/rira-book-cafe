@@ -71,7 +71,7 @@ export function MarkPaidButton({ orderId, orderNumber, describedBy }: MarkPaidBu
           type="button"
           variant="secondary"
           size="control-md"
-          className="px-3"
+          className="shrink-0 px-3 whitespace-nowrap"
           loading={pending}
           aria-describedby={describedBy}
         >

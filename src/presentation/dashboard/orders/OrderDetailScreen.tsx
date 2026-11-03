@@ -11,6 +11,7 @@ import {
 import type { OrderNote } from "@/src/domain/entities/OrderNote";
 import type { OrderRefund } from "@/src/domain/entities/OrderRefund";
 import type { OrderStatusEvent } from "@/src/domain/entities/OrderStatusEvent";
+import type { OrderPaymentAttempt } from "@/src/domain/entities/PaymentAttempt";
 import { formatCafeDayMedium } from "@/src/lib/formatCafeDay";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
@@ -28,6 +29,7 @@ import { OrderTotals } from "@/src/presentation/orders/OrderTotals";
 import { OrderItemServeToggle } from "./OrderItemServeToggle";
 import { OrderItemStateBadge } from "./OrderItemStateBadge";
 import { OrderNotesPanel } from "./OrderNotesPanel";
+import { OrderOnlinePayments } from "./OrderOnlinePayments";
 import { OrderPaymentToggle } from "./OrderPaymentToggle";
 import { OrderServiceLabel } from "./OrderServiceLabel";
 import { OrderStatusActions } from "./OrderStatusActions";
@@ -45,12 +47,16 @@ type OrderDetailScreenProps = {
   notes: OrderNote[];
   /** Money handed back on the order, oldest first. */
   refunds: OrderRefund[];
+  /** Online payments captured after the order was paid another way or cancelled, oldest first. */
+  onlinePayments: OrderPaymentAttempt[];
   /** Whether the viewer may move the order along and mark it paid. */
   canFulfill: boolean;
   /** Whether the viewer may hand money back. */
   canRefund: boolean;
   /** Whether the viewer may write off a served order nobody paid for. */
   canWriteOff: boolean;
+  /** Whether the viewer may mark an online payment the order didn't take as given back. */
+  canGiveBack: boolean;
   /** Whether the viewer may add an internal note. */
   canNote: boolean;
 };
@@ -65,9 +71,11 @@ export async function OrderDetailScreen({
   events,
   notes,
   refunds,
+  onlinePayments,
   canFulfill,
   canRefund,
   canWriteOff,
+  canGiveBack,
   canNote,
 }: OrderDetailScreenProps) {
   const t = await getTranslations("dashOrders");
@@ -195,6 +203,8 @@ export async function OrderDetailScreen({
                 </ul>
               </DashboardSection>
             ) : null}
+
+            <OrderOnlinePayments payments={onlinePayments} canGiveBack={canGiveBack} />
 
             <DashboardSection title={t("notesHeading")} aside={t("notesHint")}>
               <OrderNotesPanel orderId={order.id} notes={notes} canWrite={canNote} />

@@ -13,9 +13,13 @@
  *    order could no longer take the money. An unverified payment is returned to
  *    the guest by the gateway on its own, so nothing was captured.
  *  - `unapplied` — the gateway captured the money but the order had meanwhile been
- *    paid another way. Staff refund the guest; the order's books are untouched.
+ *    paid another way, or cancelled. Staff refund the guest; the order's books are
+ *    untouched. The dashboard lists these until they're given back.
+ *  - `refunded` — an unapplied payment staff gave back from the gateway's panel.
+ *    Nothing to book: the money never reached the books, so it leaves them as it
+ *    came — not at all.
  */
-export const PAYMENT_ATTEMPT_STATUSES = ["pending", "verifying", "paid", "failed", "unapplied"] as const;
+export const PAYMENT_ATTEMPT_STATUSES = ["pending", "verifying", "paid", "failed", "unapplied", "refunded"] as const;
 export type PaymentAttemptStatus = (typeof PAYMENT_ATTEMPT_STATUSES)[number];
 
 /** Why an attempt failed. */
@@ -61,11 +65,26 @@ export function isOpenAttempt(status: PaymentAttemptStatus): boolean {
 }
 
 /**
+ * An attempt with the number of the order it was for — how the dashboard names it
+ * ("order #42") wherever it lists money still to give back.
+ */
+export type OrderPaymentAttempt = PaymentAttempt & { orderNumber: number };
+
+/** Captured money no order took, given back or not: what an order's page shows of its online payments. */
+export const UNAPPLIED_ATTEMPT_STATUSES = ["unapplied", "refunded"] as const satisfies readonly PaymentAttemptStatus[];
+
+/** Whether staff can mark the attempt given back: captured, no order took it, and not given back yet. */
+export function canMarkAttemptRefunded(attempt: Pick<PaymentAttempt, "status">): boolean {
+  return attempt.status === "unapplied";
+}
+
+/**
  * What the guest is told when they land back on their order:
  *  - `paid` — done;
  *  - `failed` — nothing was taken (an unverified payment goes back by itself);
  *  - `processing` — another request is verifying it right now;
- *  - `review` — the money was taken but the order was already paid; staff will refund.
+ *  - `review` — the money was taken but the order was already paid; staff will refund
+ *    (or have — a callback replayed after staff gave it back tells the same story).
  */
 export const PAYMENT_OUTCOMES = ["paid", "failed", "processing", "review"] as const;
 export type PaymentOutcome = (typeof PAYMENT_OUTCOMES)[number];
@@ -75,6 +94,7 @@ export function outcomeOf(attempt: Pick<PaymentAttempt, "status">): PaymentOutco
     case "paid":
       return "paid";
     case "unapplied":
+    case "refunded":
       return "review";
     case "failed":
       return "failed";

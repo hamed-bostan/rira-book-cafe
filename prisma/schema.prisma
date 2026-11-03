@@ -295,7 +295,7 @@ model PaymentAttempt {
   // The gateway's id for the try; a callback names exactly one attempt.
   authority     String   @unique
   amount        Int
-  // pending | verifying | paid | failed | unapplied
+  // pending | verifying | paid | failed | unapplied | refunded
   status        String   @default("pending")
   // The order id while the attempt is live (pending/verifying), null after: the
   // unique index allows one live attempt per order.

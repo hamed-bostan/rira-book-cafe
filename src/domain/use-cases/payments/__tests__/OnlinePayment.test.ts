@@ -4,6 +4,7 @@ import { ConflictError } from "../../../errors/ConflictError";
 import { NotFoundError } from "../../../errors/NotFoundError";
 import { PaymentGatewayError } from "../../../errors/PaymentGatewayError";
 import { StartOnlinePayment, VerifyOnlinePayment } from "../OnlinePayment";
+import { ListOrderUnappliedPayments, ListUnappliedPayments, MarkPaymentRefunded } from "../UnappliedPayments";
 
 import type { Order } from "../../../entities/Order";
 import type { PaymentAttempt } from "../../../entities/PaymentAttempt";
@@ -75,6 +76,24 @@ function attemptStore(initial: PaymentAttempt[] = []) {
       if (row.status === "verifying") Object.assign(row, result);
       return { ...row };
     }),
+    async getById(id) {
+      const row = rows.get(id);
+      return row ? { ...row, orderNumber: 42 } : null;
+    },
+    async listUnapplied() {
+      return [...rows.values()].filter((row) => row.status === "unapplied").map((row) => ({ ...row, orderNumber: 42 }));
+    },
+    async listUnappliedForOrder(orderId) {
+      return [...rows.values()]
+        .filter((row) => row.orderId === orderId && (row.status === "unapplied" || row.status === "refunded"))
+        .map((row) => ({ ...row, orderNumber: 42 }));
+    },
+    async markRefunded(id) {
+      const row = rows.get(id)!;
+      if (row.status !== "unapplied") throw new ConflictError("INVALID_TRANSITION", "not owed back");
+      row.status = "refunded";
+      return { ...row, orderNumber: 42 };
+    },
   };
   return { repo, rows };
 }
@@ -358,5 +377,61 @@ describe("VerifyOnlinePayment", () => {
         gateway,
       ).execute(CALLBACK, NOW),
     ).rejects.toThrow(NotFoundError);
+  });
+});
+
+describe("giving back a payment no order took", () => {
+  const OWNER = { id: "owner", name: "Rira" };
+  const unapplied = pendingAttempt({ status: "unapplied", refId: "201", cardPan: "6037****1234" });
+
+  it("lists it until staff mark it given back, and logs who did on the order", async () => {
+    const { repo, rows } = attemptStore([unapplied, pendingAttempt({ id: "a2", authority: "A2", status: "failed" })]);
+    const markRefunded = vi.spyOn(repo, "markRefunded");
+    expect((await new ListUnappliedPayments(repo).execute()).map((attempt) => attempt.id)).toEqual(["a1"]);
+
+    await new MarkPaymentRefunded(repo).execute("a1", OWNER);
+
+    expect(rows.get("a1")?.status).toBe("refunded");
+    expect(await new ListUnappliedPayments(repo).execute()).toEqual([]);
+    // The order's page still shows it, as given back.
+    expect((await new ListOrderUnappliedPayments(repo).execute("o1")).map((attempt) => attempt.status)).toEqual([
+      "refunded",
+    ]);
+    const audit = markRefunded.mock.calls[0][1];
+    expect(audit?.({ ...unapplied, status: "refunded", orderNumber: 42 })).toMatchObject({
+      actorId: "owner",
+      action: "order.onlinePaymentRefunded",
+      entityType: "order",
+      entityId: "o1",
+      entityLabel: "#42",
+      changes: [
+        { field: "amount", before: null, after: "300000" },
+        { field: "refId", before: null, after: "201" },
+      ],
+    });
+  });
+
+  it("refuses a payment that isn't owed back, and one that doesn't exist", async () => {
+    const { repo } = attemptStore([{ ...unapplied, status: "refunded" }, pendingAttempt({ id: "a2", status: "paid" })]);
+    const markRefunded = vi.spyOn(repo, "markRefunded");
+
+    await expect(new MarkPaymentRefunded(repo).execute("a1", OWNER)).rejects.toThrow(ConflictError);
+    await expect(new MarkPaymentRefunded(repo).execute("a2", OWNER)).rejects.toThrow(ConflictError);
+    await expect(new MarkPaymentRefunded(repo).execute("nope", OWNER)).rejects.toThrow(NotFoundError);
+    expect(markRefunded).not.toHaveBeenCalled();
+  });
+
+  it("a callback replayed after it was given back still tells the guest staff are on it", async () => {
+    const { gateway, verify } = gatewayWith();
+    const paid = orderStore(order({ paymentStatus: "paid", paymentMethod: "cash" }));
+
+    expect(
+      await new VerifyOnlinePayment(
+        paid.repo,
+        attemptStore([{ ...unapplied, status: "refunded" }]).repo,
+        gateway,
+      ).execute(CALLBACK, NOW),
+    ).toBe("review");
+    expect(verify).not.toHaveBeenCalled();
   });
 });

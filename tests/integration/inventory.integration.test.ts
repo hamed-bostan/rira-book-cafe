@@ -5,6 +5,7 @@ import { GET as getInventory } from "@/app/api/admin/inventory/route";
 import { POST as recordWaste } from "@/app/api/admin/inventory/waste/route";
 import { cafeDayOf } from "@/src/domain/entities/CafeTime";
 import type { InventorySummary } from "@/src/domain/entities/Inventory";
+import { prisma } from "@/src/infrastructure/prisma/client";
 
 import { jsonRequest, readError, readJson } from "./helpers/http";
 import { signInAs } from "./helpers/session";
@@ -59,6 +60,36 @@ describe("inventory", () => {
     const after = await inventory();
     expect(onHand(after, "seed-ing-milk")).toBe(13000);
     expect(after.difference).toBe(0);
+  });
+
+  it("keeps the last price paid when a delivery line came free, while the free units lower the average", async () => {
+    signInAs("admin");
+    const before = await prisma.ingredient.findUniqueOrThrow({ where: { id: "seed-ing-tea" } });
+
+    const response = await receiveStock(
+      jsonRequest("POST", "/api/admin/inventory/receipts", {
+        date: today,
+        supplierId: "",
+        description: "Milk, and tea on the house",
+        lines: [
+          { ingredientId: "seed-ing-milk", quantity: "1000", cost: "70000" },
+          { ingredientId: "seed-ing-tea", quantity: String(before.onHand), cost: "" },
+        ],
+        vatAmount: "",
+        payment: "cash",
+      }),
+    );
+
+    expect(response.status).toBe(201);
+    const after = await prisma.ingredient.findUniqueOrThrow({ where: { id: "seed-ing-tea" } });
+    expect(after).toMatchObject({
+      purchasePrice: before.purchasePrice,
+      purchaseQuantity: before.purchaseQuantity,
+      onHand: before.onHand * 2,
+      stockValue: before.stockValue,
+    });
+    expect(after.averageCost).toBeCloseTo(before.averageCost / 2);
+    expect((await inventory()).difference).toBe(0);
   });
 
   it("refuses a delivery from staff without inventory.manage", async () => {

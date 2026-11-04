@@ -153,15 +153,19 @@ export class PrismaInventoryRepository implements IInventoryRepository {
           },
           actor,
         );
-        // The latest price paid is what the pricing advisor costs recipes at.
-        await tx.ingredient.update({
-          where: { id: line.ingredientId },
-          data: { purchasePrice: BigInt(line.cost), purchaseQuantity: line.quantity },
-        });
+        // The latest price paid is what the pricing advisor costs recipes at. A line
+        // that came free (a supplier's sample, a bonus case) says nothing about the
+        // price: it only lowers the average cost, as the free units above already did.
+        if (line.cost > 0) {
+          await tx.ingredient.update({
+            where: { id: line.ingredientId },
+            data: { purchasePrice: BigInt(line.cost), purchaseQuantity: line.quantity },
+          });
+        }
       }
       await recostProductsUsing(
         tx,
-        lines.map((line) => line.ingredientId),
+        lines.filter((line) => line.cost > 0).map((line) => line.ingredientId),
       );
       return expense;
     });

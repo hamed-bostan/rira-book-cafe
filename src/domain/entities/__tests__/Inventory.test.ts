@@ -22,6 +22,12 @@ describe("perpetual inventory", () => {
     expect(second).toEqual({ onHand: 2000, value: 3_800_000, averageCost: 1900 });
   });
 
+  it("lets units that came free lower the average cost", () => {
+    // 1000 g at 1,800/g, then 1000 g free → 2000 g still worth 1,800,000, 900/g.
+    const paid = receiveStock({ onHand: 0, value: 0, averageCost: 0 }, 1000, 1_800_000);
+    expect(receiveStock(paid, 1000, 0)).toEqual({ onHand: 2000, value: 1_800_000, averageCost: 900 });
+  });
+
   it("issues at average cost, and the last of the stock takes all its value", () => {
     const state = { onHand: 3, value: 100, averageCost: 100 / 3 };
     const some = issueStock(state, 1);

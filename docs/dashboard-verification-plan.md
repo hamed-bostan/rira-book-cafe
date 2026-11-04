@@ -96,3 +96,29 @@ New coverage:
 Still covered only by API tests: the full Count / Receive / Opening stock pages (their quick dialogs are clicked), the movements CSV, the To-order print, Track all books, removing a review's reply.
 
 Gate: lint 0 errors; menu-actions integration 6 passed; e2e (Chrome) — the 7 Menu / catalog / inventory / pricing / responsive specs, 319 passed. No app code changed, so no full run.
+
+### Phase 4 — Finance A: cash shifts, income, expenses, payroll (2026-11-04)
+
+Bugs fixed (each with a regression test):
+
+1. **A void failed once its account was switched off.** Every posting refused an inactive account, reversals included, so an expense, income or pay run booked to an account switched off later couldn't be voided (409 `ACCOUNT_INACTIVE`). A reversal only takes back a booking made while the account was on, so it's now allowed; new bookings to an inactive account are still refused (`writeJournal.ts`). Test: `finance-a.integration.test.ts` (fails without the fix).
+2. **The pay-run page linked a payroll-only role to pages that sent it away.** Payroll is its own permission, so a custom role can run pay without the books; "settle deductions" (needs `accounting.write`) and each journal entry (needs `accounting.view`) now link only for whoever can open them. No test: e2e has no session for a custom role — checked by reading.
+
+Not bugs:
+
+- S4.1 Editing a recurring bill whose supplier was switched off shows "No supplier": the same deliberate rule as Record a month ("a supplier or account switched off since the bill was set up has to be chosen again"). The server refuses an inactive account anyway.
+- S4.2 The drawer's expected cash counts cash recorded during the shift (`createdAt`), which is what a drawer needs.
+- S4.3 Closing a shift books its over/short on `shifts.manage` alone: deliberate, so whoever counts the drawer can close it.
+
+Open question for the owner: the shift's **"Card & transfer"** total counts order payments only. A suite payment or a table deposit taken by card on the same POS terminal isn't in it, so it may not match the terminal's end-of-day slip. Left as is.
+
+New coverage:
+
+- `tests/integration/finance-a.integration.test.ts`: voids after the account was switched off (expense, and income on a cafe-made revenue account; seeded revenue accounts are system accounts and can't be switched off); a supplier edited and switched off (leaves the picker, stays on the full list; blank name, unknown supplier and floor staff refused).
+- `e2e/finance-a-actions.spec.ts`: a cash shift opened with a float and closed short; an expense voided from its row; a recurring bill, a supplier and an employee each edited and switched off; a pay run voided, and its month free again.
+
+Still covered only by API tests: replacing or removing an expense's receipt on its page, the Income / Expenses search and filters.
+
+Test fix found in the full run: Phase 3's inventory test opened a row's menu right after a count moved that row on a long list, and the menu was left off screen. The test now searches the list down to its item first (`?q=`), as staff would.
+
+Gate: typecheck pass; lint 0 errors; unit 1976 passed; integration 537 passed; e2e (Chrome) 760 passed, 0 failed (full run — the reversal change touches every posting).

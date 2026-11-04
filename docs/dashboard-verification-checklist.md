@@ -39,11 +39,11 @@ Untested: product row on-menu switch, feature/unfeature (row + bulk); category d
 
 Suspects
 
-- [ ] S4.1 Editing a recurring bill whose supplier/account is inactive silently drops the supplier or fails validation (`expenses/recurring/page.tsx` loads only active ones; `RecurringBillDialog.tsx:131`).
-- [ ] S4.2 Shift "expected cash" is windowed by entry `createdAt`, not entry date; card/transfer income and bank payments don't show on the shift cards (`PrismaCashShiftRepository.ts:26,127`).
-- [ ] S4.3 Shift close posts a journal entry with only `shifts.manage`; `cashShift` entries can't be reversed.
-- [ ] S4.4 Pay-run "settle deductions" link needs `accounting.write`; a payroll-only user is bounced (`PayRunScreen.tsx:199`).
-- [ ] S4.5 Voids fail with `ACCOUNT_INACTIVE` once the account was deactivated — reversals also refuse inactive accounts (`writeJournal.ts:74`).
+- [x] S4.1 Recurring bill edit with an inactive supplier — by design (re-chosen, as in Record a month).
+- [x] S4.2 Shift expected cash by `createdAt` — by design. **Open question**: "Card & transfer" counts order payments only.
+- [x] S4.3 Shift close books over/short on `shifts.manage` — by design.
+- [x] S4.4 Pay-run links for a payroll-only role — **bug, fixed**.
+- [x] S4.5 Voids fail once the account is inactive — **bug, fixed** (reversals allowed).
 
 Untested: expense void (e2e), receipt replace/remove on expense page, recurring bill edit/switch off, supplier edit/deactivate (no route test), payroll void, employee edit/deactivate, income/expense filters.
 

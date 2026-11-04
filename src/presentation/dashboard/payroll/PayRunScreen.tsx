@@ -21,7 +21,15 @@ import { PayRunActions } from "./PayRunActions";
 
 import type { PayRunDetailWire } from "./payroll-response-schema";
 
-type PayRunScreenProps = PayRunDetailWire & { today: string };
+type PayRunScreenProps = PayRunDetailWire & {
+  today: string;
+  /**
+   * What the viewer may open in the books. Payroll is its own permission, so a role
+   * can run pay without the books — then the entries show without links to pages
+   * that would only send them away.
+   */
+  books: { view: boolean; write: boolean };
+};
 
 /** One figure across the people table: its heading, each person's value, and the total. */
 type FigureColumn = {
@@ -43,7 +51,7 @@ type FigureColumn = {
  * it. A run with deductions has six columns, so on a narrow card each person leads
  * with their name, their figures labelled beneath.
  */
-export async function PayRunScreen({ run, entries, today }: PayRunScreenProps) {
+export async function PayRunScreen({ run, entries, today, books }: PayRunScreenProps) {
   const t = await getTranslations("dashPayroll");
   const tAccounting = await getTranslations("dashAccounting");
   const locale = await getLocale();
@@ -195,10 +203,18 @@ export async function PayRunScreen({ run, entries, today }: PayRunScreenProps) {
 
       {run.status !== "void" && hasDeductions ? (
         <p className={ROW_CAPTION}>
-          {t("detail.settleHint")}{" "}
-          <Link href="/dashboard/accounting/journal/new" className="font-medium text-primary hover:text-primary-hover">
-            {t("detail.newEntry")}
-          </Link>
+          {t("detail.settleHint")}
+          {books.write ? (
+            <>
+              {" "}
+              <Link
+                href="/dashboard/accounting/journal/new"
+                className="font-medium text-primary hover:text-primary-hover"
+              >
+                {t("detail.newEntry")}
+              </Link>
+            </>
+          ) : null}
         </p>
       ) : null}
 
@@ -207,12 +223,16 @@ export async function PayRunScreen({ run, entries, today }: PayRunScreenProps) {
           {entries.map((entry) => (
             <li key={entry.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-3">
               <span className="flex min-w-48 flex-1 flex-col gap-0.5">
-                <Link
-                  href={`/dashboard/accounting/journal/${entry.id}`}
-                  className="-my-3 w-fit py-3 font-medium text-primary hover:text-primary-hover sm:my-0 sm:py-0"
-                >
-                  JE-{entry.number}
-                </Link>
+                {books.view ? (
+                  <Link
+                    href={`/dashboard/accounting/journal/${entry.id}`}
+                    className="-my-3 w-fit py-3 font-medium text-primary hover:text-primary-hover sm:my-0 sm:py-0"
+                  >
+                    JE-{entry.number}
+                  </Link>
+                ) : (
+                  <span className="font-medium text-foreground">JE-{entry.number}</span>
+                )}
                 <span className={ROW_CAPTION}>{formatCafeDayMedium(entry.date, locale)}</span>
               </span>
               <Badge size="compact" variant="neutral" appearance="outline">

@@ -75,7 +75,12 @@ export async function postEntry(
   for (const code of codes) {
     const account = accounts.find((a) => a.code === code);
     if (!account) throw new ConflictError("ACCOUNT_INACTIVE", `Account ${code} doesn't exist.`);
-    if (!account.isActive) throw new ConflictError("ACCOUNT_INACTIVE", `Account ${code} is inactive.`);
+    // Switching an account off stops new bookings to it. A reversal only takes back one
+    // made while it was on — refusing it would leave a voided income, expense or pay run
+    // stuck in the books.
+    if (!account.isActive && !balanced.reversesId) {
+      throw new ConflictError("ACCOUNT_INACTIVE", `Account ${code} is inactive.`);
+    }
   }
 
   try {

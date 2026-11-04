@@ -11,9 +11,16 @@ import {
   type TopItem,
   type TopItemSort,
   type UnpaidOrder,
+  netPaymentParts,
 } from "@/src/domain/entities/Analytics";
 import { CAFE_TIME_ZONE } from "@/src/domain/entities/CafeTime";
-import { PAYMENT_METHODS, SERVICE_TYPES, type PaymentMethod, type ServiceType } from "@/src/domain/entities/Order";
+import {
+  PAYMENT_METHODS,
+  SERVICE_TYPES,
+  type PaymentMethod,
+  type PaymentPart,
+  type ServiceType,
+} from "@/src/domain/entities/Order";
 import { PRODUCT_KINDS, type ProductKind } from "@/src/domain/entities/Product";
 import { DAY_BOOKING_STATUSES } from "@/src/domain/entities/Reservation";
 import type { IAnalyticsRepository } from "@/src/domain/repositories/IAnalyticsRepository";
@@ -206,18 +213,47 @@ export class PrismaAnalyticsRepository implements IAnalyticsRepository {
   }
 
   async paidByMethod(range: DateRange): Promise<MethodPayments[]> {
-    const rows = await prisma.$queryRaw<{ method: string; orders: bigint; value: bigint | null }[]>`
-      SELECT p.method, COUNT(DISTINCT p.order_id) AS orders, SUM(p.amount) AS value
-      FROM order_payment_parts p JOIN orders o ON o.id = p.order_id
-      WHERE o.status = 'completed' AND o.payment_status = 'paid'
-        AND o.placed_at >= ${range.from} AND o.placed_at < ${range.to}
-      GROUP BY p.method
-      ORDER BY value DESC`;
-    return rows.flatMap((row) =>
-      isPaymentMethod(row.method)
-        ? [{ method: row.method, orders: Number(row.orders), value: Number(row.value ?? 0) }]
-        : [],
-    );
+    // Net of refunds, so the split adds up to `paidValue`. Orders nobody refunded —
+    // nearly all — are summed in SQL; the few partly refunded ones (a full refund
+    // leaves `paid`) are netted part by part in the domain (`netPaymentParts`).
+    const [whole, refunded] = await Promise.all([
+      prisma.$queryRaw<{ method: string; orders: bigint; value: bigint | null }[]>`
+        SELECT p.method, COUNT(DISTINCT p.order_id) AS orders, SUM(p.amount) AS value
+        FROM order_payment_parts p JOIN orders o ON o.id = p.order_id
+        WHERE o.status = 'completed' AND o.payment_status = 'paid' AND o.refunded_total = 0
+          AND o.placed_at >= ${range.from} AND o.placed_at < ${range.to}
+        GROUP BY p.method`,
+      prisma.order.findMany({
+        where: {
+          status: "completed",
+          paymentStatus: "paid",
+          refundedTotal: { gt: 0 },
+          placedAt: { gte: range.from, lt: range.to },
+        },
+        select: {
+          paymentParts: { select: { method: true, amount: true }, orderBy: { position: "asc" } },
+          refunds: { select: { method: true, amount: true }, orderBy: { number: "asc" } },
+        },
+      }),
+    ]);
+
+    const byMethod = new Map<PaymentMethod, MethodPayments>();
+    const add = (method: PaymentMethod, orders: number, value: number): void => {
+      const row = byMethod.get(method) ?? { method, orders: 0, value: 0 };
+      byMethod.set(method, { method, orders: row.orders + orders, value: row.value + value });
+    };
+    for (const row of whole) {
+      if (isPaymentMethod(row.method)) add(row.method, Number(row.orders), Number(row.value ?? 0));
+    }
+    for (const order of refunded) {
+      const net = netPaymentParts(toPaymentParts(order.paymentParts), toPaymentParts(order.refunds));
+      // One order counts once under each method it was paid with, as in the SQL above.
+      for (const method of new Set(net.map((part) => part.method))) {
+        const value = net.filter((part) => part.method === method).reduce((sum, part) => sum + part.amount, 0);
+        add(method, 1, value);
+      }
+    }
+    return [...byMethod.values()].sort((a, b) => b.value - a.value);
   }
 
   async unpaidOrders(range: DateRange, limit: number): Promise<UnpaidOrder[]> {
@@ -356,4 +392,9 @@ function toServiceType(value: string): ServiceType {
 
 function isPaymentMethod(value: string): value is PaymentMethod {
   return (PAYMENT_METHODS as readonly string[]).includes(value);
+}
+
+/** Stored `{ method, amount }` rows (payment parts, refunds) whose method is a known one. */
+function toPaymentParts(rows: readonly { method: string; amount: number }[]): PaymentPart[] {
+  return rows.flatMap((row) => (isPaymentMethod(row.method) ? [{ method: row.method, amount: row.amount }] : []));
 }

@@ -1,6 +1,7 @@
 import { cafeDayOf, cafeDayRange, shiftCafeDay } from "./CafeTime";
+import { allocate } from "./Ledger";
 
-import type { PaymentMethod, ServiceType } from "./Order";
+import type { PaymentMethod, PaymentPart, ServiceType } from "./Order";
 import type { ProductKind } from "./Product";
 
 /**
@@ -155,7 +156,11 @@ export type PaymentSummary = {
   unpaidValue: number;
 };
 
-/** What the range's paid, completed orders came in as, by payment method. */
+/**
+ * What the range's paid, completed orders came in as, by payment method — net of
+ * what was refunded since (see `netPaymentParts`), so the methods add up to
+ * `PaymentSummary.paidValue`. `orders` counts the orders with a part paid that way.
+ */
 export type MethodPayments = { method: PaymentMethod; orders: number; value: number };
 
 /** An order that was served — ready or completed — but not marked paid: money to chase. */
@@ -238,4 +243,42 @@ export function fillDailySeries(range: DateRange, rows: readonly DailySales[]): 
 export function fillHourlySeries(rows: readonly HourlySales[]): HourlySales[] {
   const byHour = new Map(rows.map((row) => [row.hour, row]));
   return Array.from({ length: 24 }, (_, hour) => byHour.get(hour) ?? { hour, orders: 0, revenue: 0 });
+}
+
+/**
+ * One paid order's payment parts with its refunds taken off, so the "Paid by"
+ * split adds up to the paid value (`total − refunded_total`) to the Toman.
+ *
+ * A refund records the way the money went back, so it comes off the part paid
+ * that way first (a card refund off the card part). Whatever a refund can't take
+ * from a matching part — handed back by a way the guest didn't pay with, or more
+ * than that part — is spread over the parts still left in proportion to their
+ * amounts, so no method ever goes below nothing. Parts keep their place; one taken
+ * down to 0 stays in the list (the order was still paid that way).
+ */
+export function netPaymentParts(parts: readonly PaymentPart[], refunds: readonly PaymentPart[]): PaymentPart[] {
+  const net = parts.map((part) => ({ ...part }));
+  let unmatched = 0;
+  for (const refund of refunds) {
+    let left = refund.amount;
+    for (const part of net) {
+      if (left <= 0) break;
+      if (part.method !== refund.method) continue;
+      const taken = Math.min(part.amount, left);
+      part.amount -= taken;
+      left -= taken;
+    }
+    unmatched += left;
+  }
+  if (unmatched > 0) {
+    const remaining = net.reduce((sum, part) => sum + part.amount, 0);
+    const shares = allocate(
+      Math.min(unmatched, remaining),
+      net.map((part) => part.amount),
+    );
+    net.forEach((part, index) => {
+      part.amount -= shares[index];
+    });
+  }
+  return net;
 }

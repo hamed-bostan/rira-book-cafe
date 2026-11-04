@@ -247,7 +247,8 @@
     "supplierRequired": "Choose the supplier.",
     "directionInvalid": "Choose whether stock came in or went out.",
     "costPerInvalid": "Choose what the cost is for.",
-    "adjustmentReasonRequired": "Choose a reason."
+    "adjustmentReasonRequired": "Choose a reason.",
+    "closedYearFinal": "A closed fiscal year can’t be reopened: lock the books through its last day or later."
   },
   "apiErrors": {
     "badRequest": "The request couldn't be read. Please try again.",

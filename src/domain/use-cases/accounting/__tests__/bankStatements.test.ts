@@ -191,10 +191,27 @@ describe("statement lines and matches", () => {
       changes: [{ field: "matched" }],
     });
 
-    await new UnmatchBankLines(bank).execute("s1", "m1", ACTOR);
-    expect(unmatch.mock.calls[0][2]?.(CHANGE)).toMatchObject({
+    await new UnmatchBankLines(bank).execute("s1", "m1", ACTOR, new Date("2026-10-20T08:00:00Z"));
+    expect(unmatch.mock.calls[0][3]?.(CHANGE)).toMatchObject({
       action: "ledger.bankUnmatched",
       changes: [{ field: "unmatched" }],
+    });
+    // A fee recorded from the line goes with the match: reversed today, not on its own date.
+    const fee = {
+      id: "fee",
+      number: 12,
+      date: "2026-10-02",
+      description: "Bank fee — Monthly charge",
+      source: "bankFee",
+      lines: [],
+      createdById: "owner",
+      createdByName: "Rira",
+      createdAt: "",
+    } as const;
+    expect(unmatch.mock.calls[0][2]({ ...fee, lines: [] })).toMatchObject({
+      date: "2026-10-20",
+      source: "reversal",
+      reversesId: "fee",
     });
   });
 });

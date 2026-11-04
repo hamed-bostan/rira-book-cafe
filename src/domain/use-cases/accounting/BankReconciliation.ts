@@ -13,7 +13,7 @@ import {
   type ReconciliationSummary,
 } from "../../entities/BankReconciliation";
 import { cafeDayOf } from "../../entities/CafeTime";
-import { SYSTEM_ACCOUNTS, type JournalEntry } from "../../entities/Ledger";
+import { reversalOf, SYSTEM_ACCOUNTS, type JournalEntry } from "../../entities/Ledger";
 import { gatewaySettlementEntry } from "../../entities/Postings";
 import { ConflictError } from "../../errors/ConflictError";
 import { NotFoundError } from "../../errors/NotFoundError";
@@ -174,8 +174,15 @@ export class AutoMatchBankLines {
 export class UnmatchBankLines {
   constructor(private readonly bank: IBankReconciliationRepository) {}
 
-  execute(statementId: string, matchId: string, actor: ActivityActor): Promise<void> {
-    return this.bank.unmatch(statementId, matchId, statementAudit(actor, "ledger.bankUnmatched", "unmatched"));
+  execute(statementId: string, matchId: string, actor: ActivityActor, now: Date = new Date()): Promise<void> {
+    // A fee or interest recorded from the line goes with the match: it's reversed
+    // today, so a closed period stays closed and the history shows both.
+    return this.bank.unmatch(
+      statementId,
+      matchId,
+      (entry) => reversalOf(entry, cafeDayOf(now), "Bank line unmatched", actor),
+      statementAudit(actor, "ledger.bankUnmatched", "unmatched"),
+    );
   }
 }
 

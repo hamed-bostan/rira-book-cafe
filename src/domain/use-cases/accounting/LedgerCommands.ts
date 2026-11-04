@@ -208,6 +208,14 @@ export class UpdateAccountingSettings {
     }
     if (input.booksClosedThrough) assertNotFuture("booksClosedThrough", input.booksClosedThrough, now);
 
+    // A month's lock may be lifted to fix something, but a closed fiscal year is final:
+    // its closing entry can't be posted again, so anything dated into it after the
+    // close would never reach retained earnings.
+    const yearClosedThrough = await this.lastClosedYearEnd();
+    if (yearClosedThrough && (!input.booksClosedThrough || input.booksClosedThrough < yearClosedThrough)) {
+      throw new ValidationError("booksClosedThrough", "closedYearFinal");
+    }
+
     const before = await this.ledger.getSettings();
     // Left out, the service charge stays as it is.
     const settings: AccountingSettings = {
@@ -239,5 +247,15 @@ export class UpdateAccountingSettings {
             changes,
           };
     });
+  }
+
+  /** The last day of the latest fiscal year closed (its closing entry's date), if any. */
+  private async lastClosedYearEnd(): Promise<string | undefined> {
+    const closes = await this.ledger.listEntries({ source: "yearClose" }, { page: 1, pageSize: 100 });
+    return closes.items
+      .filter((entry) => !entry.reversedById)
+      .map((entry) => entry.date)
+      .sort()
+      .at(-1);
   }
 }

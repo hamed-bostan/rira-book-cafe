@@ -51,11 +51,11 @@ Untested: expense void (e2e), receipt replace/remove on expense page, recurring 
 
 Suspects
 
-- [ ] S5.1 **Books can be reopened after a year close**: settings let `booksClosedThrough` move back (`LedgerCommands.ts:209`, `AccountingSettingsForm.tsx:138`); year close can't re-run → retained earnings drift.
-- [ ] S5.2 **Bank fee/interest postings can't be undone**: unmatch deletes only the match, never reverses the posted entry (`PrismaBankReconciliationRepository.ts:187`) → unmatch + record again double-posts; removing the line orphans the entry.
-- [ ] S5.3 Gateway settlement has no `uniqueKey` (`Postings.ts:616`) → double submit double-posts.
-- [ ] S5.4 Recipe link shows to view-only users, page needs `accounting.write` (`PricingItemCard.tsx:81`).
-- [ ] S5.5 Journal "Print or export" link drops `accountCode` (`JournalScreen.tsx:58`).
+- [x] S5.1 Books could be reopened after a year close — **bug, fixed**.
+- [x] S5.2 Unmatch left a recorded fee or interest on the books — **bug, fixed** (unmatch reverses it).
+- [x] S5.3 Gateway settlement without an only-once key — not a bug (real payouts can repeat).
+- [x] S5.4 Recipe link for view-only users — **bug, fixed**.
+- [x] S5.5 Journal print link and `accountCode` — not a bug (no account filter on the list).
 
 Untested at route level: settlements, year close, account create / activate, account ledger, **all bank-statement routes**, pricing markup + apply suggested price, quick journal entry dialog, journal CSV click, default suite price.
 

@@ -49,6 +49,8 @@ type Fake = {
 function ledgerWith(
   found: JournalEntry | null = entry(),
   settings: AccountingSettings = { vatRateBps: 1000, serviceChargeBps: 0 },
+  /** The year-close entries on the books. */
+  yearCloses: JournalEntry[] = [],
 ): Fake {
   const post = vi.fn<ILedgerRepository["post"]>(async (input) => ({ ...input, id: "e9", number: 9, createdAt: "" }));
   const reverse = vi.fn<ILedgerRepository["reverse"]>(async () => entry({ id: "e2", number: 6, reversesId: "e1" }));
@@ -66,6 +68,13 @@ function ledgerWith(
   const ledger = {
     getEntry: vi.fn(async () => found),
     getSettings: vi.fn(async () => settings),
+    listEntries: vi.fn(async () => ({
+      items: yearCloses,
+      total: yearCloses.length,
+      page: 1,
+      pageSize: 100,
+      totalPages: 1,
+    })),
     post,
     reverse,
     createAccount,
@@ -222,5 +231,39 @@ describe("UpdateAccountingSettings", () => {
       ValidationError,
     );
     expect(updateSettings).not.toHaveBeenCalled();
+  });
+
+  describe("after a fiscal year was closed", () => {
+    // Fiscal year 1404 ended on 2026-03-20 and was closed.
+    const closed = entry({ id: "yc", source: "yearClose", date: "2026-03-20" });
+    const settings = { vatRateBps: 1000, serviceChargeBps: 0, booksClosedThrough: "2026-03-20" };
+
+    it.each([
+      ["moved back into the closed year", "2026-03-19"],
+      ["cleared", undefined],
+    ])("won't let the lock be %s — the closed year is final", async (_, booksClosedThrough) => {
+      const { ledger, updateSettings } = ledgerWith(entry(), settings, [closed]);
+
+      await expect(
+        new UpdateAccountingSettings(ledger).execute({ vatRateBps: 1000, booksClosedThrough }, ACTOR, NOW),
+      ).rejects.toMatchObject({ field: "booksClosedThrough", message: "closedYearFinal" });
+      expect(updateSettings).not.toHaveBeenCalled();
+    });
+
+    it("still moves the lock forward, or keeps it on the year's last day", async () => {
+      for (const booksClosedThrough of ["2026-03-20", "2026-09-30"]) {
+        const { ledger, updateSettings } = ledgerWith(entry(), settings, [closed]);
+        await new UpdateAccountingSettings(ledger).execute({ vatRateBps: 1000, booksClosedThrough }, ACTOR, NOW);
+        expect(updateSettings).toHaveBeenCalled();
+      }
+    });
+
+    it("ignores a year close that was reversed", async () => {
+      const { ledger, updateSettings } = ledgerWith(entry(), settings, [{ ...closed, reversedById: "r1" }]);
+
+      await new UpdateAccountingSettings(ledger).execute({ vatRateBps: 1000 }, ACTOR, NOW);
+
+      expect(updateSettings).toHaveBeenCalled();
+    });
   });
 });

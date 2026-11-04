@@ -78,12 +78,19 @@ export async function PricingItemCard({ row, defaultMarkupBps, canWrite, canAppl
           <dt className={LABEL}>{t("col.ingredients")}</dt>
           <dd className={VALUE}>
             <span className={FIGURE}>{row.directCost === null ? "—" : formatMoney(row.directCost, locale)}</span>
-            <Link
-              href={`/dashboard/pricing/recipes/${row.productId}`}
-              className="-my-3 py-3 text-body-small font-medium whitespace-nowrap text-primary transition-colors hover:text-primary-hover hover:underline sm:my-0 sm:py-0 sm:text-body-caption"
-            >
-              {t(`costSource.${row.costSource}`)}
-            </Link>
+            {/* The recipe page edits the recipe, so it needs the books' write permission. */}
+            {canWrite ? (
+              <Link
+                href={`/dashboard/pricing/recipes/${row.productId}`}
+                className="-my-3 py-3 text-body-small font-medium whitespace-nowrap text-primary transition-colors hover:text-primary-hover hover:underline sm:my-0 sm:py-0 sm:text-body-caption"
+              >
+                {t(`costSource.${row.costSource}`)}
+              </Link>
+            ) : (
+              <span className="text-body-small whitespace-nowrap text-muted-foreground sm:text-body-caption">
+                {t(`costSource.${row.costSource}`)}
+              </span>
+            )}
           </dd>
         </div>
         {/* Stock on hand is costed at its average; the last prices paid point elsewhere. */}

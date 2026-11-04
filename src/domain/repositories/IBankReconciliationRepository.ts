@@ -54,7 +54,18 @@ export type IBankReconciliationRepository = {
     actor: { id: string; name: string },
     audit?: AuditHook<StatementChange>,
   ): Promise<number>;
-  unmatch(statementId: string, matchId: string, audit?: AuditHook<StatementChange>): Promise<void>;
+  /**
+   * Undo a match. A fee or interest entry in it was posted by recording the line, and
+   * nothing else posts one — so unmatching undoes that record too: the entry is
+   * reversed with `reverse`, in the same transaction, and the line can be matched or
+   * recorded afresh without booking it twice.
+   */
+  unmatch(
+    statementId: string,
+    matchId: string,
+    reverse: (entry: JournalEntry) => NewJournalEntry,
+    audit?: AuditHook<StatementChange>,
+  ): Promise<void>;
   /**
    * Post the entry a statement line records (a fee, interest, a gateway payout) and
    * match the line to the entry's line on the statement's account — one transaction.

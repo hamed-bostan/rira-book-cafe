@@ -26,7 +26,13 @@ import { prisma } from "@/src/infrastructure/prisma/client";
 import { Prisma } from "@/src/infrastructure/prisma/generated/client";
 
 import { recordAudit } from "./writeActivityEntry";
-import { dateToDay, dayToDate, postEntry, toJournalEntry } from "./writeJournal";
+import { dateToDay, dayToDate, ENTRY_WITH_LINES, postEntry, reverseEntry, toJournalEntry } from "./writeJournal";
+
+/**
+ * Sources only recording a statement line posts. A gateway payout isn't one: the
+ * overview's settlement form posts the same kind of entry, which is matched by hand.
+ */
+const RECORDED_LINE_SOURCES = ["bankFee", "bankInterest"] as const;
 
 type Db = Prisma.TransactionClient | typeof prisma;
 type Actor = { id: string; name: string };
@@ -184,14 +190,31 @@ export class PrismaBankReconciliationRepository implements IBankReconciliationRe
     }
   }
 
-  async unmatch(statementId: string, matchId: string, audit?: AuditHook<StatementChange>): Promise<void> {
+  async unmatch(
+    statementId: string,
+    matchId: string,
+    reverse: (entry: JournalEntry) => NewJournalEntry,
+    audit?: AuditHook<StatementChange>,
+  ): Promise<void> {
     await prisma.$transaction(async (tx) => {
       await lockOpenStatement(tx, statementId);
       const match = await tx.bankMatch.findFirst({ where: { id: matchId, statementId } });
       if (!match) throw new NotFoundError("match", matchId);
+      // The fee or interest entries recording the line posted: only that action posts them.
+      const recorded = await tx.journalEntry.findMany({
+        where: {
+          source: { in: [...RECORDED_LINE_SOURCES] },
+          reversedById: null,
+          lines: { some: { bankMatch: { matchId } } },
+        },
+        include: ENTRY_WITH_LINES,
+      });
       await tx.bankMatchLedgerLine.deleteMany({ where: { matchId } });
       await tx.bankStatementLine.updateMany({ where: { matchId }, data: { matchId: null } });
       await tx.bankMatch.delete({ where: { id: matchId } });
+      for (const entry of recorded) {
+        await reverseEntry(tx, toJournalEntry(entry), reverse);
+      }
       await recordAudit(tx, { statement: await readStatement(tx, statementId), count: 1 }, audit);
     });
   }

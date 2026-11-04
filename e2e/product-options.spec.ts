@@ -46,8 +46,8 @@ test.describe.serial("product options", () => {
       const size = page.getByTestId("option-group").nth(0);
       await size.getByLabel("Group name").fill("Size");
       await size.getByLabel("Persian name").fill("اندازه");
-      await size.getByLabel("Choice", { exact: true }).nth(0).fill("Small");
-      await size.getByLabel("Choice", { exact: true }).nth(1).fill("Large");
+      await size.getByRole("textbox", { name: "Choice", exact: true }).nth(0).fill("Small");
+      await size.getByRole("textbox", { name: "Choice", exact: true }).nth(1).fill("Large");
       await size.getByLabel("Adds (Toman)").nth(1).fill("20000");
 
       // Extras: optional, up to two.
@@ -57,9 +57,9 @@ test.describe.serial("product options", () => {
       await extras.getByRole("button", { name: "Several" }).click();
       await extras.getByRole("switch", { name: "Group 2 is required" }).click();
       await extras.getByLabel("At most").fill("2");
-      await extras.getByLabel("Choice", { exact: true }).nth(0).fill("Oat milk");
+      await extras.getByRole("textbox", { name: "Choice", exact: true }).nth(0).fill("Oat milk");
       await extras.getByLabel("Adds (Toman)").nth(0).fill("12000");
-      await extras.getByLabel("Choice", { exact: true }).nth(1).fill("Extra shot");
+      await extras.getByRole("textbox", { name: "Choice", exact: true }).nth(1).fill("Extra shot");
       await extras.getByLabel("Adds (Toman)").nth(1).fill("15000");
 
       await page.getByRole("button", { name: "Create item" }).click();
@@ -82,7 +82,7 @@ test.describe.serial("product options", () => {
   test.describe("for the guest", () => {
     test.use({ storageState: storageStatePath("customer") });
 
-    test("chooses options at a live price and orders them; the bar sees them", async ({ page, browser }) => {
+    test("chooses options at a live price and orders them", async ({ page }) => {
       await page.goto(`/menu/${productId}`);
       await expect(page.getByText("from 100,000 Toman")).toBeVisible();
 
@@ -102,20 +102,16 @@ test.describe.serial("product options", () => {
       await page.getByRole("button", { name: "Place order" }).click();
       await expect(page).toHaveURL(/\/orders\/[0-9a-f-]{36}$/);
       await expect(page.getByText("Large, Oat milk")).toBeVisible();
-
-      const staff = await browser.newContext({ storageState: storageStatePath("staff") });
-      try {
-        const bar = await staff.newPage();
-        await bar.goto("/dashboard/kitchen");
-        await expect(bar.getByText("Large, Oat milk").filter({ visible: true }).first()).toBeVisible();
-      } finally {
-        await staff.close();
-      }
     });
   });
 
-  test.describe("at the counter", () => {
+  test.describe("for staff", () => {
     test.use({ storageState: storageStatePath("staff") });
+
+    test("the bar's ticket shows the line's options", async ({ page }) => {
+      await page.goto("/dashboard/kitchen");
+      await expect(page.getByText("Large, Oat milk").filter({ visible: true }).first()).toBeVisible();
+    });
 
     test("staff choose an item's options before it goes on the sale", async ({ page }) => {
       await page.goto("/dashboard/orders/new");

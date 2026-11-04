@@ -6,7 +6,7 @@ import { Checkbox as CheckboxPrimitive } from "radix-ui";
 import * as React from "react";
 
 import type { EventTableOption } from "@/src/domain/entities/CafeEvent";
-import { inFloorOrder } from "@/src/domain/entities/CafeTable";
+import { inFloorOrder, seatsAtTables } from "@/src/domain/entities/CafeTable";
 import { useRouter } from "@/src/i18n/navigation";
 import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
@@ -100,7 +100,7 @@ export function HoldTablesButton({ eventId, title, subtitle, capacity, hasTables
 
   function save(): void {
     setError(null);
-    const tableLabels = inFloorOrder(picked);
+    const tableLabels = inFloorOrder(options ?? [], picked);
     startTransition(async () => {
       try {
         await eventsApi.holdTables(eventId, { tableLabels });
@@ -154,7 +154,7 @@ export function HoldTablesButton({ eventId, title, subtitle, capacity, hasTables
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between gap-3">
               {picked.length > 0 ? (
-                <TableFit tableLabels={picked} capacity={capacity} />
+                <TableFit heldSeats={seatsAtTables(options ?? [], picked)} capacity={capacity} />
               ) : (
                 <p className="text-body-small font-medium text-muted-foreground sm:text-body-caption">
                   {t("noTablesSelected")}

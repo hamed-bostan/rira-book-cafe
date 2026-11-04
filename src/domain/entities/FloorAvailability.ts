@@ -1,7 +1,7 @@
-import { CAFE_TABLES } from "./CafeTable";
 import { TABLE_HOLDING_STATUSES, rangesOverlap, reservationEndsAt, type Reservation } from "./Reservation";
 
 import type { CafeEvent } from "./CafeEvent";
+import type { FloorTable } from "./CafeTable";
 
 /**
  * Which floor tables a booking could take, from the day's bookings and events —
@@ -21,7 +21,12 @@ export type FloorEvent = Pick<CafeEvent, "id" | "title" | "startsAt" | "endsAt" 
  * and the events holding tables. It reaches a day either side, because a booking
  * late the night before runs on into the day, and one late in the day into the next.
  */
-export type Floor = { bookings: FloorBooking[]; events: FloorEvent[] };
+export type Floor = {
+  /** The tables in use, in floor order — what the pickers draw. */
+  tables: FloorTable[];
+  bookings: FloorBooking[];
+  events: FloorEvent[];
+};
 
 /** Why a table can't be chosen: another booking or an event has it then, or it seats too few. */
 export type TableBlock =
@@ -41,13 +46,14 @@ export type BookingSlot = Pick<Reservation, "startsAt" | "durationMinutes" | "pa
 
 export function tableChoicesFor(
   slot: BookingSlot,
+  tables: readonly FloorTable[],
   bookings: readonly FloorBooking[],
   events: readonly FloorEvent[],
 ): TableChoice[] {
   const from = new Date(slot.startsAt);
   const to = reservationEndsAt(slot);
 
-  return CAFE_TABLES.map(({ label, seats }): TableChoice => {
+  return tables.map(({ label, seats }): TableChoice => {
     const booking = bookings.find(
       (other) =>
         other.id !== slot.reservationId &&

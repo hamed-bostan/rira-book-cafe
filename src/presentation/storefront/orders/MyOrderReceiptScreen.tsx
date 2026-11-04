@@ -1,6 +1,7 @@
 import { ChevronLeft } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
+import type { CafeSettings } from "@/src/domain/entities/CafeSettings";
 import type { OrderReceipt } from "@/src/domain/entities/OrderReceipt";
 import { Link } from "@/src/i18n/navigation";
 import { PrintButton } from "@/src/presentation/dashboard/accounting/PrintButton";
@@ -11,7 +12,7 @@ import { OrderReceiptSlip } from "@/src/presentation/orders/OrderReceiptSlip";
  * The guest's receipt for one of their orders — the same slip the counter prints —
  * with the way back to the order and a print button, which drop away on paper.
  */
-export async function MyOrderReceiptScreen({ receipt }: { receipt: OrderReceipt }) {
+export async function MyOrderReceiptScreen({ receipt, cafe }: { receipt: OrderReceipt; cafe: CafeSettings }) {
   const t = await getTranslations("site");
 
   return (
@@ -26,7 +27,7 @@ export async function MyOrderReceiptScreen({ receipt }: { receipt: OrderReceipt 
         </Link>
         <PrintButton />
       </div>
-      <OrderReceiptSlip receipt={receipt} />
+      <OrderReceiptSlip receipt={receipt} cafe={cafe} />
     </div>
   );
 }

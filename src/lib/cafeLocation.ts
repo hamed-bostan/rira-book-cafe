@@ -1,37 +1,54 @@
-/** Days of the week as schema.org spells them (`https://schema.org/DayOfWeek`). */
-export type Weekday = "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday" | "Saturday" | "Sunday";
+import {
+  instagramUrl,
+  inLanguage,
+  openingRules,
+  upcomingExceptions,
+  type CafeSettings,
+  type OpeningHoursRule,
+} from "@/src/domain/entities/CafeSettings";
+import { cafeDayOf } from "@/src/domain/entities/CafeTime";
 
-/** One opening-hours rule on the cafe's wall clock, e.g. Saturday–Wednesday 08:00–23:00. */
-export type OpeningHoursRule = {
-  days: Weekday[];
-  /** `HH:mm` */
-  opens: string;
-  /** `HH:mm` */
-  closes: string;
-};
+/** A day whose hours differ from the week's, for structured data — closed when it has no times. */
+export type SpecialHours = { date: string; opens?: string; closes?: string };
 
+/** Where and when the cafe is, as search engines' structured data states it. */
 export type CafeLocation = {
+  /** The address as staff wrote it, in the page's language. */
   streetAddress?: string;
-  addressLocality?: string;
-  addressRegion?: string;
-  postalCode?: string;
   /** ISO 3166-1 alpha-2. */
   addressCountry?: string;
   latitude?: number;
   longitude?: number;
-  /** International format, e.g. `+98 21 1234 5678`. */
   telephone?: string;
   openingHours: OpeningHoursRule[];
+  /** The special days coming up (holidays, late nights). */
+  specialHours: SpecialHours[];
+  /** The cafe's own pages elsewhere: its Instagram, its website. */
+  sameAs: string[];
 };
 
 /**
- * Where and when the cafe is, for search engines' structured data (the JSON-LD on
- * the home page and on events). The app doesn't store any of this yet, so only what
- * is certain is filled in: prices are in Toman, so the cafe is in Iran. Add the real
- * street address, map position, phone and hours here — every field left empty is
- * simply left out of the markup rather than guessed.
+ * The cafe's location for structured data (the JSON-LD on the home page and on
+ * events), from its settings. Only what's set is stated: prices are in Toman, so
+ * the cafe is in Iran; the address, map position, phone, hours and links appear
+ * once staff fill them in — nothing is guessed.
  */
-export const CAFE_LOCATION: CafeLocation = {
-  addressCountry: "IR",
-  openingHours: [],
-};
+export function cafeLocationFrom(settings: CafeSettings, locale: string, now: Date = new Date()): CafeLocation {
+  const { profile, hours } = settings;
+  const hasGeo = profile.latitude !== undefined && profile.longitude !== undefined;
+  return {
+    streetAddress: inLanguage(locale, profile.address, profile.addressFa)?.replace(/\s*\n\s*/g, ", "),
+    addressCountry: "IR",
+    ...(hasGeo ? { latitude: profile.latitude, longitude: profile.longitude } : {}),
+    telephone: profile.phone,
+    openingHours: hours.weekly ? openingRules(hours.weekly) : [],
+    specialHours: upcomingExceptions(hours, cafeDayOf(now)).map((exception) =>
+      exception.closed
+        ? { date: exception.date }
+        : { date: exception.date, opens: exception.opens, closes: exception.closes },
+    ),
+    sameAs: [profile.instagram ? instagramUrl(profile.instagram) : undefined, profile.website].filter(
+      (url): url is string => url !== undefined,
+    ),
+  };
+}

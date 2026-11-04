@@ -73,11 +73,11 @@ describe("reservationUpdateSchema", () => {
     expect(reservationUpdateSchema.safeParse({ status: "confirmed", undo: false }).success).toBe(false);
   });
 
-  it("refuses an unknown status and a table off the floor plan, as a new booking does", () => {
+  it("refuses an unknown status and a blank or overlong table label, as a new booking does", () => {
     expect(flattened(reservationUpdateSchema.safeParse({ status: "late" }).error)?.fieldErrors.status).toEqual([
       "statusInvalid",
     ]);
-    for (const tableLabel of ["Patio", "T4", " 4 ", ""]) {
+    for (const tableLabel of ["", "  ", "x".repeat(21)]) {
       expect(flattened(reservationUpdateSchema.safeParse({ tableLabel }).error)?.fieldErrors.tableLabel).toEqual([
         "tableInvalid",
       ]);

@@ -86,12 +86,14 @@ describe("staff table bookings", () => {
 
   it("validates the guest's phone and the table with 400", async () => {
     signInAs("staff");
-    const response = await postTable({ ...walkIn, guestName: " ", guestPhone: "12", tableLabel: "Patio" });
+    const response = await postTable({ ...walkIn, guestName: " ", guestPhone: "12" });
     expect(response.status).toBe(400);
-    expect((await readError(response)).fieldErrors).toMatchObject({
-      guestPhone: "phoneInvalid",
-      tableLabel: "tableInvalid",
-    });
+    expect((await readError(response)).fieldErrors).toMatchObject({ guestPhone: "phoneInvalid" });
+
+    // Which tables are on the floor is the cafe's own list, checked past the form's rules.
+    const patio = await postTable({ ...walkIn, tableLabel: "Patio" });
+    expect(patio.status).toBe(400);
+    expect((await readError(patio)).fieldErrors).toEqual({ tableLabel: "tableInvalid" });
   });
 
   it("needs a new guest's name, and leaves no profile behind without it", async () => {

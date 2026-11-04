@@ -1,34 +1,65 @@
-import { ArrowRight, MapPin } from "lucide-react";
+import { ArrowRight, MapPin, Phone } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
-import { CAFE_LOCATION } from "@/src/lib/cafeLocation";
+import {
+  closedWeekdays,
+  inLanguage,
+  instagramUrl,
+  mapUrl,
+  openingRules,
+  upcomingExceptions,
+  type CafeSettings,
+} from "@/src/domain/entities/CafeSettings";
+import { formatCafeDayMedium } from "@/src/lib/formatCafeDay";
 import { cn } from "@/src/lib/utils";
 import { FadeInImage } from "@/src/presentation/components/FadeInImage";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
+import { InstagramIcon } from "@/src/presentation/design-system/icons/InstagramIcon";
 import storefrontImage from "@/src/shared/images/home/storefront.png";
 
 import { Eyebrow } from "./Eyebrow";
-import { openingHoursLines } from "./openingHours";
+import { clock, dayLabel, openingHoursLines } from "./openingHours";
+
+/** How many of the coming special days the section lists. */
+const SPECIAL_DAYS_SHOWN = 4;
+
+const LINK = "flex items-center gap-2 text-body-default text-landing-ink hover:text-landing-primary";
+
+type HomeVisitProps = {
+  /** The cafe's settings: its address, phone, links, map position and hours. */
+  cafe: CafeSettings;
+  /** Today on the cafe calendar — the special days listed are from here on. */
+  today: string;
+};
 
 /**
- * Where to find the cafe, beside its storefront. The address, directions and hours
- * come from the configured location and each appears only once it is filled in —
- * nothing here is guessed.
+ * Where to find the cafe, beside its storefront. The address, directions, phone,
+ * Instagram and hours come from the cafe's settings and each appears only once
+ * it's filled in — nothing here is guessed. The week reads Saturday first, as it
+ * does in Iran; closed days and the coming special days (holidays, late nights)
+ * are listed under it.
  */
-export async function HomeVisit() {
+export async function HomeVisit({ cafe, today }: HomeVisitProps) {
   const [t, locale] = await Promise.all([getTranslations("site.home.visit"), getLocale()]);
-  const { streetAddress, addressLocality, addressRegion, postalCode, latitude, longitude } = CAFE_LOCATION;
+  const { profile, hours } = cafe;
 
-  const addressLines = [
-    streetAddress,
-    [addressLocality, addressRegion, postalCode].filter(Boolean).join(locale === "fa" ? "، " : ", "),
-  ].filter(Boolean);
+  const address = inLanguage(locale, profile.address, profile.addressFa);
+  const addressLines = address ? address.split("\n").filter(Boolean) : [];
   const directionsUrl =
-    latitude !== undefined && longitude !== undefined
-      ? `https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=17/${latitude}/${longitude}`
+    profile.latitude !== undefined && profile.longitude !== undefined
+      ? mapUrl(profile.latitude, profile.longitude)
       : undefined;
-  const hours = openingHoursLines(CAFE_LOCATION.openingHours, locale);
+  const lines = hours.weekly
+    ? [
+        ...openingHoursLines(openingRules(hours.weekly), locale),
+        ...(closedWeekdays(hours.weekly).length > 0
+          ? [{ days: dayLabel(closedWeekdays(hours.weekly), locale), hours: t("closed") }]
+          : []),
+      ]
+    : [];
+  const specialDays = upcomingExceptions(hours, today).slice(0, SPECIAL_DAYS_SHOWN);
+  const hasContact = Boolean(profile.phone || profile.instagram);
 
   return (
     <section id="visit" className="bg-landing-band px-5 pt-14 sm:px-8 md:pt-20 lg:px-16 lg:pt-24">
@@ -39,48 +70,101 @@ export async function HomeVisit() {
             {t("title")}
           </h2>
           <p className="max-w-md text-body-intro text-pretty text-landing-ink-soft">{t("body")}</p>
-          {addressLines.length > 0 || hours.length > 0 ? (
+          {addressLines.length > 0 || lines.length > 0 || hasContact ? (
             <div className="mt-2 flex flex-wrap gap-x-10 gap-y-6">
-              {addressLines.length > 0 ? (
-                <div className="flex items-start gap-4">
-                  <Icon icon={MapPin} size="xl" className="text-landing-icon" />
-                  <div className="flex flex-col items-start gap-3">
-                    <address className="text-body-default text-landing-ink not-italic">
-                      {addressLines.map((line) => (
-                        <span key={line} className="block">
-                          {line}
-                        </span>
-                      ))}
-                    </address>
-                    {directionsUrl ? (
-                      <a
-                        href={directionsUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={cn(
-                          "flex items-center gap-2 border-b-2 border-landing-primary pb-1 text-body-small-strong text-landing-ink hover:text-landing-primary",
-                          focusRing,
-                        )}
-                      >
-                        {t("directions")}
-                        <Icon icon={ArrowRight} size="xs" className="text-landing-primary rtl:-scale-x-100" />
-                      </a>
-                    ) : null}
-                  </div>
+              {addressLines.length > 0 || hasContact ? (
+                <div className="flex flex-col items-start gap-4">
+                  {addressLines.length > 0 ? (
+                    <div className="flex items-start gap-4">
+                      <Icon icon={MapPin} size="xl" className="text-landing-icon" />
+                      <div className="flex flex-col items-start gap-3">
+                        <address className="text-body-default text-landing-ink not-italic" dir="auto">
+                          {addressLines.map((line) => (
+                            <span key={line} className="block">
+                              {line}
+                            </span>
+                          ))}
+                        </address>
+                        {directionsUrl ? (
+                          <a
+                            href={directionsUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={cn(
+                              "flex items-center gap-2 border-b-2 border-landing-primary pb-1 text-body-small-strong text-landing-ink hover:text-landing-primary",
+                              focusRing,
+                            )}
+                          >
+                            {t("directions")}
+                            <Icon icon={ArrowRight} size="xs" className="text-landing-primary rtl:-scale-x-100" />
+                          </a>
+                        ) : null}
+                      </div>
+                    </div>
+                  ) : null}
+                  {profile.phone ? (
+                    <a
+                      href={`tel:${profile.phone.replace(/[^\d+]/g, "")}`}
+                      aria-label={t("callAria", { phone: profile.phone })}
+                      className={cn(LINK, "min-h-11", focusRing)}
+                    >
+                      <Icon icon={Phone} size="md" className="text-landing-icon" />
+                      <span dir="ltr" className="tabular-nums">
+                        {profile.phone}
+                      </span>
+                    </a>
+                  ) : null}
+                  {profile.instagram ? (
+                    <a
+                      href={instagramUrl(profile.instagram)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={t("instagramAria", { handle: profile.instagram })}
+                      className={cn(LINK, "min-h-11", focusRing)}
+                    >
+                      <Icon icon={InstagramIcon} size="md" className="text-landing-icon" />
+                      <span dir="ltr">@{profile.instagram}</span>
+                    </a>
+                  ) : null}
                 </div>
               ) : null}
-              {hours.length > 0 ? (
-                <dl
-                  aria-label={t("hours")}
-                  className="grid grid-cols-[auto_auto] content-start gap-x-6 gap-y-1 text-body-default text-landing-ink-soft lg:border-s lg:border-landing-border lg:ps-10"
-                >
-                  {hours.map((line) => (
-                    <div key={line.days} className="contents">
-                      <dt>{line.days}</dt>
-                      <dd>{line.hours}</dd>
+              {lines.length > 0 ? (
+                <div className="flex flex-col gap-4 lg:border-s lg:border-landing-border lg:ps-10">
+                  <dl
+                    aria-label={t("hours")}
+                    className="grid grid-cols-[auto_auto] content-start gap-x-6 gap-y-1 text-body-default text-landing-ink-soft"
+                  >
+                    {lines.map((line) => (
+                      <div key={line.days} className="contents">
+                        <dt>{line.days}</dt>
+                        <dd>{line.hours}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                  {specialDays.length > 0 ? (
+                    <div className="flex flex-col gap-1">
+                      <p className="text-body-small-strong text-landing-ink">{t("specialHours")}</p>
+                      <dl
+                        aria-label={t("specialHours")}
+                        className="grid grid-cols-[auto_auto] content-start gap-x-6 gap-y-1 text-body-small text-landing-ink-soft"
+                      >
+                        {specialDays.map((day) => {
+                          const note = inLanguage(locale, day.note, day.noteFa);
+                          const when =
+                            day.closed || !day.opens || !day.closes
+                              ? t("closed")
+                              : `${clock(day.opens, locale)} – ${clock(day.closes, locale)}`;
+                          return (
+                            <div key={day.date} className="contents">
+                              <dt>{formatCafeDayMedium(day.date, locale)}</dt>
+                              <dd dir="auto">{note ? `${when} · ${note}` : when}</dd>
+                            </div>
+                          );
+                        })}
+                      </dl>
                     </div>
-                  ))}
-                </dl>
+                  ) : null}
+                </div>
               ) : null}
             </div>
           ) : null}

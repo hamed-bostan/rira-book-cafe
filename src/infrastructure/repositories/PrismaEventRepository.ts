@@ -8,7 +8,7 @@ import {
   type RegistrationStatus,
   type TableHoldClash,
 } from "@/src/domain/entities/CafeEvent";
-import { CAFE_TABLE_LABELS, CAFE_TABLES } from "@/src/domain/entities/CafeTable";
+import type { FloorTable } from "@/src/domain/entities/CafeTable";
 import { ConflictError } from "@/src/domain/errors/ConflictError";
 import { NotFoundError } from "@/src/domain/errors/NotFoundError";
 import { ResourceInUseError } from "@/src/domain/errors/ResourceInUseError";
@@ -84,11 +84,12 @@ export class PrismaEventRepository implements IEventRepository {
     }
   }
 
-  async listTableOptions(eventId: string): Promise<EventTableOption[] | null> {
+  async listTableOptions(eventId: string, tables: readonly FloorTable[]): Promise<EventTableOption[] | null> {
     const event = await this.db.event.findUnique({ where: { id: eventId } });
     if (!event) return null;
-    const clashes = await tableClashes(this.db, CAFE_TABLE_LABELS, event.startsAt, event.endsAt, event.id);
-    return CAFE_TABLES.map(({ label, seats }) => ({
+    const labels = tables.map((table) => table.label);
+    const clashes = await tableClashes(this.db, labels, event.startsAt, event.endsAt, event.id);
+    return tables.map(({ label, seats }) => ({
       label,
       seats,
       held: event.tableLabels.includes(label),

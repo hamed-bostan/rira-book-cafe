@@ -17,6 +17,7 @@ import {
   Landmark,
   PartyPopper,
   Receipt,
+  Settings,
   ShieldCheck,
   Star,
   Tag,
@@ -72,7 +73,8 @@ export type DashboardSectionLabelKey =
   | "navPayroll"
   | "navPricing"
   | "navActivity"
-  | "navTeam";
+  | "navTeam"
+  | "navSettings";
 
 /** A count shown beside a section's link (the orders waiting in the queue), keyed by section. */
 export type DashboardNavBadges = Partial<Record<DashboardSectionLabelKey, number>>;
@@ -223,6 +225,14 @@ const SECTIONS = [
   // Team is the owner's alone.
   { href: "/dashboard/activity", labelKey: "navActivity", icon: History, needs: "activity.view", group: "groupStore" },
   { href: "/dashboard/team", labelKey: "navTeam", icon: ShieldCheck, needs: "team.manage", group: "groupStore" },
+  // Who and where the cafe is, its hours, tables and receipt — admin and owner.
+  {
+    href: "/dashboard/settings",
+    labelKey: "navSettings",
+    icon: Settings,
+    needs: "settings.write",
+    group: "groupStore",
+  },
 ] as const satisfies readonly DashboardSection[];
 
 /** The groups in sidebar order. */

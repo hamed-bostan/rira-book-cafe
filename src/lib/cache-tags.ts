@@ -8,6 +8,8 @@ export const CATALOG_TAGS = {
   products: "catalog:products",
   categories: "catalog:categories",
   events: "catalog:events",
+  // The cafe's profile, opening hours and receipt copy (dashboard → Settings).
+  settings: "catalog:settings",
 } as const;
 
 export type CatalogTag = (typeof CATALOG_TAGS)[keyof typeof CATALOG_TAGS];

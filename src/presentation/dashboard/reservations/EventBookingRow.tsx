@@ -2,7 +2,7 @@ import { Armchair, CalendarDays, Users } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import type { CafeEvent } from "@/src/domain/entities/CafeEvent";
-import { isWholeFloor } from "@/src/domain/entities/CafeTable";
+import { isWholeFloor, type FloorTable } from "@/src/domain/entities/CafeTable";
 import { Link } from "@/src/i18n/navigation";
 import { formatEventTime } from "@/src/lib/formatEventWhen";
 import { formatNumber } from "@/src/lib/formatNumber";
@@ -20,6 +20,8 @@ type EventBookingRowProps = {
   today: string;
   /** Whether the viewer may open the event itself (`events.manage`), not just its card on the list. */
   canManageEvents: boolean;
+  /** The floor's tables in use — whether the event holds them all. */
+  tables: readonly FloorTable[];
 };
 
 /**
@@ -27,13 +29,13 @@ type EventBookingRowProps = {
  * the floor sees why they can't be booked) and how full it is, with a way to it —
  * the event's own page, or its card on the events list.
  */
-export async function EventBookingRow({ event, today, canManageEvents }: EventBookingRowProps) {
+export async function EventBookingRow({ event, today, canManageEvents, tables: floor }: EventBookingRowProps) {
   const t = await getTranslations("dashReservations");
   const tEvents = await getTranslations("dashEvents");
   const tFloor = await getTranslations("floorTables");
   const locale = await getLocale();
 
-  const tables = isWholeFloor(event.tableLabels)
+  const tables = isWholeFloor(floor, event.tableLabels)
     ? t("eventHoldsWholeFloor")
     : event.tableLabels.length > 0
       ? t("eventHolds", {

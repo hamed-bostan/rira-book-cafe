@@ -1,5 +1,5 @@
+import type { OpeningHoursRule, Weekday } from "@/src/domain/entities/CafeSettings";
 import type { Locale } from "@/src/i18n/routing";
-import type { OpeningHoursRule, Weekday } from "@/src/lib/cafeLocation";
 
 /** One printable row of the hours table, e.g. { days: "Mon – Fri", hours: "7:00 AM – 7:00 PM" }. */
 export type OpeningHoursLine = { days: string; hours: string };
@@ -18,7 +18,8 @@ function dayName(day: Weekday, locale: Locale): string {
   );
 }
 
-function clock(time: string, locale: Locale): string {
+/** A wall-clock `HH:mm` as the locale writes it: `7:00 AM`, `۷:۰۰`. */
+export function clock(time: string, locale: Locale): string {
   const [hours, minutes] = time.split(":").map(Number);
   return new Intl.DateTimeFormat(LOCALE_TAG[locale], { hour: "numeric", minute: "2-digit", timeZone: "UTC" }).format(
     Date.UTC(2024, 0, 1, hours, minutes),
@@ -30,7 +31,8 @@ function isRun(days: Weekday[]): boolean {
   return days.every((day, i) => i === 0 || WEEK.indexOf(day) === (WEEK.indexOf(days[i - 1]) + 1) % WEEK.length);
 }
 
-function dayLabel(days: Weekday[], locale: Locale): string {
+/** Days as one label: a run as a range (`Sat – Wed`), others listed (`Mon, Thu`). */
+export function dayLabel(days: Weekday[], locale: Locale): string {
   const names = days.map((day) => dayName(day, locale));
   if (names.length > 2 && isRun(days)) return `${names[0]} – ${names[names.length - 1]}`;
   return names.join(locale === "fa" ? "، " : ", ");

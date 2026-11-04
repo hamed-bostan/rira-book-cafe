@@ -28,6 +28,8 @@ export function activityEntityHref(
       return `/dashboard/events/${entityId}/edit`;
     case "income":
       return "/dashboard/income";
+    case "settings":
+      return "/dashboard/settings";
     case "payroll":
       return action === "payroll.employeeChanged" ? "/dashboard/payroll/employees" : `/dashboard/payroll/${entityId}`;
     default:

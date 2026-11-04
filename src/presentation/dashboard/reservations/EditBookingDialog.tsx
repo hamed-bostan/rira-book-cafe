@@ -4,7 +4,6 @@ import { useLocale, useTranslations } from "next-intl";
 import * as React from "react";
 
 import type { ReservationDetailsInput } from "@/src/contracts/reservation-schema";
-import { isCafeTable } from "@/src/domain/entities/CafeTable";
 import { dateToWallTime, shiftCafeDay, wallTimeToDate } from "@/src/domain/entities/CafeTime";
 import { tableChoicesFor, type Floor } from "@/src/domain/entities/FloorAvailability";
 import {
@@ -59,9 +58,6 @@ const FIELDS = [
   "note",
   "tableLabel",
 ] as const satisfies readonly (keyof ReservationDetailsInput)[];
-
-/** Placeholder tiles drawn while another day's floor loads — one per table on the plan. */
-const LOADING_TILES = 9;
 
 /**
  * "Edit booking": move a booking to another day or time, change the party, how
@@ -127,6 +123,7 @@ export function EditBookingDialog({ open, onOpenChange, reservation, now, day, f
   const choices = shownFloor
     ? tableChoicesFor(
         { startsAt, durationMinutes: length, partySize, reservationId: reservation.id },
+        shownFloor.tables,
         shownFloor.bookings,
         shownFloor.events,
       )
@@ -145,9 +142,7 @@ export function EditBookingDialog({ open, onOpenChange, reservation, now, day, f
     ...(partySize !== reservation.partySize ? { partySize } : {}),
     ...(length !== reservation.durationMinutes ? { durationMinutes: length } : {}),
     ...(note !== (reservation.note ?? "") ? { note } : {}),
-    ...(showTables && pick !== (reservation.tableLabel ?? null)
-      ? { tableLabel: pick && isCafeTable(pick) ? pick : null }
-      : {}),
+    ...(showTables && pick !== (reservation.tableLabel ?? null) ? { tableLabel: pick } : {}),
   };
   const problem =
     "startsAt" in changes && (bookingDay < today || isPast(time)) ? t("editErrorPast") : (clashMessage ?? null);
@@ -295,7 +290,8 @@ export function EditBookingDialog({ open, onOpenChange, reservation, now, day, f
               />
             ) : (
               <div className={TABLE_TILE_GRID}>
-                {Array.from({ length: LOADING_TILES }, (_, index) => (
+                {/* Placeholder tiles while another day's floor loads — one per table on today's plan. */}
+                {Array.from({ length: floor.tables.length }, (_, index) => (
                   <Skeleton key={index} className="h-14 rounded-button" />
                 ))}
               </div>

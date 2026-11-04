@@ -53,9 +53,12 @@ describe("eventTablesSchema", () => {
     expect(eventTablesSchema.parse({ tableLabels: [] })).toEqual({ tableLabels: [] });
   });
 
-  it("refuses a table that isn't on the floor plan", () => {
-    const result = eventTablesSchema.safeParse({ tableLabels: ["Table 7"] });
-    expect(result.error?.issues.map((issue) => issue.message)).toContain("tableInvalid");
+  it("refuses a blank or overlong label; which labels are on the floor is the use-case's check", () => {
+    for (const label of ["", "   ", "x".repeat(21)]) {
+      const result = eventTablesSchema.safeParse({ tableLabels: [label] });
+      expect(result.error?.issues.map((issue) => issue.message)).toContain("tableInvalid");
+    }
+    expect(eventTablesSchema.parse({ tableLabels: [" Window "] })).toEqual({ tableLabels: ["Window"] });
   });
 });
 

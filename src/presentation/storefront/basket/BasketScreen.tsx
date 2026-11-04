@@ -15,6 +15,7 @@ import { choiceKey } from "@/src/domain/entities/ProductOptions";
 import { Link, useRouter } from "@/src/i18n/navigation";
 import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
+import { formatCafeDayWeekdayName } from "@/src/lib/formatCafeDay";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
@@ -29,6 +30,7 @@ import { focusRing } from "@/src/presentation/design-system/components/shared/fo
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 import { OrderItemOptions } from "@/src/presentation/orders/OrderItemOptions";
 
+import { clock } from "../home/openingHours";
 import { storefrontApi } from "../storefront-api";
 
 import { basketToOrderItems, basketTotal } from "./basket";
@@ -50,6 +52,11 @@ const PROMO_ERRORS: ReadonlySet<string> = new Set([
 type BasketScreenProps = {
   /** Whether a guest is signed in — ordering needs an account. */
   signedIn: boolean;
+  /**
+   * Set when the cafe is closed now by its opening hours, with when it next opens
+   * (`null` when not within the week). A notice only — the order can still be placed.
+   */
+  closedNow?: { reopens: { day: string; opens: string } | null } | null;
 };
 
 /**
@@ -58,7 +65,7 @@ type BasketScreenProps = {
  * when items were added; the server prices the order from the menu, and the
  * order page shows what was actually charged.
  */
-export function BasketScreen({ signedIn }: BasketScreenProps) {
+export function BasketScreen({ signedIn, closedNow = null }: BasketScreenProps) {
   const t = useTranslations("site");
   const tApiErrors = useTranslations("apiErrors");
   const tFormErrors = useTranslations("formErrors");
@@ -242,6 +249,19 @@ export function BasketScreen({ signedIn }: BasketScreenProps) {
       </section>
 
       <section className="flex flex-col gap-4 self-start rounded-card-lg border border-border p-4 lg:sticky lg:top-20">
+        {closedNow ? (
+          <p
+            role="status"
+            className="rounded-card-md bg-warning px-4 py-3 text-body-small text-pretty text-warning-foreground"
+          >
+            {closedNow.reopens
+              ? t("basket.closedNowReopens", {
+                  day: formatCafeDayWeekdayName(closedNow.reopens.day, locale),
+                  time: clock(closedNow.reopens.opens, locale),
+                })
+              : t("basket.closedNow")}
+          </p>
+        ) : null}
         <fieldset className="flex flex-col gap-2">
           <legend className="mb-2 text-body-strong text-foreground">{t("basket.serviceHeading")}</legend>
           <div className="flex gap-2">

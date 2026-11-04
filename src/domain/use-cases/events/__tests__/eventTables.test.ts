@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { FLOOR, FLOOR_TABLES } from "../../../entities/__tests__/floorFixture";
 import { type ConflictError } from "../../../errors/ConflictError";
 import { NotFoundError } from "../../../errors/NotFoundError";
 import { ValidationError } from "../../../errors/ValidationError";
@@ -50,7 +51,7 @@ describe("HoldEventTables", () => {
   it("saves the tables in floor order without duplicates and logs the change", async () => {
     const { repo, holdTables, entries } = repoWith(event());
 
-    const saved = await new HoldEventTables(repo).execute("e1", ["long", "8", "7", "8"], ACTOR, NOW);
+    const saved = await new HoldEventTables(repo, FLOOR).execute("e1", ["long", "8", "7", "8"], ACTOR, NOW);
 
     expect(holdTables.mock.calls[0][1]).toEqual(["7", "8", "long"]);
     expect(saved.tableLabels).toEqual(["7", "8", "long"]);
@@ -66,7 +67,7 @@ describe("HoldEventTables", () => {
   it("releases every table with an empty list", async () => {
     const { repo, entries } = repoWith(event());
 
-    await new HoldEventTables(repo).execute("e1", [], ACTOR, NOW);
+    await new HoldEventTables(repo, FLOOR).execute("e1", [], ACTOR, NOW);
 
     expect(entries[0].changes).toEqual([{ field: "tableLabels", before: "7", after: null }]);
   });
@@ -74,7 +75,7 @@ describe("HoldEventTables", () => {
   it("skips the write when nothing changes", async () => {
     const { repo, holdTables } = repoWith(event());
 
-    await new HoldEventTables(repo).execute("e1", ["7"], ACTOR, NOW);
+    await new HoldEventTables(repo, FLOOR).execute("e1", ["7"], ACTOR, NOW);
 
     expect(holdTables).not.toHaveBeenCalled();
   });
@@ -82,16 +83,30 @@ describe("HoldEventTables", () => {
   it("refuses a table that isn't on the floor plan", async () => {
     const { repo, holdTables } = repoWith(event());
 
-    await expect(new HoldEventTables(repo).execute("e1", ["Table 7"], ACTOR, NOW)).rejects.toBeInstanceOf(
+    await expect(new HoldEventTables(repo, FLOOR).execute("e1", ["Table 7"], ACTOR, NOW)).rejects.toBeInstanceOf(
       ValidationError,
     );
     expect(holdTables).not.toHaveBeenCalled();
   });
 
+  it("refuses a table taken out of use, but keeps one the event already holds", async () => {
+    const outOfUse = FLOOR_TABLES.map((table) =>
+      table.label === "7" || table.label === "8" ? { ...table, isActive: false } : table,
+    );
+    const tables = { listAll: async () => outOfUse };
+    const { repo, holdTables } = repoWith(event());
+
+    await expect(new HoldEventTables(repo, tables).execute("e1", ["7", "8"], ACTOR, NOW)).rejects.toBeInstanceOf(
+      ValidationError,
+    );
+    await new HoldEventTables(repo, tables).execute("e1", ["7", "6"], ACTOR, NOW);
+    expect(holdTables.mock.calls[0][1]).toEqual(["6", "7"]);
+  });
+
   it("refuses an event that has already ended", async () => {
     const { repo } = repoWith(event({ endsAt: "2026-10-21T15:30:00.000Z" }));
 
-    await expect(new HoldEventTables(repo).execute("e1", ["8"], ACTOR, NOW)).rejects.toMatchObject({
+    await expect(new HoldEventTables(repo, FLOOR).execute("e1", ["8"], ACTOR, NOW)).rejects.toMatchObject({
       code: "EVENT_CLOSED",
     } satisfies Partial<ConflictError>);
   });
@@ -99,17 +114,21 @@ describe("HoldEventTables", () => {
   it("reports a missing event", async () => {
     const { repo } = repoWith(null);
 
-    await expect(new HoldEventTables(repo).execute("e1", ["8"], ACTOR, NOW)).rejects.toBeInstanceOf(NotFoundError);
+    await expect(new HoldEventTables(repo, FLOOR).execute("e1", ["8"], ACTOR, NOW)).rejects.toBeInstanceOf(
+      NotFoundError,
+    );
   });
 });
 
 describe("ListEventTableOptions", () => {
   it("returns the floor for the event, or not found", async () => {
     const { repo } = repoWith(event());
+    const listTableOptions = vi.mocked(repo.listTableOptions);
 
-    await expect(new ListEventTableOptions(repo).execute("e1")).resolves.toEqual([
+    await expect(new ListEventTableOptions(repo, FLOOR).execute("e1")).resolves.toEqual([
       { label: "7", seats: 6, held: true },
     ]);
-    await expect(new ListEventTableOptions(repo).execute("nope")).rejects.toBeInstanceOf(NotFoundError);
+    await expect(new ListEventTableOptions(repo, FLOOR).execute("nope")).rejects.toBeInstanceOf(NotFoundError);
+    expect(listTableOptions.mock.calls[0][1].map((table) => table.label)).toEqual(FLOOR_TABLES.map((t) => t.label));
   });
 });

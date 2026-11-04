@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 
+import type { CafeSettings } from "@/src/domain/entities/CafeSettings";
 import type { OrderReceipt } from "@/src/domain/entities/OrderReceipt";
 import { PrintButton } from "@/src/presentation/dashboard/accounting/PrintButton";
 import { DashboardPageHeader } from "@/src/presentation/dashboard/DashboardPageHeader";
@@ -12,7 +13,7 @@ import { OrderReceiptSlip } from "@/src/presentation/orders/OrderReceiptSlip";
  * the heading and the button drop away. Presentational: the page reads the receipt
  * over the REST API.
  */
-export async function OrderReceiptScreen({ receipt }: { receipt: OrderReceipt }) {
+export async function OrderReceiptScreen({ receipt, cafe }: { receipt: OrderReceipt; cafe: CafeSettings }) {
   const t = await getTranslations("dashOrders");
   const { order } = receipt;
 
@@ -28,7 +29,7 @@ export async function OrderReceiptScreen({ receipt }: { receipt: OrderReceipt })
           actions={<PrintButton />}
         />
       </div>
-      <OrderReceiptSlip receipt={receipt} />
+      <OrderReceiptSlip receipt={receipt} cafe={cafe} />
     </div>
   );
 }

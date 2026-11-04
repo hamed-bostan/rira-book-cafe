@@ -1,7 +1,7 @@
 import { getLocale, getTranslations } from "next-intl/server";
 
+import { inLanguage, type CafeSettings } from "@/src/domain/entities/CafeSettings";
 import type { OrderReceipt } from "@/src/domain/entities/OrderReceipt";
-import { CAFE_LOCATION } from "@/src/lib/cafeLocation";
 import { formatCafeDayMedium } from "@/src/lib/formatCafeDay";
 import { formatNumber, formatNumberTrimmed } from "@/src/lib/formatNumber";
 import { formatOrderDate, formatOrderTime } from "@/src/lib/formatOrderDate";
@@ -41,22 +41,23 @@ function receiptRow(label: ReactNode, value: ReactNode, className?: string, key?
  *
  * Amounts are bare figures under a "Toman" heading, the way a till prints them, so
  * a nine-digit line still fits the roll.
+ *
+ * The cafe's name, address, phone and the receipt's own header lines and closing
+ * note come from its settings, in the reader's language (or the other one's when
+ * theirs is blank); the site's name and a thank-you stand in until they're set.
  */
-export async function OrderReceiptSlip({ receipt }: { receipt: OrderReceipt }) {
+export async function OrderReceiptSlip({ receipt, cafe }: { receipt: OrderReceipt; cafe: CafeSettings }) {
   const t = await getTranslations("dashOrders");
   const tMeta = await getTranslations("meta");
   const locale = await getLocale();
   const { order, payments, refunds, vatRateBps, vatIncluded } = receipt;
   const money = (amount: number): string => formatNumber(amount, locale);
-  const website = (await getSiteUrl()).host;
-  const address = [
-    CAFE_LOCATION.streetAddress,
-    CAFE_LOCATION.addressLocality,
-    CAFE_LOCATION.addressRegion,
-    CAFE_LOCATION.postalCode,
-  ]
-    .filter(Boolean)
-    .join(t("receipt.addressSeparator"));
+  const { profile, receipt: copy } = cafe;
+  const website = profile.website ? new URL(profile.website).host : (await getSiteUrl()).host;
+  const cafeName = inLanguage(locale, profile.name, profile.nameFa) ?? tMeta("siteName");
+  const address = inLanguage(locale, profile.address, profile.addressFa);
+  const headerLines = inLanguage(locale, copy.header, copy.headerFa)?.split("\n") ?? [];
+  const footer = inLanguage(locale, copy.footer, copy.footerFa) ?? t("receipt.thanks");
   const discounted = order.promoDiscount > 0 || order.pointsDiscount > 0 || order.serviceCharge > 0;
   const number = formatNumber(order.orderNumber, locale);
 
@@ -68,11 +69,22 @@ export async function OrderReceiptSlip({ receipt }: { receipt: OrderReceipt }) {
       <style>{RECEIPT_PAGE_CSS}</style>
 
       <header className="flex flex-col items-center gap-0.5 text-center">
-        <p className="text-body-strong text-foreground">{tMeta("siteName")}</p>
-        {address ? <p className={MUTED}>{address}</p> : null}
-        {CAFE_LOCATION.telephone ? (
+        <p className="text-body-strong text-foreground" dir="auto">
+          {cafeName}
+        </p>
+        {headerLines.map((line, index) => (
+          <p key={index} className="[overflow-wrap:anywhere]" dir="auto">
+            {line}
+          </p>
+        ))}
+        {address ? (
+          <p className={cn(MUTED, "[overflow-wrap:anywhere] whitespace-pre-line")} dir="auto">
+            {address}
+          </p>
+        ) : null}
+        {profile.phone ? (
           <p dir="ltr" className={cn(MUTED, "tabular-nums")}>
-            {CAFE_LOCATION.telephone}
+            {profile.phone}
           </p>
         ) : null}
         <p dir="ltr" className={MUTED}>
@@ -208,7 +220,9 @@ export async function OrderReceiptSlip({ receipt }: { receipt: OrderReceipt }) {
           : null}
       </dl>
 
-      <p className={cn(RULE, MUTED, "pt-3 text-center")}>{t("receipt.thanks")}</p>
+      <p className={cn(RULE, MUTED, "pt-3 text-center [overflow-wrap:anywhere] whitespace-pre-line")} dir="auto">
+        {footer}
+      </p>
     </article>
   );
 }

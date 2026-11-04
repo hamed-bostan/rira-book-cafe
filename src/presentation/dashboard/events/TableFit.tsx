@@ -1,11 +1,11 @@
 import { useLocale, useTranslations } from "next-intl";
 
-import { seatsAtTables } from "@/src/domain/entities/CafeTable";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { cn } from "@/src/lib/utils";
 
 type TableFitProps = {
-  tableLabels: readonly string[];
+  /** The seats at the held tables (`seatsAtTables`). */
+  heldSeats: number;
   /** The event's seats; `undefined` when it has no limit. */
   capacity: number | undefined;
   className?: string;
@@ -17,11 +17,11 @@ type TableFitProps = {
  * Shared by the event card and the "Hold tables" picker, so it renders on
  * either side.
  */
-export function TableFit({ tableLabels, capacity, className }: TableFitProps) {
+export function TableFit({ heldSeats, capacity, className }: TableFitProps) {
   const t = useTranslations("dashEvents");
   const locale = useLocale();
 
-  const held = seatsAtTables(tableLabels);
+  const held = heldSeats;
   const short = capacity === undefined ? 0 : capacity - held;
   const values = {
     held: formatNumber(held, locale),

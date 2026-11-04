@@ -1,5 +1,6 @@
 import type { AuditHook } from "./AuditHook";
 import type { CafeEvent, EventRegistration, EventTableOption } from "../entities/CafeEvent";
+import type { FloorTable } from "../entities/CafeTable";
 
 /**
  * An event as the admin form writes it. Derived and stored-only fields are the
@@ -27,8 +28,11 @@ export type IEventRepository = {
    */
   update(id: string, input: NewCafeEvent, audit?: AuditHook<CafeEvent>): Promise<CafeEvent>;
 
-  /** Every floor table for the event, with whether it's held and what else has it then; `null` when no such event. */
-  listTableOptions(eventId: string): Promise<EventTableOption[] | null>;
+  /**
+   * Each of these floor tables for the event, in the order given, with whether it's
+   * held and what else has it then; `null` when no such event.
+   */
+  listTableOptions(eventId: string, tables: readonly FloorTable[]): Promise<EventTableOption[] | null>;
   /**
    * Replace the tables held for the event, atomically: with each table locked,
    * refuse (`ConflictError("TABLE_TAKEN")`) when a guest booking or another event

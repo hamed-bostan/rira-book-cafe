@@ -36,6 +36,8 @@ const ENTITY_TYPE_NEEDS: Record<(typeof ACTIVITY_ENTITY_TYPES)[number], Permissi
   expense: "accounting.view",
   income: "accounting.view",
   payroll: "payroll.manage",
+  // The cafe's address, hours and tables are on the public site and in every picker.
+  settings: "activity.view",
 };
 
 /**

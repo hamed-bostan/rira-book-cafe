@@ -1,4 +1,3 @@
-import { CAFE_TABLE_LABELS } from "@/src/domain/entities/CafeTable";
 import { isWallTime } from "@/src/domain/entities/CafeTime";
 import {
   MAX_PARTY_SIZE,
@@ -9,6 +8,7 @@ import {
 } from "@/src/domain/entities/Reservation";
 import * as z from "@/src/lib/zod";
 
+import { floorTableLabelField } from "./cafe-table-schema";
 import { guestNameField, guestPhoneField } from "./guest-schema";
 
 /**
@@ -42,7 +42,7 @@ export type RequestReservationInput = z.input<typeof requestReservationSchema>;
 export const staffReservationSchema = z.extend(requestReservationSchema, {
   guestPhone: guestPhoneField,
   guestName: guestNameField,
-  tableLabel: z.optional(z.enum(CAFE_TABLE_LABELS, { error: "tableInvalid" })),
+  tableLabel: z.optional(floorTableLabelField),
 });
 
 export type StaffReservationInput = z.input<typeof staffReservationSchema>;
@@ -56,7 +56,7 @@ export type StaffReservationInput = z.input<typeof staffReservationSchema>;
 export const reservationUpdateSchema = z
   .object({
     status: z.optional(z.enum(RESERVATION_STATUSES, { error: "statusInvalid" })),
-    tableLabel: z.optional(z.nullable(z.enum(CAFE_TABLE_LABELS, { error: "tableInvalid" }))),
+    tableLabel: z.optional(z.nullable(floorTableLabelField)),
     undo: z.optional(z.literal(true)),
   })
   .check(
@@ -93,7 +93,7 @@ export const reservationDetailsSchema = z.object({
     z.number().check(z.refine((value) => (RESERVATION_LENGTHS as readonly number[]).includes(value), "lengthInvalid")),
   ),
   note: z.optional(z.string().check(z.trim(), z.maxLength(MAX_RESERVATION_NOTE_LENGTH, "noteTooLong"))),
-  tableLabel: z.optional(z.nullable(z.enum(CAFE_TABLE_LABELS, { error: "tableInvalid" }))),
+  tableLabel: z.optional(z.nullable(floorTableLabelField)),
 });
 
 export type ReservationDetailsInput = z.input<typeof reservationDetailsSchema>;

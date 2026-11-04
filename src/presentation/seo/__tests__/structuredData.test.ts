@@ -8,7 +8,7 @@ import { cafeJsonLd, eventJsonLd, productJsonLd, serializeJsonLd, type CafeIdent
 const CAFE: CafeIdentity = {
   name: "Rira Book Cafe",
   url: "https://rira.example/",
-  location: { addressCountry: "IR", openingHours: [] },
+  location: { addressCountry: "IR", openingHours: [], specialHours: [], sameAs: [] },
 };
 
 function product(overrides: Partial<Product> = {}): Product {
@@ -60,6 +60,8 @@ describe("cafeJsonLd", () => {
     expect(data).not.toHaveProperty("geo");
     expect(data).not.toHaveProperty("openingHoursSpecification");
     expect(data).not.toHaveProperty("telephone");
+    expect(data).not.toHaveProperty("sameAs");
+    expect(data).not.toHaveProperty("specialOpeningHoursSpecification");
   });
 
   it("adds map position and opening hours once they're configured", () => {
@@ -69,6 +71,10 @@ describe("cafeJsonLd", () => {
         latitude: 35.7,
         longitude: 51.4,
         openingHours: [{ days: ["Saturday", "Sunday"], opens: "08:00", closes: "23:00" }],
+        specialHours: [{ date: "2027-03-21" }, { date: "2027-03-22", opens: "12:00", closes: "18:00" }],
+        sameAs: ["https://www.instagram.com/rira.cafe/"],
+        telephone: "+98 21 1234 5678",
+        streetAddress: "12 Vali-e Asr St, Tehran",
       },
       description: "Coffee and books",
       image: "https://rira.example/en/opengraph-image",
@@ -78,6 +84,25 @@ describe("cafeJsonLd", () => {
     expect(data.openingHoursSpecification).toEqual([
       { "@type": "OpeningHoursSpecification", dayOfWeek: ["Saturday", "Sunday"], opens: "08:00", closes: "23:00" },
     ]);
+    expect(data.specialOpeningHoursSpecification).toEqual([
+      {
+        "@type": "OpeningHoursSpecification",
+        validFrom: "2027-03-21",
+        validThrough: "2027-03-21",
+        opens: "00:00",
+        closes: "00:00",
+      },
+      {
+        "@type": "OpeningHoursSpecification",
+        validFrom: "2027-03-22",
+        validThrough: "2027-03-22",
+        opens: "12:00",
+        closes: "18:00",
+      },
+    ]);
+    expect(data.sameAs).toEqual(["https://www.instagram.com/rira.cafe/"]);
+    expect(data.telephone).toBe("+98 21 1234 5678");
+    expect(data.address).toEqual({ "@type": "PostalAddress", streetAddress: "12 Vali-e Asr St, Tehran" });
   });
 });
 

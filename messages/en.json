@@ -212,7 +212,18 @@
     "serviceChargeInvalid": "Enter a service charge from 0 to 25, e.g. 10 or 7.5.",
     "expiryMonthsInvalid": "Enter a whole number of months from 0 to 120.",
     "scopeInvalid": "Choose each item or category once.",
-    "scopeTooMany": "A code can cover at most 100 items, and 100 categories."
+    "scopeTooMany": "A code can cover at most 100 items, and 100 categories.",
+    "tableSeatsInvalid": "Enter how many it seats, from 1 to 40.",
+    "tableLabelTaken": "Another table already has this label.",
+    "instagramInvalid": "Enter an Instagram username, like rira.cafe.",
+    "urlInvalid": "Enter a full web address, starting with https://.",
+    "coordinateInvalid": "Enter degrees with a dot for decimals, like 35.6997.",
+    "coordinatesBoth": "Enter both latitude and longitude, or neither.",
+    "timeInvalid": "Enter a time.",
+    "closesSameAsOpens": "Closing time must be different from opening time.",
+    "exceptionDuplicate": "That day is already listed.",
+    "exceptionsTooMany": "That's more special days than the cafe can list. Remove past ones first.",
+    "receiptLinesTooMany": "Keep the header to 4 lines."
   },
   "apiErrors": {
     "badRequest": "The request couldn't be read. Please try again.",
@@ -352,7 +363,8 @@
     "groupLibrary": "Library",
     "navBookHolds": "Book holds",
     "navIncome": "Income",
-    "navPayroll": "Payroll"
+    "navPayroll": "Payroll",
+    "navSettings": "Settings"
   },
   "dashTeam": {
     "membersHeading": "Team members",
@@ -1063,7 +1075,8 @@
       "bookLoan": "Book loans",
       "income": "Income",
       "payroll": "Payroll",
-      "loyalty": "Loyalty club"
+      "loyalty": "Loyalty club",
+      "settings": "Settings"
     },
     "action": {
       "product": {
@@ -1170,6 +1183,14 @@
         "settingsChanged": "<b>{actor}</b> changed the loyalty club's rules",
         "pointsAdjusted": "<b>{actor}</b> changed the points of {entity}",
         "pointsExpired": "<b>{actor}</b> expired the unused points of {entity}"
+      },
+      "settings": {
+        "profileChanged": "<b>{actor}</b> changed the café’s profile",
+        "hoursChanged": "<b>{actor}</b> changed the opening hours",
+        "receiptChanged": "<b>{actor}</b> changed the receipt",
+        "tableAdded": "<b>{actor}</b> added table {entity}",
+        "tableChanged": "<b>{actor}</b> changed table {entity}",
+        "tableRemoved": "<b>{actor}</b> removed table {entity}"
       }
     },
     "role": {
@@ -1286,7 +1307,30 @@
       "productIds": "Items it covers",
       "categoryIds": "Categories it covers",
       "firstOrderOnly": "First order only",
-      "serviceChargeBps": "Service charge (basis points)"
+      "serviceChargeBps": "Service charge (basis points)",
+      "nameFa": "Persian name",
+      "address": "Address",
+      "addressFa": "Persian address",
+      "instagram": "Instagram",
+      "website": "Website",
+      "latitude": "Latitude",
+      "longitude": "Longitude",
+      "saturday": "Saturday",
+      "sunday": "Sunday",
+      "monday": "Monday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday",
+      "thursday": "Thursday",
+      "friday": "Friday",
+      "specialDays": "Special days",
+      "receiptHeader": "Receipt header",
+      "receiptHeaderFa": "Persian receipt header",
+      "receiptFooter": "Receipt note",
+      "receiptFooterFa": "Persian receipt note",
+      "label": "Label",
+      "seats": "Seats",
+      "area": "Area",
+      "floorOrder": "Place on the floor"
     },
     "filterField": "Field",
     "allFields": "Any field"
@@ -1861,7 +1905,11 @@
         "body": "Find us in the heart of the city. Walk-ins, friends, laptops and dogs always welcome.",
         "imageAlt": "The Rira Book Cafe storefront with its blue awning",
         "directions": "Get directions",
-        "hours": "Opening hours"
+        "hours": "Opening hours",
+        "closed": "Closed",
+        "specialHours": "Special hours",
+        "callAria": "Call the café on {phone}",
+        "instagramAria": "The café on Instagram, @{handle}"
       }
     },
     "menu": {
@@ -1933,7 +1981,9 @@
       "pointsMinimum": "You can spend points once you have {points}.",
       "pointsToEarn": "You'll earn {points} points with this order.",
       "orderPlaced": "Order placed",
-      "serviceCharge": "Service charge ({rate}%)"
+      "serviceCharge": "Service charge ({rate}%)",
+      "closedNow": "We’re closed right now. You can still place your order — we’ll start on it when we open.",
+      "closedNowReopens": "We’re closed right now. You can still place your order — we’ll start on it when we open, {day} at {time}."
     },
     "orders": {
       "heading": "My orders",
@@ -3998,5 +4048,118 @@
     "pickTitle": "Options for {name}",
     "pickAdd": "Add · {price}",
     "pickCancel": "Cancel"
+  },
+  "dashSettings": {
+    "heading": "Settings",
+    "subtitle": "Who and where the café is, when it’s open, its tables and its receipts. Each section saves on its own.",
+    "languageEn": "English",
+    "languageFa": "Persian",
+    "saveError": "Couldn’t save. Please try again.",
+    "weekday": {
+      "Saturday": "Saturday",
+      "Sunday": "Sunday",
+      "Monday": "Monday",
+      "Tuesday": "Tuesday",
+      "Wednesday": "Wednesday",
+      "Thursday": "Thursday",
+      "Friday": "Friday"
+    },
+    "profile": {
+      "heading": "Café profile",
+      "description": "Shown on the home page, in search results and on receipts. Anything left blank is left out.",
+      "name": "Name",
+      "nameHint": "Leave blank to use the site’s name.",
+      "address": "Address",
+      "phone": "Phone",
+      "instagram": "Instagram",
+      "instagramHint": "The username, or the profile’s address.",
+      "website": "Website",
+      "latitude": "Latitude",
+      "longitude": "Longitude",
+      "checkMap": "Check on the map",
+      "save": "Save profile",
+      "saved": "Café profile saved"
+    },
+    "hours": {
+      "heading": "Opening hours",
+      "description": "Shown on the home page and in search results, and the basket tells guests when you’re closed. Bookings and orders are still taken at any hour.",
+      "notSetYet": "Not set yet — the site shows no hours until you save these.",
+      "week": "The week",
+      "closed": "Closed",
+      "closedAllDay": "Closed all day",
+      "closedOn": "Closed on {day}",
+      "opens": "Opens",
+      "closes": "Closes",
+      "opensOn": "Opens on {day}",
+      "closesOn": "Closes on {day}",
+      "pastMidnightHint": "Times are Tehran time. A closing time before the opening time runs past midnight.",
+      "specialDays": "Special days",
+      "specialDaysHint": "Holidays and days with other hours. The site lists the coming ones.",
+      "date": "Date",
+      "thisDay": "this day",
+      "noteEn": "Why (English)",
+      "noteFa": "Why (Persian)",
+      "notePlaceholder": "Nowruz",
+      "addSpecialDay": "Add special day",
+      "removeSpecialDay": "Remove the special day {date}",
+      "save": "Save hours",
+      "saved": "Opening hours saved"
+    },
+    "tables": {
+      "heading": "Tables",
+      "description": "The floor every table picker shows, in this order. Bookings and events name tables by their label.",
+      "summary": "{count, plural, =0 {No tables in use} one {# table in use · {seats} seats} other {{tables} tables in use · {seats} seats}}",
+      "empty": "No tables yet. Add the floor’s tables so bookings can be seated.",
+      "outOfUse": "Out of use",
+      "addButton": "Add table",
+      "addTitle": "Add a table",
+      "addSubtitle": "It goes to the end of the floor; move it into place after.",
+      "editTitle": "Edit table {label}",
+      "editSubtitle": "A new label carries over to the table’s bookings and event holds.",
+      "label": "Label",
+      "labelHint": "What staff call it: 7, Window, Long.",
+      "seats": "Seats",
+      "seatsHint": "1 to {max}.",
+      "area": "Area",
+      "areaHint": "Optional: where it stands, like Terrace.",
+      "inUse": "In use",
+      "inUseHint": "Off: the table leaves the pickers but keeps its bookings.",
+      "add": "Add table",
+      "save": "Save table",
+      "addedToast": "Table {label} added",
+      "savedToast": "Table {label} saved",
+      "saveError": "Couldn’t save the table. Please try again.",
+      "moveUp": "Move {name} up",
+      "moveDown": "Move {name} down",
+      "moveError": "Couldn’t move the table. Please try again.",
+      "actionsAria": "More actions for {name}",
+      "edit": "Edit",
+      "activate": "Put back in use",
+      "deactivate": "Take out of use",
+      "activatedToast": "{name} is back in use",
+      "deactivatedToast": "{name} is out of use",
+      "delete": "Delete",
+      "deleteTitle": "Delete {name}?",
+      "deleteSubtitle": "It goes from the floor for good. Past bookings keep its label.",
+      "deleteConfirm": "Delete table",
+      "deleteInUse": "{name} has an open order, or a booking or event ahead, so it can’t be deleted. Take it out of use instead.",
+      "deactivateInstead": "Take it out of use instead",
+      "deletedToast": "{name} deleted",
+      "deleteError": "Couldn’t delete the table. Please try again."
+    },
+    "receipt": {
+      "heading": "Receipt",
+      "description": "Printed on every receipt, in the reader’s language — or the other one where theirs is blank.",
+      "header": "Header",
+      "headerHint": "Up to {lines} lines under the café’s name: a slogan, a tax number.",
+      "footer": "Closing note",
+      "footerPlaceholder": "Thank you — see you soon!",
+      "save": "Save receipt",
+      "saved": "Receipt saved"
+    },
+    "timeZone": {
+      "heading": "Time zone",
+      "note": "Every time in the app — hours, bookings, orders, the books — is Tehran time. It can’t be changed here."
+    }
   }
 }

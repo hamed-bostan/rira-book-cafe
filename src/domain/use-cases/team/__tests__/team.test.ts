@@ -24,6 +24,9 @@ function repoWith(users: User[]) {
     create: async () => {
       throw new Error("unused");
     },
+    recordFirstSignIn: async () => {
+      throw new Error("unused");
+    },
     update: async () => {
       throw new Error("unused");
     },

@@ -13,13 +13,7 @@ import { NotFoundError } from "../../errors/NotFoundError";
 import { ValidationError } from "../../errors/ValidationError";
 import { reservationChangedNotification } from "../notifications/guestNotifications";
 
-import {
-  staffEarliestStart,
-  validateBookingGuest,
-  validateBookingNote,
-  validateBookingStart,
-  validatePartySize,
-} from "./RequestReservation";
+import { staffEarliestStart, validateBookingNote, validateBookingStart, validatePartySize } from "./RequestReservation";
 
 import type { ICustomerNotifier } from "../../repositories/INotificationRepository";
 import type { IReservationRepository, ReservationEdit } from "../../repositories/IReservationRepository";
@@ -31,8 +25,6 @@ export type ReservationDetailsInput = {
   partySize?: number;
   /** Minutes, one of `RESERVATION_LENGTHS`. */
   durationMinutes?: number;
-  guestName?: string;
-  guestPhone?: string;
   /** Blank clears it. */
   note?: string;
   /** A table from the floor plan; `null` clears it. */
@@ -45,8 +37,6 @@ function detailsOf(reservation: Reservation): ReservationEdit {
     startsAt: reservation.startsAt,
     partySize: reservation.partySize,
     durationMinutes: reservation.durationMinutes,
-    guestName: reservation.guestName,
-    guestPhone: reservation.guestPhone,
     note: reservation.note ?? null,
     tableLabel: reservation.tableLabel ?? null,
   };
@@ -60,10 +50,10 @@ function differs(detail: ReservationDetail, before: ReservationEdit, after: Rese
 
 /**
  * Staff edit a booking: move it to another day or time, change the party, how
- * long it holds the table, the guest's name and phone, the note, or the table.
- * `editableReservationDetails` is the whole rule for what may change in which
- * status (only the length and the table once the party is seated; a guest's own
- * booking keeps its phone). A new time is held to the booking rules — a quarter
+ * long it holds the table, the note, or the table. Not the guest — a booking's
+ * guest is its profile. `editableReservationDetails` is the whole rule for what
+ * may change in which status (only the length and the table once the party is
+ * seated). A new time is held to the booking rules — a quarter
  * hour, not in the past, within the horizon — and the repository re-checks the
  * table at the new time and length under its lock, refusing a clash as a new
  * booking would. A move, or a new party or length, tells the guest.
@@ -90,8 +80,6 @@ export class EditReservation {
       startsAt: Number.isNaN(startsAt.getTime()) ? "" : startsAt.toISOString(),
       partySize: input.partySize ?? current.partySize,
       durationMinutes: input.durationMinutes ?? current.durationMinutes,
-      guestName: input.guestName?.trim() ?? current.guestName,
-      guestPhone: input.guestPhone?.trim() ?? current.guestPhone,
       note: input.note === undefined ? before.note : (validateBookingNote(input.note) ?? null),
       tableLabel: input.tableLabel === undefined ? before.tableLabel : input.tableLabel?.trim() || null,
     };
@@ -101,12 +89,7 @@ export class EditReservation {
 
     const locked = changed.find((detail) => !editable.includes(detail));
     if (locked) {
-      throw new ValidationError(
-        locked,
-        current.status === "seated"
-          ? "Once the party is seated, only the length and the table can change."
-          : "A guest's own booking keeps the phone on their account.",
-      );
+      throw new ValidationError(locked, "Once the party is seated, only the length and the table can change.");
     }
 
     if (changed.includes("startsAt")) validateBookingStart(startsAt, now, staffEarliestStart(now));
@@ -116,9 +99,6 @@ export class EditReservation {
       !(RESERVATION_LENGTHS as readonly number[]).includes(next.durationMinutes)
     ) {
       throw new ValidationError("durationMinutes", "Choose how long the table is held.");
-    }
-    if (changed.includes("guestName") || changed.includes("guestPhone")) {
-      Object.assign(next, validateBookingGuest(next.guestName, next.guestPhone));
     }
     if (changed.includes("tableLabel") && next.tableLabel && !isCafeTable(next.tableLabel)) {
       throw new ValidationError("tableLabel", `There's no table "${next.tableLabel}".`);

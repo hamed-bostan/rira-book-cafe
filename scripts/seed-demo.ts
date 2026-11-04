@@ -35,14 +35,15 @@ import { PayExpense, RecordExpense, SaveSupplier, VoidExpense } from "@/src/doma
 import { ReceiveStock, RecordWaste } from "@/src/domain/use-cases/inventory/InventoryCommands";
 import { AddOrderNote } from "@/src/domain/use-cases/orders/AddOrderNote";
 import { ChangeOrderStatus } from "@/src/domain/use-cases/orders/ChangeOrderStatus";
+import { PlaceCounterOrder } from "@/src/domain/use-cases/orders/PlaceCounterOrder";
 import { PlaceOrder } from "@/src/domain/use-cases/orders/PlaceOrder";
 import { SetOrderPayment } from "@/src/domain/use-cases/orders/SetOrderPayment";
 import { AdjustGuestPoints, CreatePromoCode } from "@/src/domain/use-cases/promotions/PromotionCommands";
 import { ChangeReservation } from "@/src/domain/use-cases/reservations/ChangeReservation";
-import { RequestReservation } from "@/src/domain/use-cases/reservations/RequestReservation";
+import { BookTableForGuest, RequestReservation } from "@/src/domain/use-cases/reservations/RequestReservation";
 import { ModerateReview, SubmitReview } from "@/src/domain/use-cases/reviews/ReviewCommands";
 import { ChangeSuiteBooking } from "@/src/domain/use-cases/suite-bookings/ChangeSuiteBooking";
-import { RequestSuiteBooking } from "@/src/domain/use-cases/suite-bookings/RequestSuiteBooking";
+import { BookSuiteForGuest, RequestSuiteBooking } from "@/src/domain/use-cases/suite-bookings/RequestSuiteBooking";
 import * as c from "@/src/infrastructure/container";
 import { prisma } from "@/src/infrastructure/prisma/client";
 
@@ -112,6 +113,15 @@ const GUEST_ROWS: readonly [string, string][] = [
   ["Omid Taheri", "09121110014"],
 ];
 const GUESTS: Guest[] = GUEST_ROWS.map(([name, phone]) => ({ id: normalizePhone(phone), name, phone }));
+/**
+ * Guests who never sign in: staff find them by the phone they give at the counter,
+ * and their profile is made with the first sale or booking (typed the way staff
+ * type a number, so it's normalized like one).
+ */
+const COUNTER_GUESTS: readonly { name: string; phone: string }[] = [
+  { name: "Darya Amini", phone: "0935 111 0021" },
+  { name: "Sina Farahani", phone: "+98 935 111 0022" },
+];
 /** Regulars order far more often than the rest — the "top guests" list needs a shape. */
 const GUEST_WEIGHTS = GUESTS.map((guest, i) => [guest, i < 4 ? 5 : i < 9 ? 2 : 1] as const);
 
@@ -157,9 +167,12 @@ const receiveStock = new ReceiveStock(c.inventoryRepository);
 const recordWaste = new RecordWaste(c.inventoryRepository);
 const createPromo = new CreatePromoCode(c.promotionRepository);
 const adjustPoints = new AdjustGuestPoints(c.loyaltyRepository, c.userRepository);
+const placeCounterOrder = new PlaceCounterOrder(c.orderRepository, c.productRepository, c.userRepository);
 const requestReservation = new RequestReservation(c.reservationRepository);
 const changeReservation = new ChangeReservation(c.reservationRepository, c.customerNotifier);
+const bookTableForGuest = new BookTableForGuest(c.reservationRepository, c.userRepository);
 const requestSuite = new RequestSuiteBooking(c.suiteBookingRepository);
+const bookSuiteForGuest = new BookSuiteForGuest(c.suiteBookingRepository, c.userRepository);
 const changeSuite = new ChangeSuiteBooking(c.suiteBookingRepository, c.customerNotifier);
 const lendBook = new LendBook(c.bookLoanRepository, c.userRepository, c.customerNotifier);
 const changeLoan = new ChangeBookLoan(c.bookLoanRepository, c.bookWaitlistRepository, c.customerNotifier);
@@ -634,6 +647,59 @@ function planSuite(): void {
   });
 }
 
+// ── Guests at the counter ────────────────────────────────────────────────────
+
+/**
+ * Staff acting for guests: sales rung up at the counter and a table and a stay
+ * booked for them, each on the guest's profile — found by phone, or made with the
+ * first record for a phone that had none (the dashboard shows those guests as not
+ * signed in yet). A regular's counter sale earns them points like their own orders.
+ */
+function planCounterGuests(): void {
+  const [darya, sina] = COUNTER_GUESTS;
+  const sale = (offset: number, time: string, guest: { name?: string; phone: string }, method: PaymentMethod): void =>
+    schedule(at(offset, time), "counter sale", async () => {
+      const lines = basket();
+      const products = await c.productRepository.getByIds(lines.map((line) => line.productId));
+      const total = lines.reduce(
+        (sum, line) => sum + (products.find((p) => p.id === line.productId)?.price ?? 0) * line.quantity,
+        0,
+      );
+      await placeCounterOrder.execute(
+        {
+          items: lines,
+          serviceType: "takeaway",
+          customerPhone: guest.phone,
+          customerName: guest.name,
+          paymentParts: [{ method, amount: total }],
+          complete: true,
+        },
+        STAFF,
+      );
+      tally.orders++;
+    });
+
+  sale(-12, "15:10", darya, "cash");
+  // Found by phone this time: no name needed.
+  sale(-7, "16:40", { phone: "09351110021" }, "card");
+  sale(-5, "11:20", { phone: GUESTS[1].phone }, "card");
+
+  schedule(at(-2, "12:30"), "book table for a guest", () =>
+    bookTableForGuest.execute(
+      { guestPhone: sina.phone, guestName: sina.name, startsAt: at(3, "19:00"), partySize: 3, tableLabel: "6" },
+      STAFF,
+      new Date(),
+    ),
+  );
+  schedule(at(-1, "10:30"), "book suite for a guest", () =>
+    bookSuiteForGuest.execute(
+      { guestPhone: sina.phone, checkIn: day(10), checkOut: day(12), guests: 2 },
+      STAFF,
+      new Date(),
+    ),
+  );
+}
+
 // ── The lending shelf ────────────────────────────────────────────────────────
 
 function planLoans(): void {
@@ -729,16 +795,17 @@ async function prepare(): Promise<ActivityActor> {
   }
 
   clock = at(-DAYS - 1, "09:00").getTime();
+  // The regulars order on the site themselves, so they've signed in.
   for (const guest of GUESTS) {
     await prisma.user.upsert({
       where: { id: guest.id },
-      create: { ...guest, role: "customer" },
+      create: { ...guest, role: "customer", firstSignedInAt: new Date() },
       update: {},
     });
   }
   await prisma.user.upsert({
     where: { id: STAFF.id },
-    create: { id: STAFF.id, phone: STAFF_PHONE, name: STAFF.name, role: "staff" },
+    create: { id: STAFF.id, phone: STAFF_PHONE, name: STAFF.name, role: "staff", firstSignedInAt: new Date() },
     update: {},
   });
   // Drinks and the breakfast dishes are made when ordered, so they keep no count —
@@ -766,6 +833,7 @@ async function main(): Promise<void> {
   planOrders();
   planReservations();
   planSuite();
+  planCounterGuests();
   planLoans();
   planEventSignUps();
 

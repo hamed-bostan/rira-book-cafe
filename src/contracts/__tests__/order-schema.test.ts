@@ -62,8 +62,23 @@ describe("a payment staff record", () => {
     ).toEqual(["methodInvalid"]);
   });
 
+  it("needs the guest's phone on every counter sale, and takes their name only when given", () => {
+    const sale = { items: [{ productId: "p1", quantity: 1 }], serviceType: "takeaway" };
+    expect(messagesAt(counterOrderSchema.safeParse(sale), "customerPhone")).toEqual(["phoneRequired"]);
+    expect(messagesAt(counterOrderSchema.safeParse({ ...sale, customerPhone: " " }), "customerPhone")).toContain(
+      "phoneRequired",
+    );
+    expect(messagesAt(counterOrderSchema.safeParse({ ...sale, customerPhone: "0912" }), "customerPhone")).toEqual([
+      "phoneInvalid",
+    ]);
+    expect(counterOrderSchema.parse({ ...sale, customerPhone: " 0912 345 6789 ", customerName: "  " })).toMatchObject({
+      customerPhone: "0912 345 6789",
+      customerName: undefined,
+    });
+  });
+
   it("is never online on a counter sale", () => {
-    const sale = { items: [{ productId: "p1", quantity: 1 }], serviceType: "takeaway", customerName: "Walk-in" };
+    const sale = { items: [{ productId: "p1", quantity: 1 }], serviceType: "takeaway", customerPhone: "09123456789" };
     expect(counterOrderSchema.safeParse({ ...sale, paymentParts: [{ method: "cash", amount: 1000 }] }).success).toBe(
       true,
     );

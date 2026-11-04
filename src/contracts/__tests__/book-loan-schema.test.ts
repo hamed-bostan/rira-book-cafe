@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { MAX_BORROWER_NAME_LENGTH, MAX_LOAN_NOTE_LENGTH } from "@/src/domain/entities/BookLoan";
+import { MAX_LOAN_NOTE_LENGTH } from "@/src/domain/entities/BookLoan";
+import { MAX_GUEST_PROFILE_NAME_LENGTH } from "@/src/domain/entities/GuestProfile";
 
 import { bookLoanUpdateSchema, lendBookSchema, type LendBookInput } from "../book-loan-schema";
 
@@ -35,7 +36,6 @@ describe("lendBookSchema", () => {
     const fieldErrors = flattened(
       lendBookSchema.safeParse({
         productId: "",
-        borrowerName: " ",
         borrowerPhone: "123",
         dueOn: "next week",
         note: "n".repeat(MAX_LOAN_NOTE_LENGTH + 1),
@@ -43,15 +43,21 @@ describe("lendBookSchema", () => {
     )?.fieldErrors;
     expect(fieldErrors).toEqual({
       productId: ["bookRequired"],
-      borrowerName: ["nameRequired"],
       borrowerPhone: ["phoneInvalid"],
       dueOn: ["dateInvalid"],
       note: ["noteTooLong"],
     });
   });
 
+  it("asks for the phone, and leaves the name to a guest with no profile yet", () => {
+    expect(lendBookSchema.parse({ ...LOAN, borrowerName: undefined }).borrowerName).toBeUndefined();
+    expect(lendBookSchema.parse({ ...LOAN, borrowerName: "  " }).borrowerName).toBeUndefined();
+    const blank = flattened(lendBookSchema.safeParse({ ...LOAN, borrowerPhone: " " }).error)?.fieldErrors;
+    expect(blank?.borrowerPhone?.[0]).toBe("phoneRequired");
+  });
+
   it("caps the borrower's name", () => {
-    const result = lendBookSchema.safeParse({ ...LOAN, borrowerName: "n".repeat(MAX_BORROWER_NAME_LENGTH + 1) });
+    const result = lendBookSchema.safeParse({ ...LOAN, borrowerName: "n".repeat(MAX_GUEST_PROFILE_NAME_LENGTH + 1) });
     expect(flattened(result.error)?.fieldErrors.borrowerName).toEqual(["nameTooLong"]);
   });
 });

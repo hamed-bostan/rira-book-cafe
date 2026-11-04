@@ -56,11 +56,7 @@ export function MessageGuestDialog({ open, onOpenChange, guest, about }: Message
     startTransition(async () => {
       try {
         await guestMessagesApi.create({ phone: guest.phone, text, about: { kind: about.kind, id: about.id } });
-        toast({
-          tone: "success",
-          title: t("sentToast", { name: guest.name }),
-          description: t("sentToastBody", { phone: guest.phone }),
-        });
+        toast({ tone: "success", title: t("sentToast", { name: guest.name }) });
         setText("");
         onOpenChange(false);
         router.refresh();
@@ -75,7 +71,7 @@ export function MessageGuestDialog({ open, onOpenChange, guest, about }: Message
       open={open}
       onOpenChange={changeOpen}
       title={t("title", { name: guest.name })}
-      subtitle={t("subtitle", { about: about.label, phone: guest.phone })}
+      subtitle={t("subtitle", { about: about.label })}
       submitLabel={t("send")}
       blocked={text.trim() === ""}
       pending={pending}

@@ -84,12 +84,11 @@ export const NOTIFICATION_LIST_LIMIT = 50;
 export const LOAN_REMINDER_HOURS = 48;
 
 /**
- * Who a notice to a guest goes to: their account when the record is linked to one,
- * else the phone they gave, normalized. A user's id *is* their normalized phone, so
- * a notice addressed to the number is waiting in their profile from the first time
- * they sign in with it — a guest who booked by phone or at the counter is told
- * like any other. `null` only when there's no number to go by (a walk-in who gave
- * none).
+ * Who a notice to a guest goes to: the profile the record is on — every record
+ * staff make for a guest is on one — else the phone it was made with, normalized.
+ * A user's id *is* their normalized phone, so either way the notice is waiting in
+ * their messages when they sign in with that number. `null` only when there's no
+ * usable number to go by (an old record from before profiles).
  */
 export function guestRecipient(guest: { userId?: string; phone?: string }): string | null {
   if (guest.userId) return guest.userId;

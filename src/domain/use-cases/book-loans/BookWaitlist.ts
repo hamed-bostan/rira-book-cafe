@@ -1,17 +1,17 @@
-import { MAX_BORROWER_NAME_LENGTH } from "../../entities/BookLoan";
 import {
   bookHasLine,
   isOpenWaitlistEntry,
   type BookWaitlistEntry,
   type BookWaitlistStatus,
 } from "../../entities/BookWaitlist";
-import { isPlausiblePhone, normalizePhone } from "../../entities/Phone";
+import { normalizePhone } from "../../entities/Phone";
 import { type User } from "../../entities/User";
 import { ConflictError } from "../../errors/ConflictError";
 import { NotFoundError } from "../../errors/NotFoundError";
-import { ValidationError } from "../../errors/ValidationError";
-import { bookAvailableNotification } from "../notifications/guestNotifications";
+import { ResolveGuestProfile } from "../guest-profiles/ResolveGuestProfile";
+import { bookAvailableNotification, dueHoldReminder } from "../notifications/guestNotifications";
 
+import type { ActivityActor } from "../../entities/ActivityEntry";
 import type { IBookLoanRepository } from "../../repositories/IBookLoanRepository";
 import type { IBookWaitlistRepository } from "../../repositories/IBookWaitlistRepository";
 import type { ICustomerNotifier } from "../../repositories/INotificationRepository";
@@ -37,35 +37,28 @@ async function readLine(
   return { book, onLoan, line };
 }
 
-/**
- * The book a guest wants to queue for, if it can have a line ({@link bookHasLine}):
- * a copy free on the shelf with nobody waiting is a question for the counter, not
- * a hold (`BOOK_ON_SHELF`).
- */
-async function bookWithLine(
-  productId: string,
-  loanRepo: BookLookup,
-  waitlistRepo: Pick<IBookWaitlistRepository, "listOpenForBook">,
-): Promise<{ title: string }> {
-  const { book, onLoan, line } = await readLine(productId, loanRepo, waitlistRepo);
-  if (!bookHasLine(book.copies - onLoan, line.length)) {
-    throw new ConflictError("BOOK_ON_SHELF", "This book is on the shelf — lend it instead.");
-  }
-  return book;
+/** The book's title, for the hold to keep; not found for something that isn't a book. */
+async function bookTitle(productId: string, loanRepo: Pick<IBookLoanRepository, "getBook">): Promise<string> {
+  const book = await loanRepo.getBook(productId);
+  if (!book) throw new NotFoundError("book", productId);
+  return book.title;
 }
 
-/** A guest asks to be told when a book comes back. */
+/**
+ * A signed-in guest asks to be told when a book comes back. The repository takes
+ * them only while the book has a line (`bookHasLine`) and they hold fewer books
+ * than the cap (`canHoldAnother`), deciding under the book's lock.
+ */
 export class JoinBookWaitlist {
   constructor(
-    private readonly waitlistRepo: IBookWaitlistRepository,
-    private readonly loanRepo: BookLookup,
+    private readonly waitlistRepo: Pick<IBookWaitlistRepository, "join">,
+    private readonly loanRepo: Pick<IBookLoanRepository, "getBook">,
   ) {}
 
   async execute(productId: string, guest: Pick<User, "id" | "name" | "phone">): Promise<BookWaitlistEntry> {
-    const book = await bookWithLine(productId, this.loanRepo, this.waitlistRepo);
     return this.waitlistRepo.join({
       productId,
-      bookTitle: book.title,
+      bookTitle: await bookTitle(productId, this.loanRepo),
       userId: guest.id,
       guestName: guest.name,
       // Normalized like a loan's borrower phone, so lending to them matches the entry.
@@ -74,40 +67,79 @@ export class JoinBookWaitlist {
   }
 }
 
+/**
+ * A signed-in guest borrows a book from the site while a copy is free that nobody
+ * holds or waits for. Their hold starts ready to collect — told now, with the
+ * usual days to come for it — and holds that copy, as a told guest's is held:
+ * lending it to anyone else skips them, and if they don't come the jobs pass it on.
+ * Whether a copy is free, and whether they may hold another book, is decided under
+ * the book's lending lock (`IBookWaitlistRepository.borrow`), so two guests can't
+ * take the same copy. They get the "collect it by …" message straight away.
+ */
+export class BorrowBook {
+  constructor(
+    private readonly waitlistRepo: Pick<IBookWaitlistRepository, "borrow">,
+    private readonly loanRepo: Pick<IBookLoanRepository, "getBook">,
+    private readonly notifier?: ICustomerNotifier,
+  ) {}
+
+  async execute(
+    productId: string,
+    guest: Pick<User, "id" | "name" | "phone">,
+    now: Date = new Date(),
+  ): Promise<BookWaitlistEntry> {
+    const entry = await this.waitlistRepo.borrow(
+      {
+        productId,
+        bookTitle: await bookTitle(productId, this.loanRepo),
+        userId: guest.id,
+        guestName: guest.name,
+        // Normalized like a loan's borrower phone, so lending to them matches the hold.
+        guestPhone: normalizePhone(guest.phone),
+      },
+      now,
+    );
+    // Keyed like the jobs' reminder, so they don't send it again.
+    const notification = dueHoldReminder(entry, now);
+    if (notification && this.notifier) await this.notifier.notify(notification);
+    return entry;
+  }
+}
+
 export type AddToBookWaitlistInput = {
   productId: string;
-  guestName: string;
   guestPhone: string;
+  /** Needed only for a phone with no profile yet. */
+  guestName?: string;
 };
 
 /**
- * Staff add a guest who asked at the counter or by phone to a book's line. They
- * needn't have an account — they're told when the book is back by their phone —
- * and when their phone matches one, the hold is linked so the guest sees it too.
+ * Staff add a guest who asked at the counter or by phone to a book's line, on the
+ * profile their phone finds — or on one made with the hold, from their name, when
+ * the phone has none. The repository refuses it as it refuses a guest joining (no
+ * line, already in it, at the cap), and a refused hold leaves no profile behind.
  */
 export class AddToBookWaitlist {
   constructor(
-    private readonly waitlistRepo: IBookWaitlistRepository,
-    private readonly loanRepo: BookLookup,
+    private readonly waitlistRepo: Pick<IBookWaitlistRepository, "join">,
+    private readonly loanRepo: Pick<IBookLoanRepository, "getBook">,
     private readonly userRepo: Pick<IUserRepository, "getById">,
   ) {}
 
-  async execute(input: AddToBookWaitlistInput): Promise<BookWaitlistEntry> {
-    const guestName = input.guestName.trim();
-    if (!guestName) throw new ValidationError("guestName", "Enter the guest's name.");
-    if (guestName.length > MAX_BORROWER_NAME_LENGTH) throw new ValidationError("guestName", "That name is too long.");
-    if (!isPlausiblePhone(input.guestPhone)) throw new ValidationError("guestPhone", "Enter a valid phone number.");
-    const guestPhone = normalizePhone(input.guestPhone);
-
-    const book = await bookWithLine(input.productId, this.loanRepo, this.waitlistRepo);
-    // A user's id is their normalized phone, so this is the account lookup.
-    const account = await this.userRepo.getById(guestPhone);
+  async execute(input: AddToBookWaitlistInput, staff: ActivityActor): Promise<BookWaitlistEntry> {
+    const title = await bookTitle(input.productId, this.loanRepo);
+    const guest = await new ResolveGuestProfile(this.userRepo).execute(
+      { phone: input.guestPhone, name: input.guestName },
+      staff,
+    );
     return this.waitlistRepo.join({
       productId: input.productId,
-      bookTitle: book.title,
-      userId: account?.id,
-      guestName,
-      guestPhone,
+      bookTitle: title,
+      userId: guest.userId,
+      newGuest: guest.newProfile,
+      guestName: guest.name,
+      // Normalized like a loan's borrower phone, so lending to them matches the hold.
+      guestPhone: normalizePhone(guest.phone),
     });
   }
 }
@@ -201,8 +233,8 @@ export class RemoveFromBookWaitlist {
 
 /**
  * A book's line as the guest sees it — copies out and on the shelf, line length,
- * whether it takes them, and their place in it. Not found for something that isn't
- * a book.
+ * whether it takes them or a copy is theirs to borrow, and their place in it. Not
+ * found for something that isn't a book.
  */
 export class GetBookWaitlistStatus {
   constructor(
@@ -211,14 +243,20 @@ export class GetBookWaitlistStatus {
   ) {}
 
   async execute(productId: string, guestId?: string): Promise<BookWaitlistStatus> {
-    const { book, onLoan, line } = await readLine(productId, this.loanRepo, this.waitlistRepo);
+    const [{ book, onLoan, line }, guestHolds] = await Promise.all([
+      readLine(productId, this.loanRepo, this.waitlistRepo),
+      guestId ? this.waitlistRepo.countOpenForUser(guestId) : 0,
+    ]);
     const free = book.copies - onLoan;
     const index = guestId ? line.findIndex((entry) => entry.userId === guestId) : -1;
+    const hasLine = bookHasLine(free, line);
     return {
       onLoan,
       onShelf: Math.max(free, 0),
       queueLength: line.length,
-      canJoin: bookHasLine(free, line.length),
+      canJoin: hasLine,
+      canBorrow: !hasLine,
+      guestHolds,
       entry: index >= 0 ? line[index] : null,
       position: index >= 0 ? index + 1 : null,
     };

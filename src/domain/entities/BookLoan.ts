@@ -17,7 +17,6 @@ export type BookLoanStatus = (typeof BOOK_LOAN_STATUSES)[number];
 export const DEFAULT_LOAN_DAYS = 14;
 /** The longest loan staff can set. */
 export const MAX_LOAN_DAYS = 60;
-export const MAX_BORROWER_NAME_LENGTH = 80;
 export const MAX_LOAN_NOTE_LENGTH = 300;
 
 /** Where a deposit was paid into, and handed back from. */
@@ -47,7 +46,7 @@ export type BookLoan = {
   /** The book's title and author, snapshotted when it was lent. */
   bookTitle: string;
   bookAuthor?: string;
-  /** The guest's account, when their phone matches one — lets them see their loans. */
+  /** The borrower's profile (its id is their normalized phone); absent only on an old loan with no usable phone. */
   userId?: string;
   borrowerName: string;
   borrowerPhone: string;

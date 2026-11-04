@@ -83,6 +83,11 @@ export const storefrontApi = {
     return apiPost(`/products/${productId}/waitlist`, {}, bookWaitlistEntryResponseSchema);
   },
 
+  /** Borrow a copy that's free on the shelf: the hold, ready to collect. 409 `NO_FREE_COPY` / `ALREADY_WAITING` / `ALREADY_ON_LOAN`. */
+  borrowBook(productId: string): Promise<BookWaitlistEntry> {
+    return apiPost(`/products/${productId}/borrow`, {}, bookWaitlistEntryResponseSchema);
+  },
+
   leaveBookWaitlist(entryId: string): Promise<void> {
     return apiDelete(`/book-waitlist/${entryId}`);
   },

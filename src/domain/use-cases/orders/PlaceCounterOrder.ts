@@ -1,6 +1,5 @@
 import { singleChange, type ActivityActor } from "../../entities/ActivityEntry";
 import {
-  MAX_COUNTER_CUSTOMER_LENGTH,
   MAX_ORDER_NOTE_TEXT_LENGTH,
   MAX_TABLE_LABEL_LENGTH,
   orderSubtotal,
@@ -10,6 +9,7 @@ import {
   type ServiceType,
 } from "../../entities/Order";
 import { ValidationError } from "../../errors/ValidationError";
+import { ResolveGuestProfile } from "../guest-profiles/ResolveGuestProfile";
 
 import { ChangeOrderStatus } from "./ChangeOrderStatus";
 import { buildOrderLines, type PlaceOrderInput } from "./PlaceOrder";
@@ -17,15 +17,17 @@ import { SetOrderPayment } from "./SetOrderPayment";
 
 import type { IOrderRepository } from "../../repositories/IOrderRepository";
 import type { IProductRepository } from "../../repositories/IProductRepository";
+import type { IUserRepository } from "../../repositories/IUserRepository";
 
 export type CounterOrderInput = {
   items: PlaceOrderInput["items"];
   serviceType: ServiceType;
   tableLabel?: string;
   note?: string;
-  /** Who it's for: a typed name, or the default for a walk-in. */
-  customerName: string;
-  customerPhone?: string;
+  /** The guest's phone: every sale is a guest's. */
+  customerPhone: string;
+  /** The guest's name, for a phone with no profile yet (see `ResolveGuestProfile`). */
+  customerName?: string;
   /** How the guest paid, when they paid at the counter; omitted leaves the order to pay later. */
   paymentParts?: readonly PaymentPart[];
   /** Handed over on the spot, so it skips the bar's queue. */
@@ -33,12 +35,14 @@ export type CounterOrderInput = {
 };
 
 /**
- * Ring up a sale at the counter: a walk-in who has no account, a phone order, a book
- * picked off the shelf. Prices come from the menu, like a guest's order, and it takes
- * units off the shelf the same way, but it belongs to no account — so it earns no
- * points, and promo codes (which are counted per guest) don't apply. Handed over on
- * the spot, it tells nobody; one left in the queue is told how it goes by the phone
- * it was rung up with, like any order (`orderStatusNotification`).
+ * Ring up a sale at the counter: a walk-in, a phone order, a book picked off the
+ * shelf. Prices come from the menu, like a guest's order, and it takes units off
+ * the shelf the same way. It's rung up for the guest's profile, found by the phone
+ * they give (or made with the sale, from their name, when the phone has none), so
+ * it's in their orders when they sign in and earns them points when it's completed,
+ * as any member's order does. Promo codes and points aren't spent at the counter.
+ * Handed over on the spot, it tells nobody; one left in the queue tells the guest
+ * how it goes, like any order (`orderStatusNotification`).
  *
  * Paying and completing go through the same use-cases staff use on the order, so
  * the money and the sale are audited, stocked and booked exactly the same. They run
@@ -49,14 +53,10 @@ export class PlaceCounterOrder {
   constructor(
     private readonly orderRepo: IOrderRepository,
     private readonly productRepo: Pick<IProductRepository, "getByIds">,
+    private readonly userRepo: Pick<IUserRepository, "getById">,
   ) {}
 
   async execute(input: CounterOrderInput, staff: ActivityActor): Promise<Order> {
-    const customerName = input.customerName.trim();
-    if (!customerName) throw new ValidationError("customerName", "Enter a name for the sale.");
-    if (customerName.length > MAX_COUNTER_CUSTOMER_LENGTH) {
-      throw new ValidationError("customerName", "That name is too long.");
-    }
     const tableLabel = input.tableLabel?.trim() || undefined;
     if (input.serviceType === "dineIn" && !tableLabel) {
       throw new ValidationError("tableLabel", "Choose a table for a dine-in order.");
@@ -66,6 +66,11 @@ export class PlaceCounterOrder {
     }
     const note = input.note?.trim() || undefined;
     if (note && note.length > MAX_ORDER_NOTE_TEXT_LENGTH) throw new ValidationError("note", "That note is too long.");
+    const guest = await new ResolveGuestProfile(this.userRepo).execute(
+      { phone: input.customerPhone, name: input.customerName },
+      staff,
+      { phone: "customerPhone", name: "customerName" },
+    );
 
     const items = await buildOrderLines(this.productRepo, input.items);
     const subtotal = orderSubtotal(items);
@@ -75,8 +80,10 @@ export class PlaceCounterOrder {
 
     const placed = await this.orderRepo.place(
       {
-        customerName,
-        customerPhone: input.customerPhone?.trim() ?? "",
+        userId: guest.userId,
+        newGuest: guest.newProfile,
+        customerName: guest.name,
+        customerPhone: guest.phone,
         serviceType: input.serviceType,
         tableLabel: input.serviceType === "dineIn" ? tableLabel : undefined,
         note,

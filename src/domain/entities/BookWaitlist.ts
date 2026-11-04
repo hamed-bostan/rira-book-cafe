@@ -1,10 +1,11 @@
 import { cafeDayOf, cafeDayRange, cafeDaysBetween, shiftCafeDay } from "./CafeTime";
 
 /**
- * A guest waiting for a book from the shelf that's out on loan. The queue is first
+ * A guest's hold on a book from the shelf. A book that's out has a line, first
  * come, first served: when a copy comes back, the guest at the front is told it's
- * on the shelf and it's held for them; lending it to them closes their place in
- * line, and lending it to anyone else skips them.
+ * on the shelf and it's held for them. A copy on the shelf that nobody holds or
+ * waits for, a guest borrows from the site instead: their hold starts out told.
+ * Lending the book to them closes the hold, and lending it to anyone else skips them.
  */
 
 /**
@@ -24,7 +25,7 @@ export type BookWaitlistEntry = {
   productId: string;
   /** The book's title when they joined. */
   bookTitle: string;
-  /** The guest's account; absent for a hold staff added for a guest at the counter or by phone. */
+  /** The guest's profile (its id is their normalized phone); absent only on an old hold with no usable phone. */
   userId?: string;
   guestName: string;
   guestPhone: string;
@@ -88,9 +89,10 @@ export function isHoldFor(entry: Pick<BookWaitlistEntry, "userId" | "guestPhone"
 
 /**
  * The told guests a loan leaves without a copy, told longest ago first. Each told
- * guest holds one of the `free` copies, so lending one to anyone else takes the
- * copy of the guest told first (more of them, if more were told than copies are
- * free). The borrower's own hold isn't among them: lending to them fulfils it.
+ * guest — one who borrowed from the site too — holds one of the `free` copies, so
+ * lending one to anyone else takes the copy of the guest told first (more of them,
+ * if more were told than copies are free). The borrower's own hold isn't among
+ * them: lending to them fulfils it.
  */
 export function holdsSkippedByLoan<T extends Pick<BookWaitlistEntry, "userId" | "guestPhone">>(
   free: number,
@@ -102,12 +104,35 @@ export function holdsSkippedByLoan<T extends Pick<BookWaitlistEntry, "userId" | 
 }
 
 /**
- * Whether a book's line takes another guest. A copy free on the shelf with nobody
- * in line is a question for the counter, not a hold; a free copy held for someone
- * who was told it's back still has a line, and so does a book with every copy out.
+ * Whether a book's line takes another guest. Each told guest holds one of the free
+ * copies, so a book with every copy out or held has a line, and so does one with
+ * guests already waiting. A copy free beyond the held ones, with nobody waiting, is
+ * for borrowing ({@link canBorrowBook}), not a hold.
  */
-export function bookHasLine(free: number, queueLength: number): boolean {
-  return free <= 0 || queueLength > 0;
+export function bookHasLine(free: number, line: readonly Pick<BookWaitlistEntry, "status">[]): boolean {
+  const told = line.filter((entry) => entry.status === "notified").length;
+  return free - told <= 0 || line.length > told;
+}
+
+/**
+ * Whether a guest can borrow a book from the site: a copy is on the shelf that
+ * nobody holds or waits for — exactly when the book has no line. Borrowing holds
+ * that copy for them, as a told guest's is held.
+ */
+export function canBorrowBook(free: number, line: readonly Pick<BookWaitlistEntry, "status">[]): boolean {
+  return !bookHasLine(free, line);
+}
+
+/**
+ * The most books one guest may hold at once, across the shelf: places in a line
+ * and copies held for them to collect alike. Borrowing, joining a line and staff
+ * adding them to one are refused past it (`HOLD_LIMIT`), so nobody ties up the shelf.
+ */
+export const MAX_OPEN_HOLDS_PER_GUEST = 3;
+
+/** Whether a guest with `open` holds (waiting or ready, any book) may take another. */
+export function canHoldAnother(open: number): boolean {
+  return open < MAX_OPEN_HOLDS_PER_GUEST;
 }
 
 /** A book's line as a guest sees it: how many copies are out, how long the line is, and their place in it. */
@@ -119,6 +144,10 @@ export type BookWaitlistStatus = {
   queueLength: number;
   /** Whether the line takes another guest ({@link bookHasLine}) — joining is refused exactly when it doesn't. */
   canJoin: boolean;
+  /** Whether a copy is free for the guest to borrow ({@link canBorrowBook}) — always the opposite of `canJoin`. */
+  canBorrow: boolean;
+  /** The signed-in guest's open holds across every book (0 when signed out) — at {@link MAX_OPEN_HOLDS_PER_GUEST} they can't take another. */
+  guestHolds: number;
   /** The signed-in guest's open entry, if they're in line. */
   entry: BookWaitlistEntry | null;
   /** 1-based place in line of that entry. */

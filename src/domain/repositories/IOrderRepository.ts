@@ -2,6 +2,7 @@ import type { AuditHook } from "./AuditHook";
 import type { LedgerHook } from "./ILedgerRepository";
 import type { ActivityActor } from "../entities/ActivityEntry";
 import type { AdminOrderFilters, AdminOrderSort, OrderStatusCounts } from "../entities/AdminOrderFilters";
+import type { NewGuestProfile } from "../entities/GuestProfile";
 import type {
   Order,
   OrderItem,
@@ -62,8 +63,13 @@ export type NewOrder = Omit<
   | "items"
   | "pointsEarned"
   | "changedAt"
+  | "userId"
 > & {
+  /** Every order is a guest's: theirs online, or the profile staff rang it up for. */
+  userId: string;
   items: Omit<OrderItem, "id" | "refundedQuantity" | "addedAt">[];
+  /** A sale for a guest whose phone has no profile yet: the profile, made with the order. */
+  newGuest?: NewGuestProfile;
 };
 
 /** A refund as it went through: the document, the order after it, and the cost that came back to stock. */
@@ -80,6 +86,8 @@ export type IOrderRepository = {
    * (`ConflictError("PROMO_USED_UP")`), and redeemed points are taken off the
    * guest's balance under theirs (`ConflictError("NOT_ENOUGH_POINTS")`) — so two
    * orders racing for the last use, or the same points, can't both win.
+   *
+   * With `newGuest`, the guest's profile is made in the same transaction.
    */
   place(input: NewOrder, placedBy: ActivityActor, audit?: AuditHook<Order>): Promise<Order>;
   getById(id: string): Promise<Order | null>;

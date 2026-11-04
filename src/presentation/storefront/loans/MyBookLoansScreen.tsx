@@ -104,7 +104,7 @@ export async function MyBookLoansScreen({ loans, waitlist, now }: MyBookLoansScr
                 <Badge variant={entry.status === "notified" ? "success" : "info"}>
                   {entry.status === "notified" ? t("waitlist.yourTurn") : t("waitlist.waiting")}
                 </Badge>
-                <LeaveWaitlistButton entryId={entry.id} />
+                <LeaveWaitlistButton entryId={entry.id} ready={entry.status === "notified"} />
               </li>
             ))}
           </ul>

@@ -1,18 +1,37 @@
 import type { AuditHook } from "./AuditHook";
 import type { BookWaitlistEntry } from "../entities/BookWaitlist";
+import type { NewGuestProfile } from "../entities/GuestProfile";
 
-/** A guest joining the line. Status and timestamps are the repository's. */
-export type NewWaitlistEntry = Pick<
-  BookWaitlistEntry,
-  "productId" | "bookTitle" | "userId" | "guestName" | "guestPhone"
->;
+/**
+ * A guest taking a hold, on their profile. Status and timestamps are the
+ * repository's. With `newGuest`, the profile is made in the hold's own
+ * transaction, so a refused hold leaves none behind.
+ */
+export type NewWaitlistEntry = Pick<BookWaitlistEntry, "productId" | "bookTitle" | "guestName" | "guestPhone"> & {
+  userId: string;
+  newGuest?: NewGuestProfile;
+};
 
 export type IBookWaitlistRepository = {
   /**
-   * Put the guest in line. A guest already in line for the book — by account or
-   * by phone — is refused (`ConflictError("ALREADY_WAITING")`), enforced by unique indexes.
+   * Put the guest in the book's line, `waiting`. Decided under the guest's and the
+   * book's locks against the shelf as it is, refusing:
+   * - `ALREADY_ON_LOAN` for a guest who has the book out, by phone or by profile;
+   * - `ALREADY_WAITING` for one already in its line (unique indexes back this up);
+   * - `HOLD_LIMIT` for one already holding as many books as one may (`canHoldAnother`);
+   * - `BOOK_ON_SHELF` when the book has no line to join (`bookHasLine`) — a copy is
+   *   free that nobody holds or waits for: it's borrowed or lent instead.
    */
   join(input: NewWaitlistEntry): Promise<BookWaitlistEntry>;
+  /**
+   * A guest borrows a copy from the site: their hold starts told — `notified` at
+   * `at`, to collect by `holdPickupDeadline(at)` — and holds that copy. Decided as
+   * {@link join} is, refusing the same way except that the book must have a copy
+   * free that nobody holds or waits for (`canBorrowBook`), else `NO_FREE_COPY`.
+   */
+  borrow(input: NewWaitlistEntry, at: Date): Promise<BookWaitlistEntry>;
+  /** How many open holds (waiting or ready, any book) the guest has. */
+  countOpenForUser(userId: string): Promise<number>;
   getById(id: string): Promise<BookWaitlistEntry | null>;
   /** One guest's entries, newest first. */
   listForUser(userId: string): Promise<BookWaitlistEntry[]>;

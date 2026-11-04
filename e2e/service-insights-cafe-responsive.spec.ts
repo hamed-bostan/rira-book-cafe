@@ -127,6 +127,35 @@ function dialogFrom(button: RegExp, fill?: (dialog: Locator) => Promise<void>): 
   };
 }
 
+/**
+ * New sale at its fullest: both items (one many times), dine-in at the longest
+ * table, a note and a split — for the guest `phone` finds. A number nobody has
+ * makes the guest field ask for a new guest's name, which gets the longest one.
+ */
+function newSale(phone: string): (page: Page) => Promise<void> {
+  return async (page) => {
+    const main = page.getByRole("main");
+    await main.getByRole("button", { name: new RegExp(`^(Add|افزودن) (${BIG.en}|${BIG.fa})`) }).click();
+    for (let i = 0; i < 3; i++) {
+      await main.getByRole("button", { name: new RegExp(`^(Add|افزودن) (${SMALL.en}|${SMALL.fa})`) }).click();
+    }
+    await main.getByRole("button", { name: /^(Dine-in|سرو در کافه)$/ }).click();
+    await main.getByRole("button", { name: /^(Split|تقسیم)$/ }).click();
+    await main.getByLabel(/^(Guest's phone|تلفن مهمان)$/).fill(phone);
+    const lookup = main.getByRole("status").filter({ hasText: /(New guest|مهمان جدید|has a profile|حساب دارد)/ });
+    await expect(lookup).toBeVisible();
+    const fields = main.getByRole("textbox");
+    // Search, the phone, then the new guest's name when it's asked for.
+    let next = 2;
+    if (await main.getByLabel(/^(Guest's name|نام مهمان)$/).isVisible()) {
+      await fields.nth(next++).fill(NAME);
+    }
+    await fields.nth(next++).fill(TABLE);
+    await fields.nth(next++).fill(NOTE);
+    await fields.nth(next).fill("1328066667");
+  };
+}
+
 function menuItemFrom(actions: RegExp, item: RegExp): (page: Page) => Promise<void> {
   return async (page) => {
     await page.getByRole("button", { name: actions }).first().click();
@@ -226,24 +255,13 @@ const PAGES: Record<string, MeasuredPage> = {
   // Paid in three parts and part refunded: the receipt at its longest.
   receipt: { path: (s) => `/dashboard/orders/${s.fullOrderId}/receipt`, table: true },
   "pending order's receipt": { path: (s) => `/dashboard/orders/${s.pendingOrderId}/receipt` },
-  "new sale": {
+  // For a guest the cafe hasn't met: the guest field asks for their name, as long as it may be.
+  "new sale": { path: () => "/dashboard/orders/new", form: true, prepare: newSale("0935 700 0002") },
+  // For the guest of a seeded sale: the longest name said back, "has a profile · hasn't signed in yet".
+  "new sale for a guest with a profile": {
     path: () => "/dashboard/orders/new",
     form: true,
-    prepare: async (page) => {
-      const main = page.getByRole("main");
-      await main.getByRole("button", { name: new RegExp(`^(Add|افزودن) (${BIG.en}|${BIG.fa})`) }).click();
-      for (let i = 0; i < 3; i++) {
-        await main.getByRole("button", { name: new RegExp(`^(Add|افزودن) (${SMALL.en}|${SMALL.fa})`) }).click();
-      }
-      await main.getByRole("button", { name: /^(Dine-in|سرو در کافه)$/ }).click();
-      await main.getByRole("button", { name: /^(Split|تقسیم)$/ }).click();
-      const fields = main.getByRole("textbox");
-      await fields.nth(1).fill(NAME);
-      await fields.nth(2).fill("0912 345 6789");
-      await fields.nth(3).fill(TABLE);
-      await fields.nth(4).fill(NOTE);
-      await fields.nth(5).fill("1328066667");
-    },
+    prepare: newSale("0912 556 0101"),
   },
   "bar display": { path: () => "/dashboard/kitchen" },
 
@@ -416,16 +434,18 @@ async function seedAll(api: APIRequestContext, owner: APIRequestContext): Promis
   );
 
   // The queue: one waiting for the bar, one being made, one handed over unpaid,
-  // one cancelled — and one handed over, paid in parts, then part refunded.
-  const pending = await counterSale(api, products, "0912 555 0101", true);
-  const making = await counterSale(api, products, "0912 555 0102", false);
+  // one cancelled — and one handed over, paid in parts, then part refunded. Each
+  // for a phone no other spec uses, so its guest's profile gets the longest name.
+  const pending = await counterSale(api, products, "0912 556 0101", true);
+  const making = await counterSale(api, products, "0912 556 0102", false);
   await moveTo(api, making.id, ["preparing"]);
-  const unpaid = await counterSale(api, products, "0912 555 0103", true);
+  const unpaid = await counterSale(api, products, "0912 556 0103", true);
   await moveTo(api, unpaid.id, ["preparing", "completed"]);
-  const cancelled = await counterSale(api, products, "0912 555 0104", false);
+  const cancelled = await counterSale(api, products, "0912 556 0104", false);
   await moveTo(api, cancelled.id, ["cancelled"]);
 
-  const full = await counterSale(api, products, "+44 7700 900123", true);
+  // Not the number given team access below: that's the same profile, which would take this name.
+  const full = await counterSale(api, products, "+44 7700 900456", true);
   await moveTo(api, full.id, ["preparing", "completed"]);
   const third = Math.floor(full.total / 3);
   await jsonOf(

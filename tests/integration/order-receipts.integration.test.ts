@@ -114,7 +114,7 @@ describe("the guest's receipt", () => {
     expect((await ownReceipt(order.id)).status).toBe(401);
   });
 
-  it("covers a sale rung up at the counter for their phone", async () => {
+  it("covers a sale rung up at the counter for their profile, by its phone", async () => {
     signInAs("staff");
     const sale = await readJson<Order>(
       await ringUpSale(

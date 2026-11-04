@@ -146,7 +146,7 @@ test.describe("the guest", () => {
   test("sees on their loans page the day to collect their book by, and is told in their inbox", async ({ page }) => {
     await page.goto("/loans");
     const item = page.locator("li").filter({ has: page.getByRole("link", { name: TITLE }) });
-    await expect(item).toContainText("It's back — ask at the counter");
+    await expect(item).toContainText("It's ready — collect it at the counter");
     const deadline = shiftCafeDay(cafeDayOf(new Date()), 3);
     const noon = new Date(cafeDayRange(deadline).from.getTime() + 12 * 60 * 60 * 1000);
     const monthDay = new Intl.DateTimeFormat("en-US", {

@@ -55,6 +55,12 @@ export type ConflictCode =
   | "BOOK_ON_SHELF"
   // Every copy of the book is out — the guest joins its line instead.
   | "ALL_COPIES_OUT"
+  // A guest borrowing from the site: every copy is out or held, or guests wait for one.
+  | "NO_FREE_COPY"
+  // "Lend now" for a hold that's no longer the guest's to collect.
+  | "HOLD_NOT_READY"
+  // A guest already holding as many books as one may (MAX_OPEN_HOLDS_PER_GUEST).
+  | "HOLD_LIMIT"
   // A book still out on loan or with guests in line can't be deleted.
   | "BOOK_IN_USE"
   // A book's copies to lend can't go below the copies of it out on loan.

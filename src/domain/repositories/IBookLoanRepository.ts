@@ -2,13 +2,19 @@ import type { AuditHook } from "./AuditHook";
 import type { LedgerHook } from "./ILedgerRepository";
 import type { BookLoan, BookLoanStatus } from "../entities/BookLoan";
 import type { BookWaitlistEntry } from "../entities/BookWaitlist";
+import type { NewGuestProfile } from "../entities/GuestProfile";
 import type { Page, PageRequest } from "../entities/Pagination";
 
 /** A loan about to be recorded. Id, reference, status, return time and timestamps are the repository's. */
 export type NewBookLoan = Omit<
   BookLoan,
-  "id" | "reference" | "status" | "depositState" | "returnedAt" | "createdAt" | "updatedAt"
->;
+  "id" | "reference" | "status" | "depositState" | "returnedAt" | "createdAt" | "updatedAt" | "userId"
+> & {
+  /** The borrower's profile. */
+  userId: string;
+  /** A profile to make for the borrower in the loan's own transaction, so a refused loan leaves none. */
+  newGuest?: NewGuestProfile;
+};
 
 /** A book on the shelf staff can lend — the loan form's picker. */
 export type LendableBook = {

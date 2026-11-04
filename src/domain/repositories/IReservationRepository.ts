@@ -1,13 +1,18 @@
 import type { AuditHook } from "./AuditHook";
 import type { ActivityActor } from "../entities/ActivityEntry";
+import type { NewGuestProfile } from "../entities/GuestProfile";
 import type { Reservation, ReservationStatus } from "../entities/Reservation";
 
 /**
- * A booking about to be made. Id, reference, status and timestamps are the
- * repository's. With a `tableLabel` (staff booking a phone or walk-in guest at a
- * table) it's made `confirmed`; without, it's a `requested` booking.
+ * A booking about to be made, always for a guest's profile. Id, reference, status
+ * and timestamps are the repository's. With a `tableLabel` (staff booking a guest
+ * at a table) it's made `confirmed`; without, it's a `requested` booking.
  */
-export type NewReservation = Omit<Reservation, "id" | "reference" | "status" | "createdAt" | "updatedAt">;
+export type NewReservation = Omit<Reservation, "id" | "reference" | "status" | "createdAt" | "updatedAt" | "userId"> & {
+  userId: string;
+  /** Staff booking for a guest whose phone has no profile yet: the profile, made with the booking. */
+  newGuest?: NewGuestProfile;
+};
 
 /** What a staff change sets: the new status, and optionally the table (`null` clears it). */
 export type ReservationChange = {
@@ -17,12 +22,10 @@ export type ReservationChange = {
 
 /**
  * A booking's details as staff edit them — the whole set, as they're to be after
- * the save (`note` and `tableLabel` `null` when there are none).
+ * the save (`note` and `tableLabel` `null` when there are none). The guest isn't
+ * among them: a booking's guest is its profile.
  */
-export type ReservationEdit = Pick<
-  Reservation,
-  "startsAt" | "partySize" | "durationMinutes" | "guestName" | "guestPhone"
-> & {
+export type ReservationEdit = Pick<Reservation, "startsAt" | "partySize" | "durationMinutes"> & {
   note: string | null;
   tableLabel: string | null;
 };
@@ -31,6 +34,7 @@ export type IReservationRepository = {
   /**
    * Record a booking. One made with a table refuses a table another booking or an
    * event holds then (`TABLE_TAKEN` / `TABLE_HELD`), under the same lock as `applyChange`.
+   * With `newGuest`, the guest's profile is made in the same transaction.
    */
   create(input: NewReservation, audit?: AuditHook<Reservation>): Promise<Reservation>;
   getById(id: string): Promise<Reservation | null>;

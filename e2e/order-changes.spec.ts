@@ -151,6 +151,9 @@ test.describe("receipts", () => {
     test("links a sale just rung up to its receipt", async ({ page }) => {
       await page.goto("/dashboard/orders/new");
       await page.getByRole("button", { name: "Add Espresso", exact: true }).click();
+      await page.getByLabel("Guest's phone").fill(`0938${String(Date.now()).slice(-7)}`);
+      await expect(page.getByRole("status").filter({ hasText: "New guest" })).toBeVisible();
+      await page.getByLabel("Guest's name").fill("E2E Receipt Guest");
       await page.getByRole("button", { name: "Record sale" }).click();
 
       const done = page.getByRole("status").filter({ hasText: /^Sale #\d+ is in\./ });

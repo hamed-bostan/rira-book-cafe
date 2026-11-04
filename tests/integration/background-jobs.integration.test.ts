@@ -147,11 +147,12 @@ describe("the reminder jobs", () => {
     });
   });
 
-  it("remind a borrower without an account that a book's due tomorrow, then that it's overdue", async () => {
+  it("remind a borrower who hasn't signed in yet that a book's due tomorrow, then that it's overdue", async () => {
     signInAs("admin");
     const dueOn = shiftCafeDay(cafeDayOf(new Date()), 3);
     const loan = await readJson<BookLoan>(await lendTo("0935 111 2233", dueOn));
-    expect(loan.userId).toBeUndefined();
+    // On the profile made with the loan, though they've never signed in.
+    expect(loan.userId).toBe(PHONE_ONLY);
 
     // Lending already told them, by their phone, that the book went home with them.
     expect(await kindsFor(PHONE_ONLY)).toEqual(["loanStarted"]);

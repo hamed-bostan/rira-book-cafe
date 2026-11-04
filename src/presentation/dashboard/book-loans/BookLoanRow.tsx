@@ -24,7 +24,7 @@ type BookLoanRowProps = {
   /** Guests in line for this book (waiting or told it's back). */
   waiting: number;
   /** The guest at the front of this book's line, told when the copy comes back. */
-  firstInLine: Pick<BookWaitlistEntry, "guestName" | "guestPhone" | "userId"> | undefined;
+  firstInLine: Pick<BookWaitlistEntry, "guestName"> | undefined;
   canManage: boolean;
 };
 

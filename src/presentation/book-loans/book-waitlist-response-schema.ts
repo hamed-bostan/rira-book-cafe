@@ -25,6 +25,8 @@ export const bookWaitlistStatusResponseSchema = z.object({
   onShelf: z.number(),
   queueLength: z.number(),
   canJoin: z.boolean(),
+  canBorrow: z.boolean(),
+  guestHolds: z.number(),
   entry: z.nullable(bookWaitlistEntryResponseSchema),
   position: z.nullable(z.number()),
 }) satisfies z.ZodMiniType<BookWaitlistStatus>;

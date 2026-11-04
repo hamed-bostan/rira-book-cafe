@@ -48,8 +48,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 }
 
 /**
- * POST /api/admin/book-loans — record a book handed to a guest. Requires
- * `loans.manage`. 201 with the loan; 409 `ALREADY_ON_LOAN` when that borrower
+ * POST /api/admin/book-loans — record a book handed to a guest, on the profile
+ * `borrowerPhone` finds — or a new one, made with the loan from `borrowerName`.
+ * Requires `loans.manage`. 201 with the loan; 400 `guestNameNeeded` for a new phone
+ * with no name; 409 `ALREADY_ON_LOAN` when that borrower
  * already has the book, `ALL_COPIES_OUT` when no copy is on the shelf. The
  * borrower's place in the book's line is fulfilled; a copy held for a guest who was
  * told it's back, lent to someone else, skips that guest.

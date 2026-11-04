@@ -33,7 +33,7 @@ const nextWeek = shiftCafeDay(cafeDayOf(new Date()), 7);
 const BLIND_OWL = "seed-book-blind-owl";
 const BOOK_CLUB = "seed-event-book-club";
 
-/** Staff book a table for a guest who rang: no account behind it. */
+/** Staff book a table for a guest who rang, on the profile their phone finds or makes. */
 async function phoneBooking(phone: string, at = "18:30"): Promise<Reservation> {
   signInAs("staff");
   const response = await bookTable(
@@ -77,17 +77,20 @@ function message(body: unknown): Promise<Response> {
   return sendMessage(jsonRequest("POST", "/api/admin/guest-messages", body));
 }
 
-describe("notices reach every guest, account or not", () => {
-  it("keeps a phone booking's notice for the guest, who finds it unread when they first sign in", async () => {
+describe("notices reach every guest, signed in or not", () => {
+  it("keeps a phone booking's notice in the profile made for it, unread until the guest first signs in", async () => {
     const booking = await phoneBooking("0930 118 4462");
-    expect(booking).not.toHaveProperty("userId");
+    expect(booking.userId).toBe("09301184462");
     const confirmed = await changeReservation(
       jsonRequest("PATCH", `/api/admin/reservations/${booking.id}`, { status: "confirmed", tableLabel: "3" }),
       routeParams({ id: booking.id }),
     );
     expect(confirmed.status).toBe(200);
-    // No account has that phone yet: the notice waits under the number itself.
-    expect(await prisma.user.findUnique({ where: { id: "09301184462" } })).toBeNull();
+    // The profile was made with the booking; nobody has signed in to it yet.
+    expect(await prisma.user.findUnique({ where: { id: "09301184462" } })).toMatchObject({
+      name: "Sara Ahmadi",
+      firstSignedInAt: null,
+    });
 
     const userId = await firstSignIn("+98 930 118 4462");
 
@@ -98,6 +101,7 @@ describe("notices reach every guest, account or not", () => {
       expect.objectContaining({
         userId: "09301184462",
         kind: "reservationConfirmed",
+        link: "/reservations",
         params: expect.objectContaining({ reference: booking.reference, tableLabel: "3" }),
       }),
     ]);
@@ -126,7 +130,8 @@ describe("notices reach every guest, account or not", () => {
         }),
       ),
     );
-    expect(hold).not.toHaveProperty("userId");
+    // On the profile made with the hold: the guest hasn't signed in yet.
+    expect(hold.userId).toBe("09351112233");
 
     await changeLoan(
       jsonRequest("PATCH", `/api/admin/book-loans/${loan.id}`, { status: "returned" }),
@@ -141,14 +146,14 @@ describe("notices reach every guest, account or not", () => {
     expect(await prisma.notification.count({ where: { userId: "09121110005", kind: "loanStarted" } })).toBe(1);
   });
 
-  it("tells a counter sale's guest how their order goes, by the phone it was rung up with", async () => {
+  it("tells a counter sale's guest how their order goes, on the profile it was rung up for", async () => {
     signInAs("staff");
     const sale = await readJson<Order>(
       await ringUpSale(
         jsonRequest("POST", "/api/admin/orders", {
           items: [{ productId: "seed-espresso", quantity: 1 }],
           serviceType: "takeaway",
-          customerName: "Walk-in guest",
+          customerName: "Nima Rad",
           customerPhone: "0912 555 0101",
         }),
       ),
@@ -160,7 +165,7 @@ describe("notices reach every guest, account or not", () => {
     expect(moved.status).toBe(200);
 
     const notices = await prisma.notification.findMany({ where: { userId: "09125550101" } });
-    expect(notices).toEqual([expect.objectContaining({ kind: "orderAccepted", link: null })]);
+    expect(notices).toEqual([expect.objectContaining({ kind: "orderAccepted", link: `/orders/${sale.id}` })]);
   });
 });
 
@@ -238,7 +243,7 @@ describe("staff messages", () => {
 
     expect(sent.status).toBe(201);
     const stored = await prisma.notification.findFirstOrThrow({ where: { kind: "staffMessage" } });
-    expect(stored).toMatchObject({ userId: "09301184462", link: null });
+    expect(stored).toMatchObject({ userId: "09301184462", link: "/reservations" });
     expect(stored.params).toEqual({ about: "reservation", reference: booking.reference, text });
 
     const entries = await prisma.activityEntry.findMany({ where: { action: "reservation.guestMessaged" } });

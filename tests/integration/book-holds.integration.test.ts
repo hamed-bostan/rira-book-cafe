@@ -62,7 +62,7 @@ describe("book copies and holds", () => {
     expect((await readError(second)).code).toBe("ALL_COPIES_OUT");
   });
 
-  it("only holds a book that's out, once per phone, for guests without an account", async () => {
+  it("only holds a book that's out, once per guest, on a profile made with the hold", async () => {
     signInAs("admin");
     const onShelf = await hold(SAVUSHUN, "Ali", "09121110004");
     expect(onShelf.status).toBe(409);
@@ -73,7 +73,7 @@ describe("book copies and holds", () => {
     expect(added.status).toBe(201);
     const entry = await readJson<BookWaitlistEntry>(added);
     expect(entry).toMatchObject({ status: "waiting", guestPhone: "09351112233" });
-    expect(entry).not.toHaveProperty("userId");
+    expect(entry.userId).toBe("09351112233");
 
     const again = await hold(BLIND_OWL, "Sara", "09351112233");
     expect(again.status).toBe(409);
@@ -202,7 +202,7 @@ describe("book copies and holds", () => {
       readJson<BookWaitlistStatus>(
         await lineStatus(getRequest(`/api/products/${BLIND_OWL}/waitlist`), routeParams({ id: BLIND_OWL })),
       );
-    expect(await status()).toMatchObject({ onLoan: 1, onShelf: 1, queueLength: 0, canJoin: false });
+    expect(await status()).toMatchObject({ onLoan: 1, onShelf: 1, queueLength: 0, canJoin: false, canBorrow: true });
     const refused = await join();
     expect(refused.status).toBe(409);
     expect((await readError(refused)).code).toBe("BOOK_ON_SHELF");
@@ -210,7 +210,7 @@ describe("book copies and holds", () => {
     signInAs("admin");
     await lendTo(BLIND_OWL, "Parisa", "09121110007");
     signInAs("customer");
-    expect(await status()).toMatchObject({ onLoan: 2, onShelf: 0, canJoin: true });
+    expect(await status()).toMatchObject({ onLoan: 2, onShelf: 0, canJoin: true, canBorrow: false });
     expect((await join()).status).toBe(201);
   });
 

@@ -89,6 +89,7 @@ function waitlist(current: BookWaitlistEntry | null, cancelled: BookWaitlistEntr
     listForUser: vi.fn(async () => [entry()]),
     listOpen: vi.fn(async () => [entry(), entry({ id: "w2", productId: "b2" })]),
     notifyNext: vi.fn(async () => null),
+    countOpenForUser: vi.fn(async () => 2),
   } as unknown as IBookWaitlistRepository;
   return { repo, cancel };
 }
@@ -98,7 +99,7 @@ describe("JoinBookWaitlist", () => {
     const join = vi.fn();
     const loans = { getBook: vi.fn(async () => null), countOpenForBook: vi.fn(async () => 1) };
     await expect(
-      new JoinBookWaitlist({ join } as unknown as IBookWaitlistRepository, loans).execute("x", {
+      new JoinBookWaitlist({ join }, loans).execute("x", {
         id: "g1",
         name: "S",
         phone: "0912",
@@ -196,27 +197,43 @@ describe("GetBookWaitlistStatus", () => {
 
   it("gives the guest their place in line", async () => {
     const status = await new GetBookWaitlistStatus(waitlist(null).repo, loans).execute("b1", "g1");
-    expect(status).toMatchObject({ onLoan: 2, onShelf: 0, queueLength: 2, canJoin: true, position: 2 });
+    expect(status).toMatchObject({ onLoan: 2, onShelf: 0, queueLength: 2, canJoin: true, position: 2, guestHolds: 2 });
     expect(status.entry?.id).toBe("w1");
   });
 
-  it("takes guests exactly when joining would: not with a copy free and nobody waiting", async () => {
+  it("takes guests exactly when joining would, and offers the copy to borrow exactly when it doesn't", async () => {
     const empty = { listOpenForBook: vi.fn(async () => []) } as unknown as IBookWaitlistRepository;
     expect(await new GetBookWaitlistStatus(empty, shelf(2, 1)).execute("b1")).toMatchObject({
       onLoan: 1,
       onShelf: 1,
       canJoin: false,
+      canBorrow: true,
     });
-    expect(await new GetBookWaitlistStatus(empty, shelf(1, 1)).execute("b1")).toMatchObject({ canJoin: true });
+    expect(await new GetBookWaitlistStatus(empty, shelf(1, 1)).execute("b1")).toMatchObject({
+      canJoin: true,
+      canBorrow: false,
+    });
     // Every copy lost: none out, none to lend — the line still waits for one to turn up.
     expect(await new GetBookWaitlistStatus(empty, shelf(0, 0)).execute("b1")).toMatchObject({
       onShelf: 0,
       canJoin: true,
+      canBorrow: false,
     });
     // A free copy held for the guest who was told: others queue behind them.
     expect(await new GetBookWaitlistStatus(waitlist(null).repo, shelf(2, 1)).execute("b1")).toMatchObject({
       onShelf: 1,
       canJoin: true,
+      canBorrow: false,
+    });
+    // A copy held for a guest who borrowed it, and one more on the shelf: that one's to borrow.
+    const borrowed = {
+      listOpenForBook: vi.fn(async () => [entry({ status: "notified" })]),
+    } as unknown as IBookWaitlistRepository;
+    expect(await new GetBookWaitlistStatus(borrowed, shelf(2, 0)).execute("b1")).toMatchObject({
+      onShelf: 2,
+      queueLength: 1,
+      canJoin: false,
+      canBorrow: true,
     });
   });
 
@@ -232,7 +249,11 @@ describe("GetBookWaitlistStatus", () => {
       position: null,
       queueLength: 2,
     });
-    expect(await new GetBookWaitlistStatus(repo, loans).execute("b1")).toMatchObject({ entry: null, position: null });
+    expect(await new GetBookWaitlistStatus(repo, loans).execute("b1")).toMatchObject({
+      entry: null,
+      position: null,
+      guestHolds: 0,
+    });
   });
 });
 

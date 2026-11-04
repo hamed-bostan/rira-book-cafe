@@ -19,18 +19,24 @@ model User {
   // id is the user's normalized phone digits — the stable identifier carried on
   // the Auth.js session (and matched against ADMIN_USER_IDS), so it is supplied
   // at creation rather than database-generated.
-  id        String   @id
-  phone     String
-  name      String
-  email     String?
-  avatarUrl String?  @map("avatar_url")
+  id              String    @id
+  phone           String
+  name            String
+  email           String?
+  avatarUrl       String?   @map("avatar_url")
   // Access level: "customer" (default), "support", "staff", "admin", or "owner" —
   // stored as a plain string matching the domain union (enum-free style). This is
   // the source of truth for dashboard access; ADMIN_USER_IDS remains only as a
   // break-glass allowlist so an owner can always get back in.
-  role      String   @default("customer")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  role            String    @default("customer")
+  // A guest profile staff made from the phone a guest gave them: who made it. Null
+  // for one made by signing in, and for one an old record's backfill made.
+  createdById     String?   @map("created_by_id")
+  // When the phone first signed in; null for a profile made for a guest who
+  // hasn't signed in yet.
+  firstSignedInAt DateTime? @map("first_signed_in_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
 
   @@index([role])
   @@map("users")
@@ -161,7 +167,8 @@ model Order {
   id              String             @id @default(uuid())
   // Short sequential number staff call out.
   orderNumber     Int                @unique @default(autoincrement()) @map("order_number")
-  // The guest's account; null for a sale staff rang up at the counter.
+  // The guest's profile (a user id is a normalized phone). Null only on an old
+  // counter sale that had no usable phone — every sale since has a profile.
   userId          String?            @map("user_id")
   customerName    String             @map("customer_name")
   customerPhone   String             @map("customer_phone")
@@ -347,7 +354,8 @@ model OrderNote {
 model Reservation {
   id              String   @id @default(uuid())
   reference       Int      @unique @default(autoincrement())
-  // The guest's account; null for a phone or walk-in booking staff made for them.
+  // The guest's profile: staff booking for a guest find or make it by phone.
+  // Null only on an old booking that had no usable phone.
   userId          String?  @map("user_id")
   guestName       String   @map("guest_name")
   guestPhone      String   @map("guest_phone")
@@ -383,7 +391,7 @@ model Reservation {
 model SuiteBooking {
   id         String   @id @default(uuid())
   reference  Int      @unique @default(autoincrement())
-  // The guest's account; null for a stay staff booked for them by phone or at the counter.
+  // The guest's profile, as on a reservation; null only on an old stay without a usable phone.
   userId     String?  @map("user_id")
   guestName  String   @map("guest_name")
   guestPhone String   @map("guest_phone")
@@ -904,7 +912,7 @@ model BookWaitlistEntry {
   id         String    @id @default(uuid())
   productId  String    @map("product_id")
   bookTitle  String    @map("book_title")
-  // The guest's account; null for a hold staff added for a guest at the counter or by phone.
+  // The guest's profile, found or made by phone; null only on an old hold with no usable phone.
   userId     String?   @map("user_id")
   guestName  String    @map("guest_name")
   guestPhone String    @map("guest_phone")

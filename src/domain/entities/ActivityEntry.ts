@@ -29,6 +29,9 @@ export const ACTIVITY_ENTITY_TYPES = [
   "review",
   "promoCode",
   "user",
+  // A guest's profile, made by staff from the phone the guest gave them. Not `user`:
+  // that's the team's access, which only the owner reads.
+  "guest",
   "reservation",
   "suiteBooking",
   "bookLoan",
@@ -100,8 +103,11 @@ export const ACTIVITY_ACTIONS = [
   "promoCode.activeChanged",
   "promoCode.deleted",
   "user.roleChanged",
+  // Staff made a profile for a guest whose phone had none, with the booking, stay,
+  // loan, hold or sale it was made for — and in the same transaction.
+  "guest.profileCreated",
   "reservation.changed",
-  // Staff booking a table or the suite for a guest who rang or walked in.
+  // Staff booking a table or the suite for a guest, at the counter or on the phone.
   "reservation.booked",
   "reservation.guestMessaged",
   // A request nobody answered before it began, cancelled by the background jobs

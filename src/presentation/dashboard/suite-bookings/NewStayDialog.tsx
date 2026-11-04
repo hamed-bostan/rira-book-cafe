@@ -6,7 +6,6 @@ import * as React from "react";
 
 import { shiftCafeDay } from "@/src/domain/entities/CafeTime";
 import {
-  MAX_SUITE_GUEST_NAME_LENGTH,
   MAX_SUITE_GUESTS,
   MAX_SUITE_NIGHTS,
   MAX_SUITE_NOTE_LENGTH,
@@ -30,6 +29,7 @@ import { useToast } from "@/src/presentation/design-system/components/Toast/useT
 import { DashboardDialog } from "../DashboardDialog";
 import { DashboardField } from "../DashboardField";
 import { FIELD_GRID } from "../fieldStyles";
+import { GuestField, type GuestFieldValue } from "../guest-profiles/GuestField";
 
 import { suiteBookingsApi } from "./suite-booking-api";
 import { WINDOW_LEAD_DAYS } from "./suiteCalendar";
@@ -42,12 +42,13 @@ type NewStayDialogProps = {
   firstFree: string;
 };
 
-const FIELDS = ["guestName", "guestPhone", "checkIn", "checkOut", "guests", "note"] as const;
+const FIELDS = ["guestPhone", "guestName", "checkIn", "checkOut", "guests", "note"] as const;
 const DEFAULT_GUESTS = 2;
 
 /**
- * "New stay" for a guest who rang or asked at the counter. It's confirmed straight
- * away, so the form says up front whether the dates work — past, too long, or
+ * "New stay" for a guest at the counter or on the phone, found — or given a
+ * profile — by their phone (`GuestField`). It's confirmed straight away, so the
+ * form says up front whether the dates work — past, too long, or
  * clashing with a held stay — and the server re-checks under the suite's lock.
  * After saving, the calendar moves to the new stay.
  */
@@ -60,8 +61,7 @@ export function NewStayDialog({ held, today, firstFree }: NewStayDialogProps) {
   const { toast } = useToast();
 
   const [open, setOpen] = React.useState(false);
-  const [guestName, setGuestName] = React.useState("");
-  const [guestPhone, setGuestPhone] = React.useState("");
+  const [guest, setGuest] = React.useState<GuestFieldValue | null>(null);
   const [checkIn, setCheckIn] = React.useState(firstFree);
   const [checkOut, setCheckOut] = React.useState(shiftCafeDay(firstFree, 1));
   const [guests, setGuests] = React.useState(DEFAULT_GUESTS);
@@ -70,8 +70,7 @@ export function NewStayDialog({ held, today, firstFree }: NewStayDialogProps) {
   const [pending, startTransition] = React.useTransition();
 
   function openDialog(): void {
-    setGuestName("");
-    setGuestPhone("");
+    setGuest(null);
     setCheckIn(firstFree);
     setCheckOut(shiftCafeDay(firstFree, 1));
     setGuests(DEFAULT_GUESTS);
@@ -96,13 +95,21 @@ export function NewStayDialog({ held, today, firstFree }: NewStayDialogProps) {
             : clash
               ? t("errorClash", { reference: clash.reference, range: range(clash.checkIn, clash.checkOut) })
               : null;
-  const blocked = problem !== null || nights < 1 || !guestName.trim() || !guestPhone.trim();
+  const blocked = problem !== null || nights < 1 || !guest;
 
   function submit(): void {
+    if (!guest) return;
     setServerError(null);
     startTransition(async () => {
       try {
-        const saved = await suiteBookingsApi.create({ guestName, guestPhone, checkIn, checkOut, guests, note });
+        const saved = await suiteBookingsApi.create({
+          guestPhone: guest.phone,
+          guestName: guest.name,
+          checkIn,
+          checkOut,
+          guests,
+          note,
+        });
         toast({
           tone: "success",
           title: t("stayBooked", {
@@ -167,30 +174,7 @@ export function NewStayDialog({ held, today, firstFree }: NewStayDialogProps) {
         }
       >
         <div className={FIELD_GRID}>
-          <DashboardField label={t("guestName")} className="col-span-full">
-            <Input
-              size="control-md"
-              value={guestName}
-              onChange={(event) => setGuestName(event.target.value)}
-              maxLength={MAX_SUITE_GUEST_NAME_LENGTH}
-              placeholder={t("guestNamePlaceholder")}
-              autoComplete="off"
-              required
-            />
-          </DashboardField>
-          <DashboardField label={t("guestPhone")} className="col-span-full">
-            <Input
-              size="control-md"
-              type="tel"
-              inputMode="tel"
-              value={guestPhone}
-              onChange={(event) => setGuestPhone(event.target.value)}
-              placeholder="0912 345 6789"
-              autoComplete="off"
-              dir="ltr"
-              required
-            />
-          </DashboardField>
+          <GuestField className="col-span-full" onChange={setGuest} disabled={pending} />
           <DashboardField label={t("checkIn")}>
             <Input
               size="control-md"

@@ -37,6 +37,8 @@ import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
+import { GuestField, type GuestFieldValue } from "../guest-profiles/GuestField";
+
 import { CounterSaleDone } from "./CounterSaleDone";
 import { ordersApi } from "./order-api";
 import { splitParts, splitRemainder, type SplitAmounts } from "./paymentParts";
@@ -75,8 +77,9 @@ export function CounterSaleScreen({ products }: CounterSaleScreenProps) {
   const [basket, setBasket] = React.useState<Readonly<Record<string, number>>>({});
   const [serviceType, setServiceType] = React.useState<ServiceType>("takeaway");
   const [tableLabel, setTableLabel] = React.useState("");
-  const [customerName, setCustomerName] = React.useState(t("counter.walkIn"));
-  const [customerPhone, setCustomerPhone] = React.useState("");
+  const [guest, setGuest] = React.useState<GuestFieldValue | null>(null);
+  /** Bumped after each sale, so the guest field starts over for the next guest. */
+  const [saleCount, setSaleCount] = React.useState(0);
   const [note, setNote] = React.useState("");
   const [payment, setPayment] = React.useState<PaymentChoice>("cash");
   const [amounts, setAmounts] = React.useState<SplitAmounts>({});
@@ -97,21 +100,21 @@ export function CounterSaleScreen({ products }: CounterSaleScreenProps) {
   const parts: CounterPaymentPart[] | undefined =
     payment === "later" ? undefined : payment === "split" ? splitParts(amounts) : [{ method: payment, amount: total }];
   const paymentReady = payment !== "split" || (splitRemainder(parts ?? [], total) === 0 && (parts?.length ?? 0) > 0);
-  const ready =
-    lines.length > 0 && customerName.trim() !== "" && (serviceType !== "dineIn" || tableLabel.trim() !== "");
+  const ready = lines.length > 0 && guest !== null && (serviceType !== "dineIn" || tableLabel.trim() !== "");
 
   function setQuantity(id: string, quantity: number): void {
     setBasket((current) => ({ ...current, [id]: Math.max(quantity, 0) }));
   }
 
   function submit(): void {
+    if (!guest) return;
     const values: CounterOrderFormInput = {
       items: lines.map((line) => ({ productId: line.product.id, quantity: line.quantity })),
       serviceType,
       tableLabel: serviceType === "dineIn" ? tableLabel : undefined,
       note,
-      customerName,
-      customerPhone,
+      customerPhone: guest.phone,
+      customerName: guest.name,
       paymentParts: total > 0 ? parts : undefined,
       complete,
     };
@@ -126,8 +129,8 @@ export function CounterSaleScreen({ products }: CounterSaleScreenProps) {
         setQuery("");
         setNote("");
         setTableLabel("");
-        setCustomerName(t("counter.walkIn"));
-        setCustomerPhone("");
+        setGuest(null);
+        setSaleCount((count) => count + 1);
         setAmounts({});
         router.refresh();
       } catch (err) {
@@ -263,25 +266,7 @@ export function CounterSaleScreen({ products }: CounterSaleScreenProps) {
 
             <DashboardSection title={t("counter.detailsHeading")}>
               <div className="flex flex-col gap-4">
-                <DashboardField label={t("counter.customerLabel")}>
-                  <Input
-                    size="control-md"
-                    value={customerName}
-                    onChange={(event) => setCustomerName(event.target.value)}
-                    autoComplete="off"
-                    dir="auto"
-                  />
-                </DashboardField>
-                <DashboardField label={t("counter.phoneLabel")}>
-                  <Input
-                    size="control-md"
-                    value={customerPhone}
-                    onChange={(event) => setCustomerPhone(event.target.value)}
-                    autoComplete="off"
-                    inputMode="tel"
-                    dir="ltr"
-                  />
-                </DashboardField>
+                <GuestField key={saleCount} onChange={setGuest} disabled={pending} />
                 <div className="flex flex-col gap-2">
                   <OverviewSegmented
                     label={t("colService")}

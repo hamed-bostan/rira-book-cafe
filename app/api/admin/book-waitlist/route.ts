@@ -40,11 +40,15 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
 /**
  * POST /api/admin/book-waitlist — add a guest who asked at the counter or by phone
- * to a book's line. Requires `loans.manage`. 409 `BOOK_ON_SHELF` when a copy is
- * free and nobody waits (lend it instead), `ALREADY_WAITING` for a phone already in line.
+ * to a book's line, on the profile their phone finds — or a new one, made with the
+ * hold from `guestName`. Requires `loans.manage`. 400 `guestNameNeeded` for a new
+ * phone with no name. 409 `BOOK_ON_SHELF` when a copy is free that nobody holds or
+ * waits for (lend it instead), `ALREADY_WAITING` for a guest already in line,
+ * `ALREADY_ON_LOAN` for one who has it out, `HOLD_LIMIT` for one holding the most books.
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  if (!(await getSessionWith("loans.manage"))) return unauthorizedResponse();
+  const session = await getSessionWith("loans.manage");
+  if (!session) return unauthorizedResponse();
 
   const body = await parseJsonBody(request);
   if (!body.ok) return errorResponse(400, { message: "Expected a JSON body.", code: "BAD_REQUEST" });
@@ -61,6 +65,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     const entry = await new AddToBookWaitlist(bookWaitlistRepository, bookLoanRepository, userRepository).execute(
       parsed.data,
+      { id: session.user.id, name: session.user.name ?? session.user.id },
     );
     return NextResponse.json(entry, { status: 201 });
   } catch (error) {

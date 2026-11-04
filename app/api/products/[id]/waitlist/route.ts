@@ -32,7 +32,8 @@ export async function GET(_request: Request, { params }: RouteContext): Promise<
 /**
  * POST /api/products/:id/waitlist — join the line for a book that's out. 201 with
  * the entry. 409 `ALREADY_WAITING` when already in line, `BOOK_ON_SHELF` when a
- * copy is free and nobody waits.
+ * copy is free that nobody holds or waits for (borrow it instead), `ALREADY_ON_LOAN`
+ * when they have it out, `HOLD_LIMIT` when they hold as many books as one guest may.
  */
 export async function POST(_request: Request, { params }: RouteContext): Promise<NextResponse> {
   const session = await getUserSession();

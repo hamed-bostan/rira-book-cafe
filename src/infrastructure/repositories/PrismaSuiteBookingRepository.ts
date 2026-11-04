@@ -20,6 +20,7 @@ import { inTransaction, type PrismaDb } from "@/src/infrastructure/prisma/transa
 import { paidBySource, refundedBySource } from "./readIncomePaid";
 import { readSuiteSettings } from "./readSuiteSettings";
 import { recordAudit } from "./writeActivityEntry";
+import { createGuestProfile } from "./writeGuestProfile";
 
 /**
  * Suite stays backed by PostgreSQL via Prisma. Days are stored as `DATE` columns,
@@ -37,9 +38,10 @@ export class PrismaSuiteBookingRepository implements ISuiteBookingRepository {
     return inTransaction(this.db, async (tx) => {
       await lockSuite(tx);
       await refuseClash(tx, null, input);
+      await createGuestProfile(tx, input.newGuest);
       const row = await tx.suiteBooking.create({
         data: {
-          userId: input.userId ?? null,
+          userId: input.userId,
           guestName: input.guestName,
           guestPhone: input.guestPhone,
           guests: input.guests,

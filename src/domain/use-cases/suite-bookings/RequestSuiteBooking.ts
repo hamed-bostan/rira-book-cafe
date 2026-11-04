@@ -1,9 +1,7 @@
 import { type ActivityActor } from "../../entities/ActivityEntry";
 import { cafeDayOf, isCafeDay, shiftCafeDay } from "../../entities/CafeTime";
-import { isPlausiblePhone } from "../../entities/Phone";
 import {
   MAX_SUITE_DAYS_AHEAD,
-  MAX_SUITE_GUEST_NAME_LENGTH,
   MAX_SUITE_GUESTS,
   MAX_SUITE_NIGHTS,
   MAX_SUITE_NOTE_LENGTH,
@@ -12,9 +10,11 @@ import {
   type SuiteBooking,
 } from "../../entities/SuiteBooking";
 import { ValidationError } from "../../errors/ValidationError";
+import { ResolveGuestProfile } from "../guest-profiles/ResolveGuestProfile";
 
 import type { User } from "../../entities/User";
 import type { ISuiteBookingRepository } from "../../repositories/ISuiteBookingRepository";
+import type { IUserRepository } from "../../repositories/IUserRepository";
 
 export type RequestSuiteBookingInput = {
   /** Cafe days, `YYYY-MM-DD`. */
@@ -79,29 +79,42 @@ export class RequestSuiteBooking {
 }
 
 export type BookSuiteForGuestInput = RequestSuiteBookingInput & {
-  guestName: string;
+  /** The guest's phone, which finds their profile. */
   guestPhone: string;
+  /** The guest's name, for a phone with no profile yet. */
+  guestName?: string;
 };
 
 /**
- * Staff book the suite for a guest who rang or asked at the counter — no account
- * behind it. It's confirmed straight away; the repository refuses nights another
- * stay already holds, under the suite's lock.
+ * Staff book the suite for a guest at the counter or on the phone, on the profile
+ * their phone finds — or on one made with the stay, from their name, when the
+ * phone has none. It's confirmed straight away; the repository refuses nights
+ * another stay already holds, under the suite's lock.
  */
 export class BookSuiteForGuest {
-  constructor(private readonly suiteRepo: ISuiteBookingRepository) {}
+  constructor(
+    private readonly suiteRepo: ISuiteBookingRepository,
+    private readonly userRepo: Pick<IUserRepository, "getById">,
+  ) {}
 
   async execute(input: BookSuiteForGuestInput, actor: ActivityActor, now: Date): Promise<SuiteBooking> {
     const { note } = validateStay(input, now);
-    const guestName = input.guestName.trim();
-    if (!guestName) throw new ValidationError("guestName", "Enter the guest's name.");
-    if (guestName.length > MAX_SUITE_GUEST_NAME_LENGTH)
-      throw new ValidationError("guestName", "That name is too long.");
-    const guestPhone = input.guestPhone.trim();
-    if (!isPlausiblePhone(guestPhone)) throw new ValidationError("guestPhone", "Enter a phone number.");
+    const guest = await new ResolveGuestProfile(this.userRepo).execute(
+      { phone: input.guestPhone, name: input.guestName },
+      actor,
+    );
 
     return this.suiteRepo.create(
-      { guestName, guestPhone, guests: input.guests, checkIn: input.checkIn, checkOut: input.checkOut, note },
+      {
+        userId: guest.userId,
+        newGuest: guest.newProfile,
+        guestName: guest.name,
+        guestPhone: guest.phone,
+        guests: input.guests,
+        checkIn: input.checkIn,
+        checkOut: input.checkOut,
+        note,
+      },
       "confirmed",
       (saved) => ({
         actorId: actor.id,

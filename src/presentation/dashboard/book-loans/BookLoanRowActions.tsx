@@ -30,12 +30,8 @@ const EXTEND_DAYS = 7;
 
 type BookLoanRowActionsProps = {
   loan: Pick<BookLoan, "id" | "reference" | "status" | "bookTitle" | "borrowerName" | "dueAt">;
-  /**
-   * Told the copy is theirs when it comes back — named in the toast, which says
-   * the message is on the site, and for a guest with no account that they'll see
-   * it when they sign in with their phone.
-   */
-  firstInLine: Pick<BookWaitlistEntry, "guestName" | "guestPhone" | "userId"> | undefined;
+  /** Told the copy is theirs when it comes back — named in the toast, which says they have a message about it. */
+  firstInLine: Pick<BookWaitlistEntry, "guestName"> | undefined;
 };
 
 /**
@@ -74,13 +70,7 @@ export function BookLoanRowActions({ loan, firstInLine }: BookLoanRowActionsProp
             title: t(`updated.${change.status}`, { reference: loan.reference }),
             description:
               change.status === "returned" && firstInLine
-                ? firstInLine.userId
-                  ? t("firstInLineTold", { name: firstInLine.guestName, title: loan.bookTitle })
-                  : t("firstInLineOnSignIn", {
-                      name: firstInLine.guestName,
-                      title: loan.bookTitle,
-                      phone: firstInLine.guestPhone,
-                    })
+                ? t("firstInLineTold", { name: firstInLine.guestName, title: loan.bookTitle })
                 : undefined,
           });
         }

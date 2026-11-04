@@ -1,4 +1,9 @@
-import type { AddBookHoldInput, BookLoanUpdateInput, LendBookInput } from "@/src/contracts/book-loan-schema";
+import type {
+  AddBookHoldInput,
+  BookLoanUpdateInput,
+  LendBookInput,
+  LendHoldInput,
+} from "@/src/contracts/book-loan-schema";
 import type { BookLoan } from "@/src/domain/entities/BookLoan";
 import type { BookWaitlistEntry } from "@/src/domain/entities/BookWaitlist";
 import { apiDelete, apiPatch, apiPost } from "@/src/lib/api/client";
@@ -20,6 +25,11 @@ export const bookLoansApi = {
   /** Add a counter or phone guest to a book's line. 409 `BOOK_ON_SHELF` / `ALREADY_WAITING`. */
   addHold(values: AddBookHoldInput): Promise<BookWaitlistEntry> {
     return apiPost("/admin/book-waitlist", values, bookWaitlistEntryResponseSchema);
+  },
+
+  /** "Lend now": the loan of the book held for a told guest, on these terms; fulfils the hold. 409 `HOLD_NOT_READY`. */
+  lendHold(entryId: string, values: LendHoldInput): Promise<BookLoan> {
+    return apiPost(`/admin/book-waitlist/${entryId}/lend`, values, bookLoanResponseSchema);
   },
 
   /** Take a guest off a book's line; skipping someone who'd been told tells the next. */

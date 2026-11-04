@@ -26,8 +26,8 @@ export class GetOrderReceipt {
 }
 
 /**
- * The guest's receipt for one of their own orders — placed from their account, or
- * rung up at the counter for their phone — without the costs on its lines. Anyone
+ * The guest's receipt for one of their own orders — placed by them, or rung up at
+ * the counter for their profile — without the costs on its lines. Anyone
  * else's reads as `null`, the same as a missing one, so ids can't be probed.
  */
 export class GetOwnOrderReceipt {

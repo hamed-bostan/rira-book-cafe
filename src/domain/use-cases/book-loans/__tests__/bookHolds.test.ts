@@ -36,58 +36,88 @@ function books(copies: number, onLoan: number) {
 }
 
 describe("holding a book", () => {
-  it("lets a guest queue behind someone who's been told, even with a copy on the shelf", async () => {
+  it("puts a signed-in guest in line on their profile, the shelf's rules left to the repository", async () => {
     const join = vi.fn(async () => entry());
-    const waitlist = {
-      join,
-      listOpenForBook: vi.fn(async () => [entry({ id: "w0", status: "notified" })]),
-    } as unknown as IBookWaitlistRepository;
 
-    await new JoinBookWaitlist(waitlist, books(2, 1)).execute("b1", { id: "g1", name: "Sara", phone: "09121234567" });
-
-    expect(join).toHaveBeenCalledOnce();
-  });
-
-  it("refuses a hold when a copy is free and nobody waits", async () => {
-    const waitlist = { listOpenForBook: vi.fn(async () => []) } as unknown as IBookWaitlistRepository;
-    await expect(
-      new AddToBookWaitlist(waitlist, books(2, 1), { getById: vi.fn() }).execute({
-        productId: "b1",
-        guestName: "Ali",
-        guestPhone: "0912 111 0004",
-      }),
-    ).rejects.toMatchObject({ code: "BOOK_ON_SHELF" });
-  });
-
-  it("adds a counter guest, linking their account when the phone matches one", async () => {
-    const join = vi.fn(async () => entry());
-    const waitlist = { join, listOpenForBook: vi.fn(async () => []) } as unknown as IBookWaitlistRepository;
-    const users = { getById: vi.fn(async (id: string) => (id === "09121110004" ? ({ id } as never) : null)) };
-
-    await new AddToBookWaitlist(waitlist, books(1, 1), users).execute({
-      productId: "b1",
-      guestName: " Ali Moradi ",
-      guestPhone: "0912 111 0004",
+    await new JoinBookWaitlist({ join }, books(2, 1)).execute("b1", {
+      id: "09121234567",
+      name: "Sara",
+      phone: "+98 912 123 4567",
     });
 
     expect(join).toHaveBeenCalledWith({
       productId: "b1",
       bookTitle: "Savushun",
+      userId: "09121234567",
+      guestName: "Sara",
+      guestPhone: "09121234567",
+    });
+  });
+
+  it("adds a counter guest on the profile their phone finds, under its name", async () => {
+    const join = vi.fn(async () => entry());
+    const users = {
+      getById: vi.fn(async (id: string) =>
+        id === "09121110004" ? ({ id, name: "Ali Moradi", phone: "09121110004" } as never) : null,
+      ),
+    };
+
+    await new AddToBookWaitlist({ join }, books(1, 1), users).execute(
+      { productId: "b1", guestName: "Ali", guestPhone: "0912 111 0004" },
+      STAFF,
+    );
+
+    expect(join).toHaveBeenCalledWith({
+      productId: "b1",
+      bookTitle: "Savushun",
       userId: "09121110004",
+      newGuest: undefined,
       guestName: "Ali Moradi",
       guestPhone: "09121110004",
     });
   });
 
-  it("checks the guest's name and phone", async () => {
-    const waitlist = {} as IBookWaitlistRepository;
-    await expect(
-      new AddToBookWaitlist(waitlist, books(1, 1), { getById: vi.fn() }).execute({
-        productId: "b1",
-        guestName: "Ali",
-        guestPhone: "12",
+  it("makes a new guest's profile with the hold, from the name staff typed", async () => {
+    const join = vi.fn(async () => entry());
+
+    await new AddToBookWaitlist({ join }, books(1, 1), { getById: vi.fn(async () => null) }).execute(
+      { productId: "b1", guestName: " Sara Ahmadi ", guestPhone: "0935 111 2233" },
+      STAFF,
+    );
+
+    expect(join).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: "09351112233",
+        guestName: "Sara Ahmadi",
+        guestPhone: "09351112233",
+        newGuest: { id: "09351112233", phone: "0935 111 2233", name: "Sara Ahmadi", createdBy: STAFF },
       }),
+    );
+  });
+
+  it("asks a new guest's name, refuses a bad phone, and holds nothing for what isn't a book", async () => {
+    const join = vi.fn();
+    const nobody = { getById: vi.fn(async () => null) };
+    await expect(
+      new AddToBookWaitlist({ join }, books(1, 1), nobody).execute(
+        { productId: "b1", guestPhone: "0935 111 2233" },
+        STAFF,
+      ),
+    ).rejects.toMatchObject({ field: "guestName", message: "guestNameNeeded" });
+    await expect(
+      new AddToBookWaitlist({ join }, books(1, 1), nobody).execute(
+        { productId: "b1", guestName: "Ali", guestPhone: "12" },
+        STAFF,
+      ),
     ).rejects.toBeInstanceOf(ValidationError);
+    const noBook = { getBook: vi.fn(async () => null) };
+    await expect(
+      new AddToBookWaitlist({ join }, noBook, nobody).execute(
+        { productId: "x", guestName: "Ali", guestPhone: "09121110004" },
+        STAFF,
+      ),
+    ).rejects.toThrow(NotFoundError);
+    expect(join).not.toHaveBeenCalled();
   });
 });
 

@@ -84,7 +84,7 @@ test("staff message a guest who booked by phone, and the guest reads it in Messa
   const item = guest.getByRole("listitem").filter({ hasText: "A message from the cafe" });
   await expect(item).toContainText(`About your table booking R-${booking.reference}`);
   await expect(item).toContainText("We've kept the table by the window for you.");
-  await expect(item).toContainText("To reply, contact the cafe.");
+  await expect(item).toContainText("You can't reply here.");
   await expect(item.getByRole("img", { name: "Unread" })).toBeVisible();
 
   await guest.getByRole("button", { name: "Mark all as read" }).click();
@@ -165,7 +165,7 @@ test("a guest who joined a book's line at the counter is told it's back", async 
   // The toast and its screen-reader announcement carry the same words.
   await expect(page.getByText(`L-${loan.reference} marked returned`).first()).toBeVisible();
   await expect(
-    page.getByText(`E2E Hamid is first in line for ${title}. The message that it's back went to their profile`).first(),
+    page.getByText(`E2E Hamid is first in line for ${title} and has a message on the site that it's back.`).first(),
   ).toBeVisible();
 
   const guest = await signInAsGuest(browser, phone);

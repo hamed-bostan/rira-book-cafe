@@ -1,7 +1,5 @@
 import { isCafeDay } from "@/src/domain/entities/CafeTime";
-import { isPlausiblePhone } from "@/src/domain/entities/Phone";
 import {
-  MAX_SUITE_GUEST_NAME_LENGTH,
   MAX_SUITE_GUESTS,
   MAX_SUITE_NOTE_LENGTH,
   MIN_SUITE_GUESTS,
@@ -10,6 +8,7 @@ import {
 import * as z from "@/src/lib/zod";
 
 import { fieldsParsed } from "./fields-parsed";
+import { guestNameField, guestPhoneField } from "./guest-schema";
 
 /**
  * Suite-booking contracts shared by the route handlers and their clients. Days
@@ -45,13 +44,14 @@ export const requestSuiteBookingSchema = stayFields.check(
 
 export type RequestSuiteBookingInput = z.input<typeof requestSuiteBookingSchema>;
 
-/** Staff booking the suite for a guest who rang or asked at the counter; it's confirmed straight away. */
+/**
+ * Staff booking the suite for a guest, found by phone (the name makes them a
+ * profile when the phone has none); it's confirmed straight away.
+ */
 export const staffSuiteBookingSchema = z
   .extend(stayFields, {
-    guestName: z
-      .string()
-      .check(z.trim(), z.minLength(1, "nameRequired"), z.maxLength(MAX_SUITE_GUEST_NAME_LENGTH, "nameTooLong")),
-    guestPhone: z.string().check(z.trim(), z.refine(isPlausiblePhone, "phoneInvalid")),
+    guestPhone: guestPhoneField,
+    guestName: guestNameField,
   })
   .check(z.refine(checkOutAfterCheckIn.check, checkOutAfterCheckIn.issue));
 

@@ -20,8 +20,8 @@ Untested in a browser: status advance (kitchen, overview queue, order page, row 
 
 Suspects
 
-- [ ] S2.1 Past events have no Edit link (`EventCard.tsx:78`), so their guest list (payments, refunds) is reachable only by URL.
-- [ ] S2.2 Cancel-then-refund is two calls (`SuiteStayActions.tsx:96`, `CancelRegistrationButton.tsx:48`): refund failure leaves a cancelled, unrefunded booking (deliberate, toast shown — confirm the toast works).
+- [x] S2.1 Past events have no Edit link — **bug, fixed** (link shows on both tabs).
+- [x] S2.2 Cancel-then-refund is two calls — by design; the refund reports its own failure and the row keeps Refund.
 
 Untested: reservation Complete / undo seat / change table; suite check-out / undo check-in / new stay; event create / edit / delete / image upload / hold tables / cancel sign-up / take ticket payment; hold skip/remove; loan extend + undo; guest message for suite and book loan (no test at all), for order and hold (unit only); `GET /admin/events`, `GET /admin/events/:id`.
 

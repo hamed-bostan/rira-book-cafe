@@ -75,7 +75,8 @@ export async function EventCard({ event, upcoming, today, over, canManage, table
             {t("full")}
           </Badge>
         ) : null}
-        {canManage && upcoming ? (
+        {/* Past events too: their guest list is where a late ticket payment or a refund is taken. */}
+        {canManage ? (
           <Link
             href={`/dashboard/events/${event.id}/edit`}
             aria-label={t("editAria", { title: event.title })}

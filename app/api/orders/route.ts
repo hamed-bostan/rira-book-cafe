@@ -4,7 +4,7 @@ import { placeOrderSchema } from "@/src/contracts/order-schema";
 import { withoutCosts } from "@/src/domain/entities/Order";
 import { ListOwnOrders } from "@/src/domain/use-cases/orders/OrderQueries";
 import { PlaceOrder } from "@/src/domain/use-cases/orders/PlaceOrder";
-import { checkoutPricing, orderRepository, productRepository, userRepository } from "@/src/infrastructure/container";
+import { checkoutPricing, menuCatalog, orderRepository, userRepository } from "@/src/infrastructure/container";
 import { invalidatesCatalog } from "@/src/lib/api/invalidatesCatalog";
 import { enforceRateLimit, RATE_LIMITS } from "@/src/lib/api/rate-limit";
 import {
@@ -65,7 +65,7 @@ async function handlePost(request: NextRequest): Promise<NextResponse> {
     const guest = await userRepository.getById(session.user.id);
     if (!guest) return unauthorizedResponse();
 
-    const order = await new PlaceOrder(orderRepository, productRepository, checkoutPricing).execute(parsed.data, guest);
+    const order = await new PlaceOrder(orderRepository, menuCatalog, checkoutPricing).execute(parsed.data, guest);
     return NextResponse.json(withoutCosts(order), { status: 201 });
   } catch (error) {
     return errorResponseFromException(error, "POST /api/orders failed");

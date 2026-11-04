@@ -68,11 +68,16 @@ export type IProductRepository = {
   // Visibility splits these reads in two, and the split is in the *names* rather
   // than in a flag: the public reads filter unconditionally, and where both sides
   // need the same lookup there are two methods with different names.
+  //
+  // The public reads filter on the item's own switch (`isPublished`) only. Whether
+  // its category is shown is the other half of "on the public menu", and the
+  // use-cases apply it (`isOnPublicMenu`, through `keepOnPublicMenu`) — one rule,
+  // in the domain, for these reads and for ordering alike.
   /** The published menu, for the public site. Unpublished items are excluded. */
   getAll(locale?: string): Promise<Product[]>;
   /** One item in any visibility state — the dashboard's read, and the one every write path checks against. */
   getById(id: string, locale?: string): Promise<Product | null>;
-  /** One item, but only if the public site may show it — `null` for an unpublished one. */
+  /** One item, but only if it's published — `null` for an unpublished one. */
   getPublishedById(id: string, locale?: string): Promise<Product | null>;
   /**
    * Resolve several items at once, for screens that hold a set of ids (an order's

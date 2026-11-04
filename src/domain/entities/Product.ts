@@ -1,3 +1,4 @@
+import type { Category } from "./Category";
 import type { IngredientAlert } from "./Inventory";
 
 /**
@@ -78,6 +79,7 @@ export type Product = {
    * Whether the public site may show it. `false` takes the item off the menu without
    * touching the order lines that already reference it — the difference between
    * withdrawing an item and deleting one. Orthogonal to {@link Product.isFeatured}.
+   * Its category being hidden takes it off too — see {@link isOnPublicMenu}.
    */
   isPublished: boolean;
   badge?: string;
@@ -118,4 +120,24 @@ export function withoutCost(product: Product): Product {
 /** True for items that can be sold to take home — everything except a reading-only book. */
 export function isSellable(product: Pick<Product, "kind" | "book">): boolean {
   return product.kind !== "book" || product.book?.availability !== "reading";
+}
+
+/**
+ * Whether an item is on the public menu: published, in a category that's shown.
+ * Hiding a category hides everything in it — guests can't see, open, order or
+ * review those items — while each item keeps its own switch for when the category
+ * comes back. An item whose category can't be found isn't on the menu either.
+ *
+ * The one rule every public path applies: the menu, featured and search reads, an
+ * item's own page, placing and pricing an order, and writing a review. Staff
+ * selling at the counter (or adding to an order) follow it too: their picker is
+ * the public menu, so an item hidden from guests is hidden there as well, exactly
+ * as an unpublished one always was. Lending and holding books is not a sale, so a
+ * book on the shelf can still be lent while its category is hidden.
+ */
+export function isOnPublicMenu(
+  product: Pick<Product, "isPublished">,
+  category: Pick<Category, "isActive"> | null | undefined,
+): boolean {
+  return product.isPublished && category?.isActive === true;
 }

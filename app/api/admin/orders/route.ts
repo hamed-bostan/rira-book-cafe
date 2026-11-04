@@ -8,7 +8,7 @@ import {
 } from "@/src/domain/entities/AdminOrderFilters";
 import { ListOrders } from "@/src/domain/use-cases/orders/OrderQueries";
 import { PlaceCounterOrder } from "@/src/domain/use-cases/orders/PlaceCounterOrder";
-import { orderRepository, productRepository, userRepository } from "@/src/infrastructure/container";
+import { menuCatalog, orderRepository, userRepository } from "@/src/infrastructure/container";
 import { parseAdminOrderFilters } from "@/src/lib/api/admin-order-params";
 import { invalidatesCatalog } from "@/src/lib/api/invalidatesCatalog";
 import { parsePageRequest } from "@/src/lib/api/pagination-params";
@@ -68,7 +68,7 @@ async function handlePost(request: NextRequest): Promise<NextResponse> {
   }
 
   try {
-    const order = await new PlaceCounterOrder(orderRepository, productRepository, userRepository).execute(parsed.data, {
+    const order = await new PlaceCounterOrder(orderRepository, menuCatalog, userRepository).execute(parsed.data, {
       id: session.user.id,
       name: session.user.name ?? session.user.id,
     });

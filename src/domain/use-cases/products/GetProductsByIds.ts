@@ -1,3 +1,5 @@
+import { keepOnPublicMenu, type MenuCategories } from "./publicMenu";
+
 import type { Product } from "../../entities/Product";
 import type { IProductRepository } from "../../repositories/IProductRepository";
 
@@ -12,11 +14,15 @@ import type { IProductRepository } from "../../repositories/IProductRepository";
  * Duplicate ids are collapsed before the read, since callers derive the list from
  * rows that often share a product.
  *
- * Unpublished (draft) items are dropped unless the caller may see them — the
- * endpoint is public, and a draft's name and price aren't.
+ * Items off the public menu (unpublished drafts, or in a hidden category) are
+ * dropped unless the caller may see them — the endpoint is public, and a hidden
+ * item's name and price aren't.
  */
 export class GetProductsByIds {
-  constructor(private readonly productRepo: IProductRepository) {}
+  constructor(
+    private readonly productRepo: Pick<IProductRepository, "getByIds">,
+    private readonly categoryRepo: MenuCategories,
+  ) {}
 
   async execute(
     ids: readonly string[],
@@ -24,6 +30,6 @@ export class GetProductsByIds {
     options: { includeUnpublished?: boolean } = {},
   ): Promise<Product[]> {
     const products = await this.productRepo.getByIds([...new Set(ids)], locale);
-    return options.includeUnpublished ? products : products.filter((product) => product.isPublished);
+    return options.includeUnpublished ? products : keepOnPublicMenu(this.categoryRepo, products);
   }
 }

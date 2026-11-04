@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { MAX_ORDER_AMOUNT } from "../../../entities/Order";
-import { isSellable, MAX_STOCK_QUANTITY, withoutCost, type Product } from "../../../entities/Product";
+import { isOnPublicMenu, isSellable, MAX_STOCK_QUANTITY, withoutCost, type Product } from "../../../entities/Product";
 import { ConflictError } from "../../../errors/ConflictError";
 import { NotFoundError } from "../../../errors/NotFoundError";
 import { ValidationError } from "../../../errors/ValidationError";
@@ -485,14 +485,14 @@ describe("ListProducts / SearchProducts", () => {
 
   it("returns nothing for an all-empty search without asking the repository", async () => {
     const { repo, search } = repoWith([product()]);
-    expect(await new SearchProducts(repo).execute({ query: "   ", sort: "price-asc", dietary: [] })).toEqual([]);
+    expect(await new SearchProducts(repo, MENU).execute({ query: "   ", sort: "price-asc", dietary: [] })).toEqual([]);
     expect(search).not.toHaveBeenCalled();
   });
 
   it("searches with a trimmed term or any other criterion", async () => {
     const { repo, search } = repoWith([product()]);
-    await new SearchProducts(repo).execute({ query: " latte " }, "en");
-    await new SearchProducts(repo).execute({ maxPrice: 100_000 });
+    await new SearchProducts(repo, MENU).execute({ query: " latte " }, "en");
+    await new SearchProducts(repo, MENU).execute({ maxPrice: 100_000 });
     expect(search.mock.calls).toEqual([
       [{ query: "latte" }, "en"],
       [{ query: undefined, maxPrice: 100_000 }, undefined],
@@ -503,7 +503,7 @@ describe("ListProducts / SearchProducts", () => {
 describe("product queries", () => {
   it("collapse duplicate ids before resolving them", async () => {
     const { repo, getByIds } = repoWith([product({ id: "p1" }), product({ id: "p2" })]);
-    const found = await new GetProductsByIds(repo).execute(["p1", "p2", "p1"], "fa");
+    const found = await new GetProductsByIds(repo, MENU).execute(["p1", "p2", "p1"], "fa");
     expect(getByIds).toHaveBeenCalledWith(["p1", "p2"], "fa");
     expect(found).toHaveLength(2);
   });
@@ -511,21 +511,49 @@ describe("product queries", () => {
   it("hide an unpublished product from the storefront but not the dashboard", async () => {
     const hidden = product({ isPublished: false });
     const { repo } = repoWith([hidden]);
-    expect(await new GetPublishedProduct(repo).execute("p1")).toBeNull();
+    expect(await new GetPublishedProduct(repo, MENU).execute("p1")).toBeNull();
     expect(await new GetProductById(repo).execute("p1")).toBe(hidden);
   });
 
   it("delegate the menu reads", async () => {
     const featured = product({ id: "f", isFeatured: true });
     const { repo } = repoWith([product(), featured]);
-    expect(await new GetProducts(repo).execute("fa")).toHaveLength(2);
+    expect(await new GetProducts(repo, MENU).execute("fa")).toHaveLength(2);
     expect(repo.getAll).toHaveBeenCalledWith("fa");
-    expect(await new GetFeaturedProducts(repo).execute()).toEqual([featured]);
+    expect(await new GetFeaturedProducts(repo, MENU).execute()).toEqual([featured]);
     expect(await new GetProductTranslations(repo).execute("p1")).toEqual([{ locale: "fa", name: "لاته" }]);
+  });
+
+  it("keep every item of a hidden category off every public read, but not off the dashboard's", async () => {
+    const shown = product({ id: "shown", categoryId: "c1", isFeatured: true });
+    const seasonal = product({ id: "seasonal", categoryId: "c-off", isFeatured: true });
+    const { repo } = repoWith([shown, seasonal]);
+    const menu = categoriesOf(category(), category({ id: "c-off", isActive: false }));
+
+    expect(await new GetProducts(repo, menu).execute()).toEqual([shown]);
+    expect(await new GetFeaturedProducts(repo, menu).execute()).toEqual([shown]);
+    expect(await new SearchProducts(repo, menu).execute({ query: "latte" })).toEqual([shown]);
+    expect(await new GetPublishedProduct(repo, menu).execute("seasonal")).toBeNull();
+    expect(await new GetPublishedProduct(repo, menu).execute("shown")).toBe(shown);
+    expect(await new GetProductsByIds(repo, menu).execute(["shown", "seasonal"])).toEqual([shown]);
+    expect(
+      await new GetProductsByIds(repo, menu).execute(["shown", "seasonal"], undefined, { includeUnpublished: true }),
+    ).toEqual([shown, seasonal]);
+    expect(await new GetProductById(repo).execute("seasonal")).toBe(seasonal);
   });
 });
 
 describe("Product entity helpers", () => {
+  it("puts an item on the public menu only when it's published and its category is shown", () => {
+    const shown = { isActive: true };
+    expect(isOnPublicMenu(product(), shown)).toBe(true);
+    expect(isOnPublicMenu(product({ isPublished: false }), shown)).toBe(false);
+    expect(isOnPublicMenu(product(), { isActive: false })).toBe(false);
+    // A category that can't be found hides the item rather than showing it.
+    expect(isOnPublicMenu(product(), undefined)).toBe(false);
+    expect(isOnPublicMenu(product(), null)).toBe(false);
+  });
+
   it("strips the cost price for guests", () => {
     const stripped = withoutCost(product({ costPrice: 40_000 }));
     expect(stripped).not.toHaveProperty("costPrice");

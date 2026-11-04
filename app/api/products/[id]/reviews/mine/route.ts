@@ -3,7 +3,12 @@ import { NextResponse, type NextRequest } from "next/server";
 import { submitReviewSchema } from "@/src/contracts/review-schema";
 import { SubmitReview } from "@/src/domain/use-cases/reviews/ReviewCommands";
 import { GetReviewEligibility } from "@/src/domain/use-cases/reviews/ReviewQueries";
-import { productRepository, reviewRepository, userRepository } from "@/src/infrastructure/container";
+import {
+  categoryRepository,
+  productRepository,
+  reviewRepository,
+  userRepository,
+} from "@/src/infrastructure/container";
 import { invalidatesCatalog } from "@/src/lib/api/invalidatesCatalog";
 import {
   errorResponse,
@@ -64,7 +69,11 @@ async function handlePut(request: NextRequest, { params }: RouteContext): Promis
     // The name under the review comes from the account, never from the request.
     const guest = await userRepository.getById(session.user.id);
     if (!guest) return unauthorizedResponse();
-    const review = await new SubmitReview(reviewRepository, productRepository).execute(id, parsed.data, guest);
+    const review = await new SubmitReview(reviewRepository, productRepository, categoryRepository).execute(
+      id,
+      parsed.data,
+      guest,
+    );
     return NextResponse.json(review);
   } catch (error) {
     return errorResponseFromException(error, `PUT /api/products/${id}/reviews/mine failed`);

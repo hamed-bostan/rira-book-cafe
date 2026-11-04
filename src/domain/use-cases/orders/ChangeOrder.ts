@@ -21,7 +21,7 @@ import { buildOrderLines, type PlaceOrderInput } from "./PlaceOrder";
 
 import type { ICustomerNotifier } from "../../repositories/INotificationRepository";
 import type { IOrderRepository, OrderChange } from "../../repositories/IOrderRepository";
-import type { IProductRepository } from "../../repositories/IProductRepository";
+import type { MenuCatalog } from "../products/publicMenu";
 
 /** What staff change on an order already placed. Every part is optional; what's left out stays. */
 export type ChangeOrderInput = {
@@ -59,7 +59,7 @@ export type ChangeOrderInput = {
 export class ChangeOrder {
   constructor(
     private readonly orderRepo: IOrderRepository,
-    private readonly productRepo: Pick<IProductRepository, "getByIds">,
+    private readonly menu: MenuCatalog,
     private readonly pricing: CheckoutPricing = new CheckoutPricing(),
     /** Tells the guest their order was updated. */
     private readonly notifier?: ICustomerNotifier,
@@ -105,7 +105,7 @@ export class ChangeOrder {
     }
 
     const lower = loweredLines(order, input.lines ?? []);
-    const add = input.add?.length ? await buildOrderLines(this.productRepo, input.add) : [];
+    const add = input.add?.length ? await buildOrderLines(this.menu, input.add) : [];
     const change: OrderChange = {
       orderId,
       expected: { updatedAt: order.updatedAt, status: order.status, paymentStatus: order.paymentStatus },

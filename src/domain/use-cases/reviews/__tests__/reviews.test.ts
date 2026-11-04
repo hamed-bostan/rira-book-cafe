@@ -2,9 +2,11 @@ import { describe, expect, it, vi } from "vitest";
 
 import { ratingSummary, reviewAuthorName, type ProductReview } from "../../../entities/ProductReview";
 import { ConflictError } from "../../../errors/ConflictError";
+import { NotFoundError } from "../../../errors/NotFoundError";
 import { ValidationError } from "../../../errors/ValidationError";
 import { ModerateReview, SubmitReview } from "../ReviewCommands";
 
+import type { Category } from "../../../entities/Category";
 import type { Product } from "../../../entities/Product";
 import type { ICustomerNotifier } from "../../../repositories/INotificationRepository";
 import type { IReviewRepository } from "../../../repositories/IReviewRepository";
@@ -37,12 +39,20 @@ function reviewRepo(purchased: boolean, current: ProductReview | null = null) {
   } as unknown as IReviewRepository & { saveOwn: ReturnType<typeof vi.fn>; moderate: ReturnType<typeof vi.fn> };
 }
 
-const products = { getPublishedById: vi.fn(async () => ({ id: "p1", name: "Latte" }) as Product) };
+const products = {
+  getPublishedById: vi.fn(async () => ({ id: "p1", name: "Latte", isPublished: true, categoryId: "c1" }) as Product),
+};
+
+/** The item's category, shown or hidden. */
+function categories(isActive: boolean) {
+  return { getAll: vi.fn(async () => [{ id: "c1", isActive } as Category]) };
+}
+const SHOWN = categories(true);
 
 describe("SubmitReview", () => {
   it("lets a guest who had the item review it, under their first name", async () => {
     const repo = reviewRepo(true);
-    await new SubmitReview(repo, products).execute(
+    await new SubmitReview(repo, products, SHOWN).execute(
       "p1",
       { rating: 5, comment: "  lovely " },
       { id: "g1", name: "Sara Ahmadi" },
@@ -59,11 +69,19 @@ describe("SubmitReview", () => {
 
   it("refuses a guest who hasn't had it, and a rating outside 1–5", async () => {
     await expect(
-      new SubmitReview(reviewRepo(false), products).execute("p1", { rating: 5 }, { id: "g1", name: "Sara" }),
+      new SubmitReview(reviewRepo(false), products, SHOWN).execute("p1", { rating: 5 }, { id: "g1", name: "Sara" }),
     ).rejects.toBeInstanceOf(ConflictError);
     await expect(
-      new SubmitReview(reviewRepo(true), products).execute("p1", { rating: 6 }, { id: "g1", name: "Sara" }),
+      new SubmitReview(reviewRepo(true), products, SHOWN).execute("p1", { rating: 6 }, { id: "g1", name: "Sara" }),
     ).rejects.toBeInstanceOf(ValidationError);
+  });
+
+  it("refuses an item whose category is hidden, as if it weren't there", async () => {
+    const repo = reviewRepo(true);
+    await expect(
+      new SubmitReview(repo, products, categories(false)).execute("p1", { rating: 5 }, { id: "g1", name: "Sara" }),
+    ).rejects.toBeInstanceOf(NotFoundError);
+    expect(repo.saveOwn).not.toHaveBeenCalled();
   });
 });
 

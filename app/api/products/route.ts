@@ -58,13 +58,15 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         .map((id) => id.trim())
         .filter(Boolean);
       const includeUnpublished = (await getSessionWith("dashboard.view")) != null;
-      products = await new GetProductsByIds(productRepository).execute(wanted, locale, { includeUnpublished });
+      products = await new GetProductsByIds(productRepository, categoryRepository).execute(wanted, locale, {
+        includeUnpublished,
+      });
     } else if (hasProductSearchCriteria(filters)) {
-      products = await new SearchProducts(productRepository).execute(filters, locale);
+      products = await new SearchProducts(productRepository, categoryRepository).execute(filters, locale);
     } else if (params.get("featured") === "true") {
-      products = await new GetFeaturedProducts(productRepository).execute(locale);
+      products = await new GetFeaturedProducts(productRepository, categoryRepository).execute(locale);
     } else {
-      products = await new GetProducts(productRepository).execute(locale);
+      products = await new GetProducts(productRepository, categoryRepository).execute(locale);
     }
     return NextResponse.json(products.map(withoutCost));
   } catch (error) {

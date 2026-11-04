@@ -36,7 +36,10 @@ type RouteContext = { params: Promise<{ id: string }> };
 export async function GET(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   const { id } = await params;
   try {
-    const product = await new GetPublishedProduct(productRepository).execute(id, getRequestLocale(request));
+    const product = await new GetPublishedProduct(productRepository, categoryRepository).execute(
+      id,
+      getRequestLocale(request),
+    );
     if (!product) return errorResponse(404, { message: "Product not found.", code: "NOT_FOUND" });
     return NextResponse.json(withoutCost(product));
   } catch (error) {

@@ -34,7 +34,47 @@ export type Ingredient = {
   purchaseQuantity: number;
   isActive: boolean;
   updatedAt: string;
+  /** Stock on hand, in `unit`. */
+  onHand: number;
+  /** Whether any stock has ever moved (a delivery, a sale, a count…). */
+  hasHistory: boolean;
 };
+
+/**
+ * Whether an ingredient's unit is fixed: every quantity on record — what's on
+ * hand, each movement, each recipe line — is in it, so once the item holds stock
+ * or has moved, 1000 g can't quietly become 1000 pieces.
+ */
+export function isUnitLocked(item: Pick<Ingredient, "onHand" | "hasHistory">): boolean {
+  return item.onHand !== 0 || item.hasHistory;
+}
+
+/** Why an edit to an ingredient is refused. */
+export type IngredientEditRefusal = "UNIT_LOCKED" | "STOCK_ON_HAND" | "INGREDIENT_IN_RECIPE";
+
+/**
+ * Whether an edit to an ingredient may be saved, and why not:
+ * - `UNIT_LOCKED` — a new unit for an item whose unit is fixed ({@link isUnitLocked});
+ * - `STOCK_ON_HAND` — switching off an item still holding stock (its value would be
+ *   stranded in Inventory, where no delivery, count or waste could reach it — they
+ *   refuse a switched-off item); count it to zero or write it off first;
+ * - `INGREDIENT_IN_RECIPE` — switching off an item a published menu item's recipe
+ *   uses: every sale would keep taking it out of stock with nothing able to put it
+ *   back. The recipe changes first (or the item comes off the menu).
+ * An item already off may be edited freely; only the switch to off is checked.
+ */
+export function ingredientEditRefusal(
+  existing: Pick<Ingredient, "unit" | "isActive" | "onHand" | "hasHistory">,
+  next: Pick<Ingredient, "unit" | "isActive">,
+  usedByPublishedItem: boolean,
+): IngredientEditRefusal | null {
+  if (next.unit !== existing.unit && isUnitLocked(existing)) return "UNIT_LOCKED";
+  if (existing.isActive && !next.isActive) {
+    if (existing.onHand !== 0) return "STOCK_ON_HAND";
+    if (usedByPublishedItem) return "INGREDIENT_IN_RECIPE";
+  }
+  return null;
+}
 
 /** One ingredient in an item's recipe, in the ingredient's unit (e.g. 18 g, 200 ml, 1 piece). */
 export type RecipeLine = { ingredientId: string; quantity: number };

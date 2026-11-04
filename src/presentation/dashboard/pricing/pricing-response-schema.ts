@@ -62,6 +62,8 @@ export const ingredientResponseSchema: z.ZodMiniType<Ingredient> = z.object({
   purchaseQuantity: z.number(),
   isActive: z.boolean(),
   updatedAt: z.string(),
+  onHand: z.number(),
+  hasHistory: z.boolean(),
 });
 export const ingredientListResponseSchema = z.array(ingredientResponseSchema);
 

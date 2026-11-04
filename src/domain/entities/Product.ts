@@ -99,7 +99,27 @@ export type Product = {
   taxExempt: boolean;
   /** Book-only details; `undefined` for drinks and food. */
   book?: BookDetails;
+  /**
+   * A book whose copies Inventory counts (see {@link isHeldInInventory}): its
+   * `stockQuantity` moves only with stock movements and orders, never from the
+   * item's form. Set by the dashboard's single-item read (`getById`); absent
+   * elsewhere.
+   */
+  inventoryTracked?: boolean;
 };
+
+/**
+ * Whether Inventory counts an item's units: a book off the shelf (not made to order)
+ * whose recipe is a single stock item — the one-copy recipe "Track books" gives it.
+ * Every movement of that stock item moves the book's sale stock with it, so there
+ * is one count of its copies, and the item's form can't set a second one.
+ */
+export function isHeldInInventory(
+  item: Pick<Product, "kind" | "madeToOrder">,
+  recipe: readonly { quantity: number }[],
+): boolean {
+  return item.kind === "book" && !item.madeToOrder && recipe.length === 1 && recipe[0].quantity > 0;
+}
 
 /**
  * One row of the dashboard's menu list: the item, plus — for a made-to-order item

@@ -4,6 +4,8 @@ import {
   buildPricingReport,
   currentPosition,
   DEFAULT_PRICING_SETTINGS,
+  ingredientEditRefusal,
+  isUnitLocked,
   overheadPerUnit,
   recipeCost,
   suggestPrice,
@@ -18,6 +20,8 @@ const ingredient = (id: string, purchasePrice: number, purchaseQuantity: number)
   purchaseQuantity,
   isActive: true,
   updatedAt: "2026-10-16T00:00:00Z",
+  onHand: 0,
+  hasHistory: false,
 });
 
 // Beans: 1,200,000 per kg → 1,200/g. Milk: 60,000 per litre → 60/ml. Cup: 5,000 each.
@@ -111,5 +115,36 @@ describe("pricing", () => {
     });
     expect(cake).toMatchObject({ costSource: "manual", directCost: 44_000, markupBps: 3000, markupIsDefault: true });
     expect(mystery).toMatchObject({ costSource: "none", suggestedPrice: null, profitPerUnit: null });
+  });
+});
+
+describe("editing a stock item", () => {
+  const fresh = { unit: "g" as const, isActive: true, onHand: 0, hasHistory: false };
+
+  it("fixes the unit once the item holds stock or has moved", () => {
+    expect(isUnitLocked(fresh)).toBe(false);
+    expect(isUnitLocked({ ...fresh, onHand: 500 })).toBe(true);
+    // Counted back to zero, its movements are still in grams.
+    expect(isUnitLocked({ ...fresh, hasHistory: true })).toBe(true);
+    // Overdrawn stock is stock too.
+    expect(isUnitLocked({ ...fresh, onHand: -10, hasHistory: true })).toBe(true);
+  });
+
+  it("refuses a new unit only when it's fixed", () => {
+    expect(ingredientEditRefusal(fresh, { unit: "ml", isActive: true }, false)).toBeNull();
+    expect(ingredientEditRefusal({ ...fresh, hasHistory: true }, { unit: "ml", isActive: true }, false)).toBe(
+      "UNIT_LOCKED",
+    );
+    expect(ingredientEditRefusal({ ...fresh, hasHistory: true }, { unit: "g", isActive: true }, false)).toBeNull();
+  });
+
+  it("refuses switching off an item holding stock, or one a published recipe uses", () => {
+    const off = { unit: "g" as const, isActive: false };
+    expect(ingredientEditRefusal({ ...fresh, onHand: 3, hasHistory: true }, off, false)).toBe("STOCK_ON_HAND");
+    expect(ingredientEditRefusal({ ...fresh, onHand: -2, hasHistory: true }, off, false)).toBe("STOCK_ON_HAND");
+    expect(ingredientEditRefusal({ ...fresh, hasHistory: true }, off, true)).toBe("INGREDIENT_IN_RECIPE");
+    expect(ingredientEditRefusal({ ...fresh, hasHistory: true }, off, false)).toBeNull();
+    // Already off: other edits go through.
+    expect(ingredientEditRefusal({ ...fresh, isActive: false, onHand: 3 }, off, true)).toBeNull();
   });
 });

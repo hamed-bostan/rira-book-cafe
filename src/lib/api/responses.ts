@@ -98,9 +98,18 @@ export function errorResponseFromException(error: unknown, context: string, log:
   // with orders booked into it). Well-formed request, refusing state → 409, and the
   // message names what's in the way.
   // The state refuses the request (table taken, event full, …). 409 with the
-  // machine-readable reason as the code, which the client localizes.
+  // machine-readable reason as the code, which the client localizes. A refusal
+  // about particular fields names them too, each with the code as a `formErrors`
+  // key (`UNIT_LOCKED` → `unitLocked`), so a form shows it where it applies.
   if (error instanceof ConflictError) {
-    return errorResponse(409, { message: error.message, code: error.code });
+    const key = conflictFieldKey(error.code);
+    return errorResponse(409, {
+      message: error.message,
+      code: error.code,
+      ...(error.fields.length > 0
+        ? { fieldErrors: Object.fromEntries(error.fields.map((field) => [field, key])) }
+        : {}),
+    });
   }
 
   // An order asked for more than is on hand (or an item sold out meanwhile).
@@ -161,4 +170,9 @@ export function firstFieldErrors(error: $ZodError): Record<string, string> {
     if (messages && messages.length > 0) result[field] = messages[0];
   }
   return result;
+}
+
+/** A conflict code as the `formErrors` key a form shows on its fields: `UNIT_LOCKED` → `unitLocked`. */
+function conflictFieldKey(code: string): string {
+  return code.toLowerCase().replace(/_([a-z])/g, (_match, letter: string) => letter.toUpperCase());
 }

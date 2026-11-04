@@ -2,16 +2,21 @@
  * The request was well-formed but the current state refuses it: a table already
  * booked for that time, an event that's full, a status change the workflow
  * doesn't allow. Nothing was changed. `code` is the machine-readable reason the
- * client localizes; the presentation layer answers 409.
+ * client localizes; the presentation layer answers 409. `fields` names the form
+ * fields the refusal is about (`unit`, `lines.2.ingredientId`), when it's about
+ * some, so a form can show it on them.
  */
 export class ConflictError extends Error {
+  public readonly fields: readonly string[];
+
   constructor(
     public readonly code: ConflictCode,
     message: string,
-    options?: { cause?: unknown },
+    options?: { cause?: unknown; fields?: readonly string[] },
   ) {
     super(message, options);
     this.name = "ConflictError";
+    this.fields = options?.fields ?? [];
   }
 }
 
@@ -86,4 +91,12 @@ export type ConflictCode =
   | "ITEM_SERVED"
   | "ORDER_EMPTY"
   | "PROMO_NO_LONGER_APPLIES"
-  | "POINTS_EXCEED_TOTAL";
+  | "POINTS_EXCEED_TOTAL"
+  // Stock items. Every quantity on record is in the item's unit, so it's fixed once
+  // the item holds stock or has moved; an item holding stock, or in a published
+  // item's recipe, can't be switched off; opening stock is only for an item with
+  // no history yet.
+  | "UNIT_LOCKED"
+  | "STOCK_ON_HAND"
+  | "INGREDIENT_IN_RECIPE"
+  | "STOCK_HAS_HISTORY";

@@ -4,6 +4,7 @@ import {
   consumptionFor,
   countEntry,
   issueStock,
+  openingLinesRefused,
   openingStockEntry,
   receiveStock,
   stockLevel,
@@ -20,6 +21,12 @@ describe("perpetual inventory", () => {
     const first = receiveStock({ onHand: 0, value: 0, averageCost: 0 }, 1000, 1_800_000);
     const second = receiveStock(first, 1000, 2_000_000);
     expect(second).toEqual({ onHand: 2000, value: 3_800_000, averageCost: 1900 });
+  });
+
+  it("lets units that came free lower the average cost", () => {
+    // 1000 g at 1,800/g, then 1000 g free → 2000 g still worth 1,800,000, 900/g.
+    const paid = receiveStock({ onHand: 0, value: 0, averageCost: 0 }, 1000, 1_800_000);
+    expect(receiveStock(paid, 1000, 0)).toEqual({ onHand: 2000, value: 1_800_000, averageCost: 900 });
   });
 
   it("issues at average cost, and the last of the stock takes all its value", () => {
@@ -96,5 +103,18 @@ describe("inventory postings", () => {
     expect(balanced.lines).toContainEqual({ accountCode: "3200", debit: 0, credit: 3_000_000 });
     expect(entry?.uniqueKey).toBe("yearClose:1404");
     expect(yearCloseEntry({ fiscalYear: 1404, toDay: "2026-03-20", movements: [] }, ACTOR)).toBeNull();
+  });
+});
+
+describe("openingLinesRefused", () => {
+  it("refuses, by position, every line for an item that has moved before", () => {
+    const lines = [
+      { ingredientId: "beans" },
+      { ingredientId: "milk" },
+      { ingredientId: "cups" },
+      { ingredientId: "milk" },
+    ];
+    expect(openingLinesRefused(lines, new Set(["milk"]))).toEqual([1, 3]);
+    expect(openingLinesRefused(lines, new Set())).toEqual([]);
   });
 });

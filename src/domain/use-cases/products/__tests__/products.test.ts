@@ -356,6 +356,46 @@ describe("UpdateProduct", () => {
     await new UpdateProduct(repo, shelf(1, 0).loans, MENU).execute("p1", input(undefined), ACTOR);
     expect(update).toHaveBeenCalledTimes(2);
   });
+
+  it("leaves the stock of a book Inventory counts out of the save", async () => {
+    const book = product({
+      kind: "book",
+      name: "Savushun",
+      stockQuantity: 4,
+      inventoryTracked: true,
+      book: { author: "Daneshvar", availability: "sale" },
+    });
+    const { repo, update, entries } = repoWith([book]);
+
+    const saved = await new UpdateProduct(repo, EMPTY_SHELF.loans).execute(
+      "p1",
+      {
+        ...INPUT,
+        kind: "book",
+        name: "Savushun",
+        stockQuantity: 40,
+        book: { author: "Daneshvar", availability: "sale" },
+      },
+      ACTOR,
+    );
+
+    expect(update.mock.calls[0][1].stockQuantity).toBeUndefined();
+    expect(saved.stockQuantity).toBe(4);
+    expect(entries[0]?.changes.map((change) => change.field)).not.toContain("stockQuantity");
+  });
+
+  it("still saves the stock of a book Inventory doesn't count", async () => {
+    const book = product({ kind: "book", stockQuantity: 4, book: { author: "Daneshvar", availability: "sale" } });
+    const { repo, update } = repoWith([book]);
+
+    await new UpdateProduct(repo, EMPTY_SHELF.loans).execute(
+      "p1",
+      { ...INPUT, kind: "book", stockQuantity: 40, book: { author: "Daneshvar", availability: "sale" } },
+      ACTOR,
+    );
+
+    expect(update.mock.calls[0][1].stockQuantity).toBe(40);
+  });
 });
 
 describe("DeleteProduct", () => {

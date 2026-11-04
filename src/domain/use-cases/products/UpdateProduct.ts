@@ -17,7 +17,8 @@ import type { IProductRepository, NewProduct } from "../../repositories/IProduct
 /**
  * Save a menu item's edit form. A book's copies to lend can't go below the copies
  * of it out on loan right now, and a book with copies out can't stop being one
- * (`COPIES_BELOW_ON_LOAN`) — those loans need a copy to come back to.
+ * (`COPIES_BELOW_ON_LOAN`) — those loans need a copy to come back to. A book
+ * Inventory counts keeps its stock: only stock movements change it.
  */
 export class UpdateProduct {
   constructor(
@@ -43,10 +44,15 @@ export class UpdateProduct {
       );
     }
 
+    // A book Inventory counts keeps one count of its copies, moved only by stock
+    // movements and orders: whatever stock the form sent is left out of the write
+    // rather than refused — the read-only field may simply be stale after a sale.
+    const write = existing.inventoryTracked ? { ...valid, stockQuantity: undefined } : valid;
+
     // The entry is written by the repository inside the transaction that saves the
     // item, diffed against the row the write actually produced. Returning `null`
     // for an unchanged save keeps the log a record of changes rather than clicks.
-    return this.productRepo.update(id, valid, (saved) => {
+    return this.productRepo.update(id, write, (saved) => {
       const changes = diffFields(productSnapshot(existing), productSnapshot(saved));
       if (changes.length === 0) return null;
       return {

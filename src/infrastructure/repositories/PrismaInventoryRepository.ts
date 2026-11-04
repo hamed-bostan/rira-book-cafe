@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import type { Expense } from "@/src/domain/entities/Expense";
 import {
   issueStock,
+  openingLinesRefused,
   receiveStock,
   roundQuantity,
   STOCK_MOVEMENT_KINDS,
@@ -11,8 +12,10 @@ import {
   type StockMovement,
   type StockMovementKind,
 } from "@/src/domain/entities/Inventory";
+import { ACTIVE_ORDER_STATUSES } from "@/src/domain/entities/Order";
 import { createPage, toSkipTake, type Page, type PageRequest } from "@/src/domain/entities/Pagination";
 import { INGREDIENT_UNITS, type IngredientUnit } from "@/src/domain/entities/Pricing";
+import { ConflictError } from "@/src/domain/errors/ConflictError";
 import { NotFoundError } from "@/src/domain/errors/NotFoundError";
 import { ValidationError } from "@/src/domain/errors/ValidationError";
 import type { AuditHook } from "@/src/domain/repositories/AuditHook";
@@ -45,6 +48,7 @@ export class PrismaInventoryRepository implements IInventoryRepository {
     const rows = await prisma.ingredient.findMany({
       where: includeInactive ? {} : { isActive: true },
       orderBy: { name: "asc" },
+      include: { _count: { select: { stockMovements: true } } },
     });
     return rows.map((row) => {
       const reorderLevel = row.reorderLevel ?? undefined;
@@ -58,6 +62,7 @@ export class PrismaInventoryRepository implements IInventoryRepository {
         reorderLevel,
         isActive: row.isActive,
         level: stockLevel({ onHand: row.onHand, reorderLevel }),
+        hasHistory: row._count.stockMovements > 0,
       };
     });
   }
@@ -152,15 +157,19 @@ export class PrismaInventoryRepository implements IInventoryRepository {
           },
           actor,
         );
-        // The latest price paid is what the pricing advisor costs recipes at.
-        await tx.ingredient.update({
-          where: { id: line.ingredientId },
-          data: { purchasePrice: BigInt(line.cost), purchaseQuantity: line.quantity },
-        });
+        // The latest price paid is what the pricing advisor costs recipes at. A line
+        // that came free (a supplier's sample, a bonus case) says nothing about the
+        // price: it only lowers the average cost, as the free units above already did.
+        if (line.cost > 0) {
+          await tx.ingredient.update({
+            where: { id: line.ingredientId },
+            data: { purchasePrice: BigInt(line.cost), purchaseQuantity: line.quantity },
+          });
+        }
       }
       await recostProductsUsing(
         tx,
-        lines.map((line) => line.ingredientId),
+        lines.filter((line) => line.cost > 0).map((line) => line.ingredientId),
       );
       return expense;
     });
@@ -277,6 +286,21 @@ export class PrismaInventoryRepository implements IInventoryRepository {
         tx,
         lines.map((line) => line.ingredientId),
       );
+      // Read under the rows' locks, so two openings for one item can't both pass.
+      const moved = await tx.stockMovement.findMany({
+        where: { ingredientId: { in: lines.map((line) => line.ingredientId) } },
+        distinct: ["ingredientId"],
+        select: { ingredientId: true },
+      });
+      const refused = openingLinesRefused(input.lines, new Set(moved.map((row) => row.ingredientId)));
+      if (refused.length > 0) {
+        const names = [...new Set(refused.map((index) => stock.get(input.lines[index].ingredientId)?.name))];
+        throw new ConflictError(
+          "STOCK_HAS_HISTORY",
+          `${names.join(", ")} already ${names.length === 1 ? "has" : "have"} stock history — record a delivery or a count instead.`,
+          { fields: refused.map((index) => `lines.${index}.ingredientId`) },
+        );
+      }
       for (const line of lines) {
         const current = stock.get(line.ingredientId) as LockedStock;
         await writeMovement(
@@ -336,14 +360,20 @@ export class PrismaInventoryRepository implements IInventoryRepository {
             data: { productId: book.id, ingredientId: item.id, quantity: 1, position: 0 },
           });
           tracked += 1;
-          if (book.stockQuantity > 0) {
-            const lineValue = cost * book.stockQuantity;
+          // Copies on the shelf include those open orders have taken off the sale
+          // stock but not yet used up: completing those orders takes them out of
+          // stock, so they come in now — or the two counts would part by them.
+          const copies = (await tx.product.findUniqueOrThrow({ where: { id: book.id } })).stockQuantity;
+          const onHand = copies + (await reservedCopies(tx, book.id));
+          if (onHand > 0) {
+            const lineValue = cost * onHand;
             const [current] = (await lockStock(tx, [item.id])).values();
             await writeMovement(
               tx,
               current,
-              receiveStock(current, book.stockQuantity, lineValue),
-              { kind: "opening", quantity: book.stockQuantity, value: lineValue, date, referenceId: id },
+              receiveStock(current, onHand, lineValue),
+              // The sale stock already holds these copies.
+              { kind: "opening", quantity: onHand, value: lineValue, date, referenceId: id, shelfMoved: true },
               actor,
             );
             value += lineValue;
@@ -360,6 +390,15 @@ export class PrismaInventoryRepository implements IInventoryRepository {
 
 /** Long enough for a catalog's worth of titles in one transaction. */
 const TRACK_BOOKS_TIMEOUT_MS = 60_000;
+
+/** Units of an item that open orders (placed, not yet completed or cancelled) hold. */
+async function reservedCopies(tx: Prisma.TransactionClient, productId: string): Promise<number> {
+  const { _sum } = await tx.orderItem.aggregate({
+    where: { productId, order: { status: { in: [...ACTIVE_ORDER_STATUSES] } } },
+    _sum: { quantity: true },
+  });
+  return _sum.quantity ?? 0;
+}
 
 /** Lock the rows and make sure every item exists and is active. */
 async function lockAll(tx: Prisma.TransactionClient, ids: readonly string[]): Promise<Map<string, LockedStock>> {

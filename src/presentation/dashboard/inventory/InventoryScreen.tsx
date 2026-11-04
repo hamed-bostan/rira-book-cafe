@@ -203,7 +203,9 @@ export async function InventoryScreen({
           )}
         </section>
 
-        {canManage ? (
+        {/* Opening stock is once per item, before anything has moved it: offered
+            only while some item is still without history. */}
+        {canManage && active.some((item) => !item.hasHistory) ? (
           <p className="text-body-small text-muted-foreground sm:text-body-caption">
             {t("openingHint")}{" "}
             <Link

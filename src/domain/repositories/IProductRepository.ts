@@ -27,12 +27,12 @@ export type ProductTranslationInput = {
  * them (locales absent from it are removed, so `[]` clears all).
  *
  * `stockQuantity` may be left out for a made-to-order item, whose count nobody
- * keeps: the stored one is then left as it is (0 for a new item). A counted item
- * always carries it.
+ * keeps, and on an update of a book Inventory counts, whose count only stock
+ * movements set: the stored one is then left as it is (0 for a new item).
  */
 export type NewProduct = Omit<
   Product,
-  "id" | "discountPercent" | "rating" | "ratingCount" | "images" | "stockQuantity"
+  "id" | "discountPercent" | "rating" | "ratingCount" | "images" | "stockQuantity" | "inventoryTracked"
 > & {
   stockQuantity?: number;
   translations?: ProductTranslationInput[];

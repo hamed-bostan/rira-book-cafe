@@ -69,7 +69,11 @@ export type IInventoryRepository = {
     ledger: StockLedgerHook,
     actor: { id: string; name: string },
   ): Promise<{ tracked: number; value: number }>;
-  /** Bring stock already on the shelves into the books. */
+  /**
+   * Bring stock already on the shelves into the books. Refuses the whole entry
+   * (`STOCK_HAS_HISTORY`, naming the lines) when any of its items has moved before
+   * — see `openingLinesRefused`.
+   */
   recordOpening(
     input: OpeningStockInput,
     ledger: StockLedgerHook,

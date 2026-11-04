@@ -76,6 +76,10 @@ type ApiErrorKey =
   | "shiftAlreadyOpen"
   | "noOpenShift"
   | "alreadyOnTeam"
+  | "unitLocked"
+  | "stockOnHand"
+  | "ingredientInRecipe"
+  | "stockHasHistory"
   | "gatewayUnavailable"
   | "rateLimited"
   | "timeout"
@@ -150,6 +154,11 @@ const CODE_KEYS: Readonly<Record<string, ApiErrorKey>> = {
   SHIFT_ALREADY_OPEN: "shiftAlreadyOpen",
   NO_OPEN_SHIFT: "noOpenShift",
   ALREADY_ON_TEAM: "alreadyOnTeam",
+  // Stock items.
+  UNIT_LOCKED: "unitLocked",
+  STOCK_ON_HAND: "stockOnHand",
+  INGREDIENT_IN_RECIPE: "ingredientInRecipe",
+  STOCK_HAS_HISTORY: "stockHasHistory",
   // A 429 from `enforceRateLimit` (orders, payments, booking requests).
   RATE_LIMITED: "rateLimited",
   INTERNAL: "server",

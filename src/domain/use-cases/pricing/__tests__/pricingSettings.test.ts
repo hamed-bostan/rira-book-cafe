@@ -41,6 +41,8 @@ function pricingWith(products: PricedProduct[], settings: PricingSettings = DEFA
     id: "i1",
     isActive: true,
     updatedAt: "",
+    onHand: 0,
+    hasHistory: false,
     ...input,
   });
   const updateSettings = vi.fn<IPricingRepository["updateSettings"]>(async (next) => next);

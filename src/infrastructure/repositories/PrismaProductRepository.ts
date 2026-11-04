@@ -4,6 +4,7 @@ import { ingredientAlertFor } from "@/src/domain/entities/Inventory";
 import { createPage, toSkipTake, type Page, type PageRequest } from "@/src/domain/entities/Pagination";
 import {
   BOOK_AVAILABILITIES,
+  isHeldInInventory,
   PRODUCT_KINDS,
   type BookAvailability,
   type BookDetails,
@@ -60,9 +61,16 @@ export class PrismaProductRepository implements IProductRepository {
   }
 
   async getById(id: string, locale?: string): Promise<Product | null> {
-    const row = await this.db.product.findUnique({ where: { id } });
+    // With its recipe's shape: whether Inventory counts the item's units.
+    const row = await this.db.product.findUnique({
+      where: { id },
+      include: { recipeLines: { select: { quantity: true } } },
+    });
     if (!row) return null;
-    return (await localizeProducts([toProduct(row)], locale))[0];
+    const { recipeLines, ...columns } = row;
+    const product = toProduct(columns);
+    product.inventoryTracked = isHeldInInventory(product, recipeLines);
+    return (await localizeProducts([product], locale))[0];
   }
 
   async getPublishedById(id: string, locale?: string): Promise<Product | null> {

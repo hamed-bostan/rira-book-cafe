@@ -369,6 +369,24 @@ function planPurchasing(owner: ActivityActor): void {
     suppliers.landlord = (await saveSupplier.create({ name: "Mr. Sharifi (landlord)" })).id;
     suppliers.utility = (await saveSupplier.create({ name: "Tehran Power & Gas" })).id;
   });
+  // More copies of the books that sell, before the month starts. A tracked book's
+  // copies on the menu follow its stock item, so this stocks the shelf too.
+  schedule(at(-DAYS, "09:10"), "book delivery", async () =>
+    receiveStock.execute(
+      {
+        date: day(-DAYS),
+        description: "Books for the shelf",
+        lines: [
+          await deliveryLine("seed-ing-book-blind-owl", 6),
+          await deliveryLine("seed-ing-book-uncle-napoleon", 4),
+        ],
+        vatAmount: 0,
+        paidFrom: "bank",
+      },
+      owner,
+      new Date(),
+    ),
+  );
 
   // Weekly deliveries keep the bar stocked; the last bean order is still owed.
   for (const offset of [-28, -21, -14, -7]) {
@@ -817,8 +835,7 @@ async function prepare(): Promise<ActivityActor> {
     where: { id: { startsWith: "seed-" }, kind: { not: "book" }, madeToOrder: false },
     data: { stockQuantity: 1000 },
   });
-  await prisma.product.update({ where: { id: "seed-book-blind-owl" }, data: { stockQuantity: 12 } });
-  await prisma.product.update({ where: { id: "seed-book-uncle-napoleon" }, data: { stockQuantity: 8 } });
+  // Books come in as a delivery (see planPurchasing): Inventory counts their copies.
 
   const ownerPhone = process.env.SEED_OWNER_PHONE?.trim();
   const owner = ownerPhone ? await prisma.user.findUnique({ where: { id: normalizePhone(ownerPhone) } }) : null;

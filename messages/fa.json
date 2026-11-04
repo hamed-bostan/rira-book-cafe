@@ -247,7 +247,8 @@
     "supplierRequired": "تأمین‌کننده را انتخاب کنید.",
     "directionInvalid": "مشخص کنید موجودی وارد شد یا خارج.",
     "costPerInvalid": "مشخص کنید مبلغ برای چیست.",
-    "adjustmentReasonRequired": "دلیل را انتخاب کنید."
+    "adjustmentReasonRequired": "دلیل را انتخاب کنید.",
+    "closedYearFinal": "سال مالی بسته‌شده دوباره باز نمی‌شود: دفاتر را تا آخرین روز آن سال یا بعد از آن قفل کنید."
   },
   "apiErrors": {
     "alreadyPosted": "این مورد قبلاً ثبت شده است.",

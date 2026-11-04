@@ -122,3 +122,25 @@ Still covered only by API tests: replacing or removing an expense's receipt on i
 Test fix found in the full run: Phase 3's inventory test opened a row's menu right after a count moved that row on a long list, and the menu was left off screen. The test now searches the list down to its item first (`?q=`), as staff would.
 
 Gate: typecheck pass; lint 0 errors; unit 1976 passed; integration 537 passed; e2e (Chrome) 760 passed, 0 failed (full run — the reversal change touches every posting).
+
+### Phase 5 — Finance B: accounting, pricing (2026-11-05)
+
+Bugs fixed (each with a regression test that fails without the fix):
+
+1. **A closed fiscal year could be reopened.** After a year close, Accounting settings still let the "Books closed through" date be cleared or moved back into the closed year. Entries could then be posted into it, and since the year's closing entry can't be posted again, they'd never reach retained earnings. A month's lock can still be lifted; the lock can no longer go before the last closed year's end (`UpdateAccountingSettings`, message `closedYearFinal` in en and fa). Tests: `ledgerAudit.test.ts`, `finance-b.integration.test.ts`.
+2. **Unmatching a bank line left its recorded fee or interest on the books.** Recording a line as a fee or interest posts an entry and matches it; unmatching removed only the match, and those entries can't be reversed from the journal. Recording the line again booked it twice, and a wrong record could never be undone. Unmatching now reverses that fee or interest entry (dated today) in the same transaction. A gateway payout isn't touched: the overview's settlement form posts the same kind of entry, and those are already reversible from the journal. Tests: `bankStatements.test.ts`, `finance-b.integration.test.ts`, `finance-b-actions.spec.ts`.
+3. **The pricing page linked view-only users to the recipe editor**, which sent them away. The cost source is now plain text for them (`PricingItemCard.tsx`).
+
+Not bugs:
+
+- S5.3 A gateway settlement has no "only once" key: two real payouts can share figures, so one would be wrong. Over-booking is refused by the gateway-balance check, and the form is disabled while it saves.
+- S5.5 The journal list has no account filter, so its print link has nothing to drop.
+
+New coverage:
+
+- `tests/integration/finance-b.integration.test.ts`: a bank statement end to end (create, add and remove lines, record a fee, unmatch it, match by hand, auto-match; floor staff refused); the year close and the lock after it (and closing twice, or the running year, refused); an account's ledger; an item's own markup and the suggested price applied (409 if the price moved).
+- `e2e/finance-b-actions.spec.ts`: a new account made and switched off; a quick manual entry; a bank line booked as a fee, unmatched and booked again (once); an item's profit % set and cleared.
+
+Still covered only by API tests: the year close and the settings refusal in the browser (closing a year in the shared e2e database would lock other specs' backdated postings), applying a suggested price (it would change seeded menu prices other specs rely on), reconcile, and the gateway settlement form.
+
+Gate: typecheck pass; lint 0 errors; unit 1980 passed; integration 545 passed; e2e (Chrome) 764 passed, 0 failed (full run).

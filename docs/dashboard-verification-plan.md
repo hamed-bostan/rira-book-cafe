@@ -62,3 +62,20 @@ Not bugs: the overview confirms a booking without a table by design (only seatin
 New coverage: `e2e/service-actions.spec.ts` (bar display start / tick / serve; order page advance, tick a line, pay + unmark, note; row menu; bulk serve / pay / cancel; service filter, clear all, sort by total; write-off) and `tests/integration/order-service.integration.test.ts` (notes route, bulk route, counts, phone search). Still covered only by API tests: the overview queue's step button (the queue shows the oldest open orders, so a test's new order may not be in it).
 
 Gate: typecheck pass; lint 0 errors; unit 1976 passed; integration 518 passed; e2e (Chrome) 746 passed, 0 failed.
+
+### Phase 2 — Bookings + Library (2026-11-04)
+
+Bug fixed:
+
+1. **A past event's page couldn't be reached.** The Past tab's cards had no link, though the event page is built for past events: it's where a late ticket payment or a refund is taken. The link now shows on both tabs (`EventCard.tsx`). Test: `bookings-library-actions.spec.ts` ("a past event's page opens from the Past tab").
+
+Not bugs: cancelling a paid stay or sign-up and refunding it in one click is two calls by design; a refund that fails afterwards says so in its own toast and leaves the row's Refund button to retry (`useRefundOffer`).
+
+Everything else worked as built. New coverage:
+
+- `tests/integration/bookings-library-actions.integration.test.ts`: a booking's Complete and both undos (and the undo refused past a Seat), change table; a stay's undo check-in, check-out, and check-out refused before check-in; a loan's extension undone (and a second undo refused); staff messages about a stay and a loan (and a mismatched phone refused); `GET /admin/events` and `/admin/events/:id`.
+- `e2e/bookings-library-actions.spec.ts`: Seat → Undo → Seat → Complete and Change table on the Reservations page; Check in → Undo → Check in → Check out and Message on the Suite page; Extend → Undo and Message on Book loans; create an event from its form, edit it, hold a table, delete it; open a past event.
+
+Still covered only by API tests: a hold's Skip / Remove, the event image upload, cancelling a sign-up and taking a ticket payment from the guest list (the last two are in `booking-money` / `booking-changes` at route level).
+
+Gate: typecheck pass; lint 0 errors; integration 527 passed; e2e (Chrome) — the 8 Bookings / Library / messages / accessibility specs, 199 passed (one small UI change, so no full run).

@@ -26,9 +26,8 @@ import { toActivityRow } from "./writeActivityEntry";
  *
  * Read only for changes. Entries describing a change are written by the
  * repositories that make it, inside the same transaction (see `recordAudit`), so
- * there is no second way into the table for those. `recordEvent` is the one write
- * here, and only for admin actions that change nothing stored — see the port. No
- * update and no delete anywhere, here or in the migration.
+ * there is no second way into the table for those. No update anywhere, and the only
+ * delete is `pruneBefore` — retention by cut-off, which records itself (see the port).
  */
 export class PrismaActivityLog implements IActivityLog {
   constructor(private readonly logger: ILogger) {}
@@ -84,17 +83,44 @@ export class PrismaActivityLog implements IActivityLog {
     return [...latest.entries()].map(([id, { name }]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
   }
 
-  async recordEvent(entry: NewActivityEntry): Promise<void> {
-    // Best-effort, matching the port and the thing being recorded: the message has
-    // already gone out and can't be unsent, so throwing here would fail a request
-    // whose visible effect already happened — and invite the admin to send it
-    // again. A lost entry is emitted whole behind a greppable marker, so the
-    // record survives in the logs even when the row didn't get written.
-    try {
-      await prisma.activityEntry.create({ data: toActivityRow(entry) });
-    } catch (error) {
-      this.logger.error("ACTIVITY_LOG_WRITE_FAILED", { error, entry });
+  async *entryBatches(filters: ActivityFilters, batchSize: number): AsyncGenerator<ActivityEntry[]> {
+    const where = toWhere(filters);
+    let cursor: { createdAt: Date; id: string } | null = null;
+    for (;;) {
+      const after: Prisma.ActivityEntryWhereInput | null = cursor
+        ? {
+            OR: [{ createdAt: { lt: cursor.createdAt } }, { createdAt: cursor.createdAt, id: { lt: cursor.id } }],
+          }
+        : null;
+      const rows: ActivityRow[] = await prisma.activityEntry.findMany({
+        where: after ? { AND: [where, after] } : where,
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+        take: batchSize,
+      });
+      if (rows.length === 0) return;
+      yield rows.map(toActivityEntry);
+      if (rows.length < batchSize) return;
+      const last: ActivityRow = rows[rows.length - 1];
+      cursor = { createdAt: last.createdAt, id: last.id };
     }
+  }
+
+  async pruneBefore(cutoff: Date, batchSize: number, entry: (deleted: number) => NewActivityEntry): Promise<number> {
+    return prisma.$transaction(async (tx) => {
+      // The oldest batch first, picked by the `created_at` index. The prune entries
+      // themselves age out like any other once they pass the cut-off.
+      const doomed = await tx.activityEntry.findMany({
+        where: { createdAt: { lt: cutoff } },
+        orderBy: { createdAt: "asc" },
+        select: { id: true },
+        take: batchSize,
+      });
+      if (doomed.length === 0) return 0;
+      const { count } = await tx.activityEntry.deleteMany({ where: { id: { in: doomed.map((row) => row.id) } } });
+      await tx.activityEntry.create({ data: toActivityRow(entry(count)) });
+      this.logger.info("Activity log pruned", { deleted: count, cutoff: cutoff.toISOString() });
+      return count;
+    });
   }
 }
 
@@ -107,6 +133,15 @@ function toWhere(filters: ActivityFilters): Prisma.ActivityEntryWhereInput {
   if (filters.action) and.push({ action: filters.action });
   // Array containment, served by the GIN index on the column.
   if (filters.field) and.push({ changedFields: { has: filters.field } });
+  if (filters.from) and.push({ createdAt: { gte: filters.from } });
+  if (filters.to) and.push({ createdAt: { lt: filters.to } });
+  // A plain ILIKE: the date range and the other filters usually narrow the rows
+  // first, and the log of one cafe is small enough that a trigram index isn't
+  // worth its write cost on every audited change.
+  if (filters.search) {
+    const contains = { contains: filters.search, mode: "insensitive" as const };
+    and.push({ OR: [{ entityLabel: contains }, { actorName: contains }, { entityId: contains }] });
+  }
   // Anded alongside the chosen filters rather than replacing them, so a viewer's
   // permission narrows their query and can never widen it.
   if (filters.visibleEntityTypes) {
@@ -142,8 +177,7 @@ function toChanges(value: Prisma.JsonValue): ActivityChange[] {
   return changes;
 }
 
-/** Map a Prisma row to the domain entity, narrowing the stored union strings. */
-function toActivityEntry(row: {
+type ActivityRow = {
   id: string;
   actorId: string;
   actorName: string;
@@ -153,7 +187,10 @@ function toActivityEntry(row: {
   entityLabel: string | null;
   changes: Prisma.JsonValue;
   createdAt: Date;
-}): ActivityEntry {
+};
+
+/** Map a Prisma row to the domain entity, narrowing the stored union strings. */
+function toActivityEntry(row: ActivityRow): ActivityEntry {
   return {
     id: row.id,
     actorId: row.actorId,

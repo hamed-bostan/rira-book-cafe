@@ -227,7 +227,13 @@
     "parentIsSubcategory": "این یک زیردسته است؛ یک دستهٔ اصلی انتخاب کنید.",
     "hasSubcategories": "خودش زیردسته دارد، پس در سطح اصلی می‌ماند.",
     "replyRequired": "متن پاسخ را بنویسید.",
-    "replyTooLong": "پاسخ حداکثر ۱٬۰۰۰ نویسه باشد."
+    "replyTooLong": "پاسخ حداکثر ۱٬۰۰۰ نویسه باشد.",
+    "roleNameRequired": "نام نقش را وارد کنید.",
+    "roleNameTooLong": "این نام بیش از حد طولانی است.",
+    "roleInvalid": "یک نقش انتخاب کنید.",
+    "retentionInvalid": "یکی از بازه‌های پیشنهادی را انتخاب کنید.",
+    "twoFactorCodeRequired": "کد را وارد کنید.",
+    "twoFactorCodeInvalid": "این کد درست نیست."
   },
   "apiErrors": {
     "alreadyPosted": "این مورد قبلاً ثبت شده است.",
@@ -305,7 +311,13 @@
     "promoNeedsGuest": "این کد به شماره‌ی تلفن مهمان نیاز دارد، چون دفعات استفاده برای هر مهمان شمرده می‌شود.",
     "parentIsSubcategory": "آن دسته خودش زیردسته است. یک دستهٔ اصلی را به‌عنوان والد انتخاب کنید.",
     "hasSubcategories": "این دسته زیردسته دارد. اول آن‌ها را جابه‌جا یا حذف کنید.",
-    "reviewNotApproved": "فقط به نظری که در منو نمایش داده می‌شود می‌توان پاسخ داد."
+    "reviewNotApproved": "فقط به نظری که در منو نمایش داده می‌شود می‌توان پاسخ داد.",
+    "roleInUse": "هنوز کسی این نقش را دارد. اول او را به نقش دیگری منتقل کنید.",
+    "roleBuiltIn": "نقش‌های پیش‌فرض حذف نمی‌شوند.",
+    "roleNameTaken": "نقش دیگری همین نام را دارد.",
+    "twoFactorAlreadyOn": "ورود دومرحله‌ای از قبل فعال است.",
+    "twoFactorRequired": "مالک ورود دومرحله‌ای را برای داشبورد الزامی کرده است.",
+    "twoFactorUnavailable": "ورود دومرحله‌ای روی این سرور در دسترس نیست."
   },
   "meta": {
     "siteName": "کافه کتاب ریرا",
@@ -371,7 +383,8 @@
     "navBookHolds": "رزرو کتاب",
     "navIncome": "درآمدها",
     "navPayroll": "حقوق و دستمزد",
-    "navSettings": "تنظیمات"
+    "navSettings": "تنظیمات",
+    "security": "ورود و امنیت"
   },
   "dashTeam": {
     "membersHeading": "اعضای تیم",
@@ -438,7 +451,7 @@
       "error": "حذف دسترسی انجام نشد. دوباره تلاش کنید."
     },
     "activityHeading": "تاریخچهٔ دسترسی",
-    "activityDescription": "هر تغییری در اینکه چه کسی به داشبورد دسترسی دارد. برای همیشه نگهداری می‌شود.",
+    "activityDescription": "هر تغییری در اینکه چه کسی به داشبورد دسترسی دارد.",
     "activityEmpty": "هنوز تغییری ثبت نشده است",
     "activityEmptyBody": "دسترسی‌هایی که می‌دهید، تغییر می‌دهید یا حذف می‌کنید اینجا نشان داده می‌شوند.",
     "activity": {
@@ -466,7 +479,200 @@
       "owner": "مالک",
       "customer": "بدون دسترسی"
     },
-    "granted": "به {phone} دسترسی داده شد"
+    "granted": "به {phone} دسترسی داده شد",
+    "customRoleFallback": "نقش سفارشی",
+    "twoFactorOn": "ورود دومرحله‌ای فعال",
+    "tabsLabel": "بخش‌های تیم",
+    "tab": {
+      "members": "اعضا",
+      "roles": "نقش‌ها",
+      "security": "امنیت"
+    },
+    "activitySeeAll": "مشاهدهٔ همه",
+    "security": {
+      "menu": "نشست‌ها و امنیت",
+      "back": "تیم",
+      "title": "نشست‌ها و امنیت {name}",
+      "summary": "جاهایی که وارد شده‌اند، و برنامهٔ احراز هویتشان.",
+      "twoFactorHeading": "ورود دومرحله‌ای",
+      "twoFactorState": {
+        "on": "فعال",
+        "pending": "در حال راه‌اندازی",
+        "off": "غیرفعال"
+      },
+      "ownTwoFactor": "ورود دومرحله‌ای خودتان را از صفحهٔ ورود و امنیت مدیریت کنید.",
+      "resetHint": "اگر گوشی‌شان را گم کرده‌اند، برنامهٔ احراز هویتشان را بازنشانی کنید. از همه‌جا خارج می‌شوند و در ورود بعدی دوباره راه‌اندازی‌اش می‌کنند.",
+      "twoFactorOffHint": "از برنامهٔ احراز هویت استفاده نمی‌کنند.",
+      "reset": "بازنشانی ورود دومرحله‌ای",
+      "resetTitle": "ورود دومرحله‌ای {name} بازنشانی شود؟",
+      "resetMessage": "برنامهٔ احراز هویت و کدهای بازیابی‌شان دیگر کار نمی‌کند و از همهٔ دستگاه‌ها خارج می‌شوند.",
+      "resetDone": "ورود دومرحله‌ای {name} بازنشانی شد",
+      "resetError": "بازنشانی ورود دومرحله‌ای انجام نشد. دوباره تلاش کنید."
+    },
+    "roles": {
+      "heading": "نقش‌ها",
+      "description": "اینکه هر نقش چه کارهایی می‌تواند بکند. مالک همیشه همهٔ دسترسی‌ها را دارد.",
+      "new": "نقش جدید",
+      "newTitle": "نقش جدید",
+      "editTitle": "ویرایش {name}",
+      "editMessage": "تغییرات از بارگذاری بعدی صفحه برای هر کسی که این نقش را دارد اعمال می‌شود.",
+      "create": "ساخت نقش",
+      "save": "ذخیرهٔ نقش",
+      "nameEnLabel": "نام انگلیسی",
+      "nameFaLabel": "نام فارسی",
+      "permissionsLabel": "این نقش چه کارهایی می‌تواند بکند",
+      "alwaysOn": "همهٔ نقش‌های تیم این دسترسی را دارند.",
+      "teamManageNote": "مدیریت تیم فقط با مالک است و به هیچ نقشی داده نمی‌شود؛ هر کس آن را داشته باشد می‌تواند همهٔ دسترسی‌های دیگر را هم به خودش بدهد.",
+      "created": "نقش {name} ساخته شد",
+      "saved": "{name} ذخیره شد",
+      "nameTaken": "نقش دیگری همین نام را دارد.",
+      "saveError": "نقش ذخیره نشد. دوباره تلاش کنید.",
+      "edit": "ویرایش",
+      "delete": "حذف",
+      "deleteTitle": "{name} حذف شود؟",
+      "deleteMessage": "کسی این نقش را ندارد، پس دسترسی کسی از بین نمی‌رود.",
+      "deleted": "{name} حذف شد",
+      "inUse": "هنوز کسی این نقش را دارد. اول او را به نقش دیگری منتقل کنید.",
+      "deleteError": "نقش حذف نشد. دوباره تلاش کنید.",
+      "builtIn": "پیش‌فرض",
+      "custom": "سفارشی",
+      "summary": "{members, plural, =0 {کسی این نقش را ندارد} other {# نفر}} · {permissions} از {total} دسترسی"
+    },
+    "permissionGroup": {
+      "general": "عمومی",
+      "orders": "سفارش‌ها",
+      "floor": "سالن",
+      "menu": "منو و تخفیف‌ها",
+      "stock": "انبار",
+      "money": "مالی",
+      "admin": "تنظیمات"
+    },
+    "permission": {
+      "dashboard": {
+        "view": {
+          "label": "ورود به داشبورد",
+          "description": "داشبورد را باز کند و فهرست‌هایش را ببیند."
+        }
+      },
+      "activity": {
+        "view": {
+          "label": "دیدن گزارش فعالیت",
+          "description": "ببیند چه کسی چه چیزی را تغییر داده است. موارد مالی و تیمی دسترسی جداگانهٔ خودشان را می‌خواهند."
+        }
+      },
+      "orders": {
+        "fulfill": {
+          "label": "پیش‌بردن سفارش‌ها",
+          "description": "سفارش‌ها را بپذیرد، آماده کند، تحویل دهد یا لغو کند و فروش صندوق ثبت کند."
+        },
+        "note": {
+          "label": "یادداشت روی سفارش",
+          "description": "روی سفارش‌ها یادداشت داخلی بگذارد."
+        }
+      },
+      "reservations": {
+        "manage": {
+          "label": "مدیریت رزروها",
+          "description": "رزرو میز و اقامت سوئیت را تأیید کند، مهمان را بنشاند و رزرو را ببندد."
+        }
+      },
+      "loans": {
+        "manage": {
+          "label": "امانت کتاب",
+          "description": "کتاب‌های قفسه را امانت دهد و امانت‌ها را ببندد."
+        }
+      },
+      "events": {
+        "manage": {
+          "label": "برگزاری رویدادها",
+          "description": "رویداد بسازد و تغییر دهد و ثبت‌نام‌هایش را مدیریت کند."
+        }
+      },
+      "shifts": {
+        "manage": {
+          "label": "شیفت صندوق",
+          "description": "شیفت صندوق را باز و بسته کند و موجودی کشو را بشمارد."
+        }
+      },
+      "catalog": {
+        "write": {
+          "label": "ویرایش منو",
+          "description": "آیتم‌ها، قیمت‌ها، دسته‌بندی‌ها و تصاویر را تغییر دهد."
+        }
+      },
+      "reviews": {
+        "moderate": {
+          "label": "بررسی نظرها",
+          "description": "نظرهای مهمان‌ها را تأیید یا رد کند."
+        }
+      },
+      "promotions": {
+        "write": {
+          "label": "مدیریت تخفیف‌ها",
+          "description": "کد تخفیف و باشگاه مشتریان را بسازد و تغییر دهد."
+        }
+      },
+      "inventory": {
+        "view": {
+          "label": "دیدن موجودی",
+          "description": "موجودی انبار را ببیند و ضایعات ثبت کند."
+        },
+        "manage": {
+          "label": "مدیریت انبار",
+          "description": "ورود کالا ثبت کند، انبارگردانی کند و حد سفارش مجدد را تعیین کند."
+        }
+      },
+      "reports": {
+        "view": {
+          "label": "دیدن گزارش‌ها",
+          "description": "درآمد و گزارش‌های فروش، پرداخت و مهمان‌ها را ببیند."
+        }
+      },
+      "accounting": {
+        "view": {
+          "label": "دیدن دفاتر",
+          "description": "دفتر روزنامه، حساب‌ها، صورت‌های مالی و هزینه‌ها را ببیند."
+        },
+        "write": {
+          "label": "حسابداری",
+          "description": "هزینه ثبت و پرداخت کند، سند بزند، تأمین‌کننده‌ها را مدیریت کند و دوره را ببندد."
+        }
+      },
+      "payroll": {
+        "manage": {
+          "label": "حقوق و دستمزد",
+          "description": "حقوق هر نفر را ببیند و تغییر دهد و حقوق ماهانه را ثبت کند."
+        }
+      },
+      "settings": {
+        "write": {
+          "label": "تغییر تنظیمات کافه",
+          "description": "تنظیمات کلی کافه مثل مالیات و ساعت کاری را تغییر دهد."
+        }
+      },
+      "team": {
+        "manage": {
+          "label": "مدیریت تیم",
+          "description": "دسترسی به داشبورد را بدهد و بگیرد. فقط مالک."
+        }
+      }
+    },
+    "securitySettings": {
+      "twoFactorHeading": "ورود دومرحله‌ای",
+      "twoFactorDescription": "کدی از برنامهٔ احراز هویت که بعد از کد پیامکی، هنگام باز کردن داشبورد خواسته می‌شود.",
+      "requireTwoFactor": "ورود دومرحله‌ای برای همهٔ اعضای تیم الزامی باشد",
+      "requireTwoFactorHint": "هر کس برنامهٔ احراز هویت نداشته باشد، دفعهٔ بعد که داشبورد را باز کند باید آن را راه‌اندازی کند.",
+      "twoFactorUnavailable": "هنوز در دسترس نیست: TWO_FACTOR_ENCRYPTION_KEY روی سرور تنظیم نشده است.",
+      "retentionHeading": "گزارش فعالیت",
+      "retentionDescription": "گزارش فعالیت رویدادها را تا چه مدت نگه دارد.",
+      "retentionLabel": "نگهداری فعالیت‌ها به مدت",
+      "retentionHint": "موارد قدیمی‌تر در پس‌زمینه حذف می‌شوند و خودِ هر حذف هم در گزارش ثبت می‌شود.",
+      "forever": "برای همیشه",
+      "months": "{count, plural, other {# ماه}}",
+      "years": "{count, plural, other {# سال}}",
+      "saved": "تنظیمات ذخیره شد",
+      "error": "تنظیمات ذخیره نشد. دوباره تلاش کنید."
+    }
   },
   "dashProducts": {
     "heading": "آیتم‌های منو",
@@ -1134,7 +1340,9 @@
       "income": "درآمدها",
       "payroll": "حقوق و دستمزد",
       "loyalty": "باشگاه مشتریان",
-      "settings": "تنظیمات"
+      "settings": "تنظیمات",
+      "cashShift": "شیفت‌های صندوق",
+      "activity": "گزارش فعالیت"
     },
     "action": {
       "product": {
@@ -1209,7 +1417,9 @@
         "voided": "<b>{actor}</b> هزینهٔ {entity} را باطل کرد",
         "receiptChanged": "<b>{actor}</b> رسید هزینهٔ {entity} را تغییر داد",
         "recurringChanged": "<b>{actor}</b> صورت‌حساب دوره‌ای {entity} را تغییر داد",
-        "recurringSkipped": "<b>{actor}</b> یک ماه از {entity} را رد کرد"
+        "recurringSkipped": "<b>{actor}</b> یک ماه از {entity} را رد کرد",
+        "supplierCreated": "<b>{actor}</b> تأمین‌کنندهٔ {entity} را اضافه کرد",
+        "supplierUpdated": "<b>{actor}</b> تأمین‌کنندهٔ {entity} را تغییر داد"
       },
       "suiteBooking": {
         "changed": "<b>{actor}</b> رزرو سوئیت {entity} را به‌روز کرد",
@@ -1252,6 +1462,23 @@
         "tableAdded": "<b>{actor}</b> میز {entity} را اضافه کرد",
         "tableChanged": "<b>{actor}</b> میز {entity} را تغییر داد",
         "tableRemoved": "<b>{actor}</b> میز {entity} را حذف کرد"
+      },
+      "user": {
+        "roleCreated": "<b>{actor}</b> نقش {entity} را ساخت",
+        "roleUpdated": "<b>{actor}</b> نقش {entity} را تغییر داد",
+        "roleDeleted": "<b>{actor}</b> نقش {entity} را حذف کرد",
+        "securitySettingsChanged": "<b>{actor}</b> تنظیمات امنیتی تیم را تغییر داد",
+        "sessionsRevoked": "<b>{actor}</b> {entity} را از حساب خارج کرد",
+        "twoFactorEnabled": "<b>{actor}</b> ورود دومرحله‌ای را فعال کرد",
+        "twoFactorDisabled": "<b>{actor}</b> ورود دومرحله‌ای را غیرفعال کرد",
+        "twoFactorReset": "<b>{actor}</b> ورود دومرحله‌ای {entity} را بازنشانی کرد"
+      },
+      "activity": {
+        "pruned": "<b>{actor}</b> فعالیت‌های قدیمی‌تر از مدت نگهداری را حذف کرد"
+      },
+      "cashShift": {
+        "opened": "<b>{actor}</b> شیفت صندوق {entity} را باز کرد",
+        "closed": "<b>{actor}</b> شیفت صندوق {entity} را بست"
       }
     },
     "role": {
@@ -1268,11 +1495,13 @@
       "support": "پشتیبانی",
       "staff": "کارمند",
       "admin": "مدیر",
-      "owner": "مالک"
+      "owner": "مالک",
+      "custom": "نقش سفارشی"
     },
     "value": {
       "yes": "بله",
-      "no": "خیر"
+      "no": "خیر",
+      "all": "همه"
     },
     "field": {
       "name": "نام",
@@ -1397,10 +1626,171 @@
       "reply": "پاسخ",
       "rating": "ستاره",
       "comment": "متن نظر",
-      "author": "مهمان"
+      "author": "مهمان",
+      "nameEn": "نام انگلیسی",
+      "permissions": "دسترسی‌ها",
+      "requireTwoFactor": "الزام ورود دومرحله‌ای",
+      "activityRetentionMonths": "نگهداری فعالیت (ماه)",
+      "sessionsSignedOut": "نشست‌های خارج‌شده",
+      "twoFactor": "ورود دومرحله‌ای",
+      "entriesRemoved": "موارد حذف‌شده",
+      "olderThan": "قدیمی‌تر از",
+      "retentionMonths": "مدت نگهداری (ماه)",
+      "openingFloat": "موجودی اول شیفت",
+      "countedCash": "شمارش‌شده",
+      "expectedCash": "مورد انتظار"
     },
     "filterField": "فیلد",
-    "allFields": "همه فیلدها"
+    "allFields": "همه فیلدها",
+    "exportCsv": "خروجی CSV",
+    "filterAction": "چه اتفاقی افتاد",
+    "allActions": "همهٔ تغییرات",
+    "searchLabel": "جستجو",
+    "searchPlaceholder": "نام، مورد یا شناسه",
+    "filterFrom": "از",
+    "filterTo": "تا",
+    "applyDates": "اعمال تاریخ",
+    "clearDates": "پاک کردن تاریخ",
+    "dayPart": {
+      "day": "{field}: روز",
+      "month": "{field}: ماه",
+      "year": "{field}: سال",
+      "dayPlaceholder": "روز",
+      "monthPlaceholder": "ماه",
+      "yearPlaceholder": "سال"
+    },
+    "csv": {
+      "when": "زمان (تهران)",
+      "who": "انجام‌دهنده",
+      "area": "بخش",
+      "what": "رویداد",
+      "item": "مورد",
+      "changes": "تغییرات"
+    },
+    "twoFactorState": {
+      "on": "فعال",
+      "pending": "در حال راه‌اندازی",
+      "off": "غیرفعال"
+    },
+    "actionName": {
+      "product": {
+        "created": "ساخت آیتم",
+        "updated": "ویرایش آیتم",
+        "deleted": "حذف آیتم"
+      },
+      "category": {
+        "created": "ساخت دسته‌بندی",
+        "updated": "ویرایش دسته‌بندی",
+        "deleted": "حذف دسته‌بندی"
+      },
+      "order": {
+        "counterSale": "فروش صندوق",
+        "stageChanged": "تغییر وضعیت",
+        "paymentChanged": "تغییر پرداخت",
+        "refunded": "بازپرداخت",
+        "writtenOff": "سوخت",
+        "onlinePaymentRefunded": "برگشت پرداخت آنلاین",
+        "changed": "تغییر سفارش",
+        "customerNotified": "پیام به مهمان"
+      },
+      "review": {
+        "moderated": "بررسی نظر"
+      },
+      "promoCode": {
+        "created": "ساخت کد",
+        "updated": "ویرایش کد",
+        "activeChanged": "روشن یا خاموش",
+        "deleted": "حذف کد",
+        "archived": "بایگانی کد"
+      },
+      "user": {
+        "roleChanged": "تغییر دسترسی",
+        "roleCreated": "ساخت نقش",
+        "roleUpdated": "تغییر نقش",
+        "roleDeleted": "حذف نقش",
+        "securitySettingsChanged": "تغییر تنظیمات امنیتی",
+        "sessionsRevoked": "خروج به دست مالک",
+        "twoFactorEnabled": "فعال شدن ورود دومرحله‌ای",
+        "twoFactorDisabled": "غیرفعال شدن ورود دومرحله‌ای",
+        "twoFactorReset": "بازنشانی ورود دومرحله‌ای"
+      },
+      "guest": {
+        "profileCreated": "ساخت حساب"
+      },
+      "reservation": {
+        "changed": "به‌روزرسانی رزرو",
+        "booked": "رزرو میز",
+        "guestMessaged": "پیام به مهمان",
+        "expired": "انقضای درخواست",
+        "depositTaken": "دریافت بیعانه",
+        "depositReturned": "بازگرداندن بیعانه",
+        "depositKept": "ضبط بیعانه"
+      },
+      "suiteBooking": {
+        "changed": "به‌روزرسانی اقامت",
+        "booked": "ثبت اقامت",
+        "guestMessaged": "پیام به مهمان",
+        "expired": "انقضای درخواست",
+        "rateChanged": "تغییر نرخ اقامت",
+        "priceChanged": "تغییر قیمت سوئیت"
+      },
+      "bookLoan": {
+        "lent": "امانت کتاب",
+        "returned": "بازگشت کتاب",
+        "lost": "گم شدن کتاب",
+        "extended": "تمدید امانت",
+        "extensionUndone": "لغو تمدید",
+        "holdSkipped": "رد شدن نوبت",
+        "guestMessaged": "پیام به مهمان",
+        "holdExpired": "انقضای نوبت"
+      },
+      "event": {
+        "created": "ایجاد رویداد",
+        "updated": "ویرایش رویداد",
+        "deleted": "حذف رویداد",
+        "registrationCancelled": "لغو ثبت‌نام",
+        "guestMessaged": "پیام به مهمان",
+        "cancelled": "لغو رویداد"
+      },
+      "ledger": {
+        "entryPosted": "ثبت سند",
+        "entryReversed": "برگشت سند",
+        "accountChanged": "تغییر حساب",
+        "settingsChanged": "تغییر تنظیمات",
+        "bankStatementChanged": "به‌روزرسانی صورت‌حساب بانک",
+        "bankMatched": "تطبیق ردیف‌ها",
+        "bankUnmatched": "لغو تطبیق ردیف‌ها",
+        "bankReconciled": "مغایرت‌گیری صورت‌حساب"
+      },
+      "expense": {
+        "recorded": "ثبت هزینه",
+        "paid": "پرداخت هزینه",
+        "voided": "ابطال هزینه",
+        "receiptChanged": "تغییر رسید",
+        "recurringChanged": "تغییر صورت‌حساب دوره‌ای",
+        "recurringSkipped": "رد کردن یک ماه",
+        "supplierCreated": "افزودن تأمین‌کننده",
+        "supplierUpdated": "تغییر تأمین‌کننده"
+      },
+      "income": {
+        "recorded": "ثبت درآمد",
+        "voided": "ابطال درآمد",
+        "refunded": "بازپرداخت"
+      },
+      "payroll": {
+        "recorded": "ثبت حقوق",
+        "paid": "پرداخت حقوق",
+        "voided": "ابطال حقوق",
+        "employeeChanged": "به‌روزرسانی کارمند"
+      },
+      "activity": {
+        "pruned": "حذف فعالیت‌های قدیمی"
+      },
+      "cashShift": {
+        "opened": "باز کردن شیفت",
+        "closed": "بستن شیفت"
+      }
+    }
   },
   "dashReservations": {
     "deposit": {
@@ -4268,6 +4658,87 @@
     "timeZone": {
       "heading": "منطقهٔ زمانی",
       "note": "همهٔ زمان‌های برنامه — ساعت کاری، رزروها، سفارش‌ها و حساب‌ها — به وقت تهران است و این‌جا تغییر نمی‌کند."
+    }
+  },
+  "dashSecurity": {
+    "heading": "ورود و امنیت",
+    "summary": "برنامهٔ احراز هویت شما، و جاهایی که با حسابتان وارد داشبورد شده‌اید.",
+    "sessions": {
+      "heading": "نشست‌های فعال",
+      "descriptionSelf": "مرورگرهایی که با حساب شما وارد شده‌اند. هر کدام را که نمی‌شناسید خارج کنید.",
+      "descriptionMember": "مرورگرهایی که {name} با آن‌ها وارد شده است.",
+      "browserOn": "{browser} روی {os}",
+      "unknownDevice": "دستگاه ناشناخته",
+      "activeNow": "هم‌اکنون فعال",
+      "lastActive": "آخرین فعالیت {when}",
+      "thisBrowser": "همین مرورگر",
+      "meta": "ورود: {signedIn} · {lastSeen}",
+      "signOut": "خروج",
+      "signOutAria": "خروج {device}",
+      "signOutOthers": "خروج از همهٔ جاهای دیگر",
+      "signOutAll": "خروج از همه‌جا",
+      "confirmOneTitle": "از {device} خارج شود؟",
+      "confirmOthersTitle": "از همهٔ جاهای دیگر خارج شوید؟",
+      "confirmAllTitle": "{name} از همه‌جا خارج شود؟",
+      "confirmMessage": "مرورگرهای خارج‌شده باید دوباره با کد پیامکی وارد شوند.",
+      "signedOutOne": "خارج شد",
+      "signedOutOthers": "از همهٔ مرورگرهای دیگر خارج شد",
+      "signedOutAll": "از همه‌جا خارج شد",
+      "empty": "نشست فعالی وجود ندارد.",
+      "error": "خروج انجام نشد. دوباره تلاش کنید."
+    },
+    "twoFactor": {
+      "heading": "برنامهٔ احراز هویت",
+      "description": "بعد از کد پیامکی، داشبورد کدی از برنامه‌ای مثل Google Authenticator یا Microsoft Authenticator می‌خواهد.",
+      "stateOn": "فعال",
+      "stateOff": "غیرفعال",
+      "onSince": "فعال از {date}.",
+      "codesLeft": "{count, plural, =0 {کد بازیابی‌ای باقی نمانده است.} other {# کد بازیابی باقی مانده است.}}",
+      "requiredNote": "مالک ورود دومرحله‌ای را الزامی کرده است، پس نمی‌توانید آن را غیرفعال کنید.",
+      "unavailable": "ورود دومرحله‌ای هنوز روی این سرور در دسترس نیست.",
+      "requiredIntro": "مالک ورود دومرحله‌ای را برای داشبورد الزامی کرده است. برای ادامهٔ کار، برنامهٔ احراز هویت را راه‌اندازی کنید.",
+      "offIntro": "یک مرحلهٔ دوم به ورود داشبوردتان اضافه کنید تا کد پیامکی به‌تنهایی کافی نباشد.",
+      "setUp": "راه‌اندازی برنامهٔ احراز هویت",
+      "setupError": "راه‌اندازی ورود دومرحله‌ای انجام نشد. دوباره تلاش کنید.",
+      "stepInstall": "یک برنامهٔ احراز هویت روی گوشی‌تان نصب کنید.",
+      "stepScan": "این کد QR را با آن اسکن کنید یا کلید را دستی وارد کنید.",
+      "stepConfirm": "کد ۶ رقمی‌ای را که برنامه نشان می‌دهد وارد کنید.",
+      "qrAlt": "کد QR برای برنامهٔ احراز هویت",
+      "manualKey": "کلید",
+      "confirm": "فعال‌سازی",
+      "wrongCode": "این کد درست نیست. ساعت گوشی‌تان را بررسی کنید و جدیدترین کد را امتحان کنید.",
+      "codeLabel": "کد برنامه",
+      "codeHint": "۶ رقم؛ هر ۳۰ ثانیه یک کد تازه.",
+      "recoveryLabel": "کد بازیابی",
+      "recoveryHint": "یکی از کدهایی که هنگام راه‌اندازی ذخیره کردید. هر کد فقط یک بار کار می‌کند.",
+      "useRecovery": "استفاده از کد بازیابی",
+      "useApp": "استفاده از کد برنامه",
+      "codesHeading": "کدهای بازیابی را ذخیره کنید",
+      "codesMessage": "اگر گوشی‌تان را گم کنید، با هر کدام از این کدها یک بار می‌توانید وارد شوید. دیگر نمایش داده نمی‌شوند؛ آن‌ها را جای امنی نگه دارید.",
+      "copyCodes": "کپی کدها",
+      "codesCopied": "کدهای بازیابی کپی شد",
+      "codesCopyFailed": "کپی نشد. کدها را انتخاب کنید و دستی کپی کنید.",
+      "done": "ذخیره کردم",
+      "turnOff": "غیرفعال‌سازی",
+      "turnOffTitle": "ورود دومرحله‌ای غیرفعال شود؟",
+      "turnOffMessage": "برای تأیید، کدی از برنامه یا یک کد بازیابی وارد کنید.",
+      "turnedOff": "ورود دومرحله‌ای غیرفعال شد",
+      "turnOffError": "غیرفعال‌سازی ورود دومرحله‌ای انجام نشد. دوباره تلاش کنید."
+    },
+    "challenge": {
+      "pageTitle": "ورود دومرحله‌ای",
+      "verifyTitle": "کد برنامهٔ احراز هویت را وارد کنید",
+      "verifyMessage": "برنامهٔ احراز هویت را باز کنید و کد Rira Book Cafe را وارد کنید.",
+      "verifyRecoveryOnly": "در حال حاضر کدهای برنامه بررسی نمی‌شوند. یکی از کدهای بازیابی‌تان را وارد کنید.",
+      "enrollTitle": "راه‌اندازی ورود دومرحله‌ای",
+      "enrollMessage": "مالک برای داشبورد برنامهٔ احراز هویت را الزامی کرده است. فقط یک دقیقه طول می‌کشد.",
+      "continue": "ادامه",
+      "continueToDashboard": "ادامه به داشبورد",
+      "error": "کد بررسی نشد. دوباره تلاش کنید.",
+      "signOut": "خروج از حساب",
+      "signInAgainTitle": "لطفاً دوباره وارد شوید",
+      "signInAgainMessage": "ورودهای داشبورد حالا ثبت می‌شوند تا بتوان از راه دور خارجشان کرد. برای ادامه یک بار دیگر وارد شوید.",
+      "signInAgain": "ورود دوباره"
     }
   }
 }

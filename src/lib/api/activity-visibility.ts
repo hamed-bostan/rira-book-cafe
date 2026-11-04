@@ -38,6 +38,10 @@ const ENTITY_TYPE_NEEDS: Record<(typeof ACTIVITY_ENTITY_TYPES)[number], Permissi
   payroll: "payroll.manage",
   // The cafe's address, hours and tables are on the public site and in every picker.
   settings: "activity.view",
+  // The till's figures are the shift screen's, which the floor holds.
+  cashShift: "shifts.manage",
+  // That the log itself was pruned is for everyone who reads it.
+  activity: "activity.view",
 };
 
 /**

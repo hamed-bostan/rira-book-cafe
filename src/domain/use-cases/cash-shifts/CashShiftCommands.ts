@@ -1,3 +1,9 @@
+import {
+  activityValue,
+  type ActivityActor,
+  type ActivityChange,
+  type NewActivityEntry,
+} from "../../entities/ActivityEntry";
 import { cafeDayOf } from "../../entities/CafeTime";
 import {
   MAX_DRAWER_AMOUNT,
@@ -11,7 +17,6 @@ import { ConflictError } from "../../errors/ConflictError";
 import { NotFoundError } from "../../errors/NotFoundError";
 import { ValidationError } from "../../errors/ValidationError";
 
-import type { ActivityActor } from "../../entities/ActivityEntry";
 import type { ICashShiftRepository } from "../../repositories/ICashShiftRepository";
 
 /** How many past shifts the page lists. */
@@ -37,8 +42,34 @@ export class OpenCashShift {
   async execute(input: { openingFloat: number; note?: string }, staff: ActivityActor): Promise<CashShift> {
     const openingFloat = validAmount("openingFloat", input.openingFloat);
     if (await this.shiftRepo.getOpen()) throw new ConflictError("SHIFT_ALREADY_OPEN", "A shift is already open.");
-    return this.shiftRepo.open({ openingFloat, note: validNote(input.note), by: staff });
+    return this.shiftRepo.open({ openingFloat, note: validNote(input.note), by: staff }, (opened) =>
+      shiftEntry(staff, "cashShift.opened", opened, [
+        { field: "openingFloat", before: null, after: String(opened.openingFloat) },
+      ]),
+    );
   }
+}
+
+/**
+ * A shift's activity entry, labelled with its number (`Z-12`) as staff call it.
+ * The figures are the drawer's, which the shift screen already shows to whoever
+ * holds `shifts.manage` — the same permission that reads these entries.
+ */
+function shiftEntry(
+  staff: ActivityActor,
+  action: "cashShift.opened" | "cashShift.closed",
+  shift: CashShift,
+  changes: ActivityChange[],
+): NewActivityEntry {
+  return {
+    actorId: staff.id,
+    actorName: staff.name,
+    action,
+    entityType: "cashShift",
+    entityId: shift.id,
+    entityLabel: `Z-${shift.number}`,
+    changes,
+  };
 }
 
 /**
@@ -61,10 +92,21 @@ export class CloseCashShift {
     if (!shift) throw new NotFoundError("cash shift", id);
     if (shift.status !== "open") throw new ConflictError("NO_OPEN_SHIFT", "This shift is already closed.");
 
-    return this.shiftRepo.close(id, { countedCash, note, by: staff, at: now }, (closed) => {
-      const entry = cashOverShortEntry(closed, cafeDayOf(now), staff);
-      return entry ? [entry] : [];
-    });
+    return this.shiftRepo.close(
+      id,
+      { countedCash, note, by: staff, at: now },
+      (closed) => {
+        const entry = cashOverShortEntry(closed, cafeDayOf(now), staff);
+        return entry ? [entry] : [];
+      },
+      (closed) =>
+        shiftEntry(staff, "cashShift.closed", closed, [
+          { field: "status", before: "open", after: "closed" },
+          { field: "expectedCash", before: null, after: activityValue(closed.expectedCash) },
+          { field: "countedCash", before: null, after: activityValue(closed.countedCash) },
+          { field: "difference", before: null, after: activityValue(closed.difference) },
+        ]),
+    );
   }
 }
 

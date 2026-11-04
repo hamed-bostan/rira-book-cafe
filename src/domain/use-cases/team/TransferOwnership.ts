@@ -89,6 +89,10 @@ export class TransferOwnership {
           }),
         ),
       ],
+      // An owner stepped down by someone else — a break-glass take-over — is signed
+      // out, as anyone whose role another person changes is. Stepping yourself down
+      // by handing ownership on keeps you signed in: you're still at the screen.
+      revokeSessionsOf: outgoing.filter((former) => former.id !== actorId).map((former) => former.id),
     });
 
     // Best-effort, and after every write. Both sides are told: gaining ownership

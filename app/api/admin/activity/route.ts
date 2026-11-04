@@ -4,7 +4,6 @@ import {
   ACTIVITY_SORTS,
   DEFAULT_ACTIVITY_DIRECTION,
   DEFAULT_ACTIVITY_SORT,
-  toActivityAction,
   toActivityEntityType,
 } from "@/src/domain/entities/ActivityEntry";
 import { GetEntityActivity } from "@/src/domain/use-cases/activity/GetEntityActivity";
@@ -31,7 +30,7 @@ export const dynamic = "force-dynamic";
  *
  * Two shapes, chosen by whether `limit` is present:
  *
- *   ?page&pageSize&dir&actorId&entityType&entityId → `{ items, total, page, pageSize }`
+ *   ?page&pageSize&dir&actorId&entityType&entityId&field&action&from&to&q → `{ items, total, page, pageSize }`
  *   ?entityType&entityId&limit                     → `[…]`, one entity's history
  *
  * The second is what the per-entity panels on the order and product screens read.
@@ -51,13 +50,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
   const params = request.nextUrl.searchParams;
   const filters = parseAdminActivityFilters(params);
-
-  // Only the team page asks for one action; the dashboard's own filters don't
-  // offer it (see `admin-activity-params`), so it's read straight from the query
-  // and narrowed here. An unrecognised value narrows to `unknown`, which matches
-  // no real entry — an empty list, not an error, like every other bad list param.
-  const action = params.get("action");
-  if (action) filters.action = toActivityAction(action);
 
   try {
     const rawLimit = params.get("limit");

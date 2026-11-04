@@ -26,7 +26,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
 /** POST /api/admin/suppliers — add a supplier. Requires `accounting.write`. */
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  if (!(await getSessionWith("accounting.write"))) return unauthorizedResponse();
+  const session = await getSessionWith("accounting.write");
+  if (!session) return unauthorizedResponse();
 
   const body = await parseJsonBody(request);
   if (!body.ok) return errorResponse(400, { message: "Expected a JSON body.", code: "BAD_REQUEST" });
@@ -40,7 +41,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   try {
-    return NextResponse.json(await new SaveSupplier(expenseRepository).create(parsed.data), { status: 201 });
+    const actor = { id: session.user.id, name: session.user.name ?? session.user.id };
+    return NextResponse.json(await new SaveSupplier(expenseRepository).create(parsed.data, actor), { status: 201 });
   } catch (error) {
     return errorResponseFromException(error, "POST /api/admin/suppliers failed");
   }

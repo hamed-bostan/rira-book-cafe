@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import * as React from "react";
 
 import type { TeamMember } from "@/src/contracts/team-response-schema";
+import { Link } from "@/src/i18n/navigation";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,23 +19,27 @@ import { RemoveAccessDialog } from "./RemoveAccessDialog";
 import { isolatedName } from "./teamDisplay";
 import { TransferOwnershipDialog, type TransferIntent } from "./TransferOwnershipDialog";
 
+import type { RoleOption } from "./roleDisplay";
+
 type TeamMemberActionsProps = {
   member: TeamMember;
   /** The member's name as the row shows it. */
   name: string;
   /** Whether someone owns the cafe — decides what making yourself owner means. */
   hasOwner: boolean;
+  /** The roles a change can give, named for this reader. */
+  roleOptions: readonly RoleOption[];
 };
 
 type MemberDialog = "role" | "owner" | "remove";
 
 /**
- * A member's commands behind "⋯": Change role, Make owner and Remove access, each
- * through a dialog. Only what the server would allow is offered — never on your
- * own row or the owner's, and a role can't be changed for access that lives in
- * the server config — so a row with nothing to do has no "⋯" at all.
+ * A member's commands behind "⋯": their sessions and two-factor (a page of its
+ * own), then Change role, Make owner and Remove access, each through a dialog. Only
+ * what the server would allow is offered — never on your own row or the owner's,
+ * and a role can't be changed for access that lives in the server config.
  */
-export function TeamMemberActions({ member, name, hasOwner }: TeamMemberActionsProps) {
+export function TeamMemberActions({ member, name, hasOwner, roleOptions }: TeamMemberActionsProps) {
   const t = useTranslations("dashTeam");
   const [dialog, setDialog] = React.useState<MemberDialog | null>(null);
   // Bumped on every open, so each dialog starts afresh — no stale choice or error.
@@ -46,8 +51,6 @@ export function TeamMemberActions({ member, name, hasOwner }: TeamMemberActionsP
   // Making yourself owner means claiming a vacant seat or, with break-glass
   // access, taking it off a sitting owner — each with its own warning.
   const intent: TransferIntent = !member.isSelf ? "transfer" : hasOwner ? "takeOver" : "claim";
-
-  if (!canChangeRole && !member.transferable && !canRemove) return null;
 
   function open(next: MemberDialog): void {
     setOpened((count) => count + 1);
@@ -65,6 +68,10 @@ export function TeamMemberActions({ member, name, hasOwner }: TeamMemberActionsP
           <Icon icon={MoreHorizontal} size="icon-md" />
         </DropdownMenuIconTrigger>
         <DropdownMenuContent align="end">
+          {/* Every member has sessions to look at, so the menu is never empty. */}
+          <DropdownMenuItem asChild>
+            <Link href={`/dashboard/team/${encodeURIComponent(member.id)}`}>{t("security.menu")}</Link>
+          </DropdownMenuItem>
           {canChangeRole ? (
             <DropdownMenuItem onSelect={() => open("role")}>{t("changeRole.menu")}</DropdownMenuItem>
           ) : null}
@@ -87,6 +94,7 @@ export function TeamMemberActions({ member, name, hasOwner }: TeamMemberActionsP
           id={member.id}
           name={isolatedName(name)}
           role={role}
+          roleOptions={roleOptions}
         />
       ) : null}
       {member.transferable ? (

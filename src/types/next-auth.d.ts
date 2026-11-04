@@ -11,5 +11,13 @@ import type { DefaultSession } from "next-auth";
 declare module "next-auth" {
   interface Session {
     user: { id: string } & DefaultSession["user"];
+    /**
+     * The signed-in browser's session row (see `UserSession`), so a screen can mark
+     * "this browser" and the dashboard's door can tell a recorded session from a
+     * token minted before sessions were. Absent on such an old token.
+     */
+    sessionId?: string;
+    /** Whether this browser passed the authenticator-app check (read from the session row). */
+    twoFactorVerified?: boolean;
   }
 }

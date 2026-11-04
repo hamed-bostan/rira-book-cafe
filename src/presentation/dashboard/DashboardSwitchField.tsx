@@ -46,6 +46,7 @@ export function DashboardSwitchField({
         className="mt-0.5"
         checked={checked}
         onCheckedChange={onCheckedChange}
+        disabled={disabled}
         aria-label={ariaLabel}
         disabled={disabled}
       />

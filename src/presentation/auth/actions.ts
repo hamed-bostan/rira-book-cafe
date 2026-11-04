@@ -74,3 +74,14 @@ export async function verifyOtp(input: { phone: string; code: string; callbackUr
 export async function logout() {
   await signOut({ redirectTo: "/" });
 }
+
+/**
+ * Sign out and start signing in again, coming back to `callbackUrl` — for a
+ * browser whose session can't open the dashboard as it is (one from before
+ * sessions were recorded, or someone at the two-factor check without their phone
+ * who wants to start over). Same-origin paths only.
+ */
+export async function signInAgain(callbackUrl: string) {
+  const target = callbackUrl.startsWith("/") && !callbackUrl.startsWith("//") ? callbackUrl : "/dashboard";
+  await signOut({ redirectTo: `/login?callbackUrl=${encodeURIComponent(target)}` });
+}

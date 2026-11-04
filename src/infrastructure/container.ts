@@ -33,9 +33,14 @@ import type { IRecurringBillRepository } from "@/src/domain/repositories/IRecurr
 import type { IReservationDepositRepository } from "@/src/domain/repositories/IReservationDepositRepository";
 import type { IReservationRepository } from "@/src/domain/repositories/IReservationRepository";
 import type { IReviewRepository } from "@/src/domain/repositories/IReviewRepository";
+import type { IRoleRepository } from "@/src/domain/repositories/IRoleRepository";
+import type { ISessionRepository } from "@/src/domain/repositories/ISessionRepository";
 import type { ISuiteBookingRepository } from "@/src/domain/repositories/ISuiteBookingRepository";
 import type { ISuitePricingRepository } from "@/src/domain/repositories/ISuitePricingRepository";
 import type { ITeamNotifier } from "@/src/domain/repositories/ITeamNotifier";
+import type { ITeamSettingsRepository } from "@/src/domain/repositories/ITeamSettingsRepository";
+import type { ITwoFactorCrypto } from "@/src/domain/repositories/ITwoFactorCrypto";
+import type { ITwoFactorRepository } from "@/src/domain/repositories/ITwoFactorRepository";
 import type { IUserRepository } from "@/src/domain/repositories/IUserRepository";
 import { CheckoutPricing } from "@/src/domain/use-cases/orders/CheckoutPricing";
 import type { MenuCatalog } from "@/src/domain/use-cases/products/publicMenu";
@@ -80,10 +85,15 @@ import { PrismaRecurringBillRepository } from "./repositories/PrismaRecurringBil
 import { PrismaReservationDepositRepository } from "./repositories/PrismaReservationDepositRepository";
 import { PrismaReservationRepository } from "./repositories/PrismaReservationRepository";
 import { PrismaReviewRepository } from "./repositories/PrismaReviewRepository";
+import { PrismaRoleRepository } from "./repositories/PrismaRoleRepository";
+import { PrismaSessionRepository } from "./repositories/PrismaSessionRepository";
 import { PrismaSuiteBookingRepository } from "./repositories/PrismaSuiteBookingRepository";
 import { PrismaSuitePricingRepository } from "./repositories/PrismaSuitePricingRepository";
+import { PrismaTeamSettingsRepository } from "./repositories/PrismaTeamSettingsRepository";
+import { PrismaTwoFactorRepository } from "./repositories/PrismaTwoFactorRepository";
 import { PrismaUserRepository } from "./repositories/PrismaUserRepository";
 import { SmsIrAuthRepository } from "./repositories/SmsIrAuthRepository";
+import { parseTwoFactorKey, TotpTwoFactorCrypto } from "./two-factor/TotpTwoFactorCrypto";
 
 /**
  * Composition root.
@@ -115,6 +125,18 @@ export const logger: ILogger = createPinoLogger({
 // Users — PostgreSQL via Prisma. Rows are created on first sign-in
 // (auth `authorize` → GetOrCreateUser).
 export const userRepository: IUserRepository = new PrismaUserRepository();
+
+// Team security. Roles' permission sets (the policy every guard asks, cached and
+// dropped on every role write), signed-in sessions (checked on each request so they
+// can be revoked), authenticator-app two-factor, and the owner's team settings.
+// Without TWO_FACTOR_ENCRYPTION_KEY two-factor is unavailable; the app runs as before.
+export const roleRepository: IRoleRepository = new PrismaRoleRepository();
+export const sessionRepository: ISessionRepository = new PrismaSessionRepository();
+export const twoFactorRepository: ITwoFactorRepository = new PrismaTwoFactorRepository();
+export const twoFactorCrypto: ITwoFactorCrypto = new TotpTwoFactorCrypto(
+  parseTwoFactorKey(env.TWO_FACTOR_ENCRYPTION_KEY),
+);
+export const teamSettingsRepository: ITeamSettingsRepository = new PrismaTeamSettingsRepository();
 
 // The menu: categories and items (drinks, food, books) — PostgreSQL via Prisma.
 export const categoryRepository: ICategoryRepository = new PrismaCategoryRepository();

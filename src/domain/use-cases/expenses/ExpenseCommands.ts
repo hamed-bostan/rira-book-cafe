@@ -1,4 +1,4 @@
-import { singleChange, type ActivityActor } from "../../entities/ActivityEntry";
+import { diffFields, singleChange, type ActivityActor } from "../../entities/ActivityEntry";
 import { cafeDayOf } from "../../entities/CafeTime";
 import {
   amountOwed,
@@ -195,17 +195,50 @@ export class SetExpenseReceipt {
   }
 }
 
-/** Add or edit a supplier. Suppliers are never deleted — past bills keep their name. */
+/**
+ * Add or edit a supplier. Suppliers are never deleted — past bills keep their name.
+ * Both are recorded under the expenses (who supplies the cafe is the books'
+ * business): what it was set to, and on an edit only the fields that moved — a save
+ * that changed nothing records nothing.
+ */
 export class SaveSupplier {
   constructor(private readonly expenses: IExpenseRepository) {}
 
-  async create(input: NewSupplier): Promise<Supplier> {
-    return this.expenses.createSupplier(clean(input));
+  async create(input: NewSupplier, actor: ActivityActor): Promise<Supplier> {
+    return this.expenses.createSupplier(clean(input), (created) =>
+      supplierEntry(actor, "expense.supplierCreated", created, diffFields({}, supplierSnapshot(created))),
+    );
   }
 
-  async update(id: string, input: NewSupplier & { isActive: boolean }): Promise<Supplier> {
-    return this.expenses.updateSupplier(id, { ...clean(input), isActive: input.isActive });
+  async update(id: string, input: NewSupplier & { isActive: boolean }, actor: ActivityActor): Promise<Supplier> {
+    const before = await this.expenses.getSupplier(id);
+    if (!before) throw new NotFoundError("supplier", id);
+    return this.expenses.updateSupplier(id, { ...clean(input), isActive: input.isActive }, (updated) => {
+      const changes = diffFields(supplierSnapshot(before), supplierSnapshot(updated));
+      return changes.length > 0 ? supplierEntry(actor, "expense.supplierUpdated", updated, changes) : null;
+    });
   }
+}
+
+function supplierSnapshot(supplier: Supplier): Record<string, unknown> {
+  return { name: supplier.name, phone: supplier.phone, note: supplier.note, isActive: supplier.isActive };
+}
+
+function supplierEntry(
+  actor: ActivityActor,
+  action: "expense.supplierCreated" | "expense.supplierUpdated",
+  supplier: Supplier,
+  changes: ReturnType<typeof diffFields>,
+) {
+  return {
+    actorId: actor.id,
+    actorName: actor.name,
+    action,
+    entityType: "expense" as const,
+    entityId: supplier.id,
+    entityLabel: supplier.name,
+    changes,
+  };
 }
 
 function assertReceipt(receiptUrl: string): void {

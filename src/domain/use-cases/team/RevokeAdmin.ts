@@ -46,6 +46,10 @@ export class RevokeAdmin {
           toRole: "customer",
         }),
       ],
+      // Removing access ends every browser they're signed in on, there and then —
+      // not merely the dashboard (which the role re-read already closes) but the
+      // session itself, so nothing signed in under their old role lingers.
+      revokeSessionsOf: [target.id],
     });
 
     return demoted;

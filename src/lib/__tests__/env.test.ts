@@ -11,6 +11,7 @@ const PROD = {
   SMS_IR_TEMPLATE_ID: "123456",
   APP_URL: "https://cafe.example",
   ZARINPAL_MERCHANT_ID: "merchant",
+  TWO_FACTOR_ENCRYPTION_KEY: "ab".repeat(32),
 };
 
 describe("parseEnv", () => {
@@ -107,5 +108,31 @@ describe("envWarnings", () => {
     const warnings = envWarnings(parseEnv({ ...PROD, OTP_MOCK: "true", APP_URL: undefined, ZARINPAL_SANDBOX: "true" }));
     expect(warnings).toHaveLength(3);
     expect(warnings[0]).toMatch(/MOCK OTP/);
+  });
+
+  it("flags a production server without a two-factor key", () => {
+    const warnings = envWarnings(parseEnv({ ...PROD, TWO_FACTOR_ENCRYPTION_KEY: "" }));
+    expect(warnings).toEqual([expect.stringMatching(/TWO_FACTOR_ENCRYPTION_KEY/)]);
+  });
+});
+
+describe("TWO_FACTOR_ENCRYPTION_KEY", () => {
+  it("is optional — the app boots without it", () => {
+    expect(parseEnv(DEV).TWO_FACTOR_ENCRYPTION_KEY).toBeUndefined();
+  });
+
+  it("takes 32 bytes as hex or base64", () => {
+    expect(parseEnv({ ...DEV, TWO_FACTOR_ENCRYPTION_KEY: "0f".repeat(32) }).TWO_FACTOR_ENCRYPTION_KEY).toBe(
+      "0f".repeat(32),
+    );
+    const base64 = Buffer.alloc(32, 7).toString("base64");
+    expect(parseEnv({ ...DEV, TWO_FACTOR_ENCRYPTION_KEY: base64 }).TWO_FACTOR_ENCRYPTION_KEY).toBe(base64);
+  });
+
+  it("refuses a key of the wrong length", () => {
+    expect(() => parseEnv({ ...DEV, TWO_FACTOR_ENCRYPTION_KEY: "short" })).toThrow(/TWO_FACTOR_ENCRYPTION_KEY/);
+    expect(() => parseEnv({ ...DEV, TWO_FACTOR_ENCRYPTION_KEY: Buffer.alloc(16).toString("base64") })).toThrow(
+      /TWO_FACTOR_ENCRYPTION_KEY/,
+    );
   });
 });

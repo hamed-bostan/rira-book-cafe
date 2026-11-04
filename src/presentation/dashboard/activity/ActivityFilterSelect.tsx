@@ -3,6 +3,12 @@
 import { type ListFilterOption, useListParams } from "@/src/presentation/dashboard/list";
 import { Select } from "@/src/presentation/design-system/components/form/Select/Select";
 
+/** A labelled group of options, drawn as an `<optgroup>` ("Products": Created, Edited, …). */
+export type ActivityFilterGroup = {
+  label: string;
+  options: ListFilterOption[];
+};
+
 type ActivityFilterSelectProps = {
   /** Query param this filter writes to, e.g. `actorId`. */
   paramName: string;
@@ -10,6 +16,8 @@ type ActivityFilterSelectProps = {
   label: string;
   /** The first option is the "no filter" one, with an empty value. */
   options: ListFilterOption[];
+  /** Further options in groups, after `options`. */
+  groups?: ActivityFilterGroup[];
 };
 
 /**
@@ -17,7 +25,7 @@ type ActivityFilterSelectProps = {
  * Choosing an option navigates — re-running the server render from page 1 — and
  * the empty option clears the param rather than writing `?actorId=`.
  */
-export function ActivityFilterSelect({ paramName, label, options }: ActivityFilterSelectProps) {
+export function ActivityFilterSelect({ paramName, label, options, groups = [] }: ActivityFilterSelectProps) {
   const { searchParams, setFilter } = useListParams();
 
   return (
@@ -32,6 +40,15 @@ export function ActivityFilterSelect({ paramName, label, options }: ActivityFilt
           <option key={option.value || "all"} value={option.value}>
             {option.label}
           </option>
+        ))}
+        {groups.map((group) => (
+          <optgroup key={group.label} label={group.label}>
+            {group.options.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </optgroup>
         ))}
       </Select>
     </label>

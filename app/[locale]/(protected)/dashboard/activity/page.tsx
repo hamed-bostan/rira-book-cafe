@@ -1,10 +1,13 @@
 import { ACTIVITY_ENTITY_TYPES } from "@/src/domain/entities/ActivityEntry";
 import { visibleActivityEntityTypes } from "@/src/lib/api/activity-visibility";
+import { isActivityFiltered } from "@/src/lib/api/admin-activity-params";
 import { toSearchParams } from "@/src/lib/api/searchParams";
 import { requirePermission, sessionPermissions } from "@/src/lib/require-permission";
 import { activityServerApi } from "@/src/presentation/dashboard/activity/activity-server-api";
 import { ActivityScreen } from "@/src/presentation/dashboard/activity/ActivityScreen";
 import { withRememberedPageSize } from "@/src/presentation/dashboard/list/withRememberedPageSize";
+import { roleNamesOf } from "@/src/presentation/dashboard/team/roleDisplay";
+import { teamServerApi } from "@/src/presentation/dashboard/team/team-server-api";
 
 // The log is read from the REST API (BFF) per request — an audit trail that
 // showed a cached past would be worthless.
@@ -19,16 +22,18 @@ export default async function DashboardActivityPage({ searchParams }: DashboardA
   // page honest if a role without it is ever added.
   const session = await requirePermission("activity.view");
   const params = await withRememberedPageSize(toSearchParams(await searchParams));
+  const permissions = await sessionPermissions(session);
 
   // The BFF reads forward the viewer's session cookie, so the endpoints decide what
   // this viewer may read.
   //
   // In parallel: the actor options describe the whole log and don't depend on the
-  // page being read, so there's nothing for the second call to wait on.
-  const [entries, actors, permissions] = await Promise.all([
+  // page being read, so there's nothing for the second call to wait on. Custom
+  // roles' names are only needed for role changes, which only the owner reads.
+  const [entries, actors, roles] = await Promise.all([
     activityServerApi.listPage(params),
     activityServerApi.listActors(),
-    sessionPermissions(session),
+    permissions.includes("team.manage") ? teamServerApi.listRoles() : [],
   ]);
 
   return (
@@ -36,7 +41,8 @@ export default async function DashboardActivityPage({ searchParams }: DashboardA
       entries={entries}
       actors={actors}
       entityTypes={visibleActivityEntityTypes(permissions) ?? ACTIVITY_ENTITY_TYPES}
-      isFiltered={params.get("actorId") != null || params.get("entityType") != null || params.get("field") != null}
+      isFiltered={isActivityFiltered(params)}
+      roleNames={roleNamesOf(roles)}
     />
   );
 }

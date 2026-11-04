@@ -1,5 +1,4 @@
-import { DASHBOARD_ROLES, type User } from "../../entities/User";
-
+import type { User } from "../../entities/User";
 import type { IUserRepository } from "../../repositories/IUserRepository";
 
 /**
@@ -16,7 +15,7 @@ export class ListTeam {
   constructor(private readonly userRepo: IUserRepository) {}
 
   async execute(breakGlassIds: readonly string[] = []): Promise<User[]> {
-    const members = await this.userRepo.listByRoles(DASHBOARD_ROLES);
+    const members = await this.userRepo.listTeam();
     const seen = new Set(members.map((member) => member.id));
 
     // A break-glass id may have no user row at all (env set before that person

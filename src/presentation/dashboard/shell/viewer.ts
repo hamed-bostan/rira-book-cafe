@@ -1,3 +1,4 @@
+import type { RoleName } from "@/src/domain/entities/Role";
 import type { UserRole } from "@/src/domain/entities/User";
 import { ApiError } from "@/src/lib/api/ApiError";
 
@@ -21,6 +22,8 @@ export type DashboardViewer = {
   imageUrl: string | null;
   /** The effective role, labelled from the `dashTeam.roles` catalog. */
   role: UserRole;
+  /** A custom role's name in both languages; `null` for a built-in role, which the app names. */
+  roleName: RoleName | null;
 };
 
 /**

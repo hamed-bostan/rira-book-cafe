@@ -4,8 +4,9 @@ import { ConflictError } from "../../errors/ConflictError";
 import { ValidationError } from "../../errors/ValidationError";
 
 import { roleChangeEntry } from "./roleChangeEntry";
-import { refuseOwner, refuseSelf } from "./teamGuards";
+import { refuseOwner, refuseSelf, requireRoleExists } from "./teamGuards";
 
+import type { IRoleRepository } from "../../repositories/IRoleRepository";
 import type { ITeamNotifier } from "../../repositories/ITeamNotifier";
 import type { IUserRepository } from "../../repositories/IUserRepository";
 
@@ -49,6 +50,7 @@ export type GrantAdminCommand = {
 export class GrantAdmin {
   constructor(
     private readonly userRepo: IUserRepository,
+    private readonly roles: Pick<IRoleRepository, "get">,
     private readonly notifier?: ITeamNotifier,
   ) {}
 
@@ -73,6 +75,7 @@ export class GrantAdmin {
     const email = input.email?.trim() || null;
     const [existing, actor] = await Promise.all([this.userRepo.getById(id), this.userRepo.getById(actorId)]);
     refuseOwner(existing?.role, "You can't change the owner's role. Transfer ownership to someone else first.");
+    await requireRoleExists(input.role, this.roles);
 
     // Whether this grant actually changes anything decides both whether an
     // invitation goes out and whether it's recorded. Re-granting someone the role

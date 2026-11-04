@@ -227,7 +227,13 @@
     "parentIsSubcategory": "That's a subcategory — choose a top-level category.",
     "hasSubcategories": "It has subcategories of its own, so it stays at the top level.",
     "replyRequired": "Write the reply.",
-    "replyTooLong": "Keep the reply to 1,000 characters."
+    "replyTooLong": "Keep the reply to 1,000 characters.",
+    "roleNameRequired": "Enter the role’s name.",
+    "roleNameTooLong": "That name is too long.",
+    "roleInvalid": "Choose a role.",
+    "retentionInvalid": "Choose one of the offered periods.",
+    "twoFactorCodeRequired": "Enter the code.",
+    "twoFactorCodeInvalid": "That code didn’t work."
   },
   "apiErrors": {
     "badRequest": "The request couldn't be read. Please try again.",
@@ -305,7 +311,13 @@
     "promoNeedsGuest": "That code needs the guest's phone — its uses are counted per guest.",
     "parentIsSubcategory": "That category is itself a subcategory. Choose a top-level category as the parent.",
     "hasSubcategories": "This category has subcategories. Move or delete them first.",
-    "reviewNotApproved": "Only a review that's shown on the menu can get a reply."
+    "reviewNotApproved": "Only a review that's shown on the menu can get a reply.",
+    "roleInUse": "Someone still has this role. Move them to another role first.",
+    "roleBuiltIn": "Built-in roles can’t be deleted.",
+    "roleNameTaken": "Another role already has that name.",
+    "twoFactorAlreadyOn": "Two-factor is already on.",
+    "twoFactorRequired": "The owner requires two-factor for the dashboard.",
+    "twoFactorUnavailable": "Two-factor isn’t available on this server."
   },
   "meta": {
     "siteName": "Rira Book Cafe",
@@ -371,7 +383,8 @@
     "navBookHolds": "Book holds",
     "navIncome": "Income",
     "navPayroll": "Payroll",
-    "navSettings": "Settings"
+    "navSettings": "Settings",
+    "security": "Sign-in & security"
   },
   "dashTeam": {
     "membersHeading": "Team members",
@@ -438,7 +451,7 @@
       "error": "Couldn’t remove access. Please try again."
     },
     "activityHeading": "Access history",
-    "activityDescription": "Every change to who can reach the dashboard. Kept permanently.",
+    "activityDescription": "Every change to who can reach the dashboard.",
     "activityEmpty": "No changes recorded yet",
     "activityEmptyBody": "Access you grant, change or remove will appear here.",
     "activity": {
@@ -466,7 +479,200 @@
       "owner": "Owner",
       "customer": "No access"
     },
-    "granted": "Access granted to {phone}"
+    "granted": "Access granted to {phone}",
+    "customRoleFallback": "Custom role",
+    "twoFactorOn": "Two-factor on",
+    "tabsLabel": "Team sections",
+    "tab": {
+      "members": "Members",
+      "roles": "Roles",
+      "security": "Security"
+    },
+    "activitySeeAll": "See all",
+    "security": {
+      "menu": "Sessions & security",
+      "back": "Team",
+      "title": "{name}’s sessions and security",
+      "summary": "Where they’re signed in, and their authenticator app.",
+      "twoFactorHeading": "Two-factor sign-in",
+      "twoFactorState": {
+        "on": "On",
+        "pending": "Being set up",
+        "off": "Off"
+      },
+      "ownTwoFactor": "Your own two-factor is managed from your sign-in & security page.",
+      "resetHint": "If they’ve lost their phone, reset their authenticator app. They’re signed out everywhere and set it up again at their next sign-in.",
+      "twoFactorOffHint": "They don’t use an authenticator app.",
+      "reset": "Reset two-factor",
+      "resetTitle": "Reset {name}’s two-factor?",
+      "resetMessage": "Their authenticator app and recovery codes stop working, and they’re signed out on every device.",
+      "resetDone": "{name}’s two-factor was reset",
+      "resetError": "Couldn’t reset two-factor. Please try again."
+    },
+    "roles": {
+      "heading": "Roles",
+      "description": "What each role can do. The owner always has every permission.",
+      "new": "New role",
+      "newTitle": "New role",
+      "editTitle": "Edit {name}",
+      "editMessage": "Changes apply the next time anyone with this role loads a page.",
+      "create": "Create role",
+      "save": "Save role",
+      "nameEnLabel": "Name in English",
+      "nameFaLabel": "Name in Persian",
+      "permissionsLabel": "What this role can do",
+      "alwaysOn": "Every team role has this.",
+      "teamManageNote": "Managing the team stays with the owner. It can’t be given to a role: whoever held it could give themselves everything else.",
+      "created": "Role {name} created",
+      "saved": "{name} saved",
+      "nameTaken": "Another role already has that name.",
+      "saveError": "Couldn’t save the role. Please try again.",
+      "edit": "Edit",
+      "delete": "Delete",
+      "deleteTitle": "Delete {name}?",
+      "deleteMessage": "Nobody holds this role, so nobody loses access.",
+      "deleted": "{name} deleted",
+      "inUse": "Someone still has this role. Move them to another role first.",
+      "deleteError": "Couldn’t delete the role. Please try again.",
+      "builtIn": "Built-in",
+      "custom": "Custom",
+      "summary": "{members, plural, =0 {Nobody has it} one {# person} other {# people}} · {permissions} of {total} permissions"
+    },
+    "permissionGroup": {
+      "general": "General",
+      "orders": "Orders",
+      "floor": "Floor",
+      "menu": "Menu & promotions",
+      "stock": "Stock",
+      "money": "Money",
+      "admin": "Settings"
+    },
+    "permission": {
+      "dashboard": {
+        "view": {
+          "label": "Reach the dashboard",
+          "description": "Open the dashboard and read its lists."
+        }
+      },
+      "activity": {
+        "view": {
+          "label": "Read the activity log",
+          "description": "See who changed what. Money and team entries still need their own permission."
+        }
+      },
+      "orders": {
+        "fulfill": {
+          "label": "Move orders along",
+          "description": "Accept, prepare, serve and cancel orders, and ring up counter sales."
+        },
+        "note": {
+          "label": "Write order notes",
+          "description": "Add internal notes to an order."
+        }
+      },
+      "reservations": {
+        "manage": {
+          "label": "Manage bookings",
+          "description": "Confirm, seat and close table bookings and suite stays."
+        }
+      },
+      "loans": {
+        "manage": {
+          "label": "Lend books",
+          "description": "Lend books from the shelf and close loans."
+        }
+      },
+      "events": {
+        "manage": {
+          "label": "Run events",
+          "description": "Create and change events and manage their sign-ups."
+        }
+      },
+      "shifts": {
+        "manage": {
+          "label": "Run till shifts",
+          "description": "Open and close till shifts and count the drawer."
+        }
+      },
+      "catalog": {
+        "write": {
+          "label": "Edit the menu",
+          "description": "Change items, prices, categories and images."
+        }
+      },
+      "reviews": {
+        "moderate": {
+          "label": "Moderate reviews",
+          "description": "Approve or reject guests’ reviews."
+        }
+      },
+      "promotions": {
+        "write": {
+          "label": "Manage promotions",
+          "description": "Create and change promo codes and the loyalty club."
+        }
+      },
+      "inventory": {
+        "view": {
+          "label": "See stock",
+          "description": "See stock levels and record waste."
+        },
+        "manage": {
+          "label": "Manage stock",
+          "description": "Receive deliveries, count stock and set reorder levels."
+        }
+      },
+      "reports": {
+        "view": {
+          "label": "Read reports",
+          "description": "See revenue and the sales, payment and guest reports."
+        }
+      },
+      "accounting": {
+        "view": {
+          "label": "Read the books",
+          "description": "See the journal, accounts, statements and expenses."
+        },
+        "write": {
+          "label": "Keep the books",
+          "description": "Record and pay expenses, post entries, manage suppliers and close periods."
+        }
+      },
+      "payroll": {
+        "manage": {
+          "label": "Run payroll",
+          "description": "See and change who’s paid what, and run pay runs."
+        }
+      },
+      "settings": {
+        "write": {
+          "label": "Change cafe settings",
+          "description": "Change cafe-wide settings like tax and opening hours."
+        }
+      },
+      "team": {
+        "manage": {
+          "label": "Manage the team",
+          "description": "Give and take dashboard access. Owner only."
+        }
+      }
+    },
+    "securitySettings": {
+      "twoFactorHeading": "Two-factor sign-in",
+      "twoFactorDescription": "A code from an authenticator app, asked for after the phone code when someone opens the dashboard.",
+      "requireTwoFactor": "Require two-factor for everyone on the team",
+      "requireTwoFactorHint": "Anyone without an authenticator app is asked to set one up the next time they open the dashboard.",
+      "twoFactorUnavailable": "Not available yet: the server has no TWO_FACTOR_ENCRYPTION_KEY set.",
+      "retentionHeading": "Activity log",
+      "retentionDescription": "How long the activity log keeps what happened.",
+      "retentionLabel": "Keep activity for",
+      "retentionHint": "Older entries are removed in the background, and each removal is itself logged.",
+      "forever": "Forever",
+      "months": "{count, plural, one {# month} other {# months}}",
+      "years": "{count, plural, one {# year} other {# years}}",
+      "saved": "Settings saved",
+      "error": "Couldn’t save the settings. Please try again."
+    }
   },
   "dashProducts": {
     "heading": "Menu items",
@@ -1134,7 +1340,9 @@
       "income": "Income",
       "payroll": "Payroll",
       "loyalty": "Loyalty club",
-      "settings": "Settings"
+      "settings": "Settings",
+      "cashShift": "Till shifts",
+      "activity": "Activity log"
     },
     "action": {
       "product": {
@@ -1209,7 +1417,9 @@
         "voided": "<b>{actor}</b> voided expense {entity}",
         "receiptChanged": "<b>{actor}</b> changed the receipt on expense {entity}",
         "recurringChanged": "<b>{actor}</b> changed recurring bill {entity}",
-        "recurringSkipped": "<b>{actor}</b> skipped a month of {entity}"
+        "recurringSkipped": "<b>{actor}</b> skipped a month of {entity}",
+        "supplierCreated": "<b>{actor}</b> added supplier {entity}",
+        "supplierUpdated": "<b>{actor}</b> changed supplier {entity}"
       },
       "suiteBooking": {
         "changed": "<b>{actor}</b> updated suite booking {entity}",
@@ -1252,6 +1462,23 @@
         "tableAdded": "<b>{actor}</b> added table {entity}",
         "tableChanged": "<b>{actor}</b> changed table {entity}",
         "tableRemoved": "<b>{actor}</b> removed table {entity}"
+      },
+      "user": {
+        "roleCreated": "<b>{actor}</b> created the role {entity}",
+        "roleUpdated": "<b>{actor}</b> changed the role {entity}",
+        "roleDeleted": "<b>{actor}</b> deleted the role {entity}",
+        "securitySettingsChanged": "<b>{actor}</b> changed the team’s security settings",
+        "sessionsRevoked": "<b>{actor}</b> signed {entity} out",
+        "twoFactorEnabled": "<b>{actor}</b> turned on two-factor sign-in",
+        "twoFactorDisabled": "<b>{actor}</b> turned off two-factor sign-in",
+        "twoFactorReset": "<b>{actor}</b> reset {entity}’s two-factor sign-in"
+      },
+      "activity": {
+        "pruned": "<b>{actor}</b> removed activity older than the retention period"
+      },
+      "cashShift": {
+        "opened": "<b>{actor}</b> opened till shift {entity}",
+        "closed": "<b>{actor}</b> closed till shift {entity}"
       }
     },
     "role": {
@@ -1268,11 +1495,13 @@
       "support": "Support",
       "staff": "Staff",
       "admin": "Admin",
-      "owner": "Owner"
+      "owner": "Owner",
+      "custom": "Custom role"
     },
     "value": {
       "yes": "Yes",
-      "no": "No"
+      "no": "No",
+      "all": "All"
     },
     "field": {
       "name": "Name",
@@ -1397,10 +1626,171 @@
       "reply": "Reply",
       "rating": "Stars",
       "comment": "Review",
-      "author": "Guest"
+      "author": "Guest",
+      "nameEn": "English name",
+      "permissions": "Permissions",
+      "requireTwoFactor": "Two-factor required",
+      "activityRetentionMonths": "Keep activity (months)",
+      "sessionsSignedOut": "Sessions signed out",
+      "twoFactor": "Two-factor",
+      "entriesRemoved": "Entries removed",
+      "olderThan": "Older than",
+      "retentionMonths": "Retention (months)",
+      "openingFloat": "Opening float",
+      "countedCash": "Counted",
+      "expectedCash": "Expected"
     },
     "filterField": "Field",
-    "allFields": "Any field"
+    "allFields": "Any field",
+    "exportCsv": "Export CSV",
+    "filterAction": "What happened",
+    "allActions": "All changes",
+    "searchLabel": "Search",
+    "searchPlaceholder": "Name, item or id",
+    "filterFrom": "From",
+    "filterTo": "To",
+    "applyDates": "Apply dates",
+    "clearDates": "Clear dates",
+    "dayPart": {
+      "day": "{field}: day",
+      "month": "{field}: month",
+      "year": "{field}: year",
+      "dayPlaceholder": "Day",
+      "monthPlaceholder": "Month",
+      "yearPlaceholder": "Year"
+    },
+    "csv": {
+      "when": "When (Tehran)",
+      "who": "Changed by",
+      "area": "Area",
+      "what": "What happened",
+      "item": "Item",
+      "changes": "Changes"
+    },
+    "twoFactorState": {
+      "on": "On",
+      "pending": "Being set up",
+      "off": "Off"
+    },
+    "actionName": {
+      "product": {
+        "created": "Item created",
+        "updated": "Item edited",
+        "deleted": "Item deleted"
+      },
+      "category": {
+        "created": "Category created",
+        "updated": "Category edited",
+        "deleted": "Category deleted"
+      },
+      "order": {
+        "counterSale": "Counter sale",
+        "stageChanged": "Status changed",
+        "paymentChanged": "Payment changed",
+        "refunded": "Refunded",
+        "writtenOff": "Written off",
+        "onlinePaymentRefunded": "Online payment given back",
+        "changed": "Order changed",
+        "customerNotified": "Guest messaged"
+      },
+      "review": {
+        "moderated": "Review moderated"
+      },
+      "promoCode": {
+        "created": "Code created",
+        "updated": "Code edited",
+        "activeChanged": "Switched on or off",
+        "deleted": "Code deleted",
+        "archived": "Code archived"
+      },
+      "user": {
+        "roleChanged": "Access changed",
+        "roleCreated": "Role created",
+        "roleUpdated": "Role changed",
+        "roleDeleted": "Role deleted",
+        "securitySettingsChanged": "Security settings changed",
+        "sessionsRevoked": "Signed out by the owner",
+        "twoFactorEnabled": "Two-factor turned on",
+        "twoFactorDisabled": "Two-factor turned off",
+        "twoFactorReset": "Two-factor reset"
+      },
+      "guest": {
+        "profileCreated": "Profile created"
+      },
+      "reservation": {
+        "changed": "Booking updated",
+        "booked": "Table booked",
+        "guestMessaged": "Guest messaged",
+        "expired": "Request expired",
+        "depositTaken": "Deposit taken",
+        "depositReturned": "Deposit returned",
+        "depositKept": "Deposit kept"
+      },
+      "suiteBooking": {
+        "changed": "Stay updated",
+        "booked": "Stay booked",
+        "guestMessaged": "Guest messaged",
+        "expired": "Request expired",
+        "rateChanged": "Stay’s rate changed",
+        "priceChanged": "Suite price changed"
+      },
+      "bookLoan": {
+        "lent": "Book lent",
+        "returned": "Book returned",
+        "lost": "Book lost",
+        "extended": "Loan extended",
+        "extensionUndone": "Extension undone",
+        "holdSkipped": "Hold skipped",
+        "guestMessaged": "Guest messaged",
+        "holdExpired": "Hold expired"
+      },
+      "event": {
+        "created": "Event created",
+        "updated": "Event edited",
+        "deleted": "Event deleted",
+        "registrationCancelled": "Sign-up cancelled",
+        "guestMessaged": "Guest messaged",
+        "cancelled": "Event cancelled"
+      },
+      "ledger": {
+        "entryPosted": "Entry posted",
+        "entryReversed": "Entry reversed",
+        "accountChanged": "Account changed",
+        "settingsChanged": "Settings changed",
+        "bankStatementChanged": "Bank statement updated",
+        "bankMatched": "Lines matched",
+        "bankUnmatched": "Lines unmatched",
+        "bankReconciled": "Statement reconciled"
+      },
+      "expense": {
+        "recorded": "Expense recorded",
+        "paid": "Expense paid",
+        "voided": "Expense voided",
+        "receiptChanged": "Receipt changed",
+        "recurringChanged": "Recurring bill changed",
+        "recurringSkipped": "Month skipped",
+        "supplierCreated": "Supplier added",
+        "supplierUpdated": "Supplier changed"
+      },
+      "income": {
+        "recorded": "Income recorded",
+        "voided": "Income voided",
+        "refunded": "Refund made"
+      },
+      "payroll": {
+        "recorded": "Payroll recorded",
+        "paid": "Salary paid",
+        "voided": "Payroll voided",
+        "employeeChanged": "Employee updated"
+      },
+      "activity": {
+        "pruned": "Old activity removed"
+      },
+      "cashShift": {
+        "opened": "Shift opened",
+        "closed": "Shift closed"
+      }
+    }
   },
   "dashReservations": {
     "deposit": {
@@ -4268,6 +4658,87 @@
     "timeZone": {
       "heading": "Time zone",
       "note": "Every time in the app — hours, bookings, orders, the books — is Tehran time. It can’t be changed here."
+    }
+  },
+  "dashSecurity": {
+    "heading": "Sign-in & security",
+    "summary": "Your authenticator app, and where you’re signed in to the dashboard.",
+    "sessions": {
+      "heading": "Signed-in sessions",
+      "descriptionSelf": "Browsers signed in to your account. Sign out any you don’t recognise.",
+      "descriptionMember": "Browsers {name} is signed in on.",
+      "browserOn": "{browser} on {os}",
+      "unknownDevice": "Unknown device",
+      "activeNow": "active now",
+      "lastActive": "last active {when}",
+      "thisBrowser": "This browser",
+      "meta": "Signed in {signedIn} · {lastSeen}",
+      "signOut": "Sign out",
+      "signOutAria": "Sign out {device}",
+      "signOutOthers": "Sign out everywhere else",
+      "signOutAll": "Sign out everywhere",
+      "confirmOneTitle": "Sign out {device}?",
+      "confirmOthersTitle": "Sign out everywhere else?",
+      "confirmAllTitle": "Sign {name} out everywhere?",
+      "confirmMessage": "Signed-out browsers have to sign in again with the phone code.",
+      "signedOutOne": "Signed out",
+      "signedOutOthers": "Signed out of every other browser",
+      "signedOutAll": "Signed out everywhere",
+      "empty": "No active sessions.",
+      "error": "Couldn’t sign out. Please try again."
+    },
+    "twoFactor": {
+      "heading": "Authenticator app",
+      "description": "After the phone code, the dashboard asks for a code from an app like Google Authenticator or Microsoft Authenticator.",
+      "stateOn": "On",
+      "stateOff": "Off",
+      "onSince": "On since {date}.",
+      "codesLeft": "{count, plural, =0 {No recovery codes left.} one {# recovery code left.} other {# recovery codes left.}}",
+      "requiredNote": "The owner requires two-factor, so it can’t be turned off.",
+      "unavailable": "Two-factor isn’t available on this server yet.",
+      "requiredIntro": "The owner requires two-factor for the dashboard. Set up an authenticator app to keep using it.",
+      "offIntro": "Add a second step to your dashboard sign-in, so a phone code alone isn’t enough.",
+      "setUp": "Set up authenticator app",
+      "setupError": "Couldn’t set up two-factor. Please try again.",
+      "stepInstall": "Install an authenticator app on your phone.",
+      "stepScan": "Scan this QR code with it, or type in the key.",
+      "stepConfirm": "Enter the 6-digit code the app shows.",
+      "qrAlt": "QR code for your authenticator app",
+      "manualKey": "Key",
+      "confirm": "Turn on",
+      "wrongCode": "That code didn’t work. Check the time on your phone and try the newest code.",
+      "codeLabel": "Code from your app",
+      "codeHint": "6 digits; a new one every 30 seconds.",
+      "recoveryLabel": "Recovery code",
+      "recoveryHint": "One of the codes you saved when you set up two-factor. Each works once.",
+      "useRecovery": "Use a recovery code instead",
+      "useApp": "Use the app’s code instead",
+      "codesHeading": "Save your recovery codes",
+      "codesMessage": "If you lose your phone, each of these gets you in once. They won’t be shown again — keep them somewhere safe.",
+      "copyCodes": "Copy codes",
+      "codesCopied": "Recovery codes copied",
+      "codesCopyFailed": "Couldn’t copy. Select the codes and copy them by hand.",
+      "done": "I’ve saved them",
+      "turnOff": "Turn off",
+      "turnOffTitle": "Turn off two-factor?",
+      "turnOffMessage": "Enter a code from your app, or a recovery code, to confirm.",
+      "turnedOff": "Two-factor turned off",
+      "turnOffError": "Couldn’t turn off two-factor. Please try again."
+    },
+    "challenge": {
+      "pageTitle": "Two-factor sign-in",
+      "verifyTitle": "Enter your authenticator code",
+      "verifyMessage": "Open your authenticator app and enter the code for Rira Book Cafe.",
+      "verifyRecoveryOnly": "App codes can’t be checked right now. Enter one of your recovery codes.",
+      "enrollTitle": "Set up two-factor sign-in",
+      "enrollMessage": "The owner requires an authenticator app for the dashboard. It takes a minute.",
+      "continue": "Continue",
+      "continueToDashboard": "Continue to the dashboard",
+      "error": "Couldn’t check the code. Please try again.",
+      "signOut": "Sign out",
+      "signInAgainTitle": "Please sign in again",
+      "signInAgainMessage": "Dashboard sign-ins are now tracked so they can be signed out remotely. Sign in once more to continue.",
+      "signInAgain": "Sign in again"
     }
   }
 }

@@ -2,11 +2,16 @@ import { ArrowUpRight } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { SYSTEM_ACTOR, type ActivityChange } from "@/src/domain/entities/ActivityEntry";
+import { isCafeDay } from "@/src/domain/entities/CafeTime";
+import { isPermission } from "@/src/domain/entities/Permission";
 import { ROLE_CHANGE_FIELD, roleChangeKind, roleMove } from "@/src/domain/entities/RoleChange";
-import { USER_ROLES, type UserRole } from "@/src/domain/entities/User";
+import type { TwoFactorState } from "@/src/domain/entities/TwoFactor";
+import { isBuiltInRole, toUserRole, type UserRole } from "@/src/domain/entities/User";
 import { Link } from "@/src/i18n/navigation";
+import { formatCafeDayMedium } from "@/src/lib/formatCafeDay";
 import { formatNumberTrimmed } from "@/src/lib/formatNumber";
 import { cn } from "@/src/lib/utils";
+import { roleDisplayName, type RoleNames } from "@/src/presentation/dashboard/team/roleDisplay";
 import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
@@ -37,7 +42,14 @@ const NUMERIC_FIELDS: ReadonlySet<string> = new Set([
   "capacity",
   "counted",
   "difference",
+  "openingFloat",
+  "expectedCash",
+  "countedCash",
+  "entriesRemoved",
 ]);
+
+/** The actions about a role definition, whose entity is the role itself. */
+const ROLE_ACTIONS: ReadonlySet<string> = new Set(["user.roleCreated", "user.roleUpdated", "user.roleDeleted"]);
 const NUMBER = /^-?\d+(\.\d+)?$/;
 
 type ActivityEntryRowProps = {
@@ -54,6 +66,8 @@ type ActivityEntryRowProps = {
    * initials, and the time under the sentence.
    */
   timeline?: boolean;
+  /** Custom roles' names, for role-change sentences; only the owner reads those entries. */
+  roleNames?: RoleNames;
 };
 
 /** Two leading initials, e.g. "Sara Ahmadi" → "SA". */
@@ -85,12 +99,19 @@ function switchedTo(changes: readonly ActivityChange[]): "on" | "off" | "unknown
  * same wherever it's shown. Read-only: there is nothing here to edit or delete,
  * because a record an admin can quietly tidy up isn't one.
  */
-export async function ActivityEntryRow({ entry, time, showEntity = true, timeline = false }: ActivityEntryRowProps) {
+export async function ActivityEntryRow({
+  entry,
+  time,
+  showEntity = true,
+  timeline = false,
+  roleNames = {},
+}: ActivityEntryRowProps) {
   const t = await getTranslations("dashActivity");
   const locale = await getLocale();
 
+  const tTeam = await getTranslations("dashTeam");
   const href = showEntity ? activityEntityHref(entry.entityType, entry.entityId, entry.action) : null;
-  const label = entry.entityLabel ?? entry.entityId;
+  const rawLabel = entry.entityLabel ?? entry.entityId;
   // The background jobs' changes name the system in the reader's language.
   const actorName = entry.actorId === SYSTEM_ACTOR.id ? t("systemActor") : entry.actorName;
   const actor = (chunks: ReactNode) => <span className="font-semibold">{chunks}</span>;
@@ -100,7 +121,15 @@ export async function ActivityEntryRow({ entry, time, showEntity = true, timelin
   // because the roles carry the meaning and a diff reading `customer → support`
   // makes the reader translate it.
   const move = roleMove(entry.changes);
-  const roleName = (role: UserRole | undefined): string => t(`roleName.${role ?? "customer"}`);
+  const roleName = (role: UserRole | undefined): string =>
+    roleDisplayName(role ?? "customer", {
+      builtIn: (builtIn) => t(`roleName.${builtIn}`),
+      names: roleNames,
+      locale,
+      fallback: t("roleName.custom"),
+    });
+  // A role's own entries name it: a built-in one in the reader's language.
+  const label = ROLE_ACTIONS.has(entry.action) && isBuiltInRole(entry.entityId) ? roleName(entry.entityId) : rawLabel;
   const sentence =
     entry.action === "user.roleChanged"
       ? t.rich(`role.${roleChangeKind({ userId: entry.entityId, actorId: entry.actorId, changes: entry.changes })}`, {
@@ -142,7 +171,16 @@ export async function ActivityEntryRow({ entry, time, showEntity = true, timelin
         valueLabel={(field, value) => {
           if (value === "true") return t("value.yes");
           if (value === "false") return t("value.no");
-          if (field === ROLE_CHANGE_FIELD && isUserRole(value)) return t(`roleName.${value}`);
+          if (field === ROLE_CHANGE_FIELD) return roleName(toUserRole(value));
+          if (field === "permissions") {
+            return value
+              .split(", ")
+              .map((permission) => (isPermission(permission) ? tTeam(`permission.${permission}.label`) : permission))
+              .join(locale === "fa" ? "، " : ", ");
+          }
+          if (field === "twoFactor" && isTwoFactorState(value)) return t(`twoFactorState.${value}`);
+          if (field === "sessionsSignedOut" && value === "all") return t("value.all");
+          if (field === "olderThan" && isCafeDay(value)) return formatCafeDayMedium(value, locale);
           if (NUMERIC_FIELDS.has(field) && NUMBER.test(value)) return formatNumberTrimmed(Number(value), locale, 3);
           return value;
         }}
@@ -279,7 +317,7 @@ function fieldLabel(t: LooseTranslator, field: string): string {
   return t.has(key) ? t(key) : field;
 }
 
-/** Whether a stored value is one of the roles, so it can be named rather than shown raw. */
-function isUserRole(value: string): value is UserRole {
-  return (USER_ROLES as readonly string[]).includes(value);
+/** Whether a stored value is a two-factor state, so it can be named rather than shown raw. */
+function isTwoFactorState(value: string): value is TwoFactorState {
+  return value === "on" || value === "off" || value === "pending";
 }

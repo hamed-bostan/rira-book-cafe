@@ -1,6 +1,11 @@
 import { getLocale, getTranslations } from "next-intl/server";
 
-import { FILTERABLE_ACTIVITY_FIELDS, SYSTEM_ACTOR, type ActivityEntityType } from "@/src/domain/entities/ActivityEntry";
+import {
+  ACTIVITY_ACTIONS,
+  FILTERABLE_ACTIVITY_FIELDS,
+  SYSTEM_ACTOR,
+  type ActivityEntityType,
+} from "@/src/domain/entities/ActivityEntry";
 import { cafeDayOf } from "@/src/domain/entities/CafeTime";
 import type { Page } from "@/src/domain/entities/Pagination";
 import { Link } from "@/src/i18n/navigation";
@@ -9,12 +14,21 @@ import { formatOrderTime } from "@/src/lib/formatOrderDate";
 import { formatRelativeTime } from "@/src/lib/formatRelativeTime";
 import { cn } from "@/src/lib/utils";
 import { DashboardEmptyState } from "@/src/presentation/dashboard/DashboardEmptyState";
-import { ListPager } from "@/src/presentation/dashboard/list";
+import { ListPager, ListSearchInput } from "@/src/presentation/dashboard/list";
+import type { RoleNames } from "@/src/presentation/dashboard/team/roleDisplay";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
 
+import { ActivityDateRange } from "./ActivityDateRange";
 import { activityDayKind, groupByCafeDay } from "./activityDays";
 import { ActivityEntryRow } from "./ActivityEntryRow";
-import { ActivityFilterSelect } from "./ActivityFilterSelect";
+import { ActivityExportLink } from "./ActivityExportLink";
+import { ActivityFilterSelect, type ActivityFilterGroup } from "./ActivityFilterSelect";
+
+/** The translator through a signature that takes a runtime-built key, checked by `has` (see `ActivityEntryRow`). */
+type LooseTranslator = {
+  (key: string): string;
+  has: (key: string) => boolean;
+};
 
 import type { ActivityActorWire, ActivityEntryWire } from "./activity-response-schema";
 
@@ -27,7 +41,30 @@ type ActivityScreenProps = {
   entityTypes: readonly ActivityEntityType[];
   /** Whether a filter is narrowing the log, to tell "nothing here" from "nothing matched". */
   isFiltered: boolean;
+  /** Custom roles' names, for the role-change entries only the owner reads. */
+  roleNames?: RoleNames;
 };
+
+/**
+ * The "What happened" filter's options, grouped under the areas this viewer may
+ * read. Each action's name comes from `actionName`; one this build has no name for
+ * (added by a newer feature) reads as its key rather than breaking the page.
+ */
+function actionGroups(
+  entityTypes: readonly ActivityEntityType[],
+  areaLabel: (type: ActivityEntityType) => string,
+  actionLabel: (action: string) => string,
+): ActivityFilterGroup[] {
+  return entityTypes
+    .map((type) => ({
+      label: areaLabel(type),
+      options: ACTIVITY_ACTIONS.filter((action) => action.startsWith(`${type}.`)).map((action) => ({
+        value: action,
+        label: actionLabel(action),
+      })),
+    }))
+    .filter((group) => group.options.length > 0);
+}
 
 /**
  * The admin audit trail: every change anyone made, newest first, under a header
@@ -39,14 +76,24 @@ type ActivityScreenProps = {
  * here holds data state, and nothing here writes — the log has no controls at all,
  * which is the design.
  *
- * There is no search box. The log's text is a rendering of actions and ids, not
- * prose, so a free-text search over it would mostly match on fragments of uuids;
- * the three filters that matter — who, what kind of thing, and which value moved
- * — are exact.
+ * Beside the exact filters (who, what kind of thing, what happened, which value
+ * moved) there's a span of days and a search over what entries name — the item's
+ * label and who made the change — and the filtered log downloads as CSV.
  */
-export async function ActivityScreen({ entries, actors, entityTypes, isFiltered }: ActivityScreenProps) {
+export async function ActivityScreen({
+  entries,
+  actors,
+  entityTypes,
+  isFiltered,
+  roleNames = {},
+}: ActivityScreenProps) {
   const t = await getTranslations("dashActivity");
   const locale = await getLocale();
+  const loose = t as unknown as LooseTranslator;
+  const actionLabel = (action: string): string => {
+    const key = `actionName.${action}`;
+    return loose.has(key) ? loose(key) : action;
+  };
 
   const today = cafeDayOf(new Date());
   const dayLabel = (day: string): string => {
@@ -63,9 +110,12 @@ export async function ActivityScreen({ entries, actors, entityTypes, isFiltered 
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
-      <div className="flex min-w-0 flex-col gap-1">
-        <h1 className="dashboard-page-title">{t("heading")}</h1>
-        <p className="text-body-default text-pretty text-muted-foreground sm:text-body-small">{t("summary")}</p>
+      <div className="flex min-w-0 flex-wrap items-end justify-between gap-x-4 gap-y-3">
+        <div className="flex min-w-0 flex-col gap-1">
+          <h1 className="dashboard-page-title">{t("heading")}</h1>
+          <p className="text-body-default text-pretty text-muted-foreground sm:text-body-small">{t("summary")}</p>
+        </div>
+        <ActivityExportLink />
       </div>
 
       <section
@@ -104,6 +154,17 @@ export async function ActivityScreen({ entries, actors, entityTypes, isFiltered 
               ...FILTERABLE_ACTIVITY_FIELDS.map((field) => ({ value: field, label: t(`field.${field}`) })),
             ]}
           />
+          <ActivityFilterSelect
+            paramName="action"
+            label={t("filterAction")}
+            options={[{ value: "", label: t("allActions") }]}
+            groups={actionGroups(entityTypes, (type) => t(`entity.${type}`), actionLabel)}
+          />
+          <div className="flex min-w-0 flex-col gap-1.5 sm:col-span-1 lg:col-span-2">
+            <span className="text-body-default font-medium text-foreground sm:text-body-small">{t("searchLabel")}</span>
+            <ListSearchInput label={t("searchLabel")} placeholder={t("searchPlaceholder")} />
+          </div>
+          <ActivityDateRange />
         </div>
 
         {groups.length > 0 ? (
@@ -121,7 +182,7 @@ export async function ActivityScreen({ entries, actors, entityTypes, isFiltered 
                 <ol>
                   {group.entries.map((entry, row) => (
                     <li key={entry.id} className={cn(row > 0 && "border-t border-border")}>
-                      <ActivityEntryRow entry={entry} time={timeOf(entry, group.day)} />
+                      <ActivityEntryRow entry={entry} time={timeOf(entry, group.day)} roleNames={roleNames} />
                     </li>
                   ))}
                 </ol>

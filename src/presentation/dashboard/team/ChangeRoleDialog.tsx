@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl";
 import * as React from "react";
 
-import { GRANTABLE_ROLES, type GrantableRole } from "@/src/domain/entities/User";
+import type { GrantableRole } from "@/src/domain/entities/User";
 import { useRouter } from "@/src/i18n/navigation";
 import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
@@ -13,6 +13,8 @@ import { Select } from "@/src/presentation/design-system/components/form/Select/
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { teamApi } from "./team-api";
+
+import type { RoleOption } from "./roleDisplay";
 
 /** Why the server refused a role change, keyed by the code it answered with. */
 const BLOCKED_REASON = {
@@ -36,6 +38,8 @@ type ChangeRoleDialogProps = {
   name: string;
   /** The role they hold now — preselected, and saving it again does nothing. */
   role: GrantableRole;
+  /** The roles on offer, named for this reader. */
+  roleOptions: readonly RoleOption[];
 };
 
 /**
@@ -44,7 +48,7 @@ type ChangeRoleDialogProps = {
  * owner meanwhile, their access is in the server config) reads in the dialog in
  * this page's words rather than the remove-access wording the codes share.
  */
-export function ChangeRoleDialog({ open, onOpenChange, id, name, role }: ChangeRoleDialogProps) {
+export function ChangeRoleDialog({ open, onOpenChange, id, name, role, roleOptions }: ChangeRoleDialogProps) {
   const t = useTranslations("dashTeam");
   const tApiErrors = useTranslations("apiErrors");
   const router = useRouter();
@@ -58,7 +62,8 @@ export function ChangeRoleDialog({ open, onOpenChange, id, name, role }: ChangeR
     startTransition(async () => {
       try {
         await teamApi.changeRole(id, { role: next });
-        toast({ tone: "success", title: t("changeRole.done", { name, role: t(`role.${next}`) }) });
+        const label = roleOptions.find((option) => option.value === next)?.label ?? next;
+        toast({ tone: "success", title: t("changeRole.done", { name, role: label }) });
         onOpenChange(false);
       } catch (err) {
         const reason = blockedReason(err);
@@ -86,11 +91,13 @@ export function ChangeRoleDialog({ open, onOpenChange, id, name, role }: ChangeR
         <Select
           size="control-md"
           value={next}
-          onChange={(event) => setNext(GRANTABLE_ROLES.find((option) => option === event.target.value) ?? role)}
+          onChange={(event) =>
+            setNext(roleOptions.find((option) => option.value === event.target.value)?.value ?? role)
+          }
         >
-          {GRANTABLE_ROLES.map((option) => (
-            <option key={option} value={option}>
-              {t(`roleOption.${option}`)}
+          {roleOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
             </option>
           ))}
         </Select>

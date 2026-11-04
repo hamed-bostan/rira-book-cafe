@@ -32,8 +32,12 @@ export type ExpensePayment = { amount: number; source: PaymentSource; paidOn: st
 export type IExpenseRepository = {
   listSuppliers(includeInactive: boolean): Promise<Supplier[]>;
   getSupplier(id: string): Promise<Supplier | null>;
-  createSupplier(input: NewSupplier): Promise<Supplier>;
-  updateSupplier(id: string, input: NewSupplier & { isActive: boolean }): Promise<Supplier>;
+  createSupplier(input: NewSupplier, audit?: AuditHook<Supplier>): Promise<Supplier>;
+  updateSupplier(
+    id: string,
+    input: NewSupplier & { isActive: boolean },
+    audit?: AuditHook<Supplier>,
+  ): Promise<Supplier>;
 
   getExpense(id: string): Promise<Expense | null>;
   listExpenses(filters: ExpenseFilters, page: PageRequest): Promise<Page<Expense>>;

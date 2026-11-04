@@ -1,25 +1,22 @@
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import type { TeamMember } from "@/src/contracts/team-response-schema";
 import { formatPhone } from "@/src/lib/formatPhone";
 import { cn } from "@/src/lib/utils";
 import { Avatar } from "@/src/presentation/design-system/components/Avatar/Avatar";
-import { Badge, type BadgeProps } from "@/src/presentation/design-system/components/Badge/Badge";
+import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
 
+import { roleBadgeVariant, roleDisplayName, type RoleNames, type RoleOption } from "./roleDisplay";
 import { teamMemberInitials, teamMemberName } from "./teamDisplay";
 import { TeamMemberActions } from "./TeamMemberActions";
 
 type TeamMembersProps = {
   /** Everyone who can reach the dashboard, in the order the API returned them. */
   members: TeamMember[];
-};
-
-/** Warmer as the role gets more powerful — the owner stands out, support reads as neutral. */
-const ROLE_VARIANT: Record<TeamMember["role"], NonNullable<BadgeProps["variant"]>> = {
-  owner: "warning",
-  admin: "success",
-  staff: "info",
-  support: "neutral",
+  /** Custom roles' names, so a member holding one shows its name. */
+  roleNames: RoleNames;
+  /** The roles a change can give, named for this reader. */
+  roleOptions: readonly RoleOption[];
 };
 
 /** Member · Access · ⋯ from `md`; below it the role drops under the name, in line with it. */
@@ -29,8 +26,16 @@ const COLUMNS = "md:grid-cols-[minmax(0,1fr)_10rem_2.5rem]";
  * Everyone with dashboard access: who they are and their number, their role (and
  * whether it's set in the server config), and what can be done about it.
  */
-export function TeamMembers({ members }: TeamMembersProps) {
+export function TeamMembers({ members, roleNames, roleOptions }: TeamMembersProps) {
   const t = useTranslations("dashTeam");
+  const locale = useLocale();
+  const roleLabel = (role: TeamMember["role"]): string =>
+    roleDisplayName(role, {
+      builtIn: (builtIn) => t(`role.${builtIn}`),
+      names: roleNames,
+      locale,
+      fallback: t("customRoleFallback"),
+    });
   const hasOwner = members.some((member) => member.role === "owner");
 
   return (
@@ -102,9 +107,12 @@ export function TeamMembers({ members }: TeamMembersProps) {
               </div>
               {/* Under the name until `md`, indented to line up with it; its own column after. */}
               <div className="order-1 col-span-full flex flex-col items-start gap-1 ps-13 md:order-none md:col-span-1 md:ps-0">
-                <Badge variant={ROLE_VARIANT[member.role]} appearance="outline" size="compact" dot>
-                  {t(`role.${member.role}`)}
+                <Badge variant={roleBadgeVariant(member.role)} appearance="outline" size="compact" dot>
+                  {roleLabel(member.role)}
                 </Badge>
+                {member.twoFactor === "on" ? (
+                  <span className="text-body-small text-muted-foreground sm:text-body-caption">{t("twoFactorOn")}</span>
+                ) : null}
                 {member.breakGlass ? (
                   <span className="text-body-small text-muted-foreground sm:text-body-caption">
                     {t("managedInEnv")}
@@ -112,7 +120,7 @@ export function TeamMembers({ members }: TeamMembersProps) {
                 ) : null}
               </div>
               <div className="flex justify-end">
-                <TeamMemberActions member={member} name={name} hasOwner={hasOwner} />
+                <TeamMemberActions member={member} name={name} hasOwner={hasOwner} roleOptions={roleOptions} />
               </div>
             </li>
           );

@@ -71,10 +71,10 @@ describe("grantAdminSchema", () => {
 
 describe("changeRoleSchema", () => {
   it("takes the roles a grant can give, and nothing else", () => {
-    for (const role of ["support", "staff", "admin"]) {
+    for (const role of ["support", "staff", "admin", "custom:barista01"]) {
       expect(changeRoleSchema.safeParse({ role }).success).toBe(true);
     }
-    for (const role of ["owner", "customer", ""]) {
+    for (const role of ["owner", "customer", "", "custom:", "custom:Not A Key"]) {
       expect(changeRoleSchema.safeParse({ role }).success).toBe(false);
     }
   });
@@ -87,6 +87,7 @@ describe("teamMemberResponseSchema", () => {
     phone: "09123456789",
     avatarUrl: null,
     role: "owner",
+    twoFactor: "off",
     isSelf: true,
     breakGlass: false,
     transferable: false,

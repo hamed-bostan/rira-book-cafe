@@ -8,6 +8,7 @@ import {
 import { SYSTEM_ACCOUNTS } from "@/src/domain/entities/Ledger";
 import { ConflictError } from "@/src/domain/errors/ConflictError";
 import { NotFoundError } from "@/src/domain/errors/NotFoundError";
+import type { AuditHook } from "@/src/domain/repositories/AuditHook";
 import type {
   CloseShiftInput,
   ICashShiftRepository,
@@ -18,6 +19,7 @@ import { prisma } from "@/src/infrastructure/prisma/client";
 import { Prisma } from "@/src/infrastructure/prisma/generated/client";
 import { inTransaction, type PrismaDb } from "@/src/infrastructure/prisma/transaction";
 
+import { recordAudit } from "./writeActivityEntry";
 import { postHook } from "./writeJournal";
 
 /** The order postings that settle a guest's bill (or hand it back). */
@@ -46,17 +48,21 @@ export class PrismaCashShiftRepository implements ICashShiftRepository {
     return rows.map(toShift);
   }
 
-  async open(input: OpenShiftInput): Promise<CashShift> {
+  async open(input: OpenShiftInput, audit?: AuditHook<CashShift>): Promise<CashShift> {
     try {
-      const row = await this.db.cashShift.create({
-        data: {
-          openingFloat: BigInt(input.openingFloat),
-          note: input.note ?? null,
-          openedById: input.by.id,
-          openedByName: input.by.name,
-        },
+      return await inTransaction(this.db, async (tx) => {
+        const row = await tx.cashShift.create({
+          data: {
+            openingFloat: BigInt(input.openingFloat),
+            note: input.note ?? null,
+            openedById: input.by.id,
+            openedByName: input.by.name,
+          },
+        });
+        const shift = toShift(row);
+        await recordAudit(tx, shift, audit);
+        return shift;
       });
-      return toShift(row);
     } catch (error) {
       // The partial unique index allows one open shift.
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
@@ -70,7 +76,12 @@ export class PrismaCashShiftRepository implements ICashShiftRepository {
     return readMovements(this.db, from, to);
   }
 
-  async close(id: string, input: CloseShiftInput, ledger?: LedgerHook<CashShift>): Promise<CashShift> {
+  async close(
+    id: string,
+    input: CloseShiftInput,
+    ledger?: LedgerHook<CashShift>,
+    audit?: AuditHook<CashShift>,
+  ): Promise<CashShift> {
     return inTransaction(this.db, async (tx) => {
       // Lock the row: two people closing the same shift can't both count it.
       const locked = await tx.$queryRaw<
@@ -97,6 +108,7 @@ export class PrismaCashShiftRepository implements ICashShiftRepository {
       });
       const shift = toShift(row);
       await postHook(tx, shift, ledger);
+      await recordAudit(tx, shift, audit);
       return shift;
     });
   }

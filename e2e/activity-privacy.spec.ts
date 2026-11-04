@@ -22,8 +22,10 @@ test.describe("as an admin", () => {
   test("the books are still there to filter by", async ({ page }) => {
     await page.goto("/dashboard/activity");
 
-    await expect(page.locator("option", { hasText: "Expenses" })).toHaveCount(1);
-    await expect(page.locator("option", { hasText: "Payroll" })).toHaveCount(1);
+    // The area filter; the "What happened" filter names actions ("Payroll recorded") too.
+    const area = page.getByLabel("Area");
+    await expect(area.locator("option", { hasText: "Expenses" })).toHaveCount(1);
+    await expect(area.locator("option", { hasText: "Payroll" })).toHaveCount(1);
     await expect(page.locator("option", { hasText: "Team access" })).toHaveCount(0);
   });
 });

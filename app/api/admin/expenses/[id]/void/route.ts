@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { voidExpenseSchema } from "@/src/contracts/expense-schema";
 import { VoidExpense } from "@/src/domain/use-cases/expenses/ExpenseCommands";
 import { expenseRepository } from "@/src/infrastructure/container";
+import { invalidatesCatalog } from "@/src/lib/api/invalidatesCatalog";
 import {
   errorResponse,
   errorResponseFromException,
@@ -10,15 +11,18 @@ import {
   parseJsonBody,
   unauthorizedResponse,
 } from "@/src/lib/api/responses";
+import { CATALOG_TAGS } from "@/src/lib/cache-tags";
 import { getSessionWith } from "@/src/lib/require-permission";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 /**
  * POST /api/admin/expenses/:id/void — void an expense entered by mistake; its
- * entries are reversed today, never deleted. Requires `accounting.write`.
+ * entries are reversed today, never deleted. Requires `accounting.write`. A voided
+ * delivery takes its goods back out of stock — a tracked book's copies with them —
+ * so the menu's cached stock is expired.
  */
-export async function POST(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
+async function handlePost(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   const session = await getSessionWith("accounting.write");
   if (!session) return unauthorizedResponse();
 
@@ -44,3 +48,5 @@ export async function POST(request: NextRequest, { params }: RouteContext): Prom
     return errorResponseFromException(error, `POST /api/admin/expenses/${id}/void failed`);
   }
 }
+
+export const POST = invalidatesCatalog([CATALOG_TAGS.products], handlePost);

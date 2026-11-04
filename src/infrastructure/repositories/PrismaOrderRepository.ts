@@ -334,12 +334,8 @@ export class PrismaOrderRepository implements IOrderRepository {
         const item = before.items.find((candidate) => candidate.id === line.orderItemId);
         return line.restocked && item ? [{ item, quantity: line.quantity }] : [];
       });
-      for (const { item, quantity } of restocked) {
-        await tx.product.updateMany({
-          where: { id: item.productId, madeToOrder: false },
-          data: { stockQuantity: { increment: quantity } },
-        });
-      }
+      // Stock items first, then the shelf: the order every stock write locks rows in
+      // (a delivery locks a book's stock item, then moves its sale stock).
       const restockedValue = await returnStockForRefund(
         tx,
         restocked
@@ -349,6 +345,12 @@ export class PrismaOrderRepository implements IOrderRepository {
         input.orderId,
         actor,
       );
+      for (const { item, quantity } of restocked) {
+        await tx.product.updateMany({
+          where: { id: item.productId, madeToOrder: false },
+          data: { stockQuantity: { increment: quantity } },
+        });
+      }
 
       if (before.userId) {
         const guest = { ...before, userId: before.userId };

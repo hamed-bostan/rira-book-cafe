@@ -11,8 +11,8 @@ import { FIELD_ERROR, FIELD_HINT, FIELD_LABEL } from "./fieldStyles";
 
 type DashboardFormFieldProps = {
   label: string;
-  /** A line under the control saying what goes in it. */
-  hint?: string;
+  /** A line under the control saying what goes in it (it may carry a link). */
+  hint?: React.ReactNode;
   error?: string;
   required?: boolean;
   className?: string;

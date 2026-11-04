@@ -481,6 +481,7 @@
     "costPriceDescription": "Optional — what one unit costs the cafe, for cost of sales and margins. Never shown to guests",
     "stockLabel": "Stock",
     "stockDescription": "Units on hand. 0 marks the item sold out.",
+    "stockInInventory": "Inventory counts this book's copies. Receive, count or write them off in <link>Inventory</link>.",
     "stockPlaceholder": "0",
     "madeToOrderLabel": "Made to order",
     "madeToOrderDescription": "Made when ordered — no stock count. Ingredient warnings come from its recipe.",

@@ -47,7 +47,17 @@ export async function lockStock(
   );
 }
 
-/** Persist a stock item's new state and record the movement that produced it. */
+/**
+ * Persist a stock item's new state and record the movement that produced it.
+ *
+ * A tracked book's copies are counted once: by the stock item Inventory keeps
+ * behind it. Its sale stock (`products.stock_quantity`, what the storefront sells
+ * from) follows every movement here, in the same transaction — a delivery, a
+ * count, waste, an opening, a voided delivery. Order flows move the sale stock
+ * themselves (taken when an order is placed, put back when it's cancelled or
+ * refunded to the shelf) and say so with `shelfMoved`, as does tracking a book
+ * whose shelf already holds its copies.
+ */
 export async function writeMovement(
   tx: Prisma.TransactionClient,
   item: LockedStock,
@@ -59,6 +69,8 @@ export async function writeMovement(
     date: string;
     referenceId?: string;
     note?: string;
+    /** The caller already moved the sale stock of any book this item stands behind. */
+    shelfMoved?: boolean;
   },
   actor: StockActor,
 ): Promise<LockedStock> {
@@ -66,6 +78,7 @@ export async function writeMovement(
     where: { id: item.id },
     data: { onHand: next.onHand, stockValue: BigInt(next.value), averageCost: next.averageCost },
   });
+  if (!movement.shelfMoved) await moveBookShelves(tx, item, next);
   await tx.stockMovement.create({
     data: {
       ingredientId: item.id,
@@ -80,6 +93,31 @@ export async function writeMovement(
     },
   });
   return { ...item, ...next };
+}
+
+/**
+ * Move the sale stock of every tracked book this stock item stands behind — a book
+ * whose recipe is this one item — by what its copies on hand changed. Whole
+ * copies: each side is rounded before taking the difference, so a fraction typed
+ * into a count can never make the two counts drift apart. Runs after the item's
+ * row is locked, so the lock order is always stock item, then product.
+ */
+async function moveBookShelves(tx: Prisma.TransactionClient, item: LockedStock, next: StockState): Promise<void> {
+  if (next.onHand === item.onHand) return;
+  const books = await tx.$queryRaw<{ product_id: string; quantity: number }[]>`
+    SELECT rl.product_id, rl.quantity FROM recipe_lines rl
+    JOIN products p ON p.id = rl.product_id
+    WHERE rl.ingredient_id = ${item.id} AND p.kind = 'book' AND p.made_to_order = false AND rl.quantity > 0
+      AND NOT EXISTS (
+        SELECT 1 FROM recipe_lines other
+        WHERE other.product_id = rl.product_id AND other.ingredient_id <> rl.ingredient_id
+      )
+    ORDER BY rl.product_id`;
+  for (const book of books) {
+    const change = Math.round(next.onHand / book.quantity) - Math.round(item.onHand / book.quantity);
+    if (change === 0) continue;
+    await tx.product.update({ where: { id: book.product_id }, data: { stockQuantity: { increment: change } } });
+  }
 }
 
 /**
@@ -131,7 +169,15 @@ export async function consumeStockForOrder(
           tx,
           current,
           next,
-          { kind: "sale", quantity: -line.quantity, value: -line.value, date: day, referenceId: orderId },
+          // The order took its units off the shelf when it was placed.
+          {
+            kind: "sale",
+            quantity: -line.quantity,
+            value: -line.value,
+            date: day,
+            referenceId: orderId,
+            shelfMoved: true,
+          },
           actor,
         ),
       );
@@ -183,6 +229,8 @@ export async function returnStockForRefund(
         value: values[index],
         date: day,
         referenceId: orderId,
+        // The refund puts its units back on the shelf itself.
+        shelfMoved: true,
       };
       stock.set(
         row.ingredientId,

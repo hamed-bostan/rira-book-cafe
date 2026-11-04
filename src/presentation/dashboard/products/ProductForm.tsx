@@ -163,6 +163,13 @@ export function ProductForm(props: ProductFormProps) {
   const imageUrl = useWatch({ control, name: "imageUrl" });
   const kind = useWatch({ control, name: "kind" });
   const madeToOrder = useWatch({ control, name: "madeToOrder" });
+  // A book Inventory counts: its copies are received, counted and written off
+  // there, so the stock here is shown, not edited. Found by name in the stock list.
+  const inventoryHref =
+    props.mode === "edit" && props.product.inventoryTracked
+      ? `/dashboard/inventory?q=${encodeURIComponent(props.product.name)}`
+      : undefined;
+  const stockInInventory = inventoryHref !== undefined;
 
   const onSubmit = handleSubmit(async (values) => {
     try {
@@ -599,14 +606,30 @@ export function ProductForm(props: ProductFormProps) {
                 <div className={FIELD_GRID}>
                   <DashboardFormField
                     label={t("stockLabel")}
-                    required
-                    hint={t("stockDescription")}
+                    required={!stockInInventory}
+                    hint={
+                      inventoryHref
+                        ? t.rich("stockInInventory", {
+                            link: (chunks) => (
+                              <Link
+                                href={inventoryHref}
+                                className="font-medium text-primary underline underline-offset-4 hover:text-primary-hover"
+                              >
+                                {chunks}
+                              </Link>
+                            ),
+                          })
+                        : t("stockDescription")
+                    }
                     error={fieldError(errors.stockQuantity?.message)}
                   >
                     {(wiring) => (
+                      // A book Inventory counts shows its copies here, but they
+                      // change only there: the API leaves this field out of the save.
                       <Input
                         {...wiring}
                         {...register("stockQuantity")}
+                        readOnly={stockInInventory}
                         size="control-md"
                         inputClassName={FIELD_INPUT}
                         inputMode="numeric"

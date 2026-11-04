@@ -370,7 +370,8 @@ async function seedOwner(ownerPhone: string | undefined): Promise<string | null>
  * Sample stock at plausible Tehran prices: ingredients, and the resale goods
  * (books, cakes bought whole) that are sold one piece at a time. Each has a
  * reorder level and an opening quantity; a few are deliberately low or empty so
- * the low-stock warnings show on a fresh database.
+ * the low-stock warnings show on a fresh database. A book's copies are its item's
+ * stock on the menu, so the two start equal.
  */
 const STOCK_ITEMS = [
   {
@@ -515,7 +516,7 @@ const STOCK_ITEMS = [
     purchasePrice: 228_000,
     purchaseQuantity: 1,
     reorderLevel: 2,
-    opening: 5,
+    opening: 2,
   },
   {
     id: "seed-ing-book-uncle-napoleon",
@@ -524,7 +525,7 @@ const STOCK_ITEMS = [
     purchasePrice: 273_000,
     purchaseQuantity: 1,
     reorderLevel: 2,
-    opening: 2,
+    opening: 4,
   },
 ] as const;
 
@@ -603,6 +604,20 @@ async function seedRecipes(): Promise<void> {
       (event) => openingStockEntry(event, actor),
       actor,
     );
+  }
+
+  // A tracked book's sale stock follows its stock item (every stock movement moves
+  // both), so the opening just added the copies `seedItems` had already shelved.
+  // The sale stock is set back to what Inventory holds — on a fresh database and
+  // on a refresh alike, where `seedItems` reset it to the sample figure.
+  for (const [productId, lines] of Object.entries(RECIPES)) {
+    const book = ITEMS.find((item) => item.id === productId && item.kind === "book");
+    if (!book || lines.length !== 1) continue;
+    const { onHand } = await prisma.ingredient.findUniqueOrThrow({ where: { id: lines[0].ingredientId } });
+    await prisma.product.update({
+      where: { id: productId },
+      data: { stockQuantity: Math.round(onHand / lines[0].quantity) },
+    });
   }
 }
 

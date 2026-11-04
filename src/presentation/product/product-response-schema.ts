@@ -44,6 +44,8 @@ export const productResponseSchema = z.object({
       availability: z.enum(BOOK_AVAILABILITIES),
     }),
   ),
+  // Only the single-item read returns it.
+  inventoryTracked: z.optional(z.boolean()),
 }) satisfies z.ZodMiniType<Product>;
 
 export const productListResponseSchema = z.array(productResponseSchema);

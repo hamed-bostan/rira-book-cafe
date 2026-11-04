@@ -11,6 +11,7 @@ import {
   type StockMovement,
   type StockMovementKind,
 } from "@/src/domain/entities/Inventory";
+import { ACTIVE_ORDER_STATUSES } from "@/src/domain/entities/Order";
 import { createPage, toSkipTake, type Page, type PageRequest } from "@/src/domain/entities/Pagination";
 import { INGREDIENT_UNITS, type IngredientUnit } from "@/src/domain/entities/Pricing";
 import { NotFoundError } from "@/src/domain/errors/NotFoundError";
@@ -336,14 +337,20 @@ export class PrismaInventoryRepository implements IInventoryRepository {
             data: { productId: book.id, ingredientId: item.id, quantity: 1, position: 0 },
           });
           tracked += 1;
-          if (book.stockQuantity > 0) {
-            const lineValue = cost * book.stockQuantity;
+          // Copies on the shelf include those open orders have taken off the sale
+          // stock but not yet used up: completing those orders takes them out of
+          // stock, so they come in now — or the two counts would part by them.
+          const copies = (await tx.product.findUniqueOrThrow({ where: { id: book.id } })).stockQuantity;
+          const onHand = copies + (await reservedCopies(tx, book.id));
+          if (onHand > 0) {
+            const lineValue = cost * onHand;
             const [current] = (await lockStock(tx, [item.id])).values();
             await writeMovement(
               tx,
               current,
-              receiveStock(current, book.stockQuantity, lineValue),
-              { kind: "opening", quantity: book.stockQuantity, value: lineValue, date, referenceId: id },
+              receiveStock(current, onHand, lineValue),
+              // The sale stock already holds these copies.
+              { kind: "opening", quantity: onHand, value: lineValue, date, referenceId: id, shelfMoved: true },
               actor,
             );
             value += lineValue;
@@ -360,6 +367,15 @@ export class PrismaInventoryRepository implements IInventoryRepository {
 
 /** Long enough for a catalog's worth of titles in one transaction. */
 const TRACK_BOOKS_TIMEOUT_MS = 60_000;
+
+/** Units of an item that open orders (placed, not yet completed or cancelled) hold. */
+async function reservedCopies(tx: Prisma.TransactionClient, productId: string): Promise<number> {
+  const { _sum } = await tx.orderItem.aggregate({
+    where: { productId, order: { status: { in: [...ACTIVE_ORDER_STATUSES] } } },
+    _sum: { quantity: true },
+  });
+  return _sum.quantity ?? 0;
+}
 
 /** Lock the rows and make sure every item exists and is active. */
 async function lockAll(tx: Prisma.TransactionClient, ids: readonly string[]): Promise<Map<string, LockedStock>> {

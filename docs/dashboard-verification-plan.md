@@ -174,3 +174,41 @@ No app bugs found. Three checks that span the modules:
 Test fix: Phase 4's shift test sent the leftover shift's count as a string (the API takes numbers); that cleanup only runs on a kept database, so it hadn't failed yet.
 
 Not covered: the support role and custom roles have no sign-in in the e2e setup (the role sweep uses owner, admin and staff); the API side of every permission is covered by each suite's 401 tests.
+
+### Phase 8 — Wrap-up (2026-11-05)
+
+Final run on the merged `main`, from a fresh build:
+
+| Check        | Phase 0 baseline     | Now                           |
+| ------------ | -------------------- | ----------------------------- |
+| typecheck    | pass                 | pass                          |
+| lint         | 0 errors, 6 warnings | 0 errors, the same 6 warnings |
+| unit         | 1975 passed          | 1980 passed                   |
+| integration  | 508 passed           | 560 passed                    |
+| e2e (Chrome) | 737 passed, 1 failed | 978 passed, 0 failed          |
+
+**Bugs fixed — 14, each merged with a test:**
+
+| #   | Phase    | Bug                                                                                                                                                                    |
+| --- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Service  | Floor staff could unmark an online payment, dropping the money from the books and the give-back list                                                                   |
+| 2   | Service  | Searching orders by phone number crashed the list (500)                                                                                                                |
+| 3   | Service  | A phone typed without its spaces didn't find the guest's orders                                                                                                        |
+| 4   | Service  | Payment toggle, served tick and bulk bar didn't reload after a conflict                                                                                                |
+| 5   | Bookings | A past event's page had no link from the Past tab                                                                                                                      |
+| 6   | Finance  | Voiding failed once the account had been switched off                                                                                                                  |
+| 7   | Finance  | Pay-run page linked a payroll-only role to pages it can't open                                                                                                         |
+| 8   | Finance  | A closed fiscal year could be reopened from settings                                                                                                                   |
+| 9   | Finance  | Unmatching a bank line left its recorded fee or interest on the books (booked twice on re-record)                                                                      |
+| 10  | Finance  | Pricing page linked view-only users to the recipe editor                                                                                                               |
+| 11  | Store    | Every save in the role editor showed an error though it had saved                                                                                                      |
+| 12  | Store    | Renaming a custom role via the API without permissions crashed                                                                                                         |
+| —   | Tests    | A guest rate-limit flake; a layout check measuring the wrong page; an inventory test whose menu could open off screen on a long list; a shift cleanup sending a string |
+
+**Open question for the owner:** the cash shift's "Card & transfer" total counts order payments only — a suite payment or table deposit taken on the same POS terminal isn't in it, so it may not match the terminal's slip.
+
+**Left as they are (not bugs):** the role-saved toast names the role as it was opened; the change-role toast uses the option's full label; an unused `reviewBulkRequestSchema`; `fiscalYearsApi` living in `inventory-api.ts`; the 6 lint warnings (false positives and an autofocus on the sign-in code field).
+
+**Still covered only by API tests** (each listed in its phase): mostly actions that would disturb the shared e2e database — ownership transfer, single-session sign-out, a year close, applying a suggested price — or lists that show the oldest records first, so a test's new record may not appear.
+
+No new features were built.

@@ -75,6 +75,16 @@ export type ConflictCode =
   | "NO_OPEN_SHIFT"
   // Granting access to someone already on the team in another role — that's a role change.
   | "ALREADY_ON_TEAM"
+  // Roles: a custom role someone still holds can't be deleted, built-in ones can't be
+  // deleted at all, and two roles can't share a name.
+  | "ROLE_IN_USE"
+  | "ROLE_BUILT_IN"
+  | "ROLE_NAME_TAKEN"
+  // Two-factor: setting it up again while it's on, or turning it off while the owner
+  // requires it, or with no encryption key on the server.
+  | "TWO_FACTOR_ALREADY_ON"
+  | "TWO_FACTOR_REQUIRED"
+  | "TWO_FACTOR_UNAVAILABLE"
   // Bank reconciliation.
   | "STATEMENT_OVERLAP"
   | "STATEMENT_RECONCILED"

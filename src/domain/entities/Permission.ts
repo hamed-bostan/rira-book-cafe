@@ -1,12 +1,12 @@
-import type { UserRole } from "./User";
+import type { BuiltInRole } from "./User";
 
 /**
  * What a dashboard user is allowed to *do*, as opposed to what they are called.
  *
  * Guards ask "may this session do X?", never "is this an admin?". A route asking
  * about a *role* has to be revisited every time the set of roles changes; a route
- * asking about a permission never does — adding a role is an edit to
- * `ROLE_PERMISSIONS` and nothing else.
+ * asking about a permission never does — which is what lets the owner edit roles
+ * and add their own from the team page without any route changing.
  *
  * Granularity is set by the boundaries the app actually has — one permission per
  * group of endpoints that always travel together. Add a permission when a feature
@@ -61,8 +61,52 @@ export const PERMISSIONS = [
 
 export type Permission = (typeof PERMISSIONS)[number];
 
+/** True when the value is a permission this build knows. */
+export function isPermission(value: string): value is Permission {
+  return (PERMISSIONS as readonly string[]).includes(value);
+}
+
 /**
- * What each role may do. The whole authorization policy of the app, in one place.
+ * Permissions only the owner holds, and that no other role can be given.
+ *
+ * `team.manage` decides who holds every *other* permission. Handing it to a second
+ * role would make that role an owner in all but name — able to edit its own
+ * permission set, give itself the rest, and remove the person who granted it —
+ * which is exactly the symmetry the owner tier exists to prevent. So it isn't a
+ * box on the checklist: it moves only with ownership (`TransferOwnership`).
+ */
+export const OWNER_ONLY_PERMISSIONS = ["team.manage"] as const satisfies readonly Permission[];
+
+/**
+ * Permissions every team role holds, ticked and locked on the checklist. A role
+ * without `dashboard.view` would be a team role that can't reach the team's tool —
+ * and "every role but customer is a dashboard role" (`isDashboardRole`) is what
+ * lets the team rules be checked without reading the role table.
+ */
+export const ALWAYS_GRANTED_PERMISSIONS = ["dashboard.view"] as const satisfies readonly Permission[];
+
+/**
+ * The permission checklist, grouped by the part of the cafe each one is about.
+ * Every permission appears exactly once (a test holds it to that), in the order the
+ * checklist shows it. The plain-language descriptions are the UI's, per locale.
+ */
+export const PERMISSION_GROUPS = [
+  { key: "general", permissions: ["dashboard.view", "activity.view"] },
+  { key: "orders", permissions: ["orders.fulfill", "orders.note"] },
+  { key: "floor", permissions: ["reservations.manage", "loans.manage", "events.manage", "shifts.manage"] },
+  { key: "menu", permissions: ["catalog.write", "reviews.moderate", "promotions.write"] },
+  { key: "stock", permissions: ["inventory.view", "inventory.manage"] },
+  { key: "money", permissions: ["reports.view", "accounting.view", "accounting.write", "payroll.manage"] },
+  { key: "admin", permissions: ["settings.write", "team.manage"] },
+] as const satisfies readonly { key: string; permissions: readonly Permission[] }[];
+
+export type PermissionGroupKey = (typeof PERMISSION_GROUPS)[number]["key"];
+
+/**
+ * What each built-in role may do *by default* — the day-one policy, and what the
+ * migration seeded the editable roles with. The live policy is `RolePolicy`
+ * (`Role.ts`), built from the stored roles with this as the fallback for a built-in
+ * role that has no row.
  *
  * - `owner` is `admin` plus team management — the tier that keeps admin power from
  *   being symmetric, so that no admin can demote all the others.
@@ -72,7 +116,7 @@ export type Permission = (typeof PERMISSIONS)[number];
  * - `customer` holds nothing — the public site needs no permission, and this table
  *   is only consulted for the dashboard.
  */
-export const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
+export const ROLE_PERMISSIONS: Record<BuiltInRole, readonly Permission[]> = {
   customer: [],
   support: ["dashboard.view", "orders.note", "activity.view"],
   staff: [
@@ -127,8 +171,3 @@ export const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
     "shifts.manage",
   ],
 };
-
-/** Whether a role carries a permission. The single question every guard asks. */
-export function roleHasPermission(role: UserRole, permission: Permission): boolean {
-  return ROLE_PERMISSIONS[role].includes(permission);
-}

@@ -8,8 +8,8 @@ import type {
 import type { Page, PageRequest } from "../entities/Pagination";
 
 /**
- * Read access to the append-only activity log, plus the one narrow write that
- * {@link IActivityLog.recordEvent} documents at the bottom.
+ * Read access to the append-only activity log, plus the one narrow delete that
+ * {@link IActivityLog.pruneBefore} documents at the bottom.
  *
  * Read-only for every *change*, for the same reason `IStockMovementLog` is:
  * entries are written by the repository methods that make the changes they
@@ -40,8 +40,9 @@ import type { Page, PageRequest } from "../entities/Pagination";
  * generalises it to every audited entity rather than leaving it as the one place
  * that got it right.
  *
- * There is no update and no delete, here or anywhere below. A record an admin can
- * quietly tidy up isn't one.
+ * There is no update, and no delete of chosen entries, here or anywhere below. A
+ * record an admin can quietly tidy up isn't one. The only removal is retention —
+ * everything older than a cut-off, by policy, recorded in the log itself.
  */
 export type IActivityLog = {
   /** One page of the log, newest first, narrowed by `filters`. */
@@ -68,26 +69,20 @@ export type IActivityLog = {
   listActors(visibleEntityTypes?: readonly string[]): Promise<ActivityActorOption[]>;
 
   /**
-   * Record an admin action that *isn't* a change to anything stored. (A message
-   * staff write to a guest is stored — it's a row in their inbox — so its entry
-   * rides that row's transaction through an {@link AuditHook} instead.)
-   *
-   * This is the one write on this port, and it is a carve-out rather than a
-   * loophole. Everything above argues that an entry must commit inside the
-   * transaction of the change it explains; that argument is about entries which
-   * *have* a change to be atomic with, and its failure mode is an entry drifting
-   * from the row it claims to describe. A sent notification has no row. There is no
-   * transaction to join, nothing that can commit without it, and nothing for it to
-   * drift from — so the rule it would be breaking doesn't reach it.
-   *
-   * What that means in practice: every audited *edit* still goes through
-   * {@link AuditHook}, and this must never be used to record one. An entry written
-   * here is exactly as atomic as the thing it describes — which for an outbound
-   * message is not at all, since the send already happened and can't be unsent.
-   *
-   * Best-effort, like the sends themselves: the implementation swallows and logs a
-   * failure rather than throwing. Failing the request after the customer has
-   * already been messaged would invite an admin to send it a second time.
+   * Every entry `filters` matches, newest first, in batches — what the CSV export
+   * streams. Keyset-paged, so the thousandth batch costs what the first did.
    */
-  recordEvent(entry: NewActivityEntry): Promise<void>;
+  entryBatches(filters: ActivityFilters, batchSize: number): AsyncIterable<ActivityEntry[]>;
+
+  /**
+   * Retention: delete up to `batchSize` of the oldest entries made before `cutoff`,
+   * and — when any went — record `entry(deleted)` in the same transaction, so every
+   * prune leaves its own line in the log saying how much went and up to when.
+   * Resolves how many were deleted; the caller repeats until it's 0.
+   *
+   * Not a way to remove chosen entries: there is only a cut-off, it comes from the
+   * owner's retention setting, and the background job is the only caller. Batched so
+   * a first prune of years of history doesn't hold one long lock on the table.
+   */
+  pruneBefore(cutoff: Date, batchSize: number, entry: (deleted: number) => NewActivityEntry): Promise<number>;
 };

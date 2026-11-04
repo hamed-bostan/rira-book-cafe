@@ -1,6 +1,8 @@
+import { isCustomRoleKey, type GrantableRole, type UserRole } from "../../entities/User";
 import { AdminRevokeError } from "../../errors/AdminRevokeError";
+import { ValidationError } from "../../errors/ValidationError";
 
-import type { UserRole } from "../../entities/User";
+import type { IRoleRepository } from "../../repositories/IRoleRepository";
 
 /**
  * The two refusals every change to someone's dashboard access shares — granting,
@@ -22,4 +24,15 @@ export function refuseSelf(targetId: string, actorId: string, message: string): 
 
 export function refuseOwner(targetRole: UserRole | undefined, message: string): void {
   if (targetRole === "owner") throw new AdminRevokeError("owner", message);
+}
+
+/**
+ * A custom role has to exist to be handed out. Checked here rather than left to
+ * the policy (which would quietly give a missing role no permissions) so the owner
+ * hears about it — the role was deleted in another tab, say — instead of granting
+ * an empty role. Built-in roles always exist.
+ */
+export async function requireRoleExists(role: GrantableRole, roles: Pick<IRoleRepository, "get">): Promise<void> {
+  if (!isCustomRoleKey(role)) return;
+  if (!(await roles.get(role))) throw new ValidationError("role", "That role no longer exists.");
 }

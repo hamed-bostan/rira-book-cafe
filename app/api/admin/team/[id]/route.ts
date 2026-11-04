@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { changeRoleSchema } from "@/src/contracts/team-schema";
 import { ChangeRole } from "@/src/domain/use-cases/team/ChangeRole";
 import { RevokeAdmin } from "@/src/domain/use-cases/team/RevokeAdmin";
-import { userRepository } from "@/src/infrastructure/container";
+import { roleRepository, userRepository } from "@/src/infrastructure/container";
 import {
   errorResponse,
   errorResponseFromException,
@@ -56,7 +56,7 @@ export async function PUT(request: NextRequest, { params }: RouteContext): Promi
   }
 
   try {
-    const member = await new ChangeRole(userRepository).execute(id, parsed.data.role, session.user.id);
+    const member = await new ChangeRole(userRepository, roleRepository).execute(id, parsed.data.role, session.user.id);
     return NextResponse.json({ id: member.id, role: member.role });
   } catch (error) {
     return errorResponseFromException(error, `PUT /api/admin/team/${id} failed`);

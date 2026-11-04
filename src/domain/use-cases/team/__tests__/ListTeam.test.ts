@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { ROLE_CHANGE_FIELD, roleChangeKind, roleMove } from "../../../entities/RoleChange";
-import { DASHBOARD_ROLES, isDashboardRole, toUserRole, type User, type UserRole } from "../../../entities/User";
+import { isDashboardRole, toUserRole, type User, type UserRole } from "../../../entities/User";
 import { ListTeam } from "../ListTeam";
 import { roleChangeEntry } from "../roleChangeEntry";
 
@@ -13,24 +13,27 @@ function user(id: string, role: UserRole): User {
 
 function repoWith(users: User[]): {
   repo: IUserRepository;
-  listByRoles: ReturnType<typeof vi.fn<IUserRepository["listByRoles"]>>;
+  listTeam: ReturnType<typeof vi.fn<IUserRepository["listTeam"]>>;
 } {
-  const listByRoles = vi.fn<IUserRepository["listByRoles"]>(async (roles) =>
-    users.filter((u) => roles.includes(u.role)),
-  );
+  const listTeam = vi.fn<IUserRepository["listTeam"]>(async () => users.filter((u) => isDashboardRole(u.role)));
   const repo = {
-    listByRoles,
+    listTeam,
     getById: vi.fn(async (id: string) => users.find((u) => u.id === id) ?? null),
   } as unknown as IUserRepository;
-  return { repo, listByRoles };
+  return { repo, listTeam };
 }
 
 describe("ListTeam", () => {
-  it("lists everyone with a dashboard role", async () => {
-    const { repo, listByRoles } = repoWith([user("owner", "owner"), user("s", "support"), user("c", "customer")]);
+  it("lists everyone with a dashboard role, custom roles included", async () => {
+    const { repo, listTeam } = repoWith([
+      user("owner", "owner"),
+      user("s", "support"),
+      user("c", "customer"),
+      user("b", "custom:barista01"),
+    ]);
     const team = await new ListTeam(repo).execute();
-    expect(listByRoles).toHaveBeenCalledWith(DASHBOARD_ROLES);
-    expect(team.map((u) => u.id)).toEqual(["owner", "s"]);
+    expect(listTeam).toHaveBeenCalled();
+    expect(team.map((u) => u.id)).toEqual(["owner", "s", "b"]);
   });
 
   it("adds break-glass accounts once, skipping ids with no user row", async () => {
@@ -91,6 +94,9 @@ describe("reading role changes back", () => {
   it("narrows stored roles and knows who reaches the dashboard", () => {
     expect(toUserRole("admin")).toBe("admin");
     expect(toUserRole("root")).toBe("customer");
+    expect(toUserRole("custom:barista01")).toBe("custom:barista01");
+    expect(toUserRole("custom:Bad Key")).toBe("customer");
+    expect(isDashboardRole("custom:barista01")).toBe(true);
     expect(isDashboardRole("support")).toBe(true);
     expect(isDashboardRole("customer")).toBe(false);
   });

@@ -56,22 +56,34 @@ export class PrismaExpenseRepository implements IExpenseRepository {
     return row ? toSupplier(row) : null;
   }
 
-  async createSupplier(input: NewSupplier): Promise<Supplier> {
-    return toSupplier(
-      await prisma.supplier.create({
-        data: { name: input.name, phone: input.phone ?? null, note: input.note ?? null },
-      }),
-    );
-  }
-
-  async updateSupplier(id: string, input: NewSupplier & { isActive: boolean }): Promise<Supplier> {
-    try {
-      return toSupplier(
-        await prisma.supplier.update({
-          where: { id },
-          data: { name: input.name, phone: input.phone ?? null, note: input.note ?? null, isActive: input.isActive },
+  async createSupplier(input: NewSupplier, audit?: AuditHook<Supplier>): Promise<Supplier> {
+    return prisma.$transaction(async (tx) => {
+      const supplier = toSupplier(
+        await tx.supplier.create({
+          data: { name: input.name, phone: input.phone ?? null, note: input.note ?? null },
         }),
       );
+      await recordAudit(tx, supplier, audit);
+      return supplier;
+    });
+  }
+
+  async updateSupplier(
+    id: string,
+    input: NewSupplier & { isActive: boolean },
+    audit?: AuditHook<Supplier>,
+  ): Promise<Supplier> {
+    try {
+      return await prisma.$transaction(async (tx) => {
+        const supplier = toSupplier(
+          await tx.supplier.update({
+            where: { id },
+            data: { name: input.name, phone: input.phone ?? null, note: input.note ?? null, isActive: input.isActive },
+          }),
+        );
+        await recordAudit(tx, supplier, audit);
+        return supplier;
+      });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
         throw new NotFoundError("supplier", id, { cause: error });

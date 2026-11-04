@@ -401,24 +401,63 @@ describe("SetExpenseReceipt", () => {
 });
 
 describe("SaveSupplier", () => {
+  const ACTOR = { id: "a1", name: "Admin" };
+  const existing = { id: "sup1", name: "Power Co", isActive: true, createdAt: "2026-01-01T00:00:00.000Z" };
+  const withSupplier = (repo: IExpenseRepository): IExpenseRepository =>
+    Object.assign(repo, { getSupplier: vi.fn(async () => existing) });
+
   it("trims the fields and drops blank optional ones", async () => {
     const { repo, createSupplier, updateSupplier } = expensesWith(null);
-    await new SaveSupplier(repo).create({ name: "  Power Co ", phone: "  ", note: " monthly " });
-    expect(createSupplier).toHaveBeenCalledWith({ name: "Power Co", phone: undefined, note: "monthly" });
+    await new SaveSupplier(withSupplier(repo)).create({ name: "  Power Co ", phone: "  ", note: " monthly " }, ACTOR);
+    expect(createSupplier).toHaveBeenCalledWith(
+      { name: "Power Co", phone: undefined, note: "monthly" },
+      expect.any(Function),
+    );
 
-    await new SaveSupplier(repo).update("sup1", { name: "Power Co", phone: " 021 ", isActive: false });
-    expect(updateSupplier).toHaveBeenCalledWith("sup1", {
-      name: "Power Co",
-      phone: "021",
-      note: undefined,
-      isActive: false,
+    await new SaveSupplier(withSupplier(repo)).update(
+      "sup1",
+      { name: "Power Co", phone: " 021 ", isActive: false },
+      ACTOR,
+    );
+    expect(updateSupplier).toHaveBeenCalledWith(
+      "sup1",
+      { name: "Power Co", phone: "021", note: undefined, isActive: false },
+      expect.any(Function),
+    );
+  });
+
+  it("records the supplier as created, and only the fields an edit moved", async () => {
+    const { repo, createSupplier, updateSupplier } = expensesWith(null);
+    const saver = new SaveSupplier(withSupplier(repo));
+    await saver.create({ name: "Power Co" }, ACTOR);
+    const created = createSupplier.mock.calls[0][1]?.({ ...existing });
+    expect(created).toMatchObject({
+      action: "expense.supplierCreated",
+      entityType: "expense",
+      entityLabel: "Power Co",
     });
+
+    await saver.update("sup1", { name: "Power Co", phone: "021", isActive: false }, ACTOR);
+    const audit = updateSupplier.mock.calls[0][2];
+    expect(audit?.({ ...existing, phone: "021", isActive: false })).toMatchObject({
+      action: "expense.supplierUpdated",
+      changes: [
+        { field: "phone", before: null, after: "021" },
+        { field: "isActive", before: "true", after: "false" },
+      ],
+    });
+    // A save that moved nothing records nothing.
+    expect(audit?.({ ...existing })).toBeNull();
   });
 
   it("refuses a supplier without a name", async () => {
     const { repo, createSupplier, updateSupplier } = expensesWith(null);
-    await expect(new SaveSupplier(repo).create({ name: "   " })).rejects.toMatchObject({ field: "name" });
-    await expect(new SaveSupplier(repo).update("sup1", { name: "", isActive: true })).rejects.toThrow(ValidationError);
+    await expect(new SaveSupplier(withSupplier(repo)).create({ name: "   " }, ACTOR)).rejects.toMatchObject({
+      field: "name",
+    });
+    await expect(
+      new SaveSupplier(withSupplier(repo)).update("sup1", { name: "", isActive: true }, ACTOR),
+    ).rejects.toThrow(ValidationError);
     expect(createSupplier).not.toHaveBeenCalled();
     expect(updateSupplier).not.toHaveBeenCalled();
   });

@@ -52,6 +52,15 @@ export class PrismaUserRepository implements IUserRepository {
     return rows.map(toUser);
   }
 
+  async listTeam(): Promise<User[]> {
+    const rows = await prisma.user.findMany({
+      where: { role: { not: "customer" } },
+      orderBy: { createdAt: "asc" },
+    });
+    // A row holding some unrecognised string narrows to `customer` and isn't team.
+    return rows.map(toUser).filter((user) => user.role !== "customer");
+  }
+
   async applyRoleChanges(batch: RoleChangeBatch): Promise<User[]> {
     // An interactive transaction, not a batched array: each assignment needs a
     // read (see below) before its write, and the audit entries must land in the
@@ -105,6 +114,14 @@ export class PrismaUserRepository implements IUserRepository {
             // does — this is the other writer of the table, and it has to agree.
             changedFields: changedFields(entry.changes),
           })),
+        });
+      }
+
+      // Their signed-in browsers end in the same commit as the role move.
+      if (batch.revokeSessionsOf && batch.revokeSessionsOf.length > 0) {
+        await tx.userSession.updateMany({
+          where: { userId: { in: batch.revokeSessionsOf }, revokedAt: null },
+          data: { revokedAt: new Date() },
         });
       }
 

@@ -62,7 +62,35 @@ describe("cash shifts", () => {
     });
     const free = repo(null);
     await new OpenCashShift(free).execute({ openingFloat: 250_000, note: "  " }, STAFF);
-    expect(free.open).toHaveBeenCalledWith({ openingFloat: 250_000, note: undefined, by: STAFF });
+    expect(free.open).toHaveBeenCalledWith({ openingFloat: 250_000, note: undefined, by: STAFF }, expect.any(Function));
+  });
+
+  it("records opening and closing in the activity log, with the drawer's figures", async () => {
+    const free = repo(null);
+    await new OpenCashShift(free).execute({ openingFloat: 250_000 }, STAFF);
+    const openAudit = free.open.mock.calls[0] as unknown as [unknown, (s: CashShift) => unknown];
+    expect(openAudit[1](shift({ openingFloat: 250_000 }))).toMatchObject({
+      action: "cashShift.opened",
+      entityType: "cashShift",
+      entityId: "z1",
+      entityLabel: "Z-12",
+      changes: [{ field: "openingFloat", before: null, after: "250000" }],
+    });
+
+    const shifts = repo(shift());
+    await new CloseCashShift(shifts).execute("z1", { countedCash: 1_690_000 }, STAFF, NOW);
+    const closeAudit = shifts.close.mock.calls[0] as unknown as [unknown, unknown, unknown, (s: CashShift) => unknown];
+    expect(
+      closeAudit[3](shift({ status: "closed", expectedCash: 1_700_000, countedCash: 1_690_000, difference: -10_000 })),
+    ).toMatchObject({
+      action: "cashShift.closed",
+      changes: [
+        { field: "status", before: "open", after: "closed" },
+        { field: "expectedCash", before: null, after: "1700000" },
+        { field: "countedCash", before: null, after: "1690000" },
+        { field: "difference", before: null, after: "-10000" },
+      ],
+    });
   });
 
   it("refuses a float that isn't whole Toman", async () => {

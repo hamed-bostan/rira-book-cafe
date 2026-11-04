@@ -44,6 +44,10 @@ export const ACTIVITY_ENTITY_TYPES = [
   // Pay runs and the people on them. Entries never carry an amount: this log outlives
   // who may read it, and pay per person is for `payroll.manage` alone.
   "payroll",
+  // Till shifts: opened with a float, closed by counting the drawer.
+  "cashShift",
+  // The log itself: entries past the retention setting pruned by the background jobs.
+  "activity",
 ] as const;
 
 /**
@@ -177,14 +181,27 @@ export const ACTIVITY_ACTIONS = [
   "payroll.paid",
   "payroll.voided",
   "payroll.employeeChanged",
-  // Another event rather than a change to anything stored — an admin downloaded a
-  // customer-data export. Recorded through `IActivityLog.recordEvent`: the file
-  // has already left the moment this is written, so there is nothing to be atomic
-  // with.
-  // A standing scheduled-export rule was authored/edited, paused/resumed, or
-  // removed — the Scheduled reports panel's own audit trail. A schedule
-  // *firing* isn't logged here: it's an automated background action (see
-  // `RunDueSchedules`), not something an admin did.
+  // Team security (entity type `user`, owner-only like the rest of the team's
+  // access): a role's permissions or name set, a custom role made or deleted, the
+  // team's security settings changed, someone's sessions signed out by the owner,
+  // and a member's authenticator app turned on, off, or reset by the owner.
+  "user.roleCreated",
+  "user.roleUpdated",
+  "user.roleDeleted",
+  "user.securitySettingsChanged",
+  "user.sessionsRevoked",
+  "user.twoFactorEnabled",
+  "user.twoFactorDisabled",
+  "user.twoFactorReset",
+  // Entries older than the owner's retention setting removed by the background
+  // jobs (`SYSTEM_ACTOR`). The prune records itself, so the gap it leaves is on file.
+  "activity.pruned",
+  // A till shift opened with its float, or closed by counting the drawer.
+  "cashShift.opened",
+  "cashShift.closed",
+  // A supplier added, or its details or active switch changed.
+  "expense.supplierCreated",
+  "expense.supplierUpdated",
 ] as const;
 
 /** A recognised action, or `unknown` — see {@link ActivityEntityType} for why. */
@@ -288,6 +305,16 @@ export type ActivityFilters = {
    * than a scan of every JSON blob.
    */
   field?: string;
+  /** Entries at or after this instant (the start of a cafe day, in practice). */
+  from?: Date;
+  /** Entries before this instant (the start of the day after the range's last). */
+  to?: Date;
+  /**
+   * Free text matched, case-insensitively, against what an entry names: the thing
+   * it's about (its label or id) and who made it. Not the diff — that's the field
+   * filter's job, and its values are formatted figures rather than words.
+   */
+  search?: string;
   /**
    * Which entity types the *viewer* is allowed to see, as opposed to which ones
    * they asked for. Absent means no restriction.

@@ -8,6 +8,7 @@ import { RevokeAdmin } from "../RevokeAdmin";
 import { TransferOwnership } from "../TransferOwnership";
 
 import type { User, UserRole } from "../../../entities/User";
+import type { IRoleRepository } from "../../../repositories/IRoleRepository";
 import type { ITeamNotifier } from "../../../repositories/ITeamNotifier";
 import type { IUserRepository, RoleChangeBatch } from "../../../repositories/IUserRepository";
 
@@ -31,6 +32,7 @@ function repoWith(users: User[]) {
       throw new Error("unused");
     },
     listByRoles: async (roles) => [...byId.values()].filter((u) => roles.includes(u.role)),
+    listTeam: async () => [...byId.values()].filter((u) => u.role !== "customer"),
     applyRoleChanges: async (batch) => {
       batches.push(batch);
       return batch.assignments.map((a) => {
@@ -43,6 +45,14 @@ function repoWith(users: User[]) {
   return { repo, batches, byId };
 }
 
+/** One custom role exists: `custom:barista01`. */
+const ROLES: Pick<IRoleRepository, "get"> = {
+  get: async (key) =>
+    key === "custom:barista01"
+      ? { key, builtIn: false, name: { en: "Barista", fa: "باریستا" }, permissions: ["dashboard.view"] }
+      : null,
+};
+
 function notifier() {
   return {
     adminGranted: vi.fn<ITeamNotifier["adminGranted"]>(async () => {}),
@@ -54,14 +64,14 @@ function notifier() {
 describe("GrantAdmin", () => {
   it("normalizes +98 numbers to the same id OTP sign-in uses", async () => {
     const { repo, byId } = repoWith([user("owner", "owner")]);
-    await new GrantAdmin(repo).execute({ phone: "+98 912 000 0000", role: "staff" }, "owner");
+    await new GrantAdmin(repo, ROLES).execute({ phone: "+98 912 000 0000", role: "staff" }, "owner");
     expect(byId.get("09120000000")?.role).toBe("staff");
   });
 
   it("refuses a number that can't be a sign-in — a landline or a mobile a digit short", async () => {
     const { repo, batches } = repoWith([user("owner", "owner")]);
     for (const phone of ["021 1234 5678", "0912 000 000"]) {
-      await expect(new GrantAdmin(repo).execute({ phone, role: "staff" }, "owner")).rejects.toMatchObject({
+      await expect(new GrantAdmin(repo, ROLES).execute({ phone, role: "staff" }, "owner")).rejects.toMatchObject({
         name: "ValidationError",
         field: "phone",
       });
@@ -72,7 +82,11 @@ describe("GrantAdmin", () => {
   it("records nothing and sends nothing when the role doesn't change", async () => {
     const { repo, batches } = repoWith([user("owner", "owner"), user("09120000000", "staff")]);
     const notify = notifier();
-    await new GrantAdmin(repo, notify).execute({ phone: "09120000000", role: "staff" }, "owner", "https://x/login");
+    await new GrantAdmin(repo, ROLES, notify).execute(
+      { phone: "09120000000", role: "staff" },
+      "owner",
+      "https://x/login",
+    );
     expect(batches[0].entries).toEqual([]);
     expect(notify.adminGranted).not.toHaveBeenCalled();
   });
@@ -81,7 +95,11 @@ describe("GrantAdmin", () => {
     const { repo, batches, byId } = repoWith([user("09120000001", "owner")]);
     const notify = notifier();
     await expect(
-      new GrantAdmin(repo, notify).execute({ phone: "0912 000 0001", role: "admin" }, "09120000001", "https://x/login"),
+      new GrantAdmin(repo, ROLES, notify).execute(
+        { phone: "0912 000 0001", role: "admin" },
+        "09120000001",
+        "https://x/login",
+      ),
     ).rejects.toMatchObject({ name: "AdminRevokeError", reason: "self" });
     expect(byId.get("09120000001")?.role).toBe("owner");
     expect(batches).toEqual([]);
@@ -92,7 +110,7 @@ describe("GrantAdmin", () => {
     // A break-glass admin isn't the owner, so the self rule doesn't catch this one.
     const { repo, batches, byId } = repoWith([user("09120000001", "owner"), user("09120000002", "admin")]);
     await expect(
-      new GrantAdmin(repo).execute({ phone: "09120000001", role: "support" }, "09120000002"),
+      new GrantAdmin(repo, ROLES).execute({ phone: "09120000001", role: "support" }, "09120000002"),
     ).rejects.toMatchObject({ name: "AdminRevokeError", reason: "owner" });
     expect(byId.get("09120000001")?.role).toBe("owner");
     expect(batches).toEqual([]);
@@ -102,7 +120,7 @@ describe("GrantAdmin", () => {
     const { repo, batches, byId } = repoWith([user("owner", "owner"), user("09120000000", "support")]);
     const notify = notifier();
     await expect(
-      new GrantAdmin(repo, notify).execute({ phone: "09120000000", role: "admin" }, "owner", "https://x/login"),
+      new GrantAdmin(repo, ROLES, notify).execute({ phone: "09120000000", role: "admin" }, "owner", "https://x/login"),
     ).rejects.toMatchObject({ name: "ConflictError", code: "ALREADY_ON_TEAM" });
     expect(byId.get("09120000000")?.role).toBe("support");
     expect(batches).toEqual([]);
@@ -112,7 +130,11 @@ describe("GrantAdmin", () => {
   it("brings a customer onto the team, records it and invites them", async () => {
     const { repo, batches, byId } = repoWith([user("owner", "owner"), user("09120000000", "customer", "Sara")]);
     const notify = notifier();
-    await new GrantAdmin(repo, notify).execute({ phone: "09120000000", role: "staff" }, "owner", "https://x/login");
+    await new GrantAdmin(repo, ROLES, notify).execute(
+      { phone: "09120000000", role: "staff" },
+      "owner",
+      "https://x/login",
+    );
     expect(byId.get("09120000000")?.role).toBe("staff");
     expect(batches[0].entries[0].changes).toEqual([{ field: "role", before: "customer", after: "staff" }]);
     expect(notify.adminGranted).toHaveBeenCalledTimes(1);
@@ -141,34 +163,71 @@ describe("RevokeAdmin", () => {
     expect(result.role).toBe("customer");
     expect(batches[0].entries).toHaveLength(1);
   });
+
+  it("signs them out everywhere in the same batch", async () => {
+    const { repo, batches } = repoWith([user("owner", "owner"), user("s", "staff")]);
+    await new RevokeAdmin(repo).execute("s", "owner");
+    expect(batches[0].revokeSessionsOf).toEqual(["s"]);
+  });
+});
+
+describe("custom roles on the team", () => {
+  it("grants and changes to a custom role that exists", async () => {
+    const { repo, byId, batches } = repoWith([user("owner", "owner"), user("s", "support")]);
+    await new GrantAdmin(repo, ROLES).execute({ phone: "09120000000", role: "custom:barista01" }, "owner");
+    expect(byId.get("09120000000")?.role).toBe("custom:barista01");
+
+    await new ChangeRole(repo, ROLES).execute("s", "custom:barista01", "owner");
+    expect(byId.get("s")?.role).toBe("custom:barista01");
+    // A custom-role holder is on the team, and moving them signs them out.
+    expect(batches[1].revokeSessionsOf).toEqual(["s"]);
+  });
+
+  it("refuses a custom role that doesn't exist", async () => {
+    const { repo, batches } = repoWith([user("owner", "owner"), user("s", "support")]);
+    await expect(
+      new GrantAdmin(repo, ROLES).execute({ phone: "09120000000", role: "custom:gone0001" }, "owner"),
+    ).rejects.toMatchObject({ field: "role" });
+    await expect(new ChangeRole(repo, ROLES).execute("s", "custom:gone0001", "owner")).rejects.toMatchObject({
+      field: "role",
+    });
+    expect(batches).toEqual([]);
+  });
+
+  it("can remove someone holding a custom role", async () => {
+    const { repo } = repoWith([user("owner", "owner"), user("b", "custom:barista01")]);
+    const result = await new RevokeAdmin(repo).execute("b", "owner");
+    expect(result.role).toBe("customer");
+  });
 });
 
 describe("ChangeRole", () => {
   it("moves a member to another role with an audit entry in the same batch", async () => {
     const { repo, batches, byId } = repoWith([user("owner", "owner"), user("s", "support")]);
-    const result = await new ChangeRole(repo).execute("s", "staff", "owner");
+    const result = await new ChangeRole(repo, ROLES).execute("s", "staff", "owner");
     expect(result.role).toBe("staff");
     expect(byId.get("s")?.role).toBe("staff");
     expect(batches[0].entries).toHaveLength(1);
     expect(batches[0].entries[0].changes).toEqual([{ field: "role", before: "support", after: "staff" }]);
+    expect(batches[0].revokeSessionsOf).toEqual(["s"]);
   });
 
   it("writes and records nothing when the role is the one they hold", async () => {
     const { repo, batches } = repoWith([user("owner", "owner"), user("a", "admin")]);
-    const result = await new ChangeRole(repo).execute("a", "admin", "owner");
+    const result = await new ChangeRole(repo, ROLES).execute("a", "admin", "owner");
     expect(result.role).toBe("admin");
     expect(batches).toEqual([]);
   });
 
   it("refuses changing yourself or the owner", async () => {
     const { repo } = repoWith([user("owner", "owner"), user("a", "admin")]);
-    await expect(new ChangeRole(repo).execute("a", "staff", "a")).rejects.toMatchObject({ reason: "self" });
-    await expect(new ChangeRole(repo).execute("owner", "staff", "a")).rejects.toMatchObject({ reason: "owner" });
+    await expect(new ChangeRole(repo, ROLES).execute("a", "staff", "a")).rejects.toMatchObject({ reason: "self" });
+    await expect(new ChangeRole(repo, ROLES).execute("owner", "staff", "a")).rejects.toMatchObject({ reason: "owner" });
   });
 
   it("treats a customer as not on the team", async () => {
     const { repo } = repoWith([user("owner", "owner"), user("c", "customer")]);
-    await expect(new ChangeRole(repo).execute("c", "staff", "owner")).rejects.toThrow(NotFoundError);
+    await expect(new ChangeRole(repo, ROLES).execute("c", "staff", "owner")).rejects.toThrow(NotFoundError);
   });
 });
 

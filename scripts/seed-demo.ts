@@ -363,11 +363,13 @@ function planPurchasing(owner: ActivityActor): void {
     ),
   );
   schedule(at(-DAYS, "09:00"), "suppliers", async () => {
-    suppliers.beans = (await saveSupplier.create({ name: "Lamiz Roastery", phone: "02188776655" })).id;
-    suppliers.dairy = (await saveSupplier.create({ name: "Pegah Dairy", phone: "02144332211" })).id;
-    suppliers.bakery = (await saveSupplier.create({ name: "Nan-e Sahar Bakery", note: "Delivers before 8am" })).id;
-    suppliers.landlord = (await saveSupplier.create({ name: "Mr. Sharifi (landlord)" })).id;
-    suppliers.utility = (await saveSupplier.create({ name: "Tehran Power & Gas" })).id;
+    suppliers.beans = (await saveSupplier.create({ name: "Lamiz Roastery", phone: "02188776655" }, owner)).id;
+    suppliers.dairy = (await saveSupplier.create({ name: "Pegah Dairy", phone: "02144332211" }, owner)).id;
+    suppliers.bakery = (
+      await saveSupplier.create({ name: "Nan-e Sahar Bakery", note: "Delivers before 8am" }, owner)
+    ).id;
+    suppliers.landlord = (await saveSupplier.create({ name: "Mr. Sharifi (landlord)" }, owner)).id;
+    suppliers.utility = (await saveSupplier.create({ name: "Tehran Power & Gas" }, owner)).id;
   });
   // More copies of the books that sell, before the month starts. A tracked book's
   // copies on the menu follow its stock item, so this stocks the shelf too.

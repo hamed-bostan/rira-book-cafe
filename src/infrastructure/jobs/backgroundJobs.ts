@@ -1,5 +1,6 @@
 import { ExpireBookHolds } from "@/src/domain/use-cases/jobs/ExpireBookHolds";
 import { ExpireSuiteRequests, ExpireTableRequests } from "@/src/domain/use-cases/jobs/ExpireRequests";
+import { PruneActivityLog, PruneSessions } from "@/src/domain/use-cases/jobs/PruneActivityLog";
 import {
   SendEventReminders,
   SendHoldReminders,
@@ -8,13 +9,16 @@ import {
   SendTableReminders,
 } from "@/src/domain/use-cases/jobs/SendReminders";
 import {
+  activityLog,
   bookLoanRepository,
   bookWaitlistRepository,
   customerNotifier,
   eventRepository,
   logger,
   reservationRepository,
+  sessionRepository,
   suiteBookingRepository,
+  teamSettingsRepository,
 } from "@/src/infrastructure/container";
 
 import { JobRunner, type BackgroundJob } from "./JobRunner";
@@ -38,6 +42,10 @@ export function createBackgroundJobs(): BackgroundJob[] {
     eventReminders: new SendEventReminders(eventRepository, customerNotifier),
     loanReminders: new SendLoanReminders(bookLoanRepository, customerNotifier),
     holdReminders: new SendHoldReminders(bookWaitlistRepository, customerNotifier),
+    // Housekeeping last: the owner's activity retention (a no-op while it's
+    // "forever"), then session rows nobody can use any more.
+    pruneActivityLog: new PruneActivityLog(activityLog, teamSettingsRepository),
+    pruneSessions: new PruneSessions(sessionRepository),
   };
   return Object.entries(useCases).map(([name, useCase]) => ({ name, run: (now) => useCase.execute(now) }));
 }

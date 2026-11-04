@@ -13,13 +13,21 @@ type DashboardSwitchFieldProps = {
   ariaLabel?: string;
   checked?: boolean;
   onCheckedChange: (checked: boolean) => void;
+  disabled?: boolean;
 };
 
 /**
  * A setting on a full-page form: the small switch, then what it does. The whole
  * row toggles it, so a phone's 44px reaches past the switch's 20.
  */
-export function DashboardSwitchField({ label, hint, ariaLabel, checked, onCheckedChange }: DashboardSwitchFieldProps) {
+export function DashboardSwitchField({
+  label,
+  hint,
+  ariaLabel,
+  checked,
+  onCheckedChange,
+  disabled,
+}: DashboardSwitchFieldProps) {
   const id = React.useId();
 
   return (
@@ -30,6 +38,7 @@ export function DashboardSwitchField({ label, hint, ariaLabel, checked, onChecke
         className="mt-0.5"
         checked={checked}
         onCheckedChange={onCheckedChange}
+        disabled={disabled}
         aria-label={ariaLabel}
       />
       <span className="flex min-w-0 flex-col">

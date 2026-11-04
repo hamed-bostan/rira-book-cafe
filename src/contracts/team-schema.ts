@@ -1,6 +1,16 @@
 import { isTeamPhone } from "@/src/domain/entities/Phone";
-import { GRANTABLE_ROLES } from "@/src/domain/entities/User";
+import { isGrantableRole, type GrantableRole } from "@/src/domain/entities/User";
 import * as z from "@/src/lib/zod";
+
+/**
+ * A role a grant or a role change may give: support, staff, admin, or one of the
+ * owner's custom roles (whose existence the use-case checks — the schema can only
+ * check the key's shape).
+ */
+const grantableRole = z.custom<GrantableRole>(
+  (value) => typeof value === "string" && isGrantableRole(value),
+  "roleInvalid",
+);
 
 /**
  * The single source of truth for granting dashboard access, shared by the client form
@@ -32,7 +42,7 @@ export const grantAdminSchema = z.object({
    * Which job they're being given. `owner` isn't offered: there is exactly one,
    * and it moves by transfer rather than by grant — see `TransferOwnership`.
    */
-  role: z.enum(GRANTABLE_ROLES),
+  role: grantableRole,
 });
 
 /** Form value shape, and the validated payload the route forwards to the use-case. */
@@ -44,7 +54,7 @@ export type GrantAdminInput = z.infer<typeof grantAdminSchema>;
  * a revoke, not a change to `customer`.
  */
 export const changeRoleSchema = z.object({
-  role: z.enum(GRANTABLE_ROLES),
+  role: grantableRole,
 });
 
 export type ChangeRoleInput = z.infer<typeof changeRoleSchema>;

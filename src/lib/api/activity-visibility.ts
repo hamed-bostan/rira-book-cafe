@@ -35,6 +35,10 @@ const ENTITY_TYPE_NEEDS: Record<(typeof ACTIVITY_ENTITY_TYPES)[number], Permissi
   expense: "accounting.view",
   income: "accounting.view",
   payroll: "payroll.manage",
+  // The till's figures are the shift screen's, which the floor holds.
+  cashShift: "shifts.manage",
+  // That the log itself was pruned is for everyone who reads it.
+  activity: "activity.view",
 };
 
 /**

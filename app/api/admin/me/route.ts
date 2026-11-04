@@ -1,12 +1,20 @@
 import { NextResponse } from "next/server";
 
-import type { UserRole } from "@/src/domain/entities/User";
-import { userRepository } from "@/src/infrastructure/container";
+import type { RoleName } from "@/src/domain/entities/Role";
+import { isCustomRoleKey, type UserRole } from "@/src/domain/entities/User";
+import { roleRepository, userRepository } from "@/src/infrastructure/container";
 import { errorResponse, unauthorizedResponse } from "@/src/lib/api/responses";
 import { getSessionWith, sessionRole } from "@/src/lib/require-permission";
 
 /** What this route promises — the presentation layer's `viewerResponseSchema` (colocated with its one consumer) validates the client sees exactly this. */
-type ViewerBody = { id: string; name: string; email: string | null; imageUrl: string | null; role: UserRole };
+type ViewerBody = {
+  id: string;
+  name: string;
+  email: string | null;
+  imageUrl: string | null;
+  role: UserRole;
+  roleName: RoleName | null;
+};
 
 // Per-session, request-time data — never statically cached.
 export const dynamic = "force-dynamic";
@@ -34,6 +42,15 @@ export async function GET(): Promise<NextResponse> {
     return errorResponse(404, { message: "That user no longer exists.", code: "NOT_FOUND" });
   }
 
-  const body: ViewerBody = { id: user.id, name: user.name, email: user.email, imageUrl: user.avatarUrl, role };
+  // A custom role is named by the owner, so its name comes with it; the app names the built-in ones.
+  const roleName = isCustomRoleKey(role) ? ((await roleRepository.get(role))?.name ?? null) : null;
+  const body: ViewerBody = {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    imageUrl: user.avatarUrl,
+    role,
+    roleName,
+  };
   return NextResponse.json(body);
 }

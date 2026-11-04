@@ -6,7 +6,7 @@ import { flattenError } from "zod/mini";
 
 import { grantAdminSchema } from "@/src/contracts/team-schema";
 import { normalizePhone, phoneDigits, teamPhoneDigitsWhenComplete } from "@/src/domain/entities/Phone";
-import { GRANTABLE_ROLES, type GrantableRole } from "@/src/domain/entities/User";
+import type { GrantableRole } from "@/src/domain/entities/User";
 import { useRouter } from "@/src/i18n/navigation";
 import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
@@ -21,9 +21,13 @@ import { useToast } from "@/src/presentation/design-system/components/Toast/useT
 
 import { teamApi } from "./team-api";
 
+import type { RoleOption } from "./roleDisplay";
+
 type GrantAccessFormProps = {
   /** Who already has access, by id — their normalized phone. */
   memberIds: readonly string[];
+  /** The roles a grant can give — the built-in ones and the owner's own — named for this reader. */
+  roleOptions: readonly RoleOption[];
 };
 
 /**
@@ -37,7 +41,7 @@ type GrantAccessFormProps = {
  * The email is only where the invitation is sent. A successful grant re-runs the
  * server render and the new member appears in the list.
  */
-export function GrantAccessForm({ memberIds }: GrantAccessFormProps) {
+export function GrantAccessForm({ memberIds, roleOptions }: GrantAccessFormProps) {
   const t = useTranslations("dashTeam");
   const tApiErrors = useTranslations("apiErrors");
   const tFormErrors = useTranslations("formErrors");
@@ -156,12 +160,12 @@ export function GrantAccessForm({ memberIds }: GrantAccessFormProps) {
               size="control-md"
               value={role}
               onChange={(event) =>
-                setRole(GRANTABLE_ROLES.find((option) => option === event.target.value) ?? "support")
+                setRole(roleOptions.find((option) => option.value === event.target.value)?.value ?? "support")
               }
             >
-              {GRANTABLE_ROLES.map((option) => (
-                <option key={option} value={option}>
-                  {t(`roleOption.${option}`)}
+              {roleOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
                 </option>
               ))}
             </Select>

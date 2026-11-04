@@ -32,6 +32,12 @@ export type RoleAssignment = {
 export type RoleChangeBatch = {
   assignments: RoleAssignment[];
   entries: NewActivityEntry[];
+  /**
+   * Users whose signed-in sessions end with this change — someone removed from the
+   * team, or moved to another job. In the same transaction, so there is no moment
+   * where the role has moved and an old session still carries on.
+   */
+  revokeSessionsOf?: string[];
 };
 
 /** A user about to be created — the id is the caller's stable identifier (phone digits). */
@@ -64,6 +70,8 @@ export type IUserRepository = {
   update(id: string, input: ProfileUpdate): Promise<User>;
   /** Every user holding one of `roles`, oldest first — the team is small enough to read whole. */
   listByRoles(roles: readonly UserRole[]): Promise<User[]>;
+  /** Everyone holding any role but `customer` — built-in or custom — oldest first. */
+  listTeam(): Promise<User[]>;
   /**
    * Apply a batch of role changes and their audit entries atomically — all of it
    * commits or none of it does.

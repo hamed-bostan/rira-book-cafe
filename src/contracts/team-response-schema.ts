@@ -1,9 +1,14 @@
 import { z } from "zod/mini";
 
-import { GRANTABLE_ROLES } from "@/src/domain/entities/User";
+import { isGrantableRole, type GrantableRole } from "@/src/domain/entities/User";
 
-/** The roles a team row can carry: the owner, and every role a grant can give. */
-export const TEAM_ROLES = ["owner", ...GRANTABLE_ROLES] as const;
+/** The roles a team row can carry: the owner, and every role a grant can give (custom ones included). */
+export type TeamRole = "owner" | GrantableRole;
+
+/** Narrow a stored role to one a team row can show; anything else isn't a team role. */
+export function toTeamRole(role: string): TeamRole | null {
+  return role === "owner" || isGrantableRole(role) ? role : null;
+}
 
 /**
  * The shape the team endpoints promise to return — the one place both halves of
@@ -28,7 +33,9 @@ export const teamMemberResponseSchema = z.object({
    * the floor, `support` reads. A break-glass account with no role in the
    * database reads as `admin`, which is what its environment access gives it.
    */
-  role: z.enum(TEAM_ROLES),
+  role: z.custom<TeamRole>((value) => typeof value === "string" && toTeamRole(value) !== null),
+  /** Their authenticator-app two-factor: off, set up but unconfirmed, or on. */
+  twoFactor: z.enum(["off", "pending", "on"]),
   /** True when this member is the admin currently viewing the page. */
   isSelf: z.boolean(),
   /** True when access comes from the env allowlist and can't be revoked in the UI. */

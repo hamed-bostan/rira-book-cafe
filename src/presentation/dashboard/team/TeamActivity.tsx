@@ -2,11 +2,15 @@ import { useLocale, useTranslations } from "next-intl";
 
 import { cafeDayOf } from "@/src/domain/entities/CafeTime";
 import { roleChangeKind, roleMove } from "@/src/domain/entities/RoleChange";
+import type { UserRole } from "@/src/domain/entities/User";
+import { Link } from "@/src/i18n/navigation";
 import { formatCafeDayShort } from "@/src/lib/formatCafeDay";
 import { cn } from "@/src/lib/utils";
 import type { ActivityEntryWire } from "@/src/presentation/dashboard/activity/activity-response-schema";
 import { DashboardEmptyState } from "@/src/presentation/dashboard/DashboardEmptyState";
+import { TEXT_ACTION } from "@/src/presentation/dashboard/fieldStyles";
 
+import { roleDisplayName, type RoleNames } from "./roleDisplay";
 import { isolatedName, teamMemberName } from "./teamDisplay";
 
 type TeamActivityProps = {
@@ -14,6 +18,8 @@ type TeamActivityProps = {
   changes: ActivityEntryWire[];
   /** The signed-in owner, who reads as "You" in the sentences. */
   viewerId: string | undefined;
+  /** Custom roles' names, for changes to or from one. */
+  roleNames: RoleNames;
 };
 
 /**
@@ -26,9 +32,16 @@ type TeamActivityProps = {
  * can quietly tidy up isn't one. Names come from the entry rather than the
  * current team, so history stays truthful about people since renamed or removed.
  */
-export function TeamActivity({ changes, viewerId }: TeamActivityProps) {
+export function TeamActivity({ changes, viewerId, roleNames }: TeamActivityProps) {
   const t = useTranslations("dashTeam");
   const locale = useLocale();
+  const roleLabel = (role: UserRole | undefined): string =>
+    roleDisplayName(role ?? "customer", {
+      builtIn: (builtIn) => t(`role.${builtIn}`),
+      names: roleNames,
+      locale,
+      fallback: t("customRoleFallback"),
+    });
 
   function sentence(change: ActivityEntryWire): string {
     const kind = roleChangeKind({ userId: change.entityId, actorId: change.actorId, changes: change.changes });
@@ -43,13 +56,13 @@ export function TeamActivity({ changes, viewerId }: TeamActivityProps) {
 
     switch (kind) {
       case "granted":
-        return t("activity.granted", { actor, user, role: t(`role.${move?.toRole ?? "customer"}`) });
+        return t("activity.granted", { actor, user, role: roleLabel(move?.toRole) });
       case "changed":
         return t("activity.changed", {
           actor,
           user,
-          from: t(`role.${move?.fromRole ?? "customer"}`),
-          to: t(`role.${move?.toRole ?? "customer"}`),
+          from: roleLabel(move?.fromRole),
+          to: roleLabel(move?.toRole),
         });
       case "ownershipClaimed":
       case "steppedDown":
@@ -65,13 +78,23 @@ export function TeamActivity({ changes, viewerId }: TeamActivityProps) {
       aria-labelledby="access-history-heading"
       className="flex min-w-0 flex-col gap-2 rounded-card-lg border border-border bg-background p-5 shadow-xs"
     >
-      <div className="flex flex-col gap-1">
-        <h2 id="access-history-heading" className="text-body-strong text-foreground">
-          {t("activityHeading")}
-        </h2>
-        <p className="text-body-default text-pretty text-muted-foreground sm:text-body-small">
-          {t("activityDescription")}
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+        <div className="flex min-w-0 flex-col gap-1">
+          <h2 id="access-history-heading" className="text-body-strong text-foreground">
+            {t("activityHeading")}
+          </h2>
+          <p className="text-body-default text-pretty text-muted-foreground sm:text-body-small">
+            {t("activityDescription")}
+          </p>
+        </div>
+        {/* The card shows the latest access changes; every team change — roles, settings,
+            sign-outs, two-factor — is on the activity page, filtered to the team. */}
+        <Link
+          href="/dashboard/activity?entityType=user"
+          className={cn(TEXT_ACTION, "text-primary hover:text-primary-hover")}
+        >
+          {t("activitySeeAll")}
+        </Link>
       </div>
 
       {changes.length === 0 ? (

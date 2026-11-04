@@ -1,11 +1,11 @@
 "use client";
 
-import { LogOut } from "lucide-react";
+import { LogOut, ShieldCheck } from "lucide-react";
 import Image from "next/image";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import * as React from "react";
 
-import type { UserRole } from "@/src/domain/entities/User";
+import { Link } from "@/src/i18n/navigation";
 import { cn } from "@/src/lib/utils";
 import { logout } from "@/src/presentation/auth/actions";
 import { Avatar } from "@/src/presentation/design-system/components/Avatar/Avatar";
@@ -21,16 +21,9 @@ import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 import { ConfirmSheet } from "@/src/presentation/design-system/components/Sheet/ConfirmSheet";
 
-import type { DashboardViewer } from "./viewer";
+import { roleBadgeVariant, roleDisplayName } from "../team/roleDisplay";
 
-/** Mirrors `TeamMembers`' role tones — same role, same colour, wherever it's shown. */
-const ROLE_BADGE_VARIANT: Record<UserRole, "warning" | "success" | "info" | "neutral"> = {
-  owner: "warning",
-  admin: "success",
-  staff: "info",
-  support: "neutral",
-  customer: "neutral",
-};
+import type { DashboardViewer } from "./viewer";
 
 type UserMenuProps = {
   viewer: DashboardViewer;
@@ -45,6 +38,7 @@ type UserMenuProps = {
 export function UserMenu({ viewer }: UserMenuProps) {
   const t = useTranslations("dashboard");
   const tTeam = useTranslations("dashTeam");
+  const locale = useLocale();
   const [confirmOpen, setConfirmOpen] = React.useState(false);
   const [pending, startTransition] = React.useTransition();
 
@@ -85,12 +79,24 @@ export function UserMenu({ viewer }: UserMenuProps) {
             {viewer.email && (
               <span className="max-w-full truncate text-body-small-bold text-muted-foreground">{viewer.email}</span>
             )}
-            <Badge variant={ROLE_BADGE_VARIANT[viewer.role]} className="mt-1">
-              {tTeam(`role.${viewer.role}`)}
+            <Badge variant={roleBadgeVariant(viewer.role)} className="mt-1">
+              {roleDisplayName(viewer.role, {
+                builtIn: (role) => tTeam(`role.${role}`),
+                names: viewer.roleName ? { [viewer.role]: viewer.roleName } : {},
+                locale,
+                fallback: tTeam("customRoleFallback"),
+              })}
             </Badge>
           </div>
 
           <DropdownMenuSeparator />
+
+          <DropdownMenuItem asChild>
+            <Link href="/dashboard/security">
+              <Icon icon={ShieldCheck} size="sm" />
+              {t("security")}
+            </Link>
+          </DropdownMenuItem>
 
           <DropdownMenuItem destructive onSelect={() => setConfirmOpen(true)}>
             <Icon icon={LogOut} size="sm" />

@@ -46,7 +46,13 @@ function activityLog(): Fake {
   const listForEntity = vi.fn<IActivityLog["listForEntity"]>(async () => [ENTRY]);
   const listActors = vi.fn<IActivityLog["listActors"]>(async () => [{ id: "a1", name: "Admin" }]);
   return {
-    log: { list, listForEntity, listActors, recordEvent: vi.fn(async () => {}) },
+    log: {
+      list,
+      listForEntity,
+      listActors,
+      entryBatches: vi.fn<IActivityLog["entryBatches"]>(),
+      pruneBefore: vi.fn<IActivityLog["pruneBefore"]>(async () => 0),
+    },
     list,
     listForEntity,
     listActors,

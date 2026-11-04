@@ -16,7 +16,8 @@ type RouteContext = { params: Promise<{ id: string }> };
 
 /** PUT /api/admin/suppliers/:id — edit a supplier or switch it off. Requires `accounting.write`. */
 export async function PUT(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
-  if (!(await getSessionWith("accounting.write"))) return unauthorizedResponse();
+  const session = await getSessionWith("accounting.write");
+  if (!session) return unauthorizedResponse();
 
   const { id } = await params;
   const body = await parseJsonBody(request);
@@ -31,7 +32,8 @@ export async function PUT(request: NextRequest, { params }: RouteContext): Promi
   }
 
   try {
-    return NextResponse.json(await new SaveSupplier(expenseRepository).update(id, parsed.data));
+    const actor = { id: session.user.id, name: session.user.name ?? session.user.id };
+    return NextResponse.json(await new SaveSupplier(expenseRepository).update(id, parsed.data, actor));
   } catch (error) {
     return errorResponseFromException(error, `PUT /api/admin/suppliers/${id} failed`);
   }

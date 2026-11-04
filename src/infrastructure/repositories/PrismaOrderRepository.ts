@@ -26,6 +26,7 @@ import { pointsToClawBack, type NewOrderRefund, type OrderRefund } from "@/src/d
 import type { OrderStatusEvent } from "@/src/domain/entities/OrderStatusEvent";
 import { createPage, toSkipTake, type Page, type PageRequest } from "@/src/domain/entities/Pagination";
 import { PRODUCT_KINDS, type ProductKind } from "@/src/domain/entities/Product";
+import type { OrderItemOption } from "@/src/domain/entities/ProductOptions";
 import { ConflictError } from "@/src/domain/errors/ConflictError";
 import { InsufficientStockError, type StockShortfall } from "@/src/domain/errors/InsufficientStockError";
 import { InvalidOrderTransitionError } from "@/src/domain/errors/InvalidOrderTransitionError";
@@ -105,6 +106,7 @@ export class PrismaOrderRepository implements IOrderRepository {
               taxExempt: item.taxExempt ?? false,
               quantity: item.quantity,
               note: item.note ?? null,
+              options: toOptionsJson(item.options),
               position,
             })),
           },
@@ -490,6 +492,7 @@ export class PrismaOrderRepository implements IOrderRepository {
             taxExempt: item.taxExempt ?? false,
             quantity: item.quantity,
             note: item.note ?? null,
+            options: toOptionsJson(item.options),
             position: next + index,
             addedAt: now,
           })),
@@ -701,6 +704,44 @@ function toRefund(row: RefundRow): OrderRefund {
   };
 }
 
+/** A line's chosen options as the JSON column stores them; `[]` for none. */
+function toOptionsJson(options: readonly OrderItemOption[] | undefined): Prisma.InputJsonValue {
+  return (options ?? []).map((option) => ({ ...option }));
+}
+
+/**
+ * A line's stored options, read defensively — the column is JSON, so anything not
+ * shaped like a snapshot is skipped rather than trusted. Absent for a line without.
+ */
+function optionsOf(value: Prisma.JsonValue): Pick<OrderItem, "options"> {
+  if (!Array.isArray(value) || value.length === 0) return {};
+  const options = value.flatMap((entry): OrderItemOption[] => {
+    if (typeof entry !== "object" || entry === null || Array.isArray(entry)) return [];
+    const { groupId, group, groupFa, choiceId, choice, choiceFa, priceDelta } = entry;
+    if (
+      typeof groupId !== "string" ||
+      typeof group !== "string" ||
+      typeof choiceId !== "string" ||
+      typeof choice !== "string" ||
+      typeof priceDelta !== "number"
+    ) {
+      return [];
+    }
+    return [
+      {
+        groupId,
+        group,
+        ...(typeof groupFa === "string" ? { groupFa } : {}),
+        choiceId,
+        choice,
+        ...(typeof choiceFa === "string" ? { choiceFa } : {}),
+        priceDelta,
+      },
+    ];
+  });
+  return options.length > 0 ? { options } : {};
+}
+
 function toOrder(row: OrderRow): Order {
   return {
     id: row.id,
@@ -732,6 +773,7 @@ function toOrder(row: OrderRow): Order {
       quantity: item.quantity,
       refundedQuantity: item.refundedQuantity,
       note: item.note ?? undefined,
+      ...optionsOf(item.options),
       servedAt: item.servedAt?.toISOString(),
       addedAt: item.addedAt?.toISOString(),
     })),

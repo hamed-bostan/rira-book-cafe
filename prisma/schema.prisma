@@ -118,6 +118,7 @@ model Product {
   // points (3000 = 30%); null uses the cafe-wide default in pricing settings.
   targetMarkupBps  Int?         @map("target_markup_bps")
   recipeLines      RecipeLine[]
+  optionGroups     ProductOptionGroup[]
   createdAt        DateTime     @default(now()) @map("created_at")
   updatedAt        DateTime     @updatedAt @map("updated_at")
 
@@ -125,6 +126,49 @@ model Product {
   @@index([isPublished])
   @@index([kind])
   @@map("products")
+}
+
+// A group of choices on a menu item — Size, Extras (see domain/entities/ProductOptions).
+// `selection` is "single" or "multiple" (enum-free style). Names are the English base
+// and an optional Persian one. Goes with its item.
+model ProductOptionGroup {
+  id         String                @id @default(uuid())
+  productId  String                @map("product_id")
+  product    Product               @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name       String
+  nameFa     String?               @map("name_fa")
+  required   Boolean               @default(false)
+  selection  String                @default("single")
+  minChoices Int                   @default(0) @map("min_choices")
+  // Null: as many as the group has.
+  maxChoices Int?                  @map("max_choices")
+  position   Int
+  choices    ProductOptionChoice[]
+  createdAt  DateTime              @default(now()) @map("created_at")
+  updatedAt  DateTime              @updatedAt @map("updated_at")
+
+  @@index([productId, position])
+  @@map("product_option_groups")
+}
+
+// One choice in an option group. `price_delta` is whole Toman added to the item's price.
+// Order lines snapshot what they chose, so changing or removing a choice never touches
+// a past order.
+model ProductOptionChoice {
+  id          String             @id @default(uuid())
+  groupId     String             @map("group_id")
+  group       ProductOptionGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  name        String
+  nameFa      String?            @map("name_fa")
+  priceDelta  Int                @default(0) @map("price_delta")
+  isAvailable Boolean            @default(true) @map("is_available")
+  isDefault   Boolean            @default(false) @map("is_default")
+  position    Int
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
+
+  @@index([groupId, position])
+  @@map("product_option_choices")
 }
 
 model ProductTranslation {
@@ -235,6 +279,10 @@ model OrderItem {
   // Units of this line handed back after the order was completed.
   refundedQuantity Int               @default(0) @map("refunded_quantity")
   note             String?
+  // The options chosen, snapshotted: `[{ groupId, group, groupFa?, choiceId, choice,
+  // choiceFa?, priceDelta }]` (see domain/entities/ProductOptions). `unit_price`
+  // already includes the deltas. `[]` for a line without options.
+  options          Json              @default("[]")
   position         Int
   // When staff marked the line served; null while it's still being prepared.
   servedAt         DateTime?         @map("served_at")

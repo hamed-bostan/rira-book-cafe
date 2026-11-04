@@ -120,9 +120,24 @@ function repoWith(rows: Product[]): Fake {
   const byId = new Map(rows.map((row) => [row.id, row]));
   const entries: (NewActivityEntry | null)[] = [];
   const persist = (id: string, input: NewProduct): Product => {
-    const { translations: _translations, stockQuantity, ...fields } = input;
-    // Like the real repository, an absent count leaves the stored one (0 when new).
-    return { ...product({ id }), ...fields, id, stockQuantity: stockQuantity ?? byId.get(id)?.stockQuantity ?? 0 };
+    const { translations: _translations, stockQuantity, optionGroups, ...fields } = input;
+    // Like the real repository, an absent count leaves the stored one (0 when new),
+    // and saved groups and choices get ids.
+    return {
+      ...product({ id }),
+      ...fields,
+      id,
+      stockQuantity: stockQuantity ?? byId.get(id)?.stockQuantity ?? 0,
+      ...(optionGroups
+        ? {
+            optionGroups: optionGroups.map((group, g) => ({
+              ...group,
+              id: group.id ?? `g${g}`,
+              choices: group.choices.map((choice, c) => ({ ...choice, id: choice.id ?? `g${g}c${c}` })),
+            })),
+          }
+        : {}),
+    };
   };
 
   const create = vi.fn<IProductRepository["create"]>(async (input, audit) => {

@@ -1,5 +1,6 @@
 import type { Category } from "./Category";
 import type { IngredientAlert } from "./Inventory";
+import type { ProductOptionGroup } from "./ProductOptions";
 
 /**
  * What a menu item is. The cafe sells drinks and food over the counter and keeps a
@@ -99,6 +100,12 @@ export type Product = {
   taxExempt: boolean;
   /** Book-only details; `undefined` for drinks and food. */
   book?: BookDetails;
+  /**
+   * Choices a guest makes when ordering it — a size, extras — in order (see
+   * `ProductOptions`). Drinks and food only; absent or empty when it has none. The
+   * management list's rows leave them out.
+   */
+  optionGroups?: ProductOptionGroup[];
   /**
    * A book whose copies Inventory counts (see {@link isHeldInInventory}): its
    * `stockQuantity` moves only with stock movements and orders, never from the

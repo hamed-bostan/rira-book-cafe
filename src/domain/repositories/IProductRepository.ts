@@ -3,6 +3,7 @@ import type { AdminProductFilters, AdminProductSort } from "../entities/AdminPro
 import type { Page, PageRequest } from "../entities/Pagination";
 import type { Product, ProductListItem } from "../entities/Product";
 import type { ProductFilters } from "../entities/ProductFilters";
+import type { ProductOptionGroupInput } from "../entities/ProductOptions";
 
 /**
  * One locale's content overrides for an item — the admin-authored translation.
@@ -32,10 +33,16 @@ export type ProductTranslationInput = {
  */
 export type NewProduct = Omit<
   Product,
-  "id" | "discountPercent" | "rating" | "ratingCount" | "images" | "stockQuantity" | "inventoryTracked"
+  "id" | "discountPercent" | "rating" | "ratingCount" | "images" | "stockQuantity" | "inventoryTracked" | "optionGroups"
 > & {
   stockQuantity?: number;
   translations?: ProductTranslationInput[];
+  /**
+   * The item's option groups, like `translations`: `undefined` leaves them as they
+   * are, a list replaces them — a group or choice carrying an id the item already
+   * has is kept (and updated), the rest are created, and any left out are removed.
+   */
+  optionGroups?: ProductOptionGroupInput[];
 };
 
 /**

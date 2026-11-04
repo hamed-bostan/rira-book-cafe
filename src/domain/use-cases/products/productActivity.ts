@@ -1,4 +1,5 @@
 import type { Product } from "../../entities/Product";
+import type { ProductOptionGroupInput } from "../../entities/ProductOptions";
 import type { NewProduct } from "../../repositories/IProductRepository";
 
 /**
@@ -40,5 +41,32 @@ export function productSnapshot(product: Product | NewProduct): Record<string, u
     // Joined rather than left an array: `activityValue` renders any value with
     // `String()`, which would give the same result less explicitly.
     dietary: product.dietary?.join(", "),
+    // One readable line for all of them, so any change to a group or a choice shows
+    // as the options before and after. Left out while the item has none, so items
+    // without options log exactly as they did.
+    options: product.optionGroups?.length ? optionGroupsText(product.optionGroups) : undefined,
   };
+}
+
+/**
+ * "Size*: Small ✓, Large +20000 ⊘ · Extras (0–2): Oat milk +15000" — the groups as
+ * the activity log shows them, in marks rather than words so it reads in either
+ * language: `*` required, `✓` the default, `⊘` switched off.
+ */
+function optionGroupsText(groups: readonly ProductOptionGroupInput[]): string {
+  return groups
+    .map((group) => {
+      const bounds =
+        group.selection === "multiple"
+          ? ` (${group.required ? group.minChoices : 0}–${group.maxChoices ?? group.choices.length})`
+          : "";
+      const choices = group.choices
+        .map(
+          (choice) =>
+            `${choice.name}${choice.priceDelta > 0 ? ` +${choice.priceDelta}` : ""}${choice.isDefault ? " ✓" : ""}${choice.isAvailable ? "" : " ⊘"}`,
+        )
+        .join(", ");
+      return `${group.name}${group.required ? "*" : ""}${bounds}: ${choices}`;
+    })
+    .join(" · ");
 }

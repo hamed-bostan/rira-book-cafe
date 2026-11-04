@@ -11,6 +11,7 @@ import {
   type OrderItem,
   type ServiceType,
 } from "../../entities/Order";
+import { optionsSummary } from "../../entities/ProductOptions";
 import { ConflictError } from "../../errors/ConflictError";
 import { NotFoundError } from "../../errors/NotFoundError";
 import { ValidationError } from "../../errors/ValidationError";
@@ -173,9 +174,10 @@ function loweredLines(order: Order, lines: readonly { itemId: string; quantity: 
   });
 }
 
-/** "2× Latte" — how a line reads in the activity log. */
-function lineText(item: Pick<OrderItem, "quantity" | "name" | "note">, withNote = false): string {
-  return `${item.quantity}× ${item.name}${withNote && item.note ? ` (${item.note})` : ""}`;
+/** "2× Latte [Large, Oat milk]" — how a line reads in the activity log. */
+function lineText(item: Pick<OrderItem, "quantity" | "name" | "note" | "options">, withNote = false): string {
+  const options = optionsSummary(item.options, "en");
+  return `${item.quantity}× ${item.name}${options ? ` [${options}]` : ""}${withNote && item.note ? ` (${item.note})` : ""}`;
 }
 
 /**

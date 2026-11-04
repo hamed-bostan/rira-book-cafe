@@ -1,5 +1,6 @@
 import { MAX_ORDER_AMOUNT } from "../../entities/Order";
 import { MAX_STOCK_QUANTITY, PRODUCT_KINDS } from "../../entities/Product";
+import { normalizeOptionGroups, optionGroupsProblem } from "../../entities/ProductOptions";
 import { ValidationError } from "../../errors/ValidationError";
 
 import type { NewProduct } from "../../repositories/IProductRepository";
@@ -9,7 +10,9 @@ import type { NewProduct } from "../../repositories/IProductRepository";
  * caller (seed script, importer) still can't bypass the invariants. Shared by
  * `CreateProduct` and `UpdateProduct` so both enforce the same rules.
  *
- * Returns the input with its name trimmed.
+ * Returns the input with its name trimmed, and its option groups tidied (see
+ * `normalizeOptionGroups`) — a book has none: its groups are dropped like a
+ * drink's book details.
  */
 export function validateProduct(input: NewProduct): NewProduct {
   const name = input.name.trim();
@@ -42,6 +45,24 @@ export function validateProduct(input: NewProduct): NewProduct {
     throw new ValidationError("bookAuthor", "A book needs an author.");
   }
 
+  // Options belong to drinks and food; a book saved with a list has it cleared.
+  const optionGroups =
+    input.optionGroups === undefined
+      ? undefined
+      : input.kind === "book"
+        ? []
+        : normalizeOptionGroups(input.optionGroups);
+  const optionProblem = optionGroups ? optionGroupsProblem(optionGroups) : null;
+  if (optionProblem) throw new ValidationError("optionGroups", optionProblem);
+  if (optionGroups?.some((group) => group.choices.some((choice) => choice.priceDelta > MAX_ORDER_AMOUNT))) {
+    throw new ValidationError("optionGroups", "amountTooLarge");
+  }
+
   // Book details belong to books only; drop them for drinks and food.
-  return { ...input, name, book: input.kind === "book" ? input.book : undefined };
+  return {
+    ...input,
+    name,
+    book: input.kind === "book" ? input.book : undefined,
+    ...(optionGroups !== undefined ? { optionGroups } : {}),
+  };
 }

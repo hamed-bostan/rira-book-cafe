@@ -43,13 +43,17 @@ test("a guest books a table for 23:30 and sees it in their bookings", async ({ b
   const page = await pageAs(browser, "customer");
 
   await page.goto("/book");
-  // A fill made before the form hydrates is reset to today by it: fill until it holds.
+  // A fill made before the form hydrates is reset to today by it: fill both, and
+  // only go on once both have held for a moment.
   const dayField = page.getByLabel("Day", { exact: true });
+  const timeField = page.getByRole("combobox", { name: "Time", exact: true });
   await expect(async () => {
     await dayField.fill(day);
-    await expect(dayField).toHaveValue(day, { timeout: 1_000 });
+    await timeField.selectOption("23:30");
+    await page.waitForTimeout(300);
+    await expect(dayField).toHaveValue(day, { timeout: 500 });
+    await expect(timeField).toHaveValue("23:30", { timeout: 500 });
   }).toPass();
-  await page.getByRole("combobox", { name: "Time", exact: true }).selectOption("23:30");
   await page.getByRole("button", { name: "Request a table" }).click();
 
   await expect(page).toHaveURL(/\/reservations$/);

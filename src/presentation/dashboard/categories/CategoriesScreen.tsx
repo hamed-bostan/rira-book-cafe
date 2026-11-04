@@ -101,7 +101,7 @@ export async function CategoriesScreen({ categories }: CategoriesScreenProps) {
           {categories.length > 0 ? (
             <>
               <div className="flex items-center gap-3 border-b border-border px-5 py-2 text-body-default text-muted-foreground sm:text-body-small">
-                <label className="-my-1 flex cursor-pointer items-center gap-3 py-1">
+                <label className="flex min-h-11 cursor-pointer items-center gap-3 sm:min-h-0">
                   <BulkSelectAllCheckbox label={t("selectAllAria")} />
                   <span aria-hidden>{t("selectAll")}</span>
                 </label>

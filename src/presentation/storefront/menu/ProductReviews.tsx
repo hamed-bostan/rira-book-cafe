@@ -69,7 +69,9 @@ export async function ProductReviews({ productId, rating, ratingCount, reviews, 
           </Link>
         </p>
       ) : eligibility.canReview ? (
-        <ReviewForm productId={productId} review={eligibility.review} />
+        // Keyed by the review, so deleting it starts the form afresh rather than
+        // keeping the deleted words in the box.
+        <ReviewForm key={eligibility.review?.id ?? "new"} productId={productId} review={eligibility.review} />
       ) : (
         <p className="text-body-small text-muted-foreground">{t("reviews.notYetHad")}</p>
       )}

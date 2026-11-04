@@ -4,6 +4,12 @@ import { Checkbox } from "@/src/presentation/design-system/components/Checkbox/C
 
 import { useBulkSelection } from "./BulkSelectionProvider";
 
+/**
+ * The box stays 16px, but a finger gets 44: an invisible `::after` reaches 14px
+ * past each edge, so a row's tick box is easy to hit on a phone without growing.
+ */
+export const BULK_CHECKBOX_HIT_AREA = "relative after:absolute after:-inset-3.5 after:content-['']";
+
 type BulkRowCheckboxProps = {
   /** The row's id — what the bulk action will be sent. */
   id: string;
@@ -28,6 +34,7 @@ export function BulkRowCheckbox({ id, label }: BulkRowCheckboxProps) {
         checked={isSelected(id)}
         onCheckedChange={(checked) => toggle(id, checked === true)}
         aria-label={label}
+        className={BULK_CHECKBOX_HIT_AREA}
       />
     </span>
   );

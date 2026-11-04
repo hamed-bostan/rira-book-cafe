@@ -4,7 +4,7 @@ import { profileResponseSchema, type ProfileWire } from "@/src/contracts/profile
 import type { BookLoan } from "@/src/domain/entities/BookLoan";
 import type { BookWaitlistEntry, BookWaitlistStatus } from "@/src/domain/entities/BookWaitlist";
 import type { CafeEvent, EventRegistration } from "@/src/domain/entities/CafeEvent";
-import type { Category } from "@/src/domain/entities/Category";
+import { shownCategories, type Category } from "@/src/domain/entities/Category";
 import type { GuestLoyaltyOverview } from "@/src/domain/entities/Loyalty";
 import type { Notification } from "@/src/domain/entities/Notification";
 import type { Order } from "@/src/domain/entities/Order";
@@ -70,7 +70,8 @@ const EVENTS = { cache: { tags: [CATALOG_TAGS.events] } } as const;
 // are memoized per request with React `cache` instead of hitting the API twice.
 const readCategories = cache(async (): Promise<Category[]> => {
   const all = await serverApiGet("/categories", categoryListResponseSchema, CATEGORIES);
-  return all.filter((category) => category.isActive);
+  // A subcategory of a hidden parent is hidden with it (`isCategoryShown`).
+  return shownCategories(all);
 });
 const readItem = cache((id: string): Promise<Product | null> =>
   orNull(serverApiGet(`/products/${id}`, productResponseSchema, PRODUCTS)),
@@ -85,7 +86,10 @@ const readEvent = cache((id: string): Promise<CafeEvent | null> =>
  * endpoint answers for the signed-in guest only.
  */
 export const storefrontServerApi = {
-  /** Active categories only — an inactive one is hidden from guests with its items. */
+  /**
+   * The categories guests see, in menu order: an inactive one is hidden with its
+   * items, and so is every subcategory of an inactive parent.
+   */
   categories(): Promise<Category[]> {
     return readCategories();
   },

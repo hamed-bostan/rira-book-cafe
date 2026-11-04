@@ -1,4 +1,4 @@
-import { CATEGORY_MOVE_DIRECTIONS } from "@/src/domain/entities/Category";
+import { CATEGORY_MOVE_DIRECTIONS, MAX_REORDER_CATEGORIES } from "@/src/domain/entities/Category";
 import * as z from "@/src/lib/zod";
 
 import { imageUrlField } from "./image-url";
@@ -25,6 +25,15 @@ export const categoryFormSchema = z.pipe(
     // A new category is active by default, matching the column — an operator who
     // wants to stage one deactivates it deliberately.
     isActive: z._default(z.boolean(), true),
+    // The category it sits under: an id, or blank for a top-level one. Omitted
+    // (an older client) leaves it where it is. The one-level rule is the
+    // use-case's: only it knows the other categories.
+    parentId: z.optional(
+      z.pipe(
+        z.string().check(z.trim()),
+        z.transform((value) => (value.length > 0 ? value : null)),
+      ),
+    ),
     // Optional Persian (fa) name override; blank means "no fa translation".
     faName: z.pipe(
       z.string().check(z.trim()),
@@ -45,3 +54,15 @@ export type CategoryFormValues = z.output<typeof categoryFormSchema>;
 /** Moving a category one place on the menu — the list's up/down buttons. */
 export const categoryMoveSchema = z.object({ direction: z.enum(CATEGORY_MOVE_DIRECTIONS) });
 export type CategoryMoveInput = z.infer<typeof categoryMoveSchema>;
+
+/**
+ * A dropped drag: one parent's categories (`parentId` `null` for the top-level
+ * ones) in their new order, first id first — the whole order in one request.
+ */
+export const categoryReorderSchema = z.object({
+  parentId: z.nullable(z.string().check(z.minLength(1))),
+  ids: z
+    .array(z.string().check(z.minLength(1)))
+    .check(z.minLength(1, "selectionRequired"), z.maxLength(MAX_REORDER_CATEGORIES, "selectionTooLarge")),
+});
+export type CategoryReorderInput = z.infer<typeof categoryReorderSchema>;

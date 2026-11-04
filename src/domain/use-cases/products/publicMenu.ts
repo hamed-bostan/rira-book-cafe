@@ -1,6 +1,6 @@
 import { isOnPublicMenu, type Product } from "../../entities/Product";
 
-import type { Category } from "../../entities/Category";
+import type { Category, MenuCategory } from "../../entities/Category";
 import type { ICategoryRepository } from "../../repositories/ICategoryRepository";
 import type { IProductRepository } from "../../repositories/IProductRepository";
 
@@ -16,12 +16,22 @@ export type MenuCatalog = {
   categories: MenuCategories;
 };
 
-/** Look a category up by id — every category, shown or hidden. */
+/**
+ * Look a category up by id — every category, shown or hidden — with its parent
+ * attached, so the public-menu rule can tell a subcategory of a hidden parent.
+ */
 export async function categoryLookup(
   categories: MenuCategories,
-): Promise<(categoryId: string) => Category | undefined> {
-  const byId = new Map((await categories.getAll()).map((category) => [category.id, category]));
-  return (categoryId) => byId.get(categoryId);
+): Promise<(categoryId: string) => (Category & MenuCategory) | undefined> {
+  const all = await categories.getAll();
+  const byId = new Map(all.map((category) => [category.id, category]));
+  const withParent = new Map(
+    all.map((category) => [
+      category.id,
+      { ...category, parent: category.parentId ? (byId.get(category.parentId) ?? null) : null },
+    ]),
+  );
+  return (categoryId) => withParent.get(categoryId);
 }
 
 /**

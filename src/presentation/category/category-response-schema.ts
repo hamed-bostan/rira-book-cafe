@@ -23,6 +23,7 @@ export const categoryResponseSchema = z.object({
   slug: z.string(),
   iconUrl: z.string(),
   isActive: z.boolean(),
+  parentId: z.nullable(z.string()),
   productCount: z.number(),
   hiddenProductCount: z.number(),
   createdAt: z.coerce.date(),

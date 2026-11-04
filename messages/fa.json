@@ -191,7 +191,9 @@
     "payRunPaidBeforeBooked": "لیست حقوق را نمی‌توان پیش از تاریخ ثبت آن پرداخت کرد.",
     "guestNameNeeded": "نام مهمان را وارد کنید؛ این شماره هنوز حساب ندارد.",
     "unitLocked": "این قلم موجودی یا سابقهٔ انبار دارد، پس واحدش عوض نمی‌شود.",
-    "stockHasHistory": "این قلم سابقهٔ انبار دارد. به جای آن رسید کالا یا انبارگردانی ثبت کنید."
+    "stockHasHistory": "این قلم سابقهٔ انبار دارد. به جای آن رسید کالا یا انبارگردانی ثبت کنید.",
+    "parentIsSubcategory": "این یک زیردسته است؛ یک دستهٔ اصلی انتخاب کنید.",
+    "hasSubcategories": "خودش زیردسته دارد، پس در سطح اصلی می‌ماند."
   },
   "apiErrors": {
     "alreadyPosted": "این مورد قبلاً ثبت شده است.",
@@ -263,7 +265,10 @@
     "unitLocked": "این قلم موجودی یا سابقهٔ انبار دارد، پس واحدش عوض نمی‌شود.",
     "stockOnHand": "این قلم هنوز موجودی دارد. پیش از غیرفعال کردن، با انبارگردانی به صفر برسانید یا ضایعات ثبت کنید.",
     "ingredientInRecipe": "یکی از اقلام منو در دستور تهیه‌اش از این استفاده می‌کند. پیش از غیرفعال کردن، آن را از دستور تهیه بردارید یا آن قلم را از منو خارج کنید.",
-    "stockHasHistory": "برخی از این اقلام سابقهٔ انبار دارند. برای آن‌ها رسید کالا یا انبارگردانی ثبت کنید."
+    "stockHasHistory": "برخی از این اقلام سابقهٔ انبار دارند. برای آن‌ها رسید کالا یا انبارگردانی ثبت کنید.",
+    "parentIsSubcategory": "آن دسته خودش زیردسته است. یک دستهٔ اصلی را به‌عنوان والد انتخاب کنید.",
+    "hasSubcategories": "این دسته زیردسته دارد. اول آن‌ها را جابه‌جا یا حذف کنید.",
+    "reviewNotApproved": "فقط به نظری که در منو نمایش داده می‌شود می‌توان پاسخ داد."
   },
   "meta": {
     "siteName": "کافه کتاب ریرا",
@@ -574,7 +579,7 @@
   },
   "dashCategories": {
     "heading": "دسته‌بندی‌ها",
-    "subtitle": "مهمان‌ها دسته‌ها را به همین ترتیب در منو می‌بینند.",
+    "subtitle": "مهمان‌ها دسته‌ها را به همین ترتیب در منو می‌بینند، هر دسته با زیردسته‌هایش زیر آن.",
     "newCategory": "دسته‌بندی جدید",
     "emptyTitle": "هنوز دسته‌بندی‌ای نیست",
     "emptyBody": "برای شروع ساختن منو، یک دسته اضافه کنید.",
@@ -637,7 +642,32 @@
     "createdToast": "دسته‌بندی ساخته شد",
     "deleted": "{name} حذف شد",
     "sectionNameHint": "به زبان مهمان، به‌صورت یک زبانه در منو نمایش داده می‌شود.",
-    "sectionVisibility": "نمایش"
+    "sectionVisibility": "نمایش",
+    "subcategoriesOf": "زیردسته‌های {name}",
+    "subcategoryCount": "{count, plural, other {{formatted} زیردسته}}",
+    "selectAll": "انتخاب همه",
+    "selectAllAria": "انتخاب همهٔ دسته‌ها",
+    "selectRowAria": "انتخاب {name}",
+    "dragHint": "برای تغییر ترتیب، دسته را از دستگیره‌اش بکشید",
+    "dragHandleAria": "تغییر جای {name}",
+    "dragInstructions": "برای برداشتن، فاصله یا اینتر را بزنید؛ با کلیدهای جهت جابه‌جا کنید و با فاصله یا اینتر رها کنید. اسکیپ آن را سر جایش برمی‌گرداند.",
+    "dragPickedUp": "{name} برداشته شد، جای {position} از {count}.",
+    "dragMoved": "{name} حالا در جای {position} از {count} است.",
+    "dragDropped": "{name} در جای {position} از {count} گذاشته شد.",
+    "dragCancelled": "تغییر ترتیب لغو شد. {name} به جای {position} برگشت.",
+    "reorderedToast": "{name} به جای {position} رفت",
+    "reorderError": "ترتیب تازه ذخیره نشد. دوباره تلاش کنید.",
+    "bulkActionCount": "{action} ({count})",
+    "bulkShownToast": "{count, plural, other {# دسته}} دوباره در منو است",
+    "bulkHiddenToast": "{count, plural, other {# دسته}} از منو پنهان شد",
+    "bulkSkipped": "{count, plural, other {# مورد}} از قبل همین‌طور بود و دست نخورد.",
+    "bulkHideParentHint": "پنهان کردن یک دستهٔ والد، آیتم‌های زیردسته‌هایش را هم از منو برمی‌دارد.",
+    "deleteBlockedChildrenSub": "{name} هنوز زیردسته دارد.",
+    "deleteBlockedChildren": "اول {count, plural, other {{formatted} زیردسته‌اش}} را جابه‌جا یا حذف کنید.",
+    "parentLabel": "دستهٔ والد",
+    "parentHint": "در سطح اصلی منو بماند، یا زیر یکی از دسته‌های اصلی قرار بگیرد.",
+    "parentNone": "هیچ — سطح اصلی",
+    "parentLockedHint": "خودش زیردسته دارد، پس در سطح اصلی می‌ماند."
   },
   "dashBulk": {
     "label": "عملیات گروهی",
@@ -1199,7 +1229,9 @@
       "checkIn": "ورود",
       "checkOut": "خروج",
       "guests": "مهمان‌ها",
-      "registrations": "ثبت‌نام‌ها"
+      "registrations": "ثبت‌نام‌ها",
+      "parent": "دستهٔ والد",
+      "menuPosition": "جای در منو"
     },
     "filterField": "فیلد",
     "allFields": "همه فیلدها"
@@ -1682,7 +1714,9 @@
       "pagination": "صفحه‌های منو",
       "pageRange": "{first} تا {last} از {total}",
       "previousPage": "قبلی",
-      "nextPage": "بعدی"
+      "nextPage": "بعدی",
+      "subcategoryFilter": "محدود کردن {name}",
+      "allInCategory": "همه"
     },
     "basket": {
       "heading": "سبد شما",

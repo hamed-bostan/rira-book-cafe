@@ -21,10 +21,10 @@ import { categoriesApi } from "./category-api";
 import { DeleteCategoryDialog } from "./DeleteCategoryDialog";
 
 type CategoryRowActionsProps = {
-  category: Pick<Category, "id" | "name" | "isActive" | "productCount">;
-  /** First on the menu — it can't move up. */
+  category: Pick<Category, "id" | "name" | "isActive" | "productCount"> & { subcategoryCount: number };
+  /** First among its siblings — it can't move up. */
   isFirst: boolean;
-  /** Last on the menu — it can't move down. */
+  /** Last among its siblings — it can't move down. */
   isLast: boolean;
 };
 

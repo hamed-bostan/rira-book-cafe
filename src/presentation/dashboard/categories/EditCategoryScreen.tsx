@@ -4,7 +4,7 @@ import type { ActivityEntryWire } from "@/src/presentation/dashboard/activity/ac
 import { ActivityPanel } from "@/src/presentation/dashboard/activity/ActivityPanel";
 import { DashboardPageCrumb } from "@/src/presentation/dashboard/shell/DashboardPageCrumb";
 
-import { CategoryForm } from "./CategoryForm";
+import { CategoryForm, type ParentOption } from "./CategoryForm";
 
 /**
  * Edit screen. Presentational: the page fetches the category over the REST API
@@ -14,10 +14,15 @@ import { CategoryForm } from "./CategoryForm";
 export function EditCategoryScreen({
   category,
   translations,
+  parents,
+  hasSubcategories,
   activity,
 }: {
   category: Category;
   translations: CategoryTranslationInput[];
+  /** The top-level categories it can be filed under. */
+  parents: ParentOption[];
+  hasSubcategories: boolean;
   /** The category's recent admin activity, for the form's narrow column. */
   activity: ActivityEntryWire[];
 }) {
@@ -28,6 +33,8 @@ export function EditCategoryScreen({
         mode="edit"
         category={category}
         translations={translations}
+        parents={parents}
+        hasSubcategories={hasSubcategories}
         activity={<ActivityPanel entries={activity} />}
       />
     </>

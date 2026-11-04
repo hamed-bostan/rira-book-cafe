@@ -1,7 +1,7 @@
 import { Coffee, SearchX } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
-import type { Category } from "@/src/domain/entities/Category";
+import { categoryAndChildren, type Category } from "@/src/domain/entities/Category";
 import { pageCount } from "@/src/domain/entities/Pagination";
 import { PRODUCT_KINDS, type Product, type ProductKind } from "@/src/domain/entities/Product";
 import { Link } from "@/src/i18n/navigation";
@@ -32,27 +32,43 @@ type MenuScreenProps = {
 /**
  * The public menu: drinks, food and books, filterable by type and category.
  * Filters are links, so a filtered menu ("just the books") can be shared.
- * Items in a hidden category are left out.
+ * Items in a hidden category are left out (`categories` holds the shown ones only).
+ *
+ * The category filter offers the top-level categories; choosing one shows its
+ * items and its subcategories' together, with a second row of its subcategories
+ * to narrow it to one. A subcategory's own link (`?category=<sub>`) keeps its
+ * parent's chip lit.
  */
 export async function MenuScreen({ categories, items, categoryId, kind, page: requestedPage = 1 }: MenuScreenProps) {
   const t = await getTranslations("site");
   const tProducts = await getTranslations("dashProducts");
 
   const activeCategoryIds = new Set(categories.map((category) => category.id));
+  // The chosen category's items include its subcategories' (a subcategory has none).
+  const chosenIds = categoryId ? categoryAndChildren(categoryId, categories) : null;
   const visible = items.filter(
     (item) =>
       activeCategoryIds.has(item.categoryId) &&
-      (!categoryId || item.categoryId === categoryId) &&
+      (!chosenIds || chosenIds.has(item.categoryId)) &&
       (!kind || item.kind === kind),
   );
   const page = Math.min(Math.max(1, requestedPage), pageCount(visible.length, MENU_PAGE_SIZE));
   const onPage = visible.slice((page - 1) * MENU_PAGE_SIZE, page * MENU_PAGE_SIZE);
   // Empty because of the filters (the unfiltered menu has something), not because the menu is.
   const isFiltered = Boolean(kind || categoryId) && items.some((item) => activeCategoryIds.has(item.categoryId));
-  // Categories worth offering: ones with something of the chosen type in them.
-  const offered = categories.filter((category) =>
-    items.some((item) => item.categoryId === category.id && (!kind || item.kind === kind)),
-  );
+  // Categories worth offering: ones with something of the chosen type in them —
+  // a parent counting its subcategories' items as its own.
+  const hasItems = (category: Category): boolean => {
+    const ids = categoryAndChildren(category.id, categories);
+    return items.some((item) => ids.has(item.categoryId) && (!kind || item.kind === kind));
+  };
+  const offered = categories.filter((category) => category.parentId === null && hasItems(category));
+  // The top-level chip that's lit: the chosen category, or the parent of a chosen subcategory.
+  const chosen = categories.find((category) => category.id === categoryId);
+  const chosenParentId = chosen?.parentId ?? chosen?.id;
+  const subcategories = chosenParentId
+    ? categories.filter((category) => category.parentId === chosenParentId && hasItems(category))
+    : [];
 
   // A filter link starts over at page 1; only the pager carries a page.
   function href(next: { categoryId?: string; kind?: ProductKind; page?: number }): string {
@@ -100,6 +116,33 @@ export async function MenuScreen({ categories, items, categoryId, kind, page: re
             {t("menu.allCategories")}
           </Link>
           {offered.map((category) => (
+            <Link
+              key={category.id}
+              href={href({ kind, categoryId: category.id })}
+              aria-current={categoryId === category.id ? "true" : undefined}
+              className={chip(chosenParentId === category.id)}
+            >
+              {category.name}
+            </Link>
+          ))}
+        </nav>
+      ) : null}
+
+      {chosenParentId && subcategories.length > 0 ? (
+        <nav
+          aria-label={t("menu.subcategoryFilter", {
+            name: categories.find((c) => c.id === chosenParentId)?.name ?? "",
+          })}
+          className="scrollbar-hide -mt-2 flex gap-2 overflow-x-auto"
+        >
+          <Link
+            href={href({ kind, categoryId: chosenParentId })}
+            aria-current={categoryId === chosenParentId ? "true" : undefined}
+            className={chip(categoryId === chosenParentId)}
+          >
+            {t("menu.allInCategory")}
+          </Link>
+          {subcategories.map((category) => (
             <Link
               key={category.id}
               href={href({ kind, categoryId: category.id })}

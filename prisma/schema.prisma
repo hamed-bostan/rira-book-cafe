@@ -43,22 +43,30 @@ model User {
 }
 
 model Category {
-  id        String    @id @default(uuid())
+  id        String     @id @default(uuid())
   name      String
-  slug      String    @unique
-  iconUrl   String    @map("icon_url")
+  slug      String     @unique
+  iconUrl   String     @map("icon_url")
   // Off: the category and every item in it are off the public menu (see
   // `isOnPublicMenu`), and can't be ordered — the items keep their own switches.
-  isActive  Boolean   @default(true) @map("is_active")
-  // Where it sits on the menu, first = 0. Staff move categories up and down from
-  // the dashboard; a new one goes to the end.
-  position  Int       @default(0)
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
+  isActive  Boolean    @default(true) @map("is_active")
+  // Where it sits among its siblings (the top-level categories, or one parent's
+  // subcategories), first = 0. Staff move and drag categories from the dashboard;
+  // a new one goes to the end of its siblings.
+  position  Int        @default(0)
+  // The category it sits under, or null for a top-level one. One level only — a
+  // subcategory can't hold subcategories (the use-cases enforce it); the key
+  // refuses deleting a parent that still has subcategories.
+  parentId  String?    @map("parent_id")
+  parent    Category?  @relation("CategoryChildren", fields: [parentId], references: [id], onDelete: Restrict)
+  children  Category[] @relation("CategoryChildren")
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
   products  Product[]
 
   @@index([isActive])
   @@index([position])
+  @@index([parentId, position])
   @@map("categories")
 }
 
@@ -904,12 +912,20 @@ model ProductReview {
   moderatedById   String?   @map("moderated_by_id")
   moderatedByName String?   @map("moderated_by_name")
   moderatedAt     DateTime? @map("moderated_at")
+  // The cafe's one public answer to the review, shown under it. Set, edited and
+  // removed by staff with `reviews.moderate`; the guest is told when it's posted.
+  replyText       String?   @map("reply_text")
+  replyById       String?   @map("reply_by_id")
+  replyByName     String?   @map("reply_by_name")
+  repliedAt       DateTime? @map("replied_at")
+  replyUpdatedAt  DateTime? @map("reply_updated_at")
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
 
   @@unique([productId, userId])
   @@index([status, createdAt])
   @@index([productId, status, createdAt])
+  @@index([status, rating, createdAt])
   @@map("product_reviews")
 }
 

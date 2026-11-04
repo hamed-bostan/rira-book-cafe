@@ -19,8 +19,9 @@ import { DashboardLanguageColumn } from "@/src/presentation/dashboard/DashboardL
 import { DashboardPageHeader } from "@/src/presentation/dashboard/DashboardPageHeader";
 import { DashboardSection } from "@/src/presentation/dashboard/DashboardSection";
 import { DashboardSwitchField } from "@/src/presentation/dashboard/DashboardSwitchField";
-import { FIELD_GRID, FIELD_INPUT, LANGUAGE_GRID } from "@/src/presentation/dashboard/fieldStyles";
+import { FIELD_GRID, FIELD_INPUT, FIELD_PICKER, LANGUAGE_GRID } from "@/src/presentation/dashboard/fieldStyles";
 import { FormAlert } from "@/src/presentation/dashboard/FormAlert";
+import { ControlledChoicePicker } from "@/src/presentation/dashboard/list";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
 import { Field } from "@/src/presentation/design-system/components/form/Field/Field";
 import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
@@ -31,17 +32,29 @@ import { categoriesApi } from "./category-api";
 import { IconUpload } from "./IconUpload";
 
 /** Fields the API can return targeted `fieldErrors` for. */
-const FORM_FIELDS = ["name", "slug", "iconUrl"] as const;
+const FORM_FIELDS = ["name", "slug", "iconUrl", "parentId"] as const;
 
-type CategoryFormProps =
+/** A category this one may sit under: a top-level one other than itself. */
+export type ParentOption = Pick<Category, "id" | "name">;
+
+type CategoryFormProps = {
+  /** The top-level categories it can be filed under (itself left out). */
+  parents: ParentOption[];
+} & (
   | { mode: "create" }
   | {
       mode: "edit";
       category: Category;
       translations: CategoryTranslationInput[];
+      /**
+       * It holds subcategories of its own, so it stays top-level — the parent
+       * picker is shown, but locked, with the reason.
+       */
+      hasSubcategories: boolean;
       /** The category's history, for the narrow column. */
       activity: React.ReactNode;
-    };
+    }
+);
 
 /**
  * Create/edit category form. React Hook Form + Zod (shared `categoryFormSchema`).
@@ -76,9 +89,10 @@ export function CategoryForm(props: CategoryFormProps) {
             slug: props.category.slug,
             iconUrl: props.category.iconUrl,
             isActive: props.category.isActive,
+            parentId: props.category.parentId ?? "",
             faName: props.translations.find((translation) => translation.locale === "fa")?.name ?? "",
           }
-        : { name: "", slug: "", iconUrl: "", isActive: true, faName: "" },
+        : { name: "", slug: "", iconUrl: "", isActive: true, parentId: "", faName: "" },
   });
 
   // Mirror the name into the slug until the user edits the slug directly (and
@@ -222,6 +236,41 @@ export function CategoryForm(props: CategoryFormProps) {
               </Field>
               {/* Keeps iconUrl registered (set imperatively by IconUpload) so it's tracked + submitted. */}
               <input type="hidden" {...register("iconUrl")} />
+            </DashboardSection>
+
+            {/* One level: a top-level category, or under one. A category with
+                subcategories of its own stays top-level. */}
+            <DashboardSection title={t("parentLabel")} description={t("parentHint")}>
+              <DashboardFormField
+                label={t("parentLabel")}
+                hint={props.mode === "edit" && props.hasSubcategories ? t("parentLockedHint") : undefined}
+                error={fieldError(errors.parentId?.message)}
+              >
+                {(wiring) => (
+                  <Controller
+                    control={control}
+                    name="parentId"
+                    render={({ field }) => (
+                      <ControlledChoicePicker
+                        id={wiring.id}
+                        ariaInvalid={wiring["aria-invalid"]}
+                        ariaDescribedBy={wiring["aria-describedby"]}
+                        label={t("parentLabel")}
+                        value={field.value ?? ""}
+                        onValueChange={field.onChange}
+                        isActive={false}
+                        disabled={props.mode === "edit" && props.hasSubcategories}
+                        size="control-md"
+                        triggerClassName={FIELD_PICKER}
+                        options={[
+                          { value: "", label: t("parentNone") },
+                          ...props.parents.map((parent) => ({ value: parent.id, label: parent.name })),
+                        ]}
+                      />
+                    )}
+                  />
+                )}
+              </DashboardFormField>
             </DashboardSection>
 
             <DashboardSection title={t("sectionVisibility")}>

@@ -1,5 +1,5 @@
 import type { CategoryBulkAction } from "@/src/contracts/bulk-action-schema";
-import type { CategoryFormInput, CategoryMoveInput } from "@/src/contracts/category-schema";
+import type { CategoryFormInput, CategoryMoveInput, CategoryReorderInput } from "@/src/contracts/category-schema";
 import type { Category } from "@/src/domain/entities/Category";
 import { apiDelete, apiPatch, apiPost, apiPut } from "@/src/lib/api/client";
 import { categoryResponseSchema } from "@/src/presentation/category/category-response-schema";
@@ -28,6 +28,14 @@ export const categoriesApi = {
   /** Move a category one place up or down the menu. */
   move(id: string, values: CategoryMoveInput): Promise<void> {
     return apiPost(`/admin/categories/${id}/move`, values);
+  },
+
+  /**
+   * Put one parent's categories in a new order (`parentId` `null` for the
+   * top-level ones) — what a drag sends when it's dropped, in one request.
+   */
+  reorder(values: CategoryReorderInput): Promise<void> {
+    return apiPut("/admin/categories/order", values);
   },
 
   /**

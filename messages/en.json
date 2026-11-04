@@ -191,7 +191,9 @@
     "payRunPaidBeforeBooked": "A run can't be paid before it was booked.",
     "guestNameNeeded": "Enter the guest's name: this number has no profile yet.",
     "unitLocked": "This item holds stock or has stock history, so its unit can't change.",
-    "stockHasHistory": "This item already has stock history. Record a delivery or a count instead."
+    "stockHasHistory": "This item already has stock history. Record a delivery or a count instead.",
+    "parentIsSubcategory": "That's a subcategory — choose a top-level category.",
+    "hasSubcategories": "It has subcategories of its own, so it stays at the top level."
   },
   "apiErrors": {
     "badRequest": "The request couldn't be read. Please try again.",
@@ -263,7 +265,10 @@
     "unitLocked": "This item holds stock or has stock history, so its unit can't change.",
     "stockOnHand": "This item still holds stock. Count it to zero or record it as waste before switching it off.",
     "ingredientInRecipe": "An item on the menu uses this in its recipe. Take it out of the recipe, or the item off the menu, before switching it off.",
-    "stockHasHistory": "Some of these items already have stock history. Record a delivery or a count for them instead."
+    "stockHasHistory": "Some of these items already have stock history. Record a delivery or a count for them instead.",
+    "parentIsSubcategory": "That category is itself a subcategory. Choose a top-level category as the parent.",
+    "hasSubcategories": "This category has subcategories. Move or delete them first.",
+    "reviewNotApproved": "Only a review that's shown on the menu can get a reply."
   },
   "meta": {
     "siteName": "Rira Book Cafe",
@@ -574,7 +579,7 @@
   },
   "dashCategories": {
     "heading": "Categories",
-    "subtitle": "Guests see them on the menu in this order.",
+    "subtitle": "Guests see them on the menu in this order, each with its subcategories under it.",
     "newCategory": "New category",
     "emptyTitle": "No categories yet",
     "emptyBody": "Add one to start building the menu.",
@@ -637,7 +642,32 @@
     "createdToast": "Category created",
     "deleted": "{name} deleted",
     "sectionNameHint": "Shown as a tab on the menu, in the guest's language.",
-    "sectionVisibility": "Visibility"
+    "sectionVisibility": "Visibility",
+    "subcategoriesOf": "Subcategories of {name}",
+    "subcategoryCount": "{count, plural, one {{formatted} subcategory} other {{formatted} subcategories}}",
+    "selectAll": "Select all",
+    "selectAllAria": "Select every category",
+    "selectRowAria": "Select {name}",
+    "dragHint": "Drag a category by its grip to reorder it",
+    "dragHandleAria": "Reorder {name}",
+    "dragInstructions": "Press Space or Enter to pick it up, the arrow keys to move it, and Space or Enter to drop it. Escape puts it back.",
+    "dragPickedUp": "{name} picked up, place {position} of {count}.",
+    "dragMoved": "{name} is now in place {position} of {count}.",
+    "dragDropped": "{name} dropped in place {position} of {count}.",
+    "dragCancelled": "Reorder called off. {name} is back in place {position}.",
+    "reorderedToast": "{name} moved to place {position}",
+    "reorderError": "Couldn't save the new order. Please try again.",
+    "bulkActionCount": "{action} ({count})",
+    "bulkShownToast": "{count, plural, one {# category is} other {# categories are}} back on the menu",
+    "bulkHiddenToast": "{count, plural, one {# category is} other {# categories are}} hidden from the menu",
+    "bulkSkipped": "{count, plural, one {# was} other {# were}} already that way, so left as it was.",
+    "bulkHideParentHint": "Hiding a parent takes its subcategories' items off the menu too.",
+    "deleteBlockedChildrenSub": "{name} still has subcategories.",
+    "deleteBlockedChildren": "Move or delete its {count, plural, one {{formatted} subcategory} other {{formatted} subcategories}} first.",
+    "parentLabel": "Parent category",
+    "parentHint": "Leave it at the top of the menu, or file it under a top-level category.",
+    "parentNone": "None — top level",
+    "parentLockedHint": "It has subcategories of its own, so it stays at the top level."
   },
   "dashBulk": {
     "label": "Bulk actions",
@@ -1199,7 +1229,9 @@
       "checkIn": "Check-in",
       "checkOut": "Check-out",
       "guests": "Guests",
-      "registrations": "Sign-ups"
+      "registrations": "Sign-ups",
+      "parent": "Parent category",
+      "menuPosition": "Place on the menu"
     },
     "filterField": "Field",
     "allFields": "Any field"
@@ -1682,7 +1714,9 @@
       "pagination": "Menu pages",
       "pageRange": "{first}–{last} of {total}",
       "previousPage": "Previous",
-      "nextPage": "Next"
+      "nextPage": "Next",
+      "subcategoryFilter": "Narrow {name} down",
+      "allInCategory": "All"
     },
     "basket": {
       "heading": "Your basket",

@@ -1,8 +1,9 @@
 import { CalendarDays, Repeat, UserPlus, Users } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
-import type { AnalyticsRangePreset } from "@/src/domain/entities/Analytics";
+import type { ReportRangePreset } from "@/src/domain/entities/Analytics";
 import { cafeDaysBetween } from "@/src/domain/entities/CafeTime";
+import type { ReportTable } from "@/src/domain/use-cases/analytics/Reports";
 import { formatPercent } from "@/src/lib/formatCafeDay";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
@@ -19,6 +20,9 @@ import type { GuestReportWire } from "./report-response-schema";
 
 const DAYS_PER_WEEK = 7;
 
+/** What the Guests tab downloads: every guest who ordered in the range, by spend. */
+const GUEST_EXPORTS: readonly ReportTable[] = ["guests"];
+
 /** Two leading initials, e.g. "Maryam Kazemi" → "MK". */
 function initialsOf(name: string): string {
   return name
@@ -32,7 +36,7 @@ function initialsOf(name: string): string {
 
 type GuestReportScreenProps = {
   report: GuestReportWire;
-  selected: AnalyticsRangePreset | "custom";
+  selected: ReportRangePreset | "custom";
   /** The page's range params, carried across the tabs. */
   rangeQuery: Record<string, string>;
 };
@@ -64,8 +68,9 @@ export async function GuestReportScreen({ report, selected, rangeQuery }: GuestR
       rangeQuery={rangeQuery}
       range={report.range}
       previousRange={report.previousRange}
+      exports={GUEST_EXPORTS}
     >
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 print:grid-cols-2">
         <MetricCard
           label={t("guests.guests")}
           icon={Users}

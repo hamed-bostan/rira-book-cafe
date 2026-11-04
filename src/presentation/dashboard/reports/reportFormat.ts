@@ -1,7 +1,17 @@
 import { percentChange } from "@/src/domain/entities/Analytics";
 import { CAFE_TIME_ZONE, cafeDayRange } from "@/src/domain/entities/CafeTime";
 import type { Locale } from "@/src/i18n/routing";
+import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
+
+/**
+ * An amount added or taken off, signed: "+12,000 Toman", "−12,000 Toman" (a true
+ * minus sign, which reads at the start of the line in either direction).
+ */
+export function formatSignedMoney(amount: number, locale: Locale): string {
+  if (amount === 0) return formatMoney(0, locale);
+  return `${amount < 0 ? "−" : "+"}${formatMoney(Math.abs(amount), locale)}`;
+}
 
 const NUMBER_TAG: Record<Locale, string> = { en: "en-US", fa: "fa-IR" };
 /** Dates follow the Jalali calendar in Persian, like every other date. */

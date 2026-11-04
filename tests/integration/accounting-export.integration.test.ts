@@ -217,23 +217,28 @@ describe("the journal's print view", () => {
 /** Entries directly, so the batch tests don't pay for hundreds of API calls. */
 async function seedEntries(count: number): Promise<void> {
   const date = new Date(`${today}T00:00:00.000Z`);
-  await prisma.$transaction(async (tx) => {
-    for (let index = 0; index < count; index += 1) {
-      await tx.journalEntry.create({
-        data: {
-          date,
-          description: `Seed ${index}`,
-          source: "manual",
-          createdById: "seed",
-          createdByName: "Seed",
-          lines: {
-            create: [
-              { position: 0, accountCode: "6100", debit: BigInt(1000), credit: BigInt(0) },
-              { position: 1, accountCode: "1110", debit: BigInt(0), credit: BigInt(1000) },
-            ],
+  await prisma.$transaction(
+    async (tx) => {
+      for (let index = 0; index < count; index += 1) {
+        await tx.journalEntry.create({
+          data: {
+            date,
+            description: `Seed ${index}`,
+            source: "manual",
+            createdById: "seed",
+            createdByName: "Seed",
+            lines: {
+              create: [
+                { position: 0, accountCode: "6100", debit: BigInt(1000), credit: BigInt(0) },
+                { position: 1, accountCode: "1110", debit: BigInt(0), credit: BigInt(1000) },
+              ],
+            },
           },
-        },
-      });
-    }
-  });
+        });
+      }
+      // Hundreds of inserts: Prisma's 5 s default trips when the machine is busy
+      // (a parallel build), though the export under test never comes near it.
+    },
+    { timeout: 60_000 },
+  );
 }

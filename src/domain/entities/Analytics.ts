@@ -107,7 +107,12 @@ export type DailySales = { day: string; revenue: number; orders: number; unpaidO
 /** Completed orders, and what they took, by the hour they were placed (cafe clock, 0–23). */
 export type HourlySales = { hour: number; orders: number; revenue: number };
 
-/** Revenue split by what was sold. */
+/**
+ * Revenue split by what was sold. Each line's revenue is its share of what the
+ * guest actually paid — the order's total (promo and points already off) split
+ * over its lines by list value, the same split a refund prices lines with — less
+ * what was refunded on it. So the kinds add up to `SalesSummary.revenue` exactly.
+ */
 export type KindSales = { kind: ProductKind; revenue: number; quantity: number };
 
 /** One menu item's performance in the range. */
@@ -117,7 +122,9 @@ export type TopItem = {
   kind: ProductKind;
   /** The menu category it sits in now, in the reader's language; `null` once the item is deleted. */
   categoryName: string | null;
+  /** Units sold, less units refunded. */
   quantity: number;
+  /** What it brought in after discounts and refunds, as in `KindSales`. */
   revenue: number;
 };
 

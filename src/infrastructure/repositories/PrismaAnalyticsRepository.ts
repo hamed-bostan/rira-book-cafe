@@ -122,14 +122,12 @@ export class PrismaAnalyticsRepository implements IAnalyticsRepository {
   }
 
   async salesByKind(range: DateRange): Promise<KindSales[]> {
+    // After discounts and refunds, so the kinds add up to the headline revenue.
     const rows = await prisma.$queryRaw<{ kind: string; revenue: bigint | null; quantity: bigint | null }[]>`
-      SELECT
-        oi.kind,
-        SUM(oi.unit_price * (oi.quantity - oi.refunded_quantity)) AS revenue,
-        SUM(oi.quantity - oi.refunded_quantity) AS quantity
-      FROM order_items oi JOIN orders o ON o.id = oi.order_id
-      WHERE o.status = 'completed' AND o.placed_at >= ${range.from} AND o.placed_at < ${range.to}
-      GROUP BY oi.kind
+      WITH ${netLinesCte(range)}
+      SELECT kind, SUM(revenue)::bigint AS revenue, SUM(quantity)::bigint AS quantity
+      FROM net_lines
+      GROUP BY kind
       ORDER BY revenue DESC`;
     return rows.map((row) => ({
       kind: toKind(row.kind),
@@ -154,16 +152,16 @@ export class PrismaAnalyticsRepository implements IAnalyticsRepository {
         revenue: bigint | null;
       }[]
     >`
-      WITH ranked AS (
+      WITH ${netLinesCte(range)},
+      ranked AS (
         SELECT
-          oi.product_id,
-          (array_agg(oi.name ORDER BY o.placed_at DESC))[1] AS name,
-          (array_agg(oi.kind ORDER BY o.placed_at DESC))[1] AS kind,
-          SUM(oi.quantity - oi.refunded_quantity) AS quantity,
-          SUM(oi.unit_price * (oi.quantity - oi.refunded_quantity)) AS revenue
-        FROM order_items oi JOIN orders o ON o.id = oi.order_id
-        WHERE o.status = 'completed' AND o.placed_at >= ${range.from} AND o.placed_at < ${range.to}
-        GROUP BY oi.product_id
+          product_id,
+          (array_agg(name ORDER BY placed_at DESC))[1] AS name,
+          (array_agg(kind ORDER BY placed_at DESC))[1] AS kind,
+          SUM(quantity)::bigint AS quantity,
+          SUM(revenue)::bigint AS revenue
+        FROM net_lines
+        GROUP BY product_id
         ORDER BY ${orderBy}
         LIMIT ${limit}
       )
@@ -397,4 +395,58 @@ function isPaymentMethod(value: string): value is PaymentMethod {
 /** Stored `{ method, amount }` rows (payment parts, refunds) whose method is a known one. */
 function toPaymentParts(rows: readonly { method: string; amount: number }[]): PaymentPart[] {
   return rows.flatMap((row) => (isPaymentMethod(row.method) ? [{ method: row.method, amount: row.amount }] : []));
+}
+
+/**
+ * `net_lines`: every line of the range's completed orders with what it actually
+ * brought in — `quantity` net of refunded units, `revenue` net of discounts and
+ * refunds — so lines grouped any way add up to the sales report's revenue
+ * (`SUM(total − refunded_total)`) to the Toman.
+ *
+ * A line's share of the order's `total` (the subtotal with the promo and the
+ * points already off) is the domain's `allocate(total, unit_price × quantity)` —
+ * the split `priceRefundLines` prices refunds with — done in SQL: each line gets
+ * the floor of its exact share, and the Toman the floors leave over go one each
+ * to the largest fractions (ties to the earlier line). Since the shares add up to
+ * the total exactly, and a line's refunds were priced out of that same share, the
+ * line's revenue is its share less the refund lines recorded against it.
+ *
+ * Products are cast to `bigint` first: `total × weight` overflows `int`.
+ */
+function netLinesCte(range: DateRange): Prisma.Sql {
+  return Prisma.sql`
+    weighted AS (
+      SELECT
+        oi.id, oi.order_id, oi.product_id, oi.kind, oi.name, oi.position, o.placed_at,
+        oi.quantity - oi.refunded_quantity AS quantity,
+        o.total::bigint AS order_total,
+        oi.unit_price::bigint * oi.quantity AS weight,
+        (SUM(oi.unit_price::bigint * oi.quantity) OVER (PARTITION BY oi.order_id))::bigint AS order_weight
+      FROM order_items oi JOIN orders o ON o.id = oi.order_id
+      WHERE o.status = 'completed' AND o.placed_at >= ${range.from} AND o.placed_at < ${range.to}
+    ),
+    floored AS (
+      SELECT
+        w.*,
+        CASE WHEN w.order_weight > 0 THEN w.order_total * w.weight / w.order_weight ELSE 0 END AS base,
+        CASE WHEN w.order_weight > 0 THEN w.order_total * w.weight % w.order_weight ELSE 0 END AS fraction
+      FROM weighted w
+    ),
+    allocated AS (
+      SELECT
+        f.*,
+        f.base + CASE
+          WHEN f.order_weight > 0
+            AND ROW_NUMBER() OVER (PARTITION BY f.order_id ORDER BY f.fraction DESC, f.position, f.id)
+              <= f.order_total - SUM(f.base) OVER (PARTITION BY f.order_id)
+          THEN 1 ELSE 0 END AS share
+      FROM floored f
+    ),
+    net_lines AS (
+      SELECT
+        a.order_id, a.product_id, a.kind, a.name, a.placed_at, a.quantity,
+        a.share - COALESCE((SELECT SUM(rl.amount) FROM order_refund_lines rl WHERE rl.order_item_id = a.id), 0)
+          AS revenue
+      FROM allocated a
+    )`;
 }

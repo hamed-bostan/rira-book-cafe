@@ -36,9 +36,66 @@ export type Ingredient = {
   updatedAt: string;
   /** Stock on hand, in `unit`. */
   onHand: number;
+  /** Weighted average cost of what's on hand, per `unit` (see Inventory). */
+  averageCost: number;
   /** Whether any stock has ever moved (a delivery, a sale, a count…). */
   hasHistory: boolean;
+  /** At or below this much on hand the item shows as running low. */
+  reorderLevel?: number;
+  /** What a delivery tops it up to — the "To order" list suggests par − on hand. */
+  parLevel?: number;
+  /** How it's bought: bag, carton, kg… each holding so many `unit`. */
+  purchaseUnits: PurchaseUnit[];
+  /** Who it's usually bought from. */
+  supplierId?: string;
 };
+
+/**
+ * A pack an item is bought in, and how many base units it holds: "bag" = 1000 g,
+ * "carton" = 12 pieces, "L" = 1000 ml. Stock, recipes and average cost stay in the
+ * base unit; a purchase unit is only how a delivery (or a count) is typed.
+ */
+export type PurchaseUnit = { name: string; factor: number };
+
+/** The most purchase units one item may have — a typo guard, not a policy. */
+export const MAX_PURCHASE_UNITS = 6;
+export const MAX_PURCHASE_UNIT_NAME_LENGTH = 24;
+/** The largest pack: ten tonnes of grams. */
+export const MAX_PURCHASE_UNIT_FACTOR = 10_000_000;
+
+/** Why a set of purchase units is refused. */
+export type PurchaseUnitsRefusal = "TOO_MANY" | "NAME_INVALID" | "FACTOR_INVALID" | "NAME_REPEATED";
+
+/** Whether an item's purchase units may be saved, and why not; `null` when they're fine. */
+export function purchaseUnitsRefusal(
+  units: readonly PurchaseUnit[],
+  baseUnit: IngredientUnit,
+): PurchaseUnitsRefusal | null {
+  if (units.length > MAX_PURCHASE_UNITS) return "TOO_MANY";
+  const seen = new Set<string>();
+  for (const unit of units) {
+    const name = unit.name.trim();
+    if (!name || name !== unit.name || name.length > MAX_PURCHASE_UNIT_NAME_LENGTH || name === baseUnit)
+      return "NAME_INVALID";
+    if (!(unit.factor > 0) || unit.factor > MAX_PURCHASE_UNIT_FACTOR) return "FACTOR_INVALID";
+    const key = name.toLocaleLowerCase();
+    if (seen.has(key)) return "NAME_REPEATED";
+    seen.add(key);
+  }
+  return null;
+}
+
+/**
+ * A quantity typed in a purchase unit, in the base unit: 3 bags of 1000 g is 3000 g.
+ * No unit name is the base unit itself. `null` when the name isn't one of the
+ * item's units — the caller refuses rather than guessing.
+ */
+export function toBaseQuantity(quantity: number, unitName: string, units: readonly PurchaseUnit[]): number | null {
+  if (!unitName) return quantity;
+  const unit = units.find((candidate) => candidate.name === unitName);
+  if (!unit) return null;
+  return Math.round(quantity * unit.factor * 1000) / 1000;
+}
 
 /**
  * Whether an ingredient's unit is fixed: every quantity on record — what's on
@@ -113,24 +170,47 @@ export const MAX_OVERHEAD_MONTHS = 12;
 /** Items sold a month, when the owner sets it by hand — a typo guard, not a policy. */
 export const MAX_MONTHLY_UNITS = 10_000_000;
 
-/** Cost of one unit (g, ml, piece) of an ingredient, unrounded. */
+/** Cost of one unit (g, ml, piece) of an ingredient at the last price paid, unrounded. */
 export function ingredientUnitCost(ingredient: Pick<Ingredient, "purchasePrice" | "purchaseQuantity">): number {
   return ingredient.purchaseQuantity > 0 ? ingredient.purchasePrice / ingredient.purchaseQuantity : 0;
 }
 
+/** What a recipe's cost reads an ingredient at — see {@link costingUnitCost}. */
+export type CostBasis = "average" | "lastPrice";
+
+export type CostedIngredient = Pick<Ingredient, "purchasePrice" | "purchaseQuantity" | "onHand" | "averageCost">;
+
 /**
- * What a recipe's ingredients cost, rounded to the Toman — or `null` when it uses
- * an ingredient that no longer exists (the cost would be silently understated).
+ * The basis recipes are costed on. While the item holds stock, its weighted
+ * average cost — what each sale will actually take out of Inventory as cost of
+ * sales (`consumptionFor`) — so the advisor's direct cost, the cost price orders
+ * snapshot and the books' COGS agree. With nothing on hand the average belongs to
+ * stock that's gone, so the last price paid stands in: it's what the next
+ * delivery will most likely cost.
+ */
+export function costBasisOf(ingredient: Pick<Ingredient, "onHand">): CostBasis {
+  return ingredient.onHand > 0 ? "average" : "lastPrice";
+}
+
+/** Cost of one unit as recipes are costed: average cost with stock on hand, else the last price paid. */
+export function costingUnitCost(ingredient: CostedIngredient): number {
+  return costBasisOf(ingredient) === "average" ? ingredient.averageCost : ingredientUnitCost(ingredient);
+}
+
+/**
+ * What a recipe's ingredients cost (each at {@link costingUnitCost}), rounded to
+ * the Toman — or `null` when it uses an ingredient that no longer exists (the cost
+ * would be silently understated).
  */
 export function recipeCost(
   lines: readonly RecipeLine[],
-  ingredients: ReadonlyMap<string, Pick<Ingredient, "purchasePrice" | "purchaseQuantity">>,
+  ingredients: ReadonlyMap<string, CostedIngredient>,
 ): number | null {
   let total = 0;
   for (const line of lines) {
     const ingredient = ingredients.get(line.ingredientId);
     if (!ingredient) return null;
-    total += ingredientUnitCost(ingredient) * line.quantity;
+    total += costingUnitCost(ingredient) * line.quantity;
   }
   return Math.round(total);
 }
@@ -202,6 +282,12 @@ export type PricingRow = {
   costSource: CostSource;
   /** Ingredients (or manual cost); `null` when unknown — no suggestion is possible. */
   directCost: number | null;
+  /**
+   * The recipe's cost with every ingredient at its last price paid, when that
+   * differs from `directCost` (which reads stock on hand at average cost) — the
+   * cost the next delivery's prices point to. Absent otherwise.
+   */
+  lastPriceCost?: number;
   overheadPerUnit: number;
   fullCost: number | null;
   markupBps: number;
@@ -246,12 +332,15 @@ export function buildPricingReport(input: {
   unitsSold: ReadonlyMap<string, number>;
 }): PricingReport {
   const ingredientsById = new Map(input.ingredients.map((ingredient) => [ingredient.id, ingredient]));
+  // The same ingredients read as if nothing were on hand: each at its last price.
+  const atLastPrice = new Map(input.ingredients.map((ingredient) => [ingredient.id, { ...ingredient, onHand: 0 }]));
   const perUnit = overheadPerUnit(input.basis);
   const months = Math.max(1, input.basis.months);
 
   const rows = input.products.map((product): PricingRow => {
     const lines = input.recipes.get(product.id);
     const fromRecipe = lines && lines.length > 0 ? recipeCost(lines, ingredientsById) : null;
+    const lastPrice = fromRecipe !== null && lines ? recipeCost(lines, atLastPrice) : null;
     const costSource: CostSource = fromRecipe !== null ? "recipe" : product.costPrice !== undefined ? "manual" : "none";
     const directCost = fromRecipe ?? product.costPrice ?? null;
     const markupBps = product.targetMarkupBps ?? input.settings.defaultMarkupBps;
@@ -285,6 +374,7 @@ export function buildPricingReport(input: {
       taxExempt: product.taxExempt,
       costSource,
       directCost,
+      ...(lastPrice !== null && lastPrice !== fromRecipe ? { lastPriceCost: lastPrice } : {}),
       overheadPerUnit: overhead,
       fullCost: suggestion?.fullCost ?? null,
       markupBps,

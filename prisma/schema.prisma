@@ -587,6 +587,9 @@ model Supplier {
   isActive       Boolean         @default(true) @map("is_active")
   expenses       Expense[]
   recurringBills RecurringBill[]
+  // Stock items usually bought from this supplier, and stock sent back to it.
+  ingredients    Ingredient[]
+  returns        SupplierReturn[]
   createdAt      DateTime        @default(now()) @map("created_at")
   updatedAt      DateTime        @updatedAt @map("updated_at")
 
@@ -619,6 +622,7 @@ model Expense {
   createdAt     DateTime          @default(now()) @map("created_at")
   updatedAt     DateTime          @updatedAt @map("updated_at")
   recurringRun  RecurringBillRun?
+  returns       SupplierReturn[]
 
   @@index([date])
   @@index([status])
@@ -809,6 +813,14 @@ model Ingredient {
   stockValue       BigInt          @default(0) @map("stock_value")
   averageCost      Float           @default(0) @map("average_cost")
   reorderLevel     Float?          @map("reorder_level")
+  // What a delivery tops it up to: the "To order" list suggests par − on hand.
+  parLevel         Float?          @map("par_level")
+  // How it's bought, each a name and how many base units it holds — e.g.
+  // [{ "name": "bag", "factor": 1000 }] for beans in grams (see PurchaseUnit).
+  purchaseUnits    Json            @default("[]") @map("purchase_units")
+  // Who it's usually bought from — groups the "To order" list.
+  supplierId       String?         @map("supplier_id")
+  supplier         Supplier?       @relation(fields: [supplierId], references: [id], onDelete: SetNull)
   recipeLines      RecipeLine[]
   stockMovements   StockMovement[]
   createdAt        DateTime        @default(now()) @map("created_at")
@@ -860,6 +872,8 @@ model StockMovement {
   date          DateTime   @db.Date
   referenceId   String?    @map("reference_id")
   note          String?
+  // An adjustment's reason code (found, damaged, staffMeal, …); null for other kinds.
+  reason        String?
   createdById   String     @map("created_by_id")
   createdByName String     @map("created_by_name")
   createdAt     DateTime   @default(now()) @map("created_at")
@@ -868,6 +882,38 @@ model StockMovement {
   @@index([referenceId])
   @@index([date])
   @@map("stock_movements")
+}
+
+// Stock sent back to a supplier, and the credit they gave for it. The goods leave
+// at average cost as `return_to_supplier` movements (reference_id = this id); the
+// credit settles the delivery's bill (`applied_amount`, added to its paid amount)
+// and any rest comes back as a refund (`refunded_amount` into `refunded_to`).
+model SupplierReturn {
+  id             String   @id @default(uuid())
+  number         Int      @unique @default(autoincrement())
+  date           DateTime @db.Date
+  supplierId     String   @map("supplier_id")
+  supplier       Supplier @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  supplierName   String   @map("supplier_name")
+  expenseId      String?  @map("expense_id")
+  expense        Expense? @relation(fields: [expenseId], references: [id], onDelete: Restrict)
+  // The credit note's total, VAT included, and the VAT inside it.
+  creditAmount   BigInt   @map("credit_amount")
+  vatAmount      BigInt   @default(0) @map("vat_amount")
+  appliedAmount  BigInt   @default(0) @map("applied_amount")
+  refundedAmount BigInt   @default(0) @map("refunded_amount")
+  // cash | bank, when some of the credit came back as money
+  refundedTo     String?  @map("refunded_to")
+  // What the goods were worth in stock (at average cost).
+  stockValue     BigInt   @map("stock_value")
+  note           String?
+  createdById    String   @map("created_by_id")
+  createdByName  String   @map("created_by_name")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@index([supplierId])
+  @@index([expenseId])
+  @@map("supplier_returns")
 }
 
 // A message to one guest, shown on their account (no SMS): an order is ready, a

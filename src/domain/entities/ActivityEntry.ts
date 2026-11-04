@@ -44,6 +44,14 @@ export const ACTIVITY_ENTITY_TYPES = [
   // Pay runs and the people on them. Entries never carry an amount: this log outlives
   // who may read it, and pay per person is for `payroll.manage` alone.
   "payroll",
+  // A stock item (an ingredient, a tracked book): made or edited, from Inventory or
+  // Pricing, and every hand-made stock change — waste, counts, opening stock,
+  // adjustments, returns to a supplier. One entry per item a document moved, so an
+  // item's own history reads whole. Values are `accounting.view`'s (see
+  // activity-visibility).
+  "stockItem",
+  // The pricing advisor's cafe-wide settings.
+  "pricing",
 ] as const;
 
 /**
@@ -177,6 +185,18 @@ export const ACTIVITY_ACTIONS = [
   "payroll.paid",
   "payroll.voided",
   "payroll.employeeChanged",
+  // Stock items and the stock changes staff make by hand. A delivery is an
+  // `expense.recorded` (its bill), and sales move stock without a person's hand.
+  "stockItem.created",
+  "stockItem.updated",
+  "stockItem.wasted",
+  "stockItem.counted",
+  "stockItem.openingRecorded",
+  "stockItem.adjusted",
+  "stockItem.returnedToSupplier",
+  // A menu item's recipe replaced — its cost price follows.
+  "product.recipeChanged",
+  "pricing.settingsChanged",
   // Another event rather than a change to anything stored — an admin downloaded a
   // customer-data export. Recorded through `IActivityLog.recordEvent`: the file
   // has already left the moment this is written, so there is nothing to be atomic

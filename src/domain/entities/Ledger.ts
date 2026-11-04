@@ -106,6 +106,8 @@ export const JOURNAL_SOURCES = [
   "stockWaste",
   "stockCount",
   "stockOpening",
+  "stockAdjustment",
+  "supplierReturn",
   "yearClose",
   "cashShift",
   "manual",

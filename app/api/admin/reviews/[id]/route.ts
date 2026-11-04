@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { moderateReviewSchema } from "@/src/contracts/review-schema";
 import { ModerateReview } from "@/src/domain/use-cases/reviews/ReviewCommands";
+import { DeleteReview } from "@/src/domain/use-cases/reviews/ReviewReplyCommands";
 import { customerNotifier, reviewRepository } from "@/src/infrastructure/container";
 import { invalidatesCatalog } from "@/src/lib/api/invalidatesCatalog";
 import {
@@ -50,4 +51,27 @@ async function handlePatch(request: NextRequest, { params }: RouteContext): Prom
   }
 }
 
+/**
+ * DELETE /api/admin/reviews/:id — delete a review for good. Requires
+ * `reviews.moderate`. The item's rating is recomputed with it and the activity
+ * log keeps what it said. 204; 404 when it's already gone.
+ */
+async function handleDelete(_request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
+  const session = await getSessionWith("reviews.moderate");
+  if (!session) return unauthorizedResponse();
+
+  const { id } = await params;
+  try {
+    await new DeleteReview(reviewRepository).execute(id, {
+      id: session.user.id,
+      name: session.user.name ?? session.user.id,
+    });
+    return new NextResponse(null, { status: 204 });
+  } catch (error) {
+    return errorResponseFromException(error, `DELETE /api/admin/reviews/${id} failed`);
+  }
+}
+
 export const PATCH = invalidatesCatalog([CATALOG_TAGS.products], handlePatch);
+// A deleted approved review leaves the item's rating — the cached menu must follow.
+export const DELETE = invalidatesCatalog([CATALOG_TAGS.products], handleDelete);

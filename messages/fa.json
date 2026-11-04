@@ -193,7 +193,9 @@
     "unitLocked": "این قلم موجودی یا سابقهٔ انبار دارد، پس واحدش عوض نمی‌شود.",
     "stockHasHistory": "این قلم سابقهٔ انبار دارد. به جای آن رسید کالا یا انبارگردانی ثبت کنید.",
     "parentIsSubcategory": "این یک زیردسته است؛ یک دستهٔ اصلی انتخاب کنید.",
-    "hasSubcategories": "خودش زیردسته دارد، پس در سطح اصلی می‌ماند."
+    "hasSubcategories": "خودش زیردسته دارد، پس در سطح اصلی می‌ماند.",
+    "replyRequired": "متن پاسخ را بنویسید.",
+    "replyTooLong": "پاسخ حداکثر ۱٬۰۰۰ نویسه باشد."
   },
   "apiErrors": {
     "alreadyPosted": "این مورد قبلاً ثبت شده است.",
@@ -1072,7 +1074,10 @@
       },
       "review": {
         "moderated": "<b>{actor}</b> نظر {entity} را بررسی کرد",
-        "submitted": "<b>{actor}</b> نظر جدیدی ثبت کرد"
+        "submitted": "<b>{actor}</b> نظر جدیدی ثبت کرد",
+        "replied": "<b>{actor}</b> به نظری دربارهٔ {entity} پاسخ داد",
+        "replyRemoved": "<b>{actor}</b> پاسخ نظری دربارهٔ {entity} را برداشت",
+        "deleted": "<b>{actor}</b> نظری دربارهٔ {entity} را حذف کرد"
       },
       "promoCode": {
         "created": "<b>{actor}</b> کد تخفیف {entity} را ساخت",
@@ -1257,7 +1262,11 @@
       "guests": "مهمان‌ها",
       "registrations": "ثبت‌نام‌ها",
       "parent": "دستهٔ والد",
-      "menuPosition": "جای در منو"
+      "menuPosition": "جای در منو",
+      "reply": "پاسخ",
+      "rating": "ستاره",
+      "comment": "متن نظر",
+      "author": "مهمان"
     },
     "filterField": "فیلد",
     "allFields": "همه فیلدها"
@@ -2052,6 +2061,10 @@
         "refundIssued": {
           "title": "{amount} تومان به شما بازپرداخت شد",
           "body": "{subject, select, suite {بابت اقامت سوئیت S-{reference}.} event {بابت «{title}».} other {بابت رزروتان.}}"
+        },
+        "reviewReplied": {
+          "title": "کافه به نظرتان پاسخ داد",
+          "body": "ببینید دربارهٔ {productName} چه گفته‌اند."
         }
       }
     },
@@ -2079,7 +2092,15 @@
         "pending": "در انتظار تأیید",
         "approved": "منتشر شده",
         "rejected": "منتشر نشده"
-      }
+      },
+      "delete": "حذف نظر من",
+      "deleteTitle": "نظرتان حذف شود؟",
+      "deleteMessage": "برای همیشه از منو برداشته می‌شود. هر وقت خواستید می‌توانید نظر تازه‌ای بنویسید.",
+      "deleted": "نظرتان حذف شد",
+      "deleteError": "حذف نظرتان ممکن نشد. دوباره تلاش کنید.",
+      "replyFrom": "پاسخ {cafe}",
+      "showing": "{shown} از {total}",
+      "showMore": "نظرهای بیشتر"
     },
     "waitlist": {
       "onLoan": "{count, plural, other {{formatted} نسخه امانت داده شده است.}}",
@@ -3204,11 +3225,38 @@
     "emptyTitle": "نظری اینجا نیست",
     "emptyBody": "نظرها اینجا نمایش داده می‌شوند.",
     "noMatchesTitle": "نتیجه‌ای نیست",
-    "noMatchesBody": "نظری با این جست‌وجو پیدا نشد.",
+    "noMatchesBody": "هیچ نظری با این جست‌وجو یا فیلتر پیدا نشد.",
     "moderated": {
       "approved": "نظر درباره‌ی {item} حالا روی منو است.",
       "rejected": "نظر درباره‌ی {item} پنهان شد."
-    }
+    },
+    "filterItem": "آیتم",
+    "allItems": "همهٔ آیتم‌ها",
+    "filterStars": "ستاره",
+    "allStars": "هر تعداد ستاره",
+    "starsOption": "{count, plural, other {{formatted} ستاره}}",
+    "reply": "پاسخ",
+    "editReply": "ویرایش پاسخ",
+    "removeReply": "برداشتن پاسخ",
+    "delete": "حذف نظر",
+    "replyBy": "پاسخ کافه · {name}، {date}",
+    "replyTitle": "پاسخ به این نظر",
+    "editReplyTitle": "ویرایش پاسخ",
+    "replySubtitle": "{author} دربارهٔ {item}. پاسخ زیر همین نظر در منو، از طرف کافه نمایش داده می‌شود.",
+    "replyLabel": "پاسخ",
+    "replyHint": "مهمان‌ها آن را با امضای کافه می‌بینند. وقتی منتشر شود، به نویسندهٔ نظر خبر داده می‌شود.",
+    "postReply": "انتشار پاسخ",
+    "saveReply": "ذخیرهٔ پاسخ",
+    "repliedToast": "پاسخ منتشر شد",
+    "replyEditedToast": "پاسخ ذخیره شد",
+    "replyRemovedToast": "پاسخ برداشته شد",
+    "replyError": "ذخیرهٔ پاسخ ممکن نشد. دوباره تلاش کنید.",
+    "deleteTitle": "نظر {author} دربارهٔ {item} حذف شود؟",
+    "deleteMessage": "برای همیشه پاک می‌شود. اگر می‌خواهید بماند ولی نمایش داده نشود، پنهانش کنید.",
+    "deleteMessageShown": "برای همیشه پاک می‌شود و ستاره‌هایش از امتیاز آیتم کم می‌شود. اگر می‌خواهید بماند ولی نمایش داده نشود، پنهانش کنید.",
+    "deleteConfirm": "حذف",
+    "deletedToast": "نظر دربارهٔ {item} حذف شد",
+    "deleteError": "حذف نظر ممکن نشد. دوباره تلاش کنید."
   },
   "dashPromotions": {
     "heading": "تخفیف و باشگاه",

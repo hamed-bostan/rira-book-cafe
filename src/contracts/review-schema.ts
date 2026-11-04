@@ -1,6 +1,7 @@
 import {
   MAX_REVIEW_COMMENT_LENGTH,
   MAX_REVIEW_RATING,
+  MAX_REVIEW_REPLY_LENGTH,
   MIN_REVIEW_RATING,
   MODERATION_STATUSES,
 } from "@/src/domain/entities/ProductReview";
@@ -34,3 +35,12 @@ export const moderateReviewSchema = z.object({
 });
 
 export type ModerateReviewInput = z.input<typeof moderateReviewSchema>;
+
+/** Staff posting or editing the cafe's reply under a review. */
+export const reviewReplySchema = z.object({
+  text: z
+    .string()
+    .check(z.trim(), z.minLength(1, "replyRequired"), z.maxLength(MAX_REVIEW_REPLY_LENGTH, "replyTooLong")),
+});
+
+export type ReviewReplyInput = z.input<typeof reviewReplySchema>;

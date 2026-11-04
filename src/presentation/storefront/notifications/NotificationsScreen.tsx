@@ -55,6 +55,7 @@ const ICONS: Record<NotificationKind, LucideIcon> = {
   holdExpired: BookOpen,
   pointsEarned: Gift,
   reviewApproved: Star,
+  reviewReplied: MessageSquareText,
   staffMessage: MessageSquareText,
   reservationChanged: CalendarClock,
   suiteChanged: BedDouble,

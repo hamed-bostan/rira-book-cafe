@@ -76,6 +76,21 @@ export async function ReviewRow({ review }: ReviewRowProps) {
             {review.comment}
           </p>
         ) : null}
+        {/* The cafe's reply, as it reads under the review on the item's page — with
+            who on the team wrote it, which guests don't see. */}
+        {review.reply ? (
+          <div className="mt-1 flex flex-col gap-1 rounded-button border-s-2 border-primary bg-muted px-3 py-2">
+            <span className="text-body-small font-semibold text-foreground sm:text-body-caption">
+              {t("replyBy", { name: review.reply.byName, date: day(review.reply.updatedAt ?? review.reply.at) })}
+            </span>
+            <p
+              dir="auto"
+              className="text-body-default text-pretty whitespace-pre-wrap text-foreground/80 sm:text-body-small"
+            >
+              {review.reply.text}
+            </p>
+          </div>
+        ) : null}
       </div>
 
       <ReviewModerationActions review={review} />

@@ -1,22 +1,26 @@
+import { createPage, toSkipTake, type Page, type PageRequest } from "@/src/domain/entities/Pagination";
 import {
   ratingSummary,
   REVIEW_STATUSES,
   type ModerationStatus,
   type ProductReview,
+  type ReviewedProduct,
   type ReviewStatus,
 } from "@/src/domain/entities/ProductReview";
 import { ConflictError } from "@/src/domain/errors/ConflictError";
 import { NotFoundError } from "@/src/domain/errors/NotFoundError";
 import type { AuditHook } from "@/src/domain/repositories/AuditHook";
-import type { IReviewRepository, ReviewDraft, ReviewFilters } from "@/src/domain/repositories/IReviewRepository";
+import type {
+  IReviewRepository,
+  ReviewDraft,
+  ReviewFilters,
+  ReviewReplyInput,
+} from "@/src/domain/repositories/IReviewRepository";
 import { prisma } from "@/src/infrastructure/prisma/client";
 import type { Prisma } from "@/src/infrastructure/prisma/generated/client";
 import { inTransaction, type PrismaDb } from "@/src/infrastructure/prisma/transaction";
 
 import { recordAudit } from "./writeActivityEntry";
-
-/** The queue is a working view, not an archive. */
-const LIST_LIMIT = 200;
 
 /**
  * Product reviews backed by PostgreSQL via Prisma. Every write that can change
@@ -68,8 +72,14 @@ export class PrismaReviewRepository implements IReviewRepository {
     return rows.map(toReview);
   }
 
-  async list(filters: ReviewFilters): Promise<ProductReview[]> {
+  async countApproved(productId: string): Promise<number> {
+    return this.db.productReview.count({ where: { productId, status: "approved" } });
+  }
+
+  async list(filters: ReviewFilters, page: PageRequest): Promise<Page<ProductReview>> {
     const where: Prisma.ProductReviewWhereInput = filters.view === "all" ? {} : { status: filters.view };
+    if (filters.productId) where.productId = filters.productId;
+    if (filters.rating !== undefined) where.rating = filters.rating;
     if (filters.q) {
       where.OR = [
         { productName: { contains: filters.q, mode: "insensitive" } },
@@ -77,12 +87,30 @@ export class PrismaReviewRepository implements IReviewRepository {
         { comment: { contains: filters.q, mode: "insensitive" } },
       ];
     }
+    const [rows, total] = await Promise.all([
+      this.db.productReview.findMany({
+        where,
+        // The id breaks ties, so a page boundary between two reviews written in the
+        // same millisecond can't show one twice and the other never.
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+        ...toSkipTake(page),
+      }),
+      this.db.productReview.count({ where }),
+    ]);
+    return createPage(rows.map(toReview), total, page);
+  }
+
+  async listReviewedProducts(): Promise<ReviewedProduct[]> {
+    // The name as the most recent review recorded it — the item may have been
+    // renamed (or deleted) since; the filter is by id either way.
     const rows = await this.db.productReview.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      take: LIST_LIMIT,
+      distinct: ["productId"],
+      orderBy: [{ productId: "asc" }, { createdAt: "desc" }],
+      select: { productId: true, productName: true },
     });
-    return rows.map(toReview);
+    return rows
+      .map((row) => ({ productId: row.productId, productName: row.productName }))
+      .sort((a, b) => a.productName.localeCompare(b.productName));
   }
 
   async countByStatus(): Promise<Record<ReviewStatus, number>> {
@@ -135,6 +163,43 @@ export class PrismaReviewRepository implements IReviewRepository {
       return saved;
     });
   }
+
+  async setReply(id: string, reply: ReviewReplyInput | null, audit?: AuditHook<ProductReview>): Promise<ProductReview> {
+    return inTransaction(this.db, async (tx) => {
+      const current = await tx.productReview.findUnique({ where: { id }, select: { repliedAt: true } });
+      if (!current) throw new NotFoundError("review", id);
+      const row = await tx.productReview.update({
+        where: { id },
+        data: reply
+          ? {
+              replyText: reply.text,
+              replyById: reply.by.id,
+              replyByName: reply.by.name,
+              // The first post keeps its time; an edit stamps when.
+              repliedAt: current.repliedAt ?? reply.at,
+              replyUpdatedAt: current.repliedAt ? reply.at : null,
+            }
+          : { replyText: null, replyById: null, replyByName: null, repliedAt: null, replyUpdatedAt: null },
+      });
+      const saved = toReview(row);
+      await recordAudit(tx, saved, audit);
+      return saved;
+    });
+  }
+
+  async delete(id: string, audit?: AuditHook<ProductReview>): Promise<ProductReview | null> {
+    return inTransaction(this.db, async (tx) => {
+      const row = await tx.productReview.findUnique({ where: { id } });
+      if (!row) return null;
+      // `deleteMany` so a delete racing another one finds nothing rather than throwing.
+      const { count } = await tx.productReview.deleteMany({ where: { id } });
+      if (count === 0) return null;
+      await refreshProductRating(tx, row.productId);
+      const deleted = toReview(row);
+      await recordAudit(tx, deleted, audit);
+      return deleted;
+    });
+  }
 }
 
 /** Recompute an item's stars from its approved reviews (the item may have been deleted since — then there's nothing to update). */
@@ -165,6 +230,16 @@ function toReview(row: ReviewRow): ProductReview {
     status: toStatus(row.status),
     moderatedByName: row.moderatedByName ?? undefined,
     moderatedAt: row.moderatedAt?.toISOString(),
+    ...(row.replyText && row.repliedAt
+      ? {
+          reply: {
+            text: row.replyText,
+            byName: row.replyByName ?? "",
+            at: row.repliedAt.toISOString(),
+            ...(row.replyUpdatedAt ? { updatedAt: row.replyUpdatedAt.toISOString() } : {}),
+          },
+        }
+      : {}),
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };

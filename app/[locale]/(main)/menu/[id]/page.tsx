@@ -14,6 +14,8 @@ export const dynamic = "force-dynamic";
 
 type MenuItemPageProps = {
   params: Promise<{ id: string }>;
+  /** `?reviews=` — how many reviews "Show more" has asked for. */
+  searchParams: Promise<{ reviews?: string }>;
 };
 
 /** The item's own title and copy; the same request in the page body is memoized, not refetched. */
@@ -31,11 +33,13 @@ export async function generateMetadata({ params }: MenuItemPageProps): Promise<M
 }
 
 /** One published item; an unpublished or deleted one is the not-found page. */
-export default async function MenuItemPage({ params }: MenuItemPageProps) {
-  const { id } = await params;
+export default async function MenuItemPage({ params, searchParams }: MenuItemPageProps) {
+  const [{ id }, { reviews: shownParam }] = await Promise.all([params, searchParams]);
+  // The API rounds this to whole pages and caps it; junk reads as the first page.
+  const reviewLimit = Number.parseInt(shownParam ?? "", 10) || undefined;
   const [item, reviews, session] = await Promise.all([
     storefrontServerApi.item(id),
-    storefrontServerApi.productReviews(id),
+    storefrontServerApi.productReviews(id, reviewLimit),
     auth(),
   ]);
   if (!item) notFound();

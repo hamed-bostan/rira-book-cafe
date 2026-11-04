@@ -38,6 +38,8 @@ export const NOTIFICATION_KINDS = [
   "holdExpired",
   "pointsEarned",
   "reviewApproved",
+  // The cafe replied to the guest's review.
+  "reviewReplied",
   // Words a member of staff wrote to the guest about one of their bookings, loans or orders.
   "staffMessage",
   // Staff moved or edited a booking, or an event the guest signed up for changed.

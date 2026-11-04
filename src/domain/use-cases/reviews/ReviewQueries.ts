@@ -1,23 +1,34 @@
+import { clampPageRequest, type Page, type PageRequest } from "../../entities/Pagination";
 import {
-  PUBLIC_REVIEW_LIMIT,
+  MAX_REVIEW_RATING,
+  MIN_REVIEW_RATING,
+  publicReviewLimit,
   ratingFromTotals,
   toPublicReview,
   type ProductReview,
-  type PublicReview,
+  type PublicReviewPage,
   type RatingSummary,
+  type ReviewedProduct,
   type ReviewEligibility,
   type ReviewStatus,
 } from "../../entities/ProductReview";
 
 import type { IReviewRepository, ReviewFilters } from "../../repositories/IReviewRepository";
 
-/** An item's approved reviews, as the public sees them. */
+/**
+ * An item's approved reviews, newest first, as the public sees them — the first
+ * `limit` (a whole number of pages, capped: see `publicReviewLimit`) and how many
+ * there are in all, so the page knows whether to offer "Show more".
+ */
 export class ListProductReviews {
   constructor(private readonly reviewRepo: IReviewRepository) {}
 
-  async execute(productId: string): Promise<PublicReview[]> {
-    const reviews = await this.reviewRepo.listApproved(productId, PUBLIC_REVIEW_LIMIT);
-    return reviews.map(toPublicReview);
+  async execute(productId: string, limit?: number): Promise<PublicReviewPage> {
+    const [reviews, total] = await Promise.all([
+      this.reviewRepo.listApproved(productId, publicReviewLimit(limit)),
+      this.reviewRepo.countApproved(productId),
+    ]);
+    return { items: reviews.map(toPublicReview), total };
   }
 }
 
@@ -34,12 +45,40 @@ export class GetReviewEligibility {
   }
 }
 
-/** The moderation queue. Staff only. */
+/**
+ * One page of the moderation queue, filtered by status tab, search, item and
+ * stars. Staff only. A star count outside 1–5 is dropped rather than refused, the
+ * way a stale URL's other filters are.
+ */
 export class ListReviews {
   constructor(private readonly reviewRepo: IReviewRepository) {}
 
-  execute(filters: ReviewFilters): Promise<ProductReview[]> {
-    return this.reviewRepo.list({ view: filters.view, q: filters.q?.trim() || undefined });
+  execute(filters: ReviewFilters, page: PageRequest): Promise<Page<ProductReview>> {
+    const rating =
+      filters.rating !== undefined &&
+      Number.isInteger(filters.rating) &&
+      filters.rating >= MIN_REVIEW_RATING &&
+      filters.rating <= MAX_REVIEW_RATING
+        ? filters.rating
+        : undefined;
+    return this.reviewRepo.list(
+      {
+        view: filters.view,
+        q: filters.q?.trim() || undefined,
+        productId: filters.productId?.trim() || undefined,
+        rating,
+      },
+      clampPageRequest(page),
+    );
+  }
+}
+
+/** The items that have reviews, for the queue's item filter. Staff only. */
+export class ListReviewedProducts {
+  constructor(private readonly reviewRepo: IReviewRepository) {}
+
+  execute(): Promise<ReviewedProduct[]> {
+    return this.reviewRepo.listReviewedProducts();
   }
 }
 

@@ -54,11 +54,20 @@ describe("calendar presets", () => {
 });
 
 describe("salesBridge", () => {
-  const totals = { grossSales: 1000, promoDiscount: 100, pointsDiscount: 50, charged: 850, refunds: 30 };
+  const totals = {
+    grossSales: 1000,
+    promoDiscount: 100,
+    pointsDiscount: 50,
+    serviceCharge: 0,
+    charged: 850,
+    refunds: 30,
+  };
 
   it("lands on the revenue to the Toman, without an adjustments line when there's nothing to explain", () => {
     const lines = salesBridge(totals, { ...totals, refunds: 0 });
     expect(lines.map((line) => line.key)).not.toContain("otherAdjustments");
+    // No service charge in either period: no row of zeros for it.
+    expect(lines.map((line) => line.key)).not.toContain("serviceCharge");
     const steps = lines.filter((line) => line.kind === "start" || line.kind === "step");
     expect(steps.reduce((sum, line) => sum + line.amount, 0)).toBe(820);
     expect(lines.at(-1)).toEqual({ key: "revenue", kind: "total", amount: 820, previous: 850 });
@@ -68,6 +77,23 @@ describe("salesBridge", () => {
     const lines = salesBridge({ ...totals, charged: 870 }, totals);
     expect(lines.find((line) => line.key === "otherAdjustments")).toMatchObject({ amount: 20, previous: 0 });
     expect(lines.at(-1)?.amount).toBe(840);
+  });
+
+  it("adds the dine-in service charge as its own step after the discounts", () => {
+    const withCharge = { ...totals, serviceCharge: 85, charged: 935 };
+    const lines = salesBridge(withCharge, totals);
+    expect(lines.map((line) => line.key)).toEqual([
+      "grossSales",
+      "promoDiscount",
+      "pointsDiscount",
+      "serviceCharge",
+      "charged",
+      "refunds",
+      "revenue",
+    ]);
+    expect(lines.find((line) => line.key === "serviceCharge")).toMatchObject({ amount: 85, previous: 0 });
+    const steps = lines.filter((line) => line.kind === "start" || line.kind === "step");
+    expect(steps.reduce((sum, line) => sum + line.amount, 0)).toBe(935 - 30);
   });
 });
 

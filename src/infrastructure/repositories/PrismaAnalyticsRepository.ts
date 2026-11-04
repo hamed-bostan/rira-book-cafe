@@ -66,6 +66,7 @@ export class PrismaAnalyticsRepository implements IAnalyticsRepository {
         gross: bigint | null;
         promo: bigint | null;
         points: bigint | null;
+        service: bigint | null;
         charged: bigint | null;
         refunded: bigint | null;
         cancelled: bigint;
@@ -77,6 +78,7 @@ export class PrismaAnalyticsRepository implements IAnalyticsRepository {
         SUM(subtotal) FILTER (WHERE status = 'completed') AS gross,
         SUM(promo_discount) FILTER (WHERE status = 'completed') AS promo,
         SUM(points_discount) FILTER (WHERE status = 'completed') AS points,
+        SUM(service_charge) FILTER (WHERE status = 'completed') AS service,
         SUM(total) FILTER (WHERE status = 'completed') AS charged,
         SUM(refunded_total) FILTER (WHERE status = 'completed') AS refunded,
         COUNT(*) FILTER (WHERE status = 'cancelled') AS cancelled,
@@ -121,6 +123,7 @@ export class PrismaAnalyticsRepository implements IAnalyticsRepository {
       grossSales: Number(orders?.gross ?? 0),
       promoDiscount: Number(orders?.promo ?? 0),
       pointsDiscount: Number(orders?.points ?? 0),
+      serviceCharge: Number(orders?.service ?? 0),
       charged,
       refunds: refunded,
       orders: count,

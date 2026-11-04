@@ -8,9 +8,11 @@ import {
   type RefundTiming,
   type ReportRangePreset,
 } from "@/src/domain/entities/Analytics";
+import { inLanguage } from "@/src/domain/entities/CafeSettings";
 import { cafeDayOf } from "@/src/domain/entities/CafeTime";
 import type { ReportTable } from "@/src/domain/use-cases/analytics/Reports";
 import { formatCafeDayShort } from "@/src/lib/formatCafeDay";
+import { cafeSettingsServerApi } from "@/src/presentation/settings/cafe-settings-server-api";
 
 import { DashboardLinkTabs } from "../DashboardLinkTabs";
 
@@ -63,9 +65,14 @@ export async function ReportsFrame({
   exports,
   children,
 }: ReportsFrameProps) {
-  const t = await getTranslations("dashReports");
-  const tMeta = await getTranslations("meta");
-  const locale = await getLocale();
+  const [t, tMeta, locale, settings] = await Promise.all([
+    getTranslations("dashReports"),
+    getTranslations("meta"),
+    getLocale(),
+    cafeSettingsServerApi.getOrEmpty(),
+  ]);
+  // The printed page is headed with the cafe's own name (Settings), the site's until one is set.
+  const cafeName = inLanguage(locale, settings.profile.name, settings.profile.nameFa) ?? tMeta("siteName");
 
   const day = (value: string): string => formatCafeDayShort(value, locale);
   const span = (value: ReportRangeWire): string =>
@@ -94,7 +101,7 @@ export async function ReportsFrame({
       <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
         <div className="flex min-w-0 flex-col gap-1">
           <p className="hidden text-body-small font-semibold text-muted-foreground print:block">
-            {t("printHeading", { cafe: tMeta("siteName"), report: t(`tab.${tab}`) })}
+            {t("printHeading", { cafe: cafeName, report: t(`tab.${tab}`) })}
           </p>
           <h1 className="dashboard-page-title">{t("heading")}</h1>
           <p className="text-body-default text-pretty text-muted-foreground sm:text-body-small print:hidden">

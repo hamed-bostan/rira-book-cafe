@@ -19,6 +19,7 @@ const salesSummarySchema = z.object({
   grossSales: z.number(),
   promoDiscount: z.number(),
   pointsDiscount: z.number(),
+  serviceCharge: z.number(),
   charged: z.number(),
   refunds: z.number(),
   orders: z.number(),

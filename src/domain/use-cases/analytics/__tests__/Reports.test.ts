@@ -27,6 +27,7 @@ const EMPTY: SalesSummary = {
   grossSales: 0,
   promoDiscount: 0,
   pointsDiscount: 0,
+  serviceCharge: 0,
   charged: 0,
   refunds: 0,
   orders: 0,

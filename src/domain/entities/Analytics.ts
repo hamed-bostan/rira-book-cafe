@@ -165,6 +165,8 @@ export type SalesSummary = {
   promoDiscount: number;
   /** Taken off those orders by loyalty points. */
   pointsDiscount: number;
+  /** Added to those orders as the dine-in service charge (after the discounts, VAT in). */
+  serviceCharge: number;
   /** Completed orders' totals — what guests were charged. */
   charged: number;
   /** Refunds on completed orders counted in the range — see `RefundTiming` for which. */
@@ -232,6 +234,7 @@ export const SALES_BRIDGE_KEYS = [
   "grossSales",
   "promoDiscount",
   "pointsDiscount",
+  "serviceCharge",
   "otherAdjustments",
   "charged",
   "refunds",
@@ -239,22 +242,28 @@ export const SALES_BRIDGE_KEYS = [
 ] as const;
 export type SalesBridgeKey = (typeof SALES_BRIDGE_KEYS)[number];
 
-type BridgeTotals = Pick<SalesSummary, "grossSales" | "promoDiscount" | "pointsDiscount" | "charged" | "refunds">;
+type BridgeTotals = Pick<
+  SalesSummary,
+  "grossSales" | "promoDiscount" | "pointsDiscount" | "serviceCharge" | "charged" | "refunds"
+>;
+
+/** Steps left out when they moved nothing in either period, rather than shown as zeros. */
+const OPTIONAL_BRIDGE_STEPS: readonly SalesBridgeKey[] = ["serviceCharge", "otherAdjustments"];
 
 /**
- * Gross sales → discounts → refunds → net revenue, against the period before.
- * Every amount an order's total is made of has its own line here, and this is the
- * one place a new one goes: a service charge added on top of the subtotal becomes
- * a `step` after the discounts (and a column summed in `salesSummary`).
+ * Gross sales → discounts → service charge → refunds → net revenue, against the
+ * period before. Every amount an order's total is made of has its own line here,
+ * and this is the one place a new one goes.
  *
  * `otherAdjustments` is whatever the totals hold that no named line explains —
- * zero today, since an order's total is its subtotal less the promo and the points.
- * It only shows when it isn't, so the walk always lands on the revenue to the Toman
- * instead of hiding a difference.
+ * zero today, since an order's total is its subtotal less the promo and the points,
+ * plus the dine-in service charge. It and the service charge (off unless the cafe
+ * sets a rate) only show when they aren't zero, so the walk always lands on the
+ * revenue to the Toman instead of hiding a difference.
  */
 export function salesBridge(current: BridgeTotals, previous: BridgeTotals): SalesBridgeLine[] {
   const unexplained = (totals: BridgeTotals): number =>
-    totals.charged - (totals.grossSales - totals.promoDiscount - totals.pointsDiscount);
+    totals.charged - (totals.grossSales - totals.promoDiscount - totals.pointsDiscount + totals.serviceCharge);
   const line = (
     key: SalesBridgeKey,
     kind: SalesBridgeLine["kind"],
@@ -265,12 +274,15 @@ export function salesBridge(current: BridgeTotals, previous: BridgeTotals): Sale
     line("grossSales", "start", (totals) => totals.grossSales),
     line("promoDiscount", "step", (totals) => -totals.promoDiscount),
     line("pointsDiscount", "step", (totals) => -totals.pointsDiscount),
+    line("serviceCharge", "step", (totals) => totals.serviceCharge),
     line("otherAdjustments", "step", unexplained),
     line("charged", "subtotal", (totals) => totals.charged),
     line("refunds", "step", (totals) => -totals.refunds),
     line("revenue", "total", (totals) => totals.charged - totals.refunds),
   ];
-  return lines.filter((entry) => entry.key !== "otherAdjustments" || entry.amount !== 0 || entry.previous !== 0);
+  return lines.filter(
+    (entry) => !OPTIONAL_BRIDGE_STEPS.includes(entry.key) || entry.amount !== 0 || entry.previous !== 0,
+  );
 }
 
 /** What promo codes and loyalty points took off the range's completed orders, and the points they moved. */

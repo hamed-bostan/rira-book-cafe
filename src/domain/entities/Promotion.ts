@@ -6,6 +6,10 @@ import type { ConflictCode } from "../errors/ConflictError";
  * limits — a minimum order, a date window, how many times it can be used in all
  * and by one guest. Uses are counted from the orders carrying the code; a
  * cancelled order gives its use back.
+ *
+ * A code can be scoped: to some menu items and/or categories (it then takes money
+ * off only those lines — "10% off books"), and/or to a guest's first order. See
+ * {@link eligibleSubtotal} for how a scoped code reads the basket.
  */
 
 export const PROMO_KINDS = ["percent", "fixed"] as const;
@@ -40,6 +44,18 @@ export type PromoCode = {
   perGuestLimit?: number;
   isActive: boolean;
   /**
+   * The menu items and categories the code takes money off. Both empty = the whole
+   * order. When either is set, only lines whose item is listed, or whose item is in
+   * a listed category, count — for the discount *and* for the minimum order.
+   */
+  productIds: string[];
+  categoryIds: string[];
+  /**
+   * Only for a guest's first order: one placed while their profile has no completed
+   * order yet. Checked when the code is taken — an order that took it keeps it.
+   */
+  firstOrderOnly: boolean;
+  /**
    * ISO 8601, set when staff deleted a code that orders had used. An archived code
    * is kept rather than removed — the orders carrying it still resolve it by id, and
    * its code stays taken so it can't come back with fresh per-guest limits — but it
@@ -56,6 +72,53 @@ export type PromoCodeWithUses = PromoCode & { uses: number };
 
 /** How often a code has been used — in all, and by the guest at checkout. */
 export type PromoUsage = { total: number; byGuest: number };
+
+/** The most items, or categories, one code can be scoped to. */
+export const MAX_PROMO_SCOPE_ENTRIES = 100;
+
+/** One line of a basket as a code reads it: which item, in which category, for how much (Toman). */
+export type PromoLine = { productId: string; categoryId?: string; amount: number };
+
+/** Whether the code is limited to some items or categories. */
+export function isPromoScoped(promo: Pick<PromoCode, "productIds" | "categoryIds">): boolean {
+  return promo.productIds.length > 0 || promo.categoryIds.length > 0;
+}
+
+/**
+ * What of the basket the code applies to: every line for a code that isn't scoped;
+ * otherwise the lines whose item is listed or whose item's category is (either
+ * matches — "these two cakes, and anything in Books").
+ *
+ * Decision: a scoped code's minimum order counts these lines only, as its discount
+ * does ("spend 500,000 on books, get 10% off books") — the way the major commerce
+ * platforms read a minimum on an item-specific discount. An unscoped code's minimum
+ * is the whole order, as before.
+ */
+export function eligibleSubtotal(
+  promo: Pick<PromoCode, "productIds" | "categoryIds">,
+  lines: readonly PromoLine[],
+): number {
+  if (!isPromoScoped(promo)) return lines.reduce((sum, line) => sum + line.amount, 0);
+  const products = new Set(promo.productIds);
+  const categories = new Set(promo.categoryIds);
+  return lines.reduce(
+    (sum, line) =>
+      products.has(line.productId) || (line.categoryId !== undefined && categories.has(line.categoryId))
+        ? sum + line.amount
+        : sum,
+    0,
+  );
+}
+
+/**
+ * Who a code is being taken for, as far as its guest-bound rules care: whether the
+ * order is on a guest's profile at all (a per-guest limit or a first-order rule
+ * needs one to count against), and whether that guest already has a completed order.
+ */
+export type PromoGuest = { known: boolean; hasCompletedOrder: boolean };
+
+/** A guest with a profile and no completed order: what a check assumes unless told. */
+const NEW_GUEST: PromoGuest = { known: true, hasCompletedOrder: false };
 
 /**
  * Where a code stands for the dashboard list:
@@ -110,25 +173,50 @@ export function promoDiscount(promo: Pick<PromoCode, "kind" | "value" | "maxDisc
 
 /**
  * Why the code can't be used on this order right now, or `null` when it can. The
- * reasons are conflict codes the client localizes.
+ * reasons are conflict codes the client localizes. `eligible` is what the code
+ * applies to ({@link eligibleSubtotal}): the whole order for an unscoped code.
+ *
+ * A code with a per-guest limit, or for first orders, needs the order to be on a
+ * guest's profile (`PROMO_NEEDS_GUEST`) — there'd be nobody to count it against.
  */
-export function promoProblem(promo: PromoCode, subtotal: number, usage: PromoUsage, now: Date): ConflictCode | null {
+export function promoProblem(
+  promo: PromoCode,
+  eligible: number,
+  usage: PromoUsage,
+  now: Date,
+  guest: PromoGuest = NEW_GUEST,
+): ConflictCode | null {
   if (promo.archivedAt || !promo.isActive) return "PROMO_INVALID";
   if (promo.startsAt && now < new Date(promo.startsAt)) return "PROMO_EXPIRED";
   if (promo.endsAt && now >= new Date(promo.endsAt)) return "PROMO_EXPIRED";
+  if ((promo.perGuestLimit !== undefined || promo.firstOrderOnly) && !guest.known) return "PROMO_NEEDS_GUEST";
   if (promo.usageLimit !== undefined && usage.total >= promo.usageLimit) return "PROMO_USED_UP";
   if (promo.perGuestLimit !== undefined && usage.byGuest >= promo.perGuestLimit) return "PROMO_USED_UP";
-  if (subtotal < promo.minSubtotal) return "PROMO_MIN_SUBTOTAL";
+  if (promo.firstOrderOnly && guest.hasCompletedOrder) return "PROMO_FIRST_ORDER";
+  return termsProblem(promo, eligible);
+}
+
+/** The deal's own terms on this basket: something it covers, and enough of it. */
+function termsProblem(
+  promo: Pick<PromoCode, "minSubtotal" | "productIds" | "categoryIds">,
+  eligible: number,
+): ConflictCode | null {
+  if (isPromoScoped(promo) && eligible <= 0) return "PROMO_NOT_ELIGIBLE";
+  if (eligible < promo.minSubtotal) return "PROMO_MIN_SUBTOTAL";
   return null;
 }
 
 /**
  * Why an archived code can't stay on an order staff changed, or `null` when it
- * can. Only the deal's own terms — its minimum order — still apply: the checks on
+ * can. Only the deal's own terms — something on the order it covers, and its
+ * minimum order on those lines — still apply: the checks on
  * *taking* a code (switched on, within its dates, uses left) are for new orders,
  * which can never take an archived code, while an order that already holds one
  * keeps the deal it was placed with (see `CheckoutPricing.reprice`).
  */
-export function archivedPromoProblem(promo: Pick<PromoCode, "minSubtotal">, subtotal: number): ConflictCode | null {
-  return subtotal < promo.minSubtotal ? "PROMO_MIN_SUBTOTAL" : null;
+export function archivedPromoProblem(
+  promo: Pick<PromoCode, "minSubtotal" | "productIds" | "categoryIds">,
+  eligible: number,
+): ConflictCode | null {
+  return termsProblem(promo, eligible);
 }

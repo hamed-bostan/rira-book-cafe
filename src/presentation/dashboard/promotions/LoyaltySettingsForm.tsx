@@ -3,7 +3,12 @@
 import { useLocale, useTranslations } from "next-intl";
 import * as React from "react";
 
-import { pointsEarnedFor, pointsValue, type LoyaltySettings } from "@/src/domain/entities/Loyalty";
+import {
+  MAX_POINTS_EXPIRY_MONTHS,
+  pointsEarnedFor,
+  pointsValue,
+  type LoyaltySettings,
+} from "@/src/domain/entities/Loyalty";
 import { useRouter } from "@/src/i18n/navigation";
 import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
@@ -19,11 +24,19 @@ import { useToast } from "@/src/presentation/design-system/components/Toast/useT
 
 import { promotionsApi } from "./promotion-api";
 
-const NUMBER_FIELDS = ["tomanPerPoint", "pointValue", "minRedeemPoints"] as const;
+const NUMBER_FIELDS = ["tomanPerPoint", "pointValue", "minRedeemPoints", "pointsExpiryMonths"] as const;
 type NumberField = (typeof NUMBER_FIELDS)[number];
 
 /** What each field's box suggests while empty. */
-const PLACEHOLDER: Record<NumberField, string> = { tomanPerPoint: "10000", pointValue: "1000", minRedeemPoints: "50" };
+const PLACEHOLDER: Record<NumberField, string> = {
+  tomanPerPoint: "10000",
+  pointValue: "1000",
+  minRedeemPoints: "50",
+  pointsExpiryMonths: "0",
+};
+
+/** The rules as the form sends them: what the club's settings hold, less what the server stamps. */
+type ClubRules = Omit<LoyaltySettings, "pointsExpirySince">;
 
 /** The order, in Toman, the worked example earns points on. */
 const EXAMPLE_ORDER = 250_000;
@@ -37,23 +50,32 @@ function toForm(settings: LoyaltySettings): ClubForm {
     tomanPerPoint: String(settings.tomanPerPoint),
     pointValue: String(settings.pointValue),
     minRedeemPoints: String(settings.minRedeemPoints),
+    pointsExpiryMonths: String(settings.pointsExpiryMonths),
   };
 }
 
-/** The typed rules, or `null` until they're whole numbers — at least 1 to earn and to spend, 0 or more for the minimum. */
-function parse(form: ClubForm): LoyaltySettings | null {
-  const [tomanPerPoint, pointValue, minRedeemPoints] = NUMBER_FIELDS.map((field) =>
+/**
+ * The typed rules, or `null` until they're whole numbers — at least 1 to earn and
+ * to spend, 0 or more for the minimum, and 0 (never) to 120 months for the expiry.
+ */
+function parse(form: ClubForm): ClubRules | null {
+  const [tomanPerPoint, pointValue, minRedeemPoints, pointsExpiryMonths] = NUMBER_FIELDS.map((field) =>
     form[field].trim() === "" ? Number.NaN : Number(form[field]),
   );
   const whole = (value: number, least: number): boolean => Number.isInteger(value) && value >= least;
-  return whole(tomanPerPoint, 1) && whole(pointValue, 1) && whole(minRedeemPoints, 0)
-    ? { enabled: form.enabled, tomanPerPoint, pointValue, minRedeemPoints }
+  return whole(tomanPerPoint, 1) &&
+    whole(pointValue, 1) &&
+    whole(minRedeemPoints, 0) &&
+    whole(pointsExpiryMonths, 0) &&
+    pointsExpiryMonths <= MAX_POINTS_EXPIRY_MONTHS
+    ? { enabled: form.enabled, tomanPerPoint, pointValue, minRedeemPoints, pointsExpiryMonths }
     : null;
 }
 
 /**
  * How the rewards club works: on or paused, how much a guest spends for a point,
- * what a point takes off, and the fewest they can spend — with a worked example
+ * what a point takes off, the fewest they can spend, and how many months without a
+ * visit before points lapse (0 = never, the default) — with a worked example
  * that follows the numbers as they're typed. Discard puts back what's saved; Save
  * writes over the REST API and `router.refresh()`es.
  */

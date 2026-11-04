@@ -84,6 +84,8 @@ describe("a refund on a completed order", () => {
         quantity: 1,
         amount: 110_000,
         vatAmount: 10_000,
+        serviceCharge: 0,
+        serviceChargeVat: 0,
         restocked: false,
       },
       {
@@ -93,6 +95,8 @@ describe("a refund on a completed order", () => {
         quantity: 1,
         amount: 200_000,
         vatAmount: 0,
+        serviceCharge: 0,
+        serviceChargeVat: 0,
         restocked: true,
       },
     ],

@@ -34,6 +34,8 @@ function optionalText(max: number) {
 
 /** Longest promo code accepted as typed (codes themselves are 3–20 characters). */
 const MAX_PROMO_INPUT_LENGTH = 30;
+/** Longest phone a counter quote reads, as typed (spaces and a country code included). */
+const MAX_QUOTE_PHONE_LENGTH = 32;
 
 const orderLines = z
   .array(
@@ -83,8 +85,15 @@ export const placeOrderSchema = z
 
 export type PlaceOrderInput = z.input<typeof placeOrderSchema>;
 
-/** Previewing the basket's total with a promo code and/or points. */
-export const quoteOrderSchema = z.object({ items: orderLines, ...discountFields });
+/**
+ * Previewing the basket's total with a promo code and/or points — and how it's
+ * served, when the guest has chosen, since a dine-in order carries the service charge.
+ */
+export const quoteOrderSchema = z.object({
+  items: orderLines,
+  ...discountFields,
+  serviceType: z.optional(z.enum(SERVICE_TYPES, { error: "serviceTypeInvalid" })),
+});
 
 export type QuoteOrderInput = z.input<typeof quoteOrderSchema>;
 
@@ -145,8 +154,10 @@ export type OrderPaymentInput = z.infer<typeof orderPaymentSchema>;
 /**
  * A sale staff ring up at the counter, for a guest: the phone finds their profile,
  * and the name makes one when it has none (see `guest-schema`). Only *which* items,
- * like a guest's order: the prices come from the menu. Paid now when it carries
- * `paymentParts`; handed over on the spot with `complete`.
+ * like a guest's order: the prices come from the menu, and so do the discounts — a
+ * promo code the guest gave and/or their points, priced on the server. Paid now when
+ * it carries `paymentParts` (which must add up to the priced total); handed over on
+ * the spot with `complete`.
  */
 export const counterOrderSchema = z
   .object({
@@ -158,16 +169,31 @@ export const counterOrderSchema = z
     customerName: guestNameField,
     paymentParts: z.optional(paymentParts),
     complete: z.optional(z.boolean()),
+    ...discountFields,
   })
   .check(
     z.refine((data) => data.serviceType !== "dineIn" || data.tableLabel !== undefined, {
       path: ["tableLabel"],
       error: "tableRequired",
-      when: fieldsParsed("items.*.note", "tableLabel", "note", "customerName", "customerPhone"),
+      when: fieldsParsed("items.*.note", "tableLabel", "note", "customerName", "customerPhone", "promoCode"),
     }),
   );
 
 export type CounterOrderFormInput = z.input<typeof counterOrderSchema>;
+
+/**
+ * Previewing a counter sale's total: its lines, service and discounts, and the
+ * guest's phone once staff typed one (their points and per-guest code uses are read
+ * by it). A phone that isn't a full number yet prices the sale for no guest.
+ */
+export const counterQuoteSchema = z.object({
+  items: orderLines,
+  serviceType: z.enum(SERVICE_TYPES, { error: "serviceTypeInvalid" }),
+  customerPhone: optionalText(MAX_QUOTE_PHONE_LENGTH),
+  ...discountFields,
+});
+
+export type CounterQuoteInput = z.input<typeof counterQuoteSchema>;
 
 /** Staff refunding units of a completed order. */
 export const orderRefundSchema = z.object({

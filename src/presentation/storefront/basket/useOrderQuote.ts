@@ -4,6 +4,7 @@ import * as React from "react";
 
 import type { QuoteOrderInput } from "@/src/contracts/order-schema";
 import type { OrderQuote } from "@/src/domain/entities/Checkout";
+import type { ServiceType } from "@/src/domain/entities/Order";
 import { ApiError } from "@/src/lib/api/ApiError";
 
 import { storefrontApi } from "../storefront-api";
@@ -17,6 +18,8 @@ type UseOrderQuoteOptions = {
   basket: Basket;
   promoCode?: string;
   redeemPoints: boolean;
+  /** How it's served: a dine-in order carries the service charge. */
+  serviceType?: ServiceType;
   /** Only signed-in guests have points and can use codes. */
   enabled: boolean;
   /** Told when the server refuses the quote — a code that can't be used, points that aren't there. Keep it stable. */
@@ -43,6 +46,7 @@ export function useOrderQuote({
   basket,
   promoCode,
   redeemPoints,
+  serviceType,
   enabled,
   onRejected,
 }: UseOrderQuoteOptions): OrderQuoteState {
@@ -51,6 +55,7 @@ export function useOrderQuote({
     items: basketToOrderItems(basket),
     promoCode,
     redeemPoints,
+    serviceType,
   } satisfies QuoteOrderInput);
   const active = enabled && basket.lines.length > 0;
   // The first question goes out at once — opening the basket shouldn't wait out a

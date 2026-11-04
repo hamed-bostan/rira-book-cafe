@@ -7,7 +7,7 @@ import { formatOrderDate, formatOrderTime } from "@/src/lib/formatOrderDate";
 /** Params that hold an instant (ISO timestamp) — shown as a date and time. */
 const INSTANT_PARAMS = new Set(["startsAt"]);
 /** Params that hold an instant where only the day matters (a loan's due date). */
-const DAY_OF_INSTANT_PARAMS = new Set(["dueAt"]);
+const DAY_OF_INSTANT_PARAMS = new Set(["dueAt", "expiresAt"]);
 /** Params that already are a cafe day (`YYYY-MM-DD`). */
 const CAFE_DAY_PARAMS = new Set(["checkIn", "checkOut"]);
 

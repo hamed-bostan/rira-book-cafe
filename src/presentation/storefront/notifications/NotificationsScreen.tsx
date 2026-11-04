@@ -54,6 +54,8 @@ const ICONS: Record<NotificationKind, LucideIcon> = {
   holdLastDay: BookOpen,
   holdExpired: BookOpen,
   pointsEarned: Gift,
+  pointsExpiring: Gift,
+  pointsExpired: Gift,
   reviewApproved: Star,
   staffMessage: MessageSquareText,
   reservationChanged: CalendarClock,
@@ -73,6 +75,7 @@ const URGENT: ReadonlySet<NotificationKind> = new Set([
   "bookAvailable",
   "holdCollectBy",
   "holdLastDay",
+  "pointsExpiring",
 ]);
 
 /**

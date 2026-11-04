@@ -527,6 +527,9 @@ function planPurchasing(owner: ActivityActor): void {
 
 // ── Promotions and loyalty ───────────────────────────────────────────────────
 
+/** A code on the whole order, for any guest. */
+const UNSCOPED = { productIds: [], categoryIds: [], firstOrderOnly: false };
+
 function planPromotions(): void {
   schedule(at(-DAYS, "08:30"), "promo codes", async () => {
     await createPromo.execute(
@@ -539,6 +542,7 @@ function planPromotions(): void {
         minSubtotal: 0,
         perGuestLimit: 3,
         isActive: true,
+        ...UNSCOPED,
       },
       STAFF,
     );
@@ -550,6 +554,7 @@ function planPromotions(): void {
         value: 30_000,
         minSubtotal: 250_000,
         isActive: true,
+        ...UNSCOPED,
       },
       STAFF,
     );
@@ -562,6 +567,7 @@ function planPromotions(): void {
         minSubtotal: 0,
         endsAt: at(-DAYS + 5, "23:00").toISOString(),
         isActive: false,
+        ...UNSCOPED,
       },
       STAFF,
     );

@@ -51,6 +51,8 @@ function order(overrides: Partial<Order> = {}): Order {
     pointsRedeemed: 0,
     pointsDiscount: 0,
     pointsEarned: 0,
+    serviceCharge: 0,
+    serviceChargeBps: 0,
     total: 280_000,
     placedAt: "2026-11-03T08:00:00.000Z",
     updatedAt: UPDATED,
@@ -116,6 +118,37 @@ function setup({ current = order(), products = [product()], pricing }: Setup = {
 }
 
 describe("ChangeOrder", () => {
+  it("re-prices the service charge at the order's own rate when the lines change", async () => {
+    const { useCase, change } = setup({
+      current: order({ serviceChargeBps: 1000, serviceCharge: 28_000, total: 308_000 }),
+    });
+    await useCase.execute("o1", { add: [{ productId: "p-tea", quantity: 2 }] }, STAFF, NOW);
+    // 380,000 of lines; 10% of it.
+    expect(change.mock.calls[0][0].amounts).toEqual({
+      subtotal: 380_000,
+      promoDiscount: 0,
+      pointsDiscount: 0,
+      serviceCharge: 38_000,
+      total: 418_000,
+    });
+  });
+
+  it("moves the service charge with the service while the bill is open — not once it's paid", async () => {
+    const charged = { serviceChargeBps: 1000, serviceCharge: 28_000, total: 308_000 };
+    const open = setup({ current: order(charged) });
+    await open.useCase.execute("o1", { serviceType: "takeaway" }, STAFF, NOW);
+    expect(open.change.mock.calls[0][0].amounts).toMatchObject({ serviceCharge: 0, total: 280_000 });
+
+    const paid = setup({ current: order({ ...charged, paymentStatus: "paid" }) });
+    await paid.useCase.execute("o1", { serviceType: "takeaway" }, STAFF, NOW);
+    expect(paid.change.mock.calls[0][0].amounts).toBeUndefined();
+
+    // An order placed with no charge never gains one.
+    const plain = setup({ current: order({ serviceType: "takeaway", tableLabel: undefined }) });
+    await plain.useCase.execute("o1", { serviceType: "dineIn", tableLabel: "5" }, STAFF, NOW);
+    expect(plain.change.mock.calls[0][0].amounts).toBeUndefined();
+  });
+
   it("adds a round priced from the menu, re-prices the order, logs it and tells the guest", async () => {
     const { useCase, change, notify } = setup();
 
@@ -313,6 +346,9 @@ describe("ChangeOrder", () => {
       value: 50_000,
       minSubtotal: 250_000,
       isActive: true,
+      productIds: [],
+      categoryIds: [],
+      firstOrderOnly: false,
       createdAt: NOW.toISOString(),
       updatedAt: NOW.toISOString(),
     };

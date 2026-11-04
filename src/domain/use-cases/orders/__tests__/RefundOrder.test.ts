@@ -114,7 +114,7 @@ describe("RefundOrder", () => {
       action: "order.refunded",
       changes: [{ field: "refundedTotal", before: "0", after: "200000" }],
     });
-    expect(ledger?.(result, { vatRateBps: 1000 }).map((entry) => entry.source)).toEqual([
+    expect(ledger?.(result, { vatRateBps: 1000, serviceChargeBps: 0 }).map((entry) => entry.source)).toEqual([
       "orderReturn",
       "orderReturnCost",
     ]);
@@ -178,6 +178,8 @@ describe("refundPostings", () => {
               quantity: 1,
               amount: 100_000,
               vatAmount: 9_091,
+              serviceCharge: 0,
+              serviceChargeVat: 0,
               restocked: false,
             },
           ],
@@ -188,7 +190,7 @@ describe("refundPostings", () => {
         order: ORDER,
         restockedValue: 0,
       },
-      { vatRateBps: 1000 },
+      { vatRateBps: 1000, serviceChargeBps: 0 },
     );
 
     expect(entries.map((entry) => entry.source)).toEqual(["orderReturn"]);

@@ -44,8 +44,11 @@ export type OrderChange = {
   serviceType: ServiceType;
   /** The table, for dine-in only. */
   tableLabel?: string;
-  /** The order's amounts after the lines change; absent when only the service changes. */
-  amounts?: Pick<Order, "subtotal" | "promoDiscount" | "pointsDiscount" | "total">;
+  /**
+   * The order's amounts after the change; absent when nothing priced moved (only the
+   * table, or the service of a paid order or one with no service charge).
+   */
+  amounts?: Pick<Order, "subtotal" | "promoDiscount" | "pointsDiscount" | "serviceCharge" | "total">;
 };
 
 /** An order about to be placed. Id, number, status and timestamps are the repository's to assign. */

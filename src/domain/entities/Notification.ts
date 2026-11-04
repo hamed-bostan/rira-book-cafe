@@ -37,6 +37,10 @@ export const NOTIFICATION_KINDS = [
   "holdLastDay",
   "holdExpired",
   "pointsEarned",
+  // Sent by the background jobs when the owner set a points expiry: a heads-up
+  // before the guest's points lapse, and word once they have.
+  "pointsExpiring",
+  "pointsExpired",
   "reviewApproved",
   // Words a member of staff wrote to the guest about one of their bookings, loans or orders.
   "staffMessage",

@@ -23,6 +23,8 @@ function order(status: OrderStatus, userId = "guest"): Order {
     pointsRedeemed: 0,
     pointsDiscount: 0,
     pointsEarned: 0,
+    serviceCharge: 0,
+    serviceChargeBps: 0,
     refundedTotal: 0,
     total: 0,
     placedAt: new Date(0).toISOString(),

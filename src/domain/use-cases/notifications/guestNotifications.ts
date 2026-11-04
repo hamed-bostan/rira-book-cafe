@@ -11,6 +11,7 @@ import { eveningBefore, isReminderDue, soonBefore } from "../../entities/Reminde
 
 import type { BookWaitlistEntry } from "../../entities/BookWaitlist";
 import type { CafeEvent, EventRegistration } from "../../entities/CafeEvent";
+import type { LapsingPoints } from "../../entities/Loyalty";
 import type { Order, OrderStatus } from "../../entities/Order";
 import type { Reservation } from "../../entities/Reservation";
 import type { SuiteBooking } from "../../entities/SuiteBooking";
@@ -464,5 +465,30 @@ export function holdExpiredNotification(entry: BookWaitlistEntry): NewNotificati
     params: { title: entry.bookTitle },
     link: `/menu/${entry.productId}`,
     dedupeKey: `waitlist:${entry.id}:expired`,
+  };
+}
+
+/**
+ * A heads-up that the guest's points lapse soon unless they earn or spend — once
+ * per stretch of inactivity (a visit starts a new one).
+ */
+export function pointsExpiringNotification(lapse: LapsingPoints, expiresAt: Date): NewNotification {
+  return {
+    userId: lapse.userId,
+    kind: "pointsExpiring",
+    params: { points: lapse.balance, expiresAt: expiresAt.toISOString() },
+    link: "/rewards",
+    dedupeKey: `points:${lapse.userId}:expiring:${lapse.lastActivityAt}`,
+  };
+}
+
+/** The guest's points lapsed after the months without activity the club allows. */
+export function pointsExpiredNotification(lapse: LapsingPoints, points: number): NewNotification {
+  return {
+    userId: lapse.userId,
+    kind: "pointsExpired",
+    params: { points },
+    link: "/rewards",
+    dedupeKey: `points:${lapse.userId}:expired:${lapse.lastActivityAt}`,
   };
 }

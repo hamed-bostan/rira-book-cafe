@@ -1,4 +1,4 @@
-import { ACCOUNT_TYPES, MAX_VAT_RATE_BPS } from "@/src/domain/entities/Ledger";
+import { ACCOUNT_TYPES, MAX_SERVICE_CHARGE_BPS, MAX_VAT_RATE_BPS } from "@/src/domain/entities/Ledger";
 import * as z from "@/src/lib/zod";
 
 import { fieldsParsed } from "./fields-parsed";
@@ -68,7 +68,8 @@ export const ledgerAccountActiveSchema = z.object({ isActive: z.boolean() });
 
 /**
  * VAT rate as a percentage the owner types ("10", "9.5"), stored in basis points;
- * and the day the books are closed through (blank: nothing closed).
+ * the service charge on dine-in orders the same way ("0" = none; left out, it stays
+ * as it is); and the day the books are closed through (blank: nothing closed).
  */
 export const accountingSettingsSchema = z.object({
   vatRate: z
@@ -77,6 +78,14 @@ export const accountingSettingsSchema = z.object({
       z.transform((value) => Math.round(Number(value) * 100)),
     )
     .check(z.refine((bps) => bps <= MAX_VAT_RATE_BPS, "vatRateInvalid")),
+  serviceChargeRate: z.optional(
+    z
+      .pipe(
+        z.string().check(z.trim(), z.regex(/^\d{1,2}(\.\d{1,2})?$/, "serviceChargeInvalid")),
+        z.transform((value) => Math.round(Number(value) * 100)),
+      )
+      .check(z.refine((bps) => bps <= MAX_SERVICE_CHARGE_BPS, "serviceChargeInvalid")),
+  ),
   booksClosedThrough: z.pipe(
     z.pipe(
       z.string().check(z.trim()),

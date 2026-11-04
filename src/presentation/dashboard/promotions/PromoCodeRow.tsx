@@ -10,6 +10,8 @@ import { Badge, type BadgeProps } from "@/src/presentation/design-system/compone
 
 import { PromoCodeRowActions } from "./PromoCodeRowActions";
 
+import type { PromoScopeOptions } from "./PromoCodeDialog";
+
 type PromoCodeRowProps = {
   promo: PromoCodeWithUses;
   state: PromoCodeState;
@@ -18,7 +20,15 @@ type PromoCodeRowProps = {
   takenCodes: readonly string[];
   /** Today on the cafe calendar. */
   today: string;
+  /** The menu's items and categories, to name what a scoped code covers. */
+  scope: PromoScopeOptions;
 };
+
+/** "Books, Cakes" — the names of what a code covers, a few and then how many more. */
+function scopeNames(ids: readonly string[], options: readonly { id: string; name: string }[]): string {
+  const names = ids.map((id) => options.find((option) => option.id === id)?.name ?? id);
+  return names.length > 3 ? `${names.slice(0, 3).join(", ")} +${names.length - 3}` : names.join(", ");
+}
 
 /** The states worth a badge; a live or switched-off code says so with its switch. */
 const BADGE: Partial<Record<PromoCodeState, NonNullable<BadgeProps["variant"]>>> = {
@@ -32,7 +42,7 @@ const BADGE: Partial<Record<PromoCodeState, NonNullable<BadgeProps["variant"]>>>
  * or can't be used any more, a line of who it's for and its limits, and the
  * controls. A finished code (ended, used up) is dimmed.
  */
-export async function PromoCodeRow({ promo, state, now, takenCodes, today }: PromoCodeRowProps) {
+export async function PromoCodeRow({ promo, state, now, takenCodes, today, scope }: PromoCodeRowProps) {
   const t = await getTranslations("dashPromotions");
   const locale = await getLocale();
   const finished = isPromoCodeFinished(state);
@@ -51,8 +61,14 @@ export async function PromoCodeRow({ promo, state, now, takenCodes, today }: Pro
   // Stored as the instant the last day ends, so step back into that day.
   const lastDay = promo.endsAt ? cafeDayOf(new Date(new Date(promo.endsAt).getTime() - 1)) : undefined;
 
+  const covers = [scopeNames(promo.categoryIds, scope.categories), scopeNames(promo.productIds, scope.products)]
+    .filter(Boolean)
+    .join(", ");
+
   const meta = [
     promo.description,
+    covers ? t("scopeOnly", { names: covers }) : null,
+    promo.firstOrderOnly ? t("firstOrderBadge") : null,
     promo.usageLimit !== undefined
       ? t("usedOf", { uses: formatNumber(promo.uses, locale), limit: formatNumber(promo.usageLimit, locale) })
       : t("used", { count: promo.uses, formatted: formatNumber(promo.uses, locale) }),
@@ -88,7 +104,7 @@ export async function PromoCodeRow({ promo, state, now, takenCodes, today }: Pro
         <p className="text-body-small text-pretty text-muted-foreground sm:text-body-caption">{meta}</p>
       </div>
 
-      <PromoCodeRowActions promo={promo} finished={finished} takenCodes={takenCodes} today={today} />
+      <PromoCodeRowActions promo={promo} finished={finished} takenCodes={takenCodes} today={today} scope={scope} />
     </article>
   );
 }

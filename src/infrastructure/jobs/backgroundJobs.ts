@@ -1,4 +1,5 @@
 import { ExpireBookHolds } from "@/src/domain/use-cases/jobs/ExpireBookHolds";
+import { ExpireLoyaltyPoints } from "@/src/domain/use-cases/jobs/ExpireLoyaltyPoints";
 import { ExpireSuiteRequests, ExpireTableRequests } from "@/src/domain/use-cases/jobs/ExpireRequests";
 import {
   SendEventReminders,
@@ -13,6 +14,7 @@ import {
   customerNotifier,
   eventRepository,
   logger,
+  loyaltyRepository,
   reservationRepository,
   suiteBookingRepository,
 } from "@/src/infrastructure/container";
@@ -33,6 +35,8 @@ export function createBackgroundJobs(): BackgroundJob[] {
     expireTableRequests: new ExpireTableRequests(reservationRepository, customerNotifier),
     expireSuiteRequests: new ExpireSuiteRequests(suiteBookingRepository, customerNotifier),
     expireBookHolds: new ExpireBookHolds(bookWaitlistRepository, customerNotifier),
+    // Off unless the owner set a points expiry in the loyalty settings.
+    expireLoyaltyPoints: new ExpireLoyaltyPoints(loyaltyRepository, customerNotifier),
     tableReminders: new SendTableReminders(reservationRepository, customerNotifier),
     suiteReminders: new SendSuiteReminders(suiteBookingRepository, customerNotifier),
     eventReminders: new SendEventReminders(eventRepository, customerNotifier),

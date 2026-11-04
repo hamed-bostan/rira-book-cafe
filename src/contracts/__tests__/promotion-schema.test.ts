@@ -45,6 +45,10 @@ describe("promoCodeFormSchema", () => {
       usageLimit: undefined,
       perGuestLimit: 1,
       isActive: true,
+      // Left out, a code covers the whole order, for any guest.
+      productIds: [],
+      categoryIds: [],
+      firstOrderOnly: false,
       // Tehran is UTC+03:30: the window opens at local midnight and closes at the end of the last day.
       startsAt: "2026-10-19T20:30:00.000Z",
       endsAt: "2026-10-31T20:30:00.000Z",

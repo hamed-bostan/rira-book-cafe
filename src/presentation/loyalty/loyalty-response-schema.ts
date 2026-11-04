@@ -17,6 +17,8 @@ export const loyaltySettingsResponseSchema = z.object({
   tomanPerPoint: z.number(),
   pointValue: z.number(),
   minRedeemPoints: z.number(),
+  pointsExpiryMonths: z.number(),
+  pointsExpirySince: z.optional(z.string()),
 }) satisfies z.ZodMiniType<LoyaltySettings>;
 
 export const loyaltyTransactionResponseSchema = z.object({
@@ -35,6 +37,7 @@ export const guestLoyaltyOverviewResponseSchema = z.object({
   balance: z.number(),
   history: z.array(loyaltyTransactionResponseSchema),
   settings: loyaltySettingsResponseSchema,
+  expiresAt: z.optional(z.string()),
 }) satisfies z.ZodMiniType<GuestLoyaltyOverview>;
 
 export const guestLoyaltyLookupResponseSchema = z.object({
@@ -57,6 +60,9 @@ const promoCodeShape = {
   usageLimit: z.optional(z.number()),
   perGuestLimit: z.optional(z.number()),
   isActive: z.boolean(),
+  productIds: z.array(z.string()),
+  categoryIds: z.array(z.string()),
+  firstOrderOnly: z.boolean(),
   createdAt: z.string(),
   updatedAt: z.string(),
 };
@@ -73,6 +79,8 @@ export const orderQuoteResponseSchema = z.object({
   promoDiscount: z.number(),
   pointsRedeemed: z.number(),
   pointsDiscount: z.number(),
+  serviceCharge: z.number(),
+  serviceChargeBps: z.number(),
   total: z.number(),
   pointsBalance: z.number(),
   pointsAvailable: z.number(),

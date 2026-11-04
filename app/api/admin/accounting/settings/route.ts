@@ -24,7 +24,10 @@ export async function GET(): Promise<NextResponse> {
   }
 }
 
-/** PUT /api/admin/accounting/settings — change the VAT rate or close the books through a day. Requires `accounting.write`. */
+/**
+ * PUT /api/admin/accounting/settings — change the VAT rate, the dine-in service
+ * charge, or close the books through a day. Requires `accounting.write`.
+ */
 export async function PUT(request: NextRequest): Promise<NextResponse> {
   const session = await getSessionWith("accounting.write");
   if (!session) return unauthorizedResponse();
@@ -42,7 +45,11 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
 
   try {
     const settings = await new UpdateAccountingSettings(ledgerRepository).execute(
-      { vatRateBps: parsed.data.vatRate, booksClosedThrough: parsed.data.booksClosedThrough },
+      {
+        vatRateBps: parsed.data.vatRate,
+        serviceChargeBps: parsed.data.serviceChargeRate,
+        booksClosedThrough: parsed.data.booksClosedThrough,
+      },
       { id: session.user.id, name: session.user.name ?? session.user.id },
     );
     return NextResponse.json(settings);

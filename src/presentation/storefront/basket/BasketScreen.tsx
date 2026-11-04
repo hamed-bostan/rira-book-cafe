@@ -42,6 +42,9 @@ const PROMO_ERRORS: ReadonlySet<string> = new Set([
   "PROMO_EXPIRED",
   "PROMO_USED_UP",
   "PROMO_MIN_SUBTOTAL",
+  "PROMO_NOT_ELIGIBLE",
+  "PROMO_FIRST_ORDER",
+  "PROMO_NEEDS_GUEST",
 ]);
 
 type BasketScreenProps = {
@@ -92,6 +95,7 @@ export function BasketScreen({ signedIn }: BasketScreenProps) {
     basket,
     promoCode: appliedPromo,
     redeemPoints,
+    serviceType,
     enabled: signedIn && ready,
     onRejected: onQuoteRejected,
   });

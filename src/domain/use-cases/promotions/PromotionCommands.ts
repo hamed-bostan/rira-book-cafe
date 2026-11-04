@@ -1,5 +1,6 @@
 import {
   activityValue,
+  diffFields,
   type ActivityActor,
   type ActivityChange,
   type NewActivityEntry,
@@ -7,7 +8,10 @@ import {
 import {
   MAX_LOYALTY_NOTE_LENGTH,
   MAX_POINTS_ADJUSTMENT,
+  MAX_POINTS_EXPIRY_MONTHS,
+  pointsExpireAt,
   type GuestLoyaltyLookup,
+  type GuestLoyaltyOverview,
   type LoyaltyAccount,
   type LoyaltySettings,
   type LoyaltyTransaction,
@@ -16,6 +20,7 @@ import { MAX_ORDER_AMOUNT } from "../../entities/Order";
 import { isPlausiblePhone, normalizePhone } from "../../entities/Phone";
 import {
   MAX_PROMO_DESCRIPTION_LENGTH,
+  MAX_PROMO_SCOPE_ENTRIES,
   PROMO_CODE_PATTERN,
   normalizePromoCode,
   type PromoCode,
@@ -45,6 +50,9 @@ const PROMO_FIELDS = [
   "usageLimit",
   "perGuestLimit",
   "isActive",
+  "productIds",
+  "categoryIds",
+  "firstOrderOnly",
 ] as const satisfies readonly (keyof PromoCodeInput)[];
 
 /**
@@ -73,15 +81,36 @@ function validatePromo(input: PromoCodeInput, storedCode?: string): PromoCodeInp
   if (input.startsAt && input.endsAt && input.endsAt <= input.startsAt) {
     throw new ValidationError("endsAt", "The end must be after the start.");
   }
-  return { ...input, code, description: input.description?.trim() || undefined };
+  for (const field of ["productIds", "categoryIds"] as const) {
+    if (input[field].length > MAX_PROMO_SCOPE_ENTRIES) throw new ValidationError(field, "scopeTooMany");
+  }
+  return {
+    ...input,
+    code,
+    description: input.description?.trim() || undefined,
+    // Each id once, in a stable order, so an unchanged scope never reads as an edit.
+    productIds: [...new Set(input.productIds)].sort(),
+    categoryIds: [...new Set(input.categoryIds)].sort(),
+  };
+}
+
+/** A field as the log shows it: a scope list as its ids (none = unscoped, "not set"). */
+function promoValue(promo: PromoCode, field: (typeof PROMO_FIELDS)[number]): string | null {
+  const value = promo[field];
+  if (Array.isArray(value)) return value.length > 0 ? [...value].sort().join(", ") : null;
+  // A code that isn't first-order-only reads as unset, like an absent limit.
+  if (field === "firstOrderOnly" && value === false) return null;
+  return activityValue(value);
 }
 
 function promoChanges(before: PromoCode | null, after: PromoCode): ActivityChange[] {
-  return PROMO_FIELDS.filter((field) => before === null || before[field] !== after[field]).map((field) => ({
-    field,
-    before: before ? activityValue(before[field]) : null,
-    after: activityValue(after[field]),
-  }));
+  return PROMO_FIELDS.filter((field) => before === null || promoValue(before, field) !== promoValue(after, field)).map(
+    (field) => ({
+      field,
+      before: before ? promoValue(before, field) : null,
+      after: promoValue(after, field),
+    }),
+  );
 }
 
 /**
@@ -229,23 +258,82 @@ export class GetLoyaltySettings {
   }
 }
 
-/** Staff tune the club: how points are earned, what they're worth, the least a guest can spend. */
+/** The club's rules as staff send them: expiry left out stays as it is; when it was switched on is the use-case's. */
+export type LoyaltySettingsInput = Omit<LoyaltySettings, "pointsExpiryMonths" | "pointsExpirySince"> & {
+  pointsExpiryMonths?: number;
+};
+
+/** The settings an edit compares, in the order the activity log lists them. */
+const LOYALTY_FIELDS = [
+  "enabled",
+  "tomanPerPoint",
+  "pointValue",
+  "minRedeemPoints",
+  "pointsExpiryMonths",
+] as const satisfies readonly (keyof LoyaltySettings)[];
+
+/**
+ * Staff tune the club: how points are earned, what they're worth, the least a guest
+ * can spend, and how long points last without activity. Logged like any setting.
+ *
+ * Switching expiry on (or lengthening it from off) stamps `pointsExpirySince`, so
+ * inactivity is counted from today rather than from a guest's last visit years ago —
+ * nobody loses points the day the rule appears. Changing the months while it's on
+ * keeps the stamp; switching it off clears it.
+ */
 export class UpdateLoyaltySettings {
   constructor(private readonly loyaltyRepo: ILoyaltyRepository) {}
 
-  execute(settings: LoyaltySettings): Promise<LoyaltySettings> {
+  async execute(input: LoyaltySettingsInput, staff: ActivityActor, now: Date = new Date()): Promise<LoyaltySettings> {
     for (const field of ["tomanPerPoint", "pointValue"] as const) {
-      if (!Number.isInteger(settings[field]) || settings[field] < 1)
+      if (!Number.isInteger(input[field]) || input[field] < 1)
         throw new ValidationError(field, "Enter a whole number above zero.");
     }
-    if (!Number.isInteger(settings.minRedeemPoints) || settings.minRedeemPoints < 0) {
+    if (!Number.isInteger(input.minRedeemPoints) || input.minRedeemPoints < 0) {
       throw new ValidationError("minRedeemPoints", "Enter a whole number.");
     }
     for (const field of ["tomanPerPoint", "pointValue", "minRedeemPoints"] as const) {
-      if (settings[field] > MAX_ORDER_AMOUNT) throw new ValidationError(field, "That number is too large.");
+      if (input[field] > MAX_ORDER_AMOUNT) throw new ValidationError(field, "That number is too large.");
     }
-    return this.loyaltyRepo.saveSettings(settings);
+    const months = input.pointsExpiryMonths;
+    if (months !== undefined && (!Number.isInteger(months) || months < 0 || months > MAX_POINTS_EXPIRY_MONTHS)) {
+      throw new ValidationError("pointsExpiryMonths", "expiryMonthsInvalid");
+    }
+
+    const before = await this.loyaltyRepo.getSettings();
+    const pointsExpiryMonths = months ?? before.pointsExpiryMonths;
+    const settings: LoyaltySettings = {
+      enabled: input.enabled,
+      tomanPerPoint: input.tomanPerPoint,
+      pointValue: input.pointValue,
+      minRedeemPoints: input.minRedeemPoints,
+      pointsExpiryMonths,
+      pointsExpirySince:
+        pointsExpiryMonths <= 0
+          ? undefined
+          : before.pointsExpiryMonths > 0 && before.pointsExpirySince
+            ? before.pointsExpirySince
+            : now.toISOString(),
+    };
+    return this.loyaltyRepo.saveSettings(settings, (saved) => {
+      const changes = diffFields(pick(before, LOYALTY_FIELDS), pick(saved, LOYALTY_FIELDS));
+      return changes.length === 0
+        ? null
+        : {
+            actorId: staff.id,
+            actorName: staff.name,
+            action: "loyalty.settingsChanged",
+            entityType: "loyalty",
+            entityId: "settings",
+            entityLabel: "Loyalty club",
+            changes,
+          };
+    });
   }
+}
+
+function pick<T extends object, K extends keyof T>(value: T, keys: readonly K[]): Pick<T, K> {
+  return Object.fromEntries(keys.map((key) => [key, value[key]])) as Pick<T, K>;
 }
 
 /** The signed-in guest's balance and recent points. */
@@ -299,6 +387,36 @@ export class AdjustGuestPoints {
 
     const user = await this.userRepo.getById(normalizePhone(input.phone));
     if (!user) throw new NotFoundError("guest", input.phone);
-    return this.loyaltyRepo.adjust({ userId: user.id, delta: input.delta, note, by: staff });
+    return this.loyaltyRepo.adjust({ userId: user.id, delta: input.delta, note, by: staff }, (saved) => ({
+      actorId: staff.id,
+      actorName: staff.name,
+      action: "loyalty.pointsAdjusted",
+      entityType: "loyalty",
+      entityId: user.id,
+      entityLabel: user.name ? `${user.name} (${user.phone})` : user.phone,
+      changes: [
+        { field: "points", before: null, after: activityValue(saved.delta) },
+        { field: "note", before: null, after: note },
+      ],
+    }));
+  }
+}
+
+/**
+ * The signed-in guest's club page: their balance and recent points, the club's
+ * rules, and — when the owner set an expiry — the day their points lapse unless
+ * they earn or spend before then.
+ */
+export class GetGuestLoyaltyOverview {
+  constructor(private readonly loyaltyRepo: ILoyaltyRepository) {}
+
+  async execute(guestId: string): Promise<GuestLoyaltyOverview> {
+    const [account, settings, lastActivity] = await Promise.all([
+      new GetOwnLoyaltyAccount(this.loyaltyRepo).execute(guestId),
+      this.loyaltyRepo.getSettings(),
+      this.loyaltyRepo.lastActivity(guestId),
+    ]);
+    const expiresAt = account.balance > 0 ? pointsExpireAt(lastActivity, settings) : null;
+    return { ...account, settings, expiresAt: expiresAt?.toISOString() };
   }
 }

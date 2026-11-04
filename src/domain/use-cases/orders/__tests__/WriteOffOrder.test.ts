@@ -13,7 +13,7 @@ import type { IOrderRepository } from "../../../repositories/IOrderRepository";
 const OWNER = { id: "owner", name: "Rira" };
 /** 13:30 in Tehran on 2026-10-20. */
 const NOW = new Date("2026-10-20T10:00:00Z");
-const SETTINGS = { vatRateBps: 1000 };
+const SETTINGS = { vatRateBps: 1000, serviceChargeBps: 0 };
 
 const ORDER = {
   id: "o1",

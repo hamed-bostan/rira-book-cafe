@@ -94,6 +94,8 @@ export class PrismaOrderRepository implements IOrderRepository {
           promoDiscount: input.promoDiscount,
           pointsRedeemed: input.pointsRedeemed,
           pointsDiscount: input.pointsDiscount,
+          serviceCharge: input.serviceCharge,
+          serviceChargeBps: input.serviceChargeBps,
           total: input.total,
           items: {
             create: input.items.map((item, position) => ({
@@ -311,6 +313,8 @@ export class PrismaOrderRepository implements IOrderRepository {
               quantity: line.quantity,
               amount: line.amount,
               vatAmount: line.vatAmount,
+              serviceCharge: line.serviceCharge,
+              serviceChargeVat: line.serviceChargeVat,
               restocked: line.restocked,
               position,
             })),
@@ -510,6 +514,7 @@ export class PrismaOrderRepository implements IOrderRepository {
                 subtotal: change.amounts.subtotal,
                 promoDiscount: change.amounts.promoDiscount,
                 pointsDiscount: change.amounts.pointsDiscount,
+                serviceCharge: change.amounts.serviceCharge,
                 total: change.amounts.total,
               }
             : {}),
@@ -611,12 +616,16 @@ function mergeLines<T extends { productId: string; name: string; quantity: numbe
  * Take one use of a promo code for this guest, refusing it when the code's overall
  * or per-guest limit is already reached by live (not cancelled) orders. Serialized
  * per code, so the count can't race — nor with staff archiving or deleting the code.
+ * The same goes for a first-order code: the guest's completed orders are counted
+ * here, under the code's lock (an order completing at the same instant isn't
+ * serialized with it, so the window is that single moment). Every order — online or
+ * at the counter — is on a guest's profile, so the per-guest counts are keyed to it.
  */
 async function claimPromoUse(tx: Prisma.TransactionClient, promoCodeId: string, userId: string): Promise<void> {
   await lockPromoCode(tx, promoCodeId);
   const promo = await tx.promoCode.findUnique({
     where: { id: promoCodeId },
-    select: { isActive: true, archivedAt: true, usageLimit: true, perGuestLimit: true },
+    select: { isActive: true, archivedAt: true, usageLimit: true, perGuestLimit: true, firstOrderOnly: true },
   });
   if (!promo?.isActive || promo.archivedAt) {
     throw new ConflictError("PROMO_INVALID", "That promo code is no longer active.");
@@ -627,6 +636,9 @@ async function claimPromoUse(tx: Prisma.TransactionClient, promoCodeId: string, 
   }
   if (promo.perGuestLimit !== null && (await tx.order.count({ where: { ...live, userId } })) >= promo.perGuestLimit) {
     throw new ConflictError("PROMO_USED_UP", "You've already used that promo code.");
+  }
+  if (promo.firstOrderOnly && (await tx.order.count({ where: { userId, status: "completed" } })) > 0) {
+    throw new ConflictError("PROMO_FIRST_ORDER", "That promo code is for a first order.");
   }
 }
 
@@ -696,6 +708,8 @@ function toRefund(row: RefundRow): OrderRefund {
       quantity: line.quantity,
       amount: line.amount,
       vatAmount: line.vatAmount,
+      serviceCharge: line.serviceCharge,
+      serviceChargeVat: line.serviceChargeVat,
       restocked: line.restocked,
     })),
     createdById: row.createdById,
@@ -783,6 +797,8 @@ function toOrder(row: OrderRow): Order {
     promoDiscount: row.promoDiscount,
     pointsRedeemed: row.pointsRedeemed,
     pointsDiscount: row.pointsDiscount,
+    serviceCharge: row.serviceCharge,
+    serviceChargeBps: row.serviceChargeBps,
     pointsEarned: row.pointsEarned,
     total: row.total,
     placedAt: row.placedAt.toISOString(),

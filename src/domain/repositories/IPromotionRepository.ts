@@ -25,6 +25,8 @@ export type IPromotionRepository = {
   getArchivedByCode(code: string): Promise<PromoCode | null>;
   /** How many live (not cancelled) orders carry the code — in all, and the guest's. */
   usage(promoId: string, userId: string): Promise<PromoUsage>;
+  /** Whether the guest's profile has a completed order — a first-order code is for one that hasn't. */
+  hasCompletedOrder(userId: string): Promise<boolean>;
   /** Whether any order, in any state (cancelled ones too), ever carried the code. */
   isUsed(promoId: string): Promise<boolean>;
   /** A taken code is `UniqueConstraintError(["code"])`. */

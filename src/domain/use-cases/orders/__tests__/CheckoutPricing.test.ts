@@ -4,10 +4,17 @@ import { ConflictError } from "../../../errors/ConflictError";
 import { CheckoutPricing } from "../CheckoutPricing";
 
 import type { LoyaltySettings } from "../../../entities/Loyalty";
+import type { Product } from "../../../entities/Product";
 import type { PromoCode, PromoUsage } from "../../../entities/Promotion";
 
 const NOW = new Date("2026-10-20T10:00:00Z");
-const SETTINGS: LoyaltySettings = { enabled: true, tomanPerPoint: 10_000, pointValue: 1_000, minRedeemPoints: 50 };
+const SETTINGS: LoyaltySettings = {
+  enabled: true,
+  tomanPerPoint: 10_000,
+  pointValue: 1_000,
+  minRedeemPoints: 50,
+  pointsExpiryMonths: 0,
+};
 
 const PROMO: PromoCode = {
   id: "promo1",
@@ -16,6 +23,9 @@ const PROMO: PromoCode = {
   value: 20,
   minSubtotal: 0,
   isActive: true,
+  productIds: [],
+  categoryIds: [],
+  firstOrderOnly: false,
   createdAt: NOW.toISOString(),
   updatedAt: NOW.toISOString(),
 };
@@ -25,22 +35,181 @@ type PricingSetup = {
   usage?: PromoUsage;
   balance?: number;
   settings?: LoyaltySettings;
+  /** The service charge rate in the accounting settings, in basis points. */
+  serviceChargeBps?: number;
+  hasCompletedOrder?: boolean;
 };
+
+/** The menu's items by category, for codes scoped to categories. */
+const CATEGORY_OF: Record<string, string> = { latte: "drinks", cake: "cakes", novel: "books" };
 
 function pricing({
   promo = PROMO,
   usage = { total: 0, byGuest: 0 },
   balance = 0,
   settings = SETTINGS,
+  serviceChargeBps = 0,
+  hasCompletedOrder = false,
 }: PricingSetup = {}) {
   const promoRepo = {
     getByCode: vi.fn(async (code: string) => (code === promo?.code && !promo.archivedAt ? promo : null)),
     getById: vi.fn(async (id: string) => (id === promo?.id ? promo : null)),
     usage: vi.fn(async () => usage),
+    hasCompletedOrder: vi.fn(async () => hasCompletedOrder),
   };
   const loyaltyRepo = { getSettings: vi.fn(async () => settings), balance: vi.fn(async () => balance) };
-  return new CheckoutPricing(promoRepo, loyaltyRepo);
+  const chargesRepo = { getSettings: vi.fn(async () => ({ vatRateBps: 1000, serviceChargeBps })) };
+  const catalog = {
+    getByIds: vi.fn(async (ids: readonly string[]) =>
+      ids.map((id) => ({ id, categoryId: CATEGORY_OF[id] ?? "other" }) as Product),
+    ),
+  };
+  return new CheckoutPricing(promoRepo, loyaltyRepo, chargesRepo, catalog);
 }
+
+/** A basket of a latte, a cake and a novel: 610,000 in all, 400,000 of it books. */
+const LINES = [
+  { productId: "latte", amount: 120_000 },
+  { productId: "cake", amount: 90_000 },
+  { productId: "novel", amount: 400_000 },
+];
+
+describe("CheckoutPricing — scoped codes", () => {
+  const BOOKS: PromoCode = { ...PROMO, value: 10, categoryIds: ["books"], minSubtotal: 300_000 };
+
+  it("takes the code off the lines it covers, and reads its minimum on them", async () => {
+    const quote = await pricing({ promo: BOOKS }).execute(
+      { subtotal: 610_000, lines: LINES, promoCode: "BOOKCLUB" },
+      "g1",
+      NOW,
+    );
+    // 10% of the 400,000 of books, not of the whole basket.
+    expect(quote).toMatchObject({ promoDiscount: 40_000, total: 570_000 });
+  });
+
+  it("explains why a scoped code doesn't apply", async () => {
+    await expect(
+      pricing({ promo: BOOKS }).execute(
+        { subtotal: 210_000, lines: LINES.slice(0, 2), promoCode: "BOOKCLUB" },
+        "g1",
+        NOW,
+      ),
+    ).rejects.toMatchObject({ code: "PROMO_NOT_ELIGIBLE" });
+    await expect(
+      pricing({ promo: { ...BOOKS, minSubtotal: 500_000 } }).execute(
+        { subtotal: 610_000, lines: LINES, promoCode: "BOOKCLUB" },
+        "g1",
+        NOW,
+      ),
+    ).rejects.toMatchObject({ code: "PROMO_MIN_SUBTOTAL" });
+  });
+
+  it("matches single items as well as categories", async () => {
+    const cake = { ...PROMO, kind: "fixed" as const, value: 30_000, productIds: ["cake"] };
+    const quote = await pricing({ promo: cake }).execute(
+      { subtotal: 610_000, lines: LINES, promoCode: "BOOKCLUB" },
+      "g1",
+      NOW,
+    );
+    expect(quote.promoDiscount).toBe(30_000);
+  });
+
+  it("keeps a first-order code for a guest with no completed order", async () => {
+    const first = { ...PROMO, firstOrderOnly: true };
+    await expect(
+      pricing({ promo: first }).execute({ subtotal: 100_000, promoCode: "BOOKCLUB" }, "g1", NOW),
+    ).resolves.toMatchObject({ promoDiscount: 20_000 });
+    await expect(
+      pricing({ promo: first, hasCompletedOrder: true }).execute(
+        { subtotal: 100_000, promoCode: "BOOKCLUB" },
+        "g1",
+        NOW,
+      ),
+    ).rejects.toMatchObject({ code: "PROMO_FIRST_ORDER" });
+  });
+
+  it("prices an order on no guest profile: no points, and only codes without a per-guest rule", async () => {
+    await expect(
+      pricing({ balance: 900 }).execute({ subtotal: 100_000, promoCode: "BOOKCLUB" }, null, NOW),
+    ).resolves.toMatchObject({ promoDiscount: 20_000, pointsBalance: 0, pointsAvailable: 0 });
+    await expect(
+      pricing({ promo: { ...PROMO, perGuestLimit: 1 } }).execute(
+        { subtotal: 100_000, promoCode: "BOOKCLUB" },
+        null,
+        NOW,
+      ),
+    ).rejects.toMatchObject({ code: "PROMO_NEEDS_GUEST" });
+  });
+
+  it("re-prices a scoped code on the order's new lines", async () => {
+    const placed = {
+      userId: "g1",
+      promoCodeId: "promo1",
+      promoCode: "BOOKCLUB",
+      pointsRedeemed: 0,
+      pointsDiscount: 0,
+      serviceType: "takeaway" as const,
+      serviceChargeBps: 0,
+    };
+    const repricing = pricing({ promo: { ...BOOKS, minSubtotal: 0 }, usage: { total: 1, byGuest: 1 } });
+    await expect(repricing.reprice(placed, 610_000, NOW, LINES)).resolves.toMatchObject({ promoDiscount: 40_000 });
+    // The book taken off leaves nothing the code covers.
+    await expect(repricing.reprice(placed, 210_000, NOW, LINES.slice(0, 2))).rejects.toMatchObject({
+      code: "PROMO_NO_LONGER_APPLIES",
+    });
+  });
+});
+
+describe("CheckoutPricing — service charge", () => {
+  it("charges a dine-in order on what's left after the discounts, and earns no points on the charge", async () => {
+    const quote = await pricing({ serviceChargeBps: 1000, balance: 100 }).execute(
+      { subtotal: 300_000, promoCode: "BOOKCLUB", redeemPoints: true, serviceType: "dineIn" },
+      "g1",
+      NOW,
+    );
+    // 300,000 − 60,000 (code) − 100,000 (points) = 140,000; 10% of it is 14,000.
+    expect(quote).toMatchObject({
+      promoDiscount: 60_000,
+      pointsDiscount: 100_000,
+      serviceCharge: 14_000,
+      serviceChargeBps: 1000,
+      total: 154_000,
+      pointsToEarn: 14,
+    });
+  });
+
+  it("charges a takeaway nothing, and nothing at all while the rate is 0", async () => {
+    await expect(
+      pricing({ serviceChargeBps: 1000 }).execute({ subtotal: 300_000, serviceType: "takeaway" }, "g1", NOW),
+    ).resolves.toMatchObject({ serviceCharge: 0, total: 300_000 });
+    await expect(pricing().execute({ subtotal: 300_000, serviceType: "dineIn" }, "g1", NOW)).resolves.toMatchObject({
+      serviceCharge: 0,
+      total: 300_000,
+    });
+  });
+
+  it("re-prices the charge at the order's own rate, following its service", async () => {
+    const placed = {
+      userId: "g1",
+      promoCodeId: undefined,
+      promoCode: undefined,
+      pointsRedeemed: 0,
+      pointsDiscount: 0,
+      serviceType: "dineIn" as const,
+      serviceChargeBps: 1250,
+    };
+    // Today's rate (10%) doesn't touch an order placed at 12.5%.
+    const repricing = pricing({ serviceChargeBps: 1000 });
+    await expect(repricing.reprice(placed, 200_000, NOW)).resolves.toMatchObject({
+      serviceCharge: 25_000,
+      total: 225_000,
+    });
+    await expect(repricing.reprice(placed, 200_000, NOW, undefined, "takeaway")).resolves.toMatchObject({
+      serviceCharge: 0,
+      total: 200_000,
+    });
+  });
+});
 
 describe("CheckoutPricing", () => {
   it("costs the subtotal with no discounts, and says what it would earn", async () => {
@@ -110,6 +279,8 @@ describe("CheckoutPricing.reprice", () => {
     promoCode: "BOOKCLUB",
     pointsRedeemed: 100,
     pointsDiscount: 100_000,
+    serviceType: "takeaway" as const,
+    serviceChargeBps: 0,
   };
   const NO_PROMO = { ...PLACED, promoCodeId: undefined, promoCode: undefined };
 
@@ -121,6 +292,7 @@ describe("CheckoutPricing.reprice", () => {
       promoDiscount: 80_000,
       pointsRedeemed: 100,
       pointsDiscount: 100_000,
+      serviceCharge: 0,
       total: 220_000,
     });
   });

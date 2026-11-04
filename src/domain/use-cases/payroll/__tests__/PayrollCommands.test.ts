@@ -66,7 +66,10 @@ describe("RecordPayRun", () => {
 
     const [sent, ledger] = createRun.mock.calls[0];
     expect(sent).toMatchObject({ period: "1405-08", createdById: "owner", createdByName: "Rira" });
-    expect(ledger(RUN, { vatRateBps: 1000 })[0]).toMatchObject({ source: "payroll", sourceId: "r1" });
+    expect(ledger(RUN, { vatRateBps: 1000, serviceChargeBps: 0 })[0]).toMatchObject({
+      source: "payroll",
+      sourceId: "r1",
+    });
   });
 
   it("logs the month, and no figure of anyone's", async () => {
@@ -117,7 +120,10 @@ describe("PayPayRun", () => {
     const [id, payment, ledger] = payRun.mock.calls[0];
     expect(id).toBe("r1");
     expect(payment).toEqual({ amount: 18_000_000, source: "bank", paidOn: "2026-11-05", expectedPaid: 0 });
-    expect(ledger(paid, { vatRateBps: 1000 })[0]).toMatchObject({ source: "payrollPayment", date: "2026-11-05" });
+    expect(ledger(paid, { vatRateBps: 1000, serviceChargeBps: 0 })[0]).toMatchObject({
+      source: "payrollPayment",
+      date: "2026-11-05",
+    });
   });
 
   it("pays part, and leaves the rest owed", async () => {

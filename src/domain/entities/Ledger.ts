@@ -73,6 +73,7 @@ export const SYSTEM_ACCOUNTS = {
   salesBooks: "4300",
   salesEvents: "4400",
   salesSuite: "4500",
+  serviceCharges: "4600",
   bankInterest: "4800",
   otherIncome: "4900",
   costOfSales: "5100",
@@ -239,10 +240,20 @@ export function vatIncluded(gross: number, rateBps: number): number {
   return Math.round((gross * rateBps) / (10000 + rateBps));
 }
 
+/** Service charge rates are basis points too; 0 = no service charge (the default). */
+export const DEFAULT_SERVICE_CHARGE_BPS = 0;
+export const MAX_SERVICE_CHARGE_BPS = 2500;
+
 /** The cafe's accounting configuration. */
 export type AccountingSettings = {
   /** VAT rate included in menu prices, in basis points (1000 = 10%). */
   vatRateBps: number;
+  /**
+   * The service charge on dine-in orders, in basis points of what the lines come to
+   * after discounts; 0 = off. Its VAT is inside it, like a menu price's (see
+   * `serviceChargeFor`).
+   */
+  serviceChargeBps: number;
   /**
    * The last day of a closed period: nothing may be posted on or before it. Closing
    * a month locks its numbers for reporting; corrections go into the open period.

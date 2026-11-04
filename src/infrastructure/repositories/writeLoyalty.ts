@@ -17,6 +17,8 @@ export async function readLoyaltySettings(tx: Prisma.TransactionClient): Promise
     tomanPerPoint: row.tomanPerPoint,
     pointValue: row.pointValue,
     minRedeemPoints: row.minRedeemPoints,
+    pointsExpiryMonths: row.pointsExpiryMonths,
+    pointsExpirySince: row.pointsExpirySince?.toISOString(),
   };
 }
 
@@ -102,12 +104,16 @@ export async function clawBackPoints(
   });
 }
 
-/** A completed order earns its points (once), recorded on the order too. Returns what it earned. */
+/**
+ * A completed order earns its points (once), recorded on the order too. Returns what
+ * it earned. Points are earned on what the guest paid for the goods: the service
+ * charge isn't spending at the cafe's menu, so it earns none.
+ */
 export async function earnPoints(
   tx: Prisma.TransactionClient,
-  order: { id: string; orderNumber: number; userId: string; total: number },
+  order: { id: string; orderNumber: number; userId: string; total: number; serviceCharge: number },
 ): Promise<number> {
-  const points = pointsEarnedFor(order.total, await readLoyaltySettings(tx));
+  const points = pointsEarnedFor(order.total - order.serviceCharge, await readLoyaltySettings(tx));
   if (points <= 0) return 0;
   const existing = await tx.loyaltyTransaction.findUnique({ where: { dedupeKey: `order:${order.id}:earn` } });
   if (existing) return existing.delta;

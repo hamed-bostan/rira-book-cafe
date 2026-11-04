@@ -23,6 +23,12 @@ export type OrderRefundLine = {
   /** Whole Toman handed back for these units, VAT included. */
   amount: number;
   vatAmount: number;
+  /**
+   * The share of the order's service charge inside `amount`, and the VAT inside
+   * that share (part of `vatAmount`): a refund hands the charge back in proportion.
+   */
+  serviceCharge: number;
+  serviceChargeVat: number;
   /** The units went back on the shelf (a book can; a drink can't). */
   restocked: boolean;
 };
@@ -65,27 +71,39 @@ function shareOf(whole: number, units: number, quantity: number): number {
 
 /**
  * Price the units staff picked. `saleVat` is the VAT the order's sale actually
- * booked, not today's rate: the rate may have changed since. Refuses (with the
- * problem's key) anything but whole units still on the order.
+ * booked, not today's rate: the rate may have changed since — and `saleServiceVat`
+ * the part of it inside the service charge, read off the same sale. Refuses (with
+ * the problem's key) anything but whole units still on the order.
+ *
+ * Each line's share of the total carries its share of the service charge (the
+ * charge allocated over the lines by value, like the total), so units handed back
+ * take their service charge back with them, and a line refunded in full returns
+ * all of it. An order without a service charge prices exactly as it always did.
  */
 export function priceRefundLines(
-  order: Pick<Order, "items" | "total">,
+  order: Pick<Order, "items" | "total"> & Partial<Pick<Order, "serviceCharge">>,
   saleVat: number,
   requests: readonly RefundLineRequest[],
+  saleServiceVat = 0,
 ): { lines: OrderRefundLine[]; problem?: undefined } | { lines?: undefined; problem: string } {
   if (requests.length === 0) return { problem: "refundLinesRequired" };
   if (new Set(requests.map((request) => request.itemId)).size !== requests.length) {
     return { problem: "refundLinesRequired" };
   }
 
-  const lineTotals = allocate(
-    order.total,
-    order.items.map((item) => item.unitPrice * item.quantity),
+  const weights = order.items.map((item) => item.unitPrice * item.quantity);
+  const lineTotals = allocate(order.total, weights);
+  const lineService = allocate(Math.max(0, order.serviceCharge ?? 0), weights).map((amount, index) =>
+    Math.min(amount, lineTotals[index]),
   );
-  const lineVat = allocate(
-    saleVat,
-    order.items.map((item, index) => (item.taxExempt ? 0 : lineTotals[index])),
+  const serviceVat = Math.max(0, Math.min(saleServiceVat, saleVat));
+  const lineGoodsVat = allocate(
+    saleVat - serviceVat,
+    order.items.map((item, index) => (item.taxExempt ? 0 : lineTotals[index] - lineService[index])),
   );
+  const lineServiceVat = allocate(serviceVat, lineService);
+  const share = (amounts: readonly number[], index: number, before: number, after: number, quantity: number) =>
+    shareOf(amounts[index], after, quantity) - shareOf(amounts[index], before, quantity);
 
   const lines: OrderRefundLine[] = [];
   for (const request of requests) {
@@ -97,13 +115,17 @@ export function priceRefundLines(
     }
     const before = item.refundedQuantity ?? 0;
     const after = before + request.quantity;
+    const serviceCharge = share(lineService, index, before, after, item.quantity);
+    const serviceChargeVat = Math.min(share(lineServiceVat, index, before, after, item.quantity), serviceCharge);
     lines.push({
       orderItemId: item.id,
       name: item.name,
       kind: item.kind,
       quantity: request.quantity,
-      amount: shareOf(lineTotals[index], after, item.quantity) - shareOf(lineTotals[index], before, item.quantity),
-      vatAmount: shareOf(lineVat[index], after, item.quantity) - shareOf(lineVat[index], before, item.quantity),
+      amount: share(lineTotals, index, before, after, item.quantity),
+      vatAmount: share(lineGoodsVat, index, before, after, item.quantity) + serviceChargeVat,
+      serviceCharge,
+      serviceChargeVat,
       restocked: request.restock,
     });
   }

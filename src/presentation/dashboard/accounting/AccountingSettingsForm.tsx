@@ -28,8 +28,17 @@ function percentOf(bps: number): string {
   return String(bps / 100);
 }
 
+function formValues(settings: AccountingSettings): AccountingSettingsInput {
+  return {
+    vatRate: percentOf(settings.vatRateBps),
+    serviceChargeRate: percentOf(settings.serviceChargeBps),
+    booksClosedThrough: settings.booksClosedThrough ?? "",
+  };
+}
+
 /**
- * The VAT rate inside menu prices and the period lock. Closing the books through a
+ * The VAT rate inside menu prices, the service charge on dine-in orders (0 = none;
+ * a change applies to orders placed from then on), and the period lock. Closing the books through a
  * day freezes every entry dated on or before it — moving it later closes more;
  * clearing it reopens everything (and is audited like any other change).
  */
@@ -59,19 +68,20 @@ export function AccountingSettingsForm({
     reset,
   } = useForm<AccountingSettingsInput>({
     resolver: zodResolver(accountingSettingsSchema, undefined, { raw: true }),
-    defaultValues: { vatRate: percentOf(settings.vatRateBps), booksClosedThrough: settings.booksClosedThrough ?? "" },
+    defaultValues: formValues(settings),
   });
   const closedThrough = useWatch({ control, name: "booksClosedThrough" });
 
   const onSubmit = handleSubmit(async (values) => {
     try {
       const next = await accountsApi.updateSettings(values);
-      reset({ vatRate: percentOf(next.vatRateBps), booksClosedThrough: next.booksClosedThrough ?? "" });
+      reset(formValues(next));
       toast({ tone: "success", title: t("settings.savedToast") });
       router.refresh();
     } catch (error) {
       const fields = error instanceof ApiError ? error.fieldErrors : undefined;
       if (fields?.vatRate) setError("vatRate", { message: fields.vatRate });
+      else if (fields?.serviceChargeRate) setError("serviceChargeRate", { message: fields.serviceChargeRate });
       else if (fields?.booksClosedThrough) setError("booksClosedThrough", { message: fields.booksClosedThrough });
       else setError("root", { message: localizeApiError(error, tApiErrors, t("settings.error")) });
     }
@@ -89,6 +99,24 @@ export function AccountingSettingsForm({
           <Input
             {...field}
             {...register("vatRate")}
+            size="control-md"
+            inputMode="decimal"
+            dir="ltr"
+            className="max-w-32"
+            inputClassName={FIELD_INPUT}
+            disabled={!canWrite}
+          />
+        )}
+      </DashboardFormField>
+      <DashboardFormField
+        label={t("settings.serviceChargeLabel")}
+        hint={t("settings.serviceChargeHint")}
+        error={fieldError(errors.serviceChargeRate?.message)}
+      >
+        {(field) => (
+          <Input
+            {...field}
+            {...register("serviceChargeRate")}
             size="control-md"
             inputMode="decimal"
             dir="ltr"

@@ -2,9 +2,11 @@ import { MAX_ORDER_AMOUNT } from "@/src/domain/entities/Order";
 import {
   DEFAULT_PRICING_SETTINGS,
   INGREDIENT_UNITS,
+  ingredientEditRefusal,
   OVERHEAD_SOURCES,
   recipeCost,
   type Ingredient,
+  type IngredientEditRefusal,
   type IngredientUnit,
   type OverheadSource,
   type PricedProduct,
@@ -25,8 +27,28 @@ import { prisma } from "@/src/infrastructure/prisma/client";
 import { Prisma } from "@/src/infrastructure/prisma/generated/client";
 
 import { recordAudit } from "./writeActivityEntry";
+import { lockStock } from "./writeStock";
 
-type IngredientRow = Prisma.IngredientGetPayload<object>;
+/** An ingredient read with whether it has any stock history. */
+const WITH_HISTORY = { _count: { select: { stockMovements: true } } } satisfies Prisma.IngredientInclude;
+
+type IngredientRow = Prisma.IngredientGetPayload<{ include: typeof WITH_HISTORY }>;
+
+/** What each refused edit says, and the form field it's about. */
+const INGREDIENT_REFUSALS: Record<IngredientEditRefusal, { message: string; field: string }> = {
+  UNIT_LOCKED: {
+    message: "This item holds stock or has stock history, so its unit can't change.",
+    field: "unit",
+  },
+  STOCK_ON_HAND: {
+    message: "This item still holds stock. Count it to zero or record it as waste before switching it off.",
+    field: "isActive",
+  },
+  INGREDIENT_IN_RECIPE: {
+    message: "A menu item's recipe uses this item. Take it out of those recipes before switching it off.",
+    field: "isActive",
+  },
+};
 
 /**
  * Ingredients, recipes and pricing settings in PostgreSQL. Recipes drive each
@@ -39,25 +61,42 @@ export class PrismaPricingRepository implements IPricingRepository {
     const rows = await prisma.ingredient.findMany({
       where: includeInactive ? {} : { isActive: true },
       orderBy: { name: "asc" },
+      include: WITH_HISTORY,
     });
     return rows.map(toIngredient);
   }
 
   async createIngredient(input: IngredientInput): Promise<Ingredient> {
     return toIngredient(
-      await prisma.ingredient.create({ data: { ...input, purchasePrice: BigInt(input.purchasePrice) } }),
+      await prisma.ingredient.create({
+        data: { ...input, purchasePrice: BigInt(input.purchasePrice) },
+        include: WITH_HISTORY,
+      }),
     );
   }
 
   async updateIngredient(id: string, input: IngredientInput & { isActive: boolean }): Promise<Ingredient> {
     return prisma.$transaction(async (tx) => {
-      const existing = await tx.ingredient.findUnique({ where: { id } });
-      if (!existing) throw new NotFoundError("ingredient", id);
+      // Locked as every stock write locks it, so no delivery or sale can slip in
+      // between the checks below and the save.
+      if ((await lockStock(tx, [id])).size === 0) throw new NotFoundError("ingredient", id);
+      const existing = toIngredient(await tx.ingredient.findUniqueOrThrow({ where: { id }, include: WITH_HISTORY }));
+      const switchingOff = existing.isActive && !input.isActive;
+      const usedByPublishedItem =
+        switchingOff &&
+        (await tx.recipeLine.count({ where: { ingredientId: id, product: { isPublished: true } } })) > 0;
+      const refusal = ingredientEditRefusal(existing, input, usedByPublishedItem);
+      if (refusal) {
+        const { message, field } = INGREDIENT_REFUSALS[refusal];
+        throw new ConflictError(refusal, message, { fields: [field] });
+      }
+
       const row = await tx.ingredient.update({
         where: { id },
         data: { ...input, purchasePrice: BigInt(input.purchasePrice) },
+        include: WITH_HISTORY,
       });
-      if (existing.purchasePrice !== row.purchasePrice || existing.purchaseQuantity !== row.purchaseQuantity) {
+      if (existing.purchasePrice !== Number(row.purchasePrice) || existing.purchaseQuantity !== row.purchaseQuantity) {
         const affected = await tx.recipeLine.findMany({ where: { ingredientId: id }, select: { productId: true } });
         for (const productId of new Set(affected.map((line) => line.productId))) {
           await recostProduct(tx, productId, "purchasePrice");
@@ -207,7 +246,10 @@ export async function recostProductsUsing(
  * that caused it): it's a typo in a price or a quantity, not a real recipe.
  */
 async function recostProduct(tx: Prisma.TransactionClient, productId: string, field: string): Promise<void> {
-  const lines = await tx.recipeLine.findMany({ where: { productId }, include: { ingredient: true } });
+  const lines = await tx.recipeLine.findMany({
+    where: { productId },
+    include: { ingredient: { include: WITH_HISTORY } },
+  });
   if (lines.length === 0) return;
   const cost = recipeCost(
     lines.map((line) => ({ ingredientId: line.ingredientId, quantity: line.quantity })),
@@ -240,5 +282,7 @@ function toIngredient(row: IngredientRow): Ingredient {
     purchaseQuantity: row.purchaseQuantity,
     isActive: row.isActive,
     updatedAt: row.updatedAt.toISOString(),
+    onHand: row.onHand,
+    hasHistory: row._count.stockMovements > 0,
   };
 }

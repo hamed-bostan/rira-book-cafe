@@ -188,6 +188,7 @@
     "payRunDateBeforeMonth": "That date is before the month starts.",
     "payRunPaidBeforeBooked": "A run can't be paid before it was booked.",
     "guestNameNeeded": "Enter the guest's name: this number has no profile yet.",
+    "unitLocked": "This item holds stock or has stock history, so its unit can't change.",
     "stockHasHistory": "This item already has stock history. Record a delivery or a count instead."
   },
   "apiErrors": {
@@ -256,6 +257,9 @@
     "bookInUse": "This book is out on loan or has guests in line. Close those loans and holds before deleting it.",
     "copiesBelowOnLoan": "More copies of this book are out on loan than that. Copies to lend can't go below the number out.",
     "notRefundable": "This order's sale isn't on the books, so it can't be refunded here.",
+    "unitLocked": "This item holds stock or has stock history, so its unit can't change.",
+    "stockOnHand": "This item still holds stock. Count it to zero or record it as waste before switching it off.",
+    "ingredientInRecipe": "An item on the menu uses this in its recipe. Take it out of the recipe, or the item off the menu, before switching it off.",
     "stockHasHistory": "Some of these items already have stock history. Record a delivery or a count for them instead."
   },
   "meta": {
@@ -2681,7 +2685,8 @@
       "priceHint": "As on the invoice, e.g. 1,200,000 Toman for 1000 g.",
       "activeLabel": "Active",
       "error": "Couldn't save the ingredient. Please try again.",
-      "saved": "{name} saved."
+      "saved": "{name} saved.",
+      "unitLocked": "Fixed once the item holds stock or has stock history — every quantity on record is in this unit."
     },
     "recipe": {
       "title": "Recipe: {name}",

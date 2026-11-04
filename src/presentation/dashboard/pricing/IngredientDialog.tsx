@@ -7,7 +7,7 @@ import * as React from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 
 import { ingredientSchema, type IngredientFormInput } from "@/src/contracts/pricing-schema";
-import { INGREDIENT_UNITS, type Ingredient } from "@/src/domain/entities/Pricing";
+import { INGREDIENT_UNITS, isUnitLocked, type Ingredient } from "@/src/domain/entities/Pricing";
 import { useRouter } from "@/src/i18n/navigation";
 import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
@@ -60,6 +60,8 @@ export function IngredientDialog({ ingredient }: { ingredient?: Ingredient }) {
     defaultValues: toDefaults(ingredient),
   });
   const unit = useWatch({ control, name: "unit" });
+  // Every quantity on record is in the unit, so it's fixed once the item holds stock or has moved.
+  const unitLocked = ingredient !== undefined && isUnitLocked(ingredient);
 
   const onSubmit = handleSubmit(async (values) => {
     try {
@@ -128,16 +130,27 @@ export function IngredientDialog({ ingredient }: { ingredient?: Ingredient }) {
             />
           )}
         </DashboardFormField>
-        <DashboardFormField label={t("ingredients.unitLabel")} error={fieldError(errors.unit?.message)}>
-          {(wiring) => (
-            <Select {...wiring} {...register("unit")} size="control-md" className="border-border-strong">
-              {INGREDIENT_UNITS.map((option) => (
-                <option key={option} value={option}>
-                  {t(`unitName.${option}`)}
-                </option>
-              ))}
-            </Select>
-          )}
+        <DashboardFormField
+          label={t("ingredients.unitLabel")}
+          hint={unitLocked ? t("ingredients.unitLocked") : undefined}
+          error={fieldError(errors.unit?.message)}
+        >
+          {(wiring) =>
+            unitLocked ? (
+              // Shown, not chosen: the form keeps the saved unit and sends it back.
+              <Select {...wiring} value={unit} disabled size="control-md" className="border-border-strong">
+                <option value={unit}>{t(`unitName.${unit}`)}</option>
+              </Select>
+            ) : (
+              <Select {...wiring} {...register("unit")} size="control-md" className="border-border-strong">
+                {INGREDIENT_UNITS.map((option) => (
+                  <option key={option} value={option}>
+                    {t(`unitName.${option}`)}
+                  </option>
+                ))}
+              </Select>
+            )
+          }
         </DashboardFormField>
         <div className={FIELD_GRID}>
           <DashboardFormField

@@ -90,4 +90,11 @@ export type ConflictCode =
   | "ORDER_EMPTY"
   | "PROMO_NO_LONGER_APPLIES"
   | "POINTS_EXCEED_TOTAL"
+  // Stock items. Every quantity on record is in the item's unit, so it's fixed once
+  // the item holds stock or has moved; an item holding stock, or in a published
+  // item's recipe, can't be switched off; opening stock is only for an item with
+  // no history yet.
+  | "UNIT_LOCKED"
+  | "STOCK_ON_HAND"
+  | "INGREDIENT_IN_RECIPE"
   | "STOCK_HAS_HISTORY";

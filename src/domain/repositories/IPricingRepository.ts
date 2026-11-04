@@ -13,6 +13,12 @@ export type IPricingRepository = {
    * recipe uses it (their cost price, which orders snapshot), in the same transaction.
    */
   createIngredient(input: IngredientInput): Promise<Ingredient>;
+  /**
+   * Refuses (a `ConflictError` naming the field) what `ingredientEditRefusal`
+   * refuses, checked under the stock row's lock: a new unit once the item holds
+   * stock or has moved, and switching off an item that holds stock or that a
+   * published item's recipe uses.
+   */
   updateIngredient(id: string, input: IngredientInput & { isActive: boolean }): Promise<Ingredient>;
 
   /** Every recipe, by product id. */

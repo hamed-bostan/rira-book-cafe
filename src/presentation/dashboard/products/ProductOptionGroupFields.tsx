@@ -2,6 +2,7 @@
 
 import { ArrowDown, ArrowUp, Plus } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
+import * as React from "react";
 import {
   Controller,
   useFieldArray,
@@ -65,6 +66,7 @@ export function ProductOptionGroupFields({
   const locale = useLocale();
   const fieldError = (message?: string): string | undefined => formErrorMessage(tFormErrors, message);
   const number = formatNumber(index + 1, locale);
+  const headingId = React.useId();
   const { fields, append, remove, move } = useFieldArray({ control, name: `optionGroups.${index}.choices` });
   const { errors } = useFormState({ control, name: `optionGroups.${index}` });
   const groupErrors = errors.optionGroups?.[index];
@@ -74,11 +76,14 @@ export function ProductOptionGroupFields({
 
   return (
     <fieldset
+      aria-labelledby={headingId}
       className="flex min-w-0 flex-col gap-4 rounded-card-lg border border-border-strong p-4"
       data-testid="option-group"
     >
       <div className="flex items-center gap-2">
-        <legend className={`${OVERLINE} flex-1`}>{t("optionGroupLabel", { number })}</legend>
+        <span id={headingId} className={`${OVERLINE} flex-1`}>
+          {t("optionGroupLabel", { number })}
+        </span>
         <Button
           type="button"
           variant="secondary"

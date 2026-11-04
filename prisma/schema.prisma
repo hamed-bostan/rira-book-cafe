@@ -171,43 +171,47 @@ model ActivityEntry {
 // status / service_type / payment_status are plain strings matching the domain
 // unions (enum-free style).
 model Order {
-  id              String             @id @default(uuid())
+  id               String             @id @default(uuid())
   // Short sequential number staff call out.
-  orderNumber     Int                @unique @default(autoincrement()) @map("order_number")
+  orderNumber      Int                @unique @default(autoincrement()) @map("order_number")
   // The guest's profile (a user id is a normalized phone). Null only on an old
   // counter sale that had no usable phone — every sale since has a profile.
-  userId          String?            @map("user_id")
-  customerName    String             @map("customer_name")
-  customerPhone   String             @map("customer_phone")
-  status          String             @default("pending")
-  serviceType     String             @map("service_type")
-  tableLabel      String?            @map("table_label")
-  note            String?
-  paymentStatus   String             @default("unpaid") @map("payment_status")
+  userId           String?            @map("user_id")
+  customerName     String             @map("customer_name")
+  customerPhone    String             @map("customer_phone")
+  status           String             @default("pending")
+  serviceType      String             @map("service_type")
+  tableLabel       String?            @map("table_label")
+  note             String?
+  paymentStatus    String             @default("unpaid") @map("payment_status")
   // cash | card | transfer | online, once paid (kept after a refund). The largest
   // part when the bill was split; `payment_parts` holds every part.
-  paymentMethod   String?            @map("payment_method")
-  paymentParts    OrderPaymentPart[]
+  paymentMethod    String?            @map("payment_method")
+  paymentParts     OrderPaymentPart[]
   // Handed back on a completed order, in Toman (`refunds` are the documents).
-  refundedTotal   Int                @default(0) @map("refunded_total")
-  refunds         OrderRefund[]
-  subtotal        Int
+  refundedTotal    Int                @default(0) @map("refunded_total")
+  refunds          OrderRefund[]
+  subtotal         Int
   // The promo code applied at placement (snapshotted text; the id counts its uses).
-  promoCodeId     String?            @map("promo_code_id")
-  promoCode       String?            @map("promo_code")
-  promoDiscount   Int                @default(0) @map("promo_discount")
+  promoCodeId      String?            @map("promo_code_id")
+  promoCode        String?            @map("promo_code")
+  promoDiscount    Int                @default(0) @map("promo_discount")
   // Loyalty points spent on this order, and the Toman they took off.
-  pointsRedeemed  Int                @default(0) @map("points_redeemed")
-  pointsDiscount  Int                @default(0) @map("points_discount")
+  pointsRedeemed   Int                @default(0) @map("points_redeemed")
+  pointsDiscount   Int                @default(0) @map("points_discount")
   // Points the guest earned when it was completed.
-  pointsEarned    Int                @default(0) @map("points_earned")
-  total           Int
-  items           OrderItem[]
-  paymentAttempts PaymentAttempt[]
-  placedAt        DateTime           @default(now()) @map("placed_at")
-  updatedAt       DateTime           @updatedAt @map("updated_at")
+  pointsEarned     Int                @default(0) @map("points_earned")
+  // The service charge on the order, in Toman (VAT inside it), and the rate it was
+  // priced at in basis points — snapshotted, so a rate changed later leaves it alone.
+  serviceCharge    Int                @default(0) @map("service_charge")
+  serviceChargeBps Int                @default(0) @map("service_charge_bps")
+  total            Int
+  items            OrderItem[]
+  paymentAttempts  PaymentAttempt[]
+  placedAt         DateTime           @default(now()) @map("placed_at")
+  updatedAt        DateTime           @updatedAt @map("updated_at")
   // When staff last changed its lines, table or service after it was placed.
-  changedAt       DateTime?          @map("changed_at")
+  changedAt        DateTime?          @map("changed_at")
 
   @@index([status, placedAt])
   @@index([userId, placedAt])
@@ -283,19 +287,22 @@ model OrderRefund {
 }
 
 model OrderRefundLine {
-  id          String      @id @default(uuid())
-  refundId    String      @map("refund_id")
-  refund      OrderRefund @relation(fields: [refundId], references: [id], onDelete: Cascade)
-  orderItemId String      @map("order_item_id")
-  orderItem   OrderItem   @relation(fields: [orderItemId], references: [id], onDelete: Restrict)
-  name        String
-  kind        String
-  quantity    Int
-  amount      Int
-  vatAmount   Int         @map("vat_amount")
+  id               String      @id @default(uuid())
+  refundId         String      @map("refund_id")
+  refund           OrderRefund @relation(fields: [refundId], references: [id], onDelete: Cascade)
+  orderItemId      String      @map("order_item_id")
+  orderItem        OrderItem   @relation(fields: [orderItemId], references: [id], onDelete: Restrict)
+  name             String
+  kind             String
+  quantity         Int
+  amount           Int
+  vatAmount        Int         @map("vat_amount")
+  // The service charge share inside `amount`, and the VAT inside that share.
+  serviceCharge    Int         @default(0) @map("service_charge")
+  serviceChargeVat Int         @default(0) @map("service_charge_vat")
   // Whether the units went back on the shelf (a book can; a drink can't).
-  restocked   Boolean     @default(false)
-  position    Int
+  restocked        Boolean     @default(false)
+  position         Int
 
   @@index([refundId])
   @@index([orderItemId])
@@ -359,30 +366,30 @@ model OrderNote {
 
 // A table booking. status is a plain string matching the domain union.
 model Reservation {
-  id              String   @id @default(uuid())
-  reference       Int      @unique @default(autoincrement())
+  id              String    @id @default(uuid())
+  reference       Int       @unique @default(autoincrement())
   // The guest's profile: staff booking for a guest find or make it by phone.
   // Null only on an old booking that had no usable phone.
-  userId          String?  @map("user_id")
-  guestName       String   @map("guest_name")
-  guestPhone      String   @map("guest_phone")
-  partySize       Int      @map("party_size")
-  startsAt        DateTime @map("starts_at")
+  userId          String?   @map("user_id")
+  guestName       String    @map("guest_name")
+  guestPhone      String    @map("guest_phone")
+  partySize       Int       @map("party_size")
+  startsAt        DateTime  @map("starts_at")
   // How long the table is held; never over six hours (a CHECK in the migration).
-  durationMinutes Int      @map("duration_minutes")
-  status          String   @default("requested")
+  durationMinutes Int       @map("duration_minutes")
+  status          String    @default("requested")
   // Set when the jobs cancelled a request nobody answered before it began.
   expiredAt       DateTime? @map("expired_at")
-  tableLabel      String?  @map("table_label")
+  tableLabel      String?   @map("table_label")
   note            String?
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
   // A deposit taken against the booking, in Toman; 0 when none was (see domain/entities/ReservationDeposit).
-  depositAmount   BigInt   @default(0) @map("deposit_amount")
+  depositAmount   BigInt    @default(0) @map("deposit_amount")
   // cash | card | transfer, when a deposit was taken
-  depositMethod   String?  @map("deposit_method")
+  depositMethod   String?   @map("deposit_method")
   // held | returned | kept, when a deposit was taken
-  depositState    String?  @map("deposit_state")
+  depositState    String?   @map("deposit_state")
 
   // The floor's day view, and the table-clash check.
   @@index([startsAt])
@@ -396,25 +403,25 @@ model Reservation {
 // suite (confirmed, checkedIn) can't overlap — also enforced by an exclusion
 // constraint in the migration, not only in app code.
 model SuiteBooking {
-  id         String   @id @default(uuid())
-  reference  Int      @unique @default(autoincrement())
+  id         String    @id @default(uuid())
+  reference  Int       @unique @default(autoincrement())
   // The guest's profile, as on a reservation; null only on an old stay without a usable phone.
-  userId     String?  @map("user_id")
-  guestName  String   @map("guest_name")
-  guestPhone String   @map("guest_phone")
+  userId     String?   @map("user_id")
+  guestName  String    @map("guest_name")
+  guestPhone String    @map("guest_phone")
   guests     Int
-  checkIn    DateTime @map("check_in") @db.Date
-  checkOut   DateTime @map("check_out") @db.Date
-  status     String   @default("requested")
+  checkIn    DateTime  @map("check_in") @db.Date
+  checkOut   DateTime  @map("check_out") @db.Date
+  status     String    @default("requested")
   // Set when the jobs cancelled a request nobody answered by its arrival day.
   expiredAt  DateTime? @map("expired_at")
   note       String?
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
   // The stay's nightly rate in Toman (`nightlyRate` in the domain), snapshotted from
   // suite_settings when the stay is made (or confirmed); null for a stay from before
   // the suite had a price. The total is never stored: it's the nights times this.
-  nightRate  BigInt?  @map("nightly_rate")
+  nightRate  BigInt?   @map("nightly_rate")
 
   @@index([checkOut, checkIn])
   @@index([userId, checkIn])
@@ -572,6 +579,8 @@ model AccountingSettings {
   id                 Int       @id @default(1)
   // VAT included in menu prices, in basis points (1000 = 10%).
   vatRateBps         Int       @default(1000) @map("vat_rate_bps")
+  // Service charge on dine-in orders, in basis points (1000 = 10%); 0 = off.
+  serviceChargeBps   Int       @default(0) @map("service_charge_bps")
   // Nothing may be posted on or before this day.
   booksClosedThrough DateTime? @map("books_closed_through") @db.Date
   updatedAt          DateTime  @updatedAt @map("updated_at")
@@ -941,29 +950,34 @@ model BookWaitlistEntry {
 // A code guests type at checkout for money off. Uses are counted from the orders
 // that carry it (cancelled ones give the use back).
 model PromoCode {
-  id            String    @id @default(uuid())
+  id             String    @id @default(uuid())
   // Stored upper-case; guests can type it in any case. Unique across archived codes
   // too, so a used code's name can't come back as a new code with fresh limits.
-  code          String    @unique
-  description   String?
+  code           String    @unique
+  description    String?
   // percent | fixed
-  kind          String
+  kind           String
   // Whole percent (1–100) or Toman off.
-  value         Int
+  value          Int
   // Cap on a percent discount, in Toman.
-  maxDiscount   Int?      @map("max_discount")
-  minSubtotal   Int       @default(0) @map("min_subtotal")
-  startsAt      DateTime? @map("starts_at")
-  endsAt        DateTime? @map("ends_at")
-  usageLimit    Int?      @map("usage_limit")
-  perGuestLimit Int?      @map("per_guest_limit")
-  isActive      Boolean   @default(true) @map("is_active")
+  maxDiscount    Int?      @map("max_discount")
+  minSubtotal    Int       @default(0) @map("min_subtotal")
+  startsAt       DateTime? @map("starts_at")
+  endsAt         DateTime? @map("ends_at")
+  usageLimit     Int?      @map("usage_limit")
+  perGuestLimit  Int?      @map("per_guest_limit")
+  isActive       Boolean   @default(true) @map("is_active")
+  // Scope: the items and categories the code takes money off (both empty = the
+  // whole order), and whether only a guest's first order may use it.
+  productIds     String[]  @default([]) @map("product_ids")
+  categoryIds    String[]  @default([]) @map("category_ids")
+  firstOrderOnly Boolean   @default(false) @map("first_order_only")
   // Set when staff deleted a code orders had used: it's kept (so those orders still
   // resolve it) but gone from the list, never usable or switched on again. A code
   // no order ever used is deleted outright instead.
-  archivedAt    DateTime? @map("archived_at")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
+  archivedAt     DateTime? @map("archived_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
 
   @@map("promo_codes")
 }
@@ -975,7 +989,7 @@ model LoyaltyTransaction {
   id            String   @id @default(uuid())
   userId        String   @map("user_id")
   delta         Int
-  // earn | redeem | refund | adjust
+  // earn | redeem | refund | adjust | expire
   reason        String
   orderId       String?  @map("order_id")
   orderNumber   Int?     @map("order_number")
@@ -991,15 +1005,19 @@ model LoyaltyTransaction {
 }
 
 model LoyaltySettings {
-  id              Int      @id @default(1)
-  enabled         Boolean  @default(true)
+  id                 Int       @id @default(1)
+  enabled            Boolean   @default(true)
   // Spend this many Toman to earn one point.
-  tomanPerPoint   Int      @default(10000) @map("toman_per_point")
+  tomanPerPoint      Int       @default(10000) @map("toman_per_point")
   // One point takes this many Toman off an order.
-  pointValue      Int      @default(1000) @map("point_value")
+  pointValue         Int       @default(1000) @map("point_value")
   // The fewest points a guest can spend at once.
-  minRedeemPoints Int      @default(50) @map("min_redeem_points")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+  minRedeemPoints    Int       @default(50) @map("min_redeem_points")
+  // A guest's points lapse after this many months without earning or spending; 0 = never.
+  pointsExpiryMonths Int       @default(0) @map("points_expiry_months")
+  // When expiry was switched on: months of inactivity before it don't count.
+  pointsExpirySince  DateTime? @map("points_expiry_since")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
 
   @@map("loyalty_settings")
 }

@@ -2,7 +2,7 @@ import { join } from "node:path";
 
 import { encode } from "next-auth/jwt";
 
-import { TEST_USERS, type TestUserKey } from "../../tests/fixtures/users";
+import { TEST_USERS, testSessionId, type TestUserKey } from "../../tests/fixtures/users";
 
 import { E2E_AUTH_SECRET } from "./env";
 
@@ -38,7 +38,8 @@ type StorageState = {
 export async function signedInState(user: TestUserKey, host: string): Promise<StorageState> {
   const { id, name } = TEST_USERS[user];
   const value = await encode({
-    token: { sub: id, name },
+    // `sid` names the session row the seed wrote: the server checks it on every request.
+    token: { sub: id, name, sid: testSessionId(user) },
     secret: E2E_AUTH_SECRET,
     salt: SESSION_COOKIE,
     maxAge: SESSION_SECONDS,

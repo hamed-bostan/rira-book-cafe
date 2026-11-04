@@ -1,4 +1,4 @@
-import { TEST_USERS, type TestUserKey } from "../../fixtures/users";
+import { TEST_USERS, testSessionId, type TestUserKey } from "../../fixtures/users";
 
 import type { Session } from "next-auth";
 
@@ -16,12 +16,30 @@ export function signInAs(user: TestUserKey | null): void {
     return;
   }
   const { id, name } = TEST_USERS[user];
-  current = { user: { id, name }, expires: new Date(Date.now() + 60 * 60 * 1000).toISOString() };
+  current = {
+    user: { id, name },
+    sessionId: testSessionId(user),
+    twoFactorVerified: false,
+    expires: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+  };
 }
 
 /** Signed in as someone outside `TEST_USERS` — a guest who just signed in for the first time, say. */
 export function signInAsUser(user: { id: string; name: string }): void {
-  current = { user: { id: user.id, name: user.name }, expires: new Date(Date.now() + 60 * 60 * 1000).toISOString() };
+  current = {
+    user: { id: user.id, name: user.name },
+    sessionId: `test-session-${user.id}`,
+    twoFactorVerified: false,
+    expires: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+  };
+}
+
+/**
+ * What the real `jwt` callback would read off the session row after a passed
+ * two-factor check (the mock has no row to read).
+ */
+export function markTwoFactorVerified(verified = true): void {
+  if (current) current = { ...current, twoFactorVerified: verified };
 }
 
 export function currentSession(): Session | null {

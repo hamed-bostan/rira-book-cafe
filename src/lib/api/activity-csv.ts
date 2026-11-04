@@ -1,4 +1,4 @@
-import { getTranslations } from "next-intl/server";
+import { createTranslator, type Messages } from "next-intl";
 
 import { SYSTEM_ACTOR, type ActivityChange, type ActivityEntry } from "@/src/domain/entities/ActivityEntry";
 import { cafeDayOf, CAFE_TIME_ZONE } from "@/src/domain/entities/CafeTime";
@@ -21,7 +21,10 @@ export async function* activityCsv(
   locale: Locale,
   roleNames: Readonly<Record<string, RoleName>>,
 ): AsyncGenerator<string> {
-  const t = await getTranslations<"dashActivity">({ locale, namespace: "dashActivity" });
+  // Loaded directly rather than through `getTranslations`: a route handler has no
+  // request-scoped i18n config to read it from (as `accountingMessages` does).
+  const messages = ((await import(`../../../messages/${locale}.json`)) as { default: Messages }).default;
+  const t = createTranslator({ locale, messages, namespace: "dashActivity" });
   const loose = t as unknown as LooseTranslator;
 
   const roleName = (role: UserRole | undefined): string => {

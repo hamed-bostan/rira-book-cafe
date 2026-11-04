@@ -17,3 +17,13 @@ export const TEST_USERS = {
 } as const satisfies Record<string, TestUser>;
 
 export type TestUserKey = keyof typeof TEST_USERS;
+
+/**
+ * The recorded session each test user starts signed in on (see `UserSession`). The
+ * seed writes these rows and the E2E fixture mints its cookies with these ids, so a
+ * browser in a spec passes the per-request session check. Specs that sign sessions
+ * out make their own rather than revoking these shared ones.
+ */
+export function testSessionId(user: TestUserKey): string {
+  return `seed-session-${user}`;
+}

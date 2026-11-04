@@ -1,7 +1,7 @@
 import { seedSampleData } from "@/scripts/seed-sample-data";
 import { prisma } from "@/src/infrastructure/prisma/client";
 
-import { TEST_USERS } from "./users";
+import { TEST_USERS, testSessionId, type TestUserKey } from "./users";
 
 /**
  * The test database's starting state: the migrations' own rows (chart of accounts,
@@ -11,8 +11,11 @@ import { TEST_USERS } from "./users";
  */
 export async function seedTestDatabase(): Promise<void> {
   await seedSampleData();
-  for (const user of Object.values(TEST_USERS)) {
+  for (const [key, user] of Object.entries(TEST_USERS) as [TestUserKey, (typeof TEST_USERS)[TestUserKey]][]) {
     await prisma.user.create({ data: { ...user, firstSignedInAt: new Date() } });
+    await prisma.userSession.create({
+      data: { id: testSessionId(key), userId: user.id, userAgent: "Playwright (seeded session)" },
+    });
   }
 }
 

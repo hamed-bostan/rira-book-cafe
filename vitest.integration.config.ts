@@ -44,6 +44,9 @@ export default defineConfig({
       UPLOADS_DIR: mkdtempSync(join(tmpdir(), "rira-uploads-")),
       // No background jobs on a timer: tests run the jobs' use-cases themselves.
       JOBS_ENABLED: "false",
+      // A throwaway key, so two-factor can be set up and checked (it's off for
+      // everyone until a test turns it on).
+      TWO_FACTOR_ENCRYPTION_KEY: "11".repeat(32),
     },
   },
 });

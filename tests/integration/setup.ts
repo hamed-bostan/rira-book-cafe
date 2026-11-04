@@ -3,6 +3,8 @@ import { afterAll, beforeEach, vi } from "vitest";
 import { rateLimiter } from "@/src/infrastructure/container";
 import { prisma } from "@/src/infrastructure/prisma/client";
 import { InMemoryRateLimiter } from "@/src/infrastructure/rate-limit/InMemoryRateLimiter";
+import { invalidatePolicy } from "@/src/infrastructure/repositories/PrismaRoleRepository";
+import { invalidateTeamSettings } from "@/src/infrastructure/repositories/PrismaTeamSettingsRepository";
 
 import { restoreTestDatabase } from "../fixtures/database";
 
@@ -34,6 +36,10 @@ beforeEach(async () => {
   signInAs(null);
   vi.clearAllMocks();
   if (rateLimiter instanceof InMemoryRateLimiter) rateLimiter.clear();
+  // The role policy and team settings are cached per process; the restored database
+  // may hold different ones than the last test left.
+  invalidatePolicy();
+  invalidateTeamSettings();
 });
 
 afterAll(async () => {

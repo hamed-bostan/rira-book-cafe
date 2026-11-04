@@ -34,4 +34,6 @@ export const E2E_SERVER_ENV: Record<string, string> = {
   // No background jobs on a timer: a spec runs them itself (`e2e/run-background-jobs.ts`),
   // so nothing changes under a test while it looks.
   JOBS_ENABLED: "false",
+  // A throwaway key, so a spec can set up and pass authenticator-app two-factor.
+  TWO_FACTOR_ENCRYPTION_KEY: "22".repeat(32),
 };

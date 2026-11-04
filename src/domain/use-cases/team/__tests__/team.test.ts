@@ -76,6 +76,47 @@ describe("GrantAdmin", () => {
     expect(batches[0].entries).toEqual([]);
     expect(notify.adminGranted).not.toHaveBeenCalled();
   });
+
+  it("refuses granting to your own number — the owner can't demote themself", async () => {
+    const { repo, batches, byId } = repoWith([user("09120000001", "owner")]);
+    const notify = notifier();
+    await expect(
+      new GrantAdmin(repo, notify).execute({ phone: "0912 000 0001", role: "admin" }, "09120000001", "https://x/login"),
+    ).rejects.toMatchObject({ name: "AdminRevokeError", reason: "self" });
+    expect(byId.get("09120000001")?.role).toBe("owner");
+    expect(batches).toEqual([]);
+    expect(notify.adminGranted).not.toHaveBeenCalled();
+  });
+
+  it("refuses granting a role to the owner — ownership moves only by transfer", async () => {
+    // A break-glass admin isn't the owner, so the self rule doesn't catch this one.
+    const { repo, batches, byId } = repoWith([user("09120000001", "owner"), user("09120000002", "admin")]);
+    await expect(
+      new GrantAdmin(repo).execute({ phone: "09120000001", role: "support" }, "09120000002"),
+    ).rejects.toMatchObject({ name: "AdminRevokeError", reason: "owner" });
+    expect(byId.get("09120000001")?.role).toBe("owner");
+    expect(batches).toEqual([]);
+  });
+
+  it("refuses a member who holds another role — moving them is a role change", async () => {
+    const { repo, batches, byId } = repoWith([user("owner", "owner"), user("09120000000", "support")]);
+    const notify = notifier();
+    await expect(
+      new GrantAdmin(repo, notify).execute({ phone: "09120000000", role: "admin" }, "owner", "https://x/login"),
+    ).rejects.toMatchObject({ name: "ConflictError", code: "ALREADY_ON_TEAM" });
+    expect(byId.get("09120000000")?.role).toBe("support");
+    expect(batches).toEqual([]);
+    expect(notify.adminGranted).not.toHaveBeenCalled();
+  });
+
+  it("brings a customer onto the team, records it and invites them", async () => {
+    const { repo, batches, byId } = repoWith([user("owner", "owner"), user("09120000000", "customer", "Sara")]);
+    const notify = notifier();
+    await new GrantAdmin(repo, notify).execute({ phone: "09120000000", role: "staff" }, "owner", "https://x/login");
+    expect(byId.get("09120000000")?.role).toBe("staff");
+    expect(batches[0].entries[0].changes).toEqual([{ field: "role", before: "customer", after: "staff" }]);
+    expect(notify.adminGranted).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe("RevokeAdmin", () => {

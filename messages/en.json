@@ -241,6 +241,7 @@
     "bookOnShelf": "A copy of this book is free on the shelf right now.",
     "shiftAlreadyOpen": "A shift is already open. Close it first.",
     "noOpenShift": "There's no open shift.",
+    "alreadyOnTeam": "That number is already on the team — change their role instead.",
     "statementOverlap": "A statement already covers part of that period. Start after the last statement ends.",
     "statementReconciled": "This statement is reconciled and can no longer change.",
     "alreadyMatched": "One of those lines is already matched.",

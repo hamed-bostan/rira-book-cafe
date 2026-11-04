@@ -88,7 +88,17 @@ export function GrantAccessForm({ memberIds }: GrantAccessFormProps) {
         router.refresh();
       } catch (err) {
         const fieldError = err instanceof ApiError ? (err.fieldErrors?.phone ?? err.fieldErrors?.email) : undefined;
-        setError(formErrorMessage(tFormErrors, fieldError) ?? localizeApiError(err, tApiErrors, t("grantError")));
+        // A grant aimed at your own number or the owner's is a role change the
+        // server refuses — say so in the role-change words, not "remove access".
+        const blocked =
+          err instanceof ApiError && err.code === "REVOKE_SELF"
+            ? t("changeRole.blocked.self")
+            : err instanceof ApiError && err.code === "REVOKE_OWNER"
+              ? t("changeRole.blocked.owner")
+              : undefined;
+        setError(
+          formErrorMessage(tFormErrors, fieldError) ?? blocked ?? localizeApiError(err, tApiErrors, t("grantError")),
+        );
       }
     });
   }

@@ -24,7 +24,8 @@ import type { IOrderRepository } from "../../repositories/IOrderRepository";
  *
  * A cancelled order can't be marked paid (there's nothing to pay for) and a
  * refunded one is settled for good. Neither can a payment be taken back once part
- * of it was refunded: the refund is on the books against it. Setting the status it
+ * of it was refunded: the refund is on the books against it — nor one the gateway
+ * took online, which only a refund gives back. Setting the status it
  * already has is a no-op — unless `strict`, for a caller that must know its own
  * mark took effect (an online payment the gateway captured): then it's a
  * `ConflictError` instead.
@@ -55,6 +56,12 @@ export class SetOrderPayment {
     }
     if (order.refundedTotal > 0) {
       throw new ConflictError("INVALID_TRANSITION", "Part of this payment was refunded, so it can't be taken back.");
+    }
+    // The gateway's money can't be "un-taken" at the counter: unmarking would reverse its booking
+    // while the payment stays captured, so the money would drop out of the books and the give-back
+    // list alike. Giving it back is a refund, which needs the books' permission.
+    if (paymentStatus === "unpaid" && order.paymentMethod === "online") {
+      throw new ConflictError("INVALID_TRANSITION", "An online payment is given back with a refund, not unmarked.");
     }
     if (paymentStatus === "paid" && order.status === "cancelled") {
       throw new ConflictError("INVALID_TRANSITION", "A cancelled order can't be marked paid.");

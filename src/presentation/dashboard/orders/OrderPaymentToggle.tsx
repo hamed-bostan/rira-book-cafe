@@ -87,6 +87,8 @@ export function OrderPaymentToggle({
         router.refresh();
       } catch (err) {
         toast({ tone: "error", title: localizeApiError(err, tApiErrors, t("paymentError")) });
+        // A 409 says someone changed the order meanwhile — show what it is now.
+        router.refresh();
       }
     });
   }
@@ -113,7 +115,7 @@ export function OrderPaymentToggle({
           <Badge variant="success" appearance="outline" dot size="compact" className="h-auto min-h-6 whitespace-normal">
             {paidLabel}
           </Badge>
-          {refunded ? null : (
+          {refunded || paymentMethod === "online" ? null : (
             <button
               type="button"
               aria-busy={pending && active === "unpaid"}

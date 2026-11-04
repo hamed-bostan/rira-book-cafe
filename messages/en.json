@@ -3104,7 +3104,6 @@
       "emptyBody": "Every item is above its reorder level.",
       "noSupplier": "No usual supplier",
       "levels": "Reorder / par",
-      "levelsValue": "{reorder} / {par}",
       "suggested": "Order",
       "noPar": "Set a par level",
       "atPar": "At par already",

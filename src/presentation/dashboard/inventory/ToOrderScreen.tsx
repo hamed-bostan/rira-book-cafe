@@ -86,7 +86,7 @@ export async function ToOrderScreen({ items, today }: ToOrderScreenProps) {
                   <th scope="col" className={cn(TABLE_TH, "w-36 text-end")}>
                     {t("col.onHand")}
                   </th>
-                  <th scope="col" className={cn(TABLE_TH, "w-36 text-end")}>
+                  <th scope="col" className={cn(TABLE_TH, "w-48 text-end")}>
                     {t("toOrder.levels")}
                   </th>
                   <th scope="col" className={cn(TABLE_TH, "w-56 text-end")}>
@@ -109,10 +109,17 @@ export async function ToOrderScreen({ items, today }: ToOrderScreenProps) {
                     </td>
                     <td className={cn(S.cell, S.amount, "align-middle text-foreground/80")}>
                       <span className={S.label}>{t("toOrder.levels")}</span>
-                      {t("toOrder.levelsValue", {
-                        reorder: item.reorderLevel === undefined ? "—" : quantity(item, item.reorderLevel),
-                        par: item.parLevel === undefined ? "—" : quantity(item, item.parLevel),
-                      })}
+                      {/* One level a line, so both fit the column in either language. */}
+                      <span className="flex flex-col items-start @xl/sheet:items-end">
+                        <span className="whitespace-nowrap">
+                          {item.reorderLevel === undefined ? "—" : quantity(item, item.reorderLevel)}
+                        </span>
+                        <span className="whitespace-nowrap text-muted-foreground">
+                          {t("parLine", {
+                            quantity: item.parLevel === undefined ? "—" : quantity(item, item.parLevel),
+                          })}
+                        </span>
+                      </span>
                     </td>
                     <td className={cn(S.cell, S.amount, "align-middle font-semibold text-foreground")}>
                       <span className={S.label}>{t("toOrder.suggested")}</span>

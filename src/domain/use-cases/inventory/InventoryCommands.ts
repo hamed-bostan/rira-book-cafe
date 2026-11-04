@@ -144,7 +144,10 @@ export class CountStock {
   }
 }
 
-/** Stock already on hand when tracking starts — the owner's investment in kind. */
+/**
+ * Stock already on hand when tracking starts — the owner's investment in kind.
+ * Once per item: an item that has moved before is refused, line by line.
+ */
 export class RecordOpeningStock {
   constructor(private readonly inventory: IInventoryRepository) {}
 

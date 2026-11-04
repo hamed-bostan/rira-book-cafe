@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import type { Expense } from "@/src/domain/entities/Expense";
 import {
   issueStock,
+  openingLinesRefused,
   receiveStock,
   roundQuantity,
   STOCK_MOVEMENT_KINDS,
@@ -14,6 +15,7 @@ import {
 import { ACTIVE_ORDER_STATUSES } from "@/src/domain/entities/Order";
 import { createPage, toSkipTake, type Page, type PageRequest } from "@/src/domain/entities/Pagination";
 import { INGREDIENT_UNITS, type IngredientUnit } from "@/src/domain/entities/Pricing";
+import { ConflictError } from "@/src/domain/errors/ConflictError";
 import { NotFoundError } from "@/src/domain/errors/NotFoundError";
 import { ValidationError } from "@/src/domain/errors/ValidationError";
 import type { AuditHook } from "@/src/domain/repositories/AuditHook";
@@ -46,6 +48,7 @@ export class PrismaInventoryRepository implements IInventoryRepository {
     const rows = await prisma.ingredient.findMany({
       where: includeInactive ? {} : { isActive: true },
       orderBy: { name: "asc" },
+      include: { _count: { select: { stockMovements: true } } },
     });
     return rows.map((row) => {
       const reorderLevel = row.reorderLevel ?? undefined;
@@ -59,6 +62,7 @@ export class PrismaInventoryRepository implements IInventoryRepository {
         reorderLevel,
         isActive: row.isActive,
         level: stockLevel({ onHand: row.onHand, reorderLevel }),
+        hasHistory: row._count.stockMovements > 0,
       };
     });
   }
@@ -282,6 +286,21 @@ export class PrismaInventoryRepository implements IInventoryRepository {
         tx,
         lines.map((line) => line.ingredientId),
       );
+      // Read under the rows' locks, so two openings for one item can't both pass.
+      const moved = await tx.stockMovement.findMany({
+        where: { ingredientId: { in: lines.map((line) => line.ingredientId) } },
+        distinct: ["ingredientId"],
+        select: { ingredientId: true },
+      });
+      const refused = openingLinesRefused(input.lines, new Set(moved.map((row) => row.ingredientId)));
+      if (refused.length > 0) {
+        const names = [...new Set(refused.map((index) => stock.get(input.lines[index].ingredientId)?.name))];
+        throw new ConflictError(
+          "STOCK_HAS_HISTORY",
+          `${names.join(", ")} already ${names.length === 1 ? "has" : "have"} stock history — record a delivery or a count instead.`,
+          { fields: refused.map((index) => `lines.${index}.ingredientId`) },
+        );
+      }
       for (const line of lines) {
         const current = stock.get(line.ingredientId) as LockedStock;
         await writeMovement(

@@ -7,6 +7,7 @@ import { useForm, useWatch, type Control, type UseFormRegister } from "react-hoo
 import { openingStockSchema, type OpeningStockFormInput } from "@/src/contracts/inventory-schema";
 import type { StockItem } from "@/src/domain/entities/Inventory";
 import { Link, useRouter } from "@/src/i18n/navigation";
+import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatCafeDayMedium } from "@/src/lib/formatCafeDay";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
@@ -23,9 +24,13 @@ import { PAGE_CARD } from "../pageStyles";
 import { inventoryApi } from "./inventory-api";
 import { StockLinesFields, type StockLinesForm } from "./StockLinesFields";
 
+/** A refused line's item field, as the API names it: `lines.2.ingredientId`. */
+const LINE_ITEM_FIELD = /^lines\.\d+\.ingredientId$/;
+
 /**
  * Stock already on the shelves when tracking starts, at what it's worth — brought
- * into the books against the owner's capital.
+ * into the books against the owner's capital. Only items with no stock history are
+ * offered; one that gained some meanwhile is refused on its line.
  */
 export function OpeningStockForm({ items, today }: { items: StockItem[]; today: string }) {
   const t = useTranslations("dashInventory");
@@ -55,7 +60,16 @@ export function OpeningStockForm({ items, today }: { items: StockItem[]; today: 
       router.push("/dashboard/inventory");
       router.refresh();
     } catch (error) {
-      setError("root", { message: localizeApiError(error, tApiErrors, t("opening.error")) });
+      // An item that already has stock history is refused on its own line.
+      const lineErrors = Object.entries(error instanceof ApiError ? (error.fieldErrors ?? {}) : {}).filter(([field]) =>
+        LINE_ITEM_FIELD.test(field),
+      );
+      for (const [field, message] of lineErrors) {
+        setError(field as `lines.${number}.ingredientId`, { message });
+      }
+      if (lineErrors.length === 0) {
+        setError("root", { message: localizeApiError(error, tApiErrors, t("opening.error")) });
+      }
     }
   });
 

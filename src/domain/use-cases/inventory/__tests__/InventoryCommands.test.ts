@@ -33,6 +33,7 @@ function item(overrides: Partial<StockItem> = {}): StockItem {
     value: 50_000,
     isActive: true,
     level: "ok",
+    hasHistory: true,
     ...overrides,
   };
 }

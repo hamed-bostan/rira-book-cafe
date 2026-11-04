@@ -32,6 +32,7 @@ export const inventorySummaryResponseSchema: z.ZodMiniType<InventorySummary> = z
       reorderLevel: z.optional(z.number()),
       isActive: z.boolean(),
       level: z.enum(["out", "low", "ok"]),
+      hasHistory: z.boolean(),
     }),
   ),
   lowCount: z.number(),

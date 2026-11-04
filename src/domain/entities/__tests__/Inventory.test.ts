@@ -4,6 +4,7 @@ import {
   consumptionFor,
   countEntry,
   issueStock,
+  openingLinesRefused,
   openingStockEntry,
   receiveStock,
   stockLevel,
@@ -102,5 +103,18 @@ describe("inventory postings", () => {
     expect(balanced.lines).toContainEqual({ accountCode: "3200", debit: 0, credit: 3_000_000 });
     expect(entry?.uniqueKey).toBe("yearClose:1404");
     expect(yearCloseEntry({ fiscalYear: 1404, toDay: "2026-03-20", movements: [] }, ACTOR)).toBeNull();
+  });
+});
+
+describe("openingLinesRefused", () => {
+  it("refuses, by position, every line for an item that has moved before", () => {
+    const lines = [
+      { ingredientId: "beans" },
+      { ingredientId: "milk" },
+      { ingredientId: "cups" },
+      { ingredientId: "milk" },
+    ];
+    expect(openingLinesRefused(lines, new Set(["milk"]))).toEqual([1, 3]);
+    expect(openingLinesRefused(lines, new Set())).toEqual([]);
   });
 });

@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod/mini";
 
+import { ConflictError } from "@/src/domain/errors/ConflictError";
 import { NotFoundError } from "@/src/domain/errors/NotFoundError";
 import { PaymentGatewayError } from "@/src/domain/errors/PaymentGatewayError";
 import type { ILogger } from "@/src/domain/repositories/ILogger";
@@ -78,6 +79,26 @@ describe("errorResponseFromException", () => {
     expect(await response.json()).toMatchObject({
       error: { code: "VALIDATION", fieldErrors: { page: expect.any(String) } },
     });
+  });
+
+  it("answers a conflict with 409, naming its fields with the code as a form-error key", async () => {
+    const response = errorResponseFromException(
+      new ConflictError("STOCK_HAS_HISTORY", "Milk already has stock history.", {
+        fields: ["lines.0.ingredientId", "lines.2.ingredientId"],
+      }),
+      "ctx",
+    );
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({
+      error: {
+        message: "Milk already has stock history.",
+        code: "STOCK_HAS_HISTORY",
+        fieldErrors: { "lines.0.ingredientId": "stockHasHistory", "lines.2.ingredientId": "stockHasHistory" },
+      },
+    });
+    const plain = errorResponseFromException(new ConflictError("TABLE_TAKEN", "Taken."), "ctx");
+    expect((await plain.json()).error).not.toHaveProperty("fieldErrors");
   });
 });
 

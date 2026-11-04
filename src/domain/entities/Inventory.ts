@@ -15,7 +15,8 @@ import type { RecipeLine } from "./Pricing";
  *   sale     — used by sold items via their recipes: −qty, −avg×qty (Dr 5100 cost of sales)
  *   waste    — spoiled, spilled, expired:        −qty, −avg×qty (Dr 5200 waste)
  *   count    — physical count differs:           ±qty, ±avg×qty (5300 inventory variance)
- *   opening  — stock on hand when tracking starts: +qty, +cost  (Cr 3100 owner's capital)
+ *   opening  — stock on hand when tracking starts: +qty, +cost  (Cr 3100 owner's capital);
+ *              once per item, before anything else has moved it
  *   return   — sold units a refund put back on the shelf: +qty, +cost (Cr 5100 cost of sales)
  */
 
@@ -232,7 +233,22 @@ export type StockItem = {
   reorderLevel?: number;
   isActive: boolean;
   level: StockLevel;
+  /** Whether any stock has ever moved — once it has, opening stock is no longer for it. */
+  hasHistory: boolean;
 };
+
+/**
+ * The lines of an opening stock entry that are refused, by position: opening stock
+ * is what was on the shelves when tracking started, so it's only for an item with
+ * no movements yet. Recording it again would credit the owner's capital twice; an
+ * item already tracked takes a delivery or a count instead.
+ */
+export function openingLinesRefused(
+  lines: readonly { ingredientId: string }[],
+  withHistory: ReadonlySet<string>,
+): number[] {
+  return lines.flatMap((line, index) => (withHistory.has(line.ingredientId) ? [index] : []));
+}
 
 /** Inventory at a glance, with the check that stock and the books agree. */
 export type InventorySummary = {

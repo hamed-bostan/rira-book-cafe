@@ -2,16 +2,21 @@
  * The request was well-formed but the current state refuses it: a table already
  * booked for that time, an event that's full, a status change the workflow
  * doesn't allow. Nothing was changed. `code` is the machine-readable reason the
- * client localizes; the presentation layer answers 409.
+ * client localizes; the presentation layer answers 409. `fields` names the form
+ * fields the refusal is about (`unit`, `lines.2.ingredientId`), when it's about
+ * some, so a form can show it on them.
  */
 export class ConflictError extends Error {
+  public readonly fields: readonly string[];
+
   constructor(
     public readonly code: ConflictCode,
     message: string,
-    options?: { cause?: unknown },
+    options?: { cause?: unknown; fields?: readonly string[] },
   ) {
     super(message, options);
     this.name = "ConflictError";
+    this.fields = options?.fields ?? [];
   }
 }
 
@@ -84,4 +89,5 @@ export type ConflictCode =
   | "ITEM_SERVED"
   | "ORDER_EMPTY"
   | "PROMO_NO_LONGER_APPLIES"
-  | "POINTS_EXCEED_TOTAL";
+  | "POINTS_EXCEED_TOTAL"
+  | "STOCK_HAS_HISTORY";

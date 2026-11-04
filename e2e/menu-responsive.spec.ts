@@ -228,6 +228,19 @@ async function seedMenu(api: APIRequestContext, iconUrl: string): Promise<Seed> 
   );
   // Below its reorder level, so it's flagged and in the "Running low" tab.
   await jsonOf(await api.patch(`/api/admin/inventory/items/${ingredient.id}`, { data: { reorderLevel: "5000000" } }));
+  // A stock item nothing has moved yet: opening stock is only offered for those,
+  // so the opening stock page shows its form, with a long name in its picker.
+  await jsonOf(
+    await api.post("/api/admin/ingredients", {
+      data: {
+        name: `E2E Cardamom pods from the spice market, still in their sacks ${tag}`,
+        unit: "g",
+        purchasePrice: "2500000",
+        purchaseQuantity: "1000",
+        isActive: true,
+      },
+    }),
+  );
 
   const code = `E2E${tag}`.toUpperCase();
   await jsonOf(

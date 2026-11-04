@@ -107,7 +107,8 @@ const PAGES: Record<string, MenuPage> = {
   "delete category": {
     path: () => "/dashboard/categories",
     dialog: true,
-    prepare: deleteFrom(new RegExp(`(${CATEGORY.en}|${CATEGORY.fa})$`)),
+    // The row's ⋯ menu — not its drag grip, whose name ends with the category's too.
+    prepare: deleteFrom(new RegExp(`^(More actions for|کارهای بیشتر برای) (${CATEGORY.en}|${CATEGORY.fa})$`)),
   },
   inventory: { path: () => "/dashboard/inventory", tabs: true },
   "inventory running low": {

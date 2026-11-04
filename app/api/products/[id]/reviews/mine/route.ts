@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { submitReviewSchema } from "@/src/contracts/review-schema";
 import { SubmitReview } from "@/src/domain/use-cases/reviews/ReviewCommands";
 import { GetReviewEligibility } from "@/src/domain/use-cases/reviews/ReviewQueries";
+import { DeleteOwnReview } from "@/src/domain/use-cases/reviews/ReviewReplyCommands";
 import {
   categoryRepository,
   productRepository,
@@ -80,4 +81,23 @@ async function handlePut(request: NextRequest, { params }: RouteContext): Promis
   }
 }
 
+/**
+ * DELETE /api/products/:id/reviews/mine — the signed-in guest deletes their own
+ * review of the item. 204; 404 when they have none. Expires the cached catalog: an
+ * approved review leaving takes its stars out of the item's rating.
+ */
+async function handleDelete(_request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
+  const session = await getUserSession();
+  if (!session?.user.id) return unauthorizedResponse();
+
+  const { id } = await params;
+  try {
+    await new DeleteOwnReview(reviewRepository).execute(id, session.user.id);
+    return new NextResponse(null, { status: 204 });
+  } catch (error) {
+    return errorResponseFromException(error, `DELETE /api/products/${id}/reviews/mine failed`);
+  }
+}
+
 export const PUT = invalidatesCatalog([CATALOG_TAGS.products], handlePut);
+export const DELETE = invalidatesCatalog([CATALOG_TAGS.products], handleDelete);

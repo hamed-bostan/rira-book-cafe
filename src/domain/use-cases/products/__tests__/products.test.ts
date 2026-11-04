@@ -84,6 +84,7 @@ function category(overrides: Partial<Category> = {}): Category {
     slug: "coffee",
     iconUrl: "https://cdn/coffee.svg",
     isActive: true,
+    parentId: null,
     productCount: 0,
     hiddenProductCount: 0,
     createdAt: new Date("2026-01-01"),

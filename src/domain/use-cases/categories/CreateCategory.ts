@@ -3,6 +3,7 @@ import { UniqueConstraintError } from "../../errors/UniqueConstraintError";
 import { ValidationError } from "../../errors/ValidationError";
 
 import { categorySnapshot } from "./categoryActivity";
+import { requireValidParent } from "./categoryParent";
 
 import type { ActivityActor } from "../../entities/ActivityEntry";
 import type { Category } from "../../entities/Category";
@@ -25,9 +26,20 @@ export class CreateCategory {
     const existing = await this.categoryRepo.getBySlug(slug);
     if (existing) throw new UniqueConstraintError(["slug"]);
 
+    // A new category has no subcategories yet, so the only nesting rule that can
+    // bite is a parent that's itself a subcategory.
+    const parent = input.parentId ? requireValidParent(null, input.parentId, await this.categoryRepo.getAll()) : null;
+
     // The entry commits with the category — see `AuditHook`.
     return this.categoryRepo.create(
-      { name, slug, iconUrl: input.iconUrl, isActive: input.isActive, translations: input.translations },
+      {
+        name,
+        slug,
+        iconUrl: input.iconUrl,
+        isActive: input.isActive,
+        parentId: parent?.id ?? null,
+        translations: input.translations,
+      },
       (created) => ({
         actorId: actor.id,
         actorName: actor.name,
@@ -35,7 +47,7 @@ export class CreateCategory {
         entityType: "category",
         entityId: created.id,
         entityLabel: created.name,
-        changes: Object.entries(categorySnapshot(created))
+        changes: Object.entries(categorySnapshot(created, parent?.name ?? null))
           .map(([field, value]) => ({ field, before: null, after: activityValue(value) }))
           .filter((change) => change.after !== null),
       }),

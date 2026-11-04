@@ -4,6 +4,7 @@ import type { ProductListItem } from "@/src/domain/entities/Product";
 import { getStockStatus } from "@/src/domain/entities/stock";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { cn } from "@/src/lib/utils";
+import { BulkRowCheckbox } from "@/src/presentation/dashboard/bulk";
 import { ProductThumbnail } from "@/src/presentation/dashboard/ProductThumbnail";
 import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
 
@@ -52,6 +53,8 @@ export async function ProductRow({ product, categoryName, canWrite }: ProductRow
       className={cn("grid grid-cols-[minmax(0,1fr)_auto] items-center gap-y-3 px-5 py-3", PRODUCT_ROW_GRID)}
     >
       <div className="flex min-w-0 items-center gap-3">
+        {/* Only a catalog writer has bulk actions — and a selection to make. */}
+        {canWrite ? <BulkRowCheckbox id={product.id} label={t("selectRowAria", { name: product.name })} /> : null}
         <ProductThumbnail src={product.imageUrl} />
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -75,7 +78,13 @@ export async function ProductRow({ product, categoryName, canWrite }: ProductRow
 
       {/* On a narrow card this wraps under the name, indented past the picture; on
           a wide one it dissolves so its three cells are the row's own columns. */}
-      <div className="order-1 col-span-full flex flex-wrap items-center gap-x-5 gap-y-2 ps-13 @4xl/menu:contents">
+      <div
+        className={cn(
+          "order-1 col-span-full flex flex-wrap items-center gap-x-5 gap-y-2 @4xl/menu:contents",
+          // Lined up with the name: past the picture, and the tick box when there is one.
+          canWrite ? "ps-20" : "ps-13",
+        )}
+      >
         <div className="flex flex-col whitespace-nowrap tabular-nums @4xl/menu:text-end">
           <span className="text-body-strong text-foreground sm:text-body-small-strong">
             {formatMoney(product.price, locale)}

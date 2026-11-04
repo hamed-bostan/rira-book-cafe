@@ -17,6 +17,8 @@ import { useToast } from "@/src/presentation/design-system/components/Toast/useT
 
 import { storefrontApi } from "../storefront-api";
 
+import { DeleteMyReviewButton } from "./DeleteMyReviewButton";
+
 type ReviewFormProps = {
   productId: string;
   /** The review the guest already wrote, to edit. */
@@ -81,9 +83,12 @@ export function ReviewForm({ productId, review }: ReviewFormProps) {
       />
       <p className="text-body-caption text-muted-foreground">{t("reviews.moderationHint")}</p>
       {error ? <FormMessage>{error}</FormMessage> : null}
-      <Button type="submit" size="sm" className="self-end" loading={pending}>
-        {pending ? t("reviews.saving") : review ? t("reviews.update") : t("reviews.submit")}
-      </Button>
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        {review ? <DeleteMyReviewButton productId={productId} /> : null}
+        <Button type="submit" size="sm" loading={pending}>
+          {pending ? t("reviews.saving") : review ? t("reviews.update") : t("reviews.submit")}
+        </Button>
+      </div>
     </form>
   );
 }

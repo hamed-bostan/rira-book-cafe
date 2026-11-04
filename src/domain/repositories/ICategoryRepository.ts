@@ -12,13 +12,18 @@ export type CategoryTranslationInput = {
  * `translations` carries the per-locale names to persist alongside the base row:
  * `undefined` leaves existing translations untouched, a list replaces them (locales
  * absent from it are removed, so `[]` clears all).
+ *
+ * `parentId`: `null` makes it a top-level category, an id files it under that
+ * one; omitted leaves it where it is (top level for a new one). A category that
+ * moves under another parent goes to the end of its new siblings.
  */
 export type NewCategory = Omit<
   Category,
-  "id" | "createdAt" | "updatedAt" | "productCount" | "hiddenProductCount" | "isActive"
+  "id" | "createdAt" | "updatedAt" | "productCount" | "hiddenProductCount" | "isActive" | "parentId"
 > & {
   /** Omitted means "leave the default/current value" — see the repository impls. */
   isActive?: boolean;
+  parentId?: string | null;
   translations?: CategoryTranslationInput[];
 };
 
@@ -49,7 +54,8 @@ export type ICategoryRepository = {
   // locale returns the canonical (base row) name; a supported locale overlays its
   // translation, falling back to the base row when none exists.
   //
-  // `getAll` answers in menu order — the order guests see the categories in.
+  // `getAll` answers in menu order — the order guests see the categories in: each
+  // top-level category followed by its subcategories (see `inMenuOrder`).
   getAll(locale?: string): Promise<Category[]>;
   getById(id: string, locale?: string): Promise<Category | null>;
   getBySlug(slug: string, locale?: string): Promise<Category | null>;
@@ -62,13 +68,15 @@ export type ICategoryRepository = {
   getTranslations(categoryId: string): Promise<CategoryTranslationInput[]>;
 
   /**
-   * Put the categories in this menu order, first id first. Ids that no longer
-   * exist are skipped, and a category the list leaves out (one added since the
+   * Put one parent's categories in this order, first id first — the top-level
+   * ones (`parentId` `null`) or one parent's subcategories. Places are counted
+   * among siblings only. Ids that no longer exist, or no longer sit under that
+   * parent, are skipped, and a sibling the list leaves out (one added since the
    * caller read the order) keeps its place after the listed ones — so a stale
-   * list can't leave two categories sharing a place. `audit` runs once, inside
-   * the same transaction.
+   * list can't leave two categories sharing a place. Each of `audits` runs once,
+   * inside the same transaction.
    */
-  setOrder(ids: readonly string[], audit?: AuditHook<void>): Promise<void>;
+  setOrder(parentId: string | null, ids: readonly string[], audits?: readonly AuditHook<void>[]): Promise<void>;
 
   /**
    * Apply one field change to many categories at once, returning the rows as

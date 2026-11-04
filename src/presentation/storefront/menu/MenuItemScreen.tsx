@@ -3,7 +3,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 
 import type { BookWaitlistStatus } from "@/src/domain/entities/BookWaitlist";
 import { isSellable, type Product } from "@/src/domain/entities/Product";
-import type { PublicReview, ReviewEligibility } from "@/src/domain/entities/ProductReview";
+import type { PublicReviewPage, ReviewEligibility } from "@/src/domain/entities/ProductReview";
 import { isSoldOut } from "@/src/domain/entities/stock";
 import { Link } from "@/src/i18n/navigation";
 import { formatMoney } from "@/src/lib/formatMoney";
@@ -18,7 +18,7 @@ import { ProductReviews } from "./ProductReviews";
 
 type MenuItemScreenProps = {
   item: Product;
-  reviews: PublicReview[];
+  reviews: PublicReviewPage;
   /** The signed-in guest's review standing; `null` when signed out. */
   reviewEligibility: ReviewEligibility | null;
   /** For books: the lending line. `null` for drinks and food. */

@@ -4,13 +4,13 @@ import { profileResponseSchema, type ProfileWire } from "@/src/contracts/profile
 import type { BookLoan } from "@/src/domain/entities/BookLoan";
 import type { BookWaitlistEntry, BookWaitlistStatus } from "@/src/domain/entities/BookWaitlist";
 import type { CafeEvent, EventRegistration } from "@/src/domain/entities/CafeEvent";
-import type { Category } from "@/src/domain/entities/Category";
+import { shownCategories, type Category } from "@/src/domain/entities/Category";
 import type { GuestLoyaltyOverview } from "@/src/domain/entities/Loyalty";
 import type { Notification } from "@/src/domain/entities/Notification";
 import type { Order } from "@/src/domain/entities/Order";
 import type { OrderReceipt } from "@/src/domain/entities/OrderReceipt";
 import type { Product } from "@/src/domain/entities/Product";
-import type { PublicReview, ReviewEligibility } from "@/src/domain/entities/ProductReview";
+import type { PublicReviewPage, ReviewEligibility } from "@/src/domain/entities/ProductReview";
 import type { Reservation } from "@/src/domain/entities/Reservation";
 import type { SuiteBooking, SuiteBusyRange } from "@/src/domain/entities/SuiteBooking";
 import { ApiError } from "@/src/lib/api/ApiError";
@@ -40,7 +40,7 @@ import {
 import { productListResponseSchema, productResponseSchema } from "@/src/presentation/product/product-response-schema";
 import { reservationListResponseSchema } from "@/src/presentation/reservations/reservation-response-schema";
 import {
-  publicReviewListResponseSchema,
+  publicReviewPageResponseSchema,
   reviewEligibilityResponseSchema,
 } from "@/src/presentation/reviews/review-response-schema";
 import {
@@ -70,7 +70,8 @@ const EVENTS = { cache: { tags: [CATALOG_TAGS.events] } } as const;
 // are memoized per request with React `cache` instead of hitting the API twice.
 const readCategories = cache(async (): Promise<Category[]> => {
   const all = await serverApiGet("/categories", categoryListResponseSchema, CATEGORIES);
-  return all.filter((category) => category.isActive);
+  // A subcategory of a hidden parent is hidden with it (`isCategoryShown`).
+  return shownCategories(all);
 });
 const readItem = cache((id: string): Promise<Product | null> =>
   orNull(serverApiGet(`/products/${id}`, productResponseSchema, PRODUCTS)),
@@ -85,7 +86,10 @@ const readEvent = cache((id: string): Promise<CafeEvent | null> =>
  * endpoint answers for the signed-in guest only.
  */
 export const storefrontServerApi = {
-  /** Active categories only — an inactive one is hidden from guests with its items. */
+  /**
+   * The categories guests see, in menu order: an inactive one is hidden with its
+   * items, and so is every subcategory of an inactive parent.
+   */
   categories(): Promise<Category[]> {
     return readCategories();
   },
@@ -103,9 +107,14 @@ export const storefrontServerApi = {
     return readItem(id);
   },
 
-  /** An item's approved reviews, newest first. */
-  productReviews(productId: string): Promise<PublicReview[]> {
-    return serverApiGet(`/products/${productId}/reviews`, publicReviewListResponseSchema);
+  /**
+   * An item's approved reviews, newest first — the first `limit` ("Show more"
+   * asks for more; the API rounds to whole pages and caps it) — and how many there are.
+   */
+  productReviews(productId: string, limit?: number): Promise<PublicReviewPage> {
+    return serverApiGet(`/products/${productId}/reviews`, publicReviewPageResponseSchema, {
+      params: limit ? { limit } : undefined,
+    });
   },
 
   /** Whether the signed-in guest can review the item, and their review if they wrote one. */

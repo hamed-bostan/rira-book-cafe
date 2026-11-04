@@ -17,7 +17,10 @@ import { DashboardDialog } from "../DashboardDialog";
 import { categoriesApi } from "./category-api";
 
 type DeleteCategoryDialogProps = {
-  category: Pick<Category, "id" | "name" | "isActive" | "productCount">;
+  category: Pick<Category, "id" | "name" | "isActive" | "productCount"> & {
+    /** How many subcategories it holds — a parent with any can't be deleted either. */
+    subcategoryCount: number;
+  };
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** Hide the category instead — offered when it still has items. */
@@ -44,7 +47,14 @@ export function DeleteCategoryDialog({ category, open, onOpenChange, onHide }: D
   const [pending, startTransition] = React.useTransition();
 
   const blocked = category.productCount > 0;
+  // A parent with subcategories can't go either (409 HAS_SUBCATEGORIES): they'd be
+  // left under nothing. Items are the first thing to say when it has both.
+  const blockedBySubcategories = !blocked && category.subcategoryCount > 0;
   const items = { count: category.productCount, formatted: formatNumber(category.productCount, locale) };
+  const subcategories = {
+    count: category.subcategoryCount,
+    formatted: formatNumber(category.subcategoryCount, locale),
+  };
 
   function remove(): void {
     setError(null);
@@ -86,12 +96,26 @@ export function DeleteCategoryDialog({ category, open, onOpenChange, onHide }: D
       open={open}
       onOpenChange={handleOpenChange}
       title={t("deleteTitle", { name: category.name })}
-      subtitle={blocked ? t("deleteBlockedSub", { name: category.name }) : t("deleteMessage")}
+      subtitle={
+        blocked
+          ? t("deleteBlockedSub", { name: category.name })
+          : blockedBySubcategories
+            ? t("deleteBlockedChildrenSub", { name: category.name })
+            : t("deleteMessage")
+      }
       submitLabel={t("deleteConfirm")}
-      blocked={blocked}
+      blocked={blocked || blockedBySubcategories}
       pending={pending}
       onSubmit={remove}
-      error={blocked ? (category.isActive ? t("deleteBlocked", items) : t("deleteBlockedHidden", items)) : error}
+      error={
+        blocked
+          ? category.isActive
+            ? t("deleteBlocked", items)
+            : t("deleteBlockedHidden", items)
+          : blockedBySubcategories
+            ? t("deleteBlockedChildren", subcategories)
+            : error
+      }
       danger
       aside={
         blocked ? (

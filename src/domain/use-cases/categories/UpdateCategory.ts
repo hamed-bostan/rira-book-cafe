@@ -4,6 +4,7 @@ import { UniqueConstraintError } from "../../errors/UniqueConstraintError";
 import { ValidationError } from "../../errors/ValidationError";
 
 import { categorySnapshot } from "./categoryActivity";
+import { parentNameOf, requireValidParent } from "./categoryParent";
 
 import type { ActivityActor } from "../../entities/ActivityEntry";
 import type { Category } from "../../entities/Category";
@@ -31,14 +32,30 @@ export class UpdateCategory {
     const clash = await this.categoryRepo.getBySlug(slug);
     if (clash && clash.id !== id) throw new UniqueConstraintError(["slug"]);
 
-    const previous = await this.categoryRepo.getById(id);
+    const categories = await this.categoryRepo.getAll();
+    const previous = categories.find((category) => category.id === id);
     if (!previous) throw new NotFoundError("category", id);
+
+    // Only re-checked when the parent actually changes: keeping the one it has is
+    // always allowed, even if a rule tightened since.
+    const parentChanges = input.parentId !== undefined && input.parentId !== previous.parentId;
+    if (parentChanges) requireValidParent(id, input.parentId, categories);
 
     const updated = await this.categoryRepo.update(
       id,
-      { name, slug, iconUrl: input.iconUrl, isActive: input.isActive, translations: input.translations },
+      {
+        name,
+        slug,
+        iconUrl: input.iconUrl,
+        isActive: input.isActive,
+        parentId: input.parentId,
+        translations: input.translations,
+      },
       (saved) => {
-        const changes = diffFields(categorySnapshot(previous), categorySnapshot(saved));
+        const changes = diffFields(
+          categorySnapshot(previous, parentNameOf(previous, categories)),
+          categorySnapshot(saved, parentNameOf(saved, categories)),
+        );
         if (changes.length === 0) return null;
         return {
           actorId: actor.id,

@@ -102,6 +102,11 @@ export const ACTIVITY_ACTIONS = [
   // actions below are the same for the other things a message can be about.
   "order.customerNotified",
   "review.moderated",
+  // The cafe's public reply under a review: posted or edited, or taken down.
+  "review.replied",
+  "review.replyRemoved",
+  // Staff deleted a review for good; the entry keeps what it said.
+  "review.deleted",
   "promoCode.created",
   "promoCode.updated",
   "promoCode.activeChanged",

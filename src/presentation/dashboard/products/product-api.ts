@@ -2,7 +2,12 @@ import type { ProductBulkAction } from "@/src/contracts/bulk-action-schema";
 import type { ProductFormInput } from "@/src/contracts/product-schema";
 import type { Product } from "@/src/domain/entities/Product";
 import { apiDelete, apiPatch, apiPost, apiPut } from "@/src/lib/api/client";
-import { bulkResultSchema, type BulkResult } from "@/src/presentation/dashboard/bulk/bulk-result-response-schema";
+import {
+  bulkDeleteResultSchema,
+  bulkResultSchema,
+  type BulkDeleteResultWire,
+  type BulkResult,
+} from "@/src/presentation/dashboard/bulk/bulk-result-response-schema";
 import { productResponseSchema } from "@/src/presentation/product/product-response-schema";
 
 /**
@@ -38,5 +43,14 @@ export const productsApi = {
    */
   bulkUpdate(ids: readonly string[], action: ProductBulkAction): Promise<BulkResult> {
     return apiPatch("/admin/products/bulk", { ids, action }, bulkResultSchema);
+  },
+
+  /**
+   * Delete a selection of products. Resolves with how many went and each one left
+   * in place with why (a book out on loan, one already gone) — a refusal doesn't
+   * stop the rest.
+   */
+  bulkRemove(ids: readonly string[]): Promise<BulkDeleteResultWire> {
+    return apiPost("/admin/products/bulk/delete", { ids }, bulkDeleteResultSchema);
   },
 };

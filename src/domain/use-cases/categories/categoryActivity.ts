@@ -16,12 +16,27 @@ import type { NewCategory } from "../../repositories/ICategoryRepository";
  * that doesn't set it (the bulk activate/deactivate path writes the column
  * directly, bypassing this snapshot) means "leave it active", not "unset", so
  * it must never render as a change on its own.
+ *
+ * `parent` is the parent category's *name* (or nothing for a top-level one), not
+ * its id: the entry should read "Parent: Coffee → Tea" years later, whatever
+ * happened to either since. The caller looks the name up — it already has the list.
  */
-export function categorySnapshot(category: Category | NewCategory): Record<string, unknown> {
+export function categorySnapshot(
+  category: Category | NewCategory,
+  parentName: string | null = null,
+): Record<string, unknown> {
   return {
     name: category.name,
     slug: category.slug,
     iconUrl: category.iconUrl,
     isActive: category.isActive ?? true,
+    parent: parentName,
   };
 }
+
+/**
+ * The field a reorder records: the category's place among its siblings, counted
+ * from one as the dashboard shows it. Not `position` — the log already labels that
+ * field as a person's job title (payroll), and the two must read differently.
+ */
+export const MENU_POSITION_FIELD = "menuPosition";

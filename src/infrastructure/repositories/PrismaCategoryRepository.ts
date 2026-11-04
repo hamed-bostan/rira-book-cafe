@@ -1,4 +1,4 @@
-import type { Category } from "@/src/domain/entities/Category";
+import { inMenuOrder, type Category } from "@/src/domain/entities/Category";
 import { NotFoundError } from "@/src/domain/errors/NotFoundError";
 import { ResourceInUseError } from "@/src/domain/errors/ResourceInUseError";
 import { UniqueConstraintError } from "@/src/domain/errors/UniqueConstraintError";
@@ -22,7 +22,9 @@ import { recordAudit } from "./writeActivityEntry";
 export class PrismaCategoryRepository implements ICategoryRepository {
   async getAll(locale?: string): Promise<Category[]> {
     const rows = await prisma.category.findMany({ orderBy: MENU_ORDER });
-    const categories = await withProductCounts(rows.map(toCategory));
+    // Rows come sorted by their place among siblings; the menu shows each parent
+    // with its subcategories straight after it.
+    const categories = await withProductCounts(inMenuOrder(rows.map(toCategory)));
     return localizeCategories(categories, locale);
   }
 
@@ -45,9 +47,11 @@ export class PrismaCategoryRepository implements ICategoryRepository {
     const { translations, ...data } = input;
     try {
       const row = await prisma.$transaction(async (tx) => {
-        // A new category goes to the end of the menu.
-        const last = await tx.category.aggregate({ _max: { position: true } });
-        const created = await tx.category.create({ data: { ...data, position: (last._max.position ?? -1) + 1 } });
+        // A new category goes to the end of its siblings.
+        const parentId = data.parentId ?? null;
+        const created = await tx.category.create({
+          data: { ...data, parentId, position: await nextPosition(tx, parentId) },
+        });
         // The counts are placeholders here: the audit hook (see `categorySnapshot`)
         // never reads them, and a fresh row has nothing referencing it yet anyway.
         await recordAudit(tx, { ...toCategory(created), ...NO_PRODUCTS }, audit);
@@ -64,7 +68,16 @@ export class PrismaCategoryRepository implements ICategoryRepository {
     const { translations, ...data } = input;
     try {
       const row = await prisma.$transaction(async (tx) => {
-        const updated = await tx.category.update({ where: { id }, data });
+        // Filed under another parent: it joins the end of its new siblings.
+        let position: number | undefined;
+        if (data.parentId !== undefined) {
+          const current = await tx.category.findUnique({ where: { id }, select: { parentId: true } });
+          if (current && current.parentId !== data.parentId) position = await nextPosition(tx, data.parentId);
+        }
+        const updated = await tx.category.update({
+          where: { id },
+          data: position === undefined ? data : { ...data, position },
+        });
         // The counts are placeholders — the audit hook's `categorySnapshot` never reads them.
         await recordAudit(tx, { ...toCategory(updated), ...NO_PRODUCTS }, audit);
         return updated;
@@ -85,9 +98,14 @@ export class PrismaCategoryRepository implements ICategoryRepository {
     return rows.map((row) => ({ locale: row.locale, name: row.name }));
   }
 
-  async setOrder(ids: readonly string[], audit?: AuditHook<void>): Promise<void> {
+  async setOrder(
+    parentId: string | null,
+    ids: readonly string[],
+    audits: readonly AuditHook<void>[] = [],
+  ): Promise<void> {
     await prisma.$transaction(async (tx) => {
-      const current = await tx.category.findMany({ orderBy: MENU_ORDER, select: { id: true } });
+      // Only this parent's categories: places are counted among siblings.
+      const current = await tx.category.findMany({ where: { parentId }, orderBy: MENU_ORDER, select: { id: true } });
       const existing = new Set(current.map((row) => row.id));
       const listed = new Set(ids);
       const order = [
@@ -101,7 +119,7 @@ export class PrismaCategoryRepository implements ICategoryRepository {
         SET "position" = o.ordinality - 1
         FROM unnest(${order}::text[]) WITH ORDINALITY AS o(id, ordinality)
         WHERE c."id" = o.id AND c."position" <> o.ordinality - 1`;
-      await recordAudit(tx, undefined, audit);
+      for (const audit of audits) await recordAudit(tx, undefined, audit);
     });
   }
 
@@ -159,7 +177,13 @@ export class PrismaCategoryRepository implements ICategoryRepository {
   }
 }
 
-/** Menu order: by position, and by age where two share one (a create racing another). */
+/** Where a new sibling under `parentId` goes: after the last one. */
+async function nextPosition(tx: Prisma.TransactionClient, parentId: string | null): Promise<number> {
+  const last = await tx.category.aggregate({ where: { parentId }, _max: { position: true } });
+  return (last._max.position ?? -1) + 1;
+}
+
+/** Sibling order: by position, and by age where two share one (a create racing another). */
 const MENU_ORDER: Prisma.CategoryOrderByWithRelationInput[] = [{ position: "asc" }, { createdAt: "asc" }];
 
 /** The derived counts — not columns on a category row. */
@@ -179,6 +203,7 @@ function toCategory(row: {
   slug: string;
   iconUrl: string;
   isActive: boolean;
+  parentId: string | null;
   createdAt: Date;
   updatedAt: Date;
 }): Omit<Category, keyof ProductCounts> {
@@ -188,6 +213,7 @@ function toCategory(row: {
     slug: row.slug,
     iconUrl: row.iconUrl,
     isActive: row.isActive,
+    parentId: row.parentId,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
@@ -290,12 +316,13 @@ function toDomainError(error: unknown): unknown {
     // race between a pre-write existence check and the write).
     if (error.code === "P2002") return new UniqueConstraintError(uniqueTargetFields(error), { cause: error });
     if (error.code === "P2025") return new NotFoundError("category", undefined, { cause: error });
-    // P2003: the products' key refused a delete — an item was filed under the
-    // category after `DeleteCategory` counted none.
+    // P2003: a key refused the write — on a delete, an item or a subcategory was
+    // filed under the category after `DeleteCategory` counted none; on a save, the
+    // parent was deleted meanwhile.
     if (error.code === "P2003") {
       return new ResourceInUseError(
         "category",
-        "This category has items in it now. Move or remove them, then delete it.",
+        "This category has items or subcategories in it now, or its parent is gone. Reload and try again.",
         { cause: error },
       );
     }

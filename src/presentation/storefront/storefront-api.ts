@@ -78,6 +78,11 @@ export const storefrontApi = {
     return apiPut(`/products/${productId}/reviews/mine`, input, reviewResponseSchema);
   },
 
+  /** Delete the guest's own review of an item. */
+  deleteMyReview(productId: string): Promise<void> {
+    return apiDelete(`/products/${productId}/reviews/mine`);
+  },
+
   /** Get in line for a book that's out. 409 `ALREADY_WAITING` / `BOOK_ON_SHELF`. */
   joinBookWaitlist(productId: string): Promise<BookWaitlistEntry> {
     return apiPost(`/products/${productId}/waitlist`, {}, bookWaitlistEntryResponseSchema);

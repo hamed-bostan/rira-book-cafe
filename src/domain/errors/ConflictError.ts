@@ -105,4 +105,10 @@ export type ConflictCode =
   | "UNIT_LOCKED"
   | "STOCK_ON_HAND"
   | "INGREDIENT_IN_RECIPE"
-  | "STOCK_HAS_HISTORY";
+  | "STOCK_HAS_HISTORY"
+  // Category nesting is one level: a subcategory can't hold subcategories, and a
+  // category that has some can't become one (or be deleted while it has them).
+  | "PARENT_IS_SUBCATEGORY"
+  | "HAS_SUBCATEGORIES"
+  // Staff reply only to a review guests can see.
+  | "REVIEW_NOT_APPROVED";

@@ -3,6 +3,7 @@ import { lendingCopies } from "../../entities/Product";
 import { ConflictError } from "../../errors/ConflictError";
 import { NotFoundError } from "../../errors/NotFoundError";
 import { ValidationError } from "../../errors/ValidationError";
+import { reclaimImage } from "../images/reclaimImage";
 
 import { productSnapshot } from "./productActivity";
 import { requireCategory } from "./requireCategory";
@@ -12,6 +13,8 @@ import type { ActivityActor } from "../../entities/ActivityEntry";
 import type { Product } from "../../entities/Product";
 import type { IBookLoanRepository } from "../../repositories/IBookLoanRepository";
 import type { ICategoryRepository } from "../../repositories/ICategoryRepository";
+import type { IImageReferences } from "../../repositories/IImageReferences";
+import type { IImageStorageRepository } from "../../repositories/IImageStorageRepository";
 import type { IProductRepository, NewProduct } from "../../repositories/IProductRepository";
 
 /**
@@ -25,6 +28,11 @@ export class UpdateProduct {
     private readonly productRepo: IProductRepository,
     private readonly loanRepo: Pick<IBookLoanRepository, "countOpenForBook">,
     private readonly categoryRepo: Pick<ICategoryRepository, "getById">,
+    /**
+     * Where a replaced picture is reclaimed from (see `reclaimImage`). Optional so a
+     * caller that never swaps pictures needn't wire storage; the route always does.
+     */
+    private readonly images?: ProductImageCleanup,
   ) {}
 
   /** `actor` is the admin saving the form, and is required — it attributes the activity entry. */
@@ -52,7 +60,7 @@ export class UpdateProduct {
     // The entry is written by the repository inside the transaction that saves the
     // item, diffed against the row the write actually produced. Returning `null`
     // for an unchanged save keeps the log a record of changes rather than clicks.
-    return this.productRepo.update(id, write, (saved) => {
+    const updated = await this.productRepo.update(id, write, (saved) => {
       const changes = diffFields(productSnapshot(existing), productSnapshot(saved));
       if (changes.length === 0) return null;
       return {
@@ -65,5 +73,19 @@ export class UpdateProduct {
         changes,
       };
     });
+
+    // The old picture goes once the item points at the new one — after the write
+    // commits, best-effort, and only when nothing else (an order line that
+    // snapshotted it, another item) still shows it.
+    if (this.images && existing.imageUrl !== updated.imageUrl) {
+      await reclaimImage(existing.imageUrl, this.images.references, this.images.storage);
+    }
+    return updated;
   }
 }
+
+/** What reclaiming an item's old picture needs: who still uses it, and the storage it's in. */
+export type ProductImageCleanup = {
+  references: IImageReferences;
+  storage: Pick<IImageStorageRepository, "pathForUrl" | "removeByUrl">;
+};

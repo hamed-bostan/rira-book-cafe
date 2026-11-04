@@ -19,12 +19,27 @@ export default async function EditCategoryPage({ params }: EditCategoryPageProps
   await requirePermission("catalog.write");
 
   const { id } = await params;
-  const [category, translations, activity] = await Promise.all([
+  const [category, translations, activity, categories] = await Promise.all([
     categoriesServerApi.getById(id),
     categoriesServerApi.getTranslations(id),
     activityServerApi.listForEntity("category", id, DEFAULT_ACTIVITY_LIMIT),
+    categoriesServerApi.list(),
   ]);
   if (!category) notFound();
 
-  return <EditCategoryScreen category={category} translations={translations} activity={activity} />;
+  // It can sit under any other top-level category; one with subcategories stays put.
+  const parents = categories
+    .filter((candidate) => candidate.parentId === null && candidate.id !== id)
+    .map(({ id: parentId, name }) => ({ id: parentId, name }));
+  const hasSubcategories = categories.some((candidate) => candidate.parentId === id);
+
+  return (
+    <EditCategoryScreen
+      category={category}
+      translations={translations}
+      parents={parents}
+      hasSubcategories={hasSubcategories}
+      activity={activity}
+    />
+  );
 }

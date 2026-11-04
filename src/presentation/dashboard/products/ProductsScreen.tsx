@@ -6,6 +6,7 @@ import type { Page } from "@/src/domain/entities/Pagination";
 import type { ProductListItem } from "@/src/domain/entities/Product";
 import { Link } from "@/src/i18n/navigation";
 import { cn } from "@/src/lib/utils";
+import { BulkSelectAllCheckbox, BulkSelectionProvider, BulkStickyBar } from "@/src/presentation/dashboard/bulk";
 import { ListChoiceFilter, ListPager, ListSearchInput } from "@/src/presentation/dashboard/list";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
@@ -15,6 +16,7 @@ import { DashboardEmptyState } from "../DashboardEmptyState";
 import { DashboardLinkTabs } from "../DashboardLinkTabs";
 
 import { MENU_ITEM_SHOWS, type MenuItemShow } from "./menu-item-show";
+import { ProductBulkActions } from "./ProductBulkActions";
 import { PRODUCT_ROW_GRID, ProductRow } from "./ProductRow";
 
 type ProductsScreenProps = {
@@ -61,6 +63,10 @@ function hrefFor({ categoryId, show, query }: ListState): string {
  * Presentational: the page fetches one page over the REST API (BFF) during server
  * render. Tabs, search and filter all live in the URL; every change a row makes
  * `router.refresh()`es. There's no client-side copy of the list.
+ *
+ * For a catalog writer each row has a tick box (and the header — or, on a narrow
+ * card, the filter strip — one for the whole page): ticked items get a bar along
+ * the bottom of the screen to show, hide, feature, move or delete them together.
  */
 export async function ProductsScreen({
   products,
@@ -75,8 +81,9 @@ export async function ProductsScreen({
   const categoryNames = new Map(categories.map((category) => [category.id, category.name]));
   const isFiltered = show != null || query != null;
   const totalItems = categories.reduce((sum, category) => sum + category.productCount, 0);
+  const selectable = canWrite && products.items.length > 0;
 
-  return (
+  const screen = (
     <div className="flex min-w-0 flex-col gap-6">
       <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
         <div className="flex min-w-0 flex-col gap-1">
@@ -141,21 +148,34 @@ export async function ProductsScreen({
             showAllValue
             options={MENU_ITEM_SHOWS.map((value) => ({ value, label: t(`show.${value}`) }))}
           />
+          {selectable ? (
+            // On a narrow card the column header (and its tick box) is hidden.
+            <label className="flex min-h-11 cursor-pointer items-center gap-3 text-body-default text-muted-foreground @4xl/menu:hidden">
+              <BulkSelectAllCheckbox label={t("selectAllAria")} />
+              <span aria-hidden>{t("selectAll")}</span>
+            </label>
+          ) : null}
         </div>
 
         {products.items.length > 0 ? (
           <>
+            {/* The column names are for the eye (each row names its own values);
+                only the header's tick box is for everyone. */}
             <div
-              aria-hidden
               className={cn(
                 "hidden h-10 items-center border-b border-border bg-muted px-5 text-body-caption font-semibold tracking-wider text-muted-foreground uppercase @4xl/menu:grid",
                 PRODUCT_ROW_GRID,
               )}
             >
-              <span>{t("colProduct")}</span>
-              <span className="text-end">{t("colPrice")}</span>
-              <span>{t("colStock")}</span>
-              <span>{t("colOnMenu")}</span>
+              <span className="flex items-center gap-3">
+                {selectable ? <BulkSelectAllCheckbox label={t("selectAllAria")} /> : null}
+                <span aria-hidden>{t("colProduct")}</span>
+              </span>
+              <span aria-hidden className="text-end">
+                {t("colPrice")}
+              </span>
+              <span aria-hidden>{t("colStock")}</span>
+              <span aria-hidden>{t("colOnMenu")}</span>
               <span />
             </div>
             <ul>
@@ -173,6 +193,22 @@ export async function ProductsScreen({
             <div className="border-t border-border px-4 py-3">
               <ListPager page={products} />
             </div>
+            {selectable ? (
+              <BulkStickyBar
+                actions={
+                  <ProductBulkActions
+                    products={products.items.map(({ id, name, isPublished, isFeatured, categoryId: category }) => ({
+                      id,
+                      name,
+                      isPublished,
+                      isFeatured,
+                      categoryId: category,
+                    }))}
+                    categories={categories.map(({ id, name, parentId }) => ({ id, name, parentId }))}
+                  />
+                }
+              />
+            ) : null}
           </>
         ) : isFiltered ? (
           <DashboardEmptyState title={t("noMatchesTitle")} body={query ? t("noMatchesSearch") : t("noMatchesView")} />
@@ -181,5 +217,13 @@ export async function ProductsScreen({
         )}
       </section>
     </div>
+  );
+
+  // The selection is per page: paging, filtering or a refresh after an action
+  // replaces the ids and clears it (see `BulkSelectionProvider`).
+  return canWrite ? (
+    <BulkSelectionProvider ids={products.items.map((product) => product.id)}>{screen}</BulkSelectionProvider>
+  ) : (
+    screen
   );
 }

@@ -1,4 +1,5 @@
-import type { Category } from "./Category";
+import { isCategoryShown, type MenuCategory } from "./Category";
+
 import type { IngredientAlert } from "./Inventory";
 import type { ProductOptionGroup } from "./ProductOptions";
 
@@ -153,7 +154,9 @@ export function isSellable(product: Pick<Product, "kind" | "book">): boolean {
  * Whether an item is on the public menu: published, in a category that's shown.
  * Hiding a category hides everything in it — guests can't see, open, order or
  * review those items — while each item keeps its own switch for when the category
- * comes back. An item whose category can't be found isn't on the menu either.
+ * comes back. Hiding a parent category hides its subcategories' items too (see
+ * `isCategoryShown`): a subcategory must arrive with its `parent` attached, or
+ * it reads as hidden. An item whose category can't be found isn't on the menu either.
  *
  * The one rule every public path applies: the menu, featured and search reads, an
  * item's own page, placing and pricing an order, and writing a review. Staff
@@ -164,7 +167,7 @@ export function isSellable(product: Pick<Product, "kind" | "book">): boolean {
  */
 export function isOnPublicMenu(
   product: Pick<Product, "isPublished">,
-  category: Pick<Category, "isActive"> | null | undefined,
+  category: MenuCategory | null | undefined,
 ): boolean {
-  return product.isPublished && category?.isActive === true;
+  return product.isPublished && category != null && isCategoryShown(category, category.parent);
 }

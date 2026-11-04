@@ -13,3 +13,20 @@ export const bulkResultSchema = z.object({
 });
 
 export type BulkResult = z.infer<typeof bulkResultSchema>;
+
+/**
+ * What a bulk delete answers with: how many went, and each one left in place
+ * with why — the screen names them rather than reporting a bare shortfall.
+ */
+export const bulkDeleteResultSchema = z.object({
+  deleted: z.number(),
+  refused: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      reason: z.enum(["bookInUse", "notFound"]),
+    }),
+  ),
+});
+
+export type BulkDeleteResultWire = z.infer<typeof bulkDeleteResultSchema>;

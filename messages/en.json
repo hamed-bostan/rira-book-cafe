@@ -223,7 +223,11 @@
     "closesSameAsOpens": "Closing time must be different from opening time.",
     "exceptionDuplicate": "That day is already listed.",
     "exceptionsTooMany": "That's more special days than the cafe can list. Remove past ones first.",
-    "receiptLinesTooMany": "Keep the header to 4 lines."
+    "receiptLinesTooMany": "Keep the header to 4 lines.",
+    "parentIsSubcategory": "That's a subcategory — choose a top-level category.",
+    "hasSubcategories": "It has subcategories of its own, so it stays at the top level.",
+    "replyRequired": "Write the reply.",
+    "replyTooLong": "Keep the reply to 1,000 characters."
   },
   "apiErrors": {
     "badRequest": "The request couldn't be read. Please try again.",
@@ -298,7 +302,10 @@
     "stockHasHistory": "Some of these items already have stock history. Record a delivery or a count for them instead.",
     "promoNotEligible": "That code doesn't cover anything in this order.",
     "promoFirstOrder": "That code is only for a guest's first order.",
-    "promoNeedsGuest": "That code needs the guest's phone — its uses are counted per guest."
+    "promoNeedsGuest": "That code needs the guest's phone — its uses are counted per guest.",
+    "parentIsSubcategory": "That category is itself a subcategory. Choose a top-level category as the parent.",
+    "hasSubcategories": "This category has subcategories. Move or delete them first.",
+    "reviewNotApproved": "Only a review that's shown on the menu can get a reply."
   },
   "meta": {
     "siteName": "Rira Book Cafe",
@@ -641,11 +648,37 @@
     "moveOptionGroupUp": "Move group {number} up",
     "moveOptionGroupDown": "Move group {number} down",
     "moveOptionChoiceUp": "Move choice {number} of group {group} up",
-    "moveOptionChoiceDown": "Move choice {number} of group {group} down"
+    "moveOptionChoiceDown": "Move choice {number} of group {group} down",
+    "selectAll": "Select all on this page",
+    "selectAllAria": "Select every item on this page",
+    "selectRowAria": "Select {name}",
+    "bulkActionCount": "{action} ({count})",
+    "subcategoryLabel": "{parent} › {name}",
+    "bulkShow": "Show on menu",
+    "bulkHide": "Hide from menu",
+    "bulkFeatured": "Featured",
+    "bulkMove": "Move to…",
+    "bulkShownToast": "{count, plural, one {# item is} other {# items are}} on the menu",
+    "bulkHiddenToast": "{count, plural, one {# item is} other {# items are}} hidden from the menu",
+    "bulkFeaturedToast": "{count, plural, one {# item is} other {# items are}} featured on the menu",
+    "bulkUnfeaturedToast": "{count, plural, one {# item is} other {# items are}} no longer featured",
+    "bulkMovedToast": "{count, plural, one {# item} other {# items}} moved to {category}",
+    "bulkNone": "Nothing changed — the selected items were already that way.",
+    "bulkSkipped": "{count, plural, one {# was} other {# were}} already that way, so left as it was.",
+    "bulkMoveTitle": "Move {count, plural, one {# item} other {# items}}",
+    "bulkMoveMessage": "They keep everything else — price, stock and whether they're on the menu.",
+    "bulkMoveConfirm": "Move",
+    "bulkMovePreview": "{count, plural, one {# is} other {# are}} in that category already and stay put.",
+    "bulkDeleteTitle": "Delete {count, plural, one {# item} other {# items}}?",
+    "bulkDeleteMessage": "They come off the menu for good. Past orders keep their record. A book out on loan or with guests waiting stays.",
+    "bulkDeletedToast": "{count, plural, one {# item} other {# items}} deleted",
+    "bulkDeleteNone": "Nothing was deleted",
+    "bulkDeleteRefused": "Kept {count, plural, one {# book} other {# books}} out on loan or with guests waiting: {names}.",
+    "listSeparator": ", "
   },
   "dashCategories": {
     "heading": "Categories",
-    "subtitle": "Guests see them on the menu in this order.",
+    "subtitle": "Guests see them on the menu in this order, each with its subcategories under it.",
     "newCategory": "New category",
     "emptyTitle": "No categories yet",
     "emptyBody": "Add one to start building the menu.",
@@ -708,7 +741,32 @@
     "createdToast": "Category created",
     "deleted": "{name} deleted",
     "sectionNameHint": "Shown as a tab on the menu, in the guest's language.",
-    "sectionVisibility": "Visibility"
+    "sectionVisibility": "Visibility",
+    "subcategoriesOf": "Subcategories of {name}",
+    "subcategoryCount": "{count, plural, one {{formatted} subcategory} other {{formatted} subcategories}}",
+    "selectAll": "Select all",
+    "selectAllAria": "Select every category",
+    "selectRowAria": "Select {name}",
+    "dragHint": "Drag a category by its grip to reorder it",
+    "dragHandleAria": "Reorder {name}",
+    "dragInstructions": "Press Space or Enter to pick it up, the arrow keys to move it, and Space or Enter to drop it. Escape puts it back.",
+    "dragPickedUp": "{name} picked up, place {position} of {count}.",
+    "dragMoved": "{name} is now in place {position} of {count}.",
+    "dragDropped": "{name} dropped in place {position} of {count}.",
+    "dragCancelled": "Reorder called off. {name} is back in place {position}.",
+    "reorderedToast": "{name} moved to place {position}",
+    "reorderError": "Couldn't save the new order. Please try again.",
+    "bulkActionCount": "{action} ({count})",
+    "bulkShownToast": "{count, plural, one {# category is} other {# categories are}} back on the menu",
+    "bulkHiddenToast": "{count, plural, one {# category is} other {# categories are}} hidden from the menu",
+    "bulkSkipped": "{count, plural, one {# was} other {# were}} already that way, so left as it was.",
+    "bulkHideParentHint": "Hiding a parent takes its subcategories' items off the menu too.",
+    "deleteBlockedChildrenSub": "{name} still has subcategories.",
+    "deleteBlockedChildren": "Move or delete its {count, plural, one {{formatted} subcategory} other {{formatted} subcategories}} first.",
+    "parentLabel": "Parent category",
+    "parentHint": "Leave it at the top of the menu, or file it under a top-level category.",
+    "parentNone": "None — top level",
+    "parentLockedHint": "It has subcategories of its own, so it stays at the top level."
   },
   "dashBulk": {
     "label": "Bulk actions",
@@ -1100,7 +1158,10 @@
       },
       "review": {
         "moderated": "<b>{actor}</b> moderated {entity}’s review",
-        "submitted": "<b>{actor}</b> submitted a new review"
+        "submitted": "<b>{actor}</b> submitted a new review",
+        "replied": "<b>{actor}</b> replied to a review of {entity}",
+        "replyRemoved": "<b>{actor}</b> removed the reply to a review of {entity}",
+        "deleted": "<b>{actor}</b> deleted a review of {entity}"
       },
       "promoCode": {
         "created": "<b>{actor}</b> created promo code {entity}",
@@ -1330,7 +1391,13 @@
       "label": "Label",
       "seats": "Seats",
       "area": "Area",
-      "floorOrder": "Place on the floor"
+      "floorOrder": "Place on the floor",
+      "parent": "Parent category",
+      "menuPosition": "Place on the menu",
+      "reply": "Reply",
+      "rating": "Stars",
+      "comment": "Review",
+      "author": "Guest"
     },
     "filterField": "Field",
     "allFields": "Any field"
@@ -1948,7 +2015,9 @@
       "pagination": "Menu pages",
       "pageRange": "{first}–{last} of {total}",
       "previousPage": "Previous",
-      "nextPage": "Next"
+      "nextPage": "Next",
+      "subcategoryFilter": "Narrow {name} down",
+      "allInCategory": "All"
     },
     "basket": {
       "heading": "Your basket",
@@ -2269,6 +2338,10 @@
         "pointsExpired": {
           "title": "{points} points expired",
           "body": "They lapsed after a long time without a visit. Your next order starts earning again."
+        },
+        "reviewReplied": {
+          "title": "The cafe replied to your review",
+          "body": "See what they said about {productName}."
         }
       }
     },
@@ -2296,7 +2369,15 @@
         "pending": "Waiting for approval",
         "approved": "Published",
         "rejected": "Not published"
-      }
+      },
+      "delete": "Delete my review",
+      "deleteTitle": "Delete your review?",
+      "deleteMessage": "It comes off the menu for good. You can write a new one any time.",
+      "deleted": "Your review is deleted",
+      "deleteError": "Couldn't delete your review. Please try again.",
+      "replyFrom": "Reply from {cafe}",
+      "showing": "Showing {shown} of {total}",
+      "showMore": "Show more reviews"
     },
     "waitlist": {
       "onLoan": "{count, plural, one {{formatted} copy is out on loan.} other {{formatted} copies are out on loan.}}",
@@ -3426,11 +3507,38 @@
     "emptyTitle": "No reviews here",
     "emptyBody": "Reviews will show up here.",
     "noMatchesTitle": "No matches",
-    "noMatchesBody": "No reviews match that search.",
+    "noMatchesBody": "No reviews match that search or filter.",
     "moderated": {
       "approved": "Review of {item} is now on the menu",
       "rejected": "Review of {item} hidden"
-    }
+    },
+    "filterItem": "Item",
+    "allItems": "All items",
+    "filterStars": "Stars",
+    "allStars": "Any stars",
+    "starsOption": "{count, plural, one {{formatted} star} other {{formatted} stars}}",
+    "reply": "Reply",
+    "editReply": "Edit reply",
+    "removeReply": "Remove reply",
+    "delete": "Delete review",
+    "replyBy": "Cafe's reply · {name}, {date}",
+    "replyTitle": "Reply to this review",
+    "editReplyTitle": "Edit the reply",
+    "replySubtitle": "{author} on {item}. The reply shows under the review on the menu, from the cafe.",
+    "replyLabel": "Reply",
+    "replyHint": "Guests see it signed by the cafe. The guest is told when it's posted.",
+    "postReply": "Post reply",
+    "saveReply": "Save reply",
+    "repliedToast": "Reply posted",
+    "replyEditedToast": "Reply saved",
+    "replyRemovedToast": "Reply removed",
+    "replyError": "Couldn't save the reply. Please try again.",
+    "deleteTitle": "Delete {author}'s review of {item}?",
+    "deleteMessage": "It's gone for good. To keep it but not show it, hide it instead.",
+    "deleteMessageShown": "It's gone for good, and its stars leave the item's rating. To keep it but not show it, hide it instead.",
+    "deleteConfirm": "Delete",
+    "deletedToast": "Review of {item} deleted",
+    "deleteError": "Couldn't delete the review. Please try again."
   },
   "dashPromotions": {
     "heading": "Promotions",

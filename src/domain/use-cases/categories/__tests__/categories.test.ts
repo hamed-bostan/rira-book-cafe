@@ -29,6 +29,7 @@ function category(overrides: Partial<Category> = {}): Category {
     slug: "coffee",
     iconUrl: "https://cdn/categories/coffee.png",
     isActive: true,
+    parentId: null,
     productCount: 0,
     hiddenProductCount: 0,
     createdAt: new Date(0),
@@ -60,7 +61,7 @@ function repoWith(rows: Category[]): Fake {
   const entries: (NewActivityEntry | null)[] = [];
 
   const create = vi.fn<ICategoryRepository["create"]>(async (input, audit) => {
-    const saved = category({ ...input, id: "new", isActive: input.isActive ?? true });
+    const saved = category({ ...input, id: "new", isActive: input.isActive ?? true, parentId: input.parentId ?? null });
     if (audit) entries.push(audit(saved));
     return saved;
   });
@@ -72,6 +73,7 @@ function repoWith(rows: Category[]): Fake {
       slug: input.slug,
       iconUrl: input.iconUrl,
       isActive: input.isActive ?? current.isActive,
+      parentId: input.parentId === undefined ? current.parentId : input.parentId,
     };
     if (audit) entries.push(audit(saved));
     return saved;
@@ -88,8 +90,8 @@ function repoWith(rows: Category[]): Fake {
     return updates;
   });
 
-  const setOrder = vi.fn<ICategoryRepository["setOrder"]>(async (_ids, audit) => {
-    if (audit) entries.push(audit());
+  const setOrder = vi.fn<ICategoryRepository["setOrder"]>(async (_parentId, _ids, audits = []) => {
+    for (const audit of audits) entries.push(audit());
   });
 
   const repo: ICategoryRepository = {
@@ -122,6 +124,7 @@ describe("categorySnapshot", () => {
       slug: INPUT.slug,
       iconUrl: INPUT.iconUrl,
       isActive: true,
+      parent: null,
     });
     expect(categorySnapshot(category({ isActive: false })).isActive).toBe(false);
   });
@@ -138,6 +141,7 @@ describe("CreateCategory", () => {
       slug: "tea",
       iconUrl: INPUT.iconUrl,
       isActive: true,
+      parentId: null,
       translations,
     });
     expect(entries[0]).toEqual({
@@ -330,7 +334,8 @@ describe("MoveCategory", () => {
     const { repo, setOrder, entries } = repoWith(menu());
     await new MoveCategory(repo).execute("c2", "up", ACTOR);
 
-    expect(setOrder.mock.calls[0][0]).toEqual(["c2", "c1", "c3"]);
+    expect(setOrder.mock.calls[0][0]).toBeNull();
+    expect(setOrder.mock.calls[0][1]).toEqual(["c2", "c1", "c3"]);
     expect(entries).toEqual([
       {
         actorId: ACTOR.id,
@@ -339,7 +344,7 @@ describe("MoveCategory", () => {
         entityType: "category",
         entityId: "c2",
         entityLabel: "Tea",
-        changes: [{ field: "position", before: "2", after: "1" }],
+        changes: [{ field: "menuPosition", before: "2", after: "1" }],
       },
     ]);
   });
@@ -347,7 +352,7 @@ describe("MoveCategory", () => {
   it("swaps a category with the one below it", async () => {
     const { repo, setOrder } = repoWith(menu());
     await new MoveCategory(repo).execute("c2", "down", ACTOR);
-    expect(setOrder.mock.calls[0][0]).toEqual(["c1", "c3", "c2"]);
+    expect(setOrder.mock.calls[0][1]).toEqual(["c1", "c3", "c2"]);
   });
 
   it.each<[string, CategoryMoveDirection]>([

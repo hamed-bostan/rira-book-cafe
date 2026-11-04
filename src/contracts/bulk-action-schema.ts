@@ -45,6 +45,14 @@ export type ProductBulkAction = z.infer<typeof productBulkActionSchema>;
 export type ProductBulkRequest = z.infer<typeof productBulkRequestSchema>;
 
 /**
+ * Deleting a selection of products. Its own request (and endpoint) rather than a
+ * `delete` variant of the action above: that one is a `PATCH` that sets a field,
+ * and a delete answers differently — with each item it had to leave and why.
+ */
+export const productBulkDeleteSchema = z.object({ ids: idsField });
+export type ProductBulkDeleteRequest = z.infer<typeof productBulkDeleteSchema>;
+
+/**
  * What to do to the selected categories: activate or deactivate. No bulk
  * delete — deleting a category is destructive and rare enough to stay a
  * per-row confirm, so the union has no variant for it to route around.

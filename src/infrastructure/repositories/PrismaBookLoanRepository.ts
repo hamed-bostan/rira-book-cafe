@@ -30,6 +30,7 @@ import { inTransaction, type PrismaDb } from "@/src/infrastructure/prisma/transa
 
 import { OPEN_HOLD, lockBookShelf, toWaitlistEntry } from "./bookShelf";
 import { recordAudit } from "./writeActivityEntry";
+import { createGuestProfile } from "./writeGuestProfile";
 import { postHook } from "./writeJournal";
 
 /** Soonest due first — so the late ones lead — then in the order they went out. */
@@ -77,12 +78,14 @@ export class PrismaBookLoanRepository implements IBookLoanRepository {
       const borrower = { userId: input.userId, phone: input.borrowerPhone };
       const skipped = holdsSkippedByLoan(copies - out, told.map(toWaitlistEntry), borrower);
 
+      // A new guest's profile goes in with the loan: a loan refused above leaves none.
+      await createGuestProfile(tx, input.newGuest);
       const row = await tx.bookLoan.create({
         data: {
           productId: input.productId,
           bookTitle: input.bookTitle,
           bookAuthor: input.bookAuthor ?? null,
-          userId: input.userId ?? null,
+          userId: input.userId,
           borrowerName: input.borrowerName,
           borrowerPhone: input.borrowerPhone,
           lentAt: new Date(input.lentAt),

@@ -4,14 +4,12 @@ import { Plus } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import * as React from "react";
 
-import { MAX_BORROWER_NAME_LENGTH } from "@/src/domain/entities/BookLoan";
 import { useRouter } from "@/src/i18n/navigation";
 import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
-import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
 import { Select } from "@/src/presentation/design-system/components/form/Select/Select";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
@@ -20,6 +18,7 @@ import { bookLoansApi } from "../book-loans/book-loan-api";
 import { DashboardDialog } from "../DashboardDialog";
 import { DashboardField } from "../DashboardField";
 import { FIELD_HINT } from "../fieldStyles";
+import { GuestField, type GuestFieldValue } from "../guest-profiles/GuestField";
 
 type HoldableBook = {
   id: string;
@@ -36,15 +35,15 @@ type AddHoldDialogProps = {
   books: readonly HoldableBook[];
 };
 
-const FIELDS = ["productId", "guestName", "guestPhone"] as const;
+const FIELDS = ["productId", "guestPhone", "guestName"] as const;
 /** Where a new hold shows: the Open tab. */
 const OPEN_HOLDS_HREF = "/dashboard/book-holds";
 
 /**
- * "Add a hold" for a guest who asks at the counter or by phone. A book with a copy
- * free that nobody holds or waits for can't be picked — lend it instead. Says up
- * front which place in line they'll take. Writes over the REST API, then shows the
- * Open tab.
+ * "Add a hold" for a guest who asks at the counter or by phone, found by their
+ * phone — or given a profile with the hold (`GuestField`). A book with a copy free
+ * that nobody holds or waits for can't be picked — lend it instead. Says up front
+ * which place in line they'll take. Writes over the REST API, then shows the Open tab.
  */
 export function AddHoldDialog({ books }: AddHoldDialogProps) {
   const t = useTranslations("dashBookHolds");
@@ -58,29 +57,27 @@ export function AddHoldDialog({ books }: AddHoldDialogProps) {
 
   const [open, setOpen] = React.useState(false);
   const [productId, setProductId] = React.useState(firstHoldable);
-  const [guestName, setGuestName] = React.useState("");
-  const [guestPhone, setGuestPhone] = React.useState("");
+  const [guest, setGuest] = React.useState<GuestFieldValue | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [pending, startTransition] = React.useTransition();
 
   function openDialog(): void {
     setProductId(firstHoldable);
-    setGuestName("");
-    setGuestPhone("");
+    setGuest(null);
     setError(null);
     setOpen(true);
   }
 
   const book = books.find((candidate) => candidate.id === productId);
-  const blocked = !book || book.onShelf || !guestName.trim() || !guestPhone.trim();
+  const blocked = !book || book.onShelf || !guest;
 
   function submit(): void {
-    if (!book) return;
+    if (!book || !guest) return;
     setError(null);
     startTransition(async () => {
       try {
-        await bookLoansApi.addHold({ productId, guestName, guestPhone });
-        toast({ tone: "success", title: t("addedToast", { name: guestName.trim(), title: book.title }) });
+        const hold = await bookLoansApi.addHold({ productId, guestPhone: guest.phone, guestName: guest.name });
+        toast({ tone: "success", title: t("addedToast", { name: hold.guestName, title: book.title }) });
         setOpen(false);
         router.push(OPEN_HOLDS_HREF);
         router.refresh();
@@ -128,28 +125,7 @@ export function AddHoldDialog({ books }: AddHoldDialogProps) {
             ))}
           </Select>
         </DashboardField>
-        <DashboardField label={t("guestName")}>
-          <Input
-            size="control-md"
-            value={guestName}
-            onChange={(event) => setGuestName(event.target.value)}
-            maxLength={MAX_BORROWER_NAME_LENGTH}
-            placeholder={t("guestNamePlaceholder")}
-            autoComplete="off"
-          />
-        </DashboardField>
-        <DashboardField label={t("guestPhone")}>
-          <Input
-            size="control-md"
-            type="tel"
-            inputMode="tel"
-            value={guestPhone}
-            onChange={(event) => setGuestPhone(event.target.value)}
-            placeholder="0912 345 6789"
-            autoComplete="off"
-            dir="ltr"
-          />
-        </DashboardField>
+        <GuestField onChange={setGuest} disabled={pending} />
         {book && !book.onShelf ? (
           <p className={FIELD_HINT}>{t("placeInLine", { position: formatNumber(book.inLine + 1, locale) })}</p>
         ) : null}

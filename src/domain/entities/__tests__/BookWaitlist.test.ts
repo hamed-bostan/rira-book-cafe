@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import {
   HOLD_PICKUP_DAYS,
+  MAX_OPEN_HOLDS_PER_GUEST,
   bookHasLine,
   canBorrowBook,
+  canHoldAnother,
   holdPickupDeadline,
   holdPickupState,
   isHoldPickupPassed,
@@ -56,6 +58,15 @@ describe("isHoldPickupPassed", () => {
     const later = new Date("2026-11-10T10:00:00Z");
     expect(isHoldPickupPassed({ status: "fulfilled", pickupBy }, later)).toBe(false);
     expect(isHoldPickupPassed({ status: "waiting" }, later)).toBe(false);
+  });
+});
+
+describe("canHoldAnother", () => {
+  it("lets a guest hold up to three books at once, ready or waiting alike", () => {
+    expect(MAX_OPEN_HOLDS_PER_GUEST).toBe(3);
+    expect(canHoldAnother(0)).toBe(true);
+    expect(canHoldAnother(2)).toBe(true);
+    expect(canHoldAnother(3)).toBe(false);
   });
 });
 

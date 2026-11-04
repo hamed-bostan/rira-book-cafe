@@ -300,3 +300,142 @@ describe("Lend now on Book holds", () => {
     expect((await lendNow("no-such-hold")).status).toBe(404);
   });
 });
+
+describe("staff lending and holding on a guest's profile", () => {
+  const NEW_PHONE = "0935 222 3344";
+  const NEW_ID = "09352223344";
+
+  function holdFor(phone: string, name?: string): Promise<Response> {
+    signInAs("admin");
+    return addHold(
+      jsonRequest("POST", "/api/admin/book-waitlist", { productId: BLIND_OWL, guestPhone: phone, guestName: name }),
+    );
+  }
+
+  /** Holds the customer has on other books, straight into the table: no other seeded book is needed. */
+  async function holdsElsewhere(statuses: readonly ("waiting" | "notified")[]): Promise<void> {
+    for (const [index, held] of statuses.entries()) {
+      await prisma.bookWaitlistEntry.create({
+        data: {
+          productId: `elsewhere-${index}`,
+          bookTitle: `Elsewhere ${index}`,
+          userId: GUEST.id,
+          guestName: GUEST.name,
+          guestPhone: GUEST.phone,
+          status: held,
+          ...(held === "notified" ? { notifiedAt: new Date(), pickupBy: holdPickupDeadline(new Date()) } : {}),
+        },
+      });
+    }
+  }
+
+  it("lends to a new guest on a profile made with the loan, and a refused loan makes none", async () => {
+    const lent = await lendTo("Mina Rahimi", NEW_PHONE);
+    expect(lent.status).toBe(201);
+    expect(await readJson<BookLoan>(lent)).toMatchObject({
+      userId: NEW_ID,
+      borrowerName: "Mina Rahimi",
+      borrowerPhone: NEW_ID,
+    });
+    expect(await prisma.user.findUnique({ where: { id: NEW_ID } })).toMatchObject({
+      name: "Mina Rahimi",
+      createdById: TEST_USERS.admin.id,
+    });
+    expect(await prisma.activityEntry.count({ where: { action: "guest.profileCreated", entityId: NEW_ID } })).toBe(1);
+
+    // Every copy is out now: the next loan is refused, and its new guest gets no profile.
+    const refused = await lendTo("Kian Nouri", "0935 222 3355");
+    expect(refused.status).toBe(409);
+    expect((await readError(refused)).code).toBe("ALL_COPIES_OUT");
+    expect(await prisma.user.findUnique({ where: { id: "09352223355" } })).toBeNull();
+    expect(await prisma.activityEntry.count({ where: { action: "guest.profileCreated" } })).toBe(1);
+  });
+
+  it("lends under the profile's own name, and asks a new phone for one", async () => {
+    signInAs("admin");
+    const found = await lend(
+      jsonRequest("POST", "/api/admin/book-loans", {
+        productId: BLIND_OWL,
+        borrowerPhone: "0912 000 0004",
+        dueOn: shiftCafeDay(today, 14),
+      }),
+    );
+    expect(found.status).toBe(201);
+    expect(await readJson<BookLoan>(found)).toMatchObject({ userId: GUEST.id, borrowerName: GUEST.name });
+
+    const nameless = await lend(
+      jsonRequest("POST", "/api/admin/book-loans", {
+        productId: "seed-book-savushun",
+        borrowerPhone: NEW_PHONE,
+        dueOn: shiftCafeDay(today, 14),
+      }),
+    );
+    expect(nameless.status).toBe(400);
+    expect((await readError(nameless)).fieldErrors).toEqual({ borrowerName: "guestNameNeeded" });
+  });
+
+  it("adds a new guest to a line on a profile made with the hold, and a refused hold makes none", async () => {
+    // A copy on the shelf with nobody waiting: there's no line, so no hold — and no profile.
+    const onShelf = await holdFor(NEW_PHONE, "Mina Rahimi");
+    expect(onShelf.status).toBe(409);
+    expect((await readError(onShelf)).code).toBe("BOOK_ON_SHELF");
+    expect(await prisma.user.findUnique({ where: { id: NEW_ID } })).toBeNull();
+
+    expect((await lendTo("Niloofar", "09121110005")).status).toBe(201);
+    const added = await holdFor(NEW_PHONE, "Mina Rahimi");
+    expect(added.status).toBe(201);
+    expect(await readJson<BookWaitlistEntry>(added)).toMatchObject({
+      userId: NEW_ID,
+      guestName: "Mina Rahimi",
+      guestPhone: NEW_ID,
+      status: "waiting",
+    });
+    expect(await prisma.activityEntry.count({ where: { action: "guest.profileCreated", entityId: NEW_ID } })).toBe(1);
+
+    // The guest's own account: found by phone, under its name.
+    const known = await holdFor("0912 000 0004");
+    expect(await readJson<BookWaitlistEntry>(known)).toMatchObject({ userId: GUEST.id, guestName: GUEST.name });
+  });
+
+  it("caps a guest's holds across books — borrowing, joining and staff adding them alike", async () => {
+    await holdsElsewhere(["waiting", "waiting", "notified"]);
+    expect(await status()).toMatchObject({ canBorrow: true, guestHolds: 3 });
+
+    const borrowed = await borrowAs("customer");
+    expect(borrowed.status).toBe(409);
+    expect((await readError(borrowed)).code).toBe("HOLD_LIMIT");
+
+    expect((await lendTo("Niloofar", "09121110005")).status).toBe(201);
+    signInAs("customer");
+    const joined = await joinLine(
+      jsonRequest("POST", `/api/products/${BLIND_OWL}/waitlist`),
+      routeParams({ id: BLIND_OWL }),
+    );
+    expect(joined.status).toBe(409);
+    expect((await readError(joined)).code).toBe("HOLD_LIMIT");
+    const added = await holdFor("0912 000 0004");
+    expect(added.status).toBe(409);
+    expect((await readError(added)).code).toBe("HOLD_LIMIT");
+
+    // A hold that closes frees a place.
+    await prisma.bookWaitlistEntry.updateMany({ where: { productId: "elsewhere-0" }, data: { status: "cancelled" } });
+    expect((await holdFor("0912 000 0004")).status).toBe(201);
+  });
+
+  it("counts a guest's holds under one lock, so two books at once can't take them past the cap", async () => {
+    await holdsElsewhere(["waiting", "waiting"]);
+    const repo = new PrismaBookWaitlistRepository();
+    const now = new Date();
+    const results = await Promise.allSettled(
+      [BLIND_OWL, "seed-book-savushun"].map((productId) =>
+        repo.borrow(
+          { productId, bookTitle: productId, userId: GUEST.id, guestName: GUEST.name, guestPhone: GUEST.phone },
+          now,
+        ),
+      ),
+    );
+    expect(results.filter((result) => result.status === "fulfilled")).toHaveLength(1);
+    const [refused] = results.filter((result) => result.status === "rejected");
+    expect(refused.reason).toMatchObject({ code: "HOLD_LIMIT" });
+  });
+});

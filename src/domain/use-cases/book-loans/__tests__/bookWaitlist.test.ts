@@ -46,13 +46,14 @@ describe("JoinBookWaitlist", () => {
     });
   });
 
-  it("has no line for a book that's on the shelf", async () => {
-    const loans = { getBook: vi.fn(async () => book), countOpenForBook: vi.fn(async () => 0) };
-    const waitlist = { listOpenForBook: vi.fn(async () => []) } as unknown as IBookWaitlistRepository;
-    await expect(new JoinBookWaitlist(waitlist, loans).execute("b1", GUEST)).rejects.toMatchObject({
-      code: "BOOK_ON_SHELF",
-    });
-    expect(ConflictError).toBeDefined();
+  it("passes on the shelf's refusal — no line, at the cap — and holds nothing", async () => {
+    for (const code of ["BOOK_ON_SHELF", "HOLD_LIMIT"] as const) {
+      const join = vi.fn(async () => {
+        throw new ConflictError(code, code);
+      });
+      const loans = { getBook: vi.fn(async () => book) };
+      await expect(new JoinBookWaitlist({ join }, loans).execute("b1", GUEST)).rejects.toMatchObject({ code });
+    }
   });
 });
 

@@ -73,8 +73,8 @@ function repoWith(
   return { repo, create, applyStatus };
 }
 
-function usersWith(ids: string[]): Pick<IUserRepository, "getById"> {
-  return { getById: vi.fn(async (id: string) => (ids.includes(id) ? ({ id } as never) : null)) };
+function usersWith(ids: string[], name = "Sara"): Pick<IUserRepository, "getById"> {
+  return { getById: vi.fn(async (id: string) => (ids.includes(id) ? ({ id, name, phone: id } as never) : null)) };
 }
 
 describe("LendBook", () => {
@@ -131,14 +131,18 @@ describe("LendBook", () => {
     });
   });
 
-  it("defaults the due date to two weeks and leaves walk-ins unlinked", async () => {
+  it("defaults the due date to two weeks, and makes a walk-in a profile with the loan", async () => {
     const { repo, create } = repoWith(null);
     await new LendBook(repo, usersWith([])).execute(
       { productId: "b1", borrowerName: "Reza", borrowerPhone: "09350000000" },
       STAFF,
       NOW,
     );
-    expect(create.mock.calls[0][0]).toMatchObject({ userId: undefined, dueAt: "2026-11-03T20:29:59.999Z" });
+    expect(create.mock.calls[0][0]).toMatchObject({
+      userId: "09350000000",
+      newGuest: { id: "09350000000", phone: "09350000000", name: "Reza", createdBy: STAFF },
+      dueAt: "2026-11-03T20:29:59.999Z",
+    });
   });
 
   it("refuses a missing name, a bad phone, past or too-late due dates, and non-books", async () => {
@@ -177,7 +181,7 @@ describe("LendHeldBook", () => {
 
   it("lends the book to the hold's guest, by their phone so their profile, on the terms staff chose", async () => {
     const { repo, create } = repoWith(null);
-    const lendBook = new LendBook(repo, usersWith(["09351112233"]));
+    const lendBook = new LendBook(repo, usersWith(["09351112233"], "Sara Ahmadi"));
     await new LendHeldBook(holds(hold), lendBook).execute(
       "w1",
       { dueOn: "2026-11-10", note: " Spine creased ", depositAmount: 500000, depositMethod: "cash" },

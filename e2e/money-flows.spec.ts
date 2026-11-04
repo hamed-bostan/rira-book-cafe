@@ -107,8 +107,11 @@ test("a deposit left against a book shows on the loan", async ({ page }) => {
   // A book with a copy on the shelf: another spec may have lent every copy of one.
   const book = dialog.getByRole("combobox").first();
   await book.selectOption((await book.locator("option:not([disabled])").first().getAttribute("value")) ?? "");
-  await dialog.getByLabel("Borrower's name").fill("Sara Ahmadi");
-  await dialog.getByLabel("Borrower's phone").fill("09121234567");
+  // The guest is found by phone; a run before this one may already have made them a profile.
+  await dialog.getByLabel("Guest's phone").fill("09121234567");
+  await expect(dialog.getByRole("status").filter({ hasText: /New guest|has a profile/ })).toBeVisible();
+  const name = dialog.getByLabel("Guest's name");
+  if (await name.isVisible()) await name.fill("Sara Ahmadi");
   await dialog.getByLabel("Deposit (optional)").fill("500000");
   await expect(dialog.getByLabel("Paid into")).toBeVisible();
   await dialog.getByRole("button", { name: "Record loan" }).click();

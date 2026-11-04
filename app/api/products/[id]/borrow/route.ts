@@ -19,8 +19,8 @@ type RouteContext = { params: Promise<{ id: string }> };
  * the guest's hold, ready to collect (`notified`, with its `pickupBy`). Signed-in
  * guests only. 409 `NO_FREE_COPY` when every copy is out or held, or guests wait
  * for one (join the line instead), `ALREADY_WAITING` when they hold it or are in
- * line already, `ALREADY_ON_LOAN` when they have it out. 404 for something that
- * isn't a book.
+ * line already, `ALREADY_ON_LOAN` when they have it out, `HOLD_LIMIT` when they
+ * hold as many books as one guest may. 404 for something that isn't a book.
  */
 export async function POST(_request: Request, { params }: RouteContext): Promise<NextResponse> {
   const session = await getUserSession();

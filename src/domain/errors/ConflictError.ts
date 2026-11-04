@@ -59,6 +59,8 @@ export type ConflictCode =
   | "NO_FREE_COPY"
   // "Lend now" for a hold that's no longer the guest's to collect.
   | "HOLD_NOT_READY"
+  // A guest already holding as many books as one may (MAX_OPEN_HOLDS_PER_GUEST).
+  | "HOLD_LIMIT"
   // A book still out on loan or with guests in line can't be deleted.
   | "BOOK_IN_USE"
   // A book's copies to lend can't go below the copies of it out on loan.

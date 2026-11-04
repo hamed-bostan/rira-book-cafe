@@ -4,7 +4,6 @@ import { CircleAlert, Plus } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import * as React from "react";
 
-import { MAX_BORROWER_NAME_LENGTH } from "@/src/domain/entities/BookLoan";
 import { holdsSkippedByLoan, type BookWaitlistEntry } from "@/src/domain/entities/BookWaitlist";
 import { normalizePhone } from "@/src/domain/entities/Phone";
 import type { LendableBook } from "@/src/domain/repositories/IBookLoanRepository";
@@ -15,13 +14,13 @@ import { formatCafeDayShort } from "@/src/lib/formatCafeDay";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
-import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
 import { Select } from "@/src/presentation/design-system/components/form/Select/Select";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { DashboardDialog } from "../DashboardDialog";
 import { DashboardField } from "../DashboardField";
+import { GuestField, type GuestFieldValue } from "../guest-profiles/GuestField";
 
 import { bookLoansApi } from "./book-loan-api";
 import { LoanTermsFields } from "./LoanTermsFields";
@@ -38,14 +37,14 @@ type LendBookDialogProps = {
   today: string;
 };
 
-const FIELDS = ["productId", "borrowerName", "borrowerPhone", ...LOAN_TERMS_FIELDS] as const;
+const FIELDS = ["productId", "borrowerPhone", "borrowerName", ...LOAN_TERMS_FIELDS] as const;
 /** Where a recorded loan shows: the On loan tab, with no search hiding it. */
 const LOANS_HREF = "/dashboard/book-loans";
 
 /**
  * Record a book going out: which book (one with every copy out can't be lent —
- * that guest joins its line instead, and the dialog says so), who took it, and its
- * terms — for how long, an optional deposit and a note (`LoanTermsFields`, shared
+ * that guest joins its line instead, and the dialog says so), who took it — found
+ * by phone, or given a profile with the loan (`GuestField`) — and its terms — for how long, an optional deposit and a note (`LoanTermsFields`, shared
  * with "Lend now" on Book holds). Lending a copy that's held for a guest warns
  * first — the loan skips them. Writes over the REST API, then shows the On loan tab.
  */
@@ -64,16 +63,14 @@ export function LendBookDialog({ books, heldFor, today }: LendBookDialogProps) {
 
   const [open, setOpen] = React.useState(false);
   const [productId, setProductId] = React.useState(firstBook);
-  const [borrowerName, setBorrowerName] = React.useState("");
-  const [borrowerPhone, setBorrowerPhone] = React.useState("");
+  const [guest, setGuest] = React.useState<GuestFieldValue | null>(null);
   const terms = useLoanTerms(today);
   const [error, setError] = React.useState<string | null>(null);
   const [pending, startTransition] = React.useTransition();
 
   function openDialog(): void {
     setProductId(firstBook);
-    setBorrowerName("");
-    setBorrowerPhone("");
+    setGuest(null);
     terms.reset();
     setError(null);
     setOpen(true);
@@ -85,16 +82,22 @@ export function LendBookDialog({ books, heldFor, today }: LendBookDialogProps) {
   // someone told it's back (or who borrowed it from the site), going to a different phone.
   const skipped =
     book && !allOut
-      ? holdsSkippedByLoan(free(book), heldFor[productId] ?? [], { phone: normalizePhone(borrowerPhone) })
+      ? holdsSkippedByLoan(free(book), heldFor[productId] ?? [], { phone: normalizePhone(guest?.phone ?? "") })
       : [];
   const warning = skipped.length > 0 ? t("heldForWarning", { name: skipped[0].guestName }) : null;
-  const blocked = !book || allOut || !borrowerName.trim() || !borrowerPhone.trim();
+  const blocked = !book || allOut || !guest;
 
   function submit(): void {
+    if (!guest) return;
     setError(null);
     startTransition(async () => {
       try {
-        const saved = await bookLoansApi.create({ productId, borrowerName, borrowerPhone, ...terms.values() });
+        const saved = await bookLoansApi.create({
+          productId,
+          borrowerPhone: guest.phone,
+          borrowerName: guest.name,
+          ...terms.values(),
+        });
         toast({
           tone: "success",
           title: t("lentToast", {
@@ -163,28 +166,7 @@ export function LendBookDialog({ books, heldFor, today }: LendBookDialogProps) {
             })}
           </Select>
         </DashboardField>
-        <DashboardField label={t("borrowerName")}>
-          <Input
-            size="control-md"
-            value={borrowerName}
-            onChange={(event) => setBorrowerName(event.target.value)}
-            maxLength={MAX_BORROWER_NAME_LENGTH}
-            placeholder={t("namePlaceholder")}
-            autoComplete="off"
-          />
-        </DashboardField>
-        <DashboardField label={t("borrowerPhone")} hint={t("phoneHint")}>
-          <Input
-            size="control-md"
-            type="tel"
-            inputMode="tel"
-            value={borrowerPhone}
-            onChange={(event) => setBorrowerPhone(event.target.value)}
-            placeholder="0912 345 6789"
-            autoComplete="off"
-            dir="ltr"
-          />
-        </DashboardField>
+        <GuestField onChange={setGuest} disabled={pending} />
         <LoanTermsFields terms={terms} />
       </DashboardDialog>
     </>

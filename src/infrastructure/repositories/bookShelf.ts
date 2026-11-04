@@ -16,10 +16,21 @@ export const OPEN_HOLD = { in: [...OPEN_WAITLIST_STATUSES] };
  * copy a guest is being told about. The `book_loans_no_duplicate` trigger takes
  * the same key — advisory locks are re-entrant within a transaction, so that's no
  * wait — which is why it must stay `book-loan:<id>`. Every caller locks one book
- * and takes nothing else first, so two of them can't wait on each other.
+ * and takes nothing after it; the only lock taken first is {@link lockGuestHolds},
+ * so two callers can't wait on each other.
  */
 export async function lockBookShelf(tx: Prisma.TransactionClient, productId: string): Promise<void> {
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`book-loan:${productId}`}))`;
+}
+
+/**
+ * Serialize one guest taking holds, for the rest of the transaction, so the cap on
+ * how many they hold across books (`canHoldAnother`) can't be raced past by two
+ * books at once. Taken before {@link lockBookShelf}, never after it — nothing
+ * holding a book's lock waits for a guest's.
+ */
+export async function lockGuestHolds(tx: Prisma.TransactionClient, userId: string): Promise<void> {
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`book-holds:${userId}`}))`;
 }
 
 type EntryRow = Prisma.BookWaitlistEntryGetPayload<object>;

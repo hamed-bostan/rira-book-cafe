@@ -25,7 +25,7 @@ export type BookWaitlistEntry = {
   productId: string;
   /** The book's title when they joined. */
   bookTitle: string;
-  /** The guest's account; absent for a hold staff added for a guest at the counter or by phone. */
+  /** The guest's profile (its id is their normalized phone); absent only on an old hold with no usable phone. */
   userId?: string;
   guestName: string;
   guestPhone: string;
@@ -123,6 +123,18 @@ export function canBorrowBook(free: number, line: readonly Pick<BookWaitlistEntr
   return !bookHasLine(free, line);
 }
 
+/**
+ * The most books one guest may hold at once, across the shelf: places in a line
+ * and copies held for them to collect alike. Borrowing, joining a line and staff
+ * adding them to one are refused past it (`HOLD_LIMIT`), so nobody ties up the shelf.
+ */
+export const MAX_OPEN_HOLDS_PER_GUEST = 3;
+
+/** Whether a guest with `open` holds (waiting or ready, any book) may take another. */
+export function canHoldAnother(open: number): boolean {
+  return open < MAX_OPEN_HOLDS_PER_GUEST;
+}
+
 /** A book's line as a guest sees it: how many copies are out, how long the line is, and their place in it. */
 export type BookWaitlistStatus = {
   onLoan: number;
@@ -134,6 +146,8 @@ export type BookWaitlistStatus = {
   canJoin: boolean;
   /** Whether a copy is free for the guest to borrow ({@link canBorrowBook}) — always the opposite of `canJoin`. */
   canBorrow: boolean;
+  /** The signed-in guest's open holds across every book (0 when signed out) — at {@link MAX_OPEN_HOLDS_PER_GUEST} they can't take another. */
+  guestHolds: number;
   /** The signed-in guest's open entry, if they're in line. */
   entry: BookWaitlistEntry | null;
   /** 1-based place in line of that entry. */

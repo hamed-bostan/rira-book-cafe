@@ -912,7 +912,7 @@ model BookWaitlistEntry {
   id         String    @id @default(uuid())
   productId  String    @map("product_id")
   bookTitle  String    @map("book_title")
-  // The guest's account; null for a hold staff added for a guest at the counter or by phone.
+  // The guest's profile, found or made by phone; null only on an old hold with no usable phone.
   userId     String?   @map("user_id")
   guestName  String    @map("guest_name")
   guestPhone String    @map("guest_phone")

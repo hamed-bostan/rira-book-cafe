@@ -130,7 +130,8 @@ describe("notices reach every guest, signed in or not", () => {
         }),
       ),
     );
-    expect(hold).not.toHaveProperty("userId");
+    // On the profile made with the hold: the guest hasn't signed in yet.
+    expect(hold.userId).toBe("09351112233");
 
     await changeLoan(
       jsonRequest("PATCH", `/api/admin/book-loans/${loan.id}`, { status: "returned" }),

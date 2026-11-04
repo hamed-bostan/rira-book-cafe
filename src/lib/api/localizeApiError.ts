@@ -70,6 +70,7 @@ type ApiErrorKey =
   | "allCopiesOut"
   | "noFreeCopy"
   | "holdNotReady"
+  | "holdLimit"
   | "bookInUse"
   | "copiesBelowOnLoan"
   | "shiftAlreadyOpen"
@@ -142,6 +143,7 @@ const CODE_KEYS: Readonly<Record<string, ApiErrorKey>> = {
   ALL_COPIES_OUT: "allCopiesOut",
   NO_FREE_COPY: "noFreeCopy",
   HOLD_NOT_READY: "holdNotReady",
+  HOLD_LIMIT: "holdLimit",
   BOOK_IN_USE: "bookInUse",
   COPIES_BELOW_ON_LOAN: "copiesBelowOnLoan",
   SHIFT_ALREADY_OPEN: "shiftAlreadyOpen",

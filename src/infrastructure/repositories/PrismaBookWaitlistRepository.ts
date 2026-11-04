@@ -1,6 +1,8 @@
 import {
   OPEN_WAITLIST_STATUSES,
+  bookHasLine,
   canBorrowBook,
+  canHoldAnother,
   holdPickupDeadline,
   isHoldFor,
   type BookWaitlistEntry,
@@ -13,8 +15,9 @@ import { prisma } from "@/src/infrastructure/prisma/client";
 import { Prisma } from "@/src/infrastructure/prisma/generated/client";
 import { inTransaction, type PrismaDb } from "@/src/infrastructure/prisma/transaction";
 
-import { OPEN_HOLD as OPEN, lockBookShelf, toWaitlistEntry as toEntry } from "./bookShelf";
+import { OPEN_HOLD as OPEN, lockBookShelf, lockGuestHolds, toWaitlistEntry as toEntry } from "./bookShelf";
 import { recordAudit } from "./writeActivityEntry";
+import { createGuestProfile } from "./writeGuestProfile";
 
 /** A unique-index refusal as the guest already in line; anything else as it was. */
 function alreadyWaiting(error: unknown): unknown {
@@ -26,65 +29,81 @@ function alreadyWaiting(error: unknown): unknown {
 
 /**
  * The book waitlist backed by PostgreSQL via Prisma. A partial unique index keeps
- * a guest in a book's line at most once; telling the next guest, and borrowing a
- * copy from the site, are serialized per book with the lock lending takes
- * (`lockBookShelf`).
+ * a guest in a book's line at most once; taking a hold, and telling the next guest,
+ * are serialized per book with the lock lending takes (`lockBookShelf`).
  */
 export class PrismaBookWaitlistRepository implements IBookWaitlistRepository {
   constructor(private readonly db: PrismaDb = prisma) {}
 
-  async join(input: NewWaitlistEntry): Promise<BookWaitlistEntry> {
-    try {
-      const row = await this.db.bookWaitlistEntry.create({ data: { ...input, userId: input.userId ?? null } });
-      return toEntry(row);
-    } catch (error) {
-      throw alreadyWaiting(error);
-    }
+  join(input: NewWaitlistEntry): Promise<BookWaitlistEntry> {
+    return this.takeHold(input, null);
   }
 
-  async borrow(input: NewWaitlistEntry, at: Date): Promise<BookWaitlistEntry> {
-    const borrower = { userId: input.userId, phone: input.guestPhone };
+  borrow(input: NewWaitlistEntry, at: Date): Promise<BookWaitlistEntry> {
+    return this.takeHold(input, at);
+  }
+
+  async countOpenForUser(userId: string): Promise<number> {
+    return this.db.bookWaitlistEntry.count({ where: { userId, status: OPEN } });
+  }
+
+  /**
+   * A guest's new hold: in the book's line (`borrowedAt` null), or on a free copy
+   * borrowed at `borrowedAt`, ready to collect. Under the guest's lock, so their
+   * holds across books can't race past the cap, then the book's, like a loan: the
+   * hold is decided against the shelf as it is, so two guests can't take the last
+   * copy. A new guest's profile is made in the same transaction.
+   */
+  private async takeHold(input: NewWaitlistEntry, borrowedAt: Date | null): Promise<BookWaitlistEntry> {
+    const { newGuest, ...entry } = input;
+    const guest = { userId: entry.userId, phone: entry.guestPhone };
+    const theirs = [{ userId: guest.userId }, { guestPhone: guest.phone }];
     try {
       return await inTransaction(this.db, async (tx) => {
-        // Under the book's lock, like a loan: the copy this hold takes is decided
-        // against the shelf as it is, so two guests can't borrow the last one.
-        await lockBookShelf(tx, input.productId);
-        const [book, out, theirs, line] = await Promise.all([
-          tx.product.findUnique({ where: { id: input.productId }, select: { bookCopies: true } }),
-          tx.bookLoan.count({ where: { productId: input.productId, status: "out" } }),
+        await lockGuestHolds(tx, guest.userId);
+        await lockBookShelf(tx, entry.productId);
+        const [book, out, onLoan, line, held] = await Promise.all([
+          tx.product.findUnique({ where: { id: entry.productId }, select: { bookCopies: true } }),
+          tx.bookLoan.count({ where: { productId: entry.productId, status: "out" } }),
           tx.bookLoan.findFirst({
             where: {
-              productId: input.productId,
+              productId: entry.productId,
               status: "out",
-              OR: [{ borrowerPhone: borrower.phone }, ...(borrower.userId ? [{ userId: borrower.userId }] : [])],
+              OR: [{ borrowerPhone: guest.phone }, { userId: guest.userId }],
             },
             select: { reference: true },
           }),
-          tx.bookWaitlistEntry.findMany({ where: { productId: input.productId, status: OPEN } }),
+          tx.bookWaitlistEntry.findMany({ where: { productId: entry.productId, status: OPEN } }),
+          tx.bookWaitlistEntry.count({ where: { status: OPEN, OR: theirs } }),
         ]);
-        if (theirs) {
-          throw new ConflictError("ALREADY_ON_LOAN", `This guest already has this book (L-${theirs.reference}).`);
+        if (onLoan) {
+          throw new ConflictError("ALREADY_ON_LOAN", `This guest already has this book (L-${onLoan.reference}).`);
         }
         const entries = line.map(toEntry);
-        if (entries.some((entry) => isHoldFor(entry, borrower))) {
+        if (entries.some((open) => isHoldFor(open, guest))) {
           throw new ConflictError("ALREADY_WAITING", "This guest is already in line for this book.");
         }
-        if (!canBorrowBook(lendingCopies({ copies: book?.bookCopies ?? undefined }) - out, entries)) {
+        if (!canHoldAnother(held)) {
+          throw new ConflictError("HOLD_LIMIT", "This guest already holds as many books as one may.");
+        }
+        const free = lendingCopies({ copies: book?.bookCopies ?? undefined }) - out;
+        if (borrowedAt && !canBorrowBook(free, entries)) {
           throw new ConflictError("NO_FREE_COPY", "Every copy of this book is out or held. Join its line instead.");
         }
+        if (!borrowedAt && !bookHasLine(free, entries)) {
+          throw new ConflictError("BOOK_ON_SHELF", "This book is on the shelf — lend it instead.");
+        }
+
+        await createGuestProfile(tx, newGuest);
         const row = await tx.bookWaitlistEntry.create({
-          data: {
-            ...input,
-            userId: input.userId ?? null,
-            status: "notified",
-            notifiedAt: at,
-            pickupBy: holdPickupDeadline(at),
-          },
+          data: borrowedAt
+            ? { ...entry, status: "notified", notifiedAt: borrowedAt, pickupBy: holdPickupDeadline(borrowedAt) }
+            : entry,
         });
         return toEntry(row);
       });
     } catch (error) {
-      // A place in line taken a moment ago outside the lock (joining doesn't take it).
+      // The unique indexes back up the check above.
       throw alreadyWaiting(error);
     }
   }

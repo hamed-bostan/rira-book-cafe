@@ -1,15 +1,14 @@
 import {
   BOOK_LOAN_STATUSES,
   LOAN_DEPOSIT_METHODS,
-  MAX_BORROWER_NAME_LENGTH,
   MAX_LOAN_DAYS,
   MAX_LOAN_NOTE_LENGTH,
 } from "@/src/domain/entities/BookLoan";
 import { isCafeDay } from "@/src/domain/entities/CafeTime";
-import { isPlausiblePhone } from "@/src/domain/entities/Phone";
 import * as z from "@/src/lib/zod";
 
 import { fieldsParsed } from "./fields-parsed";
+import { guestNameField, guestPhoneField } from "./guest-schema";
 import { optionalMoneyField } from "./money-fields";
 
 /**
@@ -35,14 +34,12 @@ const depositNeedsMethod = {
   issue: { path: ["depositMethod"], error: "paymentInvalid", when: fieldsParsed("depositAmount", "depositMethod") },
 };
 
-/** Staff lending a book. */
+/** Staff lending a book to the guest `GuestField` found by phone — with their name, when it's a new one. */
 export const lendBookSchema = z
   .extend(loanTermsFields, {
     productId: z.string().check(z.minLength(1, "bookRequired")),
-    borrowerName: z
-      .string()
-      .check(z.trim(), z.minLength(1, "nameRequired"), z.maxLength(MAX_BORROWER_NAME_LENGTH, "nameTooLong")),
-    borrowerPhone: z.string().check(z.trim(), z.refine(isPlausiblePhone, "phoneInvalid")),
+    borrowerPhone: guestPhoneField,
+    borrowerName: guestNameField,
   })
   .check(z.refine(depositNeedsMethod.check, depositNeedsMethod.issue));
 
@@ -80,13 +77,11 @@ export const bookLoanUpdateSchema = z
 
 export type BookLoanUpdateInput = z.input<typeof bookLoanUpdateSchema>;
 
-/** Staff adding a guest who asked at the counter or by phone to a book's line. */
+/** Staff adding a guest who asked at the counter or by phone to a book's line, found by phone as a loan's is. */
 export const addBookHoldSchema = z.object({
   productId: z.string().check(z.minLength(1, "bookRequired")),
-  guestName: z
-    .string()
-    .check(z.trim(), z.minLength(1, "nameRequired"), z.maxLength(MAX_BORROWER_NAME_LENGTH, "nameTooLong")),
-  guestPhone: z.string().check(z.trim(), z.refine(isPlausiblePhone, "phoneInvalid")),
+  guestPhone: guestPhoneField,
+  guestName: guestNameField,
 });
 
 export type AddBookHoldInput = z.input<typeof addBookHoldSchema>;

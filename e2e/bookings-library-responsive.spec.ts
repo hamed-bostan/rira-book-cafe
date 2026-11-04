@@ -234,7 +234,8 @@ const PAGES: Record<string, MeasuredPage> = {
     path: () => "/dashboard/book-loans",
     dialog: true,
     prepare: dialogFrom(/^(Lend a book|امانت دادن کتاب)$/, async (dialog) => {
-      await dialog.getByRole("textbox").nth(0).fill(NAME);
+      await findGuest(dialog, NEW_GUEST_PHONE);
+      // After the guest's phone and name: the deposit.
       await dialog.getByRole("textbox").nth(2).fill(PRICE);
     }),
   },
@@ -248,9 +249,7 @@ const PAGES: Record<string, MeasuredPage> = {
   "add a hold": {
     path: () => "/dashboard/book-holds",
     dialog: true,
-    prepare: dialogFrom(/^(Add a hold|افزودن رزرو)$/, async (dialog) => {
-      await dialog.getByRole("textbox").nth(0).fill(NAME);
-    }),
+    prepare: dialogFrom(/^(Add a hold|افزودن رزرو)$/, (dialog) => findGuest(dialog, NEW_GUEST_PHONE)),
   },
   // For the guest at the front of the line whose copy came back, with a deposit at the order cap.
   "lend now": {

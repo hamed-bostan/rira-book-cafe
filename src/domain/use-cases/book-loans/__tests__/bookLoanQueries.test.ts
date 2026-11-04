@@ -89,6 +89,7 @@ function waitlist(current: BookWaitlistEntry | null, cancelled: BookWaitlistEntr
     listForUser: vi.fn(async () => [entry()]),
     listOpen: vi.fn(async () => [entry(), entry({ id: "w2", productId: "b2" })]),
     notifyNext: vi.fn(async () => null),
+    countOpenForUser: vi.fn(async () => 2),
   } as unknown as IBookWaitlistRepository;
   return { repo, cancel };
 }
@@ -98,7 +99,7 @@ describe("JoinBookWaitlist", () => {
     const join = vi.fn();
     const loans = { getBook: vi.fn(async () => null), countOpenForBook: vi.fn(async () => 1) };
     await expect(
-      new JoinBookWaitlist({ join } as unknown as IBookWaitlistRepository, loans).execute("x", {
+      new JoinBookWaitlist({ join }, loans).execute("x", {
         id: "g1",
         name: "S",
         phone: "0912",
@@ -196,7 +197,7 @@ describe("GetBookWaitlistStatus", () => {
 
   it("gives the guest their place in line", async () => {
     const status = await new GetBookWaitlistStatus(waitlist(null).repo, loans).execute("b1", "g1");
-    expect(status).toMatchObject({ onLoan: 2, onShelf: 0, queueLength: 2, canJoin: true, position: 2 });
+    expect(status).toMatchObject({ onLoan: 2, onShelf: 0, queueLength: 2, canJoin: true, position: 2, guestHolds: 2 });
     expect(status.entry?.id).toBe("w1");
   });
 
@@ -248,7 +249,11 @@ describe("GetBookWaitlistStatus", () => {
       position: null,
       queueLength: 2,
     });
-    expect(await new GetBookWaitlistStatus(repo, loans).execute("b1")).toMatchObject({ entry: null, position: null });
+    expect(await new GetBookWaitlistStatus(repo, loans).execute("b1")).toMatchObject({
+      entry: null,
+      position: null,
+      guestHolds: 0,
+    });
   });
 });
 

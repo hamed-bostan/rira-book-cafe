@@ -62,7 +62,7 @@ describe("book copies and holds", () => {
     expect((await readError(second)).code).toBe("ALL_COPIES_OUT");
   });
 
-  it("only holds a book that's out, once per phone, for guests without an account", async () => {
+  it("only holds a book that's out, once per guest, on a profile made with the hold", async () => {
     signInAs("admin");
     const onShelf = await hold(SAVUSHUN, "Ali", "09121110004");
     expect(onShelf.status).toBe(409);
@@ -73,7 +73,7 @@ describe("book copies and holds", () => {
     expect(added.status).toBe(201);
     const entry = await readJson<BookWaitlistEntry>(added);
     expect(entry).toMatchObject({ status: "waiting", guestPhone: "09351112233" });
-    expect(entry).not.toHaveProperty("userId");
+    expect(entry.userId).toBe("09351112233");
 
     const again = await hold(BLIND_OWL, "Sara", "09351112233");
     expect(again.status).toBe(409);

@@ -4,7 +4,12 @@ import { BellRing, BookOpen } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import * as React from "react";
 
-import { HOLD_PICKUP_DAYS, type BookWaitlistStatus } from "@/src/domain/entities/BookWaitlist";
+import {
+  HOLD_PICKUP_DAYS,
+  MAX_OPEN_HOLDS_PER_GUEST,
+  canHoldAnother,
+  type BookWaitlistStatus,
+} from "@/src/domain/entities/BookWaitlist";
 import { Link, useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatNumber } from "@/src/lib/formatNumber";
@@ -27,7 +32,8 @@ type BookWaitlistPanelProps = {
  * to collect. With every copy out or held (`canJoin`), how many are out and how
  * long the line is, and a button to get in line — the guest at the front is told
  * when a copy comes back. Once they hold it or are in line, their place, and a way
- * to give it up. Signed out, a link to sign in instead.
+ * to give it up. A guest already holding as many books as one may is told so
+ * instead of offered either. Signed out, a link to sign in instead.
  */
 export function BookWaitlistPanel({ productId, status, signedIn }: BookWaitlistPanelProps) {
   const t = useTranslations("site");
@@ -117,6 +123,14 @@ export function BookWaitlistPanel({ productId, status, signedIn }: BookWaitlistP
             {ready ? t("waitlist.cancel") : t("waitlist.leave")}
           </Button>
         </div>
+      ) : signedIn && !canHoldAnother(status.guestHolds) ? (
+        // Holding as many books as one guest may: neither borrowing nor joining would be taken.
+        <p className="text-body-small text-muted-foreground">
+          {t("waitlist.atLimit", {
+            count: MAX_OPEN_HOLDS_PER_GUEST,
+            formatted: formatNumber(MAX_OPEN_HOLDS_PER_GUEST, locale),
+          })}
+        </p>
       ) : status.canBorrow ? (
         signedIn ? (
           <Button

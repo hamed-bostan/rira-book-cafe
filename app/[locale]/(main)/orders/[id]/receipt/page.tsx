@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 
 import { requireAuth } from "@/src/lib/require-auth";
 import { noIndexMetadata } from "@/src/presentation/seo/noIndexMetadata";
+import { cafeSettingsServerApi } from "@/src/presentation/settings/cafe-settings-server-api";
 import { MyOrderReceiptScreen } from "@/src/presentation/storefront/orders/MyOrderReceiptScreen";
 import { storefrontServerApi } from "@/src/presentation/storefront/storefront-server-api";
 
@@ -23,8 +24,11 @@ type MyOrderReceiptPageProps = {
 export default async function MyOrderReceiptPage({ params }: MyOrderReceiptPageProps) {
   await requireAuth();
   const { id } = await params;
-  const receipt = await storefrontServerApi.myOrderReceipt(id);
+  const [receipt, cafe] = await Promise.all([
+    storefrontServerApi.myOrderReceipt(id),
+    cafeSettingsServerApi.getOrEmpty(),
+  ]);
   if (!receipt) notFound();
 
-  return <MyOrderReceiptScreen receipt={receipt} />;
+  return <MyOrderReceiptScreen receipt={receipt} cafe={cafe} />;
 }

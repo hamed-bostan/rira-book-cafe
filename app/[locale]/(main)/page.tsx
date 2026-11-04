@@ -1,10 +1,12 @@
 import { getLocale, getTranslations } from "next-intl/server";
 
+import { cafeDayOf } from "@/src/domain/entities/CafeTime";
 import { cafeIdentity } from "@/src/presentation/seo/cafeIdentity";
 import { JsonLd } from "@/src/presentation/seo/JsonLd";
 import { pageMetadata } from "@/src/presentation/seo/pageMetadata";
 import { defaultShareImage } from "@/src/presentation/seo/shareImage";
 import { cafeJsonLd } from "@/src/presentation/seo/structuredData";
+import { cafeSettingsServerApi } from "@/src/presentation/settings/cafe-settings-server-api";
 import { HomeScreen } from "@/src/presentation/storefront/home/HomeScreen";
 import { storefrontServerApi } from "@/src/presentation/storefront/storefront-server-api";
 
@@ -19,10 +21,11 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function HomePage() {
-  const [featured, categories, cafe, locale, t] = await Promise.all([
+  const [featured, categories, cafe, settings, locale, t] = await Promise.all([
     storefrontServerApi.featured(),
     storefrontServerApi.categories(),
     cafeIdentity(),
+    cafeSettingsServerApi.getOrEmpty(),
     getLocale(),
     getTranslations("site"),
   ]);
@@ -38,7 +41,11 @@ export default async function HomePage() {
           image: new URL(defaultShareImage(locale, cafe.name).url, cafe.url).toString(),
         })}
       />
-      <HomeScreen featured={featured.filter((item) => activeCategoryIds.has(item.categoryId))} />
+      <HomeScreen
+        featured={featured.filter((item) => activeCategoryIds.has(item.categoryId))}
+        cafe={settings}
+        today={cafeDayOf(new Date())}
+      />
     </>
   );
 }

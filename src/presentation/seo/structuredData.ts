@@ -48,6 +48,7 @@ export function cafeJsonLd({
     image,
     ...cafePlaceFields(location),
     ...(location.telephone ? { telephone: location.telephone } : {}),
+    ...(location.sameAs.length > 0 ? { sameAs: location.sameAs } : {}),
     ...(location.openingHours.length > 0
       ? {
           openingHoursSpecification: location.openingHours.map((rule) => ({
@@ -55,6 +56,18 @@ export function cafeJsonLd({
             dayOfWeek: rule.days,
             opens: rule.opens,
             closes: rule.closes,
+          })),
+        }
+      : {}),
+    // A closed day is stated as opening and closing at midnight, as schema.org asks.
+    ...(location.specialHours.length > 0
+      ? {
+          specialOpeningHoursSpecification: location.specialHours.map((day) => ({
+            "@type": "OpeningHoursSpecification",
+            validFrom: day.date,
+            validThrough: day.date,
+            opens: day.opens ?? "00:00",
+            closes: day.closes ?? "00:00",
           })),
         }
       : {}),
@@ -181,9 +194,6 @@ export function serializeJsonLd(data: JsonLdNode): string {
 function cafePlaceFields(location: CafeLocation): JsonLdNode {
   const address: JsonLdNode = {
     ...(location.streetAddress ? { streetAddress: location.streetAddress } : {}),
-    ...(location.addressLocality ? { addressLocality: location.addressLocality } : {}),
-    ...(location.addressRegion ? { addressRegion: location.addressRegion } : {}),
-    ...(location.postalCode ? { postalCode: location.postalCode } : {}),
     ...(location.addressCountry ? { addressCountry: location.addressCountry } : {}),
   };
   const hasGeo = location.latitude !== undefined && location.longitude !== undefined;

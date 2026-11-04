@@ -250,7 +250,14 @@ describe("product writes", () => {
 
   it("is backed by the database's key: an unknown category can't be written, nor a used one deleted", async () => {
     const repo = new PrismaProductRepository();
-    const { id: _id, rating: _r, ratingCount: _rc, ...espresso } = (await repo.getById("seed-espresso"))!;
+    // `inventoryTracked` is derived on read, not a column a save may carry.
+    const {
+      id: _id,
+      rating: _r,
+      ratingCount: _rc,
+      inventoryTracked: _tracked,
+      ...espresso
+    } = (await repo.getById("seed-espresso"))!;
 
     // Behind the use-case's check, the key answers with the same field error.
     await expect(repo.update("seed-espresso", { ...espresso, categoryId: "no-such-category" })).rejects.toMatchObject({

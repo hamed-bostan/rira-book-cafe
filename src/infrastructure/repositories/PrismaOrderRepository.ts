@@ -25,6 +25,7 @@ import {
 import { pointsToClawBack, type NewOrderRefund, type OrderRefund } from "@/src/domain/entities/OrderRefund";
 import type { OrderStatusEvent } from "@/src/domain/entities/OrderStatusEvent";
 import { createPage, toSkipTake, type Page, type PageRequest } from "@/src/domain/entities/Pagination";
+import { isPlausiblePhone, normalizePhone } from "@/src/domain/entities/Phone";
 import { PRODUCT_KINDS, type ProductKind } from "@/src/domain/entities/Product";
 import type { OrderItemOption } from "@/src/domain/entities/ProductOptions";
 import { ConflictError } from "@/src/domain/errors/ConflictError";
@@ -642,6 +643,9 @@ async function claimPromoUse(tx: Prisma.TransactionClient, promoCodeId: string, 
   }
 }
 
+/** An order number in a search: "42" or "#42". */
+const ORDER_NUMBER = /^#?([1-9]\d{0,8})$/;
+
 /** `WHERE` for the dashboard list. An empty filter matches every order. */
 function adminWhere(filters: AdminOrderFilters): Prisma.OrderWhereInput {
   const and: Prisma.OrderWhereInput[] = [];
@@ -652,9 +656,13 @@ function adminWhere(filters: AdminOrderFilters): Prisma.OrderWhereInput {
       { customerName: { contains: filters.query, mode: "insensitive" } },
       { customerPhone: { contains: filters.query } },
     ];
-    // "42" or "#42" finds order 42 exactly.
-    const number = Number(filters.query.replace(/^#/, ""));
-    if (Number.isInteger(number) && number > 0) or.push({ orderNumber: number });
+    // "42" or "#42" finds order 42 exactly. At most 9 digits, as income and expenses do: a
+    // phone number is all digits too, and would overflow the integer column (a 500).
+    const number = ORDER_NUMBER.exec(filters.query)?.[1];
+    if (number) or.push({ orderNumber: Number(number) });
+    // A phone finds the guest's orders however it's typed — spaces, none, +98 — through their
+    // profile, whose id is the normalized phone; the order keeps the phone as it was entered.
+    if (isPlausiblePhone(filters.query)) or.push({ userId: normalizePhone(filters.query) });
     and.push({ OR: or });
   }
 

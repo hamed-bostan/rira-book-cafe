@@ -36,6 +36,8 @@ export function OrderItemServeToggle({ orderId, itemId, itemName, served }: Orde
         router.refresh();
       } catch (err) {
         toast({ tone: "error", title: localizeApiError(err, tApiErrors, t("serveError")) });
+        // A 409 says someone changed the order meanwhile — show what it is now.
+        router.refresh();
       }
     });
   }

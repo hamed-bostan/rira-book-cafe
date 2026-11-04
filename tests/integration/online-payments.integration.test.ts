@@ -92,6 +92,21 @@ describe("an online payment the order took", () => {
     expect((await orderRepository.getById(order.id))?.paymentMethod).toBe("online");
     expect(await balanceOf("1130")).toBe(order.total);
   });
+
+  it("can't be unmarked at the counter (409) — the gateway still holds it, so only a refund gives it back", async () => {
+    const order = await placeAsGuest();
+    expect(await payOnline(order, gatewayConfirming())).toBe("paid");
+
+    signInAs("staff");
+    const response = await setPayment(
+      jsonRequest("PATCH", `/api/admin/orders/${order.id}/payment`, { paymentStatus: "unpaid" }),
+      routeParams({ id: order.id }),
+    );
+
+    expect(response.status).toBe(409);
+    expect((await orderRepository.getById(order.id))?.paymentStatus).toBe("paid");
+    expect(await balanceOf("1130")).toBe(order.total);
+  });
 });
 
 describe("an online payment no order took", () => {

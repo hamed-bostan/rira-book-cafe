@@ -12,18 +12,34 @@ import { storageStatePath } from "./fixtures/sessions";
 
 type PlacedOrder = { id: string; orderNumber: number; items: { id: string; name: string }[] };
 
-/** A guest's dine-in order at table 3, placed over the API as the signed-in guest. */
-async function placeAsGuest(items: { productId: string; quantity: number }[]): Promise<PlacedOrder> {
-  const guest: APIRequestContext = await request.newContext({
+/**
+ * A dine-in order at table 3, placed over the API. Rung up at the counter by default:
+ * the test guest may place only 10 orders in 10 minutes, and other specs need that
+ * allowance — only a test about the guest's own order places it as the guest.
+ */
+async function placeOrder(
+  items: { productId: string; quantity: number }[],
+  by: "counter" | "guest" = "counter",
+): Promise<PlacedOrder> {
+  const context: APIRequestContext = await request.newContext({
     baseURL: E2E_BASE_URL,
-    storageState: storageStatePath("customer"),
+    storageState: storageStatePath(by === "guest" ? "customer" : "admin"),
   });
   try {
+    const path = by === "guest" ? "/api/orders" : "/api/admin/orders";
     return await jsonOf<PlacedOrder>(
-      await guest.post("/api/orders", { data: { items, serviceType: "dineIn", tableLabel: "3" } }),
+      await context.post(path, {
+        data: {
+          items,
+          serviceType: "dineIn",
+          tableLabel: "3",
+          // A counter sale belongs to a guest profile; the guest's own order is already theirs.
+          ...(by === "counter" ? { customerPhone: "0912 555 0173", customerName: "Table Three" } : {}),
+        },
+      }),
     );
   } finally {
-    await guest.dispose();
+    await context.dispose();
   }
 }
 
@@ -43,7 +59,7 @@ test.describe("changing an order from its page", () => {
   test.use({ storageState: storageStatePath("staff") });
 
   test("adds a round with a note, and the bar display marks the ticket and the new line", async ({ page }) => {
-    const order = await placeAsGuest([{ productId: ESPRESSO, quantity: 1 }]);
+    const order = await placeOrder([{ productId: ESPRESSO, quantity: 1 }]);
 
     await page.goto(`/dashboard/orders/${order.id}`);
     await page.getByRole("button", { name: "Add items", exact: true }).click();
@@ -70,7 +86,7 @@ test.describe("changing an order from its page", () => {
   });
 
   test("takes a line off, and the total follows", async ({ page }) => {
-    const order = await placeAsGuest([
+    const order = await placeOrder([
       { productId: ESPRESSO, quantity: 2 },
       { productId: CAPPUCCINO, quantity: 1 },
     ]);
@@ -88,7 +104,7 @@ test.describe("changing an order from its page", () => {
   });
 
   test("won't take every line off — that's a cancellation", async ({ page }) => {
-    const order = await placeAsGuest([{ productId: ESPRESSO, quantity: 1 }]);
+    const order = await placeOrder([{ productId: ESPRESSO, quantity: 1 }]);
 
     await page.goto(`/dashboard/orders/${order.id}`);
     await page.getByRole("button", { name: "Change items" }).click();
@@ -100,7 +116,7 @@ test.describe("changing an order from its page", () => {
   });
 
   test("moves the order to another table", async ({ page }) => {
-    const order = await placeAsGuest([{ productId: ESPRESSO, quantity: 1 }]);
+    const order = await placeOrder([{ productId: ESPRESSO, quantity: 1 }]);
 
     await page.goto(`/dashboard/orders/${order.id}`);
     await page.getByRole("button", { name: "Move", exact: true }).click();
@@ -118,7 +134,7 @@ test.describe("receipts", () => {
     test.use({ storageState: storageStatePath("staff") });
 
     test("prints an order's receipt, with only the receipt on paper", async ({ page }) => {
-      const order = await placeAsGuest([{ productId: ESPRESSO, quantity: 2 }]);
+      const order = await placeOrder([{ productId: ESPRESSO, quantity: 2 }]);
 
       await page.goto(`/dashboard/orders/${order.id}`);
       await page.getByRole("link", { name: "Print receipt" }).click();
@@ -168,7 +184,7 @@ test.describe("receipts", () => {
     test.use({ storageState: storageStatePath("customer") });
 
     test("opens the receipt from their order, and nobody else can", async ({ page, browser }) => {
-      const order = await placeAsGuest([{ productId: ESPRESSO, quantity: 1 }]);
+      const order = await placeOrder([{ productId: ESPRESSO, quantity: 1 }], "guest");
 
       await page.goto(`/orders/${order.id}`);
       await page.getByRole("link", { name: "Receipt", exact: true }).click();

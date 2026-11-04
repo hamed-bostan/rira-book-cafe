@@ -104,6 +104,8 @@ export function OrderBulkActions({ orders }: OrderBulkActionsProps) {
         // A cancel is confirmed in a dialog, so its failure is said there.
         if (action.type === "cancel") setCancelError(message);
         else toast({ tone: "error", title: message });
+        // Some ticked orders may have changed meanwhile — show them as they are now.
+        router.refresh();
       }
     });
   }

@@ -205,4 +205,10 @@ describe("SetOrderPayment with refunds on the order", () => {
       "can't be taken back",
     );
   });
+
+  it("won't unmark an online payment — the gateway still holds it, so only a refund gives it back", async () => {
+    const { repo } = repoWith({ ...ORDER, paymentMethod: "online" });
+
+    await expect(new SetOrderPayment(repo).execute("o1", "unpaid", undefined, STAFF)).rejects.toThrow(ConflictError);
+  });
 });

@@ -50,7 +50,9 @@ export class HoldEventTables {
     const unknown = tableLabels.find(
       (label) => !isFloorTable(floor, label) && !(existing.tableLabels.includes(label) && hasTable(allTables, label)),
     );
-    if (unknown !== undefined) throw new ValidationError("tableLabels", `There's no table "${unknown}".`);
+    // `tableInvalid` is the forms' message key: which labels are on the floor is the
+    // cafe's own list now, so this check moved here from the shared contract.
+    if (unknown !== undefined) throw new ValidationError("tableLabels", "tableInvalid");
     if (new Date(existing.endsAt) <= now) {
       throw new ConflictError("EVENT_CLOSED", "This event is over, so its tables can't change.");
     }

@@ -128,7 +128,7 @@ export class BookTableForGuest {
   async execute(input: BookTableForGuestInput, actor: ActivityActor, now: Date): Promise<Reservation> {
     const { note } = validateBooking(input, now, staffEarliestStart(now));
     if (input.tableLabel !== undefined && !isFloorTable(await readFloor(this.tables), input.tableLabel)) {
-      throw new ValidationError("tableLabel", `There's no table "${input.tableLabel}".`);
+      throw new ValidationError("tableLabel", "tableInvalid");
     }
     const guest = await new ResolveGuestProfile(this.userRepo).execute(
       { phone: input.guestPhone, name: input.guestName },

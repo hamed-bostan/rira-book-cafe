@@ -87,7 +87,7 @@ export class ChangeReservation {
       tableLabel !== current.tableLabel &&
       !isFloorTable(await readFloor(this.tables), tableLabel)
     ) {
-      throw new ValidationError("tableLabel", `There's no table "${tableLabel}".`);
+      throw new ValidationError("tableLabel", "tableInvalid");
     }
     if (status === "seated" && !tableLabel) {
       throw new ValidationError("tableLabel", "Choose the table the party is seated at.");

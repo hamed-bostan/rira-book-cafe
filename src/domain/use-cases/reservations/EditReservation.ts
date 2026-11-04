@@ -109,7 +109,7 @@ export class EditReservation {
       next.tableLabel &&
       !isFloorTable(await readFloor(this.tables), next.tableLabel)
     ) {
-      throw new ValidationError("tableLabel", `There's no table "${next.tableLabel}".`);
+      throw new ValidationError("tableLabel", "tableInvalid");
     }
     if (current.status === "seated" && changed.includes("tableLabel") && !next.tableLabel) {
       throw new ValidationError("tableLabel", "Choose the table the party is seated at.");

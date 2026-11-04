@@ -21,10 +21,8 @@ export class DeleteCategory {
     const existing = await this.categoryRepo.getById(id);
     if (!existing) throw new NotFoundError("category", id);
 
-    // `categoryId` is a plain field, not a Prisma relation (see the schema
-    // comment), so nothing at the DB level stops a delete from orphaning every
-    // product still pointing at this row. Refuse it here instead, same as
-    // `DeleteDeliveryWindow` refuses a window with bookings still on it.
+    // A category with items can't go: they'd drop off the menu. The database's key
+    // refuses it too, but this says why, with the count, before trying.
     if (existing.productCount > 0) {
       throw new ResourceInUseError(
         "category",

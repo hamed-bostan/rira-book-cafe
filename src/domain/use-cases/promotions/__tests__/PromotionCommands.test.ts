@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { DEFAULT_LOYALTY_SETTINGS, type LoyaltySettings, type LoyaltyTransaction } from "../../../entities/Loyalty";
 import { MAX_ORDER_AMOUNT } from "../../../entities/Order";
 import { NotFoundError } from "../../../errors/NotFoundError";
+import { ResourceInUseError } from "../../../errors/ResourceInUseError";
 import { ValidationError } from "../../../errors/ValidationError";
 import {
   AdjustGuestPoints,
@@ -58,11 +59,21 @@ type PromoFake = {
   create: ReturnType<typeof vi.fn<IPromotionRepository["create"]>>;
   update: ReturnType<typeof vi.fn<IPromotionRepository["update"]>>;
   remove: ReturnType<typeof vi.fn<IPromotionRepository["delete"]>>;
+  archive: ReturnType<typeof vi.fn<IPromotionRepository["archive"]>>;
   entries: (NewActivityEntry | null)[];
 };
 
+type PromoTable = {
+  /** Orders carried the code before the delete was asked for. */
+  used?: boolean;
+  /** An order took the code after the check, so the delete itself refuses. */
+  usedMeanwhile?: boolean;
+  /** Codes held by archived (deleted, used) codes. */
+  archivedCodes?: readonly string[];
+};
+
 /** A promo table holding `current`, whose writes run the audit hook the way the real one does. */
-function promoRepo(current: PromoCode | null): PromoFake {
+function promoRepo(current: PromoCode | null, table: PromoTable = {}): PromoFake {
   const entries: (NewActivityEntry | null)[] = [];
   const persist = (id: string, input: PromoCodeInput, audit?: AuditHook<PromoCode>): PromoCode => {
     const saved: PromoCode = { ...promo({ id }), ...input, id };
@@ -72,18 +83,29 @@ function promoRepo(current: PromoCode | null): PromoFake {
   const create = vi.fn<IPromotionRepository["create"]>(async (input, audit) => persist("new", input, audit));
   const update = vi.fn<IPromotionRepository["update"]>(async (id, input, audit) => persist(id, input, audit));
   const remove = vi.fn<IPromotionRepository["delete"]>(async (_id, audit) => {
+    if (table.usedMeanwhile) throw new ResourceInUseError("promo code", "Orders have used this code.");
     if (audit) entries.push(audit());
+  });
+  const archive = vi.fn<IPromotionRepository["archive"]>(async (id, at, audit) => {
+    const saved: PromoCode = { ...(current as PromoCode), id, isActive: false, archivedAt: at.toISOString() };
+    if (audit) entries.push(audit(saved));
+    return saved;
   });
   const repo: IPromotionRepository = {
     list: vi.fn(async () => [{ ...promo(), uses: 3 }]),
     getById: vi.fn(async (id: string) => (current?.id === id ? current : null)),
     getByCode: vi.fn(async () => null),
+    getArchivedByCode: vi.fn(async (code: string) =>
+      table.archivedCodes?.includes(code) ? promo({ id: "old", code, archivedAt: "2026-01-02T00:00:00.000Z" }) : null,
+    ),
     usage: vi.fn(async () => ({ total: 0, byGuest: 0 })),
+    isUsed: vi.fn(async () => table.used ?? false),
     create,
     update,
     delete: remove,
+    archive,
   };
-  return { repo, create, update, remove, entries };
+  return { repo, create, update, remove, archive, entries };
 }
 
 describe("CreatePromoCode", () => {
@@ -148,6 +170,16 @@ describe("CreatePromoCode", () => {
     const saved = await new CreatePromoCode(repo).execute({ ...INPUT, kind: "fixed", value: 20_000 }, STAFF);
     expect(saved.value).toBe(20_000);
   });
+
+  it("refuses the code of a deleted code orders used, so its per-guest limits can't start over", async () => {
+    const { repo, create } = promoRepo(null, { archivedCodes: ["WELCOME10"] });
+    await expect(new CreatePromoCode(repo).execute(INPUT, STAFF)).rejects.toMatchObject({
+      name: "ValidationError",
+      field: "code",
+      message: "codeArchived",
+    });
+    expect(create).not.toHaveBeenCalled();
+  });
 });
 
 describe("UpdatePromoCode", () => {
@@ -197,6 +229,23 @@ describe("UpdatePromoCode", () => {
       { name: "ValidationError", field: "code" },
     );
   });
+
+  it("won't rename a code to an archived one's, but keeps its own", async () => {
+    const { repo, update } = promoRepo(promo(), { archivedCodes: ["AUTUMN15"] });
+    await expect(new UpdatePromoCode(repo).execute("p1", { ...INPUT, code: "autumn15" }, STAFF)).rejects.toMatchObject({
+      field: "code",
+      message: "codeArchived",
+    });
+    await new UpdatePromoCode(repo).execute("p1", { ...INPUT, value: 15 }, STAFF);
+    expect(update).toHaveBeenCalledTimes(1);
+  });
+
+  it("treats an archived code as gone: it can't be edited or switched back on", async () => {
+    const { repo, update } = promoRepo(promo({ isActive: false, archivedAt: "2026-01-02T00:00:00.000Z" }));
+    await expect(new UpdatePromoCode(repo).execute("p1", INPUT, STAFF)).rejects.toThrow(NotFoundError);
+    await expect(new SetPromoCodeActive(repo).execute("p1", true, STAFF)).rejects.toThrow(NotFoundError);
+    expect(update).not.toHaveBeenCalled();
+  });
 });
 
 describe("SetPromoCodeActive", () => {
@@ -237,10 +286,11 @@ describe("DeletePromoCode", () => {
     expect(remove).not.toHaveBeenCalled();
   });
 
-  it("deletes the code and logs what it was", async () => {
-    const { repo, remove, entries } = promoRepo(promo());
-    await new DeletePromoCode(repo).execute("p1", STAFF);
+  it("deletes a code no order used, and logs what it was", async () => {
+    const { repo, remove, archive, entries } = promoRepo(promo());
+    expect(await new DeletePromoCode(repo).execute("p1", STAFF)).toBe("deleted");
 
+    expect(archive).not.toHaveBeenCalled();
     expect(remove.mock.calls[0][0]).toBe("p1");
     expect(entries[0]).toMatchObject({
       actorId: "s1",
@@ -253,6 +303,35 @@ describe("DeletePromoCode", () => {
     expect(entries[0]?.changes.every((change) => change.after === null && change.before !== null)).toBe(true);
     expect(entries[0]?.changes.find((change) => change.field === "code")?.before).toBe("WELCOME10");
     expect(entries[0]?.changes.some((change) => change.field === "endsAt")).toBe(false);
+  });
+
+  it("archives a code orders used instead of deleting it, and logs that", async () => {
+    const at = new Date("2026-03-01T10:00:00.000Z");
+    const { repo, remove, archive, entries } = promoRepo(promo(), { used: true });
+    expect(await new DeletePromoCode(repo).execute("p1", STAFF, at)).toBe("archived");
+
+    expect(remove).not.toHaveBeenCalled();
+    expect(archive.mock.calls[0].slice(0, 2)).toEqual(["p1", at]);
+    expect(entries[0]).toMatchObject({ action: "promoCode.archived", entityId: "p1", entityLabel: "WELCOME10" });
+    expect(entries[0]?.changes.find((change) => change.field === "code")).toEqual({
+      field: "code",
+      before: "WELCOME10",
+      after: null,
+    });
+  });
+
+  it("archives after all when an order took the code between the check and the delete", async () => {
+    const { repo, archive, entries } = promoRepo(promo(), { usedMeanwhile: true });
+    expect(await new DeletePromoCode(repo).execute("p1", STAFF)).toBe("archived");
+    expect(archive).toHaveBeenCalledTimes(1);
+    expect(entries.map((entry) => entry?.action)).toEqual(["promoCode.archived"]);
+  });
+
+  it("is not found for a code already archived", async () => {
+    const { repo, remove, archive } = promoRepo(promo({ archivedAt: "2026-01-02T00:00:00.000Z" }), { used: true });
+    await expect(new DeletePromoCode(repo).execute("p1", STAFF)).rejects.toThrow(NotFoundError);
+    expect(remove).not.toHaveBeenCalled();
+    expect(archive).not.toHaveBeenCalled();
   });
 });
 

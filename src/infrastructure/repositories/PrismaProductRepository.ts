@@ -14,6 +14,7 @@ import {
 import type { ProductFilters, ProductSort } from "@/src/domain/entities/ProductFilters";
 import { LOW_STOCK_THRESHOLD } from "@/src/domain/entities/stock";
 import { NotFoundError } from "@/src/domain/errors/NotFoundError";
+import { ValidationError } from "@/src/domain/errors/ValidationError";
 import type { AuditHook } from "@/src/domain/repositories/AuditHook";
 import type {
   BulkProductChange,
@@ -211,6 +212,18 @@ export class PrismaProductRepository implements IProductRepository {
   ): Promise<BulkProductUpdate[]> {
     if (ids.length === 0) return [];
 
+    try {
+      return await this.applyBulkChangeIn(ids, change, audit);
+    } catch (error) {
+      throw toDomainError(error);
+    }
+  }
+
+  private applyBulkChangeIn(
+    ids: readonly string[],
+    change: BulkProductChange,
+    audit?: AuditHook<BulkProductUpdate>,
+  ): Promise<BulkProductUpdate[]> {
     return inTransaction(this.db, async (tx) => {
       // Read the rows *before* writing, narrowed to the ones the change would
       // actually move — so each audit entry carries a real "before", no-ops record
@@ -255,8 +268,9 @@ function textMatch(query: string): Prisma.ProductWhereInput[] {
 
 /**
  * Ids of the categories whose name holds `query` — the canonical name, or the
- * active locale's, which is the one the dashboard's tabs show. Categories have no
- * Prisma relation to products, so they're resolved first and matched by id.
+ * active locale's, which is the one the dashboard's tabs show. The translated
+ * names live in a side table with no relation, so they're resolved first and
+ * matched by id.
  */
 async function categoryIdsNamed(db: PrismaDb, query: string, locale?: string): Promise<string[]> {
   const nameHolds = { contains: query, mode: "insensitive" } satisfies Prisma.StringFilter;
@@ -552,6 +566,11 @@ function toDomainError(error: unknown): unknown {
   if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
     // The targeted row no longer exists (lost a race with a delete).
     return new NotFoundError("product", undefined, { cause: error });
+  }
+  if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") {
+    // The only key an item's own write can break is its category's: the category
+    // went between the use-case's check and the write. The same field error.
+    return new ValidationError("categoryId", "categoryUnknown", { cause: error });
   }
   return error;
 }

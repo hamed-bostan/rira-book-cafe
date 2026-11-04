@@ -1,13 +1,18 @@
 import { activityValue } from "../../entities/ActivityEntry";
 
+import { requireCategory } from "./requireCategory";
 import { validateProduct } from "./validateProduct";
 
 import type { ActivityActor } from "../../entities/ActivityEntry";
 import type { Product } from "../../entities/Product";
+import type { ICategoryRepository } from "../../repositories/ICategoryRepository";
 import type { IProductRepository, NewProduct } from "../../repositories/IProductRepository";
 
 export class CreateProduct {
-  constructor(private readonly productRepo: IProductRepository) {}
+  constructor(
+    private readonly productRepo: IProductRepository,
+    private readonly categoryRepo: Pick<ICategoryRepository, "getById">,
+  ) {}
 
   /**
    * `actor` is the admin creating the item. Required, not optional: it's what the
@@ -16,6 +21,7 @@ export class CreateProduct {
    */
   async execute(input: NewProduct, actor: ActivityActor): Promise<Product> {
     const valid = validateProduct(input);
+    await requireCategory(this.categoryRepo, valid.categoryId);
 
     // The entry is built here and written by the repository *inside* the
     // transaction that creates the item. The hook is a function of the persisted

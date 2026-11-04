@@ -102,6 +102,8 @@ export const ACTIVITY_ACTIONS = [
   "promoCode.updated",
   "promoCode.activeChanged",
   "promoCode.deleted",
+  // A deleted code that orders had used: kept on file for them, gone from the list.
+  "promoCode.archived",
   "user.roleChanged",
   // Staff made a profile for a guest whose phone had none, with the booking, stay,
   // loan, hold or sale it was made for — and in the same transaction.

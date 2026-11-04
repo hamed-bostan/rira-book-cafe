@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { productBulkRequestSchema, type ProductBulkAction } from "@/src/contracts/bulk-action-schema";
 import type { BulkProductChange } from "@/src/domain/repositories/IProductRepository";
 import { BulkUpdateProducts } from "@/src/domain/use-cases/products/BulkUpdateProducts";
-import { productRepository } from "@/src/infrastructure/container";
+import { categoryRepository, productRepository } from "@/src/infrastructure/container";
 import { invalidatesCatalog } from "@/src/lib/api/invalidatesCatalog";
 import {
   errorResponse,
@@ -51,7 +51,7 @@ async function handlePatch(request: NextRequest): Promise<NextResponse> {
   try {
     // The actor comes from the session, never from the body — otherwise the entries
     // this writes would record whoever the client claimed to be.
-    const updated = await new BulkUpdateProducts(productRepository).execute(
+    const updated = await new BulkUpdateProducts(productRepository, categoryRepository).execute(
       parsed.data.ids,
       toChange(parsed.data.action),
       { id: session.user.id, name: session.user.name ?? session.user.id },

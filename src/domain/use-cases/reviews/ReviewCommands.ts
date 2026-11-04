@@ -10,11 +10,13 @@ import { PLACEHOLDER_USER_NAME, type User } from "../../entities/User";
 import { ConflictError } from "../../errors/ConflictError";
 import { NotFoundError } from "../../errors/NotFoundError";
 import { ValidationError } from "../../errors/ValidationError";
+import { GetPublishedProduct } from "../products/GetPublishedProduct";
 
 import type { ActivityActor } from "../../entities/ActivityEntry";
 import type { ICustomerNotifier } from "../../repositories/INotificationRepository";
 import type { IProductRepository } from "../../repositories/IProductRepository";
 import type { IReviewRepository } from "../../repositories/IReviewRepository";
+import type { MenuCategories } from "../products/publicMenu";
 
 export type SubmitReviewInput = {
   rating: number;
@@ -23,13 +25,15 @@ export type SubmitReviewInput = {
 
 /**
  * A guest reviews something they bought, or rewrites their review of it. Only a
- * guest with a completed order for the item may; the review waits for staff
- * before it's shown, and a rewrite waits again.
+ * guest with a completed order for the item may, and only while it's on the
+ * public menu (`isOnPublicMenu` — not unpublished, not in a hidden category); the
+ * review waits for staff before it's shown, and a rewrite waits again.
  */
 export class SubmitReview {
   constructor(
     private readonly reviewRepo: IReviewRepository,
     private readonly productRepo: Pick<IProductRepository, "getPublishedById">,
+    private readonly categoryRepo: MenuCategories,
   ) {}
 
   async execute(productId: string, input: SubmitReviewInput, guest: Pick<User, "id" | "name">): Promise<ProductReview> {
@@ -40,7 +44,7 @@ export class SubmitReview {
     if (comment && comment.length > MAX_REVIEW_COMMENT_LENGTH)
       throw new ValidationError("comment", "That review is too long.");
 
-    const product = await this.productRepo.getPublishedById(productId);
+    const product = await new GetPublishedProduct(this.productRepo, this.categoryRepo).execute(productId);
     if (!product) throw new NotFoundError("product", productId);
     if (!(await this.reviewRepo.hasPurchased(guest.id, productId))) {
       throw new ConflictError("NOT_PURCHASED", "Only guests who've had this item can review it.");

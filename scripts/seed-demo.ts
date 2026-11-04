@@ -152,7 +152,7 @@ const STAFF_NOTES = [
 // ── Use-cases, wired as the route handlers wire them ─────────────────────────
 
 const postManualEntry = new PostManualEntry(c.ledgerRepository);
-const placeOrder = new PlaceOrder(c.orderRepository, c.productRepository, c.checkoutPricing);
+const placeOrder = new PlaceOrder(c.orderRepository, c.menuCatalog, c.checkoutPricing);
 const changeOrderStatus = new ChangeOrderStatus(c.orderRepository, c.customerNotifier);
 const setOrderPayment = new SetOrderPayment(c.orderRepository);
 const addOrderNote = new AddOrderNote(c.orderNoteRepository, c.orderRepository);
@@ -167,7 +167,7 @@ const receiveStock = new ReceiveStock(c.inventoryRepository);
 const recordWaste = new RecordWaste(c.inventoryRepository);
 const createPromo = new CreatePromoCode(c.promotionRepository);
 const adjustPoints = new AdjustGuestPoints(c.loyaltyRepository, c.userRepository);
-const placeCounterOrder = new PlaceCounterOrder(c.orderRepository, c.productRepository, c.userRepository);
+const placeCounterOrder = new PlaceCounterOrder(c.orderRepository, c.menuCatalog, c.userRepository);
 const requestReservation = new RequestReservation(c.reservationRepository);
 const changeReservation = new ChangeReservation(c.reservationRepository, c.customerNotifier);
 const bookTableForGuest = new BookTableForGuest(c.reservationRepository, c.userRepository);
@@ -179,7 +179,7 @@ const changeLoan = new ChangeBookLoan(c.bookLoanRepository, c.bookWaitlistReposi
 const joinWaitlist = new JoinBookWaitlist(c.bookWaitlistRepository, c.bookLoanRepository);
 const registerForEvent = new RegisterForEvent(c.eventRepository);
 const cancelRegistration = new CancelRegistrationAsStaff(c.eventRepository);
-const submitReview = new SubmitReview(c.reviewRepository, c.productRepository);
+const submitReview = new SubmitReview(c.reviewRepository, c.productRepository, c.categoryRepository);
 const moderateReview = new ModerateReview(c.reviewRepository, c.customerNotifier);
 
 // ── Timeline ─────────────────────────────────────────────────────────────────

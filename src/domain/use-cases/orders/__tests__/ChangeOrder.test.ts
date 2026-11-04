@@ -6,6 +6,7 @@ import { ValidationError } from "../../../errors/ValidationError";
 import { ChangeOrder, orderChangeDiff } from "../ChangeOrder";
 import { CheckoutPricing } from "../CheckoutPricing";
 
+import type { Category } from "../../../entities/Category";
 import type { Order, OrderItem } from "../../../entities/Order";
 import type { Product } from "../../../entities/Product";
 import type { PromoCode, PromoUsage } from "../../../entities/Promotion";
@@ -106,8 +107,11 @@ function setup({ current = order(), products = [product()], pricing }: Setup = {
   const productRepo = {
     getByIds: vi.fn(async (ids: readonly string[]) => products.filter((candidate) => ids.includes(candidate.id))),
   } as unknown as IProductRepository;
+  const categories = { getAll: vi.fn(async () => [{ id: "c1", isActive: true } as Category]) };
   const notify = vi.fn(async () => undefined);
-  const useCase = new ChangeOrder(repo, productRepo, pricing ?? new CheckoutPricing(), { notify });
+  const useCase = new ChangeOrder(repo, { products: productRepo, categories }, pricing ?? new CheckoutPricing(), {
+    notify,
+  });
   return { useCase, change, notify };
 }
 
@@ -314,7 +318,7 @@ describe("ChangeOrder", () => {
     };
     const usage: PromoUsage = { total: 1, byGuest: 1 };
     const pricing = new CheckoutPricing(
-      { getByCode: vi.fn(async () => promo), usage: vi.fn(async () => usage) },
+      { getByCode: vi.fn(async () => promo), getById: vi.fn(async () => promo), usage: vi.fn(async () => usage) },
       undefined,
     );
     const withPromo = order({ promoCode: "BIG", promoCodeId: "promo1", promoDiscount: 50_000, total: 230_000 });

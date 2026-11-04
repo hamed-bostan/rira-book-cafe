@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { orderChangeSchema } from "@/src/contracts/order-schema";
 import { ChangeOrder } from "@/src/domain/use-cases/orders/ChangeOrder";
 import { GetOrderById } from "@/src/domain/use-cases/orders/OrderQueries";
-import { checkoutPricing, customerNotifier, orderRepository, productRepository } from "@/src/infrastructure/container";
+import { checkoutPricing, customerNotifier, menuCatalog, orderRepository } from "@/src/infrastructure/container";
 import { invalidatesCatalog } from "@/src/lib/api/invalidatesCatalog";
 import {
   errorResponse,
@@ -58,7 +58,7 @@ async function handlePatch(request: NextRequest, { params }: RouteContext): Prom
   }
 
   try {
-    const order = await new ChangeOrder(orderRepository, productRepository, checkoutPricing, customerNotifier).execute(
+    const order = await new ChangeOrder(orderRepository, menuCatalog, checkoutPricing, customerNotifier).execute(
       id,
       parsed.data,
       { id: session.user.id, name: session.user.name ?? session.user.id },

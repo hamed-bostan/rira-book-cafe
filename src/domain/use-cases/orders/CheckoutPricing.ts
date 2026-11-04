@@ -1,5 +1,12 @@
 import { DEFAULT_LOYALTY_SETTINGS, pointsEarnedFor, pointsValue, redeemablePoints } from "../../entities/Loyalty";
-import { normalizePromoCode, promoDiscount, promoProblem, type PromoCode } from "../../entities/Promotion";
+import {
+  archivedPromoProblem,
+  normalizePromoCode,
+  promoDiscount,
+  promoProblem,
+  type PromoCode,
+  type PromoUsage,
+} from "../../entities/Promotion";
 import { ConflictError } from "../../errors/ConflictError";
 
 import type { OrderQuote } from "../../entities/Checkout";
@@ -36,7 +43,7 @@ export type RepricedOrder = Pick<
  */
 export class CheckoutPricing {
   constructor(
-    private readonly promoRepo?: Pick<IPromotionRepository, "getByCode" | "usage">,
+    private readonly promoRepo?: Pick<IPromotionRepository, "getByCode" | "getById" | "usage">,
     private readonly loyaltyRepo?: Pick<ILoyaltyRepository, "getSettings" | "balance">,
   ) {}
 
@@ -98,6 +105,14 @@ export class CheckoutPricing {
    * it (`PROMO_NO_LONGER_APPLIES` — its minimum isn't met any more, it ended, or it's
    * gone), or points spent that are worth more than what's left
    * (`POINTS_EXCEED_TOTAL`).
+   *
+   * The code is read back by the id the order carries, so it's found even after
+   * staff renamed it or deleted it. A code deleted after orders used it is archived,
+   * not removed, and an archived code keeps its deal on the orders that hold it:
+   * deleting a code stops guests using it again, it doesn't take back a discount an
+   * order already got. Only the deal's own terms still apply (`archivedPromoProblem`
+   * — its minimum order); whether it could be *taken* now (switched on, in its
+   * dates, uses left) is a question for new orders, and it can't be taken by any.
    */
   async reprice(
     order: Pick<Order, "userId" | "promoCodeId" | "promoCode" | "pointsRedeemed" | "pointsDiscount">,
@@ -107,15 +122,20 @@ export class CheckoutPricing {
     let promoOff = 0;
     if (order.promoCodeId) {
       const promoRepo = this.promoRepo;
-      const promo = promoRepo && order.promoCode ? await promoRepo.getByCode(order.promoCode) : null;
-      if (!promo || !promoRepo || promo.id !== order.promoCodeId) {
+      const promo = promoRepo ? await promoRepo.getById(order.promoCodeId) : null;
+      if (!promo || !promoRepo) {
         throw new ConflictError("PROMO_NO_LONGER_APPLIES", `Promo code "${order.promoCode ?? ""}" is gone.`);
       }
       // The order is live and carries the code, so it's among the uses counted —
       // but it's the one asking, and it already holds its use.
-      const usage = await promoRepo.usage(promo.id, order.userId ?? "");
-      const others = { total: Math.max(0, usage.total - 1), byGuest: Math.max(0, usage.byGuest - 1) };
-      if (promoProblem(promo, subtotal, others, now)) {
+      const others = async (): Promise<PromoUsage> => {
+        const usage = await promoRepo.usage(promo.id, order.userId ?? "");
+        return { total: Math.max(0, usage.total - 1), byGuest: Math.max(0, usage.byGuest - 1) };
+      };
+      const problem = promo.archivedAt
+        ? archivedPromoProblem(promo, subtotal)
+        : promoProblem(promo, subtotal, await others(), now);
+      if (problem) {
         throw new ConflictError(
           "PROMO_NO_LONGER_APPLIES",
           `Promo code "${promo.code}" can't be used on the order as it would be.`,

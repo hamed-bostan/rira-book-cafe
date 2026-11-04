@@ -35,6 +35,7 @@ import type { ISuitePricingRepository } from "@/src/domain/repositories/ISuitePr
 import type { ITeamNotifier } from "@/src/domain/repositories/ITeamNotifier";
 import type { IUserRepository } from "@/src/domain/repositories/IUserRepository";
 import { CheckoutPricing } from "@/src/domain/use-cases/orders/CheckoutPricing";
+import type { MenuCatalog } from "@/src/domain/use-cases/products/publicMenu";
 import { getEnv } from "@/src/lib/env";
 
 import { LoggingEmailSender } from "./email/LoggingEmailSender";
@@ -112,6 +113,9 @@ export const userRepository: IUserRepository = new PrismaUserRepository();
 // The menu: categories and items (drinks, food, books) — PostgreSQL via Prisma.
 export const categoryRepository: ICategoryRepository = new PrismaCategoryRepository();
 export const productRepository: IProductRepository = new PrismaProductRepository();
+// What ordering reads the menu through: the items, and whether their categories are
+// shown — an item in a hidden category can't be ordered (`isOnPublicMenu`).
+export const menuCatalog: MenuCatalog = { products: productRepository, categories: categoryRepository };
 
 // Orders — PostgreSQL via Prisma. Placement and cancellation move stock in the same
 // transaction as the order; internal notes are append-only.

@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { ValidationError } from "../../../errors/ValidationError";
 import { PlaceCounterOrder, type CounterOrderInput } from "../PlaceCounterOrder";
 
+import type { Category } from "../../../entities/Category";
 import type { Order, OrderStatus } from "../../../entities/Order";
 import type { Product } from "../../../entities/Product";
 import type { User } from "../../../entities/User";
@@ -17,9 +18,17 @@ const LATTE = {
   imageUrl: "/latte.jpg",
   price: 120_000,
   isPublished: true,
+  categoryId: "coffee",
 } as Product;
 
-const productRepo = { getByIds: vi.fn(async () => [LATTE]) };
+/** The counter's menu: the latte, in a category that's shown unless `hidden`. */
+function menu(hidden = false) {
+  return {
+    products: { getByIds: vi.fn(async () => [LATTE]) },
+    categories: { getAll: vi.fn(async () => [{ id: "coffee", isActive: !hidden } as Category]) },
+  };
+}
+const productRepo = menu();
 
 /** Nobody has a profile yet. */
 const noProfiles = { getById: vi.fn(async (): Promise<User | null> => null) };
@@ -157,5 +166,15 @@ describe("PlaceCounterOrder", () => {
     const useCase = new PlaceCounterOrder(repo, productRepo, noProfiles);
 
     await expect(useCase.execute({ ...SALE, serviceType: "dineIn" }, STAFF)).rejects.toThrow(ValidationError);
+  });
+
+  it("can't ring up an item whose category staff hid, as guests can't order it", async () => {
+    const { repo, place } = orderStore();
+
+    await expect(new PlaceCounterOrder(repo, menu(true), noProfiles).execute(SALE, STAFF)).rejects.toMatchObject({
+      field: "items",
+      message: "One of the items is no longer on the menu.",
+    });
+    expect(place).not.toHaveBeenCalled();
   });
 });

@@ -4,6 +4,7 @@ import { MAX_ORDER_AMOUNT, type Order } from "../../../entities/Order";
 import { ValidationError } from "../../../errors/ValidationError";
 import { PlaceOrder } from "../PlaceOrder";
 
+import type { Category } from "../../../entities/Category";
 import type { Product } from "../../../entities/Product";
 import type { IOrderRepository, NewOrder } from "../../../repositories/IOrderRepository";
 import type { IProductRepository } from "../../../repositories/IProductRepository";
@@ -27,6 +28,9 @@ function product(overrides: Partial<Product>): Product {
   };
 }
 
+/** The menu's categories: `c1` shown, `c-hidden` hidden by staff. */
+const CATEGORIES = [{ id: "c1", isActive: true } as Category, { id: "c-hidden", isActive: false } as Category];
+
 function setup(products: Product[]) {
   const place = vi.fn(async (input: NewOrder): Promise<Order> => ({
     ...input,
@@ -44,7 +48,8 @@ function setup(products: Product[]) {
   const productRepo = {
     getByIds: vi.fn(async (ids: readonly string[]) => products.filter((p) => ids.includes(p.id))),
   } as unknown as IProductRepository;
-  return { useCase: new PlaceOrder(orderRepo, productRepo), place };
+  const categories = { getAll: vi.fn(async () => CATEGORIES) };
+  return { useCase: new PlaceOrder(orderRepo, { products: productRepo, categories }), place };
 }
 
 const GUEST = { id: "09120000000", name: "Sara", phone: "09120000000" };
@@ -95,6 +100,19 @@ describe("PlaceOrder", () => {
     await expect(
       useCase.execute({ serviceType: "takeaway", items: [{ productId: "book", quantity: 1 }] }, GUEST),
     ).rejects.toThrow(ValidationError);
+  });
+
+  it("refuses an item in a hidden category, or one whose category is gone, as off the menu", async () => {
+    const { useCase, place } = setup([
+      product({ id: "seasonal", categoryId: "c-hidden" }),
+      product({ id: "stray", categoryId: "c-gone" }),
+    ]);
+    for (const productId of ["seasonal", "stray"]) {
+      await expect(
+        useCase.execute({ serviceType: "takeaway", items: [{ productId, quantity: 1 }] }, GUEST),
+      ).rejects.toMatchObject({ field: "items", message: "One of the items is no longer on the menu." });
+    }
+    expect(place).not.toHaveBeenCalled();
   });
 
   it("refuses unknown items and bad quantities", async () => {

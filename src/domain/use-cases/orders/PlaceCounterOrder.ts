@@ -16,8 +16,8 @@ import { buildOrderLines, type PlaceOrderInput } from "./PlaceOrder";
 import { SetOrderPayment } from "./SetOrderPayment";
 
 import type { IOrderRepository } from "../../repositories/IOrderRepository";
-import type { IProductRepository } from "../../repositories/IProductRepository";
 import type { IUserRepository } from "../../repositories/IUserRepository";
+import type { MenuCatalog } from "../products/publicMenu";
 
 export type CounterOrderInput = {
   items: PlaceOrderInput["items"];
@@ -37,7 +37,9 @@ export type CounterOrderInput = {
 /**
  * Ring up a sale at the counter: a walk-in, a phone order, a book picked off the
  * shelf. Prices come from the menu, like a guest's order, and it takes units off
- * the shelf the same way. It's rung up for the guest's profile, found by the phone
+ * the shelf the same way. Only what guests could order can be rung up: an item that
+ * is unpublished, or in a category staff hid, is off the counter's picker too, and
+ * refused here (`isOnPublicMenu`, via `buildOrderLines`). It's rung up for the guest's profile, found by the phone
  * they give (or made with the sale, from their name, when the phone has none), so
  * it's in their orders when they sign in and earns them points when it's completed,
  * as any member's order does. Promo codes and points aren't spent at the counter.
@@ -52,7 +54,7 @@ export type CounterOrderInput = {
 export class PlaceCounterOrder {
   constructor(
     private readonly orderRepo: IOrderRepository,
-    private readonly productRepo: Pick<IProductRepository, "getByIds">,
+    private readonly menu: MenuCatalog,
     private readonly userRepo: Pick<IUserRepository, "getById">,
   ) {}
 
@@ -72,7 +74,7 @@ export class PlaceCounterOrder {
       { phone: "customerPhone", name: "customerName" },
     );
 
-    const items = await buildOrderLines(this.productRepo, input.items);
+    const items = await buildOrderLines(this.menu, input.items);
     const subtotal = orderSubtotal(items);
     // Checked before anything is placed: a wrong split shouldn't leave an order behind.
     const problem = input.paymentParts ? paymentPartsProblem(input.paymentParts, subtotal) : null;

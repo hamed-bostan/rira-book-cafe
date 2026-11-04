@@ -61,6 +61,8 @@
     "capacityRequired": "Enter a capacity.",
     "capacityTooLarge": "Capacity can be at most 10,000.",
     "categoryRequired": "Choose a category.",
+    "categoryUnknown": "That category no longer exists. Choose another.",
+    "codeArchived": "A deleted code that orders used keeps this name. Choose another code.",
     "codeFormat": "Use letters, numbers, dashes and underscores only.",
     "codeRequired": "A code is required.",
     "codeTooLong": "Code is too long.",
@@ -1013,7 +1015,8 @@
         "created": "<b>{actor}</b> created promo code {entity}",
         "updated": "<b>{actor}</b> edited promo code {entity}",
         "activeChanged": "<b>{actor}</b> switched promo code {entity} {state, select, on {on} off {off} other {on or off}}",
-        "deleted": "<b>{actor}</b> deleted promo code {entity}"
+        "deleted": "<b>{actor}</b> deleted promo code {entity}",
+        "archived": "<b>{actor}</b> deleted promo code {entity}, kept on file for the orders that used it"
       },
       "unknown": "<b>{actor}</b> changed {entity}",
       "category": {
@@ -3171,7 +3174,7 @@
     "editAgain": "Edit to run again",
     "delete": "Delete",
     "deleteTitle": "Delete {code}?",
-    "deleteBody": "Guests won’t be able to use it any more. Orders that already used it keep their discount.",
+    "deleteBody": "Guests won’t be able to use it any more. Orders that already used it keep their discount, and if any did, the code stays on file for them — so it can’t be created again.",
     "deleted": "{code} deleted",
     "deleteError": "Couldn’t delete the code. Please try again.",
     "newTitle": "New promo code",

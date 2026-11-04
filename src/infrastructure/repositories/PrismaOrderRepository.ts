@@ -43,6 +43,7 @@ import { prisma } from "@/src/infrastructure/prisma/client";
 import { type Prisma } from "@/src/infrastructure/prisma/generated/client";
 import { inTransaction, type PrismaDb } from "@/src/infrastructure/prisma/transaction";
 
+import { lockPromoCode } from "./promoCodeLock";
 import { recordAudit } from "./writeActivityEntry";
 import { createGuestProfile } from "./writeGuestProfile";
 import { dateToDay, dayToDate, postHook } from "./writeJournal";
@@ -604,15 +605,17 @@ function mergeLines<T extends { productId: string; name: string; quantity: numbe
 /**
  * Take one use of a promo code for this guest, refusing it when the code's overall
  * or per-guest limit is already reached by live (not cancelled) orders. Serialized
- * per code, so the count can't race.
+ * per code, so the count can't race — nor with staff archiving or deleting the code.
  */
 async function claimPromoUse(tx: Prisma.TransactionClient, promoCodeId: string, userId: string): Promise<void> {
-  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`promo:${promoCodeId}`}))`;
+  await lockPromoCode(tx, promoCodeId);
   const promo = await tx.promoCode.findUnique({
     where: { id: promoCodeId },
-    select: { isActive: true, usageLimit: true, perGuestLimit: true },
+    select: { isActive: true, archivedAt: true, usageLimit: true, perGuestLimit: true },
   });
-  if (!promo?.isActive) throw new ConflictError("PROMO_INVALID", "That promo code is no longer active.");
+  if (!promo?.isActive || promo.archivedAt) {
+    throw new ConflictError("PROMO_INVALID", "That promo code is no longer active.");
+  }
   const live = { promoCodeId, status: { not: "cancelled" } } satisfies Prisma.OrderWhereInput;
   if (promo.usageLimit !== null && (await tx.order.count({ where: live })) >= promo.usageLimit) {
     throw new ConflictError("PROMO_USED_UP", "That promo code has been used up.");

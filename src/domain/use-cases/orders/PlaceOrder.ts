@@ -8,8 +8,9 @@ import {
   type OrderItem,
   type ServiceType,
 } from "../../entities/Order";
-import { isSellable } from "../../entities/Product";
+import { isOnPublicMenu, isSellable } from "../../entities/Product";
 import { ValidationError } from "../../errors/ValidationError";
+import { categoryLookup, type MenuCatalog } from "../products/publicMenu";
 
 import { CheckoutPricing } from "./CheckoutPricing";
 
@@ -17,7 +18,6 @@ import type { ActivityActor } from "../../entities/ActivityEntry";
 import type { OrderQuote } from "../../entities/Checkout";
 import type { User } from "../../entities/User";
 import type { IOrderRepository } from "../../repositories/IOrderRepository";
-import type { IProductRepository } from "../../repositories/IProductRepository";
 
 type OrderLineRequest = { productId: string; quantity: number; note?: string };
 
@@ -38,11 +38,15 @@ export type QuoteOrderInput = Pick<PlaceOrderInput, "items" | "promoCode" | "red
 
 /**
  * Price the requested lines from the menu, snapshotting each item's name, image,
- * price and cost. Items that aren't on the public menu — unpublished, deleted, or
- * a reading-only book — are refused.
+ * price and cost. Items that aren't on the public menu — unpublished, in a hidden
+ * category, deleted, or a reading-only book — are refused.
+ *
+ * Every way an order gets lines comes through here — a guest's order and its quote,
+ * a counter sale, lines staff add to an order — so staff can't ring up an item
+ * guests can't order either: their picker is the public menu (see `isOnPublicMenu`).
  */
 export async function buildOrderLines(
-  productRepo: Pick<IProductRepository, "getByIds">,
+  menu: MenuCatalog,
   lines: readonly OrderLineRequest[],
 ): Promise<Omit<OrderItem, "id">[]> {
   if (lines.length === 0) throw new ValidationError("items", "An order needs at least one item.");
@@ -53,12 +57,12 @@ export async function buildOrderLines(
   }
 
   const ids = [...new Set(lines.map((line) => line.productId))];
-  const products = await productRepo.getByIds(ids);
+  const [products, categoryOf] = await Promise.all([menu.products.getByIds(ids), categoryLookup(menu.categories)]);
   const byId = new Map(products.map((product) => [product.id, product]));
 
   const items = lines.map((line) => {
     const product = byId.get(line.productId);
-    if (!product || !product.isPublished || !isSellable(product)) {
+    if (!product || !isOnPublicMenu(product, categoryOf(product.categoryId)) || !isSellable(product)) {
       throw new ValidationError("items", "One of the items is no longer on the menu.");
     }
     const lineNote = line.note?.trim() || undefined;
@@ -91,12 +95,12 @@ export async function buildOrderLines(
  */
 export class QuoteOrder {
   constructor(
-    private readonly productRepo: Pick<IProductRepository, "getByIds">,
+    private readonly menu: MenuCatalog,
     private readonly pricing: CheckoutPricing,
   ) {}
 
   async execute(input: QuoteOrderInput, guestId: string, now: Date): Promise<OrderQuote> {
-    const items = await buildOrderLines(this.productRepo, input.items);
+    const items = await buildOrderLines(this.menu, input.items);
     const { promo: _promo, ...quote } = await this.pricing.execute(
       { subtotal: orderSubtotal(items), promoCode: input.promoCode, redeemPoints: input.redeemPoints },
       guestId,
@@ -117,7 +121,7 @@ export class QuoteOrder {
 export class PlaceOrder {
   constructor(
     private readonly orderRepo: IOrderRepository,
-    private readonly productRepo: Pick<IProductRepository, "getByIds">,
+    private readonly menu: MenuCatalog,
     private readonly pricing: CheckoutPricing = new CheckoutPricing(),
   ) {}
 
@@ -136,7 +140,7 @@ export class PlaceOrder {
     const note = input.note?.trim() || undefined;
     if (note && note.length > MAX_ORDER_NOTE_TEXT_LENGTH) throw new ValidationError("note", "That note is too long.");
 
-    const items = await buildOrderLines(this.productRepo, input.items);
+    const items = await buildOrderLines(this.menu, input.items);
     const subtotal = orderSubtotal(items);
     const priced = await this.pricing.execute(
       { subtotal, promoCode: input.promoCode, redeemPoints: input.redeemPoints },

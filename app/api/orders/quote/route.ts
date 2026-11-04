@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { quoteOrderSchema } from "@/src/contracts/order-schema";
 import { QuoteOrder } from "@/src/domain/use-cases/orders/PlaceOrder";
-import { checkoutPricing, productRepository } from "@/src/infrastructure/container";
+import { checkoutPricing, menuCatalog } from "@/src/infrastructure/container";
 import {
   errorResponse,
   errorResponseFromException,
@@ -36,11 +36,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   try {
-    const quote = await new QuoteOrder(productRepository, checkoutPricing).execute(
-      parsed.data,
-      session.user.id,
-      new Date(),
-    );
+    const quote = await new QuoteOrder(menuCatalog, checkoutPricing).execute(parsed.data, session.user.id, new Date());
     return NextResponse.json(quote);
   } catch (error) {
     return errorResponseFromException(error, "POST /api/orders/quote failed");

@@ -2,11 +2,14 @@ import { revalidateTag } from "next/cache";
 import { describe, expect, it } from "vitest";
 
 import { GET as getAdminProduct } from "@/app/api/admin/products/[id]/route";
+import { PATCH as bulkUpdateProducts } from "@/app/api/admin/products/bulk/route";
 import { GET as listAdminProducts } from "@/app/api/admin/products/route";
 import { DELETE as deleteProduct, GET as getProduct, PUT as updateProduct } from "@/app/api/products/[id]/route";
 import { GET as listProducts, POST as createProduct } from "@/app/api/products/route";
 import type { Product, ProductListItem } from "@/src/domain/entities/Product";
 import { prisma } from "@/src/infrastructure/prisma/client";
+import { PrismaCategoryRepository } from "@/src/infrastructure/repositories/PrismaCategoryRepository";
+import { PrismaProductRepository } from "@/src/infrastructure/repositories/PrismaProductRepository";
 import { CATALOG_TAGS } from "@/src/lib/cache-tags";
 
 import { getRequest, jsonRequest, rawRequest, readError, readJson, routeParams } from "./helpers/http";
@@ -213,6 +216,57 @@ describe("product writes", () => {
       where: { entityId: created.id, action: "product.updated" },
     });
     expect(entry.changes).toEqual([{ field: "madeToOrder", before: "false", after: "true" }]);
+  });
+
+  it("refuses a category that doesn't exist on create, edit and move, as a field error", async () => {
+    signInAs("admin");
+    const created = await createProduct(
+      jsonRequest("POST", "/api/products", await productForm({ categoryId: "no-such-category" })),
+    );
+    expect(created.status).toBe(400);
+    expect((await readError(created)).fieldErrors).toEqual({ categoryId: "categoryUnknown" });
+    expect(await prisma.product.count({ where: { name: "Cortado" } })).toBe(0);
+
+    const updated = await updateProduct(
+      jsonRequest("PUT", "/api/products/seed-espresso", await productForm({ categoryId: "no-such-category" })),
+      routeParams({ id: "seed-espresso" }),
+    );
+    expect(updated.status).toBe(400);
+    expect((await readError(updated)).fieldErrors).toEqual({ categoryId: "categoryUnknown" });
+
+    const moved = await bulkUpdateProducts(
+      jsonRequest("PATCH", "/api/admin/products/bulk", {
+        ids: ["seed-espresso"],
+        action: { type: "assignCategory", categoryId: "no-such-category" },
+      }),
+    );
+    expect(moved.status).toBe(400);
+    expect((await readError(moved)).fieldErrors).toEqual({ categoryId: "categoryUnknown" });
+
+    const espresso = await prisma.product.findUniqueOrThrow({ where: { id: "seed-espresso" } });
+    const hotDrinks = await prisma.category.findUniqueOrThrow({ where: { slug: "hot-drinks" } });
+    expect(espresso.categoryId).toBe(hotDrinks.id);
+  });
+
+  it("is backed by the database's key: an unknown category can't be written, nor a used one deleted", async () => {
+    const repo = new PrismaProductRepository();
+    const { id: _id, rating: _r, ratingCount: _rc, ...espresso } = (await repo.getById("seed-espresso"))!;
+
+    // Behind the use-case's check, the key answers with the same field error.
+    await expect(repo.update("seed-espresso", { ...espresso, categoryId: "no-such-category" })).rejects.toMatchObject({
+      name: "ValidationError",
+      field: "categoryId",
+      message: "categoryUnknown",
+    });
+    await expect(
+      repo.applyBulkChange(["seed-espresso"], { field: "categoryId", value: "no-such-category" }),
+    ).rejects.toMatchObject({ field: "categoryId" });
+
+    const hotDrinks = await prisma.category.findUniqueOrThrow({ where: { slug: "hot-drinks" } });
+    await expect(new PrismaCategoryRepository().delete(hotDrinks.id)).rejects.toMatchObject({
+      name: "ResourceInUseError",
+    });
+    expect(await prisma.category.count({ where: { id: hotDrinks.id } })).toBe(1);
   });
 
   it("still needs the stock of a counted item", async () => {

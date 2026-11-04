@@ -144,3 +144,21 @@ New coverage:
 Still covered only by API tests: the year close and the settings refusal in the browser (closing a year in the shared e2e database would lock other specs' backdated postings), applying a suggested price (it would change seeded menu prices other specs rely on), reconcile, and the gateway settlement form.
 
 Gate: typecheck pass; lint 0 errors; unit 1980 passed; integration 545 passed; e2e (Chrome) 764 passed, 0 failed (full run).
+
+### Phase 6 — Insights + Store (2026-11-05)
+
+Bugs fixed (each with a regression test):
+
+1. **Every save in the role editor showed "Something went wrong", though it had saved.** Editing a custom role's name or permissions answered with the role but without its `memberCount`, which the editor's response check requires (creating a role already added it). The edit route now answers with the same shape as the list and a create. Test: `insights-store.integration.test.ts` (parses the answer with the editor's schema; fails without the fix), `insights-store-actions.spec.ts`.
+2. **Renaming a custom role through the API without its permissions crashed (500).** The repository's "create if missing" fallback looked up a built-in permission set with the custom role's key, and a type cast hid it. Only a built-in role gets that fallback now (`PrismaRoleRepository.ts`). The editor always sends permissions, so the dashboard didn't hit this. Test: `insights-store.integration.test.ts`.
+
+Not bugs: S6.1 `fiscalYearsApi` sits in `inventory-api.ts` but works — a tidy-up, left. Two wording details found while testing, left as they are: the role-saved toast names the role as it was opened (before the rename), and the change-role toast uses the option's full label ("Support — read only").
+
+New coverage:
+
+- `tests/integration/insights-store.integration.test.ts`: signing one of your own sessions out (and not someone else's), the owner ending one of a member's sessions (admin refused); handing ownership over (swap recorded both ways; to yourself or by a non-owner refused); a role edit's answer; the guests report; every report table's CSV (unknown table 404, floor staff 401).
+- `e2e/insights-store-actions.spec.ts`: a member's role changed and access removed (on a member the spec adds, so the seeded accounts keep their sessions); a custom role edited and deleted; a report exported as CSV; the activity filters cleared.
+
+Still covered only by API tests: ownership transfer and single-session sign-out in the browser (both would sign seeded accounts out of the shared e2e database), Mark paid from the payments report (same route as the orders pages; the report's unpaid list shows the oldest orders, so a test's new one may not be there).
+
+Gate: typecheck pass; lint 0 errors; integration 559 passed; e2e (Chrome) — the 7 Insights / Store / team / reports / accessibility specs, 207 passed. The full e2e suite runs again in Phase 8.

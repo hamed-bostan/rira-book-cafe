@@ -63,7 +63,8 @@ Untested at route level: settlements, year close, account create / activate, acc
 
 Suspects
 
-- [ ] S6.1 `fiscalYearsApi` lives in `inventory-api.ts:85` but is accounting's — misplaced, not broken.
+- [x] S6.1 `fiscalYearsApi` in `inventory-api.ts` — works; a tidy-up, left.
+- [x] Found while testing: the role editor showed an error after every successful save, and a rename without permissions crashed — **bugs, fixed**.
 - Two-factor removal: no leftovers found.
 
 Untested: guests report (unit only), mark paid from payments report, most report CSV slugs (only streams in e2e), ownership transfer, single-session sign-out (own + member), change role / remove access (e2e opens the dialog only), role edit/delete in browser, activity clear filters.

@@ -1725,7 +1725,8 @@
       "product": {
         "created": "Item created",
         "updated": "Item edited",
-        "deleted": "Item deleted"
+        "deleted": "Item deleted",
+        "recipeChanged": "Recipe changed"
       },
       "category": {
         "created": "Category created",
@@ -1743,7 +1744,10 @@
         "customerNotified": "Guest messaged"
       },
       "review": {
-        "moderated": "Review moderated"
+        "moderated": "Review moderated",
+        "replied": "Review answered",
+        "replyRemoved": "Reply removed",
+        "deleted": "Review deleted"
       },
       "promoCode": {
         "created": "Code created",
@@ -1838,6 +1842,31 @@
       "cashShift": {
         "opened": "Shift opened",
         "closed": "Shift closed"
+      },
+      "loyalty": {
+        "settingsChanged": "Loyalty rules changed",
+        "pointsAdjusted": "Points adjusted",
+        "pointsExpired": "Points expired"
+      },
+      "settings": {
+        "profileChanged": "Café profile changed",
+        "hoursChanged": "Opening hours changed",
+        "receiptChanged": "Receipt changed",
+        "tableAdded": "Table added",
+        "tableChanged": "Table changed",
+        "tableRemoved": "Table removed"
+      },
+      "stockItem": {
+        "created": "Stock item added",
+        "updated": "Stock item changed",
+        "wasted": "Waste recorded",
+        "counted": "Stock counted",
+        "openingRecorded": "Opening stock recorded",
+        "adjusted": "Stock adjusted",
+        "returnedToSupplier": "Returned to supplier"
+      },
+      "pricing": {
+        "settingsChanged": "Pricing settings changed"
       }
     }
   },
@@ -2313,6 +2342,7 @@
         "grossSales": "Gross sales",
         "promoDiscount": "Promo codes",
         "pointsDiscount": "Loyalty points",
+        "serviceCharge": "Service charge",
         "otherAdjustments": "Other adjustments",
         "charged": "Charged to guests",
         "refunds": "Refunds",

@@ -1725,7 +1725,8 @@
       "product": {
         "created": "ساخت آیتم",
         "updated": "ویرایش آیتم",
-        "deleted": "حذف آیتم"
+        "deleted": "حذف آیتم",
+        "recipeChanged": "تغییر دستور تهیه"
       },
       "category": {
         "created": "ساخت دسته‌بندی",
@@ -1743,7 +1744,10 @@
         "customerNotified": "پیام به مهمان"
       },
       "review": {
-        "moderated": "بررسی نظر"
+        "moderated": "بررسی نظر",
+        "replied": "پاسخ به نظر",
+        "replyRemoved": "حذف پاسخ",
+        "deleted": "حذف نظر"
       },
       "promoCode": {
         "created": "ساخت کد",
@@ -1838,6 +1842,31 @@
       "cashShift": {
         "opened": "باز کردن شیفت",
         "closed": "بستن شیفت"
+      },
+      "loyalty": {
+        "settingsChanged": "تغییر قوانین باشگاه",
+        "pointsAdjusted": "اصلاح امتیاز",
+        "pointsExpired": "انقضای امتیاز"
+      },
+      "settings": {
+        "profileChanged": "تغییر مشخصات کافه",
+        "hoursChanged": "تغییر ساعت کاری",
+        "receiptChanged": "تغییر رسید",
+        "tableAdded": "افزودن میز",
+        "tableChanged": "تغییر میز",
+        "tableRemoved": "حذف میز"
+      },
+      "stockItem": {
+        "created": "افزودن قلم انبار",
+        "updated": "تغییر قلم انبار",
+        "wasted": "ثبت ضایعات",
+        "counted": "شمارش موجودی",
+        "openingRecorded": "ثبت موجودی اول دوره",
+        "adjusted": "اصلاح موجودی",
+        "returnedToSupplier": "برگشت به تأمین‌کننده"
+      },
+      "pricing": {
+        "settingsChanged": "تغییر تنظیمات قیمت‌گذاری"
       }
     }
   },
@@ -2313,6 +2342,7 @@
         "grossSales": "فروش ناخالص",
         "promoDiscount": "کدهای تخفیف",
         "pointsDiscount": "امتیاز باشگاه مشتریان",
+        "serviceCharge": "حق سرویس",
         "otherAdjustments": "سایر تعدیل‌ها",
         "charged": "دریافتی از مهمانان",
         "refunds": "بازپرداخت‌ها",

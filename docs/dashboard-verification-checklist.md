@@ -29,9 +29,9 @@ Untested: reservation Complete / undo seat / change table; suite check-out / und
 
 Suspects
 
-- [ ] S3.1 Record waste is a write gated on `inventory.view` (`app/api/admin/inventory/waste/route.ts:23`) — documented as intentional; confirm policy.
-- [ ] S3.2 e2e uses `/dashboard/activity?entity=order`; real param is `entityType` (`e2e/service-insights-cafe-responsive.spec.ts:288`) → the case tests the unfiltered log.
-- [ ] S3.3 Dead `reviewBulkRequestSchema` (`src/contracts/bulk-action-schema.ts:78`) — cleanup only.
+- [x] S3.1 Record waste on `inventory.view` — by design (floor staff record waste).
+- [x] S3.2 e2e used `?entity=order` — **test bug, fixed** (`entityType`).
+- [x] S3.3 Unused `reviewBulkRequestSchema` — harmless, left.
 
 Untested: product row on-menu switch, feature/unfeature (row + bulk); category delete-dialog "hide instead"; reorder level; record waste; track all books; count / receive / opening pages (render only); movements CSV; to-order print; review approve/reject/remove reply/delete; promo edit/switch/delete; loyalty guest lookup.
 

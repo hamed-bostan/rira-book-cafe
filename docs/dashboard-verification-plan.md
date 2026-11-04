@@ -79,3 +79,20 @@ Everything else worked as built. New coverage:
 Still covered only by API tests: a hold's Skip / Remove, the event image upload, cancelling a sign-up and taking a ticket payment from the guest list (the last two are in `booking-money` / `booking-changes` at route level).
 
 Gate: typecheck pass; lint 0 errors; integration 527 passed; e2e (Chrome) — the 8 Bookings / Library / messages / accessibility specs, 199 passed (one small UI change, so no full run).
+
+### Phase 3 — Menu (2026-11-04)
+
+No app bugs found: every untested Menu action worked when clicked (this group had its own bug round the same day).
+
+- S3.1 Record waste on `inventory.view` — by design: floor staff record what they throw away (the route says so).
+- S3.2 **Test bug, fixed**: the layout check "activity for orders" opened `?entity=order`, which the page ignores, so it measured the unfiltered log. It now uses `entityType`.
+- S3.3 Unused `reviewBulkRequestSchema` — harmless leftover, left as is.
+
+New coverage:
+
+- `tests/integration/menu-actions.integration.test.ts`: a stock item's reorder level set, logged and cleared (negative, unknown item and floor staff refused); a guest's points looked up by phone however it's typed (unknown phone, no phone and no permission refused); featuring an item and taking it off.
+- `e2e/menu-actions.spec.ts`: reorder level, quick count and waste from an Inventory row; an item's on-menu switch and Feature from its row; a category with items hidden instead of deleted; a waiting review approved then deleted; a promo code switched off, edited and deleted; a guest's points looked up.
+
+Still covered only by API tests: the full Count / Receive / Opening stock pages (their quick dialogs are clicked), the movements CSV, the To-order print, Track all books, removing a review's reply.
+
+Gate: lint 0 errors; menu-actions integration 6 passed; e2e (Chrome) — the 7 Menu / catalog / inventory / pricing / responsive specs, 319 passed. No app code changed, so no full run.

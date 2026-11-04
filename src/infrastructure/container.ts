@@ -10,6 +10,7 @@ import type { IDatabaseProbe } from "@/src/domain/repositories/IDatabaseProbe";
 import type { IEmailSender } from "@/src/domain/repositories/IEmailSender";
 import type { IEventRepository } from "@/src/domain/repositories/IEventRepository";
 import type { IExpenseRepository } from "@/src/domain/repositories/IExpenseRepository";
+import type { IImageReferences } from "@/src/domain/repositories/IImageReferences";
 import type { IImageStorageRepository } from "@/src/domain/repositories/IImageStorageRepository";
 import type { IIncomeRepository } from "@/src/domain/repositories/IIncomeRepository";
 import type { IInventoryRepository } from "@/src/domain/repositories/IInventoryRepository";
@@ -58,6 +59,7 @@ import { PrismaCategoryRepository } from "./repositories/PrismaCategoryRepositor
 import { PrismaDatabaseProbe } from "./repositories/PrismaDatabaseProbe";
 import { PrismaEventRepository } from "./repositories/PrismaEventRepository";
 import { PrismaExpenseRepository } from "./repositories/PrismaExpenseRepository";
+import { PrismaImageReferences } from "./repositories/PrismaImageReferences";
 import { PrismaIncomeRepository } from "./repositories/PrismaIncomeRepository";
 import { PrismaInventoryRepository } from "./repositories/PrismaInventoryRepository";
 import { PrismaLedgerRepository } from "./repositories/PrismaLedgerRepository";
@@ -268,6 +270,8 @@ const localImageStorage = new LocalDiskImageStorageRepository(
   logger,
 );
 export const imageStorageRepository: IImageStorageRepository = localImageStorage;
+/** Whether a stored row still uses an image — checked before a replaced or deleted item's picture is reclaimed. */
+export const imageReferences: IImageReferences = new PrismaImageReferences();
 /** Absolute file for a stored image path, or null when it escapes the uploads root. */
 export const resolveStoredImageFile = (objectPath: string): string | null => localImageStorage.resolve(objectPath);
 

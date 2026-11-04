@@ -2,9 +2,11 @@ import { activityValue } from "../../entities/ActivityEntry";
 import { ConflictError } from "../../errors/ConflictError";
 import { NotFoundError } from "../../errors/NotFoundError";
 import { ValidationError } from "../../errors/ValidationError";
+import { reclaimImage } from "../images/reclaimImage";
 
 import { productSnapshot } from "./productActivity";
 
+import type { ProductImageCleanup } from "./UpdateProduct";
 import type { ActivityActor } from "../../entities/ActivityEntry";
 import type { IBookLoanRepository } from "../../repositories/IBookLoanRepository";
 import type { IBookWaitlistRepository } from "../../repositories/IBookWaitlistRepository";
@@ -20,6 +22,8 @@ export class DeleteProduct {
     private readonly productRepo: IProductRepository,
     private readonly loanRepo: Pick<IBookLoanRepository, "countOpenForBook">,
     private readonly waitlistRepo: Pick<IBookWaitlistRepository, "listOpenForBook">,
+    /** Where the deleted item's picture is reclaimed from — see `UpdateProduct`. */
+    private readonly images?: ProductImageCleanup,
   ) {}
 
   async execute(id: string, actor: ActivityActor): Promise<void> {
@@ -60,5 +64,9 @@ export class DeleteProduct {
         .map(([field, value]) => ({ field, before: activityValue(value), after: null }))
         .filter((change) => change.before !== null),
     }));
+
+    // Reclaim the picture once the row is gone (best-effort, never blocks the
+    // delete). Kept when an order line still shows it — a sold item's receipts do.
+    if (this.images) await reclaimImage(existing.imageUrl, this.images.references, this.images.storage);
   }
 }

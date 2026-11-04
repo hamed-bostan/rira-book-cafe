@@ -9,6 +9,8 @@ import {
   bookLoanRepository,
   bookWaitlistRepository,
   categoryRepository,
+  imageReferences,
+  imageStorageRepository,
   productRepository,
 } from "@/src/infrastructure/container";
 import { invalidatesCatalog } from "@/src/lib/api/invalidatesCatalog";
@@ -70,14 +72,13 @@ async function handlePut(request: NextRequest, { params }: RouteContext): Promis
 
   try {
     // The actor attributes the activity entry to whoever saved the form.
-    const updated = await new UpdateProduct(productRepository, bookLoanRepository, categoryRepository).execute(
-      id,
-      parsed.data,
-      {
-        id: session.user.id,
-        name: session.user.name ?? session.user.id,
-      },
-    );
+    const updated = await new UpdateProduct(productRepository, bookLoanRepository, categoryRepository, {
+      references: imageReferences,
+      storage: imageStorageRepository,
+    }).execute(id, parsed.data, {
+      id: session.user.id,
+      name: session.user.name ?? session.user.id,
+    });
     return NextResponse.json(updated);
   } catch (error) {
     return errorResponseFromException(error, `PUT /api/products/${id} failed`);
@@ -96,7 +97,10 @@ async function handleDelete(_request: NextRequest, { params }: RouteContext): Pr
   try {
     // The actor comes from the session, never from the request — this is the one
     // change whose activity entry is the only surviving record of the product.
-    await new DeleteProduct(productRepository, bookLoanRepository, bookWaitlistRepository).execute(id, {
+    await new DeleteProduct(productRepository, bookLoanRepository, bookWaitlistRepository, {
+      references: imageReferences,
+      storage: imageStorageRepository,
+    }).execute(id, {
       id: session.user.id,
       name: session.user.name ?? session.user.id,
     });

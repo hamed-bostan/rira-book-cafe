@@ -114,10 +114,13 @@ export class PrismaRoleRepository implements IRoleRepository {
         const row = await tx.role.upsert({
           where: { key },
           update: data,
+          // Only a built-in role can be missing here (a custom one was checked above),
+          // so only it has a default set to start from — reading one for a custom key
+          // crashed a rename that sent no permissions.
           create: {
             key,
             builtIn: true,
-            permissions: changes.permissions ?? [...ROLE_PERMISSIONS[key as GrantableBuiltInRole]],
+            permissions: changes.permissions ?? (isCustomRoleKey(key) ? [] : [...ROLE_PERMISSIONS[key]]),
           },
         });
         const updated = isCustomRoleKey(key) ? toDefinition(row) : builtInDefinition(key, row);

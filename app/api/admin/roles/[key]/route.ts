@@ -70,7 +70,10 @@ export async function PUT(request: NextRequest, { params }: RouteContext): Promi
       },
       { id: session.user.id, name: session.user.name ?? session.user.id },
     );
-    return NextResponse.json(role);
+    // The same shape the list and a create answer with: the editor checks it, and a
+    // role without its member count read as a failed save though it had saved.
+    const counts = await roleRepository.memberCounts();
+    return NextResponse.json({ ...role, memberCount: counts[role.key] ?? 0 });
   } catch (error) {
     return errorResponseFromException(error, `PUT /api/admin/roles/${key} failed`);
   }

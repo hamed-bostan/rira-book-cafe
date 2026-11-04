@@ -75,9 +75,10 @@ test.describe("the owner's team page", () => {
     await page.goto("/dashboard/team?tab=security");
     const retention = page.getByLabel("Keep activity for");
     await expect(retention).toHaveValue("forever");
+    // Selected once the page has hydrated (a change before that would be lost).
     await expect(async () => {
       await retention.selectOption({ label: "2 years" });
-      await expect(page.getByText("Settings saved")).toBeVisible({ timeout: 3_000 });
+      await expect(page.getByText("Settings saved").first()).toBeVisible({ timeout: 3_000 });
     }).toPass();
     await page.reload();
     await expect(page.getByLabel("Keep activity for")).toHaveValue("24");

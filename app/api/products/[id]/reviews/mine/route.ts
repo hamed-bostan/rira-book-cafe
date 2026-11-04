@@ -4,6 +4,7 @@ import { submitReviewSchema } from "@/src/contracts/review-schema";
 import { SubmitReview } from "@/src/domain/use-cases/reviews/ReviewCommands";
 import { GetReviewEligibility } from "@/src/domain/use-cases/reviews/ReviewQueries";
 import { productRepository, reviewRepository, userRepository } from "@/src/infrastructure/container";
+import { invalidatesCatalog } from "@/src/lib/api/invalidatesCatalog";
 import {
   errorResponse,
   errorResponseFromException,
@@ -11,6 +12,7 @@ import {
   parseJsonBody,
   unauthorizedResponse,
 } from "@/src/lib/api/responses";
+import { CATALOG_TAGS } from "@/src/lib/cache-tags";
 import { getUserSession } from "@/src/lib/require-auth";
 
 export const dynamic = "force-dynamic";
@@ -36,8 +38,12 @@ export async function GET(_request: Request, { params }: RouteContext): Promise<
 /**
  * PUT /api/products/:id/reviews/mine — write or rewrite the guest's review. It
  * waits for staff before it's shown. 409 `NOT_PURCHASED` when they haven't had it.
+ *
+ * Expires the cached catalog the way moderation does: rewriting an approved review
+ * sends it back to the queue, which takes its stars out of the item's rating — the
+ * storefront must not keep showing the old average.
  */
-export async function PUT(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
+async function handlePut(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   const session = await getUserSession();
   if (!session?.user.id) return unauthorizedResponse();
 
@@ -64,3 +70,5 @@ export async function PUT(request: NextRequest, { params }: RouteContext): Promi
     return errorResponseFromException(error, `PUT /api/products/${id}/reviews/mine failed`);
   }
 }
+
+export const PUT = invalidatesCatalog([CATALOG_TAGS.products], handlePut);

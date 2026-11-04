@@ -4,8 +4,8 @@ import { Minus, Plus } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import * as React from "react";
 
-import { MAX_LINE_QUANTITY, MAX_ORDER_NOTE_TEXT_LENGTH, type Order } from "@/src/domain/entities/Order";
-import type { Product } from "@/src/domain/entities/Product";
+import { MAX_ORDER_NOTE_TEXT_LENGTH, type Order } from "@/src/domain/entities/Order";
+import { hasOptions } from "@/src/domain/entities/ProductOptions";
 import { useRouter } from "@/src/i18n/navigation";
 import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
@@ -22,24 +22,26 @@ import { Input } from "@/src/presentation/design-system/components/form/Input/In
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
+import { OrderItemOptions } from "@/src/presentation/orders/OrderItemOptions";
 
 import { ordersApi } from "./order-api";
+import {
+  addPick,
+  maxPickQuantity,
+  pickedItems,
+  pickedUnits,
+  updatePick,
+  type MenuPick,
+  type PickedLine,
+} from "./pickedLines";
+import { PickOptionsPanel } from "./PickOptionsPanel";
 
-/** What the round can be picked from: the menu as it is now, with what's left of counted items. */
-export type MenuPick = Pick<Product, "id" | "name" | "price" | "imageUrl" | "madeToOrder" | "stockQuantity">;
+export type { MenuPick } from "./pickedLines";
 
 type AddOrderItemsDialogProps = {
   order: Pick<Order, "id" | "orderNumber" | "updatedAt">;
   products: readonly MenuPick[];
 };
-
-/** One line of the round: how many, and the guest's request for it. */
-type RoundLine = { quantity: number; note: string };
-
-/** How many of an item can still go in the round: counted items stop at what's on the shelf. */
-function maxQuantity(product: MenuPick): number {
-  return product.madeToOrder ? MAX_LINE_QUANTITY : Math.min(product.stockQuantity, MAX_LINE_QUANTITY);
-}
 
 /**
  * Add a second round to an order: pick from the menu as at New sale, each line with
@@ -56,24 +58,22 @@ export function AddOrderItemsDialog({ order, products }: AddOrderItemsDialogProp
   const { toast } = useToast();
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState("");
-  const [round, setRound] = React.useState<Readonly<Record<string, RoundLine>>>({});
+  // The round's lines: an item with its chosen options, how many, and the guest's request.
+  const [lines, setLines] = React.useState<readonly PickedLine[]>([]);
+  /** The item whose options are being chosen, before it goes on the round. */
+  const [picking, setPicking] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [pending, startTransition] = React.useTransition();
 
   const term = query.trim().toLowerCase();
   const shown = term ? products.filter((product) => product.name.toLowerCase().includes(term)) : products;
-  const lines = products.flatMap((product) => {
-    const line = round[product.id];
-    return line && line.quantity > 0 ? [{ product, ...line }] : [];
-  });
-  const amount = lines.reduce((sum, line) => sum + line.product.price * line.quantity, 0);
+  const amount = lines.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0);
   const count = lines.reduce((sum, line) => sum + line.quantity, 0);
 
-  function setLine(id: string, next: Partial<RoundLine>): void {
-    setRound((current) => {
-      const line: RoundLine = { ...(current[id] ?? { quantity: 0, note: "" }), ...next };
-      return { ...current, [id]: { ...line, quantity: Math.max(line.quantity, 0) } };
-    });
+  /** One more of an item: straight on, or — when it has options — after they're chosen. */
+  function pick(product: MenuPick): void {
+    if (hasOptions(product)) setPicking((current) => (current === product.id ? null : product.id));
+    else setLines((current) => addPick(current, product));
   }
 
   function submit(): void {
@@ -82,11 +82,12 @@ export function AddOrderItemsDialog({ order, products }: AddOrderItemsDialogProp
       try {
         await ordersApi.update(order.id, {
           version: order.updatedAt,
-          add: lines.map((line) => ({ productId: line.product.id, quantity: line.quantity, note: line.note })),
+          add: pickedItems(lines),
         });
         toast({ tone: "success", title: t("edit.addSaved", { number: order.orderNumber }) });
         setOpen(false);
-        setRound({});
+        setLines([]);
+        setPicking(null);
         setQuery("");
       } catch (err) {
         const field =
@@ -151,14 +152,15 @@ export function AddOrderItemsDialog({ order, products }: AddOrderItemsDialogProp
             className="max-h-64 overflow-y-auto rounded-button border border-border"
           >
             {shown.map((product) => {
-              const inRound = round[product.id]?.quantity ?? 0;
-              const left = maxQuantity(product);
+              const inRound = pickedUnits(lines, product.id);
+              const left = maxPickQuantity(product);
               return (
                 <li key={product.id} className="border-b border-border last:border-b-0">
                   <button
                     type="button"
                     disabled={inRound >= left}
-                    onClick={() => setLine(product.id, { quantity: inRound + 1 })}
+                    aria-expanded={hasOptions(product) ? picking === product.id : undefined}
+                    onClick={() => pick(product)}
                     aria-label={t("counter.addAria", { name: product.name })}
                     className={cn(
                       "flex min-h-11 w-full items-center gap-3 px-3 py-2 text-start transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50",
@@ -181,6 +183,16 @@ export function AddOrderItemsDialog({ order, products }: AddOrderItemsDialogProp
                       </span>
                     ) : null}
                   </button>
+                  {picking === product.id ? (
+                    <PickOptionsPanel
+                      product={product}
+                      onCancel={() => setPicking(null)}
+                      onAdd={(choiceIds) => {
+                        setLines((current) => addPick(current, product, choiceIds));
+                        setPicking(null);
+                      }}
+                    />
+                  ) : null}
                 </li>
               );
             })}
@@ -190,19 +202,15 @@ export function AddOrderItemsDialog({ order, products }: AddOrderItemsDialogProp
         {lines.length > 0 ? (
           <div className="flex flex-col gap-4">
             <p className={FIELD_LABEL}>{t("edit.roundHeading")}</p>
-            {lines.map(({ product, quantity, note }) => (
-              <div
-                key={product.id}
-                className="flex flex-col gap-2 border-b border-border pb-4 last:border-b-0 last:pb-0"
-              >
+            {lines.map(({ key, product, options, unitPrice, quantity, note }) => (
+              <div key={key} className="flex flex-col gap-2 border-b border-border pb-4 last:border-b-0 last:pb-0">
                 <div className="flex items-center gap-2">
                   <span className="flex min-w-0 flex-1 flex-col">
                     <span dir="auto" className={cn(ROW_TEXT, "truncate text-foreground")}>
                       {product.name}
                     </span>
-                    <span className={cn(ROW_CAPTION, "tabular-nums")}>
-                      {formatMoney(product.price * quantity, locale)}
-                    </span>
+                    <OrderItemOptions options={options} />
+                    <span className={cn(ROW_CAPTION, "tabular-nums")}>{formatMoney(unitPrice * quantity, locale)}</span>
                   </span>
                   <Button
                     type="button"
@@ -210,7 +218,7 @@ export function AddOrderItemsDialog({ order, products }: AddOrderItemsDialogProp
                     size="control-sm"
                     iconOnly
                     aria-label={t("counter.decreaseAria", { name: product.name })}
-                    onClick={() => setLine(product.id, { quantity: quantity - 1 })}
+                    onClick={() => setLines((current) => updatePick(current, key, { quantity: quantity - 1 }))}
                   >
                     <Icon icon={Minus} size="icon-md" />
                   </Button>
@@ -221,8 +229,8 @@ export function AddOrderItemsDialog({ order, products }: AddOrderItemsDialogProp
                     size="control-sm"
                     iconOnly
                     aria-label={t("counter.increaseAria", { name: product.name })}
-                    disabled={quantity >= maxQuantity(product)}
-                    onClick={() => setLine(product.id, { quantity: quantity + 1 })}
+                    disabled={pickedUnits(lines, product.id) >= maxPickQuantity(product)}
+                    onClick={() => setLines((current) => updatePick(current, key, { quantity: quantity + 1 }))}
                   >
                     <Icon icon={Plus} size="icon-md" />
                   </Button>
@@ -230,7 +238,7 @@ export function AddOrderItemsDialog({ order, products }: AddOrderItemsDialogProp
                 <Input
                   size="control-md"
                   value={note}
-                  onChange={(event) => setLine(product.id, { note: event.target.value })}
+                  onChange={(event) => setLines((current) => updatePick(current, key, { note: event.target.value }))}
                   aria-label={t("edit.lineNoteAria", { name: product.name })}
                   placeholder={t("edit.lineNotePlaceholder")}
                   maxLength={MAX_ORDER_NOTE_TEXT_LENGTH}

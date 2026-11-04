@@ -34,7 +34,8 @@ function pricing({
   settings = SETTINGS,
 }: PricingSetup = {}) {
   const promoRepo = {
-    getByCode: vi.fn(async (code: string) => (code === promo?.code ? promo : null)),
+    getByCode: vi.fn(async (code: string) => (code === promo?.code && !promo.archivedAt ? promo : null)),
+    getById: vi.fn(async (id: string) => (id === promo?.id ? promo : null)),
     usage: vi.fn(async () => usage),
   };
   const loyaltyRepo = { getSettings: vi.fn(async () => settings), balance: vi.fn(async () => balance) };
@@ -146,6 +147,38 @@ describe("CheckoutPricing.reprice", () => {
     }
     await expect(pricing({ promo: null, usage }).reprice(PLACED, 400_000, NOW)).rejects.toMatchObject({
       code: "PROMO_NO_LONGER_APPLIES",
+    });
+  });
+
+  it("finds the order's code by its id, even after staff renamed it", async () => {
+    const renamed = { ...PROMO, code: "READERS" };
+    await expect(
+      pricing({ promo: renamed, usage: { total: 1, byGuest: 1 } }).reprice(PLACED, 400_000, NOW),
+    ).resolves.toMatchObject({ promoDiscount: 80_000 });
+  });
+
+  it("keeps an archived code's deal on the order that holds it, under its own terms only", async () => {
+    // Deleted after orders used it: switched off, and past every limit a new order meets.
+    const archived: PromoCode = {
+      ...PROMO,
+      archivedAt: "2026-10-15T00:00:00Z",
+      isActive: false,
+      endsAt: "2026-10-16T00:00:00Z",
+      usageLimit: 1,
+    };
+    const repricing = pricing({ promo: archived, usage: { total: 5, byGuest: 2 } });
+
+    await expect(repricing.reprice(PLACED, 400_000, NOW)).resolves.toMatchObject({
+      promoDiscount: 80_000,
+      total: 220_000,
+    });
+    // Its minimum order is part of the deal, so it still holds.
+    await expect(
+      pricing({ promo: { ...archived, minSubtotal: 500_000 } }).reprice(PLACED, 400_000, NOW),
+    ).rejects.toMatchObject({ code: "PROMO_NO_LONGER_APPLIES" });
+    // And a new order can't take it at all.
+    await expect(repricing.execute({ subtotal: 400_000, promoCode: "BOOKCLUB" }, "g1", NOW)).rejects.toMatchObject({
+      code: "PROMO_INVALID",
     });
   });
 

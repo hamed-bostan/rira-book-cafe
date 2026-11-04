@@ -7,6 +7,7 @@ import {
   type PromoUsage,
 } from "@/src/domain/entities/Promotion";
 import { NotFoundError } from "@/src/domain/errors/NotFoundError";
+import { ResourceInUseError } from "@/src/domain/errors/ResourceInUseError";
 import { UniqueConstraintError } from "@/src/domain/errors/UniqueConstraintError";
 import type { AuditHook } from "@/src/domain/repositories/AuditHook";
 import type { IPromotionRepository, PromoCodeInput } from "@/src/domain/repositories/IPromotionRepository";
@@ -14,6 +15,7 @@ import { prisma } from "@/src/infrastructure/prisma/client";
 import { Prisma } from "@/src/infrastructure/prisma/generated/client";
 import { inTransaction, type PrismaDb } from "@/src/infrastructure/prisma/transaction";
 
+import { lockPromoCode } from "./promoCodeLock";
 import { recordAudit } from "./writeActivityEntry";
 
 /** An order still counts as a use of its code unless it was cancelled. */
@@ -29,7 +31,7 @@ export class PrismaPromotionRepository implements IPromotionRepository {
 
   async list(): Promise<PromoCodeWithUses[]> {
     const [rows, uses] = await Promise.all([
-      this.db.promoCode.findMany({ orderBy: { createdAt: "desc" } }),
+      this.db.promoCode.findMany({ where: NOT_ARCHIVED, orderBy: { createdAt: "desc" } }),
       this.db.order.groupBy({
         by: ["promoCodeId"],
         where: { ...LIVE_ORDER, promoCodeId: { not: null } },
@@ -57,9 +59,11 @@ export class PrismaPromotionRepository implements IPromotionRepository {
         max_discount AS "maxDiscount", min_subtotal AS "minSubtotal",
         starts_at AS "startsAt", ends_at AS "endsAt",
         usage_limit AS "usageLimit", per_guest_limit AS "perGuestLimit",
-        is_active AS "isActive", created_at AS "createdAt", updated_at AS "updatedAt"
+        is_active AS "isActive", archived_at AS "archivedAt",
+        created_at AS "createdAt", updated_at AS "updatedAt"
       FROM promo_codes
       WHERE regexp_replace(upper(code), '[[:space:]_-]', '', 'g') = ${key}
+        AND archived_at IS NULL
       ORDER BY (code = ${code}) DESC, (code = ${key}) DESC, created_at
       LIMIT 2`;
     if (!best) return null;
@@ -77,6 +81,16 @@ export class PrismaPromotionRepository implements IPromotionRepository {
     return { total, byGuest };
   }
 
+  async getArchivedByCode(code: string): Promise<PromoCode | null> {
+    const row = await this.db.promoCode.findFirst({ where: { code, archivedAt: { not: null } } });
+    return row ? toPromo(row) : null;
+  }
+
+  async isUsed(promoId: string): Promise<boolean> {
+    // Any order: a cancelled one still names the code on its receipt and history.
+    return (await this.db.order.findFirst({ where: { promoCodeId: promoId }, select: { id: true } })) !== null;
+  }
+
   async create(input: PromoCodeInput, audit?: AuditHook<PromoCode>): Promise<PromoCode> {
     try {
       return await inTransaction(this.db, async (tx) => {
@@ -92,7 +106,8 @@ export class PrismaPromotionRepository implements IPromotionRepository {
   async update(id: string, input: PromoCodeInput, audit?: AuditHook<PromoCode>): Promise<PromoCode> {
     try {
       return await inTransaction(this.db, async (tx) => {
-        const saved = toPromo(await tx.promoCode.update({ where: { id }, data: toData(input) }));
+        // An archived code is never edited (nor switched back on): it reads as gone.
+        const saved = toPromo(await tx.promoCode.update({ where: { id, ...NOT_ARCHIVED }, data: toData(input) }));
         await recordAudit(tx, saved, audit);
         return saved;
       });
@@ -104,8 +119,12 @@ export class PrismaPromotionRepository implements IPromotionRepository {
   async delete(id: string, audit?: AuditHook<void>): Promise<void> {
     try {
       await inTransaction(this.db, async (tx) => {
-        // Orders carry the code's id without a foreign key, alongside the code
-        // and discount they got — deleting it leaves them as they were.
+        // Under checkout's lock on the code, so an order can't take it between the
+        // check and the delete — and one that already did keeps the code alive.
+        await lockPromoCode(tx, id);
+        if ((await tx.order.count({ where: { promoCodeId: id } })) > 0) {
+          throw new ResourceInUseError("promo code", "Orders have used this code, so it's archived, not deleted.");
+        }
         await tx.promoCode.delete({ where: { id } });
         await recordAudit(tx, undefined, audit);
       });
@@ -113,7 +132,25 @@ export class PrismaPromotionRepository implements IPromotionRepository {
       throw toDomainError(error);
     }
   }
+
+  async archive(id: string, at: Date, audit?: AuditHook<PromoCode>): Promise<PromoCode> {
+    try {
+      return await inTransaction(this.db, async (tx) => {
+        await lockPromoCode(tx, id);
+        const saved = toPromo(
+          await tx.promoCode.update({ where: { id, ...NOT_ARCHIVED }, data: { archivedAt: at, isActive: false } }),
+        );
+        await recordAudit(tx, saved, audit);
+        return saved;
+      });
+    } catch (error) {
+      throw toDomainError(error);
+    }
+  }
 }
+
+/** Codes still in use: everything staff list, edit or guests can type. */
+const NOT_ARCHIVED = { archivedAt: null } satisfies Prisma.PromoCodeWhereInput;
 
 type PromoRow = Prisma.PromoCodeGetPayload<object>;
 
@@ -151,6 +188,7 @@ function toPromo(row: PromoRow): PromoCode {
     usageLimit: row.usageLimit ?? undefined,
     perGuestLimit: row.perGuestLimit ?? undefined,
     isActive: row.isActive,
+    archivedAt: row.archivedAt?.toISOString(),
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };

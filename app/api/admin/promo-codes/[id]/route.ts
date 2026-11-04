@@ -76,7 +76,11 @@ export async function PATCH(request: NextRequest, { params }: RouteContext): Pro
   }
 }
 
-/** DELETE /api/admin/promo-codes/:id — remove a code for good. Orders that used it keep their discount. 204. */
+/**
+ * DELETE /api/admin/promo-codes/:id — delete a code. One no order used is removed for
+ * good; one orders used is archived (kept for them, gone from the list, never usable
+ * or re-creatable). Either way 204: to staff the code is gone. Orders keep their discount.
+ */
 export async function DELETE(_request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   const session = await getSessionWith("promotions.write");
   if (!session) return unauthorizedResponse();

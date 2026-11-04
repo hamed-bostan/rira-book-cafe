@@ -1,4 +1,9 @@
-import { activityValue, type ActivityActor, type ActivityChange } from "../../entities/ActivityEntry";
+import {
+  activityValue,
+  type ActivityActor,
+  type ActivityChange,
+  type NewActivityEntry,
+} from "../../entities/ActivityEntry";
 import {
   MAX_LOYALTY_NOTE_LENGTH,
   MAX_POINTS_ADJUSTMENT,
@@ -17,6 +22,7 @@ import {
   type PromoCodeWithUses,
 } from "../../entities/Promotion";
 import { NotFoundError } from "../../errors/NotFoundError";
+import { ResourceInUseError } from "../../errors/ResourceInUseError";
 import { ValidationError } from "../../errors/ValidationError";
 
 import type { ILoyaltyRepository } from "../../repositories/ILoyaltyRepository";
@@ -78,12 +84,30 @@ function promoChanges(before: PromoCode | null, after: PromoCode): ActivityChang
   }));
 }
 
-/** Staff create a promo code. A code that's already taken is a 409. */
+/**
+ * A code staff can't take because a deleted code that orders used still holds it.
+ *
+ * Refused rather than reused or quietly allowed: a new code under the old name
+ * would be a new row with no uses, so every guest who had already used it up would
+ * get its per-guest limit afresh — and a guest reading "AUTUMN15" on an old receipt
+ * and on a new offer would take them for the same deal. A field error, so the form
+ * says why on the code itself (`codeArchived`).
+ */
+async function refuseArchivedCode(
+  promoRepo: Pick<IPromotionRepository, "getArchivedByCode">,
+  code: string,
+): Promise<void> {
+  if (await promoRepo.getArchivedByCode(code)) throw new ValidationError("code", "codeArchived");
+}
+
+/** Staff create a promo code. A code that's already taken is a 409; one a deleted, used code holds is a 400. */
 export class CreatePromoCode {
   constructor(private readonly promoRepo: IPromotionRepository) {}
 
-  execute(input: PromoCodeInput, staff: ActivityActor): Promise<PromoCode> {
-    return this.promoRepo.create(validatePromo(input), (saved) => ({
+  async execute(input: PromoCodeInput, staff: ActivityActor): Promise<PromoCode> {
+    const valid = validatePromo(input);
+    await refuseArchivedCode(this.promoRepo, valid.code);
+    return this.promoRepo.create(valid, (saved) => ({
       actorId: staff.id,
       actorName: staff.name,
       action: "promoCode.created",
@@ -95,14 +119,20 @@ export class CreatePromoCode {
   }
 }
 
-/** Staff edit a promo code. Orders already placed with it keep the discount they got. */
+/**
+ * Staff edit a promo code. Orders already placed with it keep the discount they got.
+ * An archived code is gone to staff: not found, so it can't be edited or switched
+ * back on.
+ */
 export class UpdatePromoCode {
   constructor(private readonly promoRepo: IPromotionRepository) {}
 
   async execute(id: string, input: PromoCodeInput, staff: ActivityActor): Promise<PromoCode> {
     const current = await this.promoRepo.getById(id);
-    if (!current) throw new NotFoundError("promo code", id);
-    return this.promoRepo.update(id, validatePromo(input, current.code), (saved) => {
+    if (!current || current.archivedAt) throw new NotFoundError("promo code", id);
+    const valid = validatePromo(input, current.code);
+    if (valid.code !== current.code) await refuseArchivedCode(this.promoRepo, valid.code);
+    return this.promoRepo.update(id, valid, (saved) => {
       const changes = promoChanges(current, saved);
       if (changes.length === 0) return null;
       const onlyActive = changes.length === 1 && changes[0].field === "isActive";
@@ -125,34 +155,61 @@ export class SetPromoCodeActive {
 
   async execute(id: string, isActive: boolean, staff: ActivityActor): Promise<PromoCode> {
     const current = await this.promoRepo.getById(id);
-    if (!current) throw new NotFoundError("promo code", id);
+    if (!current || current.archivedAt) throw new NotFoundError("promo code", id);
     if (current.isActive === isActive) return current;
-    const { id: _id, createdAt: _createdAt, updatedAt: _updatedAt, ...input } = current;
+    const { id: _id, createdAt: _createdAt, updatedAt: _updatedAt, archivedAt: _archivedAt, ...input } = current;
     return new UpdatePromoCode(this.promoRepo).execute(id, { ...input, isActive }, staff);
   }
 }
 
+/** How a promo code left the list: removed for good, or archived because orders used it. */
+export type PromoCodeRemoval = "deleted" | "archived";
+
 /**
  * Delete a code. Guests can't use it any more; orders that already did keep their
  * discount. The log keeps what the code was.
+ *
+ * A code no order ever carried is removed for good. One that orders used is
+ * archived instead (`PromoCode.archivedAt`): those orders carry its id, and when
+ * staff change one later it's re-priced with the code it was placed with, so the
+ * code must still be there to read — and its code stays taken, so re-creating it
+ * can't hand guests its per-guest limit again. To staff the two look the same: the
+ * code leaves the list.
  */
 export class DeletePromoCode {
   constructor(private readonly promoRepo: IPromotionRepository) {}
 
-  async execute(id: string, staff: ActivityActor): Promise<void> {
+  async execute(id: string, staff: ActivityActor, now: Date = new Date()): Promise<PromoCodeRemoval> {
     const current = await this.promoRepo.getById(id);
-    if (!current) throw new NotFoundError("promo code", id);
-    await this.promoRepo.delete(id, () => ({
+    if (!current || current.archivedAt) throw new NotFoundError("promo code", id);
+
+    const entry = (action: "promoCode.deleted" | "promoCode.archived"): NewActivityEntry => ({
       actorId: staff.id,
       actorName: staff.name,
-      action: "promoCode.deleted",
+      action,
       entityType: "promoCode",
       entityId: id,
       entityLabel: current.code,
+      // What the code was, every set field going away — the same for both: either
+      // way it's gone from the dashboard, and the entry is where it's remembered.
       changes: promoChanges(null, current)
         .map(({ field, after }) => ({ field, before: after, after: null }))
         .filter((change) => change.before !== null),
-    }));
+    });
+    const archive = async (): Promise<PromoCodeRemoval> => {
+      await this.promoRepo.archive(id, now, () => entry("promoCode.archived"));
+      return "archived";
+    };
+
+    if (await this.promoRepo.isUsed(id)) return archive();
+    try {
+      await this.promoRepo.delete(id, () => entry("promoCode.deleted"));
+      return "deleted";
+    } catch (error) {
+      // An order took the code between the check and the delete: archive it after all.
+      if (error instanceof ResourceInUseError) return archive();
+      throw error;
+    }
   }
 }
 

@@ -39,6 +39,14 @@ export type PromoCode = {
   usageLimit?: number;
   perGuestLimit?: number;
   isActive: boolean;
+  /**
+   * ISO 8601, set when staff deleted a code that orders had used. An archived code
+   * is kept rather than removed — the orders carrying it still resolve it by id, and
+   * its code stays taken so it can't come back with fresh per-guest limits — but it
+   * is gone for staff and guests alike: off the list, never usable at checkout, never
+   * switched on or edited again. Absent for every code still in use.
+   */
+  archivedAt?: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -105,11 +113,22 @@ export function promoDiscount(promo: Pick<PromoCode, "kind" | "value" | "maxDisc
  * reasons are conflict codes the client localizes.
  */
 export function promoProblem(promo: PromoCode, subtotal: number, usage: PromoUsage, now: Date): ConflictCode | null {
-  if (!promo.isActive) return "PROMO_INVALID";
+  if (promo.archivedAt || !promo.isActive) return "PROMO_INVALID";
   if (promo.startsAt && now < new Date(promo.startsAt)) return "PROMO_EXPIRED";
   if (promo.endsAt && now >= new Date(promo.endsAt)) return "PROMO_EXPIRED";
   if (promo.usageLimit !== undefined && usage.total >= promo.usageLimit) return "PROMO_USED_UP";
   if (promo.perGuestLimit !== undefined && usage.byGuest >= promo.perGuestLimit) return "PROMO_USED_UP";
   if (subtotal < promo.minSubtotal) return "PROMO_MIN_SUBTOTAL";
   return null;
+}
+
+/**
+ * Why an archived code can't stay on an order staff changed, or `null` when it
+ * can. Only the deal's own terms — its minimum order — still apply: the checks on
+ * *taking* a code (switched on, within its dates, uses left) are for new orders,
+ * which can never take an archived code, while an order that already holds one
+ * keeps the deal it was placed with (see `CheckoutPricing.reprice`).
+ */
+export function archivedPromoProblem(promo: Pick<PromoCode, "minSubtotal">, subtotal: number): ConflictCode | null {
+  return subtotal < promo.minSubtotal ? "PROMO_MIN_SUBTOTAL" : null;
 }

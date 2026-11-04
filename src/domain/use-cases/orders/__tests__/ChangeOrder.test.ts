@@ -318,7 +318,7 @@ describe("ChangeOrder", () => {
     };
     const usage: PromoUsage = { total: 1, byGuest: 1 };
     const pricing = new CheckoutPricing(
-      { getByCode: vi.fn(async () => promo), usage: vi.fn(async () => usage) },
+      { getByCode: vi.fn(async () => promo), getById: vi.fn(async () => promo), usage: vi.fn(async () => usage) },
       undefined,
     );
     const withPromo = order({ promoCode: "BIG", promoCodeId: "promo1", promoDiscount: 50_000, total: 230_000 });

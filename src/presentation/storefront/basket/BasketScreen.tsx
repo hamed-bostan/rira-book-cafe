@@ -11,6 +11,7 @@ import {
   MAX_TABLE_LABEL_LENGTH,
   type ServiceType,
 } from "@/src/domain/entities/Order";
+import { choiceKey } from "@/src/domain/entities/ProductOptions";
 import { Link, useRouter } from "@/src/i18n/navigation";
 import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
@@ -26,6 +27,7 @@ import { Textarea } from "@/src/presentation/design-system/components/form/Texta
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
+import { OrderItemOptions } from "@/src/presentation/orders/OrderItemOptions";
 
 import { storefrontApi } from "../storefront-api";
 
@@ -140,8 +142,13 @@ export function BasketScreen({ signedIn }: BasketScreenProps) {
           return;
         }
         const fieldMessage = err instanceof ApiError ? err.fieldErrors?.tableLabel : undefined;
+        // A line whose options no longer stand (a choice switched off, a group made
+        // required) says so, rather than a generic refusal.
+        const itemsMessage = err instanceof ApiError ? err.fieldErrors?.items : undefined;
         if (fieldMessage) setTableError(formErrorMessage(tFormErrors, fieldMessage) ?? fieldMessage);
-        else setError(localizeApiError(err, tApiErrors, t("basket.orderError")));
+        else if (itemsMessage && tFormErrors.has(itemsMessage as Parameters<typeof tFormErrors>[0])) {
+          setError(formErrorMessage(tFormErrors, itemsMessage) ?? itemsMessage);
+        } else setError(localizeApiError(err, tApiErrors, t("basket.orderError")));
         // The discounts may have changed underneath the guest (a code used up meanwhile).
         if (err instanceof ApiError) onQuoteRejected(err);
       }
@@ -175,12 +182,13 @@ export function BasketScreen({ signedIn }: BasketScreenProps) {
         <h1 className="text-heading-page text-foreground">{t("basket.heading")}</h1>
         <ul className="flex flex-col divide-y divide-border rounded-card-lg border border-border">
           {basket.lines.map((line, index) => (
-            <li key={`${line.productId}-${line.note ?? ""}`} className="flex gap-3 p-3">
+            <li key={`${choiceKey(line.productId, line.choiceIds)}-${line.note ?? ""}`} className="flex gap-3 p-3">
               <div className="relative size-16 shrink-0 overflow-hidden rounded-card-md bg-muted">
                 <Image src={line.imageUrl} alt="" fill sizes="64px" className="object-cover" />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-body-small-strong text-foreground">{line.name}</p>
+                <OrderItemOptions options={line.options} />
                 {line.note ? <p className="text-body-caption text-warning-foreground">{line.note}</p> : null}
                 <p className="text-body-small text-muted-foreground">{formatMoney(line.unitPrice, locale)}</p>
                 <div className="mt-2 flex items-center gap-2">

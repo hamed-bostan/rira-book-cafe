@@ -1,4 +1,4 @@
-import { getLocale } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 
 import type { Product } from "@/src/domain/entities/Product";
 import { Link } from "@/src/i18n/navigation";
@@ -6,6 +6,7 @@ import { formatMoney } from "@/src/lib/formatMoney";
 import { cn } from "@/src/lib/utils";
 import { FadeInImage } from "@/src/presentation/components/FadeInImage";
 import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
+import { menuPrice } from "@/src/presentation/product/menuPrice";
 
 type FavoriteItemProps = {
   item: Product;
@@ -17,6 +18,8 @@ type FavoriteItemProps = {
  */
 export async function FavoriteItem({ item }: FavoriteItemProps) {
   const locale = await getLocale();
+  const tOptions = await getTranslations("productOptions");
+  const price = menuPrice(item);
   const blurb = item.description ?? item.book?.author ?? item.unit;
 
   return (
@@ -35,7 +38,11 @@ export async function FavoriteItem({ item }: FavoriteItemProps) {
         </Link>
       </h3>
       {blurb ? <p className="line-clamp-2 max-w-xs text-body-default text-landing-ink-muted">{blurb}</p> : null}
-      <p className="mt-1 text-heading-subsection text-landing-ink">{formatMoney(item.price, locale)}</p>
+      <p className="mt-1 text-heading-subsection text-landing-ink">
+        {price.from
+          ? tOptions("from", { price: formatMoney(price.amount, locale) })
+          : formatMoney(price.amount, locale)}
+      </p>
     </article>
   );
 }

@@ -1,5 +1,6 @@
 import { MAX_LINE_QUANTITY, MAX_ORDER_LINES, MAX_ORDER_NOTE_TEXT_LENGTH } from "@/src/domain/entities/Order";
 import type { Product } from "@/src/domain/entities/Product";
+import { choiceKey, type OrderItemOption } from "@/src/domain/entities/ProductOptions";
 
 /**
  * The guest's basket before they order: which items, how many, and a note per
@@ -14,20 +15,28 @@ export type BasketLine = {
   name: string;
   imageUrl: string;
   kind: Product["kind"];
-  /** Price per unit when added, Toman — display only. */
+  /** Price per unit when added, with what its options add, Toman — display only. */
   unitPrice: number;
   quantity: number;
   /** e.g. "oat milk"; the same item with different notes is two lines. */
   note?: string;
+  /** The ids of the options chosen; the same item with other choices is another line. */
+  choiceIds?: string[];
+  /** The chosen options as they read when added, in both languages — display only. */
+  options?: OrderItemOption[];
 };
 
 export type Basket = { lines: BasketLine[] };
 
 export const EMPTY_BASKET: Basket = { lines: [] };
 
-/** Two lines merge when they're the same item with the same request. */
-function sameLine(a: Pick<BasketLine, "productId" | "note">, b: Pick<BasketLine, "productId" | "note">): boolean {
-  return a.productId === b.productId && (a.note ?? "") === (b.note ?? "");
+type LineIdentity = Pick<BasketLine, "productId" | "note" | "choiceIds">;
+
+/** Two lines merge when they're the same item with the same choices and the same request. */
+function sameLine(a: LineIdentity, b: LineIdentity): boolean {
+  return (
+    choiceKey(a.productId, a.choiceIds) === choiceKey(b.productId, b.choiceIds) && (a.note ?? "") === (b.note ?? "")
+  );
 }
 
 function clampQuantity(quantity: number): number {
@@ -74,9 +83,16 @@ export function basketTotal(basket: Basket): number {
   return basket.lines.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0);
 }
 
-/** What `POST /api/orders` needs from the basket: ids, quantities and notes — never prices. */
-export function basketToOrderItems(basket: Basket): { productId: string; quantity: number; note?: string }[] {
-  return basket.lines.map(({ productId, quantity, note }) => ({ productId, quantity, note }));
+/** What `POST /api/orders` needs from the basket: ids, quantities, notes and chosen options — never prices. */
+export function basketToOrderItems(
+  basket: Basket,
+): { productId: string; quantity: number; note?: string; choiceIds?: string[] }[] {
+  return basket.lines.map(({ productId, quantity, note, choiceIds }) => ({
+    productId,
+    quantity,
+    note,
+    ...(choiceIds?.length ? { choiceIds } : {}),
+  }));
 }
 
 /** Read a stored basket defensively — anything malformed is an empty basket. */
@@ -93,10 +109,17 @@ export function parseStoredBasket(raw: string | null): Basket {
         typeof (line as BasketLine).name === "string" &&
         typeof (line as BasketLine).unitPrice === "number" &&
         typeof (line as BasketLine).quantity === "number" &&
-        (line as BasketLine).quantity > 0,
+        (line as BasketLine).quantity > 0 &&
+        isStringList((line as BasketLine).choiceIds) &&
+        ((line as BasketLine).options === undefined || Array.isArray((line as BasketLine).options)),
     );
     return { lines: lines.slice(0, MAX_ORDER_LINES) };
   } catch {
     return EMPTY_BASKET;
   }
+}
+
+/** Absent, or a list of strings — a stored line's choices. */
+function isStringList(value: unknown): boolean {
+  return value === undefined || (Array.isArray(value) && value.every((entry) => typeof entry === "string"));
 }

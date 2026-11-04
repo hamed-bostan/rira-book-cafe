@@ -1,14 +1,17 @@
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { isSellable, type Product } from "@/src/domain/entities/Product";
+import { hasOptions } from "@/src/domain/entities/ProductOptions";
 import { isSoldOut } from "@/src/domain/entities/stock";
 import { Link } from "@/src/i18n/navigation";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { cn } from "@/src/lib/utils";
 import { FadeInImage } from "@/src/presentation/components/FadeInImage";
 import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
+import { Button } from "@/src/presentation/design-system/components/Button/Button";
 import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 import { interactiveCard, zoomOnGroupHover } from "@/src/presentation/design-system/components/shared/motion";
+import { menuPrice } from "@/src/presentation/product/menuPrice";
 
 import { AddToBasketButton } from "./AddToBasketButton";
 
@@ -26,7 +29,9 @@ type MenuItemCardProps = {
 
 export async function MenuItemCard({ item, preload = false }: MenuItemCardProps) {
   const t = await getTranslations("site");
+  const tOptions = await getTranslations("productOptions");
   const locale = await getLocale();
+  const price = menuPrice(item);
   // A made-to-order item never sells out by count.
   const soldOut = isSoldOut(item);
   const sellable = isSellable(item);
@@ -69,7 +74,9 @@ export async function MenuItemCard({ item, preload = false }: MenuItemCardProps)
         {item.unit ? <p className="text-body-caption text-muted-foreground">{item.unit}</p> : null}
         <div className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-1">
           <span className="text-body-small-emphasis text-foreground">
-            {formatMoney(item.price, locale)}
+            {price.from
+              ? tOptions("from", { price: formatMoney(price.amount, locale) })
+              : formatMoney(price.amount, locale)}
             {item.originalPrice ? (
               <span className="ms-1.5 text-body-caption text-muted-foreground line-through">
                 {formatMoney(item.originalPrice, locale)}
@@ -80,6 +87,13 @@ export async function MenuItemCard({ item, preload = false }: MenuItemCardProps)
             <Badge variant="info">{t("menu.readingOnly")}</Badge>
           ) : soldOut ? (
             <Badge variant="neutral">{t("menu.soldOut")}</Badge>
+          ) : hasOptions(item) ? (
+            // Options are chosen on the item's page, so the quick add goes there.
+            <Button asChild size="sm">
+              <Link href={`/menu/${item.id}`} aria-label={tOptions("chooseAria", { name: item.name })}>
+                {tOptions("choose")}
+              </Link>
+            </Button>
           ) : (
             <AddToBasketButton item={item} />
           )}

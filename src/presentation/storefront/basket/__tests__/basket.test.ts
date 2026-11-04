@@ -34,6 +34,35 @@ describe("basket", () => {
     expect(basketTotal(basket)).toBe(600000);
   });
 
+  it("keeps the same item with other choices on its own line, whatever order they were picked in", () => {
+    const large = { ...LATTE, unitPrice: 170000, choiceIds: ["large", "oat"] };
+    let basket = addToBasket(EMPTY_BASKET, LATTE);
+    basket = addToBasket(basket, large);
+    basket = addToBasket(basket, { ...large, choiceIds: ["oat", "large"] });
+    basket = addToBasket(basket, { ...LATTE, choiceIds: ["small"] });
+    expect(basket.lines.map((line) => [line.choiceIds ?? [], line.quantity])).toEqual([
+      [[], 1],
+      [["large", "oat"], 2],
+      [["small"], 1],
+    ]);
+    expect(basketTotal(basket)).toBe(150000 + 2 * 170000 + 150000);
+    expect(basketToOrderItems(basket)).toEqual([
+      { productId: "latte", quantity: 1, note: undefined },
+      { productId: "latte", quantity: 2, note: undefined, choiceIds: ["large", "oat"] },
+      { productId: "latte", quantity: 1, note: undefined, choiceIds: ["small"] },
+    ]);
+  });
+
+  it("drops a stored line whose choices aren't a list of ids", () => {
+    const stored = JSON.stringify({
+      lines: [
+        { ...LATTE, choiceIds: "large" },
+        { ...LATTE, choiceIds: ["large"] },
+      ],
+    });
+    expect(parseStoredBasket(stored).lines.map((line) => line.choiceIds)).toEqual([["large"]]);
+  });
+
   it("caps quantities and removes a line set to zero", () => {
     let basket = addToBasket(EMPTY_BASKET, { ...LATTE, quantity: MAX_LINE_QUANTITY + 10 });
     expect(basket.lines[0].quantity).toBe(MAX_LINE_QUANTITY);

@@ -8,7 +8,7 @@ import { GetFeaturedProducts } from "@/src/domain/use-cases/products/GetFeatured
 import { GetProducts } from "@/src/domain/use-cases/products/GetProducts";
 import { GetProductsByIds } from "@/src/domain/use-cases/products/GetProductsByIds";
 import { SearchProducts } from "@/src/domain/use-cases/products/SearchProducts";
-import { productRepository } from "@/src/infrastructure/container";
+import { categoryRepository, productRepository } from "@/src/infrastructure/container";
 import { invalidatesCatalog } from "@/src/lib/api/invalidatesCatalog";
 import { parseProductFilters } from "@/src/lib/api/product-search-params";
 import { getRequestLocale } from "@/src/lib/api/request-locale";
@@ -96,7 +96,7 @@ async function handlePost(request: NextRequest): Promise<NextResponse> {
 
   try {
     // The actor attributes the activity entry.
-    const created = await new CreateProduct(productRepository).execute(parsed.data, {
+    const created = await new CreateProduct(productRepository, categoryRepository).execute(parsed.data, {
       id: session.user.id,
       name: session.user.name ?? session.user.id,
     });

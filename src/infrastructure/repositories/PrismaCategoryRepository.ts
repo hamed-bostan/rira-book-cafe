@@ -1,5 +1,6 @@
 import type { Category } from "@/src/domain/entities/Category";
 import { NotFoundError } from "@/src/domain/errors/NotFoundError";
+import { ResourceInUseError } from "@/src/domain/errors/ResourceInUseError";
 import { UniqueConstraintError } from "@/src/domain/errors/UniqueConstraintError";
 import type { AuditHook } from "@/src/domain/repositories/AuditHook";
 import type {
@@ -207,10 +208,8 @@ async function withProductCounts(categories: Omit<Category, keyof ProductCounts>
 }
 
 /**
- * Count the products in each category, and the unpublished ones among them.
- * `categoryId` is a plain field, not a Prisma relation (see the schema comment —
- * products and categories stay loosely coupled), so this is a manual `groupBy`
- * rather than an `_count` include.
+ * Count the products in each category, and the unpublished ones among them — one
+ * `groupBy` for both counts, which an `_count` include can't split by visibility.
  */
 async function productCountsById(
   db: Prisma.TransactionClient | typeof prisma,
@@ -291,6 +290,15 @@ function toDomainError(error: unknown): unknown {
     // race between a pre-write existence check and the write).
     if (error.code === "P2002") return new UniqueConstraintError(uniqueTargetFields(error), { cause: error });
     if (error.code === "P2025") return new NotFoundError("category", undefined, { cause: error });
+    // P2003: the products' key refused a delete — an item was filed under the
+    // category after `DeleteCategory` counted none.
+    if (error.code === "P2003") {
+      return new ResourceInUseError(
+        "category",
+        "This category has items in it now. Move or remove them, then delete it.",
+        { cause: error },
+      );
+    }
   }
   return error;
 }

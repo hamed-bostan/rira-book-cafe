@@ -5,11 +5,13 @@ import { NotFoundError } from "../../errors/NotFoundError";
 import { ValidationError } from "../../errors/ValidationError";
 
 import { productSnapshot } from "./productActivity";
+import { requireCategory } from "./requireCategory";
 import { validateProduct } from "./validateProduct";
 
 import type { ActivityActor } from "../../entities/ActivityEntry";
 import type { Product } from "../../entities/Product";
 import type { IBookLoanRepository } from "../../repositories/IBookLoanRepository";
+import type { ICategoryRepository } from "../../repositories/ICategoryRepository";
 import type { IProductRepository, NewProduct } from "../../repositories/IProductRepository";
 
 /**
@@ -21,6 +23,7 @@ export class UpdateProduct {
   constructor(
     private readonly productRepo: IProductRepository,
     private readonly loanRepo: Pick<IBookLoanRepository, "countOpenForBook">,
+    private readonly categoryRepo: Pick<ICategoryRepository, "getById">,
   ) {}
 
   /** `actor` is the admin saving the form, and is required — it attributes the activity entry. */
@@ -30,6 +33,7 @@ export class UpdateProduct {
 
     const existing = await this.productRepo.getById(id);
     if (!existing) throw new NotFoundError("product", id);
+    await requireCategory(this.categoryRepo, valid.categoryId);
 
     const copies = valid.kind === "book" ? lendingCopies(valid.book) : 0;
     if (copies < (await this.loanRepo.countOpenForBook(id))) {

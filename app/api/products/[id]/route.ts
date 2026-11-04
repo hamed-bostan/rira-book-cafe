@@ -5,7 +5,12 @@ import { withoutCost } from "@/src/domain/entities/Product";
 import { DeleteProduct } from "@/src/domain/use-cases/products/DeleteProduct";
 import { GetPublishedProduct } from "@/src/domain/use-cases/products/GetPublishedProduct";
 import { UpdateProduct } from "@/src/domain/use-cases/products/UpdateProduct";
-import { bookLoanRepository, bookWaitlistRepository, productRepository } from "@/src/infrastructure/container";
+import {
+  bookLoanRepository,
+  bookWaitlistRepository,
+  categoryRepository,
+  productRepository,
+} from "@/src/infrastructure/container";
 import { invalidatesCatalog } from "@/src/lib/api/invalidatesCatalog";
 import { getRequestLocale } from "@/src/lib/api/request-locale";
 import {
@@ -62,10 +67,14 @@ async function handlePut(request: NextRequest, { params }: RouteContext): Promis
 
   try {
     // The actor attributes the activity entry to whoever saved the form.
-    const updated = await new UpdateProduct(productRepository, bookLoanRepository).execute(id, parsed.data, {
-      id: session.user.id,
-      name: session.user.name ?? session.user.id,
-    });
+    const updated = await new UpdateProduct(productRepository, bookLoanRepository, categoryRepository).execute(
+      id,
+      parsed.data,
+      {
+        id: session.user.id,
+        name: session.user.name ?? session.user.id,
+      },
+    );
     return NextResponse.json(updated);
   } catch (error) {
     return errorResponseFromException(error, `PUT /api/products/${id} failed`);

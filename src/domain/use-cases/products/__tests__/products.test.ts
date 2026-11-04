@@ -21,6 +21,8 @@ import { UpdateProduct } from "../UpdateProduct";
 
 import type { NewActivityEntry } from "../../../entities/ActivityEntry";
 import type { BookWaitlistEntry } from "../../../entities/BookWaitlist";
+import type { Category } from "../../../entities/Category";
+import type { ICategoryRepository } from "../../../repositories/ICategoryRepository";
 import type {
   BulkProductChange,
   BulkProductUpdate,
@@ -74,6 +76,32 @@ function shelf(onLoan: number, inLine: number) {
   };
 }
 const EMPTY_SHELF = shelf(0, 0);
+
+function category(overrides: Partial<Category> = {}): Category {
+  return {
+    id: "c1",
+    name: "Coffee",
+    slug: "coffee",
+    iconUrl: "https://cdn/coffee.svg",
+    isActive: true,
+    productCount: 0,
+    hiddenProductCount: 0,
+    createdAt: new Date("2026-01-01"),
+    updatedAt: new Date("2026-01-01"),
+    ...overrides,
+  };
+}
+
+/** The categories as the product use-cases read them. */
+function categoriesOf(...rows: Category[]): Pick<ICategoryRepository, "getAll" | "getById"> {
+  return {
+    getAll: vi.fn(async () => rows),
+    getById: vi.fn(async (id: string) => rows.find((row) => row.id === id) ?? null),
+  };
+}
+
+/** The menu's categories, both shown: `c1` and `c2`. */
+const MENU = categoriesOf(category(), category({ id: "c2", name: "Tea", slug: "tea" }));
 
 type Fake = {
   repo: IProductRepository;
@@ -173,7 +201,7 @@ describe("productSnapshot", () => {
 describe("CreateProduct", () => {
   it("validates, trims and records the starting kind, price and stock", async () => {
     const { repo, create, entries } = repoWith([]);
-    const saved = await new CreateProduct(repo).execute(INPUT, ACTOR);
+    const saved = await new CreateProduct(repo, MENU).execute(INPUT, ACTOR);
 
     expect(saved.name).toBe("Mocha");
     expect(create.mock.calls[0][0].name).toBe("Mocha");
@@ -194,7 +222,7 @@ describe("CreateProduct", () => {
 
   it("records a made-to-order item as such rather than a count", async () => {
     const { repo, create, entries } = repoWith([]);
-    await new CreateProduct(repo).execute({ ...INPUT, madeToOrder: true, stockQuantity: undefined }, ACTOR);
+    await new CreateProduct(repo, MENU).execute({ ...INPUT, madeToOrder: true, stockQuantity: undefined }, ACTOR);
 
     expect(create.mock.calls[0][0]).toMatchObject({ madeToOrder: true, stockQuantity: undefined });
     expect(entries[0]?.changes).toEqual([
@@ -206,13 +234,13 @@ describe("CreateProduct", () => {
 
   it("drops book details from a drink", async () => {
     const { repo, create } = repoWith([]);
-    await new CreateProduct(repo).execute({ ...INPUT, book: { author: "X", availability: "sale" } }, ACTOR);
+    await new CreateProduct(repo, MENU).execute({ ...INPUT, book: { author: "X", availability: "sale" } }, ACTOR);
     expect(create.mock.calls[0][0].book).toBeUndefined();
   });
 
   it("refuses an invalid product before writing", async () => {
     const { repo, create } = repoWith([]);
-    await expect(new CreateProduct(repo).execute({ ...INPUT, price: 0 }, ACTOR)).rejects.toThrow(ValidationError);
+    await expect(new CreateProduct(repo, MENU).execute({ ...INPUT, price: 0 }, ACTOR)).rejects.toThrow(ValidationError);
     expect(create).not.toHaveBeenCalled();
   });
 
@@ -223,9 +251,19 @@ describe("CreateProduct", () => {
     ["stockQuantity", { stockQuantity: MAX_STOCK_QUANTITY + 1 }],
   ])("refuses a %s over its limit", async (field, overrides) => {
     const { repo, create } = repoWith([]);
-    await expect(new CreateProduct(repo).execute({ ...INPUT, ...overrides }, ACTOR)).rejects.toMatchObject({
+    await expect(new CreateProduct(repo, MENU).execute({ ...INPUT, ...overrides }, ACTOR)).rejects.toMatchObject({
       name: "ValidationError",
       field,
+    });
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it("refuses a category that doesn't exist, as a field error, before writing", async () => {
+    const { repo, create } = repoWith([]);
+    await expect(new CreateProduct(repo, MENU).execute({ ...INPUT, categoryId: "gone" }, ACTOR)).rejects.toMatchObject({
+      name: "ValidationError",
+      field: "categoryId",
+      message: "categoryUnknown",
     });
     expect(create).not.toHaveBeenCalled();
   });
@@ -234,7 +272,7 @@ describe("CreateProduct", () => {
 describe("UpdateProduct", () => {
   it("diffs the tracked fields against the stored row", async () => {
     const { repo, entries } = repoWith([product()]);
-    await new UpdateProduct(repo, EMPTY_SHELF.loans).execute(
+    await new UpdateProduct(repo, EMPTY_SHELF.loans, MENU).execute(
       "p1",
       { ...INPUT, name: "Latte", price: 160_000, stockQuantity: 10, imageUrl: product().imageUrl },
       ACTOR,
@@ -245,7 +283,7 @@ describe("UpdateProduct", () => {
 
   it("logs switching to made to order, leaving the stored count alone", async () => {
     const { repo, update, entries } = repoWith([product()]);
-    const saved = await new UpdateProduct(repo, EMPTY_SHELF.loans).execute(
+    const saved = await new UpdateProduct(repo, EMPTY_SHELF.loans, MENU).execute(
       "p1",
       {
         ...INPUT,
@@ -267,23 +305,26 @@ describe("UpdateProduct", () => {
     const existing = product();
     const { repo, entries } = repoWith([existing]);
     const { id: _id, rating: _rating, ratingCount: _ratingCount, ...same } = existing;
-    await new UpdateProduct(repo, EMPTY_SHELF.loans).execute("p1", same, ACTOR);
+    await new UpdateProduct(repo, EMPTY_SHELF.loans, MENU).execute("p1", same, ACTOR);
     expect(entries).toEqual([null]);
   });
 
   it("refuses a missing id, an unknown one, and invalid input", async () => {
     const { repo, update } = repoWith([product()]);
-    await expect(new UpdateProduct(repo, EMPTY_SHELF.loans).execute("", INPUT, ACTOR)).rejects.toMatchObject({
+    await expect(new UpdateProduct(repo, EMPTY_SHELF.loans, MENU).execute("", INPUT, ACTOR)).rejects.toMatchObject({
       field: "id",
     });
-    await expect(new UpdateProduct(repo, EMPTY_SHELF.loans).execute("missing", INPUT, ACTOR)).rejects.toThrow(
+    await expect(new UpdateProduct(repo, EMPTY_SHELF.loans, MENU).execute("missing", INPUT, ACTOR)).rejects.toThrow(
       NotFoundError,
     );
     await expect(
-      new UpdateProduct(repo, EMPTY_SHELF.loans).execute("p1", { ...INPUT, name: " " }, ACTOR),
+      new UpdateProduct(repo, EMPTY_SHELF.loans, MENU).execute("p1", { ...INPUT, name: " " }, ACTOR),
     ).rejects.toMatchObject({
       field: "name",
     });
+    await expect(
+      new UpdateProduct(repo, EMPTY_SHELF.loans, MENU).execute("p1", { ...INPUT, categoryId: "gone" }, ACTOR),
+    ).rejects.toMatchObject({ field: "categoryId", message: "categoryUnknown" });
     expect(update).not.toHaveBeenCalled();
   });
 
@@ -299,20 +340,20 @@ describe("UpdateProduct", () => {
     const { repo, update } = repoWith([book]);
     for (const copies of [1, 0]) {
       await expect(
-        new UpdateProduct(repo, shelf(2, 0).loans).execute("p1", input(copies), ACTOR),
+        new UpdateProduct(repo, shelf(2, 0).loans, MENU).execute("p1", input(copies), ACTOR),
       ).rejects.toMatchObject({ code: "COPIES_BELOW_ON_LOAN" });
     }
     // No count reads as one; a book with copies out can't stop being a book either.
     await expect(
-      new UpdateProduct(repo, shelf(2, 0).loans).execute("p1", input(undefined), ACTOR),
+      new UpdateProduct(repo, shelf(2, 0).loans, MENU).execute("p1", input(undefined), ACTOR),
     ).rejects.toBeInstanceOf(ConflictError);
-    await expect(new UpdateProduct(repo, shelf(1, 0).loans).execute("p1", INPUT, ACTOR)).rejects.toMatchObject({
+    await expect(new UpdateProduct(repo, shelf(1, 0).loans, MENU).execute("p1", INPUT, ACTOR)).rejects.toMatchObject({
       code: "COPIES_BELOW_ON_LOAN",
     });
     expect(update).not.toHaveBeenCalled();
 
-    await new UpdateProduct(repo, shelf(2, 0).loans).execute("p1", input(2), ACTOR);
-    await new UpdateProduct(repo, shelf(1, 0).loans).execute("p1", input(undefined), ACTOR);
+    await new UpdateProduct(repo, shelf(2, 0).loans, MENU).execute("p1", input(2), ACTOR);
+    await new UpdateProduct(repo, shelf(1, 0).loans, MENU).execute("p1", input(undefined), ACTOR);
     expect(update).toHaveBeenCalledTimes(2);
   });
 });
@@ -370,7 +411,7 @@ describe("BulkUpdateProducts", () => {
       product({ id: "p1", categoryId: "c1" }),
       product({ id: "p2", name: "Tea", categoryId: "c2" }),
     ]);
-    const changed = await new BulkUpdateProducts(repo).execute(
+    const changed = await new BulkUpdateProducts(repo, MENU).execute(
       ["p1", "p2"],
       { field: "categoryId", value: "c2" },
       ACTOR,
@@ -391,7 +432,7 @@ describe("BulkUpdateProducts", () => {
 
   it("features an item, and does nothing for one already featured", async () => {
     const { repo, entries } = repoWith([product({ id: "p1" }), product({ id: "p2", isFeatured: true })]);
-    const changed = await new BulkUpdateProducts(repo).execute(
+    const changed = await new BulkUpdateProducts(repo, MENU).execute(
       ["p1", "p2"],
       { field: "isFeatured", value: true },
       ACTOR,
@@ -400,9 +441,17 @@ describe("BulkUpdateProducts", () => {
     expect(entries[0]?.changes).toEqual([{ field: "isFeatured", before: "false", after: "true" }]);
   });
 
+  it("refuses moving items to a category that doesn't exist", async () => {
+    const { repo, applyBulkChange } = repoWith([product()]);
+    await expect(
+      new BulkUpdateProducts(repo, MENU).execute(["p1"], { field: "categoryId", value: "gone" }, ACTOR),
+    ).rejects.toMatchObject({ field: "categoryId", message: "categoryUnknown" });
+    expect(applyBulkChange).not.toHaveBeenCalled();
+  });
+
   it("refuses an empty or oversized selection and a blank category", async () => {
     const { repo, applyBulkChange } = repoWith([]);
-    const useCase = new BulkUpdateProducts(repo);
+    const useCase = new BulkUpdateProducts(repo, MENU);
     await expect(useCase.execute([], { field: "isPublished", value: false }, ACTOR)).rejects.toMatchObject({
       field: "ids",
     });

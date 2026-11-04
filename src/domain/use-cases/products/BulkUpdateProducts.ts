@@ -1,8 +1,11 @@
 import { singleChange } from "../../entities/ActivityEntry";
 import { ValidationError } from "../../errors/ValidationError";
 
+import { requireCategory } from "./requireCategory";
+
 import type { ActivityActor } from "../../entities/ActivityEntry";
 import type { Product } from "../../entities/Product";
+import type { ICategoryRepository } from "../../repositories/ICategoryRepository";
 import type { BulkProductChange, IProductRepository } from "../../repositories/IProductRepository";
 
 /** How many products one bulk action may touch. */
@@ -26,7 +29,10 @@ const MAX_BULK_PRODUCTS = 200;
  * a separate action name.
  */
 export class BulkUpdateProducts {
-  constructor(private readonly productRepo: IProductRepository) {}
+  constructor(
+    private readonly productRepo: IProductRepository,
+    private readonly categoryRepo: Pick<ICategoryRepository, "getById">,
+  ) {}
 
   /**
    * Returns the products the change actually altered. Ids that don't exist, and
@@ -41,9 +47,7 @@ export class BulkUpdateProducts {
     if (ids.length > MAX_BULK_PRODUCTS) {
       throw new ValidationError("ids", `Select at most ${MAX_BULK_PRODUCTS} products.`);
     }
-    if (change.field === "categoryId" && !change.value) {
-      throw new ValidationError("categoryId", "Choose a category.");
-    }
+    if (change.field === "categoryId") await requireCategory(this.categoryRepo, change.value);
 
     const updates = await this.productRepo.applyBulkChange(ids, change, ({ product, previous }) => ({
       actorId: actor.id,

@@ -4,6 +4,8 @@ import type { IAuthRepository } from "@/src/domain/repositories/IAuthRepository"
 import type { IBankReconciliationRepository } from "@/src/domain/repositories/IBankReconciliationRepository";
 import type { IBookLoanRepository } from "@/src/domain/repositories/IBookLoanRepository";
 import type { IBookWaitlistRepository } from "@/src/domain/repositories/IBookWaitlistRepository";
+import type { ICafeSettingsRepository } from "@/src/domain/repositories/ICafeSettingsRepository";
+import type { ICafeTableRepository } from "@/src/domain/repositories/ICafeTableRepository";
 import type { ICashShiftRepository } from "@/src/domain/repositories/ICashShiftRepository";
 import type { ICategoryRepository } from "@/src/domain/repositories/ICategoryRepository";
 import type { IDatabaseProbe } from "@/src/domain/repositories/IDatabaseProbe";
@@ -53,6 +55,8 @@ import { PrismaAnalyticsRepository } from "./repositories/PrismaAnalyticsReposit
 import { PrismaBankReconciliationRepository } from "./repositories/PrismaBankReconciliationRepository";
 import { PrismaBookLoanRepository } from "./repositories/PrismaBookLoanRepository";
 import { PrismaBookWaitlistRepository } from "./repositories/PrismaBookWaitlistRepository";
+import { PrismaCafeSettingsRepository } from "./repositories/PrismaCafeSettingsRepository";
+import { PrismaCafeTableRepository } from "./repositories/PrismaCafeTableRepository";
 import { PrismaCashShiftRepository } from "./repositories/PrismaCashShiftRepository";
 import { PrismaCategoryRepository } from "./repositories/PrismaCategoryRepository";
 import { PrismaDatabaseProbe } from "./repositories/PrismaDatabaseProbe";
@@ -142,6 +146,11 @@ export const paymentAttemptRepository: IPaymentAttemptRepository = new PrismaPay
 // Table clashes and event capacity are enforced inside the repositories under locks.
 export const reservationRepository: IReservationRepository = new PrismaReservationRepository();
 export const eventRepository: IEventRepository = new PrismaEventRepository();
+
+// The cafe's own settings (profile, hours, receipt) and the floor's tables that
+// bookings and event holds name — PostgreSQL via Prisma, written from the dashboard.
+export const cafeSettingsRepository: ICafeSettingsRepository = new PrismaCafeSettingsRepository();
+export const cafeTableRepository: ICafeTableRepository = new PrismaCafeTableRepository();
 
 // The suite (one room, stays by the night) and the shelf's lending book. Suite
 // overlaps and duplicate loans are refused under locks, with database triggers as a backstop.

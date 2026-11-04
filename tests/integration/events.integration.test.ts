@@ -6,7 +6,6 @@ import { POST as register } from "@/app/api/events/[id]/registrations/route";
 import { DELETE as deleteEvent, GET as getEvent, PUT as updateEvent } from "@/app/api/events/[id]/route";
 import { GET as listEvents, POST as createEvent } from "@/app/api/events/route";
 import type { CafeEvent, EventTableOption } from "@/src/domain/entities/CafeEvent";
-import { CAFE_TABLE_LABELS } from "@/src/domain/entities/CafeTable";
 import { cafeDayOf, shiftCafeDay, wallTimeToDate } from "@/src/domain/entities/CafeTime";
 import { prisma } from "@/src/infrastructure/prisma/client";
 
@@ -16,6 +15,9 @@ import { getRequest, jsonRequest, readError, readJson, routeParams } from "./hel
 import { signInAs } from "./helpers/session";
 
 const nextWeek = shiftCafeDay(cafeDayOf(new Date()), 7);
+
+/** The floor the migration copies in, in floor order. */
+const FLOOR_LABELS = ["1", "2", "3", "4", "5", "6", "7", "8", "long"];
 
 const workshop = {
   kind: "workshop",
@@ -194,7 +196,7 @@ describe("event table holds", () => {
 
     expect(response.status).toBe(200);
     const options = await readJson<EventTableOption[]>(response);
-    expect(options.map((option) => option.label)).toEqual(CAFE_TABLE_LABELS);
+    expect(options.map((option) => option.label)).toEqual(FLOOR_LABELS);
     expect(options.find((option) => option.label === "6")?.clash).toMatchObject({
       kind: "booking",
       reference: booking.reference,

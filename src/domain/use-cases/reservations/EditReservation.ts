@@ -1,5 +1,5 @@
 import { activityValue, type ActivityActor, type ActivityChange } from "../../entities/ActivityEntry";
-import { isCafeTable } from "../../entities/CafeTable";
+import { isFloorTable } from "../../entities/CafeTable";
 import {
   RESCHEDULE_DETAILS,
   RESERVATION_DETAILS,
@@ -12,9 +12,11 @@ import { ConflictError } from "../../errors/ConflictError";
 import { NotFoundError } from "../../errors/NotFoundError";
 import { ValidationError } from "../../errors/ValidationError";
 import { reservationChangedNotification } from "../notifications/guestNotifications";
+import { readFloor } from "../settings/CafeTableCommands";
 
 import { staffEarliestStart, validateBookingNote, validateBookingStart, validatePartySize } from "./RequestReservation";
 
+import type { ICafeTableRepository } from "../../repositories/ICafeTableRepository";
 import type { ICustomerNotifier } from "../../repositories/INotificationRepository";
 import type { IReservationRepository, ReservationEdit } from "../../repositories/IReservationRepository";
 
@@ -61,6 +63,8 @@ function differs(detail: ReservationDetail, before: ReservationEdit, after: Rese
 export class EditReservation {
   constructor(
     private readonly reservationRepo: IReservationRepository,
+    /** The floor a newly given table must be on. */
+    private readonly tables: Pick<ICafeTableRepository, "listAll">,
     /** Tells the guest their booking was changed. */
     private readonly notifier?: ICustomerNotifier,
   ) {}
@@ -100,7 +104,11 @@ export class EditReservation {
     ) {
       throw new ValidationError("durationMinutes", "Choose how long the table is held.");
     }
-    if (changed.includes("tableLabel") && next.tableLabel && !isCafeTable(next.tableLabel)) {
+    if (
+      changed.includes("tableLabel") &&
+      next.tableLabel &&
+      !isFloorTable(await readFloor(this.tables), next.tableLabel)
+    ) {
       throw new ValidationError("tableLabel", `There's no table "${next.tableLabel}".`);
     }
     if (current.status === "seated" && changed.includes("tableLabel") && !next.tableLabel) {

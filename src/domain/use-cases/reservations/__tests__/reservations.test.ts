@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { FLOOR, FLOOR_TABLES } from "../../../entities/__tests__/floorFixture";
 import { cafeDayOf, dateToWallTime, wallTimeToDate } from "../../../entities/CafeTime";
 import {
   BOOKING_TIMES,
@@ -105,7 +106,7 @@ describe("BookTableForGuest", () => {
 
   it("books staff's late or early guests at any hour, still on a quarter-hour mark", async () => {
     const { repo, create } = repoWith(null);
-    const useCase = new BookTableForGuest(repo, noProfiles);
+    const useCase = new BookTableForGuest(repo, noProfiles, FLOOR);
     for (const time of ["23:30", "02:00"]) {
       await useCase.execute(
         { ...walkIn, startsAt: wallTimeToDate(`2026-10-21T${time}`) },
@@ -125,7 +126,7 @@ describe("BookTableForGuest", () => {
     const startsAt = wallTimeToDate("2026-10-21T19:00");
 
     const fresh = repoWith(null);
-    await new BookTableForGuest(fresh.repo, noProfiles).execute({ ...walkIn, startsAt }, staff, NOW);
+    await new BookTableForGuest(fresh.repo, noProfiles, FLOOR).execute({ ...walkIn, startsAt }, staff, NOW);
     expect(fresh.create.mock.calls[0][0]).toMatchObject({
       userId: "09356401182",
       guestName: "Omid",
@@ -143,7 +144,7 @@ describe("BookTableForGuest", () => {
       role: "customer" as const,
     };
     const profiles = { getById: async () => profile };
-    await new BookTableForGuest(known.repo, profiles).execute({ ...walkIn, startsAt }, staff, NOW);
+    await new BookTableForGuest(known.repo, profiles, FLOOR).execute({ ...walkIn, startsAt }, staff, NOW);
     const booked = known.create.mock.calls[0][0];
     expect(booked).toMatchObject({ userId: "09356401182", guestName: "Omid Karimi" });
     expect(booked.newGuest).toBeUndefined();
@@ -180,7 +181,7 @@ describe("booking times", () => {
 describe("ChangeReservation", () => {
   it("confirms with a table and audits both changes", async () => {
     const { repo, applyChange } = repoWith(reservation("requested"));
-    await new ChangeReservation(repo).execute(
+    await new ChangeReservation(repo, FLOOR).execute(
       "r1",
       { status: "confirmed", tableLabel: " 4 " },
       { id: "s", name: "Ali" },
@@ -205,15 +206,37 @@ describe("ChangeReservation", () => {
     for (const tableLabel of ["Patio", "T4", "9"]) {
       const { repo, applyChange } = repoWith(reservation("confirmed", { tableLabel: "4" }));
       await expect(
-        new ChangeReservation(repo).execute("r1", { tableLabel }, { id: "s", name: "Ali" }, NOW),
+        new ChangeReservation(repo, FLOOR).execute("r1", { tableLabel }, { id: "s", name: "Ali" }, NOW),
       ).rejects.toThrow(expect.objectContaining({ field: "tableLabel" }));
       expect(applyChange).not.toHaveBeenCalled();
     }
   });
 
+  it("won't move a booking to a table taken out of use, but keeps one it already has", async () => {
+    const outOfUse = {
+      listAll: async () =>
+        FLOOR_TABLES.map((table) =>
+          table.label === "7" || table.label === "4" ? { ...table, isActive: false } : table,
+        ),
+    };
+    const moving = repoWith(reservation("confirmed", { tableLabel: "4" }));
+    await expect(
+      new ChangeReservation(moving.repo, outOfUse).execute("r1", { tableLabel: "7" }, { id: "s", name: "Ali" }, NOW),
+    ).rejects.toThrow(expect.objectContaining({ field: "tableLabel" }));
+
+    const seating = repoWith(reservation("confirmed", { tableLabel: "4" }));
+    await new ChangeReservation(seating.repo, outOfUse).execute(
+      "r1",
+      { status: "seated", tableLabel: "4" },
+      { id: "s", name: "Ali" },
+      NOW,
+    );
+    expect(seating.applyChange.mock.calls[0][2]).toEqual({ status: "seated", tableLabel: "4" });
+  });
+
   it("keeps a table a booking already has, even one off today's floor plan", async () => {
     const { repo, applyChange } = repoWith(reservation("confirmed", { tableLabel: "Patio" }));
-    await new ChangeReservation(repo).execute("r1", { status: "seated" }, { id: "s", name: "Ali" }, NOW);
+    await new ChangeReservation(repo, FLOOR).execute("r1", { status: "seated" }, { id: "s", name: "Ali" }, NOW);
     expect(applyChange.mock.calls[0][2]).toEqual({ status: "seated", tableLabel: "Patio" });
   });
 
@@ -222,13 +245,13 @@ describe("ChangeReservation", () => {
     for (const now of [NOW, new Date("2026-10-21T15:59:00Z")]) {
       const { repo, applyChange } = repoWith(reservation("confirmed", { tableLabel: "4" }));
       await expect(
-        new ChangeReservation(repo).execute("r1", { status: "noShow" }, { id: "s", name: "Ali" }, now),
+        new ChangeReservation(repo, FLOOR).execute("r1", { status: "noShow" }, { id: "s", name: "Ali" }, now),
       ).rejects.toMatchObject({ code: "NOT_DUE_YET" });
       expect(applyChange).not.toHaveBeenCalled();
     }
     for (const now of [new Date("2026-10-21T16:00:00Z"), new Date("2026-10-21T16:45:00Z")]) {
       const { repo, applyChange } = repoWith(reservation("confirmed", { tableLabel: "4" }));
-      await new ChangeReservation(repo).execute("r1", { status: "noShow" }, { id: "s", name: "Ali" }, now);
+      await new ChangeReservation(repo, FLOOR).execute("r1", { status: "noShow" }, { id: "s", name: "Ali" }, now);
       expect(applyChange.mock.calls[0][2]).toMatchObject({ status: "noShow" });
     }
   });
@@ -236,7 +259,7 @@ describe("ChangeReservation", () => {
   it("still seats or cancels a party ahead of their time", async () => {
     for (const status of ["seated", "cancelled"] as const) {
       const { repo, applyChange } = repoWith(reservation("confirmed", { tableLabel: "4" }));
-      await new ChangeReservation(repo).execute("r1", { status }, { id: "s", name: "Ali" }, NOW);
+      await new ChangeReservation(repo, FLOOR).execute("r1", { status }, { id: "s", name: "Ali" }, NOW);
       expect(applyChange).toHaveBeenCalledOnce();
     }
   });
@@ -244,14 +267,19 @@ describe("ChangeReservation", () => {
   it("requires a table to seat a party", async () => {
     const { repo } = repoWith(reservation("confirmed"));
     await expect(
-      new ChangeReservation(repo).execute("r1", { status: "seated" }, { id: "s", name: "Ali" }, NOW),
+      new ChangeReservation(repo, FLOOR).execute("r1", { status: "seated" }, { id: "s", name: "Ali" }, NOW),
     ).rejects.toThrow(ValidationError);
   });
 
   it("refuses transitions the workflow doesn't allow", async () => {
     const { repo, applyChange } = repoWith(reservation("completed"));
     await expect(
-      new ChangeReservation(repo).execute("r1", { status: "seated", tableLabel: "4" }, { id: "s", name: "Ali" }, NOW),
+      new ChangeReservation(repo, FLOOR).execute(
+        "r1",
+        { status: "seated", tableLabel: "4" },
+        { id: "s", name: "Ali" },
+        NOW,
+      ),
     ).rejects.toThrow(ConflictError);
     expect(applyChange).not.toHaveBeenCalled();
   });
@@ -259,16 +287,16 @@ describe("ChangeReservation", () => {
   it("does nothing when nothing changes", async () => {
     const current = reservation("confirmed", { tableLabel: "4" });
     const { repo, applyChange } = repoWith(current);
-    expect(await new ChangeReservation(repo).execute("r1", { tableLabel: "4" }, { id: "s", name: "Ali" }, NOW)).toBe(
-      current,
-    );
+    expect(
+      await new ChangeReservation(repo, FLOOR).execute("r1", { tableLabel: "4" }, { id: "s", name: "Ali" }, NOW),
+    ).toBe(current);
     expect(applyChange).not.toHaveBeenCalled();
   });
 
   it("takes back a Seat, keeping the table, logging it, and telling the guest nothing", async () => {
     const { repo, applyChange } = repoWith(reservation("seated", { tableLabel: "4" }));
     const notifier = { notify: vi.fn() };
-    const saved = await new ChangeReservation(repo, notifier).execute(
+    const saved = await new ChangeReservation(repo, FLOOR, notifier).execute(
       "r1",
       { status: "confirmed", undo: true },
       { id: "s", name: "Ali" },
@@ -289,7 +317,12 @@ describe("ChangeReservation", () => {
 
   it("takes back a Complete", async () => {
     const { repo, applyChange } = repoWith(reservation("completed", { tableLabel: "4" }));
-    await new ChangeReservation(repo).execute("r1", { status: "seated", undo: true }, { id: "s", name: "Ali" }, NOW);
+    await new ChangeReservation(repo, FLOOR).execute(
+      "r1",
+      { status: "seated", undo: true },
+      { id: "s", name: "Ali" },
+      NOW,
+    );
     expect(applyChange.mock.calls[0].slice(1, 3)).toEqual(["completed", { status: "seated", tableLabel: "4" }]);
   });
 
@@ -303,12 +336,12 @@ describe("ChangeReservation", () => {
     ] as const) {
       const { repo, applyChange } = repoWith(reservation(from, { tableLabel: "4" }));
       await expect(
-        new ChangeReservation(repo).execute("r1", { status: to, undo: true }, { id: "s", name: "Ali" }, NOW),
+        new ChangeReservation(repo, FLOOR).execute("r1", { status: to, undo: true }, { id: "s", name: "Ali" }, NOW),
       ).rejects.toThrow(ConflictError);
       expect(applyChange).not.toHaveBeenCalled();
     }
     await expect(
-      new ChangeReservation(repoWith(reservation("seated", { tableLabel: "4" })).repo).execute(
+      new ChangeReservation(repoWith(reservation("seated", { tableLabel: "4" })).repo, FLOOR).execute(
         "r1",
         { status: "confirmed", tableLabel: "5", undo: true },
         { id: "s", name: "Ali" },
@@ -319,7 +352,7 @@ describe("ChangeReservation", () => {
 
   it("never steps back without the undo flag", async () => {
     await expect(
-      new ChangeReservation(repoWith(reservation("seated", { tableLabel: "4" })).repo).execute(
+      new ChangeReservation(repoWith(reservation("seated", { tableLabel: "4" })).repo, FLOOR).execute(
         "r1",
         { status: "confirmed" },
         { id: "s", name: "Ali" },
@@ -330,7 +363,7 @@ describe("ChangeReservation", () => {
 
   it("still tells the guest when a request is confirmed", async () => {
     const notifier = { notify: vi.fn() };
-    await new ChangeReservation(repoWith(reservation("requested")).repo, notifier).execute(
+    await new ChangeReservation(repoWith(reservation("requested")).repo, FLOOR, notifier).execute(
       "r1",
       { status: "confirmed", tableLabel: "4" },
       { id: "s", name: "Ali" },

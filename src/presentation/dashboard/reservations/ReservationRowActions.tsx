@@ -4,7 +4,7 @@ import { MoreHorizontal } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import * as React from "react";
 
-import { isCafeTable, type CafeTableLabel } from "@/src/domain/entities/CafeTable";
+import { isFloorTable } from "@/src/domain/entities/CafeTable";
 import { tableChoicesFor, type Floor } from "@/src/domain/entities/FloorAvailability";
 import {
   canUndoReservationStatus,
@@ -86,7 +86,7 @@ export function ReservationRowActions({ reservation, now, day, today, floor }: R
   const tableName = (label: string): string => tFloor("tableName", tableNameValues(label, locale));
   const dialogOpen = picking || confirming;
 
-  function save(change: { status?: ReservationStatus; tableLabel?: CafeTableLabel }): void {
+  function save(change: { status?: ReservationStatus; tableLabel?: string }): void {
     setError(null);
     // A one-click Seat or Complete can be taken back; a Seat that also picked a
     // table can't (the undo keeps the table, so it wouldn't undo all of it).
@@ -168,13 +168,14 @@ export function ReservationRowActions({ reservation, now, day, today, floor }: R
       partySize: reservation.partySize,
       reservationId: reservation.id,
     },
+    floor.tables,
     floor.bookings,
     floor.events,
   );
   const until = reservationEndsAt(reservation).toISOString();
 
   function saveTable(): void {
-    if (!pick || !isCafeTable(pick)) return;
+    if (!pick || !isFloorTable(floor.tables, pick)) return;
     if (tableMode === "confirm") save({ status: "confirmed", tableLabel: pick });
     else if (tableMode === "seat") save({ status: "seated", tableLabel: pick });
     else save({ tableLabel: pick });

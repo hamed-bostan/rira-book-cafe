@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { FLOOR } from "../../../entities/__tests__/floorFixture";
 import { wallTimeToDate } from "../../../entities/CafeTime";
 import {
   RESERVATION_DETAILS,
@@ -54,7 +55,7 @@ function setup(current: Reservation | null) {
   });
   const repo = { getById: vi.fn(async () => current), applyEdit } as unknown as IReservationRepository;
   const notifier = { notify: vi.fn(async () => undefined) };
-  return { useCase: new EditReservation(repo, notifier), applyEdit, notifier, entries };
+  return { useCase: new EditReservation(repo, FLOOR, notifier), applyEdit, notifier, entries };
 }
 
 describe("editableReservationDetails", () => {

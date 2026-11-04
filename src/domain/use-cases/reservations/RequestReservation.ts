@@ -1,5 +1,5 @@
 import { activityValue, type ActivityActor } from "../../entities/ActivityEntry";
-import { isCafeTable } from "../../entities/CafeTable";
+import { isFloorTable } from "../../entities/CafeTable";
 import {
   BOOKING_SLOT_MINUTES,
   DEFAULT_RESERVATION_MINUTES,
@@ -11,8 +11,10 @@ import {
 } from "../../entities/Reservation";
 import { ValidationError } from "../../errors/ValidationError";
 import { ResolveGuestProfile } from "../guest-profiles/ResolveGuestProfile";
+import { readFloor } from "../settings/CafeTableCommands";
 
 import type { User } from "../../entities/User";
+import type { ICafeTableRepository } from "../../repositories/ICafeTableRepository";
 import type { IReservationRepository } from "../../repositories/IReservationRepository";
 import type { IUserRepository } from "../../repositories/IUserRepository";
 
@@ -119,11 +121,13 @@ export class BookTableForGuest {
   constructor(
     private readonly reservationRepo: IReservationRepository,
     private readonly userRepo: Pick<IUserRepository, "getById">,
+    /** The floor a table given on the spot must be on. */
+    private readonly tables: Pick<ICafeTableRepository, "listAll">,
   ) {}
 
   async execute(input: BookTableForGuestInput, actor: ActivityActor, now: Date): Promise<Reservation> {
     const { note } = validateBooking(input, now, staffEarliestStart(now));
-    if (input.tableLabel !== undefined && !isCafeTable(input.tableLabel)) {
+    if (input.tableLabel !== undefined && !isFloorTable(await readFloor(this.tables), input.tableLabel)) {
       throw new ValidationError("tableLabel", `There's no table "${input.tableLabel}".`);
     }
     const guest = await new ResolveGuestProfile(this.userRepo).execute(

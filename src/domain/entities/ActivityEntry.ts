@@ -44,6 +44,8 @@ export const ACTIVITY_ENTITY_TYPES = [
   // Pay runs and the people on them. Entries never carry an amount: this log outlives
   // who may read it, and pay per person is for `payroll.manage` alone.
   "payroll",
+  // The cafe's own configuration: its profile, opening hours, receipt and tables.
+  "settings",
 ] as const;
 
 /**
@@ -177,6 +179,14 @@ export const ACTIVITY_ACTIONS = [
   "payroll.paid",
   "payroll.voided",
   "payroll.employeeChanged",
+  // The cafe's settings: one entry per section saved, and per table added,
+  // changed, moved along the floor or removed.
+  "settings.profileChanged",
+  "settings.hoursChanged",
+  "settings.receiptChanged",
+  "settings.tableAdded",
+  "settings.tableChanged",
+  "settings.tableRemoved",
   // Another event rather than a change to anything stored — an admin downloaded a
   // customer-data export. Recorded through `IActivityLog.recordEvent`: the file
   // has already left the moment this is written, so there is nothing to be atomic

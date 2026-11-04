@@ -4,9 +4,8 @@ import { Plus } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import * as React from "react";
 
-import { isCafeTable } from "@/src/domain/entities/CafeTable";
 import { wallTimeToDate } from "@/src/domain/entities/CafeTime";
-import { tableChoicesFor, type FloorBooking, type FloorEvent } from "@/src/domain/entities/FloorAvailability";
+import { tableChoicesFor, type Floor } from "@/src/domain/entities/FloorAvailability";
 import {
   BOOKING_TIMES,
   DEFAULT_RESERVATION_MINUTES,
@@ -42,8 +41,8 @@ type NewBookingDialogProps = {
   dayLabel: string;
   /** "Now", from the page — on today, times already gone can't be picked. */
   now: string;
-  bookings: readonly FloorBooking[];
-  events: readonly FloorEvent[];
+  /** The day's floor: its tables and what holds them. */
+  floor: Floor;
 };
 
 const FIELDS = ["guestPhone", "guestName", "startsAt", "partySize", "note", "tableLabel"] as const;
@@ -62,7 +61,7 @@ const SLOTS = BOOKING_TIMES;
  * holds the tables around the day (a late booking the night before included);
  * the server re-checks the table when it saves.
  */
-export function NewBookingDialog({ day, dayLabel, now, bookings, events }: NewBookingDialogProps) {
+export function NewBookingDialog({ day, dayLabel, now, floor }: NewBookingDialogProps) {
   const t = useTranslations("dashReservations");
   const tFloor = useTranslations("floorTables");
   const tApiErrors = useTranslations("apiErrors");
@@ -99,8 +98,9 @@ export function NewBookingDialog({ day, dayLabel, now, bookings, events }: NewBo
 
   const choices = tableChoicesFor(
     { startsAt: startOf(time).toISOString(), durationMinutes: DEFAULT_RESERVATION_MINUTES, partySize },
-    bookings,
-    events,
+    floor.tables,
+    floor.bookings,
+    floor.events,
   );
   function submit(): void {
     if (!guest) return;
@@ -113,7 +113,7 @@ export function NewBookingDialog({ day, dayLabel, now, bookings, events }: NewBo
           startsAt: `${day}T${time}`,
           partySize,
           note,
-          tableLabel: pick && isCafeTable(pick) ? pick : undefined,
+          tableLabel: pick ?? undefined,
         });
         toast({
           tone: "success",

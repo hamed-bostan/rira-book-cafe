@@ -132,9 +132,7 @@ export async function ReservationsScreen({
             ) : null}
           </p>
         </div>
-        {canManage && day >= today ? (
-          <NewBookingDialog day={day} dayLabel={dayLabel} now={now} bookings={floor.bookings} events={floor.events} />
-        ) : null}
+        {canManage && day >= today ? <NewBookingDialog day={day} dayLabel={dayLabel} now={now} floor={floor} /> : null}
       </div>
 
       <OtherDayRequests requests={otherDayRequests} today={today} />
@@ -188,7 +186,12 @@ export async function ReservationsScreen({
                     canKeepDeposit={canKeepDeposits}
                   />
                 ) : (
-                  <EventBookingRow event={row.event} today={today} canManageEvents={canManageEvents} />
+                  <EventBookingRow
+                    event={row.event}
+                    today={today}
+                    canManageEvents={canManageEvents}
+                    tables={floor.tables}
+                  />
                 )}
               </li>
             ))}

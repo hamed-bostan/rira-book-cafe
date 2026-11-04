@@ -5,6 +5,7 @@ import { RESERVATION_STATUSES } from "@/src/domain/entities/Reservation";
 
 /** What `GET /api/admin/reservations/floor` returns, validated at the typed-service boundary. */
 export const floorResponseSchema = z.object({
+  tables: z.array(z.object({ label: z.string(), seats: z.number(), area: z.optional(z.string()) })),
   bookings: z.array(
     z.object({
       id: z.string(),

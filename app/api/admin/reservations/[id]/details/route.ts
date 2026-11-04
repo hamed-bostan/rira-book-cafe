@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { reservationDetailsSchema } from "@/src/contracts/reservation-schema";
 import { wallTimeToDate } from "@/src/domain/entities/CafeTime";
 import { EditReservation } from "@/src/domain/use-cases/reservations/EditReservation";
-import { customerNotifier, reservationRepository } from "@/src/infrastructure/container";
+import { cafeTableRepository, customerNotifier, reservationRepository } from "@/src/infrastructure/container";
 import {
   errorResponse,
   errorResponseFromException,
@@ -42,7 +42,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext): Pro
 
   try {
     const { startsAt, ...rest } = parsed.data;
-    const reservation = await new EditReservation(reservationRepository, customerNotifier).execute(
+    const reservation = await new EditReservation(reservationRepository, cafeTableRepository, customerNotifier).execute(
       id,
       { ...rest, startsAt: startsAt === undefined ? undefined : wallTimeToDate(startsAt) },
       { id: session.user.id, name: session.user.name ?? session.user.id },

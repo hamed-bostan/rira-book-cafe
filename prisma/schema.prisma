@@ -791,6 +791,57 @@ model SuiteSettings {
   @@map("suite_settings")
 }
 
+// --- The cafe's own settings (dashboard → Settings).
+
+// Who and where the cafe is, when it's open and what its receipts say: one row
+// (id 1). Every field is optional — the site leaves out what isn't set.
+model CafeSettings {
+  id              Int      @id @default(1)
+  name            String?
+  nameFa          String?  @map("name_fa")
+  address         String?
+  addressFa       String?  @map("address_fa")
+  phone           String?
+  // The Instagram username, without the `@`.
+  instagram       String?
+  website         String?
+  latitude        Float?
+  longitude       Float?
+  // `{ Saturday: { closed, opens?, closes? }, … }` on the cafe's wall clock, or
+  // NULL until staff first set the week (the site then shows no hours).
+  weeklyHours     Json?    @map("weekly_hours")
+  // `[{ date, closed, opens?, closes?, note?, noteFa? }]`, in date order.
+  hoursExceptions Json     @default("[]") @map("hours_exceptions")
+  receiptHeader   String?  @map("receipt_header")
+  receiptHeaderFa String?  @map("receipt_header_fa")
+  receiptFooter   String?  @map("receipt_footer")
+  receiptFooterFa String?  @map("receipt_footer_fa")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("cafe_settings")
+}
+
+// The floor's tables. `label` is what a reservation's `table_label` and an
+// event's `table_labels` name, so a rename is carried onto them in the same
+// transaction. A table taken out of use (`is_active` off) keeps its history but
+// leaves the pickers; one still needed (an open order, a booking or event ahead)
+// can't be deleted.
+model CafeTable {
+  id        String   @id @default(uuid())
+  label     String   @unique
+  seats     Int
+  // Where on the floor it stands ("Window", "Terrace"), when staff group them.
+  area      String?
+  isActive  Boolean  @default(true) @map("is_active")
+  // Floor order, first = 0 — the order pickers list tables in.
+  position  Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([position])
+  @@map("cafe_tables")
+}
+
 // --- Pricing: ingredients, recipes and the advisor's settings.
 
 // Something menu items are made from, priced as bought: purchase_price Toman for

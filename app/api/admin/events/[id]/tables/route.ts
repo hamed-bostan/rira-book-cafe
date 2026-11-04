@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { eventTablesSchema } from "@/src/contracts/event-schema";
 import { HoldEventTables, ListEventTableOptions } from "@/src/domain/use-cases/events/EventTables";
-import { eventRepository } from "@/src/infrastructure/container";
+import { cafeTableRepository, eventRepository } from "@/src/infrastructure/container";
 import {
   errorResponse,
   errorResponseFromException,
@@ -22,7 +22,7 @@ export async function GET(_request: Request, { params }: RouteContext): Promise<
 
   const { id } = await params;
   try {
-    return NextResponse.json(await new ListEventTableOptions(eventRepository).execute(id));
+    return NextResponse.json(await new ListEventTableOptions(eventRepository, cafeTableRepository).execute(id));
   } catch (error) {
     return errorResponseFromException(error, `GET /api/admin/events/${id}/tables failed`);
   }
@@ -47,7 +47,7 @@ export async function PUT(request: NextRequest, { params }: RouteContext): Promi
   }
 
   try {
-    const event = await new HoldEventTables(eventRepository).execute(
+    const event = await new HoldEventTables(eventRepository, cafeTableRepository).execute(
       id,
       parsed.data.tableLabels,
       { id: session.user.id, name: session.user.name ?? session.user.id },

@@ -5,7 +5,7 @@ import { cafeDayOf, isCafeDay, wallTimeToDate } from "@/src/domain/entities/Cafe
 import { RESERVATION_STATUSES, type ReservationStatus } from "@/src/domain/entities/Reservation";
 import { BookTableForGuest } from "@/src/domain/use-cases/reservations/RequestReservation";
 import { ListReservationsForDay, ListReservationsFrom } from "@/src/domain/use-cases/reservations/ReservationQueries";
-import { reservationRepository, userRepository } from "@/src/infrastructure/container";
+import { cafeTableRepository, reservationRepository, userRepository } from "@/src/infrastructure/container";
 import {
   errorResponse,
   errorResponseFromException,
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   try {
     const { startsAt, ...rest } = parsed.data;
-    const reservation = await new BookTableForGuest(reservationRepository, userRepository).execute(
+    const reservation = await new BookTableForGuest(reservationRepository, userRepository, cafeTableRepository).execute(
       { ...rest, startsAt: wallTimeToDate(startsAt) },
       { id: session.user.id, name: session.user.name ?? session.user.id },
       new Date(),

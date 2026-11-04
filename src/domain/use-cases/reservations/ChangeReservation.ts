@@ -1,5 +1,5 @@
 import { activityValue, type ActivityActor, type ActivityChange } from "../../entities/ActivityEntry";
-import { isCafeTable } from "../../entities/CafeTable";
+import { isFloorTable } from "../../entities/CafeTable";
 import {
   canTransitionReservation,
   canUndoReservationStatus,
@@ -12,7 +12,9 @@ import { ConflictError } from "../../errors/ConflictError";
 import { NotFoundError } from "../../errors/NotFoundError";
 import { ValidationError } from "../../errors/ValidationError";
 import { reservationNotification } from "../notifications/guestNotifications";
+import { readFloor } from "../settings/CafeTableCommands";
 
+import type { ICafeTableRepository } from "../../repositories/ICafeTableRepository";
 import type { ICustomerNotifier } from "../../repositories/INotificationRepository";
 import type { IReservationRepository } from "../../repositories/IReservationRepository";
 
@@ -40,6 +42,8 @@ export type ReservationUpdate = {
 export class ChangeReservation {
   constructor(
     private readonly reservationRepo: IReservationRepository,
+    /** The floor a newly given table must be on. */
+    private readonly tables: Pick<ICafeTableRepository, "listAll">,
     /** Tells the guest their table was confirmed or cancelled. */
     private readonly notifier?: ICustomerNotifier,
   ) {}
@@ -77,7 +81,12 @@ export class ChangeReservation {
       update.tableLabel === undefined ? (current.tableLabel ?? null) : update.tableLabel?.trim() || null;
     // A table being given must be on the floor plan, as for a new booking; the one
     // a booking already has stays whatever it's called.
-    if (update.tableLabel !== undefined && tableLabel && !isCafeTable(tableLabel)) {
+    if (
+      update.tableLabel !== undefined &&
+      tableLabel &&
+      tableLabel !== current.tableLabel &&
+      !isFloorTable(await readFloor(this.tables), tableLabel)
+    ) {
       throw new ValidationError("tableLabel", `There's no table "${tableLabel}".`);
     }
     if (status === "seated" && !tableLabel) {

@@ -1,12 +1,15 @@
 import { cafeDayRange, shiftCafeDay } from "../../entities/CafeTime";
 import { TABLE_HOLDING_STATUSES } from "../../entities/Reservation";
+import { readFloor } from "../settings/CafeTableCommands";
 
 import type { Floor } from "../../entities/FloorAvailability";
+import type { ICafeTableRepository } from "../../repositories/ICafeTableRepository";
 import type { IEventRepository } from "../../repositories/IEventRepository";
 import type { IReservationRepository } from "../../repositories/IReservationRepository";
 
 /**
- * The floor around one cafe day (`Floor`), for the table pickers: the bookings
+ * The floor around one cafe day (`Floor`), for the table pickers: the tables in
+ * use, in floor order, and the bookings
  * holding a table and the events holding tables from the day before to the day
  * after, so a booking near midnight on either side still blocks its table. Only
  * what a picker needs — no guest names or phones. A cross-guest read: gate to staff.
@@ -15,16 +18,19 @@ export class ReadFloorForDay {
   constructor(
     private readonly reservationRepo: IReservationRepository,
     private readonly eventRepo: IEventRepository,
+    private readonly tables: Pick<ICafeTableRepository, "listAll">,
   ) {}
 
   async execute(day: string): Promise<Floor> {
     const from = cafeDayRange(shiftCafeDay(day, -1)).from;
     const to = cafeDayRange(shiftCafeDay(day, 1)).to;
-    const [reservations, events] = await Promise.all([
+    const [tables, reservations, events] = await Promise.all([
+      readFloor(this.tables),
       this.reservationRepo.listBetween(from, to),
       this.eventRepo.listAll(),
     ]);
     return {
+      tables,
       bookings: reservations
         .filter(
           (booking) => booking.tableLabel && (TABLE_HOLDING_STATUSES as readonly string[]).includes(booking.status),

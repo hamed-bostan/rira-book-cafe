@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { reservationUpdateSchema } from "@/src/contracts/reservation-schema";
 import { ChangeReservation } from "@/src/domain/use-cases/reservations/ChangeReservation";
-import { customerNotifier, reservationRepository } from "@/src/infrastructure/container";
+import { cafeTableRepository, customerNotifier, reservationRepository } from "@/src/infrastructure/container";
 import {
   errorResponse,
   errorResponseFromException,
@@ -39,12 +39,11 @@ export async function PATCH(request: NextRequest, { params }: RouteContext): Pro
   }
 
   try {
-    const reservation = await new ChangeReservation(reservationRepository, customerNotifier).execute(
-      id,
-      parsed.data,
-      { id: session.user.id, name: session.user.name ?? session.user.id },
-      new Date(),
-    );
+    const reservation = await new ChangeReservation(
+      reservationRepository,
+      cafeTableRepository,
+      customerNotifier,
+    ).execute(id, parsed.data, { id: session.user.id, name: session.user.name ?? session.user.id }, new Date());
     return NextResponse.json(reservation);
   } catch (error) {
     return errorResponseFromException(error, `PATCH /api/admin/reservations/${id} failed`);

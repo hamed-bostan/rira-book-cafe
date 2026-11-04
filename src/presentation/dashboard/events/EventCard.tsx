@@ -2,7 +2,7 @@ import { CalendarDays } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { seatsLeft, type CafeEvent } from "@/src/domain/entities/CafeEvent";
-import { isWholeFloor } from "@/src/domain/entities/CafeTable";
+import { activeFloor, isWholeFloor, seatsAtTables, type CafeTable } from "@/src/domain/entities/CafeTable";
 import { Link } from "@/src/i18n/navigation";
 import { formatEventWhen } from "@/src/lib/formatEventWhen";
 import { formatMoney } from "@/src/lib/formatMoney";
@@ -27,6 +27,8 @@ type EventCardProps = {
   /** Already ended — its tables can't change any more, even on its own day. */
   over: boolean;
   canManage: boolean;
+  /** Every table, in use or not — what the held labels are counted against. */
+  tables: readonly CafeTable[];
 };
 
 /**
@@ -34,7 +36,7 @@ type EventCardProps = {
  * capacity with the ticket price, and the tables held for it — with how their
  * seats compare to the guests expected.
  */
-export async function EventCard({ event, upcoming, today, over, canManage }: EventCardProps) {
+export async function EventCard({ event, upcoming, today, over, canManage, tables }: EventCardProps) {
   const t = await getTranslations("dashEvents");
   const tFloor = await getTranslations("floorTables");
   const locale = await getLocale();
@@ -42,7 +44,7 @@ export async function EventCard({ event, upcoming, today, over, canManage }: Eve
   const left = seatsLeft(event);
   const when = formatEventWhen(event.startsAt, event.endsAt, locale);
   const shortWhen = formatEventWhen(event.startsAt, event.endsAt, locale, "short");
-  const tableNames = isWholeFloor(event.tableLabels)
+  const tableNames = isWholeFloor(activeFloor(tables), event.tableLabels)
     ? [tFloor("wholeFloor")]
     : event.tableLabels.map((label) => tFloor("tableName", tableNameValues(label, locale)));
 
@@ -153,7 +155,7 @@ export async function EventCard({ event, upcoming, today, over, canManage }: Eve
                 </li>
               ))}
             </ul>
-            <TableFit tableLabels={event.tableLabels} capacity={event.capacity} />
+            <TableFit heldSeats={seatsAtTables(tables, event.tableLabels)} capacity={event.capacity} />
           </>
         ) : (
           <p className="text-body-default text-muted-foreground sm:text-body-small">{t("noTablesHeld")}</p>

@@ -2,6 +2,7 @@ import { Plus } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
 import { type CafeEvent } from "@/src/domain/entities/CafeEvent";
+import type { CafeTable } from "@/src/domain/entities/CafeTable";
 import { cafeDayOf } from "@/src/domain/entities/CafeTime";
 import { Link } from "@/src/i18n/navigation";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
@@ -20,6 +21,8 @@ type EventsScreenProps = {
   canManage: boolean;
   /** "Now", from the page — splits upcoming from past without a client clock. */
   now: string;
+  /** The floor's tables, in use or not — what events hold. */
+  tables: CafeTable[];
 };
 
 /**
@@ -27,7 +30,7 @@ type EventsScreenProps = {
  * event cards, each with its seats and the tables held for it. The split is by
  * cafe day, as the design draws it — today's events stay under Upcoming all day.
  */
-export async function EventsScreen({ events, tab, canManage, now }: EventsScreenProps) {
+export async function EventsScreen({ events, tab, canManage, now, tables }: EventsScreenProps) {
   const t = await getTranslations("dashEvents");
   const nowDate = new Date(now);
   const todayDay = cafeDayOf(nowDate);
@@ -75,6 +78,7 @@ export async function EventsScreen({ events, tab, canManage, now }: EventsScreen
                 today={dayOf(event) === todayDay}
                 over={new Date(event.endsAt) <= nowDate}
                 canManage={canManage}
+                tables={tables}
               />
             </li>
           ))}

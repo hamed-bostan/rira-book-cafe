@@ -99,4 +99,9 @@ export type ConflictCode =
   | "UNIT_LOCKED"
   | "STOCK_ON_HAND"
   | "INGREDIENT_IN_RECIPE"
-  | "STOCK_HAS_HISTORY";
+  | "STOCK_HAS_HISTORY"
+  // Sending back more of an item than is on hand; voiding a delivery some of which
+  // went back to the supplier (the return would be left crediting a bill that no
+  // longer exists).
+  | "RETURN_EXCEEDS_STOCK"
+  | "DELIVERY_HAS_RETURNS";

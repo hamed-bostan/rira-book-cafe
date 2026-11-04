@@ -4,9 +4,11 @@ import { useLocale, useTranslations } from "next-intl";
 import * as React from "react";
 
 import { EXPENSE_PAYMENT_CHOICES } from "@/src/contracts/expense-schema";
+import { type COST_PER } from "@/src/contracts/inventory-schema";
 import { moneyField, quantityField } from "@/src/contracts/money-fields";
 import { MAX_EXPENSE_DESCRIPTION_LENGTH } from "@/src/domain/entities/Expense";
 import { receiveStock, type StockItem } from "@/src/domain/entities/Inventory";
+import { toBaseQuantity } from "@/src/domain/entities/Pricing";
 import { useRouter } from "@/src/i18n/navigation";
 import { moneyUnit } from "@/src/lib/formatMoney";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
@@ -15,6 +17,7 @@ import { Select } from "@/src/presentation/design-system/components/form/Select/
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { DashboardField } from "../DashboardField";
+import { FIELD_GRID } from "../fieldStyles";
 
 import { inventoryApi } from "./inventory-api";
 import { stockApiErrorMessage } from "./stockApiErrorMessage";
@@ -23,6 +26,7 @@ import { formatStockQuantity, formatUnitCost, typedNumber } from "./stockFormat"
 import { StockItemSelect } from "./StockItemSelect";
 
 type PaymentChoice = (typeof EXPENSE_PAYMENT_CHOICES)[number];
+type CostPer = (typeof COST_PER)[number];
 
 type ReceiveDeliveryDialogProps = {
   open: boolean;
@@ -60,6 +64,9 @@ export function ReceiveDeliveryDialog({
 
   const [itemId, setItemId] = React.useState(initialItemId);
   const [quantity, setQuantity] = React.useState("");
+  /** A purchase unit's name, or "" for the base unit. */
+  const [pack, setPack] = React.useState("");
+  const [costPer, setCostPer] = React.useState<CostPer>("line");
   const [cost, setCost] = React.useState("");
   const [payment, setPayment] = React.useState<PaymentChoice>("unpaid");
   const [error, setError] = React.useState<string | null>(null);
@@ -67,6 +74,8 @@ export function ReceiveDeliveryDialog({
 
   const item = items.find((candidate) => candidate.id === itemId);
   const unit = item ? t(`unit.${item.unit}`) : "";
+  const packs = item?.purchaseUnits ?? [];
+  const typedUnit = pack || unit;
   const amount = (value: number): string => t("quick.quantity", { quantity: formatStockQuantity(value, locale), unit });
 
   const parsedQuantity = quantityField.safeParse(quantity);
@@ -89,9 +98,18 @@ export function ReceiveDeliveryDialog({
         : undefined;
   const ready = item !== undefined && parsedQuantity.success && parsedCost.success;
 
+  // What it comes to in the base unit and for the line: 3 bags of 1000 g at 450,000 each.
+  const baseQuantity = parsedQuantity.success ? toBaseQuantity(parsedQuantity.data, pack, packs) : null;
+  const lineCost =
+    parsedQuantity.success && parsedCost.success
+      ? costPer === "unit"
+        ? Math.round(parsedCost.data * parsedQuantity.data)
+        : parsedCost.data
+      : null;
+
   let preview: string | undefined;
-  if (item && parsedQuantity.success && parsedCost.success) {
-    const after = receiveStock(item, parsedQuantity.data, parsedCost.data);
+  if (item && baseQuantity !== null && lineCost !== null) {
+    const after = receiveStock(item, baseQuantity, lineCost);
     preview = costsVisible
       ? t("quick.receivePreviewWithCost", {
           from: amount(item.onHand),
@@ -102,9 +120,15 @@ export function ReceiveDeliveryDialog({
       : t("quick.onHandChange", { from: amount(item.onHand), to: amount(after.onHand) });
   }
 
+  function pick(id: string): void {
+    setItemId(id);
+    setPack("");
+    setCostPer("line");
+  }
+
   function submit(): void {
-    if (!item || !parsedQuantity.success) return;
-    const received = parsedQuantity.data;
+    if (!item || baseQuantity === null) return;
+    const received = baseQuantity;
     setError(null);
     startTransition(async () => {
       try {
@@ -112,7 +136,7 @@ export function ReceiveDeliveryDialog({
           date: today,
           supplierId: "",
           description: t("quick.receiveDescription", { name: item.name }).slice(0, MAX_EXPENSE_DESCRIPTION_LENGTH),
-          lines: [{ ingredientId: item.id, quantity, cost }],
+          lines: [{ ingredientId: item.id, quantity, unit: pack, cost, costPer }],
           vatAmount: "",
           payment,
         });
@@ -143,29 +167,62 @@ export function ReceiveDeliveryDialog({
         href: "/dashboard/inventory/receive",
       }}
     >
-      <StockItemSelect items={items} value={itemId} onChange={setItemId} />
-      <DashboardField label={t("quick.quantityLabel", { unit })}>
-        <Input
-          size="control-md"
-          value={quantity}
-          onChange={(event) => setQuantity(event.target.value)}
-          inputMode="decimal"
-          autoComplete="off"
-          placeholder="0"
-          dir="ltr"
-        />
-      </DashboardField>
-      <DashboardField label={t("quick.costLabel")} hint={t("quick.costHint")}>
-        <Input
-          size="control-md"
-          value={cost}
-          onChange={(event) => setCost(event.target.value)}
-          inputMode="numeric"
-          autoComplete="off"
-          placeholder="0"
-          dir="ltr"
-        />
-      </DashboardField>
+      <StockItemSelect items={items} value={itemId} onChange={pick} />
+      <div className={FIELD_GRID}>
+        <DashboardField label={t("quick.quantityLabel", { unit: typedUnit })}>
+          <Input
+            size="control-md"
+            value={quantity}
+            onChange={(event) => setQuantity(event.target.value)}
+            inputMode="decimal"
+            autoComplete="off"
+            placeholder="0"
+            dir="ltr"
+          />
+        </DashboardField>
+        {packs.length > 0 ? (
+          <DashboardField label={t("packs.unitLabel")}>
+            <Select size="control-md" value={pack} onChange={(event) => setPack(event.target.value)}>
+              <option value="">{unit}</option>
+              {packs.map((option) => (
+                <option key={option.name} value={option.name}>
+                  {t("packs.option", {
+                    name: option.name,
+                    quantity: formatStockQuantity(option.factor, locale),
+                    unit,
+                  })}
+                </option>
+              ))}
+            </Select>
+          </DashboardField>
+        ) : null}
+      </div>
+      <div className={FIELD_GRID}>
+        <DashboardField
+          label={costPer === "unit" ? t("packs.costEachLabel", { unit: typedUnit }) : t("quick.costLabel")}
+          hint={costPer === "unit" ? undefined : t("quick.costHint")}
+        >
+          <Input
+            size="control-md"
+            value={cost}
+            onChange={(event) => setCost(event.target.value)}
+            inputMode="numeric"
+            autoComplete="off"
+            placeholder="0"
+            dir="ltr"
+          />
+        </DashboardField>
+        <DashboardField label={t("packs.costPerLabel")}>
+          <Select
+            size="control-md"
+            value={costPer}
+            onChange={(event) => setCostPer(event.target.value === "unit" ? "unit" : "line")}
+          >
+            <option value="line">{t("packs.costPer.line")}</option>
+            <option value="unit">{t("packs.costPer.unit", { unit: typedUnit })}</option>
+          </Select>
+        </DashboardField>
+      </div>
       <DashboardField label={tExpenses("form.paymentLabel")}>
         <Select
           size="control-md"

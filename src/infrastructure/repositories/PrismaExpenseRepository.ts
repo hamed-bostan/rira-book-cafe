@@ -226,6 +226,15 @@ export class PrismaExpenseRepository implements IExpenseRepository {
     audit?: AuditHook<Expense>,
   ): Promise<Expense> {
     return inTransaction(this.db, async (tx) => {
+      // Goods from this delivery went back to the supplier against a credit that
+      // settled part of its bill: voiding it would leave that return crediting a
+      // bill that no longer exists. The return stands; the bill is paid off instead.
+      if ((await tx.supplierReturn.count({ where: { expenseId: id } })) > 0) {
+        throw new ConflictError(
+          "DELIVERY_HAS_RETURNS",
+          "Some of this delivery was returned to the supplier, so it can't be voided.",
+        );
+      }
       const result = await tx.expense.updateMany({ where: { id, status: { not: "void" } }, data: { status: "void" } });
       if (result.count === 0) {
         const current = await tx.expense.findUnique({ where: { id } });

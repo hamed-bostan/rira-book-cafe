@@ -64,6 +64,11 @@ export async function StockRow({ item, costsVisible, canManage }: StockRowProps)
         {costsVisible ? (
           <span className="text-body-small text-muted-foreground tabular-nums sm:text-body-caption">
             {t("averageCostLine", { cost: `${formatUnitCost(item.averageCost, locale)} ${moneyUnit(locale)}`, unit })}
+            {/* The last price paid too, when it's moved away from the average: it's
+                what recipes are costed at once this runs out. */}
+            {item.lastPurchaseCost > 0 && Math.abs(item.lastPurchaseCost - item.averageCost) >= 0.01
+              ? ` · ${t("lastPriceLine", { cost: `${formatUnitCost(item.lastPurchaseCost, locale)} ${moneyUnit(locale)}` })}`
+              : null}
           </span>
         ) : null}
       </div>
@@ -80,6 +85,11 @@ export async function StockRow({ item, costsVisible, canManage }: StockRowProps)
           <span className="whitespace-nowrap text-foreground/80 tabular-nums">
             {item.reorderLevel !== undefined ? amount(item.reorderLevel) : t("reorderNone")}
           </span>
+          {item.parLevel !== undefined ? (
+            <span className="text-body-small whitespace-nowrap text-muted-foreground tabular-nums sm:text-body-caption">
+              {t("parLine", { quantity: amount(item.parLevel) })}
+            </span>
+          ) : null}
         </div>
         {costsVisible ? (
           <div className={figure}>

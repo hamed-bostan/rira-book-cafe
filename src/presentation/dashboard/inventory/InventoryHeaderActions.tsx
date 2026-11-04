@@ -15,7 +15,11 @@ type InventoryHeaderActionsProps = {
   receiveItemId: string | undefined;
 };
 
-/** "Count stock" and "Receive delivery" beside the page title, each opening its dialog. */
+/**
+ * "New stock item", "Count stock" and "Receive delivery" beside the page title,
+ * each opening its dialog. With no items yet there's nothing to count or receive,
+ * so only "New stock item" is offered — not two buttons that can't be pressed.
+ */
 export function InventoryHeaderActions({ countItemId, receiveItemId }: InventoryHeaderActionsProps) {
   const t = useTranslations("dashInventory");
   const { openDialog } = useStockDialogs();
@@ -26,26 +30,34 @@ export function InventoryHeaderActions({ countItemId, receiveItemId }: Inventory
         size="control-md"
         type="button"
         variant="secondary"
-        className="px-3"
-        disabled={countItemId === undefined}
-        onClick={() => {
-          if (countItemId !== undefined) openDialog("count", countItemId);
-        }}
-      >
-        {t("count.heading")}
-      </Button>
-      <Button
-        size="control-md"
-        type="button"
-        className="gap-2 px-4"
-        disabled={receiveItemId === undefined}
-        onClick={() => {
-          if (receiveItemId !== undefined) openDialog("receive", receiveItemId);
-        }}
+        className="gap-2 px-3"
+        onClick={() => openDialog("newItem")}
       >
         <Icon icon={Plus} size="icon-md" />
-        {t("receive.heading")}
+        {t("item.newTitle")}
       </Button>
+      {countItemId !== undefined ? (
+        <Button
+          size="control-md"
+          type="button"
+          variant="secondary"
+          className="px-3"
+          onClick={() => openDialog("count", countItemId)}
+        >
+          {t("count.heading")}
+        </Button>
+      ) : null}
+      {receiveItemId !== undefined ? (
+        <Button
+          size="control-md"
+          type="button"
+          className="gap-2 px-4"
+          onClick={() => openDialog("receive", receiveItemId)}
+        >
+          <Icon icon={Plus} size="icon-md" />
+          {t("receive.heading")}
+        </Button>
+      ) : null}
     </>
   );
 }

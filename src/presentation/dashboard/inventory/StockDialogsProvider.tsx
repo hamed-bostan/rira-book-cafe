@@ -4,18 +4,23 @@ import * as React from "react";
 
 import type { StockItem } from "@/src/domain/entities/Inventory";
 
+import { AdjustStockDialog } from "./AdjustStockDialog";
 import { CountStockDialog } from "./CountStockDialog";
 import { ReceiveDeliveryDialog } from "./ReceiveDeliveryDialog";
 import { ReorderLevelDialog } from "./ReorderLevelDialog";
+import { StockItemDialog } from "./StockItemDialog";
 import { WasteDialog } from "./WasteDialog";
 
 import type { ReactNode } from "react";
 
-export type StockDialogKind = "receive" | "count" | "level" | "waste";
+export type StockDialogKind = "receive" | "count" | "level" | "waste" | "adjust" | "item" | "newItem";
 
 type StockDialogsContextValue = {
-  /** Open one of the stock dialogs on an item — the person can still pick another inside it. */
-  openDialog: (kind: StockDialogKind, itemId: string) => void;
+  /**
+   * Open one of the stock dialogs on an item — the person can still pick another
+   * inside it. `newItem` makes one, so it takes no item.
+   */
+  openDialog: (kind: StockDialogKind, itemId?: string) => void;
 };
 
 const StockDialogsContext = React.createContext<StockDialogsContextValue | null>(null);
@@ -26,6 +31,8 @@ type StockDialogsProviderProps = {
   costsVisible: boolean;
   /** Today on the cafe calendar — the date each entry is booked on. */
   today: string;
+  /** Who an item can be bought from — the item dialog's choice. */
+  suppliers: readonly { id: string; name: string }[];
   children: ReactNode;
 };
 
@@ -37,31 +44,47 @@ type DialogState = { kind: StockDialogKind; itemId: string; open: boolean; key: 
  * menu. Each opening starts a fresh form; closing keeps the dialog mounted until
  * its exit animation has played.
  */
-export function StockDialogsProvider({ items, costsVisible, today, children }: StockDialogsProviderProps) {
+export function StockDialogsProvider({ items, costsVisible, today, suppliers, children }: StockDialogsProviderProps) {
   const [dialog, setDialog] = React.useState<DialogState | null>(null);
 
-  const openDialog = React.useCallback((kind: StockDialogKind, itemId: string): void => {
+  const openDialog = React.useCallback((kind: StockDialogKind, itemId = ""): void => {
     setDialog((current) => ({ kind, itemId, open: true, key: (current?.key ?? 0) + 1 }));
   }, []);
   const value = React.useMemo(() => ({ openDialog }), [openDialog]);
 
   const onOpenChange = (open: boolean): void => setDialog((current) => (current ? { ...current, open } : current));
-  const shared = dialog ? { open: dialog.open, onOpenChange, items, initialItemId: dialog.itemId } : undefined;
+
+  function render(state: DialogState): ReactNode {
+    const shared = { open: state.open, onOpenChange, items, initialItemId: state.itemId };
+    switch (state.kind) {
+      case "receive":
+        return <ReceiveDeliveryDialog key={state.key} {...shared} costsVisible={costsVisible} today={today} />;
+      case "count":
+        return <CountStockDialog key={state.key} {...shared} costsVisible={costsVisible} today={today} />;
+      case "level":
+        return <ReorderLevelDialog key={state.key} {...shared} />;
+      case "waste":
+        return <WasteDialog key={state.key} {...shared} costsVisible={costsVisible} today={today} />;
+      case "adjust":
+        return <AdjustStockDialog key={state.key} {...shared} costsVisible={costsVisible} today={today} />;
+      case "item":
+      case "newItem":
+        return (
+          <StockItemDialog
+            key={state.key}
+            open={state.open}
+            onOpenChange={onOpenChange}
+            item={state.kind === "item" ? items.find((item) => item.id === state.itemId) : undefined}
+            suppliers={suppliers}
+          />
+        );
+    }
+  }
 
   return (
     <StockDialogsContext.Provider value={value}>
       {children}
-      {dialog && shared ? (
-        dialog.kind === "receive" ? (
-          <ReceiveDeliveryDialog key={dialog.key} {...shared} costsVisible={costsVisible} today={today} />
-        ) : dialog.kind === "count" ? (
-          <CountStockDialog key={dialog.key} {...shared} costsVisible={costsVisible} today={today} />
-        ) : dialog.kind === "level" ? (
-          <ReorderLevelDialog key={dialog.key} {...shared} />
-        ) : (
-          <WasteDialog key={dialog.key} {...shared} costsVisible={costsVisible} today={today} />
-        )
-      ) : null}
+      {dialog ? render(dialog) : null}
     </StockDialogsContext.Provider>
   );
 }

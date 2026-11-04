@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 
-import { cafeDayOf } from "@/src/domain/entities/CafeTime";
+import { cafeDayOf, isCafeDay } from "@/src/domain/entities/CafeTime";
+import { toSearchParams } from "@/src/lib/api/searchParams";
 import { requirePermission } from "@/src/lib/require-permission";
 import { DashboardPageHeader } from "@/src/presentation/dashboard/DashboardPageHeader";
 import { inventoryServerApi } from "@/src/presentation/dashboard/inventory/inventory-server-api";
@@ -9,9 +10,22 @@ import { DashboardPageCrumb } from "@/src/presentation/dashboard/shell/Dashboard
 
 export const dynamic = "force-dynamic";
 
-export default async function StockCountPage() {
+type StockCountPageProps = { searchParams: Promise<Record<string, string | string[] | undefined>> };
+
+/**
+ * `?date=` is the count's day. A past one is compared with what each item had on
+ * hand at the end of that day, read here over the API, not with today's figures.
+ */
+export default async function StockCountPage({ searchParams }: StockCountPageProps) {
   await requirePermission("inventory.manage");
-  const [t, summary] = await Promise.all([getTranslations("dashInventory"), inventoryServerApi.getSummary()]);
+  const today = cafeDayOf(new Date());
+  const asked = toSearchParams(await searchParams).get("date") ?? "";
+  const date = isCafeDay(asked) && asked < today ? asked : today;
+  const [t, summary, onHandThen] = await Promise.all([
+    getTranslations("dashInventory"),
+    inventoryServerApi.getSummary(),
+    date < today ? inventoryServerApi.getOnHandAt(date) : Promise.resolve(null),
+  ]);
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
@@ -24,7 +38,9 @@ export default async function StockCountPage() {
       />
       <StockCountForm
         items={summary.items.filter((item) => item.isActive)}
-        today={cafeDayOf(new Date())}
+        today={today}
+        date={date}
+        expected={onHandThen ? Object.fromEntries(onHandThen) : undefined}
         costsVisible={summary.costsVisible}
       />
     </div>

@@ -80,6 +80,8 @@ type ApiErrorKey =
   | "stockOnHand"
   | "ingredientInRecipe"
   | "stockHasHistory"
+  | "returnExceedsStock"
+  | "deliveryHasReturns"
   | "gatewayUnavailable"
   | "rateLimited"
   | "timeout"
@@ -159,6 +161,8 @@ const CODE_KEYS: Readonly<Record<string, ApiErrorKey>> = {
   STOCK_ON_HAND: "stockOnHand",
   INGREDIENT_IN_RECIPE: "ingredientInRecipe",
   STOCK_HAS_HISTORY: "stockHasHistory",
+  RETURN_EXCEEDS_STOCK: "returnExceedsStock",
+  DELIVERY_HAS_RETURNS: "deliveryHasReturns",
   // A 429 from `enforceRateLimit` (orders, payments, booking requests).
   RATE_LIMITED: "rateLimited",
   INTERNAL: "server",

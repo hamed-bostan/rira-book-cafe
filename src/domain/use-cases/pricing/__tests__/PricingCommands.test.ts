@@ -9,6 +9,7 @@ import type { ILedgerRepository } from "../../../repositories/ILedgerRepository"
 import type { IPricingRepository } from "../../../repositories/IPricingRepository";
 
 // 2026-10-16 is 24 Mehr 1405: the last three complete months are Tir–Shahrivar.
+const ACTOR = { id: "owner", name: "Rira" };
 const NOW = new Date("2026-10-16T08:00:00Z");
 const account = (code: string, type: Account["type"]): Account => ({
   code,
@@ -103,13 +104,17 @@ describe("SaveRecipe", () => {
   it("refuses a repeated ingredient or a zero quantity", async () => {
     const { pricing } = setup();
     await expect(
-      new SaveRecipe(pricing).execute("latte", [
-        { ingredientId: "milk", quantity: 100 },
-        { ingredientId: "milk", quantity: 50 },
-      ]),
+      new SaveRecipe(pricing).execute(
+        "latte",
+        [
+          { ingredientId: "milk", quantity: 100 },
+          { ingredientId: "milk", quantity: 50 },
+        ],
+        ACTOR,
+      ),
     ).rejects.toThrow(ValidationError);
-    await expect(new SaveRecipe(pricing).execute("latte", [{ ingredientId: "milk", quantity: 0 }])).rejects.toThrow(
-      ValidationError,
-    );
+    await expect(
+      new SaveRecipe(pricing).execute("latte", [{ ingredientId: "milk", quantity: 0 }], ACTOR),
+    ).rejects.toThrow(ValidationError);
   });
 });

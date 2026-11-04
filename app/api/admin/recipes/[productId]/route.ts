@@ -31,7 +31,9 @@ export async function GET(_request: Request, { params }: RouteContext): Promise<
 
 /** PUT /api/admin/recipes/:productId — replace the recipe; the item's cost price follows. Requires `accounting.write`. */
 async function handlePut(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
-  if (!(await getSessionWith("accounting.write"))) return unauthorizedResponse();
+  const session = await getSessionWith("accounting.write");
+  if (!session) return unauthorizedResponse();
+  const actor = { id: session.user.id, name: session.user.name ?? session.user.id };
 
   const { productId } = await params;
   const body = await parseJsonBody(request);
@@ -46,7 +48,9 @@ async function handlePut(request: NextRequest, { params }: RouteContext): Promis
   }
 
   try {
-    return NextResponse.json({ lines: await new SaveRecipe(pricingRepository).execute(productId, parsed.data.lines) });
+    return NextResponse.json({
+      lines: await new SaveRecipe(pricingRepository).execute(productId, parsed.data.lines, actor),
+    });
   } catch (error) {
     return errorResponseFromException(error, `PUT /api/admin/recipes/${productId} failed`);
   }

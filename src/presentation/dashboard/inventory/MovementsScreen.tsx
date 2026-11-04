@@ -14,15 +14,18 @@ import { cn } from "@/src/lib/utils";
 import { ListFilterSelect, ListPager } from "@/src/presentation/dashboard/list";
 import { Badge, type BadgeProps } from "@/src/presentation/design-system/components/Badge/Badge";
 
+import { ExportCsvLink } from "../accounting/ExportCsvLink";
 import { DashboardPageHeader } from "../DashboardPageHeader";
 import { FIELD_LABEL } from "../fieldStyles";
 import { PAGE_CARD, ROW_CAPTION, ROW_TEXT, TABLE_HEAD, TABLE_TH } from "../pageStyles";
 import { DashboardPageCrumb } from "../shell/DashboardPageCrumb";
 import { STACKED_TABLE } from "../stackedTableStyles";
 
+import { inventoryExports } from "./inventory-api";
+import { MovementsDateRange } from "./MovementsDateRange";
 import { formatStockQuantity } from "./stockFormat";
 
-/** Five or six columns: stacked rows under a laptop's card, the table from there up. */
+/** Five to seven columns: stacked rows under a laptop's card, the table from there up. */
 const S = STACKED_TABLE.wide;
 
 /** Each kind's tint, read down the Type column. */
@@ -33,26 +36,45 @@ const KIND_VARIANT: Record<StockMovementKind, BadgeProps["variant"]> = {
   waste: "error",
   count: "warning",
   return: "info",
+  adjustment: "warning",
+  return_to_supplier: "error",
 };
 
-type MovementsScreenProps = { page: Page<StockMovement>; items: StockItem[]; costsVisible: boolean };
+/** What the list is narrowed to — the query string, as the page read it. */
+export type MovementQuery = { item?: string; kind?: string; from?: string; to?: string };
+
+type MovementsScreenProps = {
+  page: Page<StockMovement>;
+  items: StockItem[];
+  costsVisible: boolean;
+  query: MovementQuery;
+  /** Today on the cafe calendar — the date filter's presets count from it. */
+  today: string;
+};
 
 /**
- * Where each item's stock went: deliveries, sales, waste, counts — newest first.
- * A table on a laptop's card; on a narrower one each movement leads with its item,
- * the rest labelled under it.
+ * Where each item's stock went: deliveries, sales, waste, counts, adjustments and
+ * returns to suppliers — newest first, over any span of days, downloadable as a
+ * spreadsheet (values in it only for those who see costs). Narrowed to one item,
+ * each row also shows what was on hand right after it. A table on a laptop's card;
+ * on a narrower one each movement leads with its item, the rest labelled under it.
  */
-export async function MovementsScreen({ page, items, costsVisible }: MovementsScreenProps) {
+export async function MovementsScreen({ page, items, costsVisible, query, today }: MovementsScreenProps) {
   const t = await getTranslations("dashInventory");
   const locale = await getLocale();
   const units = new Map(items.map((item) => [item.id, item.unit]));
+  const withBalance = page.items.some((movement) => movement.balanceAfter !== undefined);
 
   const referenceHref = (movement: StockMovement): string | null => {
     if (!movement.referenceId) return null;
     if (movement.kind === "sale" || movement.kind === "return") return `/dashboard/orders/${movement.referenceId}`;
     if (movement.kind === "receipt") return `/dashboard/expenses/${movement.referenceId}`;
+    if (movement.kind === "return_to_supplier") return `/dashboard/inventory/returns#return-${movement.referenceId}`;
     return null;
   };
+
+  const exportParams: Record<string, string> = { locale };
+  for (const [key, value] of Object.entries(query)) if (value) exportParams[key] = value;
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
@@ -62,10 +84,11 @@ export async function MovementsScreen({ page, items, costsVisible }: MovementsSc
         backLabel={t("heading")}
         title={t("movements.heading")}
         subtitle={t("movements.subtitle")}
+        actions={<ExportCsvLink href={inventoryExports.movementsHref(exportParams)} />}
       />
 
       <section aria-label={t("movements.heading")} className={cn(PAGE_CARD, S.frame, "overflow-hidden")}>
-        <div className="flex flex-wrap items-end gap-x-4 gap-y-3 border-b border-border px-5 py-4">
+        <div className="flex flex-wrap items-start gap-x-4 gap-y-3 border-b border-border px-5 py-4">
           <div className="flex min-w-0 flex-col gap-1.5">
             <span className={FIELD_LABEL}>{t("col.item")}</span>
             <ListFilterSelect
@@ -90,6 +113,7 @@ export async function MovementsScreen({ page, items, costsVisible }: MovementsSc
               ]}
             />
           </div>
+          <MovementsDateRange from={query.from} to={query.to} today={today} />
         </div>
 
         {page.items.length === 0 ? (
@@ -110,6 +134,11 @@ export async function MovementsScreen({ page, items, costsVisible }: MovementsSc
                 <th scope="col" className={cn(TABLE_TH, "w-36 text-end")}>
                   {t("movements.quantity")}
                 </th>
+                {withBalance ? (
+                  <th scope="col" className={cn(TABLE_TH, "w-36 text-end")}>
+                    {t("movements.balance")}
+                  </th>
+                ) : null}
                 {costsVisible ? (
                   <th scope="col" className={cn(TABLE_TH, "w-40 text-end")}>
                     {t("col.value")}
@@ -150,6 +179,11 @@ export async function MovementsScreen({ page, items, costsVisible }: MovementsSc
                         ) : (
                           kind
                         )}
+                        {movement.reason ? (
+                          <span className={cn(ROW_CAPTION, "font-medium")}>
+                            {t(`adjust.reason.${movement.reason}`)}
+                          </span>
+                        ) : null}
                         {movement.note ? (
                           <span className={ROW_CAPTION} dir="auto">
                             {movement.note}
@@ -174,6 +208,18 @@ export async function MovementsScreen({ page, items, costsVisible }: MovementsSc
                         {unit}
                       </span>
                     </td>
+                    {withBalance ? (
+                      <td className={cn(S.cell, S.amount, "align-middle text-foreground")}>
+                        <span className={S.label}>{t("movements.balance")}</span>
+                        {movement.balanceAfter === undefined ? (
+                          "—"
+                        ) : (
+                          <span>
+                            <span dir="ltr">{formatStockQuantity(movement.balanceAfter, locale)}</span> {unit}
+                          </span>
+                        )}
+                      </td>
+                    ) : null}
                     {costsVisible ? (
                       <td className={cn(S.cell, S.amount, "align-middle text-foreground")}>
                         <span className={S.label}>{t("col.value")}</span>

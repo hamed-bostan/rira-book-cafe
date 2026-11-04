@@ -46,6 +46,11 @@ export function StockRowActions({ id, name, canManage }: StockRowActionsProps) {
             <DropdownMenuItem onSelect={() => openDialog("receive", id)}>{t("receive.heading")}</DropdownMenuItem>
             <DropdownMenuItem onSelect={() => openDialog("count", id)}>{t("count.heading")}</DropdownMenuItem>
             <DropdownMenuItem onSelect={() => openDialog("level", id)}>{t("quick.levelTitle")}</DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => openDialog("adjust", id)}>{t("adjust.title")}</DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href={`/dashboard/inventory/returns/new?item=${id}`}>{t("returns.new")}</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => openDialog("item", id)}>{t("item.edit")}</DropdownMenuItem>
           </>
         ) : null}
         {/* Floor staff record what they throw away: the waste API asks only for

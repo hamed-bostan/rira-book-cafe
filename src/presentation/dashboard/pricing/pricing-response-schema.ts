@@ -42,6 +42,7 @@ export const pricingReportResponseSchema: z.ZodMiniType<PricingReport> = z.objec
       taxExempt: z.boolean(),
       costSource: z.enum(["recipe", "manual", "none"]),
       directCost: z.nullable(z.number()),
+      lastPriceCost: z.optional(z.number()),
       overheadPerUnit: z.number(),
       fullCost: z.nullable(z.number()),
       markupBps: z.number(),
@@ -54,6 +55,9 @@ export const pricingReportResponseSchema: z.ZodMiniType<PricingReport> = z.objec
   ),
 });
 
+/** A pack an item is bought in. */
+export const purchaseUnitResponseSchema = z.object({ name: z.string(), factor: z.number() });
+
 export const ingredientResponseSchema: z.ZodMiniType<Ingredient> = z.object({
   id: z.string(),
   name: z.string(),
@@ -63,7 +67,12 @@ export const ingredientResponseSchema: z.ZodMiniType<Ingredient> = z.object({
   isActive: z.boolean(),
   updatedAt: z.string(),
   onHand: z.number(),
+  averageCost: z.number(),
   hasHistory: z.boolean(),
+  reorderLevel: z.optional(z.number()),
+  parLevel: z.optional(z.number()),
+  purchaseUnits: z.array(purchaseUnitResponseSchema),
+  supplierId: z.optional(z.string()),
 });
 export const ingredientListResponseSchema = z.array(ingredientResponseSchema);
 

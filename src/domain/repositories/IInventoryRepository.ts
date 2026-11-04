@@ -105,6 +105,21 @@ export type UntrackedBook = {
   stockQuantity: number;
 };
 
+/** A delivery goods can go back against, with what's still owed on its bill. */
+export type ReturnableDelivery = {
+  id: string;
+  number: number;
+  date: string;
+  supplierId: string;
+  description: string;
+  amount: number;
+  /** What's still owed: the part of a credit the bill can take. */
+  owed: number;
+};
+
+/** How many recent deliveries the return form offers. */
+export const MAX_RETURNABLE_DELIVERIES = 100;
+
 /** The most movements one CSV export carries — about a year of a busy cafe. */
 export const MAX_MOVEMENT_EXPORT_ROWS = 50_000;
 
@@ -171,6 +186,8 @@ export type IInventoryRepository = {
   ): Promise<SupplierReturn>;
   /** Returns, newest first: all, or one supplier's, or one delivery's. */
   listSupplierReturns(filter: { supplierId?: string; expenseId?: string }): Promise<SupplierReturn[]>;
+  /** Recent deliveries from a named supplier that aren't void — what a return can be made against. */
+  listReturnableDeliveries(): Promise<ReturnableDelivery[]>;
   /** Books for sale with no recipe yet. */
   listUntrackedBooks(): Promise<UntrackedBook[]>;
   /**

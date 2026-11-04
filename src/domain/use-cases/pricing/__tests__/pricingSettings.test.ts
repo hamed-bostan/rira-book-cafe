@@ -21,7 +21,7 @@ import {
 } from "../PricingCommands";
 
 import type { ILedgerRepository } from "../../../repositories/ILedgerRepository";
-import type { IngredientInput, IPricingRepository } from "../../../repositories/IPricingRepository";
+import type { IngredientInput, IngredientPatch, IPricingRepository } from "../../../repositories/IPricingRepository";
 
 const NOW = new Date("2026-10-16T08:00:00Z");
 const ACTOR = { id: "owner", name: "Rira" };
@@ -37,13 +37,22 @@ type Fake = {
 };
 
 function pricingWith(products: PricedProduct[], settings: PricingSettings = DEFAULT_PRICING_SETTINGS): Fake {
-  const ingredient = (input: IngredientInput & { isActive?: boolean }): Ingredient => ({
+  const ingredient = (input: IngredientPatch): Ingredient => ({
     id: "i1",
     isActive: true,
     updatedAt: "",
     onHand: 0,
+    averageCost: 0,
     hasHistory: false,
+    purchaseUnits: [],
     ...input,
+    name: input.name ?? "Milk",
+    unit: input.unit ?? "ml",
+    purchasePrice: input.purchasePrice ?? 0,
+    purchaseQuantity: input.purchaseQuantity ?? 1,
+    reorderLevel: input.reorderLevel ?? undefined,
+    parLevel: input.parLevel ?? undefined,
+    supplierId: input.supplierId ?? undefined,
   });
   const updateSettings = vi.fn<IPricingRepository["updateSettings"]>(async (next) => next);
   const setTargetMarkup = vi.fn<IPricingRepository["setTargetMarkup"]>(async () => {});
@@ -151,8 +160,14 @@ describe("UpdatePricingSettings", () => {
       overheadMonths: 12,
       defaultMarkupBps: 0,
     };
-    expect(await new UpdatePricingSettings(pricing).execute(next)).toEqual(next);
-    expect(updateSettings).toHaveBeenCalledWith(next);
+    expect(await new UpdatePricingSettings(pricing).execute(next, ACTOR)).toEqual(next);
+    expect(updateSettings.mock.calls[0][0]).toEqual(next);
+    const audit = updateSettings.mock.calls[0][1];
+    expect(audit?.({ before: DEFAULT_PRICING_SETTINGS, after: next })).toMatchObject({
+      action: "pricing.settingsChanged",
+      entityType: "pricing",
+    });
+    expect(audit?.({ before: next, after: next })).toBeNull();
   });
 
   it.each<[Partial<PricingSettings>, string]>([
@@ -170,7 +185,7 @@ describe("UpdatePricingSettings", () => {
   ])("refuses %o", async (overrides, field) => {
     const { pricing, updateSettings } = pricingWith([]);
     await expect(
-      new UpdatePricingSettings(pricing).execute({ ...DEFAULT_PRICING_SETTINGS, ...overrides }),
+      new UpdatePricingSettings(pricing).execute({ ...DEFAULT_PRICING_SETTINGS, ...overrides }, ACTOR),
     ).rejects.toMatchObject({ field });
     expect(updateSettings).not.toHaveBeenCalled();
   });
@@ -179,9 +194,9 @@ describe("UpdatePricingSettings", () => {
 describe("SetItemMarkup", () => {
   it("sets or clears an item's own target", async () => {
     const { pricing, setTargetMarkup } = pricingWith([]);
-    await new SetItemMarkup(pricing).execute("latte", 5000);
-    await new SetItemMarkup(pricing).execute("latte", null);
-    expect(setTargetMarkup.mock.calls).toEqual([
+    await new SetItemMarkup(pricing).execute("latte", 5000, ACTOR);
+    await new SetItemMarkup(pricing).execute("latte", null, ACTOR);
+    expect(setTargetMarkup.mock.calls.map(([id, markup]) => [id, markup])).toEqual([
       ["latte", 5000],
       ["latte", null],
     ]);
@@ -189,7 +204,7 @@ describe("SetItemMarkup", () => {
 
   it.each([-1, 100_001, 0.5])("refuses a markup of %s", async (markup) => {
     const { pricing, setTargetMarkup } = pricingWith([]);
-    await expect(new SetItemMarkup(pricing).execute("latte", markup)).rejects.toThrow(ValidationError);
+    await expect(new SetItemMarkup(pricing).execute("latte", markup, ACTOR)).rejects.toThrow(ValidationError);
     expect(setTargetMarkup).not.toHaveBeenCalled();
   });
 });
@@ -199,10 +214,10 @@ describe("SaveIngredient", () => {
 
   it("trims the name on create and keeps the active flag on update", async () => {
     const { pricing, createIngredient, updateIngredient } = pricingWith([]);
-    await new SaveIngredient(pricing).create(MILK);
-    await new SaveIngredient(pricing).update("i1", { ...MILK, isActive: false });
-    expect(createIngredient).toHaveBeenCalledWith({ ...MILK, name: "Milk" });
-    expect(updateIngredient).toHaveBeenCalledWith("i1", { ...MILK, name: "Milk", isActive: false });
+    await new SaveIngredient(pricing).create(MILK, ACTOR);
+    await new SaveIngredient(pricing).update("i1", { ...MILK, isActive: false }, ACTOR);
+    expect(createIngredient.mock.calls[0][0]).toEqual({ ...MILK, name: "Milk", purchaseUnits: undefined });
+    expect(updateIngredient.mock.calls[0][1]).toEqual({ ...MILK, name: "Milk", isActive: false });
   });
 
   it.each<[Partial<IngredientInput>, string]>([
@@ -213,7 +228,9 @@ describe("SaveIngredient", () => {
     [{ purchaseQuantity: 0 }, "purchaseQuantity"],
   ])("refuses %o", async (overrides, field) => {
     const { pricing, createIngredient } = pricingWith([]);
-    await expect(async () => new SaveIngredient(pricing).create({ ...MILK, ...overrides })).rejects.toMatchObject({
+    await expect(async () =>
+      new SaveIngredient(pricing).create({ ...MILK, ...overrides }, ACTOR),
+    ).rejects.toMatchObject({
       field,
     });
     expect(createIngredient).not.toHaveBeenCalled();
@@ -227,17 +244,17 @@ describe("SaveRecipe", () => {
       { ingredientId: "milk", quantity: 200 },
       { ingredientId: "beans", quantity: 18 },
     ];
-    expect(await new SaveRecipe(pricing).execute("latte", lines)).toEqual(lines);
-    expect(saveRecipe).toHaveBeenCalledWith("latte", lines);
+    expect(await new SaveRecipe(pricing).execute("latte", lines, ACTOR)).toEqual(lines);
+    expect(saveRecipe.mock.calls[0].slice(0, 2)).toEqual(["latte", lines]);
     // An empty recipe clears it.
-    await new SaveRecipe(pricing).execute("latte", []);
-    expect(saveRecipe).toHaveBeenLastCalledWith("latte", []);
+    await new SaveRecipe(pricing).execute("latte", [], ACTOR);
+    expect(saveRecipe.mock.calls[1].slice(0, 2)).toEqual(["latte", []]);
   });
 
   it("refuses a recipe with too many lines", async () => {
     const { pricing, saveRecipe } = pricingWith([]);
     const lines = Array.from({ length: MAX_RECIPE_LINES + 1 }, (_, i) => ({ ingredientId: `i${i}`, quantity: 1 }));
-    await expect(new SaveRecipe(pricing).execute("latte", lines)).rejects.toThrow("too many lines");
+    await expect(new SaveRecipe(pricing).execute("latte", lines, ACTOR)).rejects.toThrow("too many lines");
     expect(saveRecipe).not.toHaveBeenCalled();
   });
 });

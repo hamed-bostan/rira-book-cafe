@@ -1,6 +1,6 @@
 import { getLocale, getTranslations } from "next-intl/server";
 
-import { ingredientUnitCost, type Ingredient } from "@/src/domain/entities/Pricing";
+import { costBasisOf, costingUnitCost, ingredientUnitCost, type Ingredient } from "@/src/domain/entities/Pricing";
 import type { Locale } from "@/src/i18n/routing";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumberTrimmed } from "@/src/lib/formatNumber";
@@ -79,7 +79,20 @@ export async function IngredientRow({ ingredient, canWrite }: IngredientRowProps
         <div className={cn(figure, "@3xl/ingredients:items-end @3xl/ingredients:text-end")}>
           <span className={inlineLabel}>{t("ingredients.colUnitCost")}</span>
           <span className="font-semibold whitespace-nowrap text-foreground tabular-nums">
-            {t("ingredients.perUnit", { cost: formatUnitCost(ingredientUnitCost(ingredient), locale), unit })}
+            {t("ingredients.perUnit", { cost: formatUnitCost(costingUnitCost(ingredient), locale), unit })}
+          </span>
+          {/* Recipes are costed at the average cost of what's on hand (what cost of
+              sales books), and at the last price once it's run out: say which, and
+              show the other figure when they differ. */}
+          <span className="text-body-small whitespace-nowrap text-muted-foreground tabular-nums sm:text-body-caption">
+            {costBasisOf(ingredient) === "average"
+              ? Math.abs(ingredientUnitCost(ingredient) - ingredient.averageCost) >= 0.01
+                ? t("ingredients.averageWithLast", {
+                    cost: formatUnitCost(ingredientUnitCost(ingredient), locale),
+                    unit,
+                  })
+                : t("ingredients.basisAverage")
+              : t("ingredients.basisLastPrice")}
           </span>
         </div>
       </div>

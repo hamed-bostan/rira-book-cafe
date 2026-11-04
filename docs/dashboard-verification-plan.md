@@ -187,7 +187,7 @@ Final run on the merged `main`, from a fresh build:
 | integration  | 508 passed           | 560 passed                    |
 | e2e (Chrome) | 737 passed, 1 failed | 978 passed, 0 failed          |
 
-**Bugs fixed — 14, each merged with a test:**
+**App bugs fixed — 12, each merged with a test (plus 4 test fixes):**
 
 | #   | Phase    | Bug                                                                                                                                                                    |
 | --- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

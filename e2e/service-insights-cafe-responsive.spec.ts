@@ -285,7 +285,7 @@ const PAGES: Record<string, MeasuredPage> = {
   },
 
   activity: { path: () => "/dashboard/activity" },
-  "activity for orders": { path: () => "/dashboard/activity?entity=order" },
+  "activity for orders": { path: () => "/dashboard/activity?entityType=order" },
   team: { path: () => "/dashboard/team", user: "owner" },
   "change a role": {
     path: () => "/dashboard/team",

@@ -1,8 +1,8 @@
 import { isDashboardRole, type GrantableRole, type User } from "../../entities/User";
-import { AdminRevokeError } from "../../errors/AdminRevokeError";
 import { NotFoundError } from "../../errors/NotFoundError";
 
 import { roleChangeEntry } from "./roleChangeEntry";
+import { refuseOwner, refuseSelf } from "./teamGuards";
 
 import type { IUserRepository } from "../../repositories/IUserRepository";
 
@@ -22,21 +22,14 @@ export class ChangeRole {
   constructor(private readonly userRepo: IUserRepository) {}
 
   async execute(id: string, role: GrantableRole, actorId: string): Promise<User> {
-    if (id === actorId) {
-      throw new AdminRevokeError("self", "You can't change your own role.");
-    }
+    refuseSelf(id, actorId, "You can't change your own role.");
 
     const target = await this.userRepo.getById(id);
     if (!target || !isDashboardRole(target.role)) {
       throw new NotFoundError("team member", id);
     }
 
-    if (target.role === "owner") {
-      throw new AdminRevokeError(
-        "owner",
-        "You can't change the owner's role. Transfer ownership to someone else first.",
-      );
-    }
+    refuseOwner(target.role, "You can't change the owner's role. Transfer ownership to someone else first.");
 
     if (target.role === role) return target;
 

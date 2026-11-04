@@ -1,8 +1,8 @@
 import { isDashboardRole, type User } from "../../entities/User";
-import { AdminRevokeError } from "../../errors/AdminRevokeError";
 import { NotFoundError } from "../../errors/NotFoundError";
 
 import { roleChangeEntry } from "./roleChangeEntry";
+import { refuseOwner, refuseSelf } from "./teamGuards";
 
 import type { IUserRepository } from "../../repositories/IUserRepository";
 
@@ -26,18 +26,14 @@ export class RevokeAdmin {
   constructor(private readonly userRepo: IUserRepository) {}
 
   async execute(id: string, actorId: string): Promise<User> {
-    if (id === actorId) {
-      throw new AdminRevokeError("self", "You can't remove your own access.");
-    }
+    refuseSelf(id, actorId, "You can't remove your own access.");
 
     const target = await this.userRepo.getById(id);
     if (!target || !isDashboardRole(target.role)) {
       throw new NotFoundError("team member", id);
     }
 
-    if (target.role === "owner") {
-      throw new AdminRevokeError("owner", "You can't remove the owner. Transfer ownership to someone else first.");
-    }
+    refuseOwner(target.role, "You can't remove the owner. Transfer ownership to someone else first.");
 
     const actor = await this.userRepo.getById(actorId);
     const [demoted] = await this.userRepo.applyRoleChanges({

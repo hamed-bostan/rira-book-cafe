@@ -68,6 +68,8 @@ export type ConflictCode =
   // Cash shifts.
   | "SHIFT_ALREADY_OPEN"
   | "NO_OPEN_SHIFT"
+  // Granting access to someone already on the team in another role — that's a role change.
+  | "ALREADY_ON_TEAM"
   // Bank reconciliation.
   | "STATEMENT_OVERLAP"
   | "STATEMENT_RECONCILED"

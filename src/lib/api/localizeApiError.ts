@@ -75,6 +75,7 @@ type ApiErrorKey =
   | "copiesBelowOnLoan"
   | "shiftAlreadyOpen"
   | "noOpenShift"
+  | "alreadyOnTeam"
   | "gatewayUnavailable"
   | "rateLimited"
   | "timeout"
@@ -148,6 +149,7 @@ const CODE_KEYS: Readonly<Record<string, ApiErrorKey>> = {
   COPIES_BELOW_ON_LOAN: "copiesBelowOnLoan",
   SHIFT_ALREADY_OPEN: "shiftAlreadyOpen",
   NO_OPEN_SHIFT: "noOpenShift",
+  ALREADY_ON_TEAM: "alreadyOnTeam",
   // A 429 from `enforceRateLimit` (orders, payments, booking requests).
   RATE_LIMITED: "rateLimited",
   INTERNAL: "server",

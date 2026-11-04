@@ -1,8 +1,10 @@
 import { isTeamPhone, normalizePhone } from "../../entities/Phone";
-import { PLACEHOLDER_USER_NAME, type GrantableRole, type User } from "../../entities/User";
+import { isDashboardRole, PLACEHOLDER_USER_NAME, type GrantableRole, type User } from "../../entities/User";
+import { ConflictError } from "../../errors/ConflictError";
 import { ValidationError } from "../../errors/ValidationError";
 
 import { roleChangeEntry } from "./roleChangeEntry";
+import { refuseOwner, refuseSelf } from "./teamGuards";
 
 import type { ITeamNotifier } from "../../repositories/ITeamNotifier";
 import type { IUserRepository } from "../../repositories/IUserRepository";
@@ -38,6 +40,11 @@ export type GrantAdminCommand = {
  * they'd be given at first sign-in is simply written early, with a placeholder
  * name they overwrite when they complete their profile. `GetOrCreateUser` finds
  * that existing row on their first sign-in and leaves the role intact.
+ *
+ * It only ever brings someone *onto* the team. Refused: your own number, the
+ * owner's number (both `AdminRevokeError`, 409, exactly as `ChangeRole` refuses
+ * them), and a member who holds another dashboard role (`ALREADY_ON_TEAM`, 409 —
+ * moving them is `ChangeRole`).
  */
 export class GrantAdmin {
   constructor(
@@ -57,17 +64,30 @@ export class GrantAdmin {
       );
     }
 
+    // The same refusals as `ChangeRole` and `RevokeAdmin`: a grant aimed at your
+    // own number would rewrite your own role (an owner granting themselves `admin`
+    // would demote the only owner and lock team management away), and the owner's
+    // role only moves by `TransferOwnership`.
+    refuseSelf(id, actorId, "You can't change your own role.");
+
     const email = input.email?.trim() || null;
+    const [existing, actor] = await Promise.all([this.userRepo.getById(id), this.userRepo.getById(actorId)]);
+    refuseOwner(existing?.role, "You can't change the owner's role. Transfer ownership to someone else first.");
+
     // Whether this grant actually changes anything decides both whether an
     // invitation goes out and whether it's recorded. Re-granting someone the role
-    // they already hold is a harmless no-op on the row, but mailing them "you've
-    // been given access" a second time is not — and the log tracks changes, not
-    // clicks.
-    const [existing, actor] = await Promise.all([this.userRepo.getById(id), this.userRepo.getById(actorId)]);
-    // Compared against the *requested* role rather than against "admin": moving
-    // someone from support to staff is a real change and must be recorded, while
-    // re-granting the role they already hold still isn't.
+    // they already hold is a harmless no-op on the row (it may still save a new
+    // email), but mailing them "you've been given access" a second time is not —
+    // and the log tracks changes, not clicks.
     const unchanged = existing?.role === input.role;
+
+    // Someone already on the team in another role isn't being *invited*: that's a
+    // role change, which has its own path (`ChangeRole`) and its own wording.
+    // Refusing here keeps one way to move a member and never sends an "you have
+    // access now" note to someone who already had it.
+    if (existing && !unchanged && isDashboardRole(existing.role)) {
+      throw new ConflictError("ALREADY_ON_TEAM", "That number is already on the team. Change their role instead.");
+    }
 
     const [user] = await this.userRepo.applyRoleChanges({
       assignments: [{ id, phone: input.phone.trim(), role: input.role, email }],

@@ -141,4 +141,23 @@ describe("inventory", () => {
 
     expect(response.status).toBe(404);
   });
+
+  it("lets floor staff write off waste, without seeing what it was worth", async () => {
+    signInAs("staff");
+
+    const response = await recordWaste(
+      jsonRequest("POST", "/api/admin/inventory/waste", {
+        date: today,
+        ingredientId: "seed-ing-milk",
+        quantity: "200",
+        note: "",
+      }),
+    );
+
+    expect(response.status).toBe(201);
+    expect(Object.keys(await readJson<Record<string, unknown>>(response))).toEqual(["id"]);
+    const staffView = await inventory();
+    expect(onHand(staffView, "seed-ing-milk")).toBe(7800);
+    expect(staffView.items.every((item) => item.value === 0 && item.averageCost === 0)).toBe(true);
+  });
 });

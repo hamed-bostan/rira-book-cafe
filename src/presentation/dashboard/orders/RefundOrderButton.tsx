@@ -19,6 +19,7 @@ import { Button } from "@/src/presentation/design-system/components/Button/Butto
 import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
 import { Select } from "@/src/presentation/design-system/components/form/Select/Select";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
+import { OrderItemOptions } from "@/src/presentation/orders/OrderItemOptions";
 
 import { DashboardDialog } from "../DashboardDialog";
 
@@ -130,6 +131,7 @@ export function RefundOrderButton({ order }: RefundOrderButtonProps) {
                     ))}
                   </Select>
                 </div>
+                <OrderItemOptions options={item.options} />
                 {pick.quantity > 0 ? (
                   <DashboardSwitchField
                     label={t("refund.restock")}

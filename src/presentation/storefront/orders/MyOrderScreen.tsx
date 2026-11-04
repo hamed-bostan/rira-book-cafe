@@ -14,6 +14,7 @@ import { OrderServiceLabel } from "@/src/presentation/dashboard/orders/OrderServ
 import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
+import { OrderItemOptions } from "@/src/presentation/orders/OrderItemOptions";
 import { OrderTotals } from "@/src/presentation/orders/OrderTotals";
 
 import { CancelMyOrderButton } from "./CancelMyOrderButton";
@@ -105,6 +106,7 @@ export async function MyOrderScreen({ order, paymentOutcome }: MyOrderScreenProp
                 <p className="text-body-small-strong text-foreground">
                   {formatNumber(item.quantity, locale)}× {item.name}
                 </p>
+                <OrderItemOptions options={item.options} />
                 {item.note ? <p className="text-body-caption text-muted-foreground">{item.note}</p> : null}
                 {canServeItems(order.status) ? (
                   <div className="mt-1">

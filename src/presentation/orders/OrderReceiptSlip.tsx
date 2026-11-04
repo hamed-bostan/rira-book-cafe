@@ -8,6 +8,8 @@ import { formatOrderDate, formatOrderTime } from "@/src/lib/formatOrderDate";
 import { getSiteUrl } from "@/src/lib/siteUrl";
 import { cn } from "@/src/lib/utils";
 
+import { OrderItemOptions } from "./OrderItemOptions";
+
 import type { ReactNode } from "react";
 
 /** The printer's margins when a receipt prints: a till roll's width goes to the receipt, not to white space. */
@@ -122,6 +124,7 @@ export async function OrderReceiptSlip({ receipt }: { receipt: OrderReceipt }) {
                 <span className="block font-medium [overflow-wrap:anywhere]" dir="auto">
                   <span className="tabular-nums">{formatNumber(item.quantity, locale)}×</span> {item.name}
                 </span>
+                <OrderItemOptions options={item.options} className={cn(MUTED, "[overflow-wrap:anywhere]")} />
                 {item.quantity > 1 ? (
                   <span className={cn(MUTED, "block tabular-nums")}>
                     {t("receipt.each", { price: money(item.unitPrice) })}

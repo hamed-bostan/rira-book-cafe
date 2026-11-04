@@ -47,6 +47,19 @@ export const orderResponseSchema = z.object({
       quantity: z.number(),
       refundedQuantity: z.optional(z.number()),
       note: z.optional(z.string()),
+      options: z.optional(
+        z.array(
+          z.object({
+            groupId: z.string(),
+            group: z.string(),
+            groupFa: z.optional(z.string()),
+            choiceId: z.string(),
+            choice: z.string(),
+            choiceFa: z.optional(z.string()),
+            priceDelta: z.number(),
+          }),
+        ),
+      ),
       servedAt: z.optional(z.string()),
       addedAt: z.optional(z.string()),
     }),

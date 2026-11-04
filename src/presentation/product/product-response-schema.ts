@@ -1,6 +1,7 @@
 import { z } from "zod/mini";
 
 import { BOOK_AVAILABILITIES, PRODUCT_KINDS, type Product } from "@/src/domain/entities/Product";
+import { OPTION_SELECTIONS } from "@/src/domain/entities/ProductOptions";
 
 /**
  * The shape a product endpoint promises to return, validated at the typed-service
@@ -46,6 +47,30 @@ export const productResponseSchema = z.object({
   ),
   // Only the single-item read returns it.
   inventoryTracked: z.optional(z.boolean()),
+  // Every read but the management list's returns them.
+  optionGroups: z.optional(
+    z.array(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        nameFa: z.optional(z.string()),
+        required: z.boolean(),
+        selection: z.enum(OPTION_SELECTIONS),
+        minChoices: z.number(),
+        maxChoices: z.optional(z.number()),
+        choices: z.array(
+          z.object({
+            id: z.string(),
+            name: z.string(),
+            nameFa: z.optional(z.string()),
+            priceDelta: z.number(),
+            isAvailable: z.boolean(),
+            isDefault: z.boolean(),
+          }),
+        ),
+      }),
+    ),
+  ),
 }) satisfies z.ZodMiniType<Product>;
 
 export const productListResponseSchema = z.array(productResponseSchema);

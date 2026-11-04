@@ -106,3 +106,71 @@ describe("productFormSchema", () => {
     }
   });
 });
+
+describe("productFormSchema options", () => {
+  type GroupInput = NonNullable<ProductFormInput["optionGroups"]>[number];
+  const choice = (name: string, priceDelta = "", extra: Partial<GroupInput["choices"][number]> = {}) => ({
+    name,
+    nameFa: "",
+    priceDelta,
+    isAvailable: true,
+    isDefault: false,
+    ...extra,
+  });
+  const group = (overrides: Partial<GroupInput> = {}): GroupInput => ({
+    name: "Size",
+    nameFa: "اندازه",
+    required: true,
+    selection: "single",
+    minChoices: "",
+    maxChoices: "",
+    choices: [choice("Small"), choice("Large", "20000", { isDefault: true })],
+    ...overrides,
+  });
+
+  it("leaves the groups alone when the request has none, and parses the form's strings", () => {
+    expect(productFormSchema.parse(BASE).optionGroups).toBeUndefined();
+    const [size] = productFormSchema.parse({ ...BASE, optionGroups: [group()] }).optionGroups ?? [];
+    expect(size).toMatchObject({ name: "Size", nameFa: "اندازه", required: true, minChoices: 1, maxChoices: 1 });
+    expect(size.choices.map((c) => [c.name, c.priceDelta, c.isDefault, c.nameFa])).toEqual([
+      ["Small", 0, false, undefined],
+      ["Large", 20000, true, undefined],
+    ]);
+  });
+
+  it("drops a book's groups and a default where it means nothing", () => {
+    expect(
+      productFormSchema.parse({ ...BASE, kind: "book", bookAuthor: "Hedayat", optionGroups: [group()] }).optionGroups,
+    ).toEqual([]);
+    const [optional] =
+      productFormSchema.parse({ ...BASE, optionGroups: [group({ required: false })] }).optionGroups ?? [];
+    expect(optional.choices[1].isDefault).toBe(false);
+  });
+
+  it("refuses names, prices and bounds that can't be ordered from", () => {
+    const parse = (g: GroupInput) => productFormSchema.safeParse({ ...BASE, optionGroups: [g] });
+    expect(messagesAt(parse(group({ name: " " })), "optionGroups.0.name")).toEqual(["optionNameRequired"]);
+    expect(messagesAt(parse(group({ choices: [] })), "optionGroups.0.choices")).toEqual(["optionChoicesRequired"]);
+    expect(messagesAt(parse(group({ choices: [choice("A", "-5")] })), "optionGroups.0.choices.0.priceDelta")).toEqual([
+      "priceInvalid",
+    ]);
+    expect(
+      messagesAt(parse(group({ choices: [choice("Oat"), choice("oat")] })), "optionGroups.0.choices.1.name"),
+    ).toEqual(["optionChoiceDuplicate"]);
+    expect(
+      messagesAt(
+        parse(group({ choices: [choice("A", "", { isDefault: true }), choice("B", "", { isDefault: true })] })),
+        "optionGroups.0.choices",
+      ),
+    ).toEqual(["optionDefaultOne"]);
+    const extras = (overrides: Partial<GroupInput>) =>
+      group({ selection: "multiple", choices: [choice("Shot"), choice("Oat")], ...overrides });
+    expect(messagesAt(parse(extras({ maxChoices: "3" })), "optionGroups.0.maxChoices")).toEqual(["optionMaxInvalid"]);
+    expect(messagesAt(parse(extras({ minChoices: "2", maxChoices: "1" })), "optionGroups.0.minChoices")).toEqual([
+      "optionMinInvalid",
+    ]);
+    const [parsed] =
+      productFormSchema.parse({ ...BASE, optionGroups: [extras({ maxChoices: "2" })] }).optionGroups ?? [];
+    expect(parsed).toMatchObject({ selection: "multiple", minChoices: 1, maxChoices: 2 });
+  });
+});

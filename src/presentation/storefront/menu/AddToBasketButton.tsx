@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import * as React from "react";
 
 import type { Product } from "@/src/domain/entities/Product";
+import type { OrderItemOption } from "@/src/domain/entities/ProductOptions";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 
@@ -14,6 +15,10 @@ type AddToBasketButtonProps = {
   item: Pick<Product, "id" | "name" | "imageUrl" | "kind" | "price">;
   quantity?: number;
   note?: string;
+  /** The options chosen on the item's page, and what one unit then costs. */
+  choice?: { choiceIds: string[]; options: OrderItemOption[]; unitPrice: number };
+  /** Off while the item's required options aren't chosen yet. */
+  disabled?: boolean;
   /** Called after adding — the detail form resets its fields. */
   onAdded?: () => void;
   size?: "sm" | "md";
@@ -21,7 +26,16 @@ type AddToBasketButtonProps = {
 };
 
 /** Adds an item to the basket, with a brief "Added" confirmation in place of the label. */
-export function AddToBasketButton({ item, quantity = 1, note, onAdded, size = "sm", label }: AddToBasketButtonProps) {
+export function AddToBasketButton({
+  item,
+  quantity = 1,
+  note,
+  choice,
+  disabled = false,
+  onAdded,
+  size = "sm",
+  label,
+}: AddToBasketButtonProps) {
   const t = useTranslations("site");
   const { add } = useBasketActions();
   const [added, setAdded] = React.useState(false);
@@ -38,15 +52,17 @@ export function AddToBasketButton({ item, quantity = 1, note, onAdded, size = "s
       size={size}
       variant={added ? "soft" : "primary"}
       aria-label={label ?? t("menu.addAria", { name: item.name })}
+      disabled={disabled}
       onClick={() => {
         add({
           productId: item.id,
           name: item.name,
           imageUrl: item.imageUrl,
           kind: item.kind,
-          unitPrice: item.price,
+          unitPrice: choice?.unitPrice ?? item.price,
           quantity,
           note,
+          ...(choice && choice.choiceIds.length > 0 ? { choiceIds: choice.choiceIds, options: choice.options } : {}),
         });
         setAdded(true);
         onAdded?.();

@@ -11,6 +11,7 @@ import {
   SETTABLE_PAYMENT_STATUSES,
 } from "@/src/domain/entities/Order";
 import { MAX_REFUND_REASON_LENGTH } from "@/src/domain/entities/OrderRefund";
+import { MAX_LINE_CHOICES } from "@/src/domain/entities/ProductOptions";
 import * as z from "@/src/lib/zod";
 
 import { fieldsParsed } from "./fields-parsed";
@@ -42,6 +43,13 @@ const orderLines = z
         .number()
         .check(z.int("quantityWhole"), z.gte(1, "quantityMin"), z.lte(MAX_LINE_QUANTITY, "quantityMax")),
       note: optionalText(MAX_ORDER_NOTE_TEXT_LENGTH),
+      // The ids of the options chosen (a size, extras). Whether they're the item's,
+      // can be had, and answer its groups is the server's to say, from the menu.
+      choiceIds: z.optional(
+        z
+          .array(z.string().check(z.minLength(1, "optionUnknown"), z.maxLength(64, "optionUnknown")))
+          .check(z.maxLength(MAX_LINE_CHOICES, "optionTooMany")),
+      ),
     }),
   )
   .check(z.minLength(1, "itemsRequired"), z.maxLength(MAX_ORDER_LINES, "itemsTooMany"));

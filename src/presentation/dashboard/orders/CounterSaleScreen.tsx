@@ -7,12 +7,11 @@ import * as React from "react";
 import type { CounterOrderFormInput } from "@/src/contracts/order-schema";
 import {
   COUNTER_PAYMENT_METHODS,
-  MAX_LINE_QUANTITY,
   MAX_TABLE_LABEL_LENGTH,
   type CounterPaymentPart,
   type ServiceType,
 } from "@/src/domain/entities/Order";
-import type { Product } from "@/src/domain/entities/Product";
+import { hasOptions } from "@/src/domain/entities/ProductOptions";
 import { useRouter } from "@/src/i18n/navigation";
 import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
@@ -36,6 +35,7 @@ import { Input } from "@/src/presentation/design-system/components/form/Input/In
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
+import { OrderItemOptions } from "@/src/presentation/orders/OrderItemOptions";
 
 import { GuestField, type GuestFieldValue } from "../guest-profiles/GuestField";
 
@@ -43,20 +43,25 @@ import { CounterSaleDone } from "./CounterSaleDone";
 import { ordersApi } from "./order-api";
 import { splitParts, splitRemainder, type SplitAmounts } from "./paymentParts";
 import { PaymentPartsFields } from "./PaymentPartsFields";
+import {
+  addPick,
+  maxPickQuantity,
+  pickedItems,
+  pickedUnits,
+  updatePick,
+  type MenuPick,
+  type PickedLine,
+} from "./pickedLines";
+import { PickOptionsPanel } from "./PickOptionsPanel";
 
 /** How the sale is settled: later, one method, or split between them. */
 const PAYMENT_CHOICES = ["later", ...COUNTER_PAYMENT_METHODS, "split"] as const;
 type PaymentChoice = (typeof PAYMENT_CHOICES)[number];
 
 type CounterSaleScreenProps = {
-  /** What's on the menu right now, with what's left of counted items. */
-  products: readonly Pick<Product, "id" | "name" | "price" | "imageUrl" | "madeToOrder" | "stockQuantity">[];
+  /** What's on the menu right now, with what's left of counted items and their options. */
+  products: readonly MenuPick[];
 };
-
-/** How many of an item can still go in the basket: counted items stop at what's on the shelf. */
-function maxQuantity(product: CounterSaleScreenProps["products"][number]): number {
-  return product.madeToOrder ? MAX_LINE_QUANTITY : Math.min(product.stockQuantity, MAX_LINE_QUANTITY);
-}
 
 /**
  * Ring up a sale at the counter: pick from the menu, say how it's served, and take
@@ -74,7 +79,10 @@ export function CounterSaleScreen({ products }: CounterSaleScreenProps) {
   const { toast } = useToast();
 
   const [query, setQuery] = React.useState("");
-  const [basket, setBasket] = React.useState<Readonly<Record<string, number>>>({});
+  // The sale's lines: an item with its chosen options; the same item with other choices is another line.
+  const [lines, setLines] = React.useState<readonly PickedLine[]>([]);
+  /** The item whose options are being chosen, before it goes on the sale. */
+  const [picking, setPicking] = React.useState<string | null>(null);
   const [serviceType, setServiceType] = React.useState<ServiceType>("takeaway");
   const [tableLabel, setTableLabel] = React.useState("");
   const [guest, setGuest] = React.useState<GuestFieldValue | null>(null);
@@ -91,25 +99,23 @@ export function CounterSaleScreen({ products }: CounterSaleScreenProps) {
 
   const term = query.trim().toLowerCase();
   const shown = term ? products.filter((product) => product.name.toLowerCase().includes(term)) : products;
-  const lines = products.flatMap((product) => {
-    const quantity = basket[product.id] ?? 0;
-    return quantity > 0 ? [{ product, quantity }] : [];
-  });
-  const total = lines.reduce((sum, line) => sum + line.product.price * line.quantity, 0);
+  const total = lines.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0);
 
   const parts: CounterPaymentPart[] | undefined =
     payment === "later" ? undefined : payment === "split" ? splitParts(amounts) : [{ method: payment, amount: total }];
   const paymentReady = payment !== "split" || (splitRemainder(parts ?? [], total) === 0 && (parts?.length ?? 0) > 0);
   const ready = lines.length > 0 && guest !== null && (serviceType !== "dineIn" || tableLabel.trim() !== "");
 
-  function setQuantity(id: string, quantity: number): void {
-    setBasket((current) => ({ ...current, [id]: Math.max(quantity, 0) }));
+  /** One more of an item: straight on, or — when it has options — after they're chosen. */
+  function pick(product: MenuPick): void {
+    if (hasOptions(product)) setPicking((current) => (current === product.id ? null : product.id));
+    else setLines((current) => addPick(current, product));
   }
 
   function submit(): void {
     if (!guest) return;
     const values: CounterOrderFormInput = {
-      items: lines.map((line) => ({ productId: line.product.id, quantity: line.quantity })),
+      items: pickedItems(lines),
       serviceType,
       tableLabel: serviceType === "dineIn" ? tableLabel : undefined,
       note,
@@ -125,7 +131,8 @@ export function CounterSaleScreen({ products }: CounterSaleScreenProps) {
         const order = await ordersApi.createCounterSale(values);
         toast({ tone: "success", title: t("counter.saved", { number: order.orderNumber }) });
         setLastSale({ id: order.id, number: order.orderNumber });
-        setBasket({});
+        setLines([]);
+        setPicking(null);
         setQuery("");
         setNote("");
         setTableLabel("");
@@ -173,14 +180,21 @@ export function CounterSaleScreen({ products }: CounterSaleScreenProps) {
             ) : (
               <ul className="grid grid-cols-1 sm:grid-cols-2">
                 {shown.map((product) => {
-                  const inBasket = basket[product.id] ?? 0;
-                  const left = maxQuantity(product);
+                  const inBasket = pickedUnits(lines, product.id);
+                  const left = maxPickQuantity(product);
                   return (
-                    <li key={product.id} className="border-b border-border sm:odd:border-e">
+                    <li
+                      key={product.id}
+                      className={cn(
+                        "border-b border-border sm:odd:border-e",
+                        picking === product.id && "sm:col-span-2 sm:border-e-0",
+                      )}
+                    >
                       <button
                         type="button"
                         disabled={inBasket >= left}
-                        onClick={() => setQuantity(product.id, inBasket + 1)}
+                        aria-expanded={hasOptions(product) ? picking === product.id : undefined}
+                        onClick={() => pick(product)}
                         aria-label={t("counter.addAria", { name: product.name })}
                         className={cn(
                           "flex w-full items-center gap-3 px-4 py-3 text-start transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50",
@@ -203,6 +217,16 @@ export function CounterSaleScreen({ products }: CounterSaleScreenProps) {
                           </span>
                         ) : null}
                       </button>
+                      {picking === product.id ? (
+                        <PickOptionsPanel
+                          product={product}
+                          onCancel={() => setPicking(null)}
+                          onAdd={(choiceIds) => {
+                            setLines((current) => addPick(current, product, choiceIds));
+                            setPicking(null);
+                          }}
+                        />
+                      ) : null}
                     </li>
                   );
                 })}
@@ -217,17 +241,15 @@ export function CounterSaleScreen({ products }: CounterSaleScreenProps) {
                 <p className="p-5 text-muted-foreground">{t("counter.basketEmpty")}</p>
               ) : (
                 <ul>
-                  {lines.map(({ product, quantity }) => (
-                    <li
-                      key={product.id}
-                      className="flex items-center gap-2 border-b border-border px-5 py-3 last:border-b-0"
-                    >
+                  {lines.map(({ key, product, options, unitPrice, quantity }) => (
+                    <li key={key} className="flex items-center gap-2 border-b border-border px-5 py-3 last:border-b-0">
                       <span className="flex min-w-0 flex-1 flex-col">
                         <span dir="auto" className={cn(ROW_TEXT, "truncate text-foreground")}>
                           {product.name}
                         </span>
+                        <OrderItemOptions options={options} />
                         <span className={cn(ROW_CAPTION, "tabular-nums")}>
-                          {formatMoney(product.price * quantity, locale)}
+                          {formatMoney(unitPrice * quantity, locale)}
                         </span>
                       </span>
                       <Button
@@ -236,7 +258,7 @@ export function CounterSaleScreen({ products }: CounterSaleScreenProps) {
                         size="control-sm"
                         iconOnly
                         aria-label={t("counter.decreaseAria", { name: product.name })}
-                        onClick={() => setQuantity(product.id, quantity - 1)}
+                        onClick={() => setLines((current) => updatePick(current, key, { quantity: quantity - 1 }))}
                       >
                         <Icon icon={Minus} size="icon-md" />
                       </Button>
@@ -249,8 +271,8 @@ export function CounterSaleScreen({ products }: CounterSaleScreenProps) {
                         size="control-sm"
                         iconOnly
                         aria-label={t("counter.increaseAria", { name: product.name })}
-                        disabled={quantity >= maxQuantity(product)}
-                        onClick={() => setQuantity(product.id, quantity + 1)}
+                        disabled={pickedUnits(lines, product.id) >= maxPickQuantity(product)}
+                        onClick={() => setLines((current) => updatePick(current, key, { quantity: quantity + 1 }))}
                       >
                         <Icon icon={Plus} size="icon-md" />
                       </Button>

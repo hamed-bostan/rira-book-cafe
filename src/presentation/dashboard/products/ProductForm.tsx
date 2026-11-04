@@ -45,6 +45,7 @@ import { useToast } from "@/src/presentation/design-system/components/Toast/useT
 
 import { productsApi } from "./product-api";
 import { ProductImageUpload } from "./ProductImageUpload";
+import { ProductOptionGroupsEditor } from "./ProductOptionGroupsEditor";
 
 /** Fields the API can return targeted `fieldErrors` for. */
 const FORM_FIELDS = [
@@ -68,6 +69,7 @@ const FORM_FIELDS = [
   "bookIsbn",
   "bookAvailability",
   "bookCopies",
+  "optionGroups",
 ] as const satisfies readonly (keyof ProductFormInput)[];
 
 /** A dietary tag is a field, not a filter: it tints rather than fills once it's on. */
@@ -122,6 +124,23 @@ function toDefaults(product?: Product, translations?: ProductTranslationInput[])
     faDescription: fa?.description ?? "",
     faNutrition: fa?.nutrition ?? "",
     faOrigin: fa?.origin ?? "",
+    optionGroups: (product?.optionGroups ?? []).map((group) => ({
+      id: group.id,
+      name: group.name,
+      nameFa: group.nameFa ?? "",
+      required: group.required,
+      selection: group.selection,
+      minChoices: group.selection === "multiple" && group.required ? String(group.minChoices) : "",
+      maxChoices: group.selection === "multiple" && group.maxChoices != null ? String(group.maxChoices) : "",
+      choices: group.choices.map((choice) => ({
+        id: choice.id,
+        name: choice.name,
+        nameFa: choice.nameFa ?? "",
+        priceDelta: choice.priceDelta > 0 ? String(choice.priceDelta) : "",
+        isAvailable: choice.isAvailable,
+        isDefault: choice.isDefault,
+      })),
+    })),
   };
 }
 
@@ -151,6 +170,7 @@ export function ProductForm(props: ProductFormProps) {
     register,
     handleSubmit,
     control,
+    getValues,
     setValue,
     setError,
     formState: { errors, isSubmitting },
@@ -583,6 +603,21 @@ export function ProductForm(props: ProductFormProps) {
                   )}
                 </DashboardFormField>
               </div>
+            </DashboardSection>
+
+            {/* Sizes and extras: drinks and food only — a book's are dropped on save. */}
+            <DashboardSection
+              title={t("sectionOptions")}
+              description={kind === "book" ? t("optionsBookHint") : t("sectionOptionsHint")}
+            >
+              {kind === "book" ? null : (
+                <ProductOptionGroupsEditor
+                  control={control}
+                  register={register}
+                  getValues={getValues}
+                  setValue={setValue}
+                />
+              )}
             </DashboardSection>
 
             <DashboardSection title={t("stockLabel")}>

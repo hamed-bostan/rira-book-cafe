@@ -13,6 +13,12 @@ import {
   type ProductListItem,
 } from "@/src/domain/entities/Product";
 import type { ProductFilters, ProductSort } from "@/src/domain/entities/ProductFilters";
+import {
+  OPTION_SELECTIONS,
+  type OptionSelection,
+  type ProductOptionGroup,
+  type ProductOptionGroupInput,
+} from "@/src/domain/entities/ProductOptions";
 import { LOW_STOCK_THRESHOLD } from "@/src/domain/entities/stock";
 import { NotFoundError } from "@/src/domain/errors/NotFoundError";
 import { ValidationError } from "@/src/domain/errors/ValidationError";
@@ -45,6 +51,14 @@ const WITH_RECIPE_STOCK = {
 } satisfies Prisma.ProductInclude;
 
 /**
+ * An item's option groups and their choices, in order — read with every item a
+ * guest or an order sees (the management list's rows go without).
+ */
+const WITH_OPTIONS = {
+  optionGroups: { orderBy: { position: "asc" }, include: { choices: { orderBy: { position: "asc" } } } },
+} satisfies Prisma.ProductInclude;
+
+/**
  * Menu items backed by PostgreSQL via Prisma. Server-side only (it opens a DB
  * connection), bound through the container — never imported by client code.
  */
@@ -56,7 +70,11 @@ export class PrismaProductRepository implements IProductRepository {
   constructor(private readonly db: PrismaDb = prisma) {}
 
   async getAll(locale?: string): Promise<Product[]> {
-    const rows = await this.db.product.findMany({ where: PUBLISHED, orderBy: { createdAt: "asc" } });
+    const rows = await this.db.product.findMany({
+      where: PUBLISHED,
+      orderBy: { createdAt: "asc" },
+      include: WITH_OPTIONS,
+    });
     return localizeProducts(rows.map(toProduct), locale);
   }
 
@@ -64,7 +82,7 @@ export class PrismaProductRepository implements IProductRepository {
     // With its recipe's shape: whether Inventory counts the item's units.
     const row = await this.db.product.findUnique({
       where: { id },
-      include: { recipeLines: { select: { quantity: true } } },
+      include: { recipeLines: { select: { quantity: true } }, ...WITH_OPTIONS },
     });
     if (!row) return null;
     const { recipeLines, ...columns } = row;
@@ -76,14 +94,14 @@ export class PrismaProductRepository implements IProductRepository {
   async getPublishedById(id: string, locale?: string): Promise<Product | null> {
     // `findFirst`, not `findUnique`: the lookup is by id *and* visibility. An
     // unpublished item resolves to `null`, indistinguishable from a missing one.
-    const row = await this.db.product.findFirst({ where: { ...PUBLISHED, id } });
+    const row = await this.db.product.findFirst({ where: { ...PUBLISHED, id }, include: WITH_OPTIONS });
     if (!row) return null;
     return (await localizeProducts([toProduct(row)], locale))[0];
   }
 
   async getByIds(ids: readonly string[], locale?: string): Promise<Product[]> {
     if (ids.length === 0) return [];
-    const rows = await this.db.product.findMany({ where: { id: { in: [...ids] } } });
+    const rows = await this.db.product.findMany({ where: { id: { in: [...ids] } }, include: WITH_OPTIONS });
     return localizeProducts(rows.map(toProduct), locale);
   }
 
@@ -91,6 +109,7 @@ export class PrismaProductRepository implements IProductRepository {
     const rows = await this.db.product.findMany({
       where: { ...PUBLISHED, isFeatured: true },
       orderBy: { createdAt: "asc" },
+      include: WITH_OPTIONS,
     });
     return localizeProducts(rows.map(toProduct), locale);
   }
@@ -129,6 +148,7 @@ export class PrismaProductRepository implements IProductRepository {
     const rows = await this.db.product.findMany({
       where: { AND: and },
       orderBy: orderByFor(filters.sort),
+      include: WITH_OPTIONS,
     });
     return localizeProducts(rows.map(toProduct), locale);
   }
@@ -154,10 +174,12 @@ export class PrismaProductRepository implements IProductRepository {
 
   async create(input: NewProduct, audit?: AuditHook<Product>): Promise<Product> {
     // `translations` isn't a `products` column — persist it into the side table.
-    const { translations, ...product } = input;
+    const { translations, optionGroups, ...product } = input;
     try {
       const row = await inTransaction(this.db, async (tx) => {
-        const created = await tx.product.create({ data: toRowData(product) });
+        const { id } = await tx.product.create({ data: toRowData(product) });
+        await replaceOptionGroups(tx, id, optionGroups);
+        const created = await tx.product.findUniqueOrThrow({ where: { id }, include: WITH_OPTIONS });
         // Inside the transaction, so the audit entry and the item it records commit together.
         await recordAudit(tx, toProduct(created), audit);
         await replaceProductTranslations(tx, created.id, translations);
@@ -170,10 +192,13 @@ export class PrismaProductRepository implements IProductRepository {
   }
 
   async update(id: string, input: NewProduct, audit?: AuditHook<Product>): Promise<Product> {
-    const { translations, ...product } = input;
+    const { translations, optionGroups, ...product } = input;
     try {
       const row = await inTransaction(this.db, async (tx) => {
-        const updated = await tx.product.update({ where: { id }, data: toRowData(product) });
+        await tx.product.update({ where: { id }, data: toRowData(product) });
+        await replaceOptionGroups(tx, id, optionGroups);
+        // Read back with its options, so the audit entry diffs what was saved.
+        const updated = await tx.product.findUniqueOrThrow({ where: { id }, include: WITH_OPTIONS });
         await recordAudit(tx, toProduct(updated), audit);
         await replaceProductTranslations(tx, id, translations);
         return updated;
@@ -390,7 +415,7 @@ function orderByFor(sort: ProductSort | undefined): Prisma.ProductOrderByWithRel
  * author behind. An absent `stockQuantity` (a made-to-order item) is left out of
  * the write, so the stored count stays as it was — the column default on create.
  */
-function toRowData(product: Omit<NewProduct, "translations">) {
+function toRowData(product: Omit<NewProduct, "translations" | "optionGroups">) {
   const { book, ...rest } = product;
   const isBook = product.kind === "book" && book !== undefined;
   return {
@@ -437,7 +462,36 @@ type ProductRow = {
   bookIsbn: string | null;
   bookAvailability: string | null;
   bookCopies: number | null;
+  /** Present when the read included them (WITH_OPTIONS). */
+  optionGroups?: OptionGroupRow[];
 };
+
+type OptionGroupRow = Prisma.ProductOptionGroupGetPayload<{ include: { choices: true } }>;
+
+/** Narrow a stored selection; an unknown value reads as single-choice, the stricter. */
+function toSelection(value: string): OptionSelection {
+  return (OPTION_SELECTIONS as readonly string[]).includes(value) ? (value as OptionSelection) : "single";
+}
+
+function toOptionGroup(row: OptionGroupRow): ProductOptionGroup {
+  return {
+    id: row.id,
+    name: row.name,
+    nameFa: row.nameFa ?? undefined,
+    required: row.required,
+    selection: toSelection(row.selection),
+    minChoices: row.minChoices,
+    maxChoices: row.maxChoices ?? undefined,
+    choices: row.choices.map((choice) => ({
+      id: choice.id,
+      name: choice.name,
+      nameFa: choice.nameFa ?? undefined,
+      priceDelta: choice.priceDelta,
+      isAvailable: choice.isAvailable,
+      isDefault: choice.isDefault,
+    })),
+  };
+}
 
 /** Narrow a stored kind; an unknown value reads as a drink rather than failing the whole list. */
 function toKind(value: string): ProductKind {
@@ -488,6 +542,7 @@ function toProduct(row: ProductRow): Product {
     dietary: row.dietary,
     taxExempt: row.taxExempt,
     book: toBook(row),
+    ...(row.optionGroups ? { optionGroups: row.optionGroups.map(toOptionGroup) } : {}),
   };
 }
 
@@ -535,6 +590,65 @@ async function replaceProductTranslations(
       create: { productId, locale: t.locale, ...fields },
       update: fields,
     });
+  }
+}
+
+/**
+ * Persist an item's option groups. An undefined list leaves them untouched; a list
+ * replaces the set. A group or choice whose id the item already has is updated in
+ * place — its id stays, so a guest's basket and a staff picker that hold it still
+ * name it — anything else is created, and what the list leaves out is deleted
+ * (choices with their group). Order lines never point at these rows: they
+ * snapshot what they chose.
+ */
+async function replaceOptionGroups(
+  tx: Prisma.TransactionClient,
+  productId: string,
+  groups?: ProductOptionGroupInput[],
+): Promise<void> {
+  if (groups === undefined) return;
+
+  const existing = await tx.productOptionGroup.findMany({
+    where: { productId },
+    select: { id: true, choices: { select: { id: true } } },
+  });
+  const choicesOf = new Map(existing.map((group) => [group.id, new Set(group.choices.map((choice) => choice.id))]));
+  const keptGroupIds = groups.flatMap((group) => (group.id && choicesOf.has(group.id) ? [group.id] : []));
+  await tx.productOptionGroup.deleteMany({ where: { productId, id: { notIn: keptGroupIds } } });
+
+  for (const [position, group] of groups.entries()) {
+    const fields = {
+      name: group.name,
+      nameFa: group.nameFa ?? null,
+      required: group.required,
+      selection: group.selection,
+      minChoices: group.minChoices,
+      maxChoices: group.maxChoices ?? null,
+      position,
+    };
+    const kept = group.id ? choicesOf.get(group.id) : undefined;
+    const groupId =
+      kept && group.id
+        ? (await tx.productOptionGroup.update({ where: { id: group.id }, data: fields, select: { id: true } })).id
+        : (await tx.productOptionGroup.create({ data: { productId, ...fields }, select: { id: true } })).id;
+
+    const keptChoiceIds = group.choices.flatMap((choice) => (choice.id && kept?.has(choice.id) ? [choice.id] : []));
+    await tx.productOptionChoice.deleteMany({ where: { groupId, id: { notIn: keptChoiceIds } } });
+    for (const [choicePosition, choice] of group.choices.entries()) {
+      const choiceFields = {
+        name: choice.name,
+        nameFa: choice.nameFa ?? null,
+        priceDelta: choice.priceDelta,
+        isAvailable: choice.isAvailable,
+        isDefault: choice.isDefault,
+        position: choicePosition,
+      };
+      if (choice.id && kept?.has(choice.id)) {
+        await tx.productOptionChoice.update({ where: { id: choice.id }, data: choiceFields });
+      } else {
+        await tx.productOptionChoice.create({ data: { groupId, ...choiceFields } });
+      }
+    }
   }
 }
 

@@ -10,6 +10,7 @@ import { formatMoney } from "@/src/lib/formatMoney";
 import { FadeInImage } from "@/src/presentation/components/FadeInImage";
 import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { menuPrice } from "@/src/presentation/product/menuPrice";
 
 import { AddToBasketForm } from "./AddToBasketForm";
 import { BookWaitlistPanel } from "./BookWaitlistPanel";
@@ -33,7 +34,9 @@ export async function MenuItemScreen({ item, reviews, reviewEligibility, waitlis
   const t = await getTranslations("site");
   const tProducts = await getTranslations("dashProducts");
   const tDietary = await getTranslations("dietary");
+  const tOptions = await getTranslations("productOptions");
   const locale = await getLocale();
+  const price = menuPrice(item);
   const sellable = isSellable(item);
   // A made-to-order item never sells out by count.
   const soldOut = isSoldOut(item);
@@ -80,7 +83,9 @@ export async function MenuItemScreen({ item, reviews, reviewEligibility, waitlis
             {item.unit ? <p className="mt-1 text-body-small text-muted-foreground">{item.unit}</p> : null}
           </div>
           <p className="text-heading-subsection text-foreground">
-            {formatMoney(item.price, locale)}
+            {price.from
+              ? tOptions("from", { price: formatMoney(price.amount, locale) })
+              : formatMoney(price.amount, locale)}
             {item.originalPrice ? (
               <span className="ms-2 text-body-default text-muted-foreground line-through">
                 {formatMoney(item.originalPrice, locale)}

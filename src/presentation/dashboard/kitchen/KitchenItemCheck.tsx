@@ -14,6 +14,7 @@ import { useToast } from "@/src/presentation/design-system/components/Toast/useT
 import { ordersApi } from "../orders/order-api";
 
 import { KitchenAddedTag } from "./KitchenAddedTag";
+import { KITCHEN_OPTIONS } from "./kitchenStyles";
 
 type KitchenItemCheckProps = {
   orderId: string;
@@ -21,6 +22,8 @@ type KitchenItemCheckProps = {
   /** "2", in the reader's digits. */
   quantity: string;
   name: string;
+  /** The options chosen for the line, in the reader's language ("Large, Oat milk"). */
+  options?: string;
   /** The guest's request for the line ("Oat milk · Extra hot"). */
   note?: string;
   /** Whether the line is already ticked off — the order's per-line served mark. */
@@ -39,6 +42,7 @@ export function KitchenItemCheck({
   itemId,
   quantity,
   name,
+  options,
   note,
   served,
   added = false,
@@ -85,6 +89,7 @@ export function KitchenItemCheck({
           <span className="shrink-0 tabular-nums">{quantity}×</span>
           <span className="min-w-0">{name}</span>
         </span>
+        {options ? <span className={KITCHEN_OPTIONS}>{options}</span> : null}
         {note ? (
           <span className="text-body-default font-medium text-muted-foreground sm:text-body-small">{note}</span>
         ) : null}

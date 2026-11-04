@@ -32,6 +32,7 @@ import { DashboardPageCrumb } from "@/src/presentation/dashboard/shell/Dashboard
 import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
+import { OrderItemOptions } from "@/src/presentation/orders/OrderItemOptions";
 import { OrderTotals } from "@/src/presentation/orders/OrderTotals";
 
 import { AddOrderItemsDialog, type MenuPick } from "./AddOrderItemsDialog";
@@ -167,6 +168,7 @@ export async function OrderDetailScreen({
                           {formatMoney(item.unitPrice * item.quantity, locale)}
                         </span>
                       </div>
+                      <OrderItemOptions options={item.options} className="text-body-small text-foreground/80" />
                       {item.note ? <p className={cn(FIELD_HINT, "text-warning-foreground")}>{item.note}</p> : null}
                       {item.addedAt ? (
                         <p className={cn(FIELD_HINT, "tabular-nums")}>

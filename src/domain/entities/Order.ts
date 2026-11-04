@@ -1,4 +1,5 @@
 import type { ProductKind } from "./Product";
+import type { OrderItemOption } from "./ProductOptions";
 
 /**
  * A cafe order: what a guest asked for, where it's served, and how far along the
@@ -119,6 +120,12 @@ export type OrderItem = {
   refundedQuantity?: number;
   /** The guest's request for this line, e.g. "oat milk, no sugar". */
   note?: string;
+  /**
+   * The options chosen for this line, snapshotted when it was taken (see
+   * `ProductOptions`); `unitPrice` already includes what they add. Absent or empty
+   * for an item without options.
+   */
+  options?: OrderItemOption[];
   /**
    * ISO 8601 timestamp (UTC) of when staff marked the line served — taken to the
    * table or handed over. Absent while it's still being prepared.

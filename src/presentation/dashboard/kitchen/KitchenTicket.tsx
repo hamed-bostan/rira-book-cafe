@@ -3,6 +3,7 @@ import { useLocale, useTranslations } from "next-intl";
 
 import { isLateOrder, minutesWaiting } from "@/src/domain/entities/Kitchen";
 import { canServeItems, servedLineCount, type Order } from "@/src/domain/entities/Order";
+import { optionsSummary } from "@/src/domain/entities/ProductOptions";
 import { formatNumber } from "@/src/lib/formatNumber";
 import { cn } from "@/src/lib/utils";
 import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
@@ -11,6 +12,7 @@ import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 import { KitchenAddedTag } from "./KitchenAddedTag";
 import { KitchenAdvanceButton } from "./KitchenAdvanceButton";
 import { KitchenItemCheck } from "./KitchenItemCheck";
+import { KITCHEN_OPTIONS } from "./kitchenStyles";
 import { KitchenWaitPill } from "./KitchenWaitPill";
 
 type KitchenTicketProps = {
@@ -89,6 +91,7 @@ export function KitchenTicket({ order, now, service, canFulfill }: KitchenTicket
                   itemId={item.id}
                   quantity={quantity}
                   name={item.name}
+                  options={optionsSummary(item.options, locale) || undefined}
                   note={item.note}
                   served={Boolean(item.servedAt)}
                   added={Boolean(item.addedAt)}
@@ -105,6 +108,9 @@ export function KitchenTicket({ order, now, service, canFulfill }: KitchenTicket
                     <span className="min-w-0">{item.name}</span>
                   </span>
                   {item.addedAt ? <KitchenAddedTag /> : null}
+                  {item.options?.length ? (
+                    <span className={KITCHEN_OPTIONS}>{optionsSummary(item.options, locale)}</span>
+                  ) : null}
                   {item.note ? (
                     <span className="text-body-default font-medium text-muted-foreground sm:text-body-small">
                       {item.note}

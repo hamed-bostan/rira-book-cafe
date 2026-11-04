@@ -1,6 +1,13 @@
 import { MAX_ORDER_AMOUNT } from "@/src/domain/entities/Order";
 import { BOOK_AVAILABILITIES, MAX_BOOK_COPIES, MAX_STOCK_QUANTITY, PRODUCT_KINDS } from "@/src/domain/entities/Product";
 import { DIETARY_TAGS } from "@/src/domain/entities/ProductFilters";
+import {
+  MAX_OPTION_CHOICES,
+  MAX_OPTION_GROUPS,
+  MAX_OPTION_NAME_LENGTH,
+  normalizeOptionGroups,
+  OPTION_SELECTIONS,
+} from "@/src/domain/entities/ProductOptions";
 import * as z from "@/src/lib/zod";
 
 import { fieldsParsed } from "./fields-parsed";
@@ -91,6 +98,107 @@ const dietaryField = z
 
 const productFieldsParsed = fieldsParsed("price", "originalPrice", "costPrice", "bookCopies");
 
+/** An option's name: required, trimmed, short. */
+const optionNameField = z
+  .string()
+  .check(z.trim(), z.minLength(1, "optionNameRequired"), z.maxLength(MAX_OPTION_NAME_LENGTH, "optionNameTooLong"));
+
+/** An option's Persian name: optional; blank → `undefined` (the English one shows). */
+const optionNameFaField = z.pipe(
+  z.optional(z.string().check(z.trim(), z.maxLength(MAX_OPTION_NAME_LENGTH, "optionNameTooLong"))),
+  z.transform((value) => (value ? value : undefined)),
+);
+
+/** What a choice adds to the price: whole Toman, 0 or more; blank is 0 (a free choice). */
+const priceDeltaField = z
+  .pipe(
+    z.string().check(
+      z.trim(),
+      z.refine((value) => value === "" || PRICE_PATTERN.test(value), "priceInvalid"),
+    ),
+    z.transform((value) => (value === "" ? 0 : Number(value))),
+  )
+  .check(z.refine((n) => n <= MAX_ORDER_AMOUNT, "amountTooLarge"));
+
+/** A count of choices: blank → `undefined`; otherwise a whole number. */
+const choiceCountField = z
+  .pipe(
+    z.string().check(
+      z.trim(),
+      z.refine((value) => value === "" || /^\d+$/.test(value), "optionCountWhole"),
+    ),
+    z.transform((value) => (value === "" ? undefined : Number(value))),
+  )
+  .check(z.refine((n) => n === undefined || n <= MAX_OPTION_CHOICES, "optionMaxInvalid"));
+
+const optionChoiceField = z.object({
+  // The id of a choice the item already has; absent for a new one. The server keeps
+  // only ids the item really has, so a forged one just makes a new choice.
+  id: z.optional(z.string().check(z.maxLength(64, "optionUnknown"))),
+  name: optionNameField,
+  nameFa: optionNameFaField,
+  priceDelta: priceDeltaField,
+  isAvailable: z.boolean(),
+  isDefault: z.boolean(),
+});
+
+/**
+ * One option group as the form holds it. A single-choice group takes one choice at
+ * most (exactly one when required) and may name a default when required; a
+ * multiple-choice one takes between `minChoices` (when required; 1 if left blank)
+ * and `maxChoices` (blank: as many as it has).
+ */
+const optionGroupField = z
+  .object({
+    id: z.optional(z.string().check(z.maxLength(64, "optionUnknown"))),
+    name: optionNameField,
+    nameFa: optionNameFaField,
+    required: z.boolean(),
+    selection: z.enum(OPTION_SELECTIONS, { error: "optionSelectionInvalid" }),
+    minChoices: choiceCountField,
+    maxChoices: choiceCountField,
+    choices: z
+      .array(optionChoiceField)
+      .check(z.minLength(1, "optionChoicesRequired"), z.maxLength(MAX_OPTION_CHOICES, "optionChoicesTooMany")),
+  })
+  .check(
+    z.superRefine(
+      (group, ctx) => {
+        const seen = new Set<string>();
+        group.choices.forEach((choice, index) => {
+          const key = choice.name.toLowerCase();
+          if (seen.has(key)) {
+            ctx.addIssue({ code: "custom", path: ["choices", index, "name"], message: "optionChoiceDuplicate" });
+          }
+          seen.add(key);
+        });
+        if (group.selection === "single") {
+          if (group.required && group.choices.filter((choice) => choice.isDefault).length > 1) {
+            ctx.addIssue({ code: "custom", path: ["choices"], message: "optionDefaultOne" });
+          }
+          return;
+        }
+        const max = group.maxChoices ?? group.choices.length;
+        const min = group.required ? (group.minChoices ?? 1) : 0;
+        if (max < 1 || max > group.choices.length) {
+          ctx.addIssue({ code: "custom", path: ["maxChoices"], message: "optionMaxInvalid" });
+        } else if (group.required && (min < 1 || min > max)) {
+          ctx.addIssue({ code: "custom", path: ["minChoices"], message: "optionMinInvalid" });
+        }
+      },
+      { when: fieldsParsed("minChoices", "maxChoices", "choices.*.priceDelta", "choices.*.nameFa", "nameFa") },
+    ),
+  );
+
+/**
+ * The item's option groups, in order. Optional on the wire: a client that sends
+ * none (one that predates options) leaves the item's groups as they are; the form
+ * always sends its list, so an empty one clears them.
+ */
+const optionGroupsField = z.optional(
+  z.array(optionGroupField).check(z.maxLength(MAX_OPTION_GROUPS, "optionGroupsTooMany")),
+);
+
 export const productFormSchema = z.pipe(
   z
     .object({
@@ -128,6 +236,8 @@ export const productFormSchema = z.pipe(
       faDescription: optionalText,
       faNutrition: optionalText,
       faOrigin: optionalText,
+      // Sizes and extras (drinks and food only — a book's are dropped on parse).
+      optionGroups: optionGroupsField,
     })
     .check(
       z.refine((data) => data.originalPrice === undefined || data.originalPrice > data.price, {
@@ -166,9 +276,24 @@ export const productFormSchema = z.pipe(
       bookAvailability,
       bookCopies,
       stockQuantity,
+      optionGroups,
       ...base
     }) => ({
       ...base,
+      // Positions are the lists' order; the bounds a group's kind doesn't use are
+      // reset, and a default kept only on a required single-choice group.
+      optionGroups:
+        optionGroups === undefined
+          ? undefined
+          : base.kind === "book"
+            ? []
+            : normalizeOptionGroups(
+                optionGroups.map(({ minChoices, maxChoices, ...group }) => ({
+                  ...group,
+                  minChoices: minChoices ?? 1,
+                  maxChoices,
+                })),
+              ),
       // A made-to-order item sends no count, so saving it leaves the stored one alone.
       stockQuantity: base.madeToOrder ? undefined : Number(stockQuantity),
       // Book details only travel with books; for drinks and food they're dropped

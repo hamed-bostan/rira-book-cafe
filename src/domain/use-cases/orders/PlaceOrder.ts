@@ -9,6 +9,14 @@ import {
   type ServiceType,
 } from "../../entities/Order";
 import { isOnPublicMenu, isSellable } from "../../entities/Product";
+import {
+  optionSelectionProblem,
+  optionsDelta,
+  snapshotOptions,
+  withDefaultChoices,
+  type OrderItemOption,
+  type ProductOptionGroup,
+} from "../../entities/ProductOptions";
 import { ValidationError } from "../../errors/ValidationError";
 import { categoryLookup, type MenuCatalog } from "../products/publicMenu";
 
@@ -19,7 +27,27 @@ import type { OrderQuote } from "../../entities/Checkout";
 import type { User } from "../../entities/User";
 import type { IOrderRepository } from "../../repositories/IOrderRepository";
 
-type OrderLineRequest = { productId: string; quantity: number; note?: string };
+/**
+ * One line as a client asks for it: which item, how many, the guest's note, and
+ * the ids of the options chosen (see `ProductOptions`) — never a price.
+ */
+type OrderLineRequest = { productId: string; quantity: number; note?: string; choiceIds?: readonly string[] };
+
+/**
+ * The options a line asked for, checked against the item's options as they are
+ * now, and snapshotted. A required single-choice group the request left out gets
+ * its default (a basket filled before the item had options still orders); anything
+ * else wrong — a choice the item doesn't have (any more), one switched off, a
+ * required group unanswered, too few or too many — refuses the order, with the
+ * reason as a `formErrors` key.
+ */
+function lineOptions(groups: readonly ProductOptionGroup[], choiceIds: readonly string[]): OrderItemOption[] {
+  if (groups.length === 0 && choiceIds.length === 0) return [];
+  const chosen = withDefaultChoices(groups, choiceIds);
+  const problem = optionSelectionProblem(groups, chosen);
+  if (problem) throw new ValidationError("items", problem);
+  return snapshotOptions(groups, chosen);
+}
 
 /** What the guest asks for. Prices and names come from the menu, never from the client. */
 export type PlaceOrderInput = {
@@ -69,12 +97,16 @@ export async function buildOrderLines(
     if (lineNote && lineNote.length > MAX_ORDER_NOTE_TEXT_LENGTH) {
       throw new ValidationError("items", "An item note is too long.");
     }
+    const options = lineOptions(product.optionGroups ?? [], line.choiceIds ?? []);
     return {
       productId: product.id,
       kind: product.kind,
       name: product.name,
       imageUrl: product.imageUrl,
-      unitPrice: product.price,
+      // The item's price as it is now, plus what each choice adds now — never the
+      // client's figure. Discounts (promo, points) then apply to these lines' totals.
+      unitPrice: product.price + optionsDelta(options),
+      ...(options.length > 0 ? { options } : {}),
       // Snapshotted like the price, so a later cost change doesn't rewrite past margins.
       unitCost: product.costPrice,
       taxExempt: product.taxExempt,

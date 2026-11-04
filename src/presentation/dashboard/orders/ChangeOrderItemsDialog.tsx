@@ -16,6 +16,7 @@ import { FIELD_HINT, FIELD_LABEL } from "@/src/presentation/dashboard/fieldStyle
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
 import { Select } from "@/src/presentation/design-system/components/form/Select/Select";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
+import { OrderItemOptions } from "@/src/presentation/orders/OrderItemOptions";
 
 import { ordersApi } from "./order-api";
 
@@ -134,6 +135,7 @@ export function ChangeOrderItemsDialog({ order }: ChangeOrderItemsDialogProps) {
                   ))}
                 </Select>
               </div>
+              <OrderItemOptions options={item.options} className={FIELD_HINT} />
               {lowerable ? null : <p className={FIELD_HINT}>{t("edit.lineServed")}</p>}
               {item.note ? (
                 <p dir="auto" className={cn(FIELD_HINT, "[overflow-wrap:anywhere]")}>

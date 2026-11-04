@@ -103,7 +103,10 @@ test("a stock item's reorder level, a quick count and waste, from its row", asyn
     return found;
   };
 
-  await page.goto("/dashboard/inventory");
+  // Searched down to this item, as staff would on a long list: unfiltered, a count moves
+  // its row (it's no longer out of stock) while the page refreshes, and a menu opened
+  // then is left where the row was.
+  await page.goto(`/dashboard/inventory?q=${encodeURIComponent(name)}`);
   const actions = page.getByRole("button", { name: `More actions for ${name}` });
 
   await actions.click();

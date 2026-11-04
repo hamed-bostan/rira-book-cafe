@@ -1,4 +1,5 @@
 import { cafeDayOf, cafeDayRange, shiftCafeDay } from "./CafeTime";
+import { jalaliMonthDays, toJalali } from "./JalaliCalendar";
 import { allocate } from "./Ledger";
 
 import type { PaymentMethod, PaymentPart, ServiceType } from "./Order";
@@ -17,9 +18,44 @@ import type { ProductKind } from "./Product";
  * it is now.
  */
 
+/** Rolling presets — a number of days ending today. */
 export const ANALYTICS_RANGE_PRESETS = ["today", "7d", "30d", "90d"] as const;
 export type AnalyticsRangePreset = (typeof ANALYTICS_RANGE_PRESETS)[number];
 export const DEFAULT_ANALYTICS_PRESET: AnalyticsRangePreset = "7d";
+
+/**
+ * Calendar presets, on the viewer's calendar: the week so far (weeks start on
+ * Saturday, as in Iran), the month so far, and the whole month before. A Persian
+ * reader's month is the Jalali one (1 Mehr – 30 Mehr); an English reader's is the
+ * Gregorian one. The URL carries the preset's name, so a shared link means "this
+ * month" to whoever opens it.
+ */
+export const CALENDAR_RANGE_PRESETS = ["week", "month", "lastMonth"] as const;
+export type CalendarRangePreset = (typeof CALENDAR_RANGE_PRESETS)[number];
+
+/** Every preset a report's `?range=` accepts. */
+export const REPORT_RANGE_PRESETS = [...ANALYTICS_RANGE_PRESETS, ...CALENDAR_RANGE_PRESETS] as const;
+export type ReportRangePreset = (typeof REPORT_RANGE_PRESETS)[number];
+
+/** Which calendar the month presets follow. */
+export type ReportCalendar = "jalali" | "gregorian";
+
+/** Persian readers keep the Jalali calendar; everyone else the Gregorian one. */
+export function calendarForLocale(locale: string | undefined): ReportCalendar {
+  return locale === "fa" ? "jalali" : "gregorian";
+}
+
+/**
+ * When a refund on a completed order counts:
+ * - `orderDay` — against the day the order was placed, so a day's revenue is what
+ *   that day's orders finally came to. The default.
+ * - `refundDay` — on the day the money went back, as the books (and the till) see
+ *   it: an earlier period's figures stay as they were, and the period the refund
+ *   falls in carries it.
+ */
+export const REFUND_TIMINGS = ["orderDay", "refundDay"] as const;
+export type RefundTiming = (typeof REFUND_TIMINGS)[number];
+export const DEFAULT_REFUND_TIMING: RefundTiming = "orderDay";
 
 /** Longest custom range a report accepts — keeps the day series and SQL bounded. */
 export const MAX_RANGE_DAYS = 366;
@@ -49,11 +85,47 @@ export function rangeDays(range: DateRange): number {
   return Math.round((range.to.getTime() - range.from.getTime()) / DAY_MS);
 }
 
-/** A preset ending today (inclusive), on the cafe calendar. */
-export function presetRange(preset: AnalyticsRangePreset, now: Date): DateRange {
+/**
+ * A preset's days on the cafe calendar. Rolling presets end today (inclusive); the
+ * week and the month run from their first day to today; last month is whole.
+ */
+export function presetRange(preset: ReportRangePreset, now: Date, calendar: ReportCalendar = "gregorian"): DateRange {
   const today = cafeDayOf(now);
-  const days = preset === "today" ? 1 : Number(preset.replace("d", ""));
-  return dayRange(shiftCafeDay(today, -(days - 1)), today);
+  switch (preset) {
+    case "week":
+      return dayRange(weekStart(today), today);
+    case "month":
+      return dayRange(monthOf(today, calendar).fromDay, today);
+    case "lastMonth": {
+      const previous = monthOf(shiftCafeDay(monthOf(today, calendar).fromDay, -1), calendar);
+      return dayRange(previous.fromDay, previous.toDay);
+    }
+    default: {
+      const days = preset === "today" ? 1 : Number(preset.replace("d", ""));
+      return dayRange(shiftCafeDay(today, -(days - 1)), today);
+    }
+  }
+}
+
+/** JavaScript's day number for Saturday, the first day of the week in Iran. */
+const SATURDAY = 6;
+
+/** The Saturday on or before `day`. */
+export function weekStart(day: string): string {
+  const weekday = new Date(`${day}T00:00:00Z`).getUTCDay();
+  return shiftCafeDay(day, -((weekday - SATURDAY + 7) % 7));
+}
+
+/** The month `day` falls in, on `calendar`, as an inclusive span of cafe days. */
+export function monthOf(day: string, calendar: ReportCalendar): { fromDay: string; toDay: string } {
+  if (calendar === "jalali") {
+    const { jy, jm } = toJalali(day);
+    return jalaliMonthDays(jy, jm);
+  }
+  const [year, month] = day.split("-").map(Number);
+  const last = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  const prefix = day.slice(0, 8);
+  return { fromDay: `${prefix}01`, toDay: `${prefix}${String(last).padStart(2, "0")}` };
 }
 
 /**
@@ -85,8 +157,18 @@ export function daysOf(range: DateRange): string[] {
 
 /** Headline sales numbers for one range. */
 export type SalesSummary = {
-  /** Sum of completed orders' totals, Toman. */
+  /** What completed orders came to after refunds (`charged − refunds`), Toman. */
   revenue: number;
+  /** Completed orders' lines at list price — before any discount. */
+  grossSales: number;
+  /** Taken off those orders by promo codes. */
+  promoDiscount: number;
+  /** Taken off those orders by loyalty points. */
+  pointsDiscount: number;
+  /** Completed orders' totals — what guests were charged. */
+  charged: number;
+  /** Refunds on completed orders counted in the range — see `RefundTiming` for which. */
+  refunds: number;
   /** Completed orders. */
   orders: number;
   /** Units sold across completed orders. */
@@ -131,16 +213,182 @@ export type TopItem = {
 export const TOP_ITEM_SORTS = ["revenue", "quantity"] as const;
 export type TopItemSort = (typeof TOP_ITEM_SORTS)[number];
 
+/**
+ * One line of the walk from gross sales to net revenue:
+ * - `start` — gross sales, the lines at list price;
+ * - `step` — something added or taken off (negative when taken off);
+ * - `subtotal` — what guests were charged, after discounts;
+ * - `total` — net revenue, the report's headline figure.
+ */
+export type SalesBridgeLine = {
+  key: SalesBridgeKey;
+  kind: "start" | "step" | "subtotal" | "total";
+  amount: number;
+  /** The same line for the period before. */
+  previous: number;
+};
+
+export const SALES_BRIDGE_KEYS = [
+  "grossSales",
+  "promoDiscount",
+  "pointsDiscount",
+  "otherAdjustments",
+  "charged",
+  "refunds",
+  "revenue",
+] as const;
+export type SalesBridgeKey = (typeof SALES_BRIDGE_KEYS)[number];
+
+type BridgeTotals = Pick<SalesSummary, "grossSales" | "promoDiscount" | "pointsDiscount" | "charged" | "refunds">;
+
+/**
+ * Gross sales → discounts → refunds → net revenue, against the period before.
+ * Every amount an order's total is made of has its own line here, and this is the
+ * one place a new one goes: a service charge added on top of the subtotal becomes
+ * a `step` after the discounts (and a column summed in `salesSummary`).
+ *
+ * `otherAdjustments` is whatever the totals hold that no named line explains —
+ * zero today, since an order's total is its subtotal less the promo and the points.
+ * It only shows when it isn't, so the walk always lands on the revenue to the Toman
+ * instead of hiding a difference.
+ */
+export function salesBridge(current: BridgeTotals, previous: BridgeTotals): SalesBridgeLine[] {
+  const unexplained = (totals: BridgeTotals): number =>
+    totals.charged - (totals.grossSales - totals.promoDiscount - totals.pointsDiscount);
+  const line = (
+    key: SalesBridgeKey,
+    kind: SalesBridgeLine["kind"],
+    amountOf: (totals: BridgeTotals) => number,
+  ): SalesBridgeLine => ({ key, kind, amount: amountOf(current), previous: amountOf(previous) });
+
+  const lines = [
+    line("grossSales", "start", (totals) => totals.grossSales),
+    line("promoDiscount", "step", (totals) => -totals.promoDiscount),
+    line("pointsDiscount", "step", (totals) => -totals.pointsDiscount),
+    line("otherAdjustments", "step", unexplained),
+    line("charged", "subtotal", (totals) => totals.charged),
+    line("refunds", "step", (totals) => -totals.refunds),
+    line("revenue", "total", (totals) => totals.charged - totals.refunds),
+  ];
+  return lines.filter((entry) => entry.key !== "otherAdjustments" || entry.amount !== 0 || entry.previous !== 0);
+}
+
+/** What promo codes and loyalty points took off the range's completed orders, and the points they moved. */
+export type DiscountSummary = {
+  /** Completed orders that used a promo code, and what the codes took off them. */
+  promoOrders: number;
+  promoDiscount: number;
+  /** Completed orders paid partly in points, and what the points took off them. */
+  pointsOrders: number;
+  pointsDiscount: number;
+  /** Points spent on those orders. */
+  pointsRedeemed: number;
+  /** Points guests earned on the range's completed orders. */
+  pointsEarned: number;
+};
+
+/** One promo code's use in the range. */
+export type PromoCodeUsage = {
+  /** As it was typed on the orders (stored upper-case). */
+  code: string;
+  /** Completed orders it was used on. */
+  uses: number;
+  /** What it took off them. */
+  discount: number;
+  /** What those orders came to — after every discount, less what was refunded on them. */
+  revenue: number;
+};
+
+export type DiscountReport = {
+  summary: DiscountSummary;
+  previousSummary: DiscountSummary;
+  /** Every code used in the range, the one that gave most away first. */
+  byCode: PromoCodeUsage[];
+};
+
+/**
+ * Where the cafe's money comes from — every stream the books carry as revenue:
+ * - `cafe` — completed orders (drinks, food, books);
+ * - `suite` — payments taken for suite stays;
+ * - `events` — payments taken for event sign-ups;
+ * - `tableDeposits` — table-booking deposits the cafe kept (a no-show, a late cancellation);
+ * - `bookDeposits` — deposits kept on books lent and lost (lending charges no fee);
+ * - `otherIncome` — payments recorded with no booking behind them (a room hire, bank interest).
+ *
+ * A deposit is never part of an order: kept, it is its own income; handed back, it
+ * was never the cafe's. So nothing here is counted twice.
+ */
+export const REVENUE_STREAMS = ["cafe", "suite", "events", "tableDeposits", "bookDeposits", "otherIncome"] as const;
+export type RevenueStreamKey = (typeof REVENUE_STREAMS)[number];
+
+/** One stream's money in a range, as the repository reads it. All VAT-inclusive, in Toman. */
+export type StreamTotals = {
+  stream: RevenueStreamKey;
+  /** Taken in the range: completed orders' totals, payments received, deposits kept. */
+  received: number;
+  /** Handed back, counted per `RefundTiming`. */
+  refunded: number;
+  /** The VAT inside `received`, as each sale or payment booked it. */
+  vat: number;
+  /** The VAT inside `refunded`. */
+  vatRefunded: number;
+};
+
+/** One stream on the report. */
+export type RevenueStream = {
+  stream: RevenueStreamKey;
+  received: number;
+  refunded: number;
+  /** `received − refunded`: what the stream brought in. */
+  revenue: number;
+  /** The VAT inside `revenue` — owed to the tax office, not the cafe's. */
+  vat: number;
+  /** `revenue − vat` — what the profit and loss statement shows for the stream. */
+  revenueExVat: number;
+  /** `revenue` for the period before. */
+  previousRevenue: number;
+};
+
+/** Every stream in its fixed order (one with no money reads 0), with the period before beside it. */
+export function buildRevenueStreams(
+  current: readonly StreamTotals[],
+  previous: readonly StreamTotals[],
+): RevenueStream[] {
+  const find = (rows: readonly StreamTotals[], stream: RevenueStreamKey): StreamTotals =>
+    rows.find((row) => row.stream === stream) ?? { stream, received: 0, refunded: 0, vat: 0, vatRefunded: 0 };
+  return REVENUE_STREAMS.map((stream) => {
+    const now = find(current, stream);
+    const before = find(previous, stream);
+    const revenue = now.received - now.refunded;
+    const vat = now.vat - now.vatRefunded;
+    return {
+      stream,
+      received: now.received,
+      refunded: now.refunded,
+      revenue,
+      vat,
+      revenueExVat: revenue - vat,
+      previousRevenue: before.received - before.refunded,
+    };
+  });
+}
+
 /** Everything the sales report draws. */
 export type SalesReport = {
   range: DateRange;
   previousRange: DateRange;
+  refunds: RefundTiming;
   summary: SalesSummary;
   previousSummary: SalesSummary;
+  /** Gross sales down to net revenue. */
+  bridge: SalesBridgeLine[];
   daily: DailySales[];
   hourly: HourlySales[];
   byKind: KindSales[];
   topItems: TopItem[];
+  discounts: DiscountReport;
+  /** Every revenue stream, the cafe's orders first. */
+  streams: RevenueStream[];
 };
 
 /**
@@ -167,6 +415,8 @@ export type PaymentSummary = {
  * What the range's paid, completed orders came in as, by payment method — net of
  * what was refunded since (see `netPaymentParts`), so the methods add up to
  * `PaymentSummary.paidValue`. `orders` counts the orders with a part paid that way.
+ * Counting refunds on the day they happened, each refund comes off the method it
+ * went back by instead, so a method can read below zero in a period of refunds.
  */
 export type MethodPayments = { method: PaymentMethod; orders: number; value: number };
 
@@ -183,13 +433,18 @@ export type UnpaidOrder = {
 
 export type PaymentReport = {
   range: DateRange;
-  /** The period before, named beside the range as on the other reports; the payment figures themselves don't compare. */
+  /** The period before, which the paid figures are compared with. */
   previousRange: DateRange;
+  refunds: RefundTiming;
   summary: PaymentSummary;
+  previousSummary: PaymentSummary;
   /** Paid completed orders by method; a method nobody paid with is left out. */
   byMethod: MethodPayments[];
+  previousByMethod: MethodPayments[];
   /** Ready or completed orders still unpaid, oldest first. */
   unpaid: UnpaidOrder[];
+  /** Every revenue stream with the VAT inside it — the period's VAT split. */
+  streams: RevenueStream[];
 };
 
 /** A guest ranked by spend in the range. */

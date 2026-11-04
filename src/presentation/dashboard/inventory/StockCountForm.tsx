@@ -36,14 +36,24 @@ const S = STACKED_TABLE.compact;
  * on saving it's posted to Inventory variance. A table from a tablet's width; on a
  * phone each item leads its row, with what's expected and the difference beside
  * each other and the count under them.
+ *
+ * Dated in the past, each item is compared with what it had on hand at the end of
+ * that day (`expected`, read by the page for the date in its query string), and the
+ * difference is applied to today's stock — see `CountStock`.
  */
 export function StockCountForm({
   items,
   today,
+  date: countDate,
+  expected,
   costsVisible,
 }: {
   items: StockItem[];
   today: string;
+  /** The count's day, from the query string. */
+  date: string;
+  /** On hand at the end of a past `date`, by item; absent for today. */
+  expected?: Readonly<Record<string, number>>;
   costsVisible: boolean;
 }) {
   const t = useTranslations("dashInventory");
@@ -51,20 +61,31 @@ export function StockCountForm({
   const locale = useLocale();
   const router = useRouter();
   const { toast } = useToast();
-  const [date, setDate] = React.useState(today);
+  const [date, setDate] = React.useState(countDate);
   const [note, setNote] = React.useState("");
   const [counted, setCounted] = React.useState<Record<string, string>>({});
   const [error, setError] = React.useState<string | null>(null);
   const [pending, startTransition] = React.useTransition();
 
+  const expectedOf = (item: StockItem): number => expected?.[item.id] ?? item.onHand;
   const entered = items.filter((item) => NUMBER.test((counted[item.id] ?? "").trim()));
   const invalid = items.some(
     (item) => (counted[item.id] ?? "").trim() !== "" && !NUMBER.test((counted[item.id] ?? "").trim()),
   );
   const variance = entered.reduce(
-    (sum, item) => sum + Math.round((Number(counted[item.id]) - item.onHand) * item.averageCost),
+    (sum, item) => sum + Math.round((Number(counted[item.id]) - expectedOf(item)) * item.averageCost),
     0,
   );
+
+  /** A new day re-reads what was expected on it; what's typed so far stays. */
+  function changeDate(next: string): void {
+    setDate(next);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(next) && next <= today) {
+      router.replace(next === today ? "/dashboard/inventory/count" : `/dashboard/inventory/count?date=${next}`, {
+        scroll: false,
+      });
+    }
+  }
 
   function submit(): void {
     setError(null);
@@ -93,13 +114,22 @@ export function StockCountForm({
       }}
     >
       <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-[12rem_minmax(0,1fr)]">
-        <DashboardField label={t("dateLabel")} hint={date ? formatCafeDayMedium(date, locale) : undefined}>
+        <DashboardField
+          label={t("dateLabel")}
+          hint={
+            date
+              ? date < today
+                ? t("count.backdatedHint", { date: formatCafeDayMedium(date, locale) })
+                : formatCafeDayMedium(date, locale)
+              : undefined
+          }
+        >
           <Input
             size="control-md"
             type="date"
             value={date}
             max={today}
-            onChange={(event) => setDate(event.target.value)}
+            onChange={(event) => changeDate(event.target.value)}
             dir="ltr"
             inputClassName={FIELD_INPUT}
           />
@@ -124,7 +154,7 @@ export function StockCountForm({
             body=""
             action={
               <Button asChild size="control-md" className="px-4">
-                <Link href="/dashboard/pricing/ingredients">{t("addItems")}</Link>
+                <Link href="/dashboard/inventory">{t("addItems")}</Link>
               </Button>
             }
           />
@@ -149,7 +179,7 @@ export function StockCountForm({
             <tbody className={cn(S.body, "divide-y divide-border")}>
               {items.map((item) => {
                 const raw = (counted[item.id] ?? "").trim();
-                const difference = NUMBER.test(raw) ? Number(raw) - item.onHand : null;
+                const difference = NUMBER.test(raw) ? Number(raw) - expectedOf(item) : null;
                 const unit = t(`unit.${item.unit}`);
                 return (
                   <tr key={item.id} className={S.row}>
@@ -158,7 +188,7 @@ export function StockCountForm({
                     </td>
                     <td className={cn(S.cell, S.amount, "align-middle @xl/sheet:py-2")}>
                       <span className={S.label}>{t("count.expected")}</span>
-                      {formatStockQuantity(item.onHand, locale)} {unit}
+                      {formatStockQuantity(expectedOf(item), locale)} {unit}
                     </td>
                     {/* Stacked, the count gets a line of its own under the figures, as wide as the row. */}
                     <td className={cn(S.cell, "order-last basis-full align-middle @xl/sheet:py-2")}>

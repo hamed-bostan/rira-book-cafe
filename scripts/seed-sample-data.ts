@@ -579,9 +579,8 @@ async function seedRecipes(): Promise<void> {
     const { id, ...data } = item;
     await prisma.ingredient.upsert({ where: { id }, create: item, update: data });
   }
-  const byId = new Map<string, { purchasePrice: number; purchaseQuantity: number }>(
-    STOCK_ITEMS.map((item) => [item.id, item]),
-  );
+  // Costed before any stock comes in: nothing on hand, so each at its last price.
+  const byId = new Map(STOCK_ITEMS.map((item) => [item.id, { ...item, onHand: 0, averageCost: 0 }]));
   for (const [productId, lines] of Object.entries(RECIPES)) {
     await prisma.recipeLine.deleteMany({ where: { productId } });
     await prisma.recipeLine.createMany({ data: lines.map((line, position) => ({ productId, ...line, position })) });

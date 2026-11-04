@@ -1,6 +1,6 @@
 import { SYSTEM_ACCOUNTS, type NewJournalEntry } from "./Ledger";
 
-import type { RecipeLine } from "./Pricing";
+import type { PurchaseUnit, RecipeLine } from "./Pricing";
 
 /**
  * Perpetual inventory at weighted average cost.
@@ -18,15 +18,88 @@ import type { RecipeLine } from "./Pricing";
  *   opening  — stock on hand when tracking starts: +qty, +cost  (Cr 3100 owner's capital);
  *              once per item, before anything else has moved it
  *   return   — sold units a refund put back on the shelf: +qty, +cost (Cr 5100 cost of sales)
+ *   adjustment — a manual ± with a reason code: ±qty, ±avg×qty (the reason's account,
+ *              see ADJUSTMENT_ACCOUNTS)
+ *   return_to_supplier — goods sent back against a credit note: −qty, −avg×qty
+ *              (Dr payable / refund, see supplierReturnEntry)
+ *
+ * One location only. The cafe keeps one store room behind one counter, so stock is
+ * a single figure per item; there are no transfers because there's nowhere to
+ * transfer to. A second location would need on-hand per (item, location), a
+ * location on every movement and a transfer kind that moves value without
+ * touching the books — a schema change, not a reason code.
  */
 
-export const STOCK_MOVEMENT_KINDS = ["opening", "receipt", "sale", "waste", "count", "return"] as const;
+export const STOCK_MOVEMENT_KINDS = [
+  "opening",
+  "receipt",
+  "sale",
+  "waste",
+  "count",
+  "return",
+  "adjustment",
+  "return_to_supplier",
+] as const;
 export type StockMovementKind = (typeof STOCK_MOVEMENT_KINDS)[number];
 
 export const INVENTORY_ACCOUNTS = {
   waste: "5200",
   variance: "5300",
+  /** A running cost of the team, not of what was sold. */
+  staffMeals: "6410",
+  /** Given away to taste or to promote: a running cost, like marketing. */
+  samples: "6610",
 } as const;
+
+/**
+ * Why stock was adjusted by hand. A closed list, so the P&L can put each where it
+ * belongs and the movements can be filtered by it:
+ *
+ *   found      — turned up (a misplaced case): in, valued at average cost → 5300 variance
+ *   damaged    — broken or spoiled beyond a waste write-off's routine → 5200 waste
+ *   staffMeal  — the team ate or drank it → 6410 staff meals (operating expense)
+ *   sampling   — tastings, giveaways → 6610 samples (operating expense)
+ *   correction — a typing mistake in an earlier entry, either way → 5300 variance
+ *   other      — anything else, with a note saying what → 5300 variance
+ *
+ * Found and correction go to variance because they correct what the system
+ * thought was there, exactly as a count does; staff meals and samples are real
+ * consumption the cafe chose, so they're running costs rather than cost of sales
+ * (no sale earned them) and show up in the pricing advisor's overhead.
+ */
+export const ADJUSTMENT_REASONS = ["found", "damaged", "staffMeal", "sampling", "correction", "other"] as const;
+export type AdjustmentReason = (typeof ADJUSTMENT_REASONS)[number];
+
+export const ADJUSTMENT_ACCOUNTS: Record<AdjustmentReason, string> = {
+  found: INVENTORY_ACCOUNTS.variance,
+  damaged: INVENTORY_ACCOUNTS.waste,
+  staffMeal: INVENTORY_ACCOUNTS.staffMeals,
+  sampling: INVENTORY_ACCOUNTS.samples,
+  correction: INVENTORY_ACCOUNTS.variance,
+  other: INVENTORY_ACCOUNTS.variance,
+};
+
+/** Which way each reason may move stock: found stock comes in, what was eaten goes out. */
+export const ADJUSTMENT_DIRECTIONS: Record<AdjustmentReason, "in" | "out" | "either"> = {
+  found: "in",
+  damaged: "out",
+  staffMeal: "out",
+  sampling: "out",
+  correction: "either",
+  other: "either",
+};
+
+/** Whether a signed adjustment fits its reason: no "found" stock going out, no staff meal coming in. */
+export function adjustmentFitsReason(reason: AdjustmentReason, quantity: number): boolean {
+  if (quantity === 0) return false;
+  const direction = ADJUSTMENT_DIRECTIONS[reason];
+  return direction === "either" || (direction === "in" ? quantity > 0 : quantity < 0);
+}
+
+/** "Other" must say what happened; the rest may. */
+export function adjustmentNeedsNote(reason: AdjustmentReason): boolean {
+  return reason === "other";
+}
 
 /** What's on hand and what it's worth. `value` is whole Toman and always matches the ledger. */
 export type StockState = { onHand: number; value: number; averageCost: number };
@@ -141,14 +214,185 @@ export type StockMovement = {
   /** Signed whole Toman, same sign as `quantity`. */
   value: number;
   date: string;
-  /** The order, receipt (expense) or count it belongs to. */
+  /** The order, receipt (expense), count or supplier return it belongs to. */
   referenceId?: string;
   note?: string;
+  /** An adjustment's reason code. */
+  reason?: AdjustmentReason;
+  /**
+   * On hand right after this movement — read when the list is narrowed to one item,
+   * where it's that item's running balance. Absent otherwise.
+   */
+  balanceAfter?: number;
   createdByName: string;
   createdAt: string;
 };
 
+/**
+ * Each movement's running balance, newest first: the newest leaves `latestBalance`
+ * on hand (what was there right after it), and each older one left what the newer
+ * one started from. Walks back from a known balance, so a page in the middle of
+ * the history reads right as long as it's given the balance after its first row.
+ */
+export function withRunningBalance<T extends Pick<StockMovement, "quantity">>(
+  newestFirst: readonly T[],
+  latestBalance: number,
+): (T & { balanceAfter: number })[] {
+  let balance = latestBalance;
+  return newestFirst.map((movement) => {
+    const row = { ...movement, balanceAfter: roundQuantity(balance) };
+    balance -= movement.quantity;
+    return row;
+  });
+}
+
+/**
+ * What was on hand at the end of a past day: on hand now, less everything that
+ * moved after it. A count dated in the past is compared against this — not against
+ * today's figure, which already carries the sales and deliveries since — and the
+ * difference it finds is then applied to today's stock.
+ */
+export function onHandAtEndOf(onHandNow: number, movedSince: number): number {
+  return roundQuantity(onHandNow - movedSince);
+}
+
 type Actor = { id: string; name: string };
+
+/**
+ * A manual adjustment's entry: stock out is a debit to the reason's account (a
+ * loss, or a staff meal's or tasting's cost), stock in a credit to it. `null` at
+ * zero value — a free item moved, nothing to book.
+ */
+export function adjustmentEntry(
+  input: { id: string; date: string; value: number; reason: AdjustmentReason; description: string },
+  actor: Actor,
+): NewJournalEntry | null {
+  if (input.value === 0) return null;
+  const amount = Math.abs(input.value);
+  const account = ADJUSTMENT_ACCOUNTS[input.reason];
+  return {
+    date: input.date,
+    description: input.description,
+    source: "stockAdjustment",
+    sourceId: input.id,
+    uniqueKey: `stock:${input.id}:adjustment`,
+    lines:
+      input.value < 0
+        ? [
+            { accountCode: account, debit: amount, credit: 0 },
+            { accountCode: SYSTEM_ACCOUNTS.inventory, debit: 0, credit: amount },
+          ]
+        : [
+            { accountCode: SYSTEM_ACCOUNTS.inventory, debit: amount, credit: 0 },
+            { accountCode: account, debit: 0, credit: amount },
+          ],
+    createdById: actor.id,
+    createdByName: actor.name,
+  };
+}
+
+/**
+ * How a supplier's credit for returned goods is settled: first against what's
+ * still owed on the delivery's bill (it simply owes less), and whatever the bill
+ * can't absorb — it was paid already, or the credit is bigger, or no bill was
+ * named — comes back as money.
+ */
+export function settleSupplierCredit(credit: number, owedOnBill: number): { applied: number; refunded: number } {
+  const applied = Math.max(0, Math.min(credit, owedOnBill));
+  return { applied, refunded: credit - applied };
+}
+
+/**
+ * Stock sent back to a supplier against a credit note. The goods leave Inventory
+ * at average cost (what they're carried at), the credit's VAT reverses the input
+ * VAT the bill claimed, and the credit itself lowers what's owed (Dr payable) or
+ * comes back as money (Dr cash/bank). A credit worth more or less than the goods'
+ * average cost is a purchase price difference, through inventory variance — the
+ * same account a count's difference goes to — so Inventory always moves by
+ * exactly what the stock list lost.
+ *
+ *   Dr 2100 payable   applied          Cr 1200 inventory   stock value
+ *   Dr 1110/1120      refunded         Cr 2200 VAT         VAT on the credit
+ *   Dr/Cr 5300 variance — the difference
+ */
+export function supplierReturnEntry(
+  input: {
+    id: string;
+    date: string;
+    applied: number;
+    refunded: number;
+    refundedTo?: "cash" | "bank";
+    vatAmount: number;
+    stockValue: number;
+    supplierName: string;
+    description: string;
+  },
+  actor: Actor,
+): NewJournalEntry {
+  const credit = input.applied + input.refunded;
+  const difference = credit - input.vatAmount - input.stockValue;
+  const refundAccount = input.refundedTo === "bank" ? SYSTEM_ACCOUNTS.bank : SYSTEM_ACCOUNTS.cash;
+  return {
+    date: input.date,
+    description: input.description,
+    source: "supplierReturn",
+    sourceId: input.id,
+    uniqueKey: `supplierReturn:${input.id}`,
+    lines: [
+      { accountCode: SYSTEM_ACCOUNTS.accountsPayable, debit: input.applied, credit: 0, memo: input.supplierName },
+      { accountCode: refundAccount, debit: input.refunded, credit: 0 },
+      { accountCode: INVENTORY_ACCOUNTS.variance, debit: Math.max(0, -difference), credit: 0 },
+      { accountCode: SYSTEM_ACCOUNTS.inventory, debit: 0, credit: input.stockValue },
+      { accountCode: SYSTEM_ACCOUNTS.vatPayable, debit: 0, credit: input.vatAmount },
+      { accountCode: INVENTORY_ACCOUNTS.variance, debit: 0, credit: Math.max(0, difference) },
+    ],
+    createdById: actor.id,
+    createdByName: actor.name,
+  };
+}
+
+/** One line of a supplier return: what went back and what it was carried at. */
+export type SupplierReturnLine = { ingredientId: string; ingredientName: string; quantity: number; value: number };
+
+/** Stock sent back to a supplier, and how its credit was settled. */
+export type SupplierReturn = {
+  id: string;
+  /** Sequential, what staff quote ("SR-3"). */
+  number: number;
+  date: string;
+  supplierId: string;
+  supplierName: string;
+  /** The delivery it came from, when one was named. */
+  expenseId?: string;
+  expenseNumber?: number;
+  /** The credit note's total, VAT included. */
+  creditAmount: number;
+  vatAmount: number;
+  /** The part that lowered what's owed on the bill. */
+  appliedAmount: number;
+  /** The part that came back as money. */
+  refundedAmount: number;
+  refundedTo?: "cash" | "bank";
+  /** What the goods were carried at in stock. */
+  stockValue: number;
+  note?: string;
+  lines: SupplierReturnLine[];
+  createdByName: string;
+  createdAt: string;
+};
+
+/** A return as someone without access to the books sees it: what went back, not what it was worth. */
+export function withoutReturnCosts(item: SupplierReturn): SupplierReturn {
+  return {
+    ...item,
+    creditAmount: 0,
+    vatAmount: 0,
+    appliedAmount: 0,
+    refundedAmount: 0,
+    stockValue: 0,
+    lines: item.lines.map((line) => ({ ...line, value: 0 })),
+  };
+}
 
 /** Spoiled or spilled stock leaves inventory as an expense. */
 export function wasteEntry(
@@ -231,11 +475,74 @@ export type StockItem = {
   /** Whole Toman; the sum over all items equals the Inventory account. */
   value: number;
   reorderLevel?: number;
+  /** What a delivery tops it up to. */
+  parLevel?: number;
+  /** How it's bought; the first is the pack the "To order" list rounds up to. */
+  purchaseUnits: PurchaseUnit[];
+  /** Who it's usually bought from. */
+  supplierId?: string;
+  supplierName?: string;
+  /** One unit at the last price paid — what recipes are costed at with nothing on hand. */
+  lastPurchaseCost: number;
   isActive: boolean;
   level: StockLevel;
   /** Whether any stock has ever moved — once it has, opening stock is no longer for it. */
   hasHistory: boolean;
 };
+
+/** What to order of one item: base units, and in packs when it has a purchase unit. */
+export type OrderSuggestion = {
+  /** In the item's base unit; zero when it's already at or above par. */
+  quantity: number;
+  /** The first purchase unit, and how many of it — the quantity rounded up to whole packs. */
+  packs?: { count: number; unit: PurchaseUnit };
+};
+
+/**
+ * How much to order to bring an item back to its par level: par − on hand (on hand
+ * below zero counts as zero — what's owed to the shelf was already sold), rounded
+ * up to whole packs of the item's first purchase unit, since that's how it's
+ * bought. `null` without a par level: there's nothing to top up to.
+ */
+export function suggestOrder(item: Pick<StockItem, "onHand" | "parLevel" | "purchaseUnits">): OrderSuggestion | null {
+  if (item.parLevel === undefined) return null;
+  const short = roundQuantity(item.parLevel - Math.max(item.onHand, 0));
+  if (short <= 0) return { quantity: 0 };
+  const unit = item.purchaseUnits[0];
+  if (!unit) return { quantity: short };
+  const count = Math.ceil(roundQuantity(short / unit.factor));
+  return { quantity: roundQuantity(count * unit.factor), packs: { count, unit } };
+}
+
+/** One supplier's part of the "To order" list. */
+export type OrderGroup = {
+  /** Absent for items with no usual supplier — listed last. */
+  supplierId?: string;
+  supplierName?: string;
+  lines: { item: StockItem; suggestion: OrderSuggestion | null }[];
+};
+
+/**
+ * Everything that needs ordering — active items running low or out — grouped by
+ * who it's usually bought from, suppliers by name and the unassigned last, items
+ * by name within each.
+ */
+export function orderList(items: readonly StockItem[], locale = "en"): OrderGroup[] {
+  const groups = new Map<string, OrderGroup>();
+  const due = items
+    .filter((item) => item.isActive && item.level !== "ok")
+    .sort((a, b) => a.name.localeCompare(b.name, locale));
+  for (const item of due) {
+    const key = item.supplierId ?? "";
+    const group = groups.get(key) ?? { supplierId: item.supplierId, supplierName: item.supplierName, lines: [] };
+    group.lines.push({ item, suggestion: suggestOrder(item) });
+    groups.set(key, group);
+  }
+  return [...groups.values()].sort((a, b) => {
+    if (!a.supplierId || !b.supplierId) return a.supplierId ? -1 : b.supplierId ? 1 : 0;
+    return (a.supplierName ?? "").localeCompare(b.supplierName ?? "", locale);
+  });
+}
 
 /**
  * The lines of an opening stock entry that are refused, by position: opening stock
@@ -271,7 +578,7 @@ export type InventorySummary = {
 export function withoutStockCosts(summary: InventorySummary): InventorySummary {
   return {
     ...summary,
-    items: summary.items.map((item) => ({ ...item, averageCost: 0, value: 0 })),
+    items: summary.items.map((item) => ({ ...item, averageCost: 0, value: 0, lastPurchaseCost: 0 })),
     stockValue: 0,
     booksValue: 0,
     difference: 0,

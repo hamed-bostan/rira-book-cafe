@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { cafeDayOf } from "@/src/domain/entities/CafeTime";
 import { toSearchParams } from "@/src/lib/api/searchParams";
 import { requirePermission, sessionHas } from "@/src/lib/require-permission";
+import { suppliersServerApi } from "@/src/presentation/dashboard/expenses/expense-server-api";
 import { inventoryServerApi } from "@/src/presentation/dashboard/inventory/inventory-server-api";
 import {
   INVENTORY_VIEWS,
@@ -25,10 +26,16 @@ export default async function InventoryPage({ searchParams }: InventoryPageProps
   const view = level && VIEW_SET.has(level) ? (level as InventoryView) : "all";
   const q = params.get("q")?.trim() || undefined;
 
-  const [summary, untrackedBooks, canManage] = await Promise.all([
+  const session = await auth();
+  const [canManage, canSeeSuppliers] = await Promise.all([
+    sessionHas(session, "inventory.manage"),
+    sessionHas(session, "accounting.view"),
+  ]);
+  const [summary, untrackedBooks, suppliers] = await Promise.all([
     inventoryServerApi.getSummary(),
     inventoryServerApi.listUntrackedBooks(),
-    auth().then((session) => sessionHas(session, "inventory.manage")),
+    // The item dialog's supplier choice; the list is the books' (`accounting.view`).
+    canManage && canSeeSuppliers ? suppliersServerApi.list(false) : Promise.resolve([]),
   ]);
 
   return (
@@ -39,6 +46,7 @@ export default async function InventoryPage({ searchParams }: InventoryPageProps
       today={cafeDayOf(new Date())}
       canManage={canManage}
       untrackedBooks={untrackedBooks.length}
+      suppliers={suppliers.map((supplier) => ({ id: supplier.id, name: supplier.name }))}
     />
   );
 }

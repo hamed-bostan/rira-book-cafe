@@ -1,7 +1,8 @@
+import { cafeDayOf } from "@/src/domain/entities/CafeTime";
 import { toSearchParams } from "@/src/lib/api/searchParams";
 import { requirePermission } from "@/src/lib/require-permission";
 import { inventoryServerApi } from "@/src/presentation/dashboard/inventory/inventory-server-api";
-import { MovementsScreen } from "@/src/presentation/dashboard/inventory/MovementsScreen";
+import { MovementsScreen, type MovementQuery } from "@/src/presentation/dashboard/inventory/MovementsScreen";
 import { withRememberedPageSize } from "@/src/presentation/dashboard/list/withRememberedPageSize";
 
 export const dynamic = "force-dynamic";
@@ -17,6 +18,15 @@ export default async function StockMovementsPage({ searchParams }: MovementsPage
     if (value) query[key] = value;
   }
   const [page, summary] = await Promise.all([inventoryServerApi.listMovements(query), inventoryServerApi.getSummary()]);
+  const filters: MovementQuery = { item: query.item, kind: query.kind, from: query.from, to: query.to };
 
-  return <MovementsScreen page={page} items={summary.items} costsVisible={summary.costsVisible} />;
+  return (
+    <MovementsScreen
+      page={page}
+      items={summary.items}
+      costsVisible={summary.costsVisible}
+      query={filters}
+      today={cafeDayOf(new Date())}
+    />
+  );
 }

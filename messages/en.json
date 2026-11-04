@@ -233,7 +233,23 @@
     "roleInvalid": "Choose a role.",
     "retentionInvalid": "Choose one of the offered periods.",
     "twoFactorCodeRequired": "Enter the code.",
-    "twoFactorCodeInvalid": "That code didn’t work."
+    "twoFactorCodeInvalid": "That code didn’t work.",
+    "adjustmentDirection": "That reason can't move stock that way: found stock comes in; breakage, staff meals and tastings go out.",
+    "adjustmentNoteRequired": "Say what happened — a note is needed for “Other”.",
+    "vatOverCredit": "The VAT can't be more than the credit.",
+    "parBelowReorder": "The par level can't be below the reorder level.",
+    "reorderAbovePar": "The reorder level can't be above the par level.",
+    "purchaseUnitsTooMany": "That's more pack sizes than an item can have.",
+    "purchaseUnitNameInvalid": "Name each pack (e.g. bag, carton) — not the item's own unit.",
+    "purchaseUnitFactorInvalid": "Enter how many base units the pack holds, e.g. 1000.",
+    "purchaseUnitRepeated": "Each pack name can only be used once.",
+    "returnDeliveryInvalid": "Choose a delivery from this supplier that isn't void.",
+    "returnBeforeDelivery": "A return can't be dated before its delivery.",
+    "refundToRequired": "Part of the credit comes back as money: choose cash or bank.",
+    "supplierRequired": "Choose the supplier.",
+    "directionInvalid": "Choose whether stock came in or went out.",
+    "costPerInvalid": "Choose what the cost is for.",
+    "adjustmentReasonRequired": "Choose a reason."
   },
   "apiErrors": {
     "badRequest": "The request couldn't be read. Please try again.",
@@ -317,7 +333,9 @@
     "roleNameTaken": "Another role already has that name.",
     "twoFactorAlreadyOn": "Two-factor is already on.",
     "twoFactorRequired": "The owner requires two-factor for the dashboard.",
-    "twoFactorUnavailable": "Two-factor isn’t available on this server."
+    "twoFactorUnavailable": "Two-factor isn’t available on this server.",
+    "returnExceedsStock": "There isn't that much on hand to send back.",
+    "deliveryHasReturns": "Some of this delivery was sent back to the supplier, so it can't be voided."
   },
   "meta": {
     "siteName": "Rira Book Cafe",
@@ -1342,13 +1360,16 @@
       "loyalty": "Loyalty club",
       "settings": "Settings",
       "cashShift": "Till shifts",
-      "activity": "Activity log"
+      "activity": "Activity log",
+      "stockItem": "Stock",
+      "pricing": "Pricing"
     },
     "action": {
       "product": {
         "created": "<b>{actor}</b> created {entity}",
         "updated": "<b>{actor}</b> edited {entity}",
-        "deleted": "<b>{actor}</b> deleted {entity}"
+        "deleted": "<b>{actor}</b> deleted {entity}",
+        "recipeChanged": "<b>{actor}</b> changed the recipe of {entity}"
       },
       "order": {
         "stageChanged": "<b>{actor}</b> changed the status of order {entity}",
@@ -1479,6 +1500,18 @@
       "cashShift": {
         "opened": "<b>{actor}</b> opened till shift {entity}",
         "closed": "<b>{actor}</b> closed till shift {entity}"
+      },
+      "stockItem": {
+        "created": "<b>{actor}</b> added stock item {entity}",
+        "updated": "<b>{actor}</b> edited stock item {entity}",
+        "wasted": "<b>{actor}</b> wrote off waste of {entity}",
+        "counted": "<b>{actor}</b> counted {entity}",
+        "openingRecorded": "<b>{actor}</b> recorded opening stock of {entity}",
+        "adjusted": "<b>{actor}</b> adjusted the stock of {entity}",
+        "returnedToSupplier": "<b>{actor}</b> returned {entity} to the supplier"
+      },
+      "pricing": {
+        "settingsChanged": "<b>{actor}</b> changed the pricing settings"
       }
     },
     "role": {
@@ -1638,7 +1671,23 @@
       "retentionMonths": "Retention (months)",
       "openingFloat": "Opening float",
       "countedCash": "Counted",
-      "expectedCash": "Expected"
+      "expectedCash": "Expected",
+      "onHand": "On hand",
+      "value": "Value",
+      "reorderLevel": "Reorder level",
+      "parLevel": "Par level",
+      "purchaseUnits": "Pack sizes",
+      "purchasePrice": "Purchase price",
+      "purchaseQuantity": "Purchase quantity",
+      "recipe": "Recipe",
+      "recipeLines": "Recipe lines",
+      "targetMarkupBps": "Profit target (basis points)",
+      "defaultMarkupBps": "Default profit (basis points)",
+      "roundingStep": "Rounding step",
+      "overheadSource": "Overhead from",
+      "manualMonthlyOverhead": "Monthly overhead",
+      "expectedMonthlyUnits": "Items sold a month",
+      "overheadMonths": "Months averaged"
     },
     "filterField": "Field",
     "allFields": "Any field",
@@ -2931,7 +2980,9 @@
       "incomeRefund": "Booking refund",
       "reservationDeposit": "Table deposit",
       "payroll": "Payroll",
-      "payrollPayment": "Salary payment"
+      "payrollPayment": "Salary payment",
+      "stockAdjustment": "Stock adjustment",
+      "supplierReturn": "Return to supplier"
     },
     "entry": {
       "title": "Journal entry JE-{number}",
@@ -3276,7 +3327,10 @@
       "voided": "EX-{number} voided",
       "paidSoFar": "{paid} paid, {left} left",
       "payAmount": "Amount",
-      "payAmountHint": "Leave blank to pay all that's left, or enter part of it."
+      "payAmountHint": "Leave blank to pay all that's left, or enter part of it.",
+      "settledByCredit": "Settled by a supplier's credit, {date}",
+      "returnsHeading": "Returned to the supplier",
+      "returnGoods": "Return goods from this delivery"
     },
     "suppliers": {
       "heading": "Suppliers",
@@ -3443,7 +3497,10 @@
       "activeLabel": "Active",
       "error": "Couldn't save the ingredient. Please try again.",
       "saved": "{name} saved.",
-      "unitLocked": "Fixed once the item holds stock or has stock history — every quantity on record is in this unit."
+      "unitLocked": "Fixed once the item holds stock or has stock history — every quantity on record is in this unit.",
+      "averageWithLast": "Average of stock on hand · last paid {cost} / {unit}",
+      "basisAverage": "Average of stock on hand",
+      "basisLastPrice": "Last price paid (none on hand)"
     },
     "recipe": {
       "title": "Recipe: {name}",
@@ -3486,7 +3543,9 @@
       "error": "Couldn't save the settings. Please try again."
     },
     "applied": "{name} now costs {price}.",
-    "markupSaved": "Profit saved."
+    "markupSaved": "Profit saved.",
+    "lastPriceLabel": "At last prices paid",
+    "lastPriceCost": "At the last prices paid: {cost}"
   },
   "dashInventory": {
     "heading": "Inventory",
@@ -3581,7 +3640,8 @@
       "invalid": "Counts are numbers, e.g. 1250 or 0.5.",
       "save": "{count, plural, one {Save count (# item)} other {Save count (# items)}}",
       "error": "Couldn't save the count. Please try again.",
-      "saved": "Count saved."
+      "saved": "Count saved.",
+      "backdatedHint": "End of {date}: compared with what was on hand then; the difference is applied to today's stock."
     },
     "opening": {
       "heading": "Opening stock",
@@ -3608,17 +3668,50 @@
       "sale": "Sale",
       "waste": "Waste",
       "count": "Count",
-      "return": "Refund"
+      "return": "Refund",
+      "adjustment": "Adjustment",
+      "return_to_supplier": "Returned to supplier"
     },
     "movements": {
       "heading": "Stock history",
-      "subtitle": "Every change to stock, newest first: deliveries, what sales used, waste and counts.",
+      "subtitle": "Every change to stock, newest first: deliveries, what sales used, waste, counts, adjustments and returns.",
       "allItems": "All items",
       "kindLabel": "Type",
       "allKinds": "All types",
       "quantity": "Quantity",
       "by": "By",
-      "empty": "No stock movements yet."
+      "empty": "No stock movements yet.",
+      "balance": "On hand after",
+      "range": {
+        "label": "Dates",
+        "preset": {
+          "all": "All dates",
+          "thisMonth": "This month",
+          "lastMonth": "Last month",
+          "last30": "Last 30 days",
+          "custom": "Choose dates…"
+        },
+        "from": "From",
+        "to": "To",
+        "apply": "Apply",
+        "allTime": "All dates",
+        "between": "{from} to {to}",
+        "since": "From {from}",
+        "until": "Up to {to}"
+      },
+      "csv": {
+        "date": "Date",
+        "persianDate": "Persian date",
+        "item": "Item",
+        "kind": "Type",
+        "reason": "Reason",
+        "quantity": "Quantity",
+        "unit": "Unit",
+        "value": "Value (Toman)",
+        "balance": "On hand after",
+        "note": "Note",
+        "by": "By"
+      }
     },
     "quick": {
       "itemLabel": "Item",
@@ -3671,6 +3764,146 @@
       "confirmBody": "Each book gets a stock item and a one-copy recipe, so every sale books its cost from now on. Copies on the shelf come in as opening stock at their cost price, against the owner's capital. Books with no cost price come in at zero until a delivery sets it.",
       "saved": "{count, plural, one {# book set up in stock} other {# books set up in stock}}",
       "error": "Couldn't set up the books. Please try again."
+    },
+    "emptyBodyManage": "Add the first stock item — beans, milk, cups — to start tracking it.",
+    "parLine": "Par {quantity}",
+    "lastPriceLine": "last paid {cost}",
+    "unitName": {
+      "g": "Grams (g)",
+      "ml": "Millilitres (ml)",
+      "piece": "Pieces"
+    },
+    "item": {
+      "newTitle": "New stock item",
+      "editTitle": "Edit {name}",
+      "edit": "Edit item",
+      "subtitle": "How it's kept and bought. What it costs comes from deliveries.",
+      "create": "Add item",
+      "save": "Save",
+      "saved": "{name} saved",
+      "error": "Couldn't save the stock item. Please try again.",
+      "nameLabel": "Name",
+      "namePlaceholder": "e.g. Espresso beans",
+      "unitLabel": "Counted in",
+      "unitLocked": "Fixed once the item holds stock or has stock history.",
+      "supplierLabel": "Usually bought from",
+      "noSupplier": "No usual supplier",
+      "reorderLabel": "Reorder at ({unit})",
+      "reorderHint": "Flagged as running low at this level or below.",
+      "parLabel": "Par level ({unit})",
+      "parHint": "What a delivery tops it up to — the order list suggests the difference.",
+      "packsLabel": "Pack sizes",
+      "packsHint": "How it's bought, e.g. bag = 1000 {unit}. Deliveries can then be entered in packs.",
+      "packName": "Pack name",
+      "packNamePlaceholder": "e.g. bag",
+      "packFactor": "How many {unit} in the pack",
+      "packAdd": "Add a pack size",
+      "packRemove": "Remove pack size"
+    },
+    "packs": {
+      "unitLabel": "Unit",
+      "baseUnit": "Base unit",
+      "option": "{name} ({quantity} {unit})",
+      "costPerLabel": "Cost is for",
+      "costPer": {
+        "line": "The whole line",
+        "unit": "Each {unit}"
+      },
+      "costEachLabel": "Cost per {unit} (Toman)"
+    },
+    "adjust": {
+      "title": "Adjust stock",
+      "subtitle": "Change what's on hand by hand, with the reason. It's posted at average cost.",
+      "submit": "Save adjustment",
+      "saved": "Stock of {name} adjusted",
+      "error": "Couldn't save the adjustment. Please try again.",
+      "reasonLabel": "Reason",
+      "reason": {
+        "found": "Found",
+        "damaged": "Damaged",
+        "staffMeal": "Staff meal",
+        "sampling": "Sampling / tasting",
+        "correction": "Correction",
+        "other": "Other"
+      },
+      "directionLabel": "Stock",
+      "direction": {
+        "in": "Comes in (+)",
+        "out": "Goes out (−)"
+      },
+      "fixed": {
+        "in": "Found stock always comes in.",
+        "out": "This always takes stock out."
+      },
+      "quantityLabel": "Quantity ({unit})",
+      "noteLabel": "Note (optional)",
+      "noteRequiredLabel": "Note (needed for “Other”)",
+      "notePlaceholder": "What happened",
+      "noteNeeded": "Add a note saying what happened.",
+      "account": {
+        "found": "{amount} is booked as inventory variance.",
+        "damaged": "{amount} is written off as waste.",
+        "staffMeal": "{amount} is booked as staff meals.",
+        "sampling": "{amount} is booked as samples and tastings.",
+        "correction": "{amount} is booked as inventory variance.",
+        "other": "{amount} is booked as inventory variance."
+      }
+    },
+    "toOrder": {
+      "heading": "To order",
+      "subtitle": "Everything at or below its reorder level, by supplier, with how much brings it back to par.",
+      "printedOn": "As of {date}",
+      "emptyTitle": "Nothing to order",
+      "emptyBody": "Every item is above its reorder level.",
+      "noSupplier": "No usual supplier",
+      "levels": "Reorder / par",
+      "suggested": "Order",
+      "noPar": "Set a par level",
+      "atPar": "At par already",
+      "packs": "{count, plural, one {{formatted} {pack}} other {{formatted} × {pack}}} ({quantity})"
+    },
+    "returns": {
+      "heading": "Returns to suppliers",
+      "subtitle": "Stock sent back, and the credit given for it.",
+      "new": "Return to supplier",
+      "newSubtitle": "What goes back leaves stock at its average cost. The credit comes off the delivery's bill first; the rest comes back as money.",
+      "emptyTitle": "No returns yet",
+      "emptyBody": "Stock sent back to a supplier shows up here.",
+      "title": "SR-{number} · {supplier}",
+      "against": "From delivery EX-{number}",
+      "credit": "Credit",
+      "applied": "Off the bill",
+      "refundedTo": {
+        "cash": "Refunded to cash",
+        "bank": "Refunded to the bank"
+      },
+      "stockValue": "Stock value",
+      "supplierLabel": "Supplier",
+      "supplierPlaceholder": "Choose a supplier",
+      "deliveryLabel": "Delivery",
+      "deliveryHint": "Its bill takes the credit first.",
+      "noDelivery": "No delivery — any stock",
+      "deliveryOption": "EX-{number} · {date} · {description}",
+      "linesLabel": "What goes back",
+      "onHand": "{quantity} on hand",
+      "creditLabel": "Credit (Toman, VAT included)",
+      "creditHint": "The credit note's total. Leave blank if nothing was credited.",
+      "vatLabel": "VAT in the credit (Toman)",
+      "refundLabel": "Money back to",
+      "refundHint": "Only needed when the bill can't take all of the credit.",
+      "refundNeeded": "Part of the credit comes back as money — choose where to.",
+      "refundTo": {
+        "none": "Nothing comes back",
+        "cash": "Cash",
+        "bank": "Bank"
+      },
+      "settleBill": "{amount} comes off what's owed on EX-{number}.",
+      "settleRefund": "{amount} comes back as money.",
+      "noteLabel": "Note (optional)",
+      "notePlaceholder": "e.g. Damaged on arrival",
+      "save": "Save return",
+      "saved": "Return SR-{number} saved",
+      "error": "Couldn't save the return. Please try again."
     }
   },
   "dashBookLoans": {

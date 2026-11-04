@@ -37,8 +37,8 @@ describe("stockReceiptSchema", () => {
       supplierId: undefined,
       description: "Beans delivery",
       lines: [
-        { ingredientId: "ing-beans", quantity: 1000, cost: 2400000 },
-        { ingredientId: "ing-syrup", quantity: 0.5, cost: 0 },
+        { ingredientId: "ing-beans", quantity: 1000, cost: 2400000, purchaseUnit: undefined, costPerUnit: false },
+        { ingredientId: "ing-syrup", quantity: 0.5, cost: 0, purchaseUnit: undefined, costPerUnit: false },
       ],
       vatAmount: 0,
       paidFrom: "bank",

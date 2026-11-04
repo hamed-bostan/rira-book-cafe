@@ -1,13 +1,17 @@
 import type {
   OpeningStockFormInput,
   ReorderLevelInput,
+  StockAdjustmentFormInput,
   StockCountFormInput,
+  StockItemFormInput,
   StockReceiptFormInput,
+  SupplierReturnFormInput,
   WasteFormInput,
 } from "@/src/contracts/inventory-schema";
 import type { Expense } from "@/src/domain/entities/Expense";
+import type { SupplierReturn } from "@/src/domain/entities/Inventory";
 import type { JournalEntry } from "@/src/domain/entities/Ledger";
-import { apiPatch, apiPost } from "@/src/lib/api/client";
+import { apiClient, apiPatch, apiPost, apiPut } from "@/src/lib/api/client";
 import {
   expenseResponseSchema,
   journalEntryResponseSchema,
@@ -16,6 +20,8 @@ import {
 import {
   countResultResponseSchema,
   openingResultResponseSchema,
+  stockItemSavedResponseSchema,
+  supplierReturnResponseSchema,
   trackBooksResultResponseSchema,
 } from "./inventory-response-schema";
 
@@ -44,6 +50,35 @@ export const inventoryApi = {
 
   setReorderLevel(id: string, values: ReorderLevelInput): Promise<void> {
     return apiPatch(`/admin/inventory/items/${id}`, values);
+  },
+
+  /** A manual ± with its reason. */
+  async adjust(values: StockAdjustmentFormInput): Promise<void> {
+    await apiPost("/admin/inventory/adjustments", values);
+  },
+
+  /** Stock going back to a supplier against their credit note. */
+  returnToSupplier(values: SupplierReturnFormInput): Promise<SupplierReturn> {
+    return apiPost("/admin/inventory/returns", values, supplierReturnResponseSchema);
+  },
+};
+
+/** Stock items as Inventory makes and edits them. */
+export const stockItemsApi = {
+  create(values: StockItemFormInput): Promise<{ id: string; name: string }> {
+    return apiPost("/admin/inventory/items", values, stockItemSavedResponseSchema);
+  },
+
+  update(id: string, values: StockItemFormInput): Promise<{ id: string; name: string }> {
+    return apiPut(`/admin/inventory/items/${id}`, values, stockItemSavedResponseSchema);
+  },
+};
+
+/** Download links: plain GETs the browser follows, so the session cookie goes with them. */
+export const inventoryExports = {
+  /** The movements the filters match, as a CSV in `locale`. */
+  movementsHref(params: Record<string, string>): string {
+    return apiClient.getUri({ url: "/admin/inventory/movements/export", params });
   },
 };
 

@@ -92,6 +92,8 @@ type ApiErrorKey =
   | "parentIsSubcategory"
   | "hasSubcategories"
   | "reviewNotApproved"
+  | "returnExceedsStock"
+  | "deliveryHasReturns"
   | "gatewayUnavailable"
   | "rateLimited"
   | "timeout"
@@ -185,6 +187,8 @@ const CODE_KEYS: Readonly<Record<string, ApiErrorKey>> = {
   PARENT_IS_SUBCATEGORY: "parentIsSubcategory",
   HAS_SUBCATEGORIES: "hasSubcategories",
   REVIEW_NOT_APPROVED: "reviewNotApproved",
+  RETURN_EXCEEDS_STOCK: "returnExceedsStock",
+  DELIVERY_HAS_RETURNS: "deliveryHasReturns",
   // A 429 from `enforceRateLimit` (orders, payments, booking requests).
   RATE_LIMITED: "rateLimited",
   INTERNAL: "server",

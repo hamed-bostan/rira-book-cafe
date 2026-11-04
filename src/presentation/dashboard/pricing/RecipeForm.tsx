@@ -6,7 +6,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useFieldArray, useForm, useWatch } from "react-hook-form";
 
 import { recipeSchema, type RecipeFormInput } from "@/src/contracts/pricing-schema";
-import { ingredientUnitCost, MAX_RECIPE_LINES, type Ingredient, type RecipeLine } from "@/src/domain/entities/Pricing";
+import { costingUnitCost, MAX_RECIPE_LINES, type Ingredient, type RecipeLine } from "@/src/domain/entities/Pricing";
 import { Link, useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatMoney } from "@/src/lib/formatMoney";
@@ -66,7 +66,8 @@ export function RecipeForm({ productId, lines, ingredients }: RecipeFormProps) {
   const total = watched.reduce((sum, line) => {
     const ingredient = byId.get(line.ingredientId);
     const quantity = Number(line.quantity);
-    return ingredient && quantity > 0 ? sum + ingredientUnitCost(ingredient) * quantity : sum;
+    // Costed as the saved recipe will be: average cost with stock on hand, else the last price.
+    return ingredient && quantity > 0 ? sum + costingUnitCost(ingredient) * quantity : sum;
   }, 0);
 
   const onSubmit = handleSubmit(async (values) => {

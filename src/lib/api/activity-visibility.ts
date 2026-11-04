@@ -42,6 +42,10 @@ const ENTITY_TYPE_NEEDS: Record<(typeof ACTIVITY_ENTITY_TYPES)[number], Permissi
   cashShift: "shifts.manage",
   // That the log itself was pruned is for everyone who reads it.
   activity: "activity.view",
+  // Who changed stock is the floor's business (they read the stock list); what
+  // it was worth is redacted below.
+  stockItem: "inventory.view",
+  pricing: "accounting.view",
 };
 
 /**
@@ -51,6 +55,10 @@ const ENTITY_TYPE_NEEDS: Record<(typeof ACTIVITY_ENTITY_TYPES)[number], Permissi
  */
 const FIELD_NEEDS: Readonly<Partial<Record<string, Permission>>> = {
   costPrice: "accounting.view",
+  // A stock item's purchase price, and what a stock change was worth or credited.
+  purchasePrice: "accounting.view",
+  value: "accounting.view",
+  creditAmount: "accounting.view",
 };
 
 /**

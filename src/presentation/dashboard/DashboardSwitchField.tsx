@@ -48,7 +48,6 @@ export function DashboardSwitchField({
         onCheckedChange={onCheckedChange}
         disabled={disabled}
         aria-label={ariaLabel}
-        disabled={disabled}
       />
       <span className="flex min-w-0 flex-col">
         <span className={FIELD_LABEL}>{label}</span>

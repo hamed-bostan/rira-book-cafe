@@ -1,7 +1,8 @@
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { amountOwed } from "@/src/domain/entities/Expense";
-import type { Account } from "@/src/domain/entities/Ledger";
+import type { SupplierReturn } from "@/src/domain/entities/Inventory";
+import { SYSTEM_ACCOUNTS, type Account } from "@/src/domain/entities/Ledger";
 import { Link } from "@/src/i18n/navigation";
 import { formatCafeDayMedium } from "@/src/lib/formatCafeDay";
 import { formatMoney } from "@/src/lib/formatMoney";
@@ -12,6 +13,7 @@ import { Badge } from "@/src/presentation/design-system/components/Badge/Badge";
 
 import { DashboardPageHeader } from "../DashboardPageHeader";
 import { DashboardSection } from "../DashboardSection";
+import { SupplierReturnCard } from "../inventory/SupplierReturnCard";
 import { AMOUNT, ROW_CAPTION, ROW_END } from "../pageStyles";
 import { DashboardPageCrumb } from "../shell/DashboardPageCrumb";
 
@@ -21,14 +23,40 @@ import { ExpenseStatusBadge } from "./ExpenseStatusBadge";
 import { PayExpenseButton } from "./PayExpenseButton";
 import { VoidExpenseButton } from "./VoidExpenseButton";
 
-type ExpenseDetailScreenProps = ExpenseDetailWire & { accounts: Account[]; canWrite: boolean; today: string };
+type ExpenseDetailScreenProps = ExpenseDetailWire & {
+  accounts: Account[];
+  canWrite: boolean;
+  today: string;
+  /** Goods from this delivery sent back to the supplier, and their credits. */
+  returns?: SupplierReturn[];
+  /** Units of the stock items, to read the returns' quantities. */
+  stockUnits?: ReadonlyMap<string, "g" | "ml" | "piece">;
+  /** Whether the viewer may send goods from this delivery back (`inventory.manage`). */
+  canReturn?: boolean;
+};
 
-/** One expense: what it was, how it was booked and paid, and the journal entries behind it. */
-export async function ExpenseDetailScreen({ expense, entries, accounts, canWrite, today }: ExpenseDetailScreenProps) {
+/**
+ * One expense: what it was, how it was booked and paid, and the journal entries
+ * behind it — for a delivery, also what was sent back to the supplier and how
+ * those credits settled it.
+ */
+export async function ExpenseDetailScreen({
+  expense,
+  entries,
+  accounts,
+  canWrite,
+  today,
+  returns = [],
+  stockUnits = new Map(),
+  canReturn = false,
+}: ExpenseDetailScreenProps) {
   const t = await getTranslations("dashExpenses");
   const tAccounting = await getTranslations("dashAccounting");
   const locale = await getLocale();
   const account = accounts.find((candidate) => candidate.code === expense.accountCode);
+  // A delivery from a named supplier, still standing: goods from it can go back.
+  const isDelivery =
+    expense.accountCode === SYSTEM_ACCOUNTS.inventory && expense.status !== "void" && Boolean(expense.supplierId);
 
   const details: { key: string; label: string; value: string; figure?: boolean; strong?: boolean }[] = [
     { key: "date", label: t("form.dateLabel"), value: formatCafeDayMedium(expense.date, locale) },
@@ -47,12 +75,15 @@ export async function ExpenseDetailScreen({ expense, entries, accounts, canWrite
               source: t(`detail.source.${expense.paidFrom}`),
               date: formatCafeDayMedium(expense.paidOn, locale),
             })
-          : expense.paidAmount > 0
-            ? t("detail.paidSoFar", {
-                paid: formatMoney(expense.paidAmount, locale),
-                left: formatMoney(amountOwed(expense), locale),
-              })
-            : t("status.unpaid"),
+          : // Settled (in part) by a supplier's credit for goods sent back: no money left.
+            expense.status === "paid" && expense.paidOn
+            ? t("detail.settledByCredit", { date: formatCafeDayMedium(expense.paidOn, locale) })
+            : expense.paidAmount > 0
+              ? t("detail.paidSoFar", {
+                  paid: formatMoney(expense.paidAmount, locale),
+                  left: formatMoney(amountOwed(expense), locale),
+                })
+              : t("status.unpaid"),
     },
     {
       key: "net",
@@ -121,6 +152,24 @@ export async function ExpenseDetailScreen({ expense, entries, accounts, canWrite
       ) : expense.receiptUrl ? (
         <DashboardSection title={t("receipt.heading")}>
           <ExpenseReceiptPreview src={expense.receiptUrl} />
+        </DashboardSection>
+      ) : null}
+
+      {returns.length > 0 || (canReturn && isDelivery) ? (
+        <DashboardSection title={t("detail.returnsHeading")}>
+          <div className="flex flex-col gap-3">
+            {returns.map((item) => (
+              <SupplierReturnCard key={item.id} item={item} units={stockUnits} costsVisible linkDelivery={false} />
+            ))}
+            {canReturn && isDelivery ? (
+              <Link
+                href={`/dashboard/inventory/returns/new?expense=${expense.id}`}
+                className="w-fit font-medium text-primary underline underline-offset-4 hover:text-primary-hover"
+              >
+                {t("detail.returnGoods")}
+              </Link>
+            ) : null}
+          </div>
         </DashboardSection>
       ) : null}
 

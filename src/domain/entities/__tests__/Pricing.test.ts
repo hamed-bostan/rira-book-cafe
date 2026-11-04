@@ -21,7 +21,9 @@ const ingredient = (id: string, purchasePrice: number, purchaseQuantity: number)
   isActive: true,
   updatedAt: "2026-10-16T00:00:00Z",
   onHand: 0,
+  averageCost: 0,
   hasHistory: false,
+  purchaseUnits: [],
 });
 
 // Beans: 1,200,000 per kg → 1,200/g. Milk: 60,000 per litre → 60/ml. Cup: 5,000 each.

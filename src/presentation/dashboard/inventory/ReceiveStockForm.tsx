@@ -61,7 +61,7 @@ export function ReceiveStockForm({
       date: today,
       supplierId: "",
       description: "",
-      lines: [{ ingredientId: "", quantity: "", cost: "" }],
+      lines: [{ ingredientId: "", quantity: "", unit: "", cost: "", costPer: "line" }],
       vatAmount: "",
       payment: "unpaid",
     },
@@ -136,6 +136,7 @@ export function ReceiveStockForm({
         errors={errors}
         items={items}
         costLabel={t("receive.costLabel")}
+        withPacks
       />
 
       <DashboardFormField

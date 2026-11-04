@@ -31,6 +31,8 @@ function item(overrides: Partial<StockItem> = {}): StockItem {
     onHand: 1000,
     averageCost: 50,
     value: 50_000,
+    purchaseUnits: [],
+    lastPurchaseCost: 50,
     isActive: true,
     level: "ok",
     hasHistory: true,
@@ -332,18 +334,25 @@ describe("SetReorderLevel", () => {
   it("sets or clears the level", async () => {
     const setReorderLevel = vi.fn<IInventoryRepository["setReorderLevel"]>(async () => {});
     const useCase = new SetReorderLevel({ setReorderLevel } as unknown as IInventoryRepository);
-    await useCase.execute("milk", 500);
-    await useCase.execute("milk", null);
-    expect(setReorderLevel.mock.calls).toEqual([
+    await useCase.execute("milk", 500, ACTOR);
+    await useCase.execute("milk", null, ACTOR);
+    expect(setReorderLevel.mock.calls.map(([id, level]) => [id, level])).toEqual([
       ["milk", 500],
       ["milk", null],
     ]);
+    const audit = setReorderLevel.mock.calls[0][2];
+    expect(audit?.({ id: "milk", name: "Milk", before: null, after: 500 })).toMatchObject({
+      action: "stockItem.updated",
+      entityType: "stockItem",
+      changes: [{ field: "reorderLevel", before: null, after: "500" }],
+    });
+    expect(audit?.({ id: "milk", name: "Milk", before: 500, after: 500 })).toBeNull();
   });
 
   it("refuses a negative level", async () => {
     const setReorderLevel = vi.fn();
     await expect(
-      new SetReorderLevel({ setReorderLevel } as unknown as IInventoryRepository).execute("milk", -1),
+      new SetReorderLevel({ setReorderLevel } as unknown as IInventoryRepository).execute("milk", -1, ACTOR),
     ).rejects.toThrow(ValidationError);
     expect(setReorderLevel).not.toHaveBeenCalled();
   });

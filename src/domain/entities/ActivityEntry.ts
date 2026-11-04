@@ -52,6 +52,14 @@ export const ACTIVITY_ENTITY_TYPES = [
   "cashShift",
   // The log itself: entries past the retention setting pruned by the background jobs.
   "activity",
+  // A stock item (an ingredient, a tracked book): made or edited, from Inventory or
+  // Pricing, and every hand-made stock change — waste, counts, opening stock,
+  // adjustments, returns to a supplier. One entry per item a document moved, so an
+  // item's own history reads whole. Values are `accounting.view`'s (see
+  // activity-visibility).
+  "stockItem",
+  // The pricing advisor's cafe-wide settings.
+  "pricing",
 ] as const;
 
 /**
@@ -225,6 +233,18 @@ export const ACTIVITY_ACTIONS = [
   // A supplier added, or its details or active switch changed.
   "expense.supplierCreated",
   "expense.supplierUpdated",
+  // Stock items and the stock changes staff make by hand. A delivery is an
+  // `expense.recorded` (its bill), and sales move stock without a person's hand.
+  "stockItem.created",
+  "stockItem.updated",
+  "stockItem.wasted",
+  "stockItem.counted",
+  "stockItem.openingRecorded",
+  "stockItem.adjusted",
+  "stockItem.returnedToSupplier",
+  // A menu item's recipe replaced — its cost price follows.
+  "product.recipeChanged",
+  "pricing.settingsChanged",
 ] as const;
 
 /** A recognised action, or `unknown` — see {@link ActivityEntityType} for why. */

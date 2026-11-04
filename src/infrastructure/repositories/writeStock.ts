@@ -69,6 +69,8 @@ export async function writeMovement(
     date: string;
     referenceId?: string;
     note?: string;
+    /** An adjustment's reason code. */
+    reason?: string;
     /** The caller already moved the sale stock of any book this item stands behind. */
     shelfMoved?: boolean;
   },
@@ -88,6 +90,7 @@ export async function writeMovement(
       date: dayToDate(movement.date),
       referenceId: movement.referenceId ?? null,
       note: movement.note ?? null,
+      reason: movement.reason ?? null,
       createdById: actor.id,
       createdByName: actor.name,
     },

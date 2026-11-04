@@ -18,7 +18,9 @@ type RouteContext = { params: Promise<{ id: string }> };
 
 /** PATCH /api/admin/pricing/items/:id — set an item's own profit %, or clear it (blank). Requires `accounting.write`. */
 async function handlePatch(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
-  if (!(await getSessionWith("accounting.write"))) return unauthorizedResponse();
+  const session = await getSessionWith("accounting.write");
+  if (!session) return unauthorizedResponse();
+  const actor = { id: session.user.id, name: session.user.name ?? session.user.id };
 
   const { id } = await params;
   const body = await parseJsonBody(request);
@@ -33,7 +35,7 @@ async function handlePatch(request: NextRequest, { params }: RouteContext): Prom
   }
 
   try {
-    await new SetItemMarkup(pricingRepository).execute(id, parsed.data.markup);
+    await new SetItemMarkup(pricingRepository).execute(id, parsed.data.markup, actor);
     return new NextResponse(null, { status: 204 });
   } catch (error) {
     return errorResponseFromException(error, `PATCH /api/admin/pricing/items/${id} failed`);

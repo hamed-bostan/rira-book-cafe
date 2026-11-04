@@ -86,6 +86,13 @@ export async function PricingItemCard({ row, defaultMarkupBps, canWrite, canAppl
             </Link>
           </dd>
         </div>
+        {/* Stock on hand is costed at its average; the last prices paid point elsewhere. */}
+        {row.lastPriceCost !== undefined ? (
+          <div>
+            <dt className="sr-only">{t("lastPriceLabel")}</dt>
+            <dd className={FIELD_HINT}>{t("lastPriceCost", { cost: formatMoney(row.lastPriceCost, locale) })}</dd>
+          </div>
+        ) : null}
         <div className={LINE}>
           <dt className={LABEL}>{t("col.overhead")}</dt>
           <dd className={cn(VALUE, FIGURE)}>{formatMoney(row.overheadPerUnit, locale)}</dd>

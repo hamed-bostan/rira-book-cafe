@@ -19,12 +19,16 @@ const MOVEMENT_COLUMNS = ["start", "start", "start", "end", "end", "start"] as c
 export default function StockMovementsLoading() {
   return (
     <LoadingRegion className="flex min-w-0 flex-col gap-6">
-      <DashboardPageHeaderSkeleton actions={0} />
+      <DashboardPageHeaderSkeleton actions={1} />
       <section className={cn(PAGE_CARD, "overflow-hidden")}>
         <div className="flex flex-wrap items-end gap-x-4 gap-y-3 border-b border-border px-5 py-4">
           <div className="w-48">
             <DashboardFieldSkeleton />
           </div>
+          <div className="w-40">
+            <DashboardFieldSkeleton />
+          </div>
+          {/* The date span. */}
           <div className="w-40">
             <DashboardFieldSkeleton />
           </div>

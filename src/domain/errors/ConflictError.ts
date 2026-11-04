@@ -121,4 +121,9 @@ export type ConflictCode =
   | "PARENT_IS_SUBCATEGORY"
   | "HAS_SUBCATEGORIES"
   // Staff reply only to a review guests can see.
-  | "REVIEW_NOT_APPROVED";
+  | "REVIEW_NOT_APPROVED"
+  // Sending back more of an item than is on hand; voiding a delivery some of which
+  // went back to the supplier (the return would be left crediting a bill that no
+  // longer exists).
+  | "RETURN_EXCEEDS_STOCK"
+  | "DELIVERY_HAS_RETURNS";

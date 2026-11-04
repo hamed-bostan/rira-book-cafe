@@ -1,4 +1,4 @@
-import { AlertTriangle, CircleAlert, History, PackageX, Wallet } from "lucide-react";
+import { AlertTriangle, CircleAlert, ClipboardList, History, PackageX, Undo2, Wallet } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import type { InventorySummary, StockItem, StockLevel } from "@/src/domain/entities/Inventory";
@@ -16,6 +16,7 @@ import { MetricCard } from "../MetricCard";
 import { METRIC_GRID_OF_THREE } from "../pageStyles";
 
 import { InventoryHeaderActions } from "./InventoryHeaderActions";
+import { NewStockItemButton } from "./NewStockItemButton";
 import { StockDialogsProvider } from "./StockDialogsProvider";
 import { STOCK_COLUMNS, StockRow } from "./StockRow";
 import { TrackBooksButton } from "./TrackBooksButton";
@@ -34,6 +35,8 @@ type InventoryScreenProps = {
   canManage: boolean;
   /** Books for sale with no stock item behind them, so their sales book no cost. */
   untrackedBooks: number;
+  /** Who items can be bought from, for the item dialog (read only for those who manage stock). */
+  suppliers: readonly { id: string; name: string }[];
 };
 
 /** Out first, then low, then the rest — what needs ordering is read first. */
@@ -56,6 +59,7 @@ export async function InventoryScreen({
   today,
   canManage,
   untrackedBooks,
+  suppliers,
 }: InventoryScreenProps) {
   const t = await getTranslations("dashInventory");
   const locale = await getLocale();
@@ -81,7 +85,7 @@ export async function InventoryScreen({
   };
 
   return (
-    <StockDialogsProvider items={active} costsVisible={summary.costsVisible} today={today}>
+    <StockDialogsProvider items={active} costsVisible={summary.costsVisible} today={today} suppliers={suppliers}>
       <div className="flex min-w-0 flex-col gap-6">
         <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
           <div className="flex min-w-0 flex-col gap-1">
@@ -95,6 +99,20 @@ export async function InventoryScreen({
                 {t("movements.heading")}
               </Link>
             </Button>
+            <Button size="control-md" asChild variant="secondary" className="gap-2 px-3">
+              <Link href="/dashboard/inventory/to-order">
+                <Icon icon={ClipboardList} size="icon-md" />
+                {t("toOrder.heading")}
+              </Link>
+            </Button>
+            {canManage ? (
+              <Button size="control-md" asChild variant="secondary" className="gap-2 px-3">
+                <Link href="/dashboard/inventory/returns">
+                  <Icon icon={Undo2} size="icon-md" />
+                  {t("returns.heading")}
+                </Link>
+              </Button>
+            ) : null}
             {canManage ? <InventoryHeaderActions countItemId={active[0]?.id} receiveItemId={firstToOrder?.id} /> : null}
           </div>
         </div>
@@ -198,6 +216,8 @@ export async function InventoryScreen({
             <DashboardEmptyState title={t("noMatchesTitle")} body={t("noMatchesBody")} />
           ) : view !== "all" ? (
             <DashboardEmptyState title={t("allGoodTitle")} body={t("allGoodBody")} />
+          ) : canManage ? (
+            <DashboardEmptyState title={t("emptyTitle")} body={t("emptyBodyManage")} action={<NewStockItemButton />} />
           ) : (
             <DashboardEmptyState title={t("emptyTitle")} body={t("emptyBody")} />
           )}

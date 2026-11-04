@@ -34,6 +34,11 @@ export function activityEntityHref(
       return "/dashboard/cash-shifts";
     case "payroll":
       return action === "payroll.employeeChanged" ? "/dashboard/payroll/employees" : `/dashboard/payroll/${entityId}`;
+    // A stock item's own history of movements.
+    case "stockItem":
+      return `/dashboard/inventory/movements?item=${entityId}`;
+    case "pricing":
+      return "/dashboard/pricing/settings";
     default:
       return null;
   }

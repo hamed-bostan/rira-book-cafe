@@ -367,7 +367,7 @@ describe("UpdateProduct", () => {
     });
     const { repo, update, entries } = repoWith([book]);
 
-    const saved = await new UpdateProduct(repo, EMPTY_SHELF.loans).execute(
+    const saved = await new UpdateProduct(repo, EMPTY_SHELF.loans, MENU).execute(
       "p1",
       {
         ...INPUT,
@@ -388,7 +388,7 @@ describe("UpdateProduct", () => {
     const book = product({ kind: "book", stockQuantity: 4, book: { author: "Daneshvar", availability: "sale" } });
     const { repo, update } = repoWith([book]);
 
-    await new UpdateProduct(repo, EMPTY_SHELF.loans).execute(
+    await new UpdateProduct(repo, EMPTY_SHELF.loans, MENU).execute(
       "p1",
       { ...INPUT, kind: "book", stockQuantity: 40, book: { author: "Daneshvar", availability: "sale" } },
       ACTOR,

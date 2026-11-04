@@ -1,5 +1,6 @@
 import {
   assertBalanced,
+  DEFAULT_SERVICE_CHARGE_BPS,
   DEFAULT_VAT_RATE_BPS,
   JOURNAL_SOURCES,
   UnbalancedEntryError,
@@ -41,6 +42,7 @@ export async function readSettings(tx: Prisma.TransactionClient): Promise<Accoun
   const row = await tx.accountingSettings.findUnique({ where: { id: 1 } });
   return {
     vatRateBps: row?.vatRateBps ?? DEFAULT_VAT_RATE_BPS,
+    serviceChargeBps: row?.serviceChargeBps ?? DEFAULT_SERVICE_CHARGE_BPS,
     booksClosedThrough: row?.booksClosedThrough ? dateToDay(row.booksClosedThrough) : undefined,
   };
 }

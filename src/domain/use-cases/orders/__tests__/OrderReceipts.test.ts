@@ -19,7 +19,7 @@ const ORDER = {
 function sources(order: Order | null, refunds: OrderRefund[] = []) {
   return {
     orders: { getById: vi.fn(async () => order), listRefunds: vi.fn(async () => refunds) },
-    ledger: { getSettings: vi.fn(async () => ({ vatRateBps: 1000 })) },
+    ledger: { getSettings: vi.fn(async () => ({ vatRateBps: 1000, serviceChargeBps: 0 })) },
   };
 }
 

@@ -12,7 +12,7 @@ import { isOnPublicMenu, isSellable } from "../../entities/Product";
 import { ValidationError } from "../../errors/ValidationError";
 import { categoryLookup, type MenuCatalog } from "../products/publicMenu";
 
-import { CheckoutPricing } from "./CheckoutPricing";
+import { CheckoutPricing, checkoutLines } from "./CheckoutPricing";
 
 import type { ActivityActor } from "../../entities/ActivityEntry";
 import type { OrderQuote } from "../../entities/Checkout";
@@ -33,8 +33,12 @@ export type PlaceOrderInput = {
   redeemPoints?: boolean;
 };
 
-/** What the basket asks to preview: the lines and the discounts, nothing about service. */
-export type QuoteOrderInput = Pick<PlaceOrderInput, "items" | "promoCode" | "redeemPoints">;
+/**
+ * What the basket asks to preview: the lines and the discounts — and how it's
+ * served, when the guest has said, since a dine-in order carries the service charge.
+ */
+export type QuoteOrderInput = Pick<PlaceOrderInput, "items" | "promoCode" | "redeemPoints"> &
+  Partial<Pick<PlaceOrderInput, "serviceType">>;
 
 /**
  * Price the requested lines from the menu, snapshotting each item's name, image,
@@ -99,10 +103,16 @@ export class QuoteOrder {
     private readonly pricing: CheckoutPricing,
   ) {}
 
-  async execute(input: QuoteOrderInput, guestId: string, now: Date): Promise<OrderQuote> {
+  async execute(input: QuoteOrderInput, guestId: string | null, now: Date): Promise<OrderQuote> {
     const items = await buildOrderLines(this.menu, input.items);
     const { promo: _promo, ...quote } = await this.pricing.execute(
-      { subtotal: orderSubtotal(items), promoCode: input.promoCode, redeemPoints: input.redeemPoints },
+      {
+        subtotal: orderSubtotal(items),
+        lines: checkoutLines(items),
+        promoCode: input.promoCode,
+        redeemPoints: input.redeemPoints,
+        serviceType: input.serviceType,
+      },
       guestId,
       now,
     );
@@ -143,7 +153,13 @@ export class PlaceOrder {
     const items = await buildOrderLines(this.menu, input.items);
     const subtotal = orderSubtotal(items);
     const priced = await this.pricing.execute(
-      { subtotal, promoCode: input.promoCode, redeemPoints: input.redeemPoints },
+      {
+        subtotal,
+        lines: checkoutLines(items),
+        promoCode: input.promoCode,
+        redeemPoints: input.redeemPoints,
+        serviceType: input.serviceType,
+      },
       guest.id,
       now,
     );
@@ -164,6 +180,8 @@ export class PlaceOrder {
         promoDiscount: priced.promoDiscount,
         pointsRedeemed: priced.pointsRedeemed,
         pointsDiscount: priced.pointsDiscount,
+        serviceCharge: priced.serviceCharge,
+        serviceChargeBps: priced.serviceChargeBps,
         total: priced.total,
       },
       actor,

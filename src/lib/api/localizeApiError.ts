@@ -63,6 +63,9 @@ type ApiErrorKey =
   | "promoExpired"
   | "promoUsedUp"
   | "promoMinSubtotal"
+  | "promoNotEligible"
+  | "promoFirstOrder"
+  | "promoNeedsGuest"
   | "notEnoughPoints"
   | "loyaltyDisabled"
   | "alreadyWaiting"
@@ -141,6 +144,9 @@ const CODE_KEYS: Readonly<Record<string, ApiErrorKey>> = {
   PROMO_EXPIRED: "promoExpired",
   PROMO_USED_UP: "promoUsedUp",
   PROMO_MIN_SUBTOTAL: "promoMinSubtotal",
+  PROMO_NOT_ELIGIBLE: "promoNotEligible",
+  PROMO_FIRST_ORDER: "promoFirstOrder",
+  PROMO_NEEDS_GUEST: "promoNeedsGuest",
   NOT_ENOUGH_POINTS: "notEnoughPoints",
   LOYALTY_DISABLED: "loyaltyDisabled",
   ALREADY_WAITING: "alreadyWaiting",

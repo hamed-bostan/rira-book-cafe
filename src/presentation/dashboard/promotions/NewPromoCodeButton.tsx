@@ -7,16 +7,18 @@ import * as React from "react";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 
-import { PromoCodeDialog } from "./PromoCodeDialog";
+import { PromoCodeDialog, type PromoScopeOptions } from "./PromoCodeDialog";
 
 type NewPromoCodeButtonProps = {
   takenCodes: readonly string[];
   /** Today on the cafe calendar. */
   today: string;
+  /** The menu's items and categories, to limit a code to. */
+  scope: PromoScopeOptions;
 };
 
 /** The page's "New code" button and the dialog it opens. */
-export function NewPromoCodeButton({ takenCodes, today }: NewPromoCodeButtonProps) {
+export function NewPromoCodeButton({ takenCodes, today, scope }: NewPromoCodeButtonProps) {
   const t = useTranslations("dashPromotions");
   const [open, setOpen] = React.useState(false);
   // Bumped on every open, so the dialog starts empty — nothing left from last time.
@@ -36,7 +38,14 @@ export function NewPromoCodeButton({ takenCodes, today }: NewPromoCodeButtonProp
         <Icon icon={Plus} size="icon-md" />
         {t("newCode")}
       </Button>
-      <PromoCodeDialog key={opened} open={open} onOpenChange={setOpen} takenCodes={takenCodes} today={today} />
+      <PromoCodeDialog
+        key={opened}
+        open={open}
+        onOpenChange={setOpen}
+        takenCodes={takenCodes}
+        today={today}
+        scope={scope}
+      />
     </>
   );
 }

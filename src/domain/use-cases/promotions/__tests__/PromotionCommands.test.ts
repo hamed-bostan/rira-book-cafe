@@ -27,6 +27,7 @@ import type { ILoyaltyRepository, PointsAdjustment } from "../../../repositories
 import type { IPromotionRepository, PromoCodeInput } from "../../../repositories/IPromotionRepository";
 
 const STAFF = { id: "s1", name: "Staff" };
+const NOW = new Date("2026-11-04T09:00:00.000Z");
 
 const INPUT: PromoCodeInput = {
   code: "  welcome10 ",
@@ -36,6 +37,9 @@ const INPUT: PromoCodeInput = {
   maxDiscount: 50_000,
   minSubtotal: 0,
   isActive: true,
+  productIds: [],
+  categoryIds: [],
+  firstOrderOnly: false,
 };
 
 function promo(overrides: Partial<PromoCode> = {}): PromoCode {
@@ -48,6 +52,9 @@ function promo(overrides: Partial<PromoCode> = {}): PromoCode {
     maxDiscount: 50_000,
     minSubtotal: 0,
     isActive: true,
+    productIds: [],
+    categoryIds: [],
+    firstOrderOnly: false,
     createdAt: "2026-01-01T00:00:00.000Z",
     updatedAt: "2026-01-01T00:00:00.000Z",
     ...overrides,
@@ -99,6 +106,7 @@ function promoRepo(current: PromoCode | null, table: PromoTable = {}): PromoFake
       table.archivedCodes?.includes(code) ? promo({ id: "old", code, archivedAt: "2026-01-02T00:00:00.000Z" }) : null,
     ),
     usage: vi.fn(async () => ({ total: 0, byGuest: 0 })),
+    hasCompletedOrder: vi.fn(async () => false),
     isUsed: vi.fn(async () => table.used ?? false),
     create,
     update,
@@ -124,7 +132,7 @@ describe("CreatePromoCode", () => {
       entityLabel: "WELCOME10",
     });
     // A creation lists every field, with nothing on the "before" side.
-    expect(entries[0]?.changes).toHaveLength(11);
+    expect(entries[0]?.changes).toHaveLength(14);
     expect(entries[0]?.changes.every((change) => change.before === null)).toBe(true);
     expect(entries[0]?.changes.find((change) => change.field === "value")?.after).toBe("10");
   });
@@ -351,22 +359,37 @@ type LoyaltyFake = {
   saveSettings: ReturnType<typeof vi.fn<ILoyaltyRepository["saveSettings"]>>;
   history: ReturnType<typeof vi.fn<ILoyaltyRepository["history"]>>;
   adjust: ReturnType<typeof vi.fn<ILoyaltyRepository["adjust"]>>;
+  entries: (NewActivityEntry | null)[];
 };
 
-function loyaltyRepo(): LoyaltyFake {
-  const saveSettings = vi.fn<ILoyaltyRepository["saveSettings"]>(async (settings) => settings);
+function loyaltyRepo(current: LoyaltySettings = DEFAULT_LOYALTY_SETTINGS, lastActivity?: string): LoyaltyFake {
+  const entries: (NewActivityEntry | null)[] = [];
+  const saveSettings = vi.fn<ILoyaltyRepository["saveSettings"]>(async (settings, audit) => {
+    if (audit) entries.push(audit(settings));
+    return settings;
+  });
   const history = vi.fn<ILoyaltyRepository["history"]>(async (userId) => [transaction({ userId })]);
-  const adjust = vi.fn<ILoyaltyRepository["adjust"]>(async (adjustment: PointsAdjustment) =>
-    transaction({ userId: adjustment.userId, delta: adjustment.delta, reason: "adjust", note: adjustment.note }),
-  );
+  const adjust = vi.fn<ILoyaltyRepository["adjust"]>(async (adjustment: PointsAdjustment, audit) => {
+    const saved = transaction({
+      userId: adjustment.userId,
+      delta: adjustment.delta,
+      reason: "adjust",
+      note: adjustment.note,
+    });
+    if (audit) entries.push(audit(saved));
+    return saved;
+  });
   const repo: ILoyaltyRepository = {
-    getSettings: vi.fn(async () => DEFAULT_LOYALTY_SETTINGS),
+    getSettings: vi.fn(async () => current),
     saveSettings,
     balance: vi.fn(async () => 120),
     history,
     adjust,
+    lastActivity: vi.fn(async () => lastActivity),
+    listLapsing: vi.fn(async () => []),
+    expire: vi.fn(async () => 0),
   };
-  return { repo, saveSettings, history, adjust };
+  return { repo, saveSettings, history, adjust, entries };
 }
 
 const GUEST: User = {
@@ -387,11 +410,72 @@ describe("loyalty settings", () => {
     expect(await new GetLoyaltySettings(loyaltyRepo().repo).execute()).toEqual(DEFAULT_LOYALTY_SETTINGS);
   });
 
-  it("saves well-formed settings", async () => {
-    const { repo, saveSettings } = loyaltyRepo();
-    const next: LoyaltySettings = { enabled: false, tomanPerPoint: 5_000, pointValue: 500, minRedeemPoints: 0 };
-    expect(await new UpdateLoyaltySettings(repo).execute(next)).toEqual(next);
-    expect(saveSettings).toHaveBeenCalledWith(next);
+  it("saves well-formed settings, and logs what changed", async () => {
+    const { repo, saveSettings, entries } = loyaltyRepo();
+    const next: LoyaltySettings = {
+      enabled: false,
+      tomanPerPoint: 5_000,
+      pointValue: 500,
+      minRedeemPoints: 0,
+      pointsExpiryMonths: 0,
+    };
+    expect(await new UpdateLoyaltySettings(repo).execute(next, STAFF, NOW)).toEqual(next);
+    expect(saveSettings).toHaveBeenCalledWith(next, expect.any(Function));
+    expect(entries).toEqual([
+      expect.objectContaining({
+        action: "loyalty.settingsChanged",
+        entityType: "loyalty",
+        actorId: "s1",
+        changes: [
+          { field: "enabled", before: "true", after: "false" },
+          { field: "tomanPerPoint", before: "10000", after: "5000" },
+          { field: "pointValue", before: "1000", after: "500" },
+          { field: "minRedeemPoints", before: "50", after: "0" },
+        ],
+      }),
+    ]);
+  });
+
+  it("logs nothing when nothing changed", async () => {
+    const { repo, entries } = loyaltyRepo();
+    await new UpdateLoyaltySettings(repo).execute(DEFAULT_LOYALTY_SETTINGS, STAFF, NOW);
+    expect(entries).toEqual([null]);
+  });
+
+  it("stamps when expiry was switched on, keeps the stamp while it stays on, and clears it when off", async () => {
+    const on = loyaltyRepo();
+    const saved = await new UpdateLoyaltySettings(on.repo).execute(
+      { ...DEFAULT_LOYALTY_SETTINGS, pointsExpiryMonths: 12 },
+      STAFF,
+      NOW,
+    );
+    expect(saved).toMatchObject({ pointsExpiryMonths: 12, pointsExpirySince: NOW.toISOString() });
+    expect(on.entries[0]?.changes).toEqual([{ field: "pointsExpiryMonths", before: "0", after: "12" }]);
+
+    const since = "2026-01-01T00:00:00.000Z";
+    const longer = loyaltyRepo({ ...DEFAULT_LOYALTY_SETTINGS, pointsExpiryMonths: 12, pointsExpirySince: since });
+    await expect(
+      new UpdateLoyaltySettings(longer.repo).execute(
+        { ...DEFAULT_LOYALTY_SETTINGS, pointsExpiryMonths: 18 },
+        STAFF,
+        NOW,
+      ),
+    ).resolves.toMatchObject({ pointsExpirySince: since });
+    // Left out, the expiry stays as it is.
+    await expect(
+      new UpdateLoyaltySettings(longer.repo).execute(
+        { enabled: true, tomanPerPoint: 10_000, pointValue: 1_000, minRedeemPoints: 50 },
+        STAFF,
+        NOW,
+      ),
+    ).resolves.toMatchObject({ pointsExpiryMonths: 12, pointsExpirySince: since });
+    await expect(
+      new UpdateLoyaltySettings(longer.repo).execute(
+        { ...DEFAULT_LOYALTY_SETTINGS, pointsExpiryMonths: 0 },
+        STAFF,
+        NOW,
+      ),
+    ).resolves.toMatchObject({ pointsExpiryMonths: 0, pointsExpirySince: undefined });
   });
 
   it.each<[Partial<LoyaltySettings>, string]>([
@@ -403,10 +487,13 @@ describe("loyalty settings", () => {
     [{ tomanPerPoint: MAX_ORDER_AMOUNT + 1 }, "tomanPerPoint"],
     [{ pointValue: MAX_ORDER_AMOUNT + 1 }, "pointValue"],
     [{ minRedeemPoints: MAX_ORDER_AMOUNT + 1 }, "minRedeemPoints"],
+    [{ pointsExpiryMonths: -1 }, "pointsExpiryMonths"],
+    [{ pointsExpiryMonths: 121 }, "pointsExpiryMonths"],
+    [{ pointsExpiryMonths: 1.5 }, "pointsExpiryMonths"],
   ])("refuses %o", async (overrides, field) => {
     const { repo, saveSettings } = loyaltyRepo();
     await expect(async () =>
-      new UpdateLoyaltySettings(repo).execute({ ...DEFAULT_LOYALTY_SETTINGS, ...overrides }),
+      new UpdateLoyaltySettings(repo).execute({ ...DEFAULT_LOYALTY_SETTINGS, ...overrides }, STAFF, NOW),
     ).rejects.toMatchObject({
       field,
     });
@@ -448,7 +535,32 @@ describe("AdjustGuestPoints", () => {
       { phone: "+989120000000", delta: -20, note: "  goodwill  " },
       STAFF,
     );
-    expect(adjust).toHaveBeenCalledWith({ userId: "09120000000", delta: -20, note: "goodwill", by: STAFF });
+    expect(adjust).toHaveBeenCalledWith(
+      { userId: "09120000000", delta: -20, note: "goodwill", by: STAFF },
+      expect.any(Function),
+    );
+  });
+
+  it("logs the adjustment in the activity log, on the guest", async () => {
+    const { repo, entries } = loyaltyRepo();
+    await new AdjustGuestPoints(repo, users(GUEST)).execute(
+      { phone: "+989120000000", delta: 25, note: "birthday" },
+      STAFF,
+    );
+    expect(entries).toEqual([
+      {
+        actorId: "s1",
+        actorName: "Staff",
+        action: "loyalty.pointsAdjusted",
+        entityType: "loyalty",
+        entityId: "09120000000",
+        entityLabel: "Sara (+989120000000)",
+        changes: [
+          { field: "points", before: null, after: "25" },
+          { field: "note", before: null, after: "birthday" },
+        ],
+      },
+    ]);
   });
 
   it.each<[string, { phone: string; delta: number; note: string }, string]>([

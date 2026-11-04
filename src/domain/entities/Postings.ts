@@ -25,7 +25,8 @@ import type { Reservation } from "./Reservation";
  * only decide *when* to post, never *what*.
  *
  * The flow for an order:
- *   completed → sale: Dr Guest receivables (total) / Cr Sales by kind (net) + Cr VAT payable
+ *   completed → sale: Dr Guest receivables (total) / Cr Sales by kind (net) + Cr Service charges (net,
+ *               dine-in orders with a service charge) + Cr VAT payable
  *             → cost:  Dr Cost of sales / Cr Inventory (only for items with a cost)
  *   paid      → Dr Cash | Bank | Gateway clearing, one line per account / Cr Guest receivables
  *   unpaid (correcting a mistaken "paid") → the payment, reversed
@@ -80,35 +81,41 @@ const methodsLabel = (parts: readonly PaymentPart[]) => parts.map((part) => part
 
 /**
  * How an order's total splits for the books: each line's share of what the guest
- * pays (the total allocated over the lines in whole Toman), the taxable part of
- * each (exempt lines — books — carry none), and the VAT inside those. The sale's
- * entry books this, and a receipt prints the same VAT.
+ * pays for the goods (the total less the service charge, allocated over the lines
+ * in whole Toman), the taxable part of each (exempt lines — books — carry none),
+ * the service charge, and the VAT inside the taxable lines and the charge — split
+ * between them as `lineVat` and `serviceVat`. The sale's entry books this, and a
+ * receipt prints the same VAT.
+ *
+ * The service charge is VATable (see `serviceChargeFor`), so it's in the VAT base
+ * whatever the lines are; an order without one splits exactly as it always did.
  */
 export function saleSplit(
-  order: Pick<Order, "total" | "items">,
+  order: Pick<Order, "total" | "items" | "serviceCharge">,
   vatRateBps: number,
-): { lineTotals: number[]; taxable: number[]; vat: number } {
+): { lineTotals: number[]; taxable: number[]; vat: number; lineVat: number[]; serviceVat: number } {
+  // `|| 0`: an order read from before the service charge carries none.
+  const serviceCharge = Math.max(0, Math.min(order.serviceCharge || 0, order.total));
   const lineTotals = allocate(
-    order.total,
+    order.total - serviceCharge,
     order.items.map((item) => item.unitPrice * item.quantity),
   );
   const taxable = order.items.map((item, index) => (item.taxExempt ? 0 : lineTotals[index]));
-  const vat = vatIncluded(
-    taxable.reduce((sum, amount) => sum + amount, 0),
-    vatRateBps,
-  );
-  return { lineTotals, taxable, vat };
+  const vat = vatIncluded(taxable.reduce((sum, amount) => sum + amount, 0) + serviceCharge, vatRateBps);
+  const split = allocate(vat, [...taxable, serviceCharge]);
+  return { lineTotals, taxable, vat, lineVat: split.slice(0, taxable.length), serviceVat: split[taxable.length] };
 }
 
 /**
  * Revenue for a completed order. Prices are VAT-inclusive, so the VAT inside the
  * taxable lines goes to VAT payable — exempt lines (books) carry none — and the
- * rest is revenue by kind. Everything is allocated in whole Toman (the total over
+ * rest is revenue by kind. A service charge is its own income (Service charges),
+ * net of the VAT inside it. Everything is allocated in whole Toman (the total over
  * the lines, then the VAT over the taxable ones), so the lines add up exactly.
  */
 export function saleEntry(order: Order, vatRateBps: number, date: string, actor: Actor): NewJournalEntry {
-  const { lineTotals, taxable, vat } = saleSplit(order, vatRateBps);
-  const lineVat = allocate(vat, taxable);
+  const { lineTotals, vat, lineVat, serviceVat } = saleSplit(order, vatRateBps);
+  const serviceCharge = order.total - lineTotals.reduce((sum, amount) => sum + amount, 0);
 
   const netByKind = new Map<ProductKind, number>();
   order.items.forEach((item, index) => {
@@ -125,6 +132,9 @@ export function saleEntry(order: Order, vatRateBps: number, date: string, actor:
     lines: [
       { accountCode: SYSTEM_ACCOUNTS.guestReceivables, debit: order.total, credit: 0 },
       ...kinds.map((kind) => ({ accountCode: SALES_ACCOUNT[kind], debit: 0, credit: netByKind.get(kind) ?? 0 })),
+      ...(serviceCharge > 0
+        ? [{ accountCode: SYSTEM_ACCOUNTS.serviceCharges, debit: 0, credit: serviceCharge - serviceVat }]
+        : []),
       { accountCode: SYSTEM_ACCOUNTS.vatPayable, debit: 0, credit: vat },
     ],
     createdById: actor.id,
@@ -211,8 +221,13 @@ export function orderReturnEntry(
   actor: Actor,
 ): NewJournalEntry {
   const netByKind = new Map<ProductKind, number>();
+  let serviceNet = 0;
   for (const line of refund.lines) {
-    netByKind.set(line.kind, (netByKind.get(line.kind) ?? 0) + line.amount - line.vatAmount);
+    // The line's share of the service charge comes back out of service charge
+    // income, the rest out of the sales it was booked to — each net of its own VAT.
+    const lineServiceNet = line.serviceCharge - line.serviceChargeVat;
+    serviceNet += lineServiceNet;
+    netByKind.set(line.kind, (netByKind.get(line.kind) ?? 0) + line.amount - line.vatAmount - lineServiceNet);
   }
   return {
     date: refund.date,
@@ -222,6 +237,7 @@ export function orderReturnEntry(
     uniqueKey: `orderRefund:${refund.id}`,
     lines: [
       ...[...netByKind].map(([kind, amount]) => ({ accountCode: SALES_ACCOUNT[kind], debit: amount, credit: 0 })),
+      ...(serviceNet > 0 ? [{ accountCode: SYSTEM_ACCOUNTS.serviceCharges, debit: serviceNet, credit: 0 }] : []),
       { accountCode: SYSTEM_ACCOUNTS.vatPayable, debit: refund.vatAmount, credit: 0 },
       { accountCode: PAYMENT_ACCOUNT[refund.method], debit: 0, credit: refund.amount },
     ],

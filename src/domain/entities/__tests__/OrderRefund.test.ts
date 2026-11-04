@@ -38,6 +38,8 @@ describe("priceRefundLines", () => {
         quantity: 1,
         amount: 100_000,
         vatAmount: 9_090,
+        serviceCharge: 0,
+        serviceChargeVat: 0,
         restocked: false,
       },
     ]);

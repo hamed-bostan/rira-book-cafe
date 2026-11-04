@@ -11,6 +11,8 @@ import { LoyaltySettingsForm } from "./LoyaltySettingsForm";
 import { NewPromoCodeButton } from "./NewPromoCodeButton";
 import { PromoCodeRow } from "./PromoCodeRow";
 
+import type { PromoScopeOptions } from "./PromoCodeDialog";
+
 type PromotionsScreenProps = {
   /** Every code, newest first, with its uses. */
   promoCodes: PromoCodeWithUses[];
@@ -19,6 +21,8 @@ type PromotionsScreenProps = {
   now: string;
   /** Today on the cafe calendar — a code can't be set to end before it. */
   today: string;
+  /** The menu's items and categories, to limit a code to. */
+  scope: PromoScopeOptions;
 };
 
 /** Codes guests can use first, then the ones switched off, then the ones only an edit can bring back. */
@@ -30,7 +34,7 @@ const RANK: Record<PromoCodeState, number> = { live: 0, scheduled: 0, off: 1, en
  * example, and a guest's points looked up by phone. Presentational — the page
  * fetches over the REST API; every write `router.refresh()`es.
  */
-export async function PromotionsScreen({ promoCodes, loyaltySettings, now, today }: PromotionsScreenProps) {
+export async function PromotionsScreen({ promoCodes, loyaltySettings, now, today, scope }: PromotionsScreenProps) {
   const t = await getTranslations("dashPromotions");
   const locale = await getLocale();
   const nowDate = new Date(now);
@@ -49,7 +53,7 @@ export async function PromotionsScreen({ promoCodes, loyaltySettings, now, today
           <h1 className="dashboard-page-title">{t("heading")}</h1>
           <p className="text-body-default text-muted-foreground sm:text-body-small">{t("subtitle")}</p>
         </div>
-        <NewPromoCodeButton takenCodes={takenCodes} today={today} />
+        <NewPromoCodeButton takenCodes={takenCodes} today={today} scope={scope} />
       </div>
 
       <section
@@ -68,7 +72,14 @@ export async function PromotionsScreen({ promoCodes, loyaltySettings, now, today
           <ul>
             {rows.map(({ promo, state }, index) => (
               <li key={promo.id} className={cn(index > 0 && "border-t border-border")}>
-                <PromoCodeRow promo={promo} state={state} now={now} takenCodes={takenCodes} today={today} />
+                <PromoCodeRow
+                  promo={promo}
+                  state={state}
+                  now={now}
+                  takenCodes={takenCodes}
+                  today={today}
+                  scope={scope}
+                />
               </li>
             ))}
           </ul>

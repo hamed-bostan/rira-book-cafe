@@ -1,11 +1,14 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { ValidationError } from "../../../errors/ValidationError";
-import { PlaceCounterOrder, type CounterOrderInput } from "../PlaceCounterOrder";
+import { CheckoutPricing } from "../CheckoutPricing";
+import { PlaceCounterOrder, QuoteCounterOrder, type CounterOrderInput } from "../PlaceCounterOrder";
 
 import type { Category } from "../../../entities/Category";
+import type { LoyaltySettings } from "../../../entities/Loyalty";
 import type { Order, OrderStatus } from "../../../entities/Order";
 import type { Product } from "../../../entities/Product";
+import type { PromoCode } from "../../../entities/Promotion";
 import type { User } from "../../../entities/User";
 import type { IOrderRepository } from "../../../repositories/IOrderRepository";
 
@@ -176,5 +179,117 @@ describe("PlaceCounterOrder", () => {
       message: "One of the items is no longer on the menu.",
     });
     expect(place).not.toHaveBeenCalled();
+  });
+});
+
+describe("PlaceCounterOrder — discounts and the service charge", () => {
+  const NOW = new Date("2026-11-04T09:00:00Z");
+  const CLUB: LoyaltySettings = {
+    enabled: true,
+    tomanPerPoint: 10_000,
+    pointValue: 1_000,
+    minRedeemPoints: 50,
+    pointsExpiryMonths: 0,
+  };
+  const CODE: PromoCode = {
+    id: "promo1",
+    code: "AUTUMN",
+    kind: "percent",
+    value: 10,
+    minSubtotal: 0,
+    perGuestLimit: 1,
+    isActive: true,
+    productIds: [],
+    categoryIds: [],
+    firstOrderOnly: false,
+    createdAt: "",
+    updatedAt: "",
+  };
+
+  /** Pricing for a guest holding `balance` points, with `byGuest` uses of the code, at a service charge rate. */
+  function pricing({ balance = 0, byGuest = 0, serviceChargeBps = 0 } = {}) {
+    const usage = vi.fn(async () => ({ total: byGuest, byGuest }));
+    const balanceOf = vi.fn(async () => balance);
+    return {
+      usage,
+      balanceOf,
+      pricing: new CheckoutPricing(
+        {
+          getByCode: vi.fn(async (code: string) => (code === "AUTUMN" ? CODE : null)),
+          getById: vi.fn(async () => CODE),
+          usage,
+          hasCompletedOrder: vi.fn(async () => false),
+        },
+        { getSettings: vi.fn(async () => CLUB), balance: balanceOf },
+        { getSettings: vi.fn(async () => ({ vatRateBps: 1000, serviceChargeBps })) },
+      ),
+    };
+  }
+
+  it("takes a promo code and the guest's points, counted against the guest's profile", async () => {
+    const { repo, place } = orderStore();
+    const { pricing: priced, usage, balanceOf } = pricing({ balance: 100 });
+    const order = await new PlaceCounterOrder(repo, productRepo, noProfiles, priced).execute(
+      { ...SALE, promoCode: "autumn", redeemPoints: true, paymentParts: [{ method: "cash", amount: 116_000 }] },
+      STAFF,
+      NOW,
+    );
+
+    // 240,000 − 24,000 (10%) − 100 points (100,000) = 116,000.
+    expect(place.mock.calls[0][0]).toMatchObject({
+      promoCodeId: "promo1",
+      promoCode: "AUTUMN",
+      promoDiscount: 24_000,
+      pointsRedeemed: 100,
+      pointsDiscount: 100_000,
+      serviceCharge: 0,
+      total: 116_000,
+    });
+    expect(order).toMatchObject({ paymentStatus: "paid", total: 116_000 });
+    expect(usage).toHaveBeenCalledWith("promo1", "09123456789");
+    expect(balanceOf).toHaveBeenCalledWith("09123456789");
+  });
+
+  it("refuses a code the guest already used up, before placing anything", async () => {
+    const { repo, place } = orderStore();
+    await expect(
+      new PlaceCounterOrder(repo, productRepo, noProfiles, pricing({ byGuest: 1 }).pricing).execute(
+        { ...SALE, promoCode: "AUTUMN" },
+        STAFF,
+        NOW,
+      ),
+    ).rejects.toMatchObject({ code: "PROMO_USED_UP" });
+    expect(place).not.toHaveBeenCalled();
+  });
+
+  it("charges a dine-in sale the service charge, and wants the payment to cover it", async () => {
+    const { repo, place } = orderStore();
+    const useCase = new PlaceCounterOrder(repo, productRepo, noProfiles, pricing({ serviceChargeBps: 1000 }).pricing);
+    const dineIn = { ...SALE, serviceType: "dineIn" as const, tableLabel: "4" };
+
+    await expect(
+      useCase.execute({ ...dineIn, paymentParts: [{ method: "cash", amount: 240_000 }] }, STAFF, NOW),
+    ).rejects.toThrow("paymentPartsTotal");
+    await useCase.execute({ ...dineIn, paymentParts: [{ method: "cash", amount: 264_000 }] }, STAFF, NOW);
+    expect(place.mock.calls[0][0]).toMatchObject({ serviceCharge: 24_000, serviceChargeBps: 1000, total: 264_000 });
+  });
+
+  it("quotes the sale by the guest's phone, and for no guest until a phone is in", async () => {
+    const { pricing: priced, balanceOf } = pricing({ balance: 80, serviceChargeBps: 1000 });
+    const quote = new QuoteCounterOrder(productRepo, priced);
+
+    await expect(
+      quote.execute({ ...SALE, serviceType: "dineIn", customerPhone: "0912 345 6789", redeemPoints: true }, NOW),
+    ).resolves.toMatchObject({ pointsRedeemed: 80, pointsDiscount: 80_000, serviceCharge: 16_000, total: 176_000 });
+    expect(balanceOf).toHaveBeenCalledWith("09123456789");
+
+    await expect(quote.execute({ ...SALE, customerPhone: "0912" }, NOW)).resolves.toMatchObject({
+      pointsBalance: 0,
+      total: 240_000,
+    });
+    // A per-guest code needs the guest.
+    await expect(quote.execute({ ...SALE, customerPhone: undefined, promoCode: "AUTUMN" }, NOW)).rejects.toMatchObject({
+      code: "PROMO_NEEDS_GUEST",
+    });
   });
 });

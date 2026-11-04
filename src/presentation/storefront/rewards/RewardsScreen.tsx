@@ -5,14 +5,15 @@ import type { GuestLoyaltyOverview } from "@/src/domain/entities/Loyalty";
 import { Link } from "@/src/i18n/navigation";
 import { formatMoney } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
-import { formatOrderDateShort } from "@/src/lib/formatOrderDate";
+import { formatOrderDate, formatOrderDateShort } from "@/src/lib/formatOrderDate";
 import { cn } from "@/src/lib/utils";
 import { EmptyState } from "@/src/presentation/design-system/components/EmptyState/EmptyState";
 import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 
 /**
- * The guest's place in the loyalty club: their balance and what it's worth, how
- * points are earned and spent, and where their points came from.
+ * The guest's place in the loyalty club: their balance and what it's worth (and,
+ * when the cafe set an expiry, the day it lapses unless they visit), how points are
+ * earned, spent and kept, and where their points came from.
  */
 export async function RewardsScreen({ overview }: { overview: GuestLoyaltyOverview }) {
   const t = await getTranslations("site");
@@ -37,6 +38,11 @@ export async function RewardsScreen({ overview }: { overview: GuestLoyaltyOvervi
           <p className="text-body-small text-muted-foreground">
             {t("rewards.worth", { amount: formatMoney(balance * settings.pointValue, locale) })}
           </p>
+          {overview.expiresAt ? (
+            <p className="mt-1 text-body-small-strong text-foreground" data-testid="points-expiry">
+              {t("rewards.expiresOn", { date: formatOrderDate(overview.expiresAt, locale) })}
+            </p>
+          ) : null}
         </div>
       </section>
 
@@ -47,6 +53,14 @@ export async function RewardsScreen({ overview }: { overview: GuestLoyaltyOvervi
             <li>{t("rewards.howEarn", { amount: formatMoney(settings.tomanPerPoint, locale) })}</li>
             <li>{t("rewards.howSpend", { amount: formatMoney(settings.pointValue, locale) })}</li>
             <li>{t("rewards.howMinimum", { points: formatNumber(settings.minRedeemPoints, locale) })}</li>
+            {settings.pointsExpiryMonths > 0 ? (
+              <li>
+                {t("rewards.howExpiry", {
+                  count: settings.pointsExpiryMonths,
+                  months: formatNumber(settings.pointsExpiryMonths, locale),
+                })}
+              </li>
+            ) : null}
           </ul>
         </section>
       ) : (

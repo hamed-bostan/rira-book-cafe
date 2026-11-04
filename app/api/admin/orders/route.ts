@@ -8,7 +8,7 @@ import {
 } from "@/src/domain/entities/AdminOrderFilters";
 import { ListOrders } from "@/src/domain/use-cases/orders/OrderQueries";
 import { PlaceCounterOrder } from "@/src/domain/use-cases/orders/PlaceCounterOrder";
-import { menuCatalog, orderRepository, userRepository } from "@/src/infrastructure/container";
+import { checkoutPricing, menuCatalog, orderRepository, userRepository } from "@/src/infrastructure/container";
 import { parseAdminOrderFilters } from "@/src/lib/api/admin-order-params";
 import { invalidatesCatalog } from "@/src/lib/api/invalidatesCatalog";
 import { parsePageRequest } from "@/src/lib/api/pagination-params";
@@ -48,9 +48,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 /**
  * POST /api/admin/orders — ring up a sale at the counter, on the profile
  * `customerPhone` finds (made from `customerName`, with the sale, when it has none).
- * Prices come from the menu; it can be paid and handed over in the same request.
- * 201 with the order; 400 without a phone, or a name for a new guest; 409 when an
- * item sold out. Requires `orders.fulfill`.
+ * Prices come from the menu, and the discounts (a promo code, the guest's points) and
+ * the service charge are priced on the server; it can be paid and handed over in the
+ * same request. 201 with the order; 400 without a phone, or a name for a new guest, or
+ * a payment that doesn't add up to the total; 409 when an item sold out or a code or
+ * the points can't be used. Requires `orders.fulfill`.
  */
 async function handlePost(request: NextRequest): Promise<NextResponse> {
   const session = await getSessionWith("orders.fulfill");
@@ -68,10 +70,10 @@ async function handlePost(request: NextRequest): Promise<NextResponse> {
   }
 
   try {
-    const order = await new PlaceCounterOrder(orderRepository, menuCatalog, userRepository).execute(parsed.data, {
-      id: session.user.id,
-      name: session.user.name ?? session.user.id,
-    });
+    const order = await new PlaceCounterOrder(orderRepository, menuCatalog, userRepository, checkoutPricing).execute(
+      parsed.data,
+      { id: session.user.id, name: session.user.name ?? session.user.id },
+    );
     return NextResponse.json(order, { status: 201 });
   } catch (error) {
     return errorResponseFromException(error, "POST /api/admin/orders failed");

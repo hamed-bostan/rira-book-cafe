@@ -55,7 +55,7 @@ export async function OrderReceiptSlip({ receipt }: { receipt: OrderReceipt }) {
   ]
     .filter(Boolean)
     .join(t("receipt.addressSeparator"));
-  const discounted = order.promoDiscount > 0 || order.pointsDiscount > 0;
+  const discounted = order.promoDiscount > 0 || order.pointsDiscount > 0 || order.serviceCharge > 0;
   const number = formatNumber(order.orderNumber, locale);
 
   return (
@@ -155,6 +155,12 @@ export async function OrderReceiptSlip({ receipt }: { receipt: OrderReceipt }) {
           ? receiptRow(
               t("pointsDiscount", { points: formatNumber(order.pointsRedeemed, locale) }),
               `−${money(order.pointsDiscount)}`,
+            )
+          : null}
+        {order.serviceCharge > 0
+          ? receiptRow(
+              t("serviceCharge", { rate: formatNumberTrimmed(order.serviceChargeBps / 100, locale, 2) }),
+              `+${money(order.serviceCharge)}`,
             )
           : null}
         {receiptRow(

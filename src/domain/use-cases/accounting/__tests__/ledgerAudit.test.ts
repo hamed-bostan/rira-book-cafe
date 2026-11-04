@@ -46,7 +46,10 @@ type Fake = {
   updateSettings: ReturnType<typeof vi.fn<ILedgerRepository["updateSettings"]>>;
 };
 
-function ledgerWith(found: JournalEntry | null = entry(), settings: AccountingSettings = { vatRateBps: 1000 }): Fake {
+function ledgerWith(
+  found: JournalEntry | null = entry(),
+  settings: AccountingSettings = { vatRateBps: 1000, serviceChargeBps: 0 },
+): Fake {
   const post = vi.fn<ILedgerRepository["post"]>(async (input) => ({ ...input, id: "e9", number: 9, createdAt: "" }));
   const reverse = vi.fn<ILedgerRepository["reverse"]>(async () => entry({ id: "e2", number: 6, reversesId: "e1" }));
   const createAccount = vi.fn<ILedgerRepository["createAccount"]>(async (input) => ({
@@ -185,7 +188,7 @@ describe("chart of accounts", () => {
 
 describe("UpdateAccountingSettings", () => {
   it("audits the settings that moved", async () => {
-    const { ledger, updateSettings } = ledgerWith(entry(), { vatRateBps: 1000 });
+    const { ledger, updateSettings } = ledgerWith(entry(), { vatRateBps: 1000, serviceChargeBps: 0 });
     await new UpdateAccountingSettings(ledger).execute(
       { vatRateBps: 900, booksClosedThrough: "2026-09-30" },
       ACTOR,
@@ -207,8 +210,8 @@ describe("UpdateAccountingSettings", () => {
   });
 
   it("records nothing when nothing changed", async () => {
-    const { ledger, updateSettings } = ledgerWith(entry(), { vatRateBps: 1000 });
-    await new UpdateAccountingSettings(ledger).execute({ vatRateBps: 1000 }, ACTOR, NOW);
+    const { ledger, updateSettings } = ledgerWith(entry(), { vatRateBps: 1000, serviceChargeBps: 0 });
+    await new UpdateAccountingSettings(ledger).execute({ vatRateBps: 1000, serviceChargeBps: 0 }, ACTOR, NOW);
     const [sent, audit] = updateSettings.mock.calls[0];
     expect(audit?.(sent)).toBeNull();
   });

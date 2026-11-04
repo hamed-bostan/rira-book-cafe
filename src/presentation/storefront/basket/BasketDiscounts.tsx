@@ -5,7 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import * as React from "react";
 
 import { formatMoney } from "@/src/lib/formatMoney";
-import { formatNumber } from "@/src/lib/formatNumber";
+import { formatNumber, formatNumberTrimmed } from "@/src/lib/formatNumber";
 import { Button } from "@/src/presentation/design-system/components/Button/Button";
 import { FormMessage } from "@/src/presentation/design-system/components/form/FormMessage/FormMessage";
 import { Input } from "@/src/presentation/design-system/components/form/Input/Input";
@@ -139,7 +139,7 @@ export function BasketDiscounts({
 
       <div className="flex flex-col gap-1.5 border-t border-border pt-4">
         <dl className="flex flex-col gap-1.5">
-          {quote && (quote.promoDiscount > 0 || quote.pointsDiscount > 0) ? (
+          {quote && (quote.promoDiscount > 0 || quote.pointsDiscount > 0 || quote.serviceCharge > 0) ? (
             <>
               <div className="flex items-center justify-between text-body-small text-muted-foreground">
                 <dt>{t("basket.subtotal")}</dt>
@@ -155,6 +155,16 @@ export function BasketDiscounts({
                 <div className="flex items-center justify-between text-body-small text-success-foreground">
                   <dt>{t("basket.pointsDiscount")}</dt>
                   <dd>−{formatMoney(quote.pointsDiscount, locale)}</dd>
+                </div>
+              ) : null}
+              {quote.serviceCharge > 0 ? (
+                <div className="flex items-center justify-between text-body-small text-muted-foreground">
+                  <dt>
+                    {t("basket.serviceCharge", {
+                      rate: formatNumberTrimmed(quote.serviceChargeBps / 100, locale, 2),
+                    })}
+                  </dt>
+                  <dd>+{formatMoney(quote.serviceCharge, locale)}</dd>
                 </div>
               ) : null}
             </>

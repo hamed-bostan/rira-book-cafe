@@ -24,6 +24,7 @@ const ENTITY_TYPE_NEEDS: Record<(typeof ACTIVITY_ENTITY_TYPES)[number], Permissi
   order: "activity.view",
   review: "activity.view",
   promoCode: "activity.view",
+  loyalty: "activity.view",
   reservation: "activity.view",
   suiteBooking: "activity.view",
   bookLoan: "activity.view",

@@ -60,6 +60,7 @@ export class PrismaPromotionRepository implements IPromotionRepository {
         starts_at AS "startsAt", ends_at AS "endsAt",
         usage_limit AS "usageLimit", per_guest_limit AS "perGuestLimit",
         is_active AS "isActive", archived_at AS "archivedAt",
+        product_ids AS "productIds", category_ids AS "categoryIds", first_order_only AS "firstOrderOnly",
         created_at AS "createdAt", updated_at AS "updatedAt"
       FROM promo_codes
       WHERE regexp_replace(upper(code), '[[:space:]_-]', '', 'g') = ${key}
@@ -79,6 +80,11 @@ export class PrismaPromotionRepository implements IPromotionRepository {
       this.db.order.count({ where: { ...LIVE_ORDER, promoCodeId: promoId, userId } }),
     ]);
     return { total, byGuest };
+  }
+
+  async hasCompletedOrder(userId: string): Promise<boolean> {
+    const order = await this.db.order.findFirst({ where: { userId, status: "completed" }, select: { id: true } });
+    return order !== null;
   }
 
   async getArchivedByCode(code: string): Promise<PromoCode | null> {
@@ -167,6 +173,9 @@ function toData(input: PromoCodeInput): Prisma.PromoCodeCreateInput {
     usageLimit: input.usageLimit ?? null,
     perGuestLimit: input.perGuestLimit ?? null,
     isActive: input.isActive,
+    productIds: [...input.productIds],
+    categoryIds: [...input.categoryIds],
+    firstOrderOnly: input.firstOrderOnly,
   };
 }
 
@@ -188,6 +197,10 @@ function toPromo(row: PromoRow): PromoCode {
     usageLimit: row.usageLimit ?? undefined,
     perGuestLimit: row.perGuestLimit ?? undefined,
     isActive: row.isActive,
+    // Nullable in the database (a Postgres array column); empty means unscoped either way.
+    productIds: row.productIds ?? [],
+    categoryIds: row.categoryIds ?? [],
+    firstOrderOnly: row.firstOrderOnly,
     archivedAt: row.archivedAt?.toISOString(),
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),

@@ -26,6 +26,7 @@ import { Input } from "@/src/presentation/design-system/components/form/Input/In
 import { Switch } from "@/src/presentation/design-system/components/Switch/Switch";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
+import { PromoScopePicker, type PromoScopeOption } from "./PromoScopePicker";
 import { promotionsApi } from "./promotion-api";
 
 /** The form's fields in the order a problem with them is reported. */
@@ -39,12 +40,20 @@ const FIELDS = [
   "usageLimit",
   "startsOn",
   "endsOn",
+  "categoryIds",
+  "productIds",
   "description",
 ] as const;
 type Field = (typeof FIELDS)[number];
 
 /** Optional limits, typed as whole numbers. */
 type LimitField = "maxDiscount" | "minSubtotal" | "perGuestLimit" | "usageLimit";
+
+/** Who and what the code is for, beyond its limits. */
+type ScopeField = "productIds" | "categoryIds" | "firstOrderOnly";
+
+/** The menu's items and categories a code can be limited to. */
+export type PromoScopeOptions = { products: PromoScopeOption[]; categories: PromoScopeOption[] };
 
 /** Fields whose message says nothing about which field it is ("Enter a whole number…"), so it's prefixed with the label. */
 const NAMED: ReadonlySet<Field> = new Set([
@@ -54,6 +63,8 @@ const NAMED: ReadonlySet<Field> = new Set([
   "usageLimit",
   "startsOn",
   "endsOn",
+  "categoryIds",
+  "productIds",
   "description",
 ]);
 
@@ -66,10 +77,12 @@ type PromoCodeDialogProps = {
   takenCodes: readonly string[];
   /** Today on the cafe calendar — a code can't be set to end before it. */
   today: string;
+  /** The menu's items and categories, to limit the code to. */
+  scope: PromoScopeOptions;
 };
 
 /** A code's stored window back to the inclusive cafe days the form shows. */
-function initialValues(promo?: PromoCode): PromoCodeFormInput {
+function initialValues(promo?: PromoCode): PromoCodeFormInput & Required<Pick<PromoCodeFormInput, ScopeField>> {
   return {
     code: promo?.code ?? "",
     description: promo?.description ?? "",
@@ -83,13 +96,18 @@ function initialValues(promo?: PromoCode): PromoCodeFormInput {
     usageLimit: promo?.usageLimit !== undefined ? String(promo.usageLimit) : "",
     perGuestLimit: promo?.perGuestLimit !== undefined ? String(promo.perGuestLimit) : "",
     isActive: promo?.isActive ?? true,
+    productIds: promo?.productIds ?? [],
+    categoryIds: promo?.categoryIds ?? [],
+    firstOrderOnly: promo?.firstOrderOnly ?? false,
   };
 }
 
 /**
  * Create or edit a promo code, in a dialog: the code, percent or amount off (a
  * percentage can be capped), the limits — a minimum order, uses per guest and in
- * all, the days it runs — who it's for, and whether it's on. Checks itself as it's
+ * all, the days it runs — what it covers (some categories and/or items: their lines
+ * alone are discounted and count toward the minimum), whether it's for a guest's
+ * first order only, who it's for, and whether it's on. Checks itself as it's
  * filled in with the same schema the API re-validates with, so Save stays off
  * until the code would be accepted; a code that already ended has to get a new end
  * date. Writes over the REST API, then `router.refresh()`es.
@@ -97,19 +115,20 @@ function initialValues(promo?: PromoCode): PromoCodeFormInput {
  * Controlled, so a row's ⋯ menu can open it. It holds what's typed, so callers
  * give it a fresh `key` each time it opens — it always starts from the code as saved.
  */
-export function PromoCodeDialog({ open, onOpenChange, promo, takenCodes, today }: PromoCodeDialogProps) {
+export function PromoCodeDialog({ open, onOpenChange, promo, takenCodes, today, scope }: PromoCodeDialogProps) {
   const t = useTranslations("dashPromotions");
   const tApiErrors = useTranslations("apiErrors");
   const tFormErrors = useTranslations("formErrors");
   const router = useRouter();
   const { toast } = useToast();
   const activeId = React.useId();
+  const firstOrderId = React.useId();
 
-  const [values, setValues] = React.useState<PromoCodeFormInput>(() => initialValues(promo));
+  const [values, setValues] = React.useState(() => initialValues(promo));
   const [serverError, setServerError] = React.useState<string | null>(null);
   const [pending, startTransition] = React.useTransition();
 
-  function set<K extends keyof PromoCodeFormInput>(key: K, value: PromoCodeFormInput[K]): void {
+  function set<K extends keyof typeof values>(key: K, value: (typeof values)[K]): void {
     setValues((current) => ({ ...current, [key]: value }));
     setServerError(null);
   }
@@ -262,6 +281,39 @@ export function PromoCodeDialog({ open, onOpenChange, promo, takenCodes, today }
           {day("startsOn")}
           {day("endsOn", today)}
         </div>
+
+        <div className={cn("col-span-full", FIELD_GRID)}>
+          <PromoScopePicker
+            label={t("optionalField", { label: t("field.categoryIds") })}
+            hint={t("scopeCategoriesHint")}
+            options={scope.categories}
+            selected={values.categoryIds}
+            onChange={(ids) => set("categoryIds", ids)}
+          />
+          <PromoScopePicker
+            label={t("optionalField", { label: t("field.productIds") })}
+            hint={t("scopeProductsHint")}
+            options={scope.products}
+            selected={values.productIds}
+            onChange={(ids) => set("productIds", ids)}
+          />
+        </div>
+
+        <label
+          htmlFor={firstOrderId}
+          className="col-span-full flex min-h-11 cursor-pointer items-center gap-3 sm:min-h-8"
+        >
+          <Switch
+            id={firstOrderId}
+            size="sm"
+            checked={values.firstOrderOnly}
+            onCheckedChange={(checked) => set("firstOrderOnly", checked)}
+          />
+          <span className="flex flex-col">
+            <span className={FIELD_LABEL}>{t("field.firstOrderOnly")}</span>
+            <span className={FIELD_HINT}>{t("firstOrderHint")}</span>
+          </span>
+        </label>
 
         <DashboardField label={t("optionalField", { label: label("description") })} className="col-span-full">
           <Input

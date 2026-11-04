@@ -10,7 +10,7 @@ import type { Order } from "../../../entities/Order";
 import type { IOrderRepository } from "../../../repositories/IOrderRepository";
 
 const STAFF = { id: "staff", name: "Ali" };
-const SETTINGS = { vatRateBps: DEFAULT_VAT_RATE_BPS };
+const SETTINGS = { vatRateBps: DEFAULT_VAT_RATE_BPS, serviceChargeBps: 0 };
 // 2026-10-16 01:00 in Tehran is still the 15th in UTC — postings use the cafe's day.
 const NOW = new Date("2026-10-15T21:30:00Z");
 
@@ -53,6 +53,8 @@ function order(overrides: Partial<Order> = {}): Order {
     pointsRedeemed: 0,
     pointsDiscount: 0,
     pointsEarned: 0,
+    serviceCharge: 0,
+    serviceChargeBps: 0,
     refundedTotal: 0,
     total: 550_000,
     placedAt: NOW.toISOString(),

@@ -58,11 +58,15 @@ export class RefundOrder {
     // An order from before the books began has no sale to take back.
     const sale = (await this.ledger.entriesFor(orderId)).find((entry) => entry.source === "orderSale");
     if (!sale) throw new ConflictError("NOT_REFUNDABLE", "This order's sale isn't on the books.");
-    const saleVat = sale.lines
-      .filter((line) => line.accountCode === SYSTEM_ACCOUNTS.vatPayable)
-      .reduce((sum, line) => sum + line.credit, 0);
+    const credited = (accountCode: string): number =>
+      sale.lines.filter((line) => line.accountCode === accountCode).reduce((sum, line) => sum + line.credit, 0);
+    const saleVat = credited(SYSTEM_ACCOUNTS.vatPayable);
+    // The VAT inside the service charge, as the sale booked it: the charge less the
+    // income it credited. A sale with no charge credited none.
+    const serviceNet = credited(SYSTEM_ACCOUNTS.serviceCharges);
+    const saleServiceVat = serviceNet > 0 ? Math.max(0, order.serviceCharge - serviceNet) : 0;
 
-    const priced = priceRefundLines(order, saleVat, input.lines);
+    const priced = priceRefundLines(order, saleVat, input.lines, saleServiceVat);
     if (priced.problem !== undefined) throw new ValidationError("lines", priced.problem);
     const amount = priced.lines.reduce((sum, line) => sum + line.amount, 0);
     const vatAmount = priced.lines.reduce((sum, line) => sum + line.vatAmount, 0);

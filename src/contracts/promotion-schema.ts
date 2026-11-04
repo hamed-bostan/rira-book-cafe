@@ -1,9 +1,14 @@
 import { cafeDayRange, isCafeDay } from "@/src/domain/entities/CafeTime";
-import { MAX_LOYALTY_NOTE_LENGTH, MAX_POINTS_ADJUSTMENT } from "@/src/domain/entities/Loyalty";
+import {
+  MAX_LOYALTY_NOTE_LENGTH,
+  MAX_POINTS_ADJUSTMENT,
+  MAX_POINTS_EXPIRY_MONTHS,
+} from "@/src/domain/entities/Loyalty";
 import { MAX_ORDER_AMOUNT } from "@/src/domain/entities/Order";
 import { isPlausiblePhone } from "@/src/domain/entities/Phone";
 import {
   MAX_PROMO_DESCRIPTION_LENGTH,
+  MAX_PROMO_SCOPE_ENTRIES,
   PROMO_CODE_PATTERN,
   PROMO_KINDS,
   normalizePromoCode,
@@ -38,6 +43,14 @@ const optionalDay = z.pipe(
   ),
   z.transform((value) => (value === "" ? undefined : value)),
 );
+
+/** Ids a code is scoped to: each named once, no more than a code can hold. */
+const scopeIds = z
+  .array(z.string().check(z.trim(), z.minLength(1, "scopeInvalid"), z.maxLength(64, "scopeInvalid")))
+  .check(
+    z.maxLength(MAX_PROMO_SCOPE_ENTRIES, "scopeTooMany"),
+    z.refine((ids) => new Set(ids).size === ids.length, "scopeInvalid"),
+  );
 
 const promoFieldsParsed = fieldsParsed(
   "description",
@@ -81,6 +94,11 @@ export const promoCodeFormSchema = z.pipe(
       usageLimit: optionalWhole("limitInvalid"),
       perGuestLimit: optionalWhole("limitInvalid"),
       isActive: z.boolean(),
+      /** The items and categories the code is limited to; both empty = the whole order. */
+      productIds: z._default(scopeIds, []),
+      categoryIds: z._default(scopeIds, []),
+      /** Only a guest's first order may use it. */
+      firstOrderOnly: z._default(z.boolean(), false),
     })
     .check(
       z.refine((data) => data.kind !== "percent" || data.value <= 100, {
@@ -136,6 +154,16 @@ export const loyaltySettingsSchema = z.object({
   minRedeemPoints: z
     .number()
     .check(z.int("limitInvalid"), z.gte(0, "limitInvalid"), z.lte(MAX_ORDER_AMOUNT, "amountTooLarge")),
+  /** Months without earning or spending before a guest's points lapse; 0 = never. Left out, it stays as it is. */
+  pointsExpiryMonths: z.optional(
+    z
+      .number()
+      .check(
+        z.int("expiryMonthsInvalid"),
+        z.gte(0, "expiryMonthsInvalid"),
+        z.lte(MAX_POINTS_EXPIRY_MONTHS, "expiryMonthsInvalid"),
+      ),
+  ),
 });
 export type LoyaltySettingsInput = z.input<typeof loyaltySettingsSchema>;
 

@@ -2,7 +2,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 
 import type { Order } from "@/src/domain/entities/Order";
 import { formatMoney } from "@/src/lib/formatMoney";
-import { formatNumber } from "@/src/lib/formatNumber";
+import { formatNumber, formatNumberTrimmed } from "@/src/lib/formatNumber";
 import { cn } from "@/src/lib/utils";
 
 type OrderTotalsProps = {
@@ -14,6 +14,8 @@ type OrderTotalsProps = {
     | "pointsRedeemed"
     | "pointsDiscount"
     | "pointsEarned"
+    | "serviceCharge"
+    | "serviceChargeBps"
     | "total"
     | "refundedTotal"
   >;
@@ -29,7 +31,7 @@ type OrderTotalsProps = {
 export async function OrderTotals({ order, inset = false }: OrderTotalsProps) {
   const t = await getTranslations("dashOrders");
   const locale = await getLocale();
-  const discounted = order.promoDiscount > 0 || order.pointsDiscount > 0;
+  const discounted = order.promoDiscount > 0 || order.pointsDiscount > 0 || order.serviceCharge > 0;
   const rowText = inset ? "text-body-default sm:text-body-small" : "text-body-small";
 
   return (
@@ -50,6 +52,12 @@ export async function OrderTotals({ order, inset = false }: OrderTotalsProps) {
         <div className={cn("flex items-center justify-between text-success-foreground", rowText)}>
           <dt>{t("pointsDiscount", { points: formatNumber(order.pointsRedeemed, locale) })}</dt>
           <dd>−{formatMoney(order.pointsDiscount, locale)}</dd>
+        </div>
+      ) : null}
+      {order.serviceCharge > 0 ? (
+        <div className={cn("flex items-center justify-between text-muted-foreground", rowText)}>
+          <dt>{t("serviceCharge", { rate: formatNumberTrimmed(order.serviceChargeBps / 100, locale, 2) })}</dt>
+          <dd>+{formatMoney(order.serviceCharge, locale)}</dd>
         </div>
       ) : null}
       <div className={cn("flex items-center justify-between", inset && discounted && "border-t border-border pt-2")}>

@@ -66,7 +66,10 @@ describe("RecordIncome", () => {
 
     expect(create.mock.calls[0][0]).toMatchObject({ description: "Room hire", payerName: "Book club" });
     const [hook, audit] = [create.mock.calls[0][1], create.mock.calls[0][2]];
-    expect(hook(saved, { vatRateBps: 1000 })[0]).toMatchObject({ source: "income", uniqueKey: "income:n1" });
+    expect(hook(saved, { vatRateBps: 1000, serviceChargeBps: 0 })[0]).toMatchObject({
+      source: "income",
+      uniqueKey: "income:n1",
+    });
     expect(audit?.(saved)).toMatchObject({ action: "income.recorded", entityType: "income" });
   });
 

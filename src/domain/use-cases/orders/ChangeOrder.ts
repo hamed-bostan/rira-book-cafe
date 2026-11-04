@@ -16,7 +16,7 @@ import { NotFoundError } from "../../errors/NotFoundError";
 import { ValidationError } from "../../errors/ValidationError";
 import { orderChangedNotification } from "../notifications/guestNotifications";
 
-import { CheckoutPricing } from "./CheckoutPricing";
+import { CheckoutPricing, checkoutLines } from "./CheckoutPricing";
 import { buildOrderLines, type PlaceOrderInput } from "./PlaceOrder";
 
 import type { ICustomerNotifier } from "../../repositories/INotificationRepository";
@@ -115,10 +115,13 @@ export class ChangeOrder {
       tableLabel,
     };
 
-    if (lower.length > 0 || add.length > 0) {
+    // Moving between dine-in and takeaway moves the service charge with it — while
+    // the bill is still open. Once it's paid, the charge stays as it was settled.
+    const chargeMoves = serviceType !== order.serviceType && order.serviceChargeBps > 0 && canChangeOrderLines(order);
+    if (lower.length > 0 || add.length > 0 || chargeMoves) {
       const kept = order.items.flatMap((item) => {
         const quantity = lower.find((line) => line.itemId === item.id)?.to ?? item.quantity;
-        return quantity > 0 ? [{ unitPrice: item.unitPrice, quantity }] : [];
+        return quantity > 0 ? [{ productId: item.productId, unitPrice: item.unitPrice, quantity }] : [];
       });
       if (kept.length + add.length === 0) {
         throw new ConflictError("ORDER_EMPTY", "That would leave nothing on the order; cancel it instead.");
@@ -126,11 +129,12 @@ export class ChangeOrder {
       if (kept.length + add.length > MAX_ORDER_LINES) throw new ValidationError("add", "itemsTooMany");
       const subtotal = orderSubtotal(kept) + orderSubtotal(add);
       if (subtotal > MAX_ORDER_AMOUNT) throw new ValidationError("add", "quantityMax");
-      const priced = await this.pricing.reprice(order, subtotal, now);
+      const priced = await this.pricing.reprice(order, subtotal, now, checkoutLines([...kept, ...add]), serviceType);
       change.amounts = {
         subtotal: priced.subtotal,
         promoDiscount: priced.promoDiscount,
         pointsDiscount: priced.pointsDiscount,
+        serviceCharge: priced.serviceCharge,
         total: priced.total,
       };
     }

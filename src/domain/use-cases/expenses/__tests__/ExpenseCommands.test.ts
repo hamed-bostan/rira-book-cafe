@@ -21,7 +21,7 @@ import type { ILedgerRepository } from "../../../repositories/ILedgerRepository"
 const ACTOR = { id: "owner", name: "Rira" };
 /** 13:30 in Tehran on 2026-10-20. */
 const NOW = new Date("2026-10-20T10:00:00Z");
-const SETTINGS = { vatRateBps: 1000 };
+const SETTINGS = { vatRateBps: 1000, serviceChargeBps: 0 };
 const RECEIPT = "/uploads/receipts/0f8fad5b-d9cb-469f-a165-70867728950e.jpg";
 const OTHER_RECEIPT = "/uploads/receipts/7c9e6679-7425-40de-944b-e07fc1f90ae7.png";
 

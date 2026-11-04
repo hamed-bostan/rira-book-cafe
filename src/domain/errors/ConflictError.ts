@@ -53,6 +53,12 @@ export type ConflictCode =
   | "PROMO_EXPIRED"
   | "PROMO_USED_UP"
   | "PROMO_MIN_SUBTOTAL"
+  // A code scoped to items or categories none of the order's lines are in.
+  | "PROMO_NOT_ELIGIBLE"
+  // A first-order code, for a guest who already has a completed order.
+  | "PROMO_FIRST_ORDER"
+  // A code with a per-guest rule, on an order that isn't on a guest's profile.
+  | "PROMO_NEEDS_GUEST"
   | "NOT_ENOUGH_POINTS"
   | "LOYALTY_DISABLED"
   // The book waitlist.

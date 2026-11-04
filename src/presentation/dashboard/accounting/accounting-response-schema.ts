@@ -63,6 +63,7 @@ export const printedJournalResponseSchema: z.ZodMiniType<PrintedJournal> = z.obj
 
 export const accountingSettingsResponseSchema: z.ZodMiniType<AccountingSettings> = z.object({
   vatRateBps: z.number(),
+  serviceChargeBps: z.number(),
   booksClosedThrough: z.optional(z.string()),
 });
 

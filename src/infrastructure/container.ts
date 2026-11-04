@@ -127,7 +127,6 @@ export const orderNoteRepository: IOrderNoteRepository = new PrismaOrderNoteRepo
 // repository re-checks code limits and spends/earns points inside its transactions.
 export const promotionRepository: IPromotionRepository = new PrismaPromotionRepository();
 export const loyaltyRepository: ILoyaltyRepository = new PrismaLoyaltyRepository();
-export const checkoutPricing: CheckoutPricing = new CheckoutPricing(promotionRepository, loyaltyRepository);
 
 // Online payments — Zarinpal. Without `ZARINPAL_MERCHANT_ID` (or with
 // `ZARINPAL_SANDBOX=true`) payments go to Zarinpal's sandbox, so local dev and
@@ -168,6 +167,15 @@ export const analyticsRepository: IAnalyticsRepository = new PrismaAnalyticsRepo
 // PostgreSQL. Orders and expenses post their journal entries inside their own
 // transactions; the database itself refuses unbalanced or edited entries.
 export const ledgerRepository: ILedgerRepository = new PrismaLedgerRepository();
+// Checkout prices discounts and charges through one `CheckoutPricing` (the basket's
+// preview, the placed order and the counter's sale agree): promo codes (scoped by the
+// menu's categories), points, and the service charge kept with the VAT rate.
+export const checkoutPricing: CheckoutPricing = new CheckoutPricing(
+  promotionRepository,
+  loyaltyRepository,
+  ledgerRepository,
+  productRepository,
+);
 export const expenseRepository: IExpenseRepository = new PrismaExpenseRepository();
 export const recurringBillRepository: IRecurringBillRepository = new PrismaRecurringBillRepository();
 export const payrollRepository: IPayrollRepository = new PrismaPayrollRepository();

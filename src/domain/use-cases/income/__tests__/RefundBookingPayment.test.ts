@@ -79,7 +79,7 @@ describe("RefundBookingPayment", () => {
     expect(refunds[0]).toMatchObject({ amount: 1_100_000, vatAmount: 100_000 });
 
     const [, , ledger, audit] = refund.mock.calls[0];
-    expect(ledger(refunds[0], { vatRateBps: 1000 })[0]?.lines).toEqual([
+    expect(ledger(refunds[0], { vatRateBps: 1000, serviceChargeBps: 0 })[0]?.lines).toEqual([
       { accountCode: "4500", debit: 1_000_000, credit: 0, memo: undefined },
       { accountCode: "2200", debit: 100_000, credit: 0 },
       { accountCode: "1120", debit: 0, credit: 1_100_000 },

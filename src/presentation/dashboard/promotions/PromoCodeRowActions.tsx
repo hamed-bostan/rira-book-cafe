@@ -18,7 +18,7 @@ import { Icon } from "@/src/presentation/design-system/components/Icon/Icon";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
 
 import { PromoActiveSwitch } from "./PromoActiveSwitch";
-import { PromoCodeDialog } from "./PromoCodeDialog";
+import { PromoCodeDialog, type PromoScopeOptions } from "./PromoCodeDialog";
 import { promotionsApi } from "./promotion-api";
 
 type PromoCodeRowActionsProps = {
@@ -31,13 +31,15 @@ type PromoCodeRowActionsProps = {
   takenCodes: readonly string[];
   /** Today on the cafe calendar. */
   today: string;
+  /** The menu's items and categories, to limit the code to. */
+  scope: PromoScopeOptions;
 };
 
 /**
  * A code's controls: its on/off switch, and behind "⋯" Edit (in a dialog) and
  * Delete (which asks first). Each writes over the REST API and `router.refresh()`es.
  */
-export function PromoCodeRowActions({ promo, finished, takenCodes, today }: PromoCodeRowActionsProps) {
+export function PromoCodeRowActions({ promo, finished, takenCodes, today, scope }: PromoCodeRowActionsProps) {
   const t = useTranslations("dashPromotions");
   const tApiErrors = useTranslations("apiErrors");
   const router = useRouter();
@@ -102,6 +104,7 @@ export function PromoCodeRowActions({ promo, finished, takenCodes, today }: Prom
         promo={promo}
         takenCodes={takenCodes}
         today={today}
+        scope={scope}
       />
       <DashboardDialog
         open={confirmDelete}

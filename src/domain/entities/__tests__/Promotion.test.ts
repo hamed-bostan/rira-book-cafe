@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  archivedPromoProblem,
+  eligibleSubtotal,
   isPromoCodeFinished,
+  isPromoScoped,
   normalizePromoCode,
   PROMO_CODE_PATTERN,
   PROMO_CODE_STATES,
@@ -23,6 +26,9 @@ function promo(overrides: Partial<PromoCode> = {}): PromoCode {
     value: 10,
     minSubtotal: 0,
     isActive: true,
+    productIds: [],
+    categoryIds: [],
+    firstOrderOnly: false,
     createdAt: NOW.toISOString(),
     updatedAt: NOW.toISOString(),
     ...overrides,
@@ -30,6 +36,50 @@ function promo(overrides: Partial<PromoCode> = {}): PromoCode {
 }
 
 const UNUSED = { total: 0, byGuest: 0 };
+
+describe("promo code scope", () => {
+  const LINES = [
+    { productId: "latte", categoryId: "drinks", amount: 120_000 },
+    { productId: "cake", categoryId: "cakes", amount: 90_000 },
+    { productId: "novel", categoryId: "books", amount: 400_000 },
+  ];
+
+  it("applies to the whole order when it isn't scoped", () => {
+    expect(isPromoScoped(promo())).toBe(false);
+    expect(eligibleSubtotal(promo(), LINES)).toBe(610_000);
+  });
+
+  it("counts only the lines whose item or category it names", () => {
+    expect(eligibleSubtotal(promo({ categoryIds: ["books"] }), LINES)).toBe(400_000);
+    expect(eligibleSubtotal(promo({ productIds: ["cake"] }), LINES)).toBe(90_000);
+    // Either matches, and a line matching both counts once.
+    expect(eligibleSubtotal(promo({ productIds: ["cake", "novel"], categoryIds: ["books"] }), LINES)).toBe(490_000);
+  });
+
+  it("refuses an order with nothing it covers, and reads its minimum on the lines it does", () => {
+    const books = promo({ categoryIds: ["books"], minSubtotal: 500_000 });
+    expect(promoProblem(books, 0, UNUSED, NOW)).toBe("PROMO_NOT_ELIGIBLE");
+    expect(promoProblem(books, 400_000, UNUSED, NOW)).toBe("PROMO_MIN_SUBTOTAL");
+    expect(promoProblem(books, 500_000, UNUSED, NOW)).toBeNull();
+    expect(archivedPromoProblem(books, 0)).toBe("PROMO_NOT_ELIGIBLE");
+    expect(archivedPromoProblem(books, 500_000)).toBeNull();
+  });
+
+  it("keeps a first-order code for a guest without a completed order", () => {
+    const first = promo({ firstOrderOnly: true });
+    expect(promoProblem(first, 100_000, UNUSED, NOW, { known: true, hasCompletedOrder: false })).toBeNull();
+    expect(promoProblem(first, 100_000, UNUSED, NOW, { known: true, hasCompletedOrder: true })).toBe(
+      "PROMO_FIRST_ORDER",
+    );
+  });
+
+  it("needs a guest for a code with a per-guest rule — and not for one without", () => {
+    const noGuest = { known: false, hasCompletedOrder: false };
+    expect(promoProblem(promo({ perGuestLimit: 1 }), 100_000, UNUSED, NOW, noGuest)).toBe("PROMO_NEEDS_GUEST");
+    expect(promoProblem(promo({ firstOrderOnly: true }), 100_000, UNUSED, NOW, noGuest)).toBe("PROMO_NEEDS_GUEST");
+    expect(promoProblem(promo({ usageLimit: 10 }), 100_000, UNUSED, NOW, noGuest)).toBeNull();
+  });
+});
 
 describe("promoDiscount", () => {
   it("takes a percentage off, rounded down to whole Toman", () => {

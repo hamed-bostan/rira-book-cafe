@@ -2,6 +2,7 @@ import type { OrderBulkAction } from "@/src/contracts/bulk-action-schema";
 import type { OrderNoteInput } from "@/src/contracts/order-note-schema";
 import type {
   CounterOrderFormInput,
+  CounterQuoteInput,
   OrderChangeInput,
   OrderItemServedInput,
   OrderPaymentInput,
@@ -9,11 +10,13 @@ import type {
   OrderStatusChangeInput,
   OrderWriteOffInput,
 } from "@/src/contracts/order-schema";
+import type { OrderQuote } from "@/src/domain/entities/Checkout";
 import type { Order } from "@/src/domain/entities/Order";
 import type { OrderNote } from "@/src/domain/entities/OrderNote";
 import { apiPatch, apiPost } from "@/src/lib/api/client";
 import { bulkResultSchema, type BulkResult } from "@/src/presentation/dashboard/bulk/bulk-result-response-schema";
 import { orderNoteResponseSchema } from "@/src/presentation/dashboard/orders/order-note-response-schema";
+import { orderQuoteResponseSchema } from "@/src/presentation/loyalty/loyalty-response-schema";
 import { orderRefundResultResponseSchema, orderResponseSchema } from "@/src/presentation/orders/order-response-schema";
 
 /**
@@ -22,9 +25,18 @@ import { orderRefundResultResponseSchema, orderResponseSchema } from "@/src/pres
  * (see `ordersServerApi`).
  */
 export const ordersApi = {
-  /** Ring up a sale at the counter. 409 when an item just sold out. */
+  /** Ring up a sale at the counter. 409 when an item just sold out, or the code or points can't be used. */
   createCounterSale(values: CounterOrderFormInput): Promise<Order> {
     return apiPost("/admin/orders", values, orderResponseSchema);
+  },
+
+  /**
+   * What a counter sale would cost with its discounts and service charge — priced
+   * as ringing it up will be; changes nothing. 409 with the reason a code or the
+   * points can't be used. (A POST, but a read: the basket travels in the body.)
+   */
+  quoteCounterSale(values: CounterQuoteInput): Promise<OrderQuote> {
+    return apiPost("/admin/orders/quote", values, orderQuoteResponseSchema);
   },
 
   /** Hand money back on a completed order. 409 if someone refunded it first. */

@@ -51,7 +51,7 @@ describe("TakeReservationDeposit", () => {
 
     expect(takeDeposit.mock.calls[0][1]).toEqual({ amount: 400_000, method: "cash" });
     const [, , ledger, audit] = takeDeposit.mock.calls[0];
-    expect(ledger(saved, { vatRateBps: 1000 })).toEqual([
+    expect(ledger(saved, { vatRateBps: 1000, serviceChargeBps: 0 })).toEqual([
       expect.objectContaining({
         date: "2026-11-07",
         source: "reservationDeposit",
@@ -108,7 +108,7 @@ describe("SettleReservationDeposit", () => {
 
     const [, to, ledger, audit] = settleDeposit.mock.calls[0];
     expect(to).toBe("kept");
-    expect(ledger(saved, { vatRateBps: 1000 })[0]?.lines).toEqual([
+    expect(ledger(saved, { vatRateBps: 1000, serviceChargeBps: 0 })[0]?.lines).toEqual([
       { accountCode: "2400", debit: 400_000, credit: 0, memo: "Neda" },
       { accountCode: "4900", debit: 0, credit: 400_000 },
     ]);

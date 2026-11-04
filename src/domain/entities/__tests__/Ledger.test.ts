@@ -66,6 +66,8 @@ const ORDER: Order = {
   pointsRedeemed: 0,
   pointsDiscount: 0,
   pointsEarned: 0,
+  serviceCharge: 0,
+  serviceChargeBps: 0,
   refundedTotal: 0,
   total: 680000,
   placedAt: "2026-10-16T10:00:00Z",

@@ -25,9 +25,14 @@ export async function GET(): Promise<NextResponse> {
   }
 }
 
-/** PUT /api/admin/loyalty/settings — change how points are earned and spent. */
+/**
+ * PUT /api/admin/loyalty/settings — change how points are earned and spent, and how
+ * long they last without activity (`pointsExpiryMonths`, 0 = never; left out, it
+ * stays). Logged in the activity log.
+ */
 export async function PUT(request: NextRequest): Promise<NextResponse> {
-  if (!(await getSessionWith("promotions.write"))) return unauthorizedResponse();
+  const session = await getSessionWith("promotions.write");
+  if (!session) return unauthorizedResponse();
 
   const body = await parseJsonBody(request);
   if (!body.ok) return errorResponse(400, { message: "Expected a JSON body.", code: "BAD_REQUEST" });
@@ -42,7 +47,12 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
   }
 
   try {
-    return NextResponse.json(await new UpdateLoyaltySettings(loyaltyRepository).execute(parsed.data));
+    return NextResponse.json(
+      await new UpdateLoyaltySettings(loyaltyRepository).execute(parsed.data, {
+        id: session.user.id,
+        name: session.user.name ?? session.user.id,
+      }),
+    );
   } catch (error) {
     return errorResponseFromException(error, "PUT /api/admin/loyalty/settings failed");
   }

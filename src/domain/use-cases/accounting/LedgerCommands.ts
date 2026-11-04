@@ -2,6 +2,7 @@ import { diffFields, singleChange, type ActivityActor } from "../../entities/Act
 import { cafeDayOf } from "../../entities/CafeTime";
 import {
   isReversibleSource,
+  MAX_SERVICE_CHARGE_BPS,
   MAX_VAT_RATE_BPS,
   reversalOf,
   SYSTEM_ACCOUNTS,
@@ -181,7 +182,8 @@ export class SetLedgerAccountActive {
 }
 
 /**
- * Change the VAT rate or move the period lock. Closing through a day freezes every
+ * Change the VAT rate, the service charge rate (new orders only — each order keeps
+ * the rate it was placed at), or move the period lock. Closing through a day freezes every
  * entry dated on or before it; a close can't be set in the future, and every move
  * (including reopening) is audited.
  */
@@ -189,20 +191,41 @@ export class UpdateAccountingSettings {
   constructor(private readonly ledger: ILedgerRepository) {}
 
   async execute(
-    settings: AccountingSettings,
+    input: Omit<AccountingSettings, "serviceChargeBps"> & { serviceChargeBps?: number },
     actor: ActivityActor,
     now: Date = new Date(),
   ): Promise<AccountingSettings> {
-    if (!Number.isInteger(settings.vatRateBps) || settings.vatRateBps < 0 || settings.vatRateBps > MAX_VAT_RATE_BPS) {
+    if (!Number.isInteger(input.vatRateBps) || input.vatRateBps < 0 || input.vatRateBps > MAX_VAT_RATE_BPS) {
       throw new ValidationError("vatRate", "Enter a VAT rate from 0 to 50%.");
     }
-    if (settings.booksClosedThrough) assertNotFuture("booksClosedThrough", settings.booksClosedThrough, now);
+    if (
+      input.serviceChargeBps !== undefined &&
+      (!Number.isInteger(input.serviceChargeBps) ||
+        input.serviceChargeBps < 0 ||
+        input.serviceChargeBps > MAX_SERVICE_CHARGE_BPS)
+    ) {
+      throw new ValidationError("serviceChargeRate", "Enter a service charge from 0 to 25%.");
+    }
+    if (input.booksClosedThrough) assertNotFuture("booksClosedThrough", input.booksClosedThrough, now);
 
     const before = await this.ledger.getSettings();
+    // Left out, the service charge stays as it is.
+    const settings: AccountingSettings = {
+      ...input,
+      serviceChargeBps: input.serviceChargeBps ?? before.serviceChargeBps,
+    };
     return this.ledger.updateSettings(settings, (saved) => {
       const changes = diffFields(
-        { vatRateBps: before.vatRateBps, booksClosedThrough: before.booksClosedThrough },
-        { vatRateBps: saved.vatRateBps, booksClosedThrough: saved.booksClosedThrough },
+        {
+          vatRateBps: before.vatRateBps,
+          serviceChargeBps: before.serviceChargeBps,
+          booksClosedThrough: before.booksClosedThrough,
+        },
+        {
+          vatRateBps: saved.vatRateBps,
+          serviceChargeBps: saved.serviceChargeBps,
+          booksClosedThrough: saved.booksClosedThrough,
+        },
       );
       return changes.length === 0
         ? null

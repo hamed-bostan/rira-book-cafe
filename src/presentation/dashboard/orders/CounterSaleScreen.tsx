@@ -17,7 +17,7 @@ import { useRouter } from "@/src/i18n/navigation";
 import { ApiError } from "@/src/lib/api/ApiError";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { formatMoney } from "@/src/lib/formatMoney";
-import { formatNumber } from "@/src/lib/formatNumber";
+import { formatNumber, formatNumberTrimmed } from "@/src/lib/formatNumber";
 import { formErrorMessage } from "@/src/lib/formErrorMessage";
 import { cn } from "@/src/lib/utils";
 import { DashboardColumns } from "@/src/presentation/dashboard/DashboardColumns";
@@ -39,10 +39,23 @@ import { useToast } from "@/src/presentation/design-system/components/Toast/useT
 
 import { GuestField, type GuestFieldValue } from "../guest-profiles/GuestField";
 
+import { CounterSaleDiscounts } from "./CounterSaleDiscounts";
 import { CounterSaleDone } from "./CounterSaleDone";
 import { ordersApi } from "./order-api";
 import { splitParts, splitRemainder, type SplitAmounts } from "./paymentParts";
 import { PaymentPartsFields } from "./PaymentPartsFields";
+import { useCounterQuote } from "./useCounterQuote";
+
+/** Refusals that are about the promo code: shown under its field, and the code is dropped. */
+const PROMO_ERRORS: ReadonlySet<string> = new Set([
+  "PROMO_INVALID",
+  "PROMO_EXPIRED",
+  "PROMO_USED_UP",
+  "PROMO_MIN_SUBTOTAL",
+  "PROMO_NOT_ELIGIBLE",
+  "PROMO_FIRST_ORDER",
+  "PROMO_NEEDS_GUEST",
+]);
 
 /** How the sale is settled: later, one method, or split between them. */
 const PAYMENT_CHOICES = ["later", ...COUNTER_PAYMENT_METHODS, "split"] as const;
@@ -59,9 +72,11 @@ function maxQuantity(product: CounterSaleScreenProps["products"][number]): numbe
 }
 
 /**
- * Ring up a sale at the counter: pick from the menu, say how it's served, and take
- * the money there and then or leave it to pay later. Prices stay on the server, as on
- * a guest's order; the total here is only what the menu says now. The screen resets
+ * Ring up a sale at the counter: pick from the menu, say how it's served, apply a
+ * promo code or the guest's points, and take the money there and then or leave it to
+ * pay later. Prices stay on the server, as on a guest's order: the total shown is the
+ * server's live quote (`useCounterQuote` — discounts and the dine-in service charge
+ * in), and Ring up waits for it, so the payment taken is the total charged. The screen resets
  * for the next guest after each sale, and `router.refresh()` re-reads what's left on
  * the shelf.
  */
@@ -84,6 +99,9 @@ export function CounterSaleScreen({ products }: CounterSaleScreenProps) {
   const [payment, setPayment] = React.useState<PaymentChoice>("cash");
   const [amounts, setAmounts] = React.useState<SplitAmounts>({});
   const [complete, setComplete] = React.useState(true);
+  const [appliedPromo, setAppliedPromo] = React.useState<string | undefined>(undefined);
+  const [promoError, setPromoError] = React.useState<string | null>(null);
+  const [redeemPoints, setRedeemPoints] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   /** The sale just rung up, with the way to it and its receipt, until the next one. */
   const [lastSale, setLastSale] = React.useState<{ id: string; number: number } | null>(null);
@@ -95,12 +113,39 @@ export function CounterSaleScreen({ products }: CounterSaleScreenProps) {
     const quantity = basket[product.id] ?? 0;
     return quantity > 0 ? [{ product, quantity }] : [];
   });
-  const total = lines.reduce((sum, line) => sum + line.product.price * line.quantity, 0);
+  const subtotal = lines.reduce((sum, line) => sum + line.product.price * line.quantity, 0);
+  const items = lines.map((line) => ({ productId: line.product.id, quantity: line.quantity }));
+  // Points are the guest's: without their phone there are none to spend.
+  const spendPoints = redeemPoints && guest !== null;
+
+  // A code the server refuses is dropped (with the reason shown), and so is a
+  // points request it can't honour — the totals fall back to what the sale can have.
+  const onQuoteRejected = React.useCallback(
+    (rejection: ApiError) => {
+      if (rejection.code && PROMO_ERRORS.has(rejection.code)) {
+        setPromoError(localizeApiError(rejection, tApiErrors, t("counter.promoError")));
+        setAppliedPromo(undefined);
+      } else if (rejection.code === "NOT_ENOUGH_POINTS" || rejection.code === "LOYALTY_DISABLED") {
+        setRedeemPoints(false);
+      }
+    },
+    [tApiErrors, t],
+  );
+  const quoteState = useCounterQuote(
+    lines.length > 0
+      ? { items, serviceType, customerPhone: guest?.phone, promoCode: appliedPromo, redeemPoints: spendPoints }
+      : null,
+    onQuoteRejected,
+  );
+  const { quote } = quoteState;
+  // What's charged: the server's price, discounts and service charge in; the menu's until it answers.
+  const total = quote?.total ?? subtotal;
+  const priced = quote !== null && !quoteState.loading;
 
   const parts: CounterPaymentPart[] | undefined =
     payment === "later" ? undefined : payment === "split" ? splitParts(amounts) : [{ method: payment, amount: total }];
   const paymentReady = payment !== "split" || (splitRemainder(parts ?? [], total) === 0 && (parts?.length ?? 0) > 0);
-  const ready = lines.length > 0 && guest !== null && (serviceType !== "dineIn" || tableLabel.trim() !== "");
+  const ready = lines.length > 0 && guest !== null && (serviceType !== "dineIn" || tableLabel.trim() !== "") && priced;
 
   function setQuantity(id: string, quantity: number): void {
     setBasket((current) => ({ ...current, [id]: Math.max(quantity, 0) }));
@@ -109,7 +154,7 @@ export function CounterSaleScreen({ products }: CounterSaleScreenProps) {
   function submit(): void {
     if (!guest) return;
     const values: CounterOrderFormInput = {
-      items: lines.map((line) => ({ productId: line.product.id, quantity: line.quantity })),
+      items,
       serviceType,
       tableLabel: serviceType === "dineIn" ? tableLabel : undefined,
       note,
@@ -117,6 +162,8 @@ export function CounterSaleScreen({ products }: CounterSaleScreenProps) {
       customerName: guest.name,
       paymentParts: total > 0 ? parts : undefined,
       complete,
+      promoCode: appliedPromo,
+      redeemPoints: spendPoints,
     };
     setError(null);
     setLastSale(null);
@@ -132,6 +179,9 @@ export function CounterSaleScreen({ products }: CounterSaleScreenProps) {
         setGuest(null);
         setSaleCount((count) => count + 1);
         setAmounts({});
+        setAppliedPromo(undefined);
+        setPromoError(null);
+        setRedeemPoints(false);
         router.refresh();
       } catch (err) {
         const field =
@@ -140,6 +190,8 @@ export function CounterSaleScreen({ products }: CounterSaleScreenProps) {
           (field ? formErrorMessage(tFormErrors, field) : null) ??
             localizeApiError(err, tApiErrors, t("counter.error")),
         );
+        // The discounts may have changed underneath the sale (a code used up meanwhile).
+        if (err instanceof ApiError) onQuoteRejected(err);
       }
     });
   }
@@ -258,10 +310,63 @@ export function CounterSaleScreen({ products }: CounterSaleScreenProps) {
                   ))}
                 </ul>
               )}
-              <div className="flex items-baseline justify-between gap-3 border-t border-border px-5 py-4">
-                <span className="font-bold text-foreground">{t("total")}</span>
-                <span className={cn(AMOUNT, "font-bold text-foreground")}>{formatMoney(total, locale)}</span>
-              </div>
+              <dl className="flex flex-col gap-1.5 border-t border-border px-5 py-4" aria-busy={quoteState.loading}>
+                {quote && (quote.promoDiscount > 0 || quote.pointsDiscount > 0 || quote.serviceCharge > 0) ? (
+                  <>
+                    <div className={cn(ROW_TEXT, "flex items-baseline justify-between gap-3 text-muted-foreground")}>
+                      <dt>{t("subtotal")}</dt>
+                      <dd className="tabular-nums">{formatMoney(quote.subtotal, locale)}</dd>
+                    </div>
+                    {quote.promoDiscount > 0 ? (
+                      <div
+                        className={cn(ROW_TEXT, "flex items-baseline justify-between gap-3 text-success-foreground")}
+                      >
+                        <dt>{t("promoDiscount", { code: quote.promoCode ?? "" })}</dt>
+                        <dd className="tabular-nums">−{formatMoney(quote.promoDiscount, locale)}</dd>
+                      </div>
+                    ) : null}
+                    {quote.pointsDiscount > 0 ? (
+                      <div
+                        className={cn(ROW_TEXT, "flex items-baseline justify-between gap-3 text-success-foreground")}
+                      >
+                        <dt>{t("pointsDiscount", { points: formatNumber(quote.pointsRedeemed, locale) })}</dt>
+                        <dd className="tabular-nums">−{formatMoney(quote.pointsDiscount, locale)}</dd>
+                      </div>
+                    ) : null}
+                    {quote.serviceCharge > 0 ? (
+                      <div className={cn(ROW_TEXT, "flex items-baseline justify-between gap-3 text-muted-foreground")}>
+                        <dt>
+                          {t("serviceCharge", { rate: formatNumberTrimmed(quote.serviceChargeBps / 100, locale, 2) })}
+                        </dt>
+                        <dd className="tabular-nums">+{formatMoney(quote.serviceCharge, locale)}</dd>
+                      </div>
+                    ) : null}
+                  </>
+                ) : null}
+                <div className="flex items-baseline justify-between gap-3">
+                  <dt className="font-bold text-foreground">{t("total")}</dt>
+                  <dd className={cn(AMOUNT, "font-bold text-foreground")} data-testid="counter-total">
+                    {formatMoney(total, locale)}
+                  </dd>
+                </div>
+              </dl>
+            </DashboardSection>
+
+            <DashboardSection title={t("counter.discountsHeading")}>
+              <CounterSaleDiscounts
+                key={saleCount}
+                quoteState={quoteState}
+                appliedPromo={appliedPromo}
+                onPromoChange={(code) => {
+                  setPromoError(null);
+                  setAppliedPromo(code);
+                }}
+                promoError={promoError}
+                redeemPoints={spendPoints}
+                onRedeemChange={setRedeemPoints}
+                hasGuest={guest !== null}
+                disabled={pending}
+              />
             </DashboardSection>
 
             <DashboardSection title={t("counter.detailsHeading")}>

@@ -171,7 +171,14 @@ export type Order = {
   pointsDiscount: number;
   /** Points the guest earned when it was completed (0 until then). */
   pointsEarned: number;
-  /** What the guest pays, in Toman: the subtotal less the promo and the points. VAT is inside it. */
+  /** The service charge, in Toman (VAT inside it) — see {@link serviceChargeFor}. 0 on most orders. */
+  serviceCharge: number;
+  /** The service charge rate the order was priced at, in basis points — kept, so a later rate change leaves it alone. */
+  serviceChargeBps: number;
+  /**
+   * What the guest pays, in Toman: the subtotal less the promo and the points, plus
+   * the service charge. VAT is inside it.
+   */
   total: number;
   /** ISO 8601 timestamp (UTC). */
   placedAt: string;
@@ -337,6 +344,33 @@ export function servedLineCount(order: Pick<Order, "items">): { served: number; 
 /** Total units across all lines. */
 export function orderItemCount(order: Pick<Order, "items">): number {
   return order.items.reduce((sum, item) => sum + item.quantity, 0);
+}
+
+/**
+ * The orders a service charge applies to: those served at a table.
+ *
+ * Decision: an order is either dine-in or takeaway — whoever placed it, a guest
+ * online or staff at the counter — so the charge follows table service: every
+ * dine-in order carries it, a takeaway (picked up at the counter, nobody serves it)
+ * never does.
+ */
+export const SERVICE_CHARGED_TYPES = ["dineIn"] as const satisfies readonly ServiceType[];
+
+/**
+ * The service charge on an order: `rateBps` of what its lines come to after the
+ * promo and the points, rounded to the nearest Toman; 0 for a takeaway or when the
+ * rate is 0 (the default — no service charge).
+ *
+ * Decision on VAT: in Iran a service charge is a VATable supply, so it's in the VAT
+ * base. Menu prices carry their VAT inside them and so does the charge — a rate on
+ * the VAT-inclusive amount is the same rate on the net amount plus VAT on it — and
+ * the books take the VAT out of it at the VAT rate, books' lines or not (the
+ * service is taxable even where the goods are exempt). See `saleSplit`.
+ */
+export function serviceChargeFor(afterDiscounts: number, rateBps: number, serviceType: ServiceType): number {
+  if (rateBps <= 0 || afterDiscounts <= 0) return 0;
+  if (!(SERVICE_CHARGED_TYPES as readonly ServiceType[]).includes(serviceType)) return 0;
+  return Math.round((afterDiscounts * rateBps) / 10000);
 }
 
 /** The sum of the lines, in Toman. */

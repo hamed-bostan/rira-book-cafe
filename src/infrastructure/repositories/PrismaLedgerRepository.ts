@@ -100,6 +100,7 @@ export class PrismaLedgerRepository implements ILedgerRepository {
   ): Promise<AccountingSettings> {
     const data = {
       vatRateBps: settings.vatRateBps,
+      serviceChargeBps: settings.serviceChargeBps,
       booksClosedThrough: settings.booksClosedThrough ? dayToDate(settings.booksClosedThrough) : null,
     };
     return prisma.$transaction(async (tx) => {

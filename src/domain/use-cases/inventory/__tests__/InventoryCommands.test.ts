@@ -21,7 +21,7 @@ import type { ILedgerRepository } from "../../../repositories/ILedgerRepository"
 const ACTOR = { id: "a1", name: "Barista" };
 /** 13:30 in Tehran on 2026-10-20 — that's "today" for every date check below. */
 const NOW = new Date("2026-10-20T10:00:00Z");
-const SETTINGS = { vatRateBps: 1000 };
+const SETTINGS = { vatRateBps: 1000, serviceChargeBps: 0 };
 
 function item(overrides: Partial<StockItem> = {}): StockItem {
   return {

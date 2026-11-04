@@ -191,7 +191,11 @@
     "payRunPaidBeforeBooked": "A run can't be paid before it was booked.",
     "guestNameNeeded": "Enter the guest's name: this number has no profile yet.",
     "unitLocked": "This item holds stock or has stock history, so its unit can't change.",
-    "stockHasHistory": "This item already has stock history. Record a delivery or a count instead."
+    "stockHasHistory": "This item already has stock history. Record a delivery or a count instead.",
+    "serviceChargeInvalid": "Enter a service charge from 0 to 25, e.g. 10 or 7.5.",
+    "expiryMonthsInvalid": "Enter a whole number of months from 0 to 120.",
+    "scopeInvalid": "Choose each item or category once.",
+    "scopeTooMany": "A code can cover at most 100 items, and 100 categories."
   },
   "apiErrors": {
     "badRequest": "The request couldn't be read. Please try again.",
@@ -238,7 +242,7 @@
     "promoInvalid": "That code isn't valid.",
     "promoExpired": "That code has expired or isn't active yet.",
     "promoUsedUp": "That code has already been used up.",
-    "promoMinSubtotal": "Your order doesn't reach the minimum for that code yet.",
+    "promoMinSubtotal": "This order doesn't reach that code's minimum yet — only the items the code covers count.",
     "notEnoughPoints": "You don't have enough points for that.",
     "loyaltyDisabled": "Points can't be used right now.",
     "alreadyWaiting": "You're already on the waitlist for this book.",
@@ -263,7 +267,10 @@
     "unitLocked": "This item holds stock or has stock history, so its unit can't change.",
     "stockOnHand": "This item still holds stock. Count it to zero or record it as waste before switching it off.",
     "ingredientInRecipe": "An item on the menu uses this in its recipe. Take it out of the recipe, or the item off the menu, before switching it off.",
-    "stockHasHistory": "Some of these items already have stock history. Record a delivery or a count for them instead."
+    "stockHasHistory": "Some of these items already have stock history. Record a delivery or a count for them instead.",
+    "promoNotEligible": "That code doesn't cover anything in this order.",
+    "promoFirstOrder": "That code is only for a guest's first order.",
+    "promoNeedsGuest": "That code needs the guest's phone — its uses are counted per guest."
   },
   "meta": {
     "siteName": "Rira Book Cafe",
@@ -819,7 +826,17 @@
       "saved": "Sale recorded as order #{number}",
       "done": "Sale #{number} is in.",
       "openOrder": "Open order",
-      "error": "Couldn't record the sale. Please try again."
+      "error": "Couldn't record the sale. Please try again.",
+      "discountsHeading": "Discounts",
+      "promoLabel": "Promo code",
+      "promoPlaceholder": "e.g. AUTUMN15",
+      "promoApply": "Apply",
+      "promoRemove": "Remove the promo code",
+      "promoError": "That code can't be used on this sale.",
+      "pointsLabel": "Spend the guest's points ({points} in balance)",
+      "pointsHint": "{points} points take {amount} off.",
+      "pointsMinimum": "Points can be spent from {points} up.",
+      "pointsNeedGuest": "Enter the guest's phone to spend their points."
     },
     "refund": {
       "open": "Refund",
@@ -919,7 +936,8 @@
       "cancelled": "Cancelled",
       "thanks": "Thank you — see you again soon.",
       "addressSeparator": ", "
-    }
+    },
+    "serviceCharge": "Service charge ({rate}%)"
   },
   "dashOrderNotes": {
     "label": "Internal note",
@@ -992,7 +1010,8 @@
       "suiteBooking": "Suite",
       "bookLoan": "Book loans",
       "income": "Income",
-      "payroll": "Payroll"
+      "payroll": "Payroll",
+      "loyalty": "Loyalty club"
     },
     "action": {
       "product": {
@@ -1094,6 +1113,11 @@
         "paid": "<b>{actor}</b> recorded a salary payment for {entity}",
         "voided": "<b>{actor}</b> voided payroll for {entity}",
         "employeeChanged": "<b>{actor}</b> updated employee {entity}"
+      },
+      "loyalty": {
+        "settingsChanged": "<b>{actor}</b> changed the loyalty club's rules",
+        "pointsAdjusted": "<b>{actor}</b> changed the points of {entity}",
+        "pointsExpired": "<b>{actor}</b> expired the unused points of {entity}"
       }
     },
     "role": {
@@ -1199,7 +1223,17 @@
       "checkIn": "Check-in",
       "checkOut": "Check-out",
       "guests": "Guests",
-      "registrations": "Sign-ups"
+      "registrations": "Sign-ups",
+      "points": "Points",
+      "enabled": "Club on",
+      "tomanPerPoint": "Spend per point",
+      "pointValue": "Point value",
+      "minRedeemPoints": "Fewest points to spend",
+      "pointsExpiryMonths": "Points expire after (months)",
+      "productIds": "Items it covers",
+      "categoryIds": "Categories it covers",
+      "firstOrderOnly": "First order only",
+      "serviceChargeBps": "Service charge (basis points)"
     },
     "filterField": "Field",
     "allFields": "Any field"
@@ -1714,7 +1748,8 @@
       "pointsUse": "Use {points} points for {amount} off",
       "pointsMinimum": "You can spend points once you have {points}.",
       "pointsToEarn": "You'll earn {points} points with this order.",
-      "orderPlaced": "Order placed"
+      "orderPlaced": "Order placed",
+      "serviceCharge": "Service charge ({rate}%)"
     },
     "orders": {
       "heading": "My orders",
@@ -1992,6 +2027,14 @@
         "refundIssued": {
           "title": "We refunded {amount} Toman",
           "body": "{subject, select, suite {For your suite stay S-{reference}.} event {For “{title}”.} other {For your booking.}}"
+        },
+        "pointsExpiring": {
+          "title": "Your {points} points expire soon",
+          "body": "Earn or spend points by {expiresAt} to keep them — any order does it."
+        },
+        "pointsExpired": {
+          "title": "{points} points expired",
+          "body": "They lapsed after a long time without a visit. Your next order starts earning again."
         }
       }
     },
@@ -2059,8 +2102,11 @@
         "earn": "Earned on order #{orderNumber}",
         "redeem": "Spent on order #{orderNumber}",
         "refund": "Returned from order #{orderNumber}",
-        "adjust": "Adjusted by the cafe"
-      }
+        "adjust": "Adjusted by the cafe",
+        "expire": "Expired after a long time without a visit"
+      },
+      "expiresOn": "Earn or spend points by {date} to keep them.",
+      "howExpiry": "Points expire after {count, plural, one {{months} month} other {{months} months}} without earning or spending."
     }
   },
   "dashAccounting": {
@@ -2288,7 +2334,7 @@
       }
     },
     "settings": {
-      "subtitle": "The VAT rate inside menu prices, and which periods are closed.",
+      "subtitle": "The VAT rate inside menu prices, the service charge on dine-in orders, and which periods are closed.",
       "vatRateLabel": "VAT rate (%)",
       "vatRateHint": "Menu prices include VAT; this rate takes it back out of each sale. VAT-exempt items (books) carry none.",
       "closedThroughLabel": "Books closed through",
@@ -2296,7 +2342,9 @@
       "save": "Save settings",
       "saved": "Saved.",
       "error": "Couldn't save the settings. Please try again.",
-      "savedToast": "Settings saved"
+      "savedToast": "Settings saved",
+      "serviceChargeLabel": "Service charge (%)",
+      "serviceChargeHint": "Added to dine-in orders on what the lines come to after discounts — takeaway carries none. Like menu prices, it has VAT inside it, and it's booked as service charge income. 0 = no service charge. A change applies to orders placed from then on."
     },
     "statements": {
       "heading": "Statements",
@@ -3202,7 +3250,10 @@
       "startsOn": "Starts on",
       "endsOn": "Ends on",
       "description": "Who it’s for",
-      "isActive": "Active"
+      "isActive": "Active",
+      "productIds": "Items",
+      "categoryIds": "Categories",
+      "firstOrderOnly": "First order only"
     },
     "kind": {
       "percent": "Percent off",
@@ -3235,12 +3286,14 @@
     "club": {
       "tomanPerPoint": "Spend per point",
       "pointValue": "Point value",
-      "minRedeemPoints": "Fewest to spend"
+      "minRedeemPoints": "Fewest to spend",
+      "pointsExpiryMonths": "Points expire after (months)"
     },
     "clubHint": {
       "tomanPerPoint": "Toman spent to earn 1 point.",
       "pointValue": "Toman off for each point.",
-      "minRedeemPoints": "Points needed before they can spend."
+      "minRedeemPoints": "Points needed before they can spend.",
+      "pointsExpiryMonths": "Months without earning or spending before a guest's points lapse. 0 = never."
     },
     "clubExample": "A {order} order earns {count, plural, one {{formatted} point} other {{formatted} points}}, worth {worth} off a later order.",
     "clubPaused": "The club is paused. Turn it on to let guests earn again.",
@@ -3280,9 +3333,20 @@
       "redeemPlain": "Spent on an order",
       "refund": "Given back from order #{number}",
       "refundPlain": "Given back",
-      "adjust": "Changed by hand"
+      "adjust": "Changed by hand",
+      "expire": "Expired",
+      "expirePlain": "Expired after no activity"
     },
-    "byStaff": "by {name}"
+    "byStaff": "by {name}",
+    "firstOrderHint": "Only a guest with no completed order yet can use it.",
+    "scopeCategoriesHint": "Only lines in these categories are discounted and count toward the minimum. None chosen: the whole order.",
+    "scopeProductsHint": "Or single items. A line counts when its item is chosen or is in a chosen category.",
+    "scopeSearch": "Search",
+    "scopeSearchAria": "Search {label}",
+    "scopeNoMatches": "Nothing matches.",
+    "scopeClear": "Clear {count, plural, one {{formatted} chosen} other {{formatted} chosen}}",
+    "scopeOnly": "Only on {names}",
+    "firstOrderBadge": "First order only"
   },
   "dashCashShifts": {
     "heading": "Cash shifts",

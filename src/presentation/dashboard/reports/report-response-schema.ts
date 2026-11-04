@@ -1,5 +1,6 @@
 import { z } from "zod/mini";
 
+import { REFUND_TIMINGS, REVENUE_STREAMS, SALES_BRIDGE_KEYS } from "@/src/domain/entities/Analytics";
 import { PAYMENT_METHODS, SERVICE_TYPES } from "@/src/domain/entities/Order";
 import { PRODUCT_KINDS } from "@/src/domain/entities/Product";
 
@@ -15,6 +16,11 @@ export type ReportRangeWire = z.infer<typeof rangeSchema>;
 
 const salesSummarySchema = z.object({
   revenue: z.number(),
+  grossSales: z.number(),
+  promoDiscount: z.number(),
+  pointsDiscount: z.number(),
+  charged: z.number(),
+  refunds: z.number(),
   orders: z.number(),
   itemsSold: z.number(),
   averageOrderValue: z.number(),
@@ -32,11 +38,43 @@ const topItemSchema = z.object({
   revenue: z.number(),
 });
 
+const revenueStreamSchema = z.object({
+  stream: z.enum(REVENUE_STREAMS),
+  received: z.number(),
+  refunded: z.number(),
+  revenue: z.number(),
+  vat: z.number(),
+  revenueExVat: z.number(),
+  previousRevenue: z.number(),
+});
+
+export type RevenueStreamWire = z.infer<typeof revenueStreamSchema>;
+
+const discountSummarySchema = z.object({
+  promoOrders: z.number(),
+  promoDiscount: z.number(),
+  pointsOrders: z.number(),
+  pointsDiscount: z.number(),
+  pointsRedeemed: z.number(),
+  pointsEarned: z.number(),
+});
+
+const bridgeLineSchema = z.object({
+  key: z.enum(SALES_BRIDGE_KEYS),
+  kind: z.enum(["start", "step", "subtotal", "total"]),
+  amount: z.number(),
+  previous: z.number(),
+});
+
+export type SalesBridgeLineWire = z.infer<typeof bridgeLineSchema>;
+
 export const salesReportResponseSchema = z.object({
   range: rangeSchema,
   previousRange: rangeSchema,
+  refunds: z.enum(REFUND_TIMINGS),
   summary: salesSummarySchema,
   previousSummary: salesSummarySchema,
+  bridge: z.array(bridgeLineSchema),
   daily: z.array(
     z.object({
       day: z.string(),
@@ -50,23 +88,39 @@ export const salesReportResponseSchema = z.object({
   hourly: z.array(z.object({ hour: z.number(), orders: z.number(), revenue: z.number() })),
   byKind: z.array(z.object({ kind: z.enum(PRODUCT_KINDS), revenue: z.number(), quantity: z.number() })),
   topItems: z.array(topItemSchema),
+  discounts: z.object({
+    summary: discountSummarySchema,
+    previousSummary: discountSummarySchema,
+    byCode: z.array(z.object({ code: z.string(), uses: z.number(), discount: z.number(), revenue: z.number() })),
+  }),
+  streams: z.array(revenueStreamSchema),
 });
 
 export type SalesReportWire = z.infer<typeof salesReportResponseSchema>;
 export type TopItemWire = z.infer<typeof topItemSchema>;
 
+const paymentSummarySchema = z.object({
+  /** Completed orders' total; `paidValue` is the part of it marked paid. */
+  revenue: z.number(),
+  paidOrders: z.number(),
+  paidValue: z.number(),
+  unpaidOrders: z.number(),
+  unpaidValue: z.number(),
+});
+
+const methodPaymentsSchema = z.object({ method: z.enum(PAYMENT_METHODS), orders: z.number(), value: z.number() });
+
+export type MethodPaymentsWire = z.infer<typeof methodPaymentsSchema>;
+
 export const paymentReportResponseSchema = z.object({
   range: rangeSchema,
   previousRange: rangeSchema,
-  summary: z.object({
-    /** Completed orders' total; `paidValue` is the part of it marked paid. */
-    revenue: z.number(),
-    paidOrders: z.number(),
-    paidValue: z.number(),
-    unpaidOrders: z.number(),
-    unpaidValue: z.number(),
-  }),
-  byMethod: z.array(z.object({ method: z.enum(PAYMENT_METHODS), orders: z.number(), value: z.number() })),
+  refunds: z.enum(REFUND_TIMINGS),
+  summary: paymentSummarySchema,
+  previousSummary: paymentSummarySchema,
+  byMethod: z.array(methodPaymentsSchema),
+  previousByMethod: z.array(methodPaymentsSchema),
+  streams: z.array(revenueStreamSchema),
   unpaid: z.array(
     z.object({
       id: z.string(),

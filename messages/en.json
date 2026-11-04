@@ -1504,7 +1504,10 @@
       "today": "Today",
       "7d": "7 days",
       "30d": "30 days",
-      "90d": "90 days"
+      "90d": "90 days",
+      "week": "This week",
+      "month": "This month",
+      "lastMonth": "Last month"
     },
     "tabsLabel": "Reports",
     "tab": {
@@ -1578,7 +1581,9 @@
       "markPaid": "Mark paid",
       "markedPaid": "Order #{number} marked paid",
       "markedUnpaid": "Order #{number} is unpaid again",
-      "markPaidError": "Couldn't mark the order paid."
+      "markPaidError": "Couldn't mark the order paid.",
+      "paidHint": "{share} · {change}",
+      "methodPrevious": "Period before: {value}"
     },
     "guests": {
       "guests": "Guests",
@@ -1592,6 +1597,132 @@
       "topGuestsDescription": "Regulars by what they spent in this range.",
       "visits": "{count, plural, one {{formatted} visit} other {{formatted} visits}}",
       "pickLonger": "Pick a range of a week or more to see your regulars."
+    },
+    "printHeading": "{cafe} · {report} report",
+    "rangePicker": {
+      "trigger": "Pick dates",
+      "triggerActive": "Pick dates, now {range}",
+      "presetsLabel": "Calendar ranges",
+      "customHeading": "Custom range",
+      "previousMonth": "Previous month",
+      "nextMonth": "Next month",
+      "pickStart": "Pick the first day.",
+      "pickEnd": "From {day} — now pick the last day.",
+      "tooLong": "Pick at most {days} days.",
+      "apply": "Show these dates"
+    },
+    "refunds": {
+      "label": "Count refunds on",
+      "option": {
+        "orderDay": "Order's day",
+        "refundDay": "Refund's day"
+      },
+      "hint": {
+        "orderDay": "A refund comes off the day its order was placed, so each day shows what its orders finally came to. Earlier periods change when an old order is refunded.",
+        "refundDay": "A refund counts on the day the money went back, as the books and the till see it. Past periods stay as they were reported."
+      },
+      "printed": {
+        "orderDay": "refunds on the order's day",
+        "refundDay": "refunds on the refund's day"
+      }
+    },
+    "export": {
+      "csv": "Export CSV",
+      "print": "Print",
+      "period": "Period",
+      "refundsLine": "Refunds counted",
+      "table": {
+        "salesByDay": "Sales by day",
+        "topItems": "Items sold",
+        "discounts": "Promo codes",
+        "streams": "Revenue by stream",
+        "paymentsByMethod": "Payments by method",
+        "unpaidOrders": "Unpaid orders",
+        "guests": "Guests by spend"
+      },
+      "columns": {
+        "day": "Day",
+        "orders": "Orders",
+        "revenue": "Revenue",
+        "unpaidOrders": "Unpaid orders",
+        "unpaidValue": "Unpaid value",
+        "item": "Item",
+        "category": "Category",
+        "kind": "Kind",
+        "units": "Units",
+        "code": "Code",
+        "uses": "Uses",
+        "discount": "Discount",
+        "stream": "Stream",
+        "received": "Received",
+        "refunded": "Refunded",
+        "vat": "VAT",
+        "revenueExVat": "Revenue excl. VAT",
+        "previousRevenue": "Revenue, period before",
+        "total": "Total",
+        "method": "Method",
+        "value": "Amount",
+        "orderNumber": "Order",
+        "placedAt": "Placed",
+        "where": "Service",
+        "guest": "Guest",
+        "phone": "Phone"
+      }
+    },
+    "bridge": {
+      "heading": "From gross sales to revenue",
+      "description": "Completed orders at menu prices, less what discounts and refunds took off.",
+      "line": {
+        "grossSales": "Gross sales",
+        "promoDiscount": "Promo codes",
+        "pointsDiscount": "Loyalty points",
+        "otherAdjustments": "Other adjustments",
+        "charged": "Charged to guests",
+        "refunds": "Refunds",
+        "revenue": "Net revenue"
+      },
+      "previous": "Before: {value}"
+    },
+    "discounts": {
+      "heading": "Discounts",
+      "description": "What promo codes and loyalty points took off completed orders.",
+      "promo": "Promo codes",
+      "points": "Loyalty points",
+      "pointsMoved": "{redeemed} points redeemed · {earned} points earned",
+      "byCodeHeading": "By promo code",
+      "noCodes": "No promo codes were used in this range.",
+      "uses": "{count, plural, one {{formatted} use} other {{formatted} uses}}",
+      "codeLine": "{uses} · {revenue} in orders",
+      "codeDiscount": "{value} off"
+    },
+    "streams": {
+      "heading": "Revenue by stream",
+      "description": "Everything the cafe earned in the range, in Toman: orders, the suite, events and kept deposits.",
+      "hint": "Revenue excl. VAT is what the profit and loss statement shows for each stream. To match it day for day, count refunds on the refund's day: the books date a sale on the day its order was completed, a payment on the day it was received, and a deposit on the day it was kept.",
+      "stream": {
+        "cafe": "Cafe orders",
+        "suite": "Suite stays",
+        "events": "Event sign-ups",
+        "tableDeposits": "Table deposits kept",
+        "bookDeposits": "Book deposits kept",
+        "otherIncome": "Other income"
+      },
+      "column": {
+        "stream": "Stream",
+        "received": "Received",
+        "refunded": "Refunded",
+        "revenue": "Revenue",
+        "vat": "VAT",
+        "revenueExVat": "Excl. VAT"
+      },
+      "total": "Total"
+    },
+    "vat": {
+      "heading": "VAT in revenue",
+      "description": "The VAT inside each stream's revenue, as each sale and payment booked it, less the VAT handed back with refunds.",
+      "empty": "No revenue in this range.",
+      "collected": "VAT collected",
+      "share": "{percent} of revenue"
     }
   },
   "site": {

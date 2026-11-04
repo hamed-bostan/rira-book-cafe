@@ -1,8 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { calendarForLocale } from "@/src/domain/entities/Analytics";
 import { GetGuestReport } from "@/src/domain/use-cases/analytics/Reports";
 import { analyticsRepository } from "@/src/infrastructure/container";
 import { parseAnalyticsRange } from "@/src/lib/api/analytics-params";
+import { getRequestLocale } from "@/src/lib/api/request-locale";
 import { errorResponseFromException, unauthorizedResponse } from "@/src/lib/api/responses";
 import { getSessionWith } from "@/src/lib/require-permission";
 
@@ -15,7 +17,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
     const now = new Date();
     const report = await new GetGuestReport(analyticsRepository).execute(
-      parseAnalyticsRange(request.nextUrl.searchParams, now),
+      parseAnalyticsRange(request.nextUrl.searchParams, now, calendarForLocale(getRequestLocale(request))),
       now,
     );
     return NextResponse.json(report);

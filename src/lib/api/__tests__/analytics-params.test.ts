@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { $ZodError } from "zod/v4/core";
 
-import { parseAnalyticsRange, parseTopItemSort, rangeParams, selectedRangeOption } from "../analytics-params";
+import {
+  parseAnalyticsRange,
+  parseRefundTiming,
+  parseTopItemSort,
+  rangeParams,
+  selectedRangeOption,
+} from "../analytics-params";
 
 const NOW = new Date("2026-10-20T10:00:00Z");
 
@@ -37,5 +43,26 @@ describe("analytics params", () => {
     expect(rangeParams(params)).toEqual({ range: "7d", sort: "quantity" });
     expect(parseTopItemSort(params)).toBe("quantity");
     expect(parseTopItemSort(new URLSearchParams({ sort: "nope" }))).toBe("revenue");
+  });
+
+  it("forwards the refund timing, and counts refunds on the order's day unless asked", () => {
+    const params = new URLSearchParams({ range: "month", refunds: "refundDay" });
+    expect(rangeParams(params)).toEqual({ range: "month", refunds: "refundDay" });
+    expect(parseRefundTiming(params)).toBe("refundDay");
+    expect(parseRefundTiming(new URLSearchParams())).toBe("orderDay");
+    expect(() => parseRefundTiming(new URLSearchParams({ refunds: "whenever" }))).toThrow($ZodError);
+  });
+
+  it("reads month presets on the reader's calendar", () => {
+    const params = new URLSearchParams({ range: "month" });
+    expect(selectedRangeOption(params)).toBe("month");
+    expect(parseAnalyticsRange(params, NOW, "gregorian")).toMatchObject({
+      fromDay: "2026-10-01",
+      toDay: "2026-10-20",
+    });
+    expect(parseAnalyticsRange(params, NOW, "jalali")).toMatchObject({ fromDay: "2026-09-23", toDay: "2026-10-20" });
+    expect(parseAnalyticsRange(new URLSearchParams({ range: "week" }), NOW)).toMatchObject({
+      fromDay: "2026-10-17",
+    });
   });
 });

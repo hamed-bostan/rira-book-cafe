@@ -1,8 +1,9 @@
 import { CircleX, ClipboardList, Receipt, Wallet } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
-import type { AnalyticsRangePreset, TopItemSort } from "@/src/domain/entities/Analytics";
+import type { RefundTiming, ReportRangePreset, TopItemSort } from "@/src/domain/entities/Analytics";
 import { PRODUCT_KINDS, type ProductKind } from "@/src/domain/entities/Product";
+import type { ReportTable } from "@/src/domain/use-cases/analytics/Reports";
 import { formatCafeDayShort, formatCafeDayWeekdayName, formatPercent } from "@/src/lib/formatCafeDay";
 import { formatMoney, moneyUnit } from "@/src/lib/formatMoney";
 import { formatNumber } from "@/src/lib/formatNumber";
@@ -10,11 +11,14 @@ import { formatNumber } from "@/src/lib/formatNumber";
 import { MetricCard, type MetricCardTone } from "../MetricCard";
 
 import { BestSellers } from "./BestSellers";
+import { DiscountsPanel } from "./DiscountsPanel";
 import { changeOf, formatChange, formatDayTip, formatHourSpan, formatHourTick } from "./reportFormat";
 import { reportHref } from "./reportLinks";
 import { ReportPanel } from "./ReportPanel";
 import { ReportSalesChart, type ReportChartBar } from "./ReportSalesChart";
 import { ReportsFrame } from "./ReportsFrame";
+import { RevenueStreamsPanel } from "./RevenueStreamsPanel";
+import { SalesBridgePanel } from "./SalesBridgePanel";
 import { buildSalesChart, type SalesChartPoint } from "./salesChart";
 import { ShareBars } from "./ShareBars";
 
@@ -30,11 +34,14 @@ const KIND_COLOR: Record<ProductKind, string> = {
 /** At most this many days get a weekday under their bar; longer spans show dates. */
 const WEEKDAY_LABEL_DAYS = 7;
 
+/** What the Sales tab downloads, in the order its panels sit. */
+const SALES_EXPORTS: readonly ReportTable[] = ["salesByDay", "topItems", "discounts", "streams"];
+
 type SalesReportScreenProps = {
   report: SalesReportWire;
-  selected: AnalyticsRangePreset | "custom";
+  selected: ReportRangePreset | "custom";
   sort: TopItemSort;
-  /** The page's range params, carried across the tabs and into the ranking links. */
+  /** The page's range and refund-timing params, carried across the tabs and into the ranking links. */
   rangeQuery: Record<string, string>;
   /** The cafe day and hour it is, so the bar still filling up is drawn lighter. */
   now: { day: string; hour: number };
@@ -46,6 +53,7 @@ type SalesReportScreenProps = {
  * between drinks, food and books. Presentational — the page fetches over the BFF.
  */
 export async function SalesReportScreen({ report, selected, sort, rangeQuery, now }: SalesReportScreenProps) {
+  const refunds: RefundTiming = report.refunds;
   const t = await getTranslations("dashReports");
   const locale = await getLocale();
   const { summary, previousSummary } = report;
@@ -95,8 +103,10 @@ export async function SalesReportScreen({ report, selected, sort, rangeQuery, no
       keep={keep}
       range={report.range}
       previousRange={report.previousRange}
+      refunds={refunds}
+      exports={SALES_EXPORTS}
     >
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 print:grid-cols-2">
         <MetricCard
           label={t("sales.revenue")}
           icon={Wallet}
@@ -127,7 +137,14 @@ export async function SalesReportScreen({ report, selected, sort, rangeQuery, no
 
       <ReportSalesChart kind={chart.kind} bars={bars} />
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2 print:grid-cols-1">
+        <SalesBridgePanel lines={report.bridge} />
+        <DiscountsPanel discounts={report.discounts} />
+      </div>
+
+      <RevenueStreamsPanel streams={report.streams} />
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2 print:grid-cols-1">
         <BestSellers
           items={report.topItems}
           sort={sort}

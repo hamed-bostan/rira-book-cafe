@@ -1,9 +1,10 @@
-import { CircleCheck, Clock } from "lucide-react";
+import { CircleCheck, Clock, Landmark } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
-import type { AnalyticsRangePreset } from "@/src/domain/entities/Analytics";
+import type { ReportRangePreset } from "@/src/domain/entities/Analytics";
 import { cafeDayOf, shiftCafeDay } from "@/src/domain/entities/CafeTime";
 import type { PaymentMethod } from "@/src/domain/entities/Order";
+import type { ReportTable } from "@/src/domain/use-cases/analytics/Reports";
 import { Link } from "@/src/i18n/navigation";
 import { formatCafeDayShort, formatPercent } from "@/src/lib/formatCafeDay";
 import { formatMoney, moneyUnit } from "@/src/lib/formatMoney";
@@ -12,13 +13,15 @@ import { formatOrderTime } from "@/src/lib/formatOrderDate";
 import { cn } from "@/src/lib/utils";
 import { focusRing } from "@/src/presentation/design-system/components/shared/focusRing";
 
-import { MetricCard } from "../MetricCard";
+import { MetricCard, type MetricCardTone } from "../MetricCard";
 import { ROW_END } from "../pageStyles";
 
 import { MarkPaidButton } from "./MarkPaidButton";
+import { changeOf, formatChange } from "./reportFormat";
 import { ReportPanel } from "./ReportPanel";
 import { ReportsFrame } from "./ReportsFrame";
 import { ShareBars } from "./ShareBars";
+import { VatSplitPanel } from "./VatSplitPanel";
 
 import type { PaymentReportWire } from "./report-response-schema";
 
@@ -32,10 +35,13 @@ const METHOD_GROUPS = [
   { key: "online", methods: ["online"], colorClassName: "bg-warning-foreground" },
 ] as const satisfies readonly { key: string; methods: readonly PaymentMethod[]; colorClassName: string }[];
 
+/** What the Payments tab downloads, in the order its panels sit. */
+const PAYMENT_EXPORTS: readonly ReportTable[] = ["paymentsByMethod", "unpaidOrders", "streams"];
+
 type PaymentReportScreenProps = {
   report: PaymentReportWire;
-  selected: AnalyticsRangePreset | "custom";
-  /** The page's range params, carried across the tabs. */
+  selected: ReportRangePreset | "custom";
+  /** The page's range and refund-timing params, carried across the tabs. */
   rangeQuery: Record<string, string>;
   /** The cafe day it is, to say "Today" and "Yesterday" beside an order's time. */
   today: string;
@@ -65,9 +71,21 @@ export async function PaymentReportScreen({
   // counts ready orders — served, not yet revenue — so the two needn't add up to it.
   const { revenue } = summary;
 
-  const methodValue = (methods: readonly PaymentMethod[]): number =>
-    report.byMethod.filter((row) => methods.includes(row.method)).reduce((sum, row) => sum + row.value, 0);
+  const methodValue = (methods: readonly PaymentMethod[], rows = report.byMethod): number =>
+    rows.filter((row) => methods.includes(row.method)).reduce((sum, row) => sum + row.value, 0);
   const paidTotal = methodValue(METHOD_GROUPS.flatMap((group) => group.methods));
+  const vatTotal = report.streams.reduce((sum, row) => sum + row.vat, 0);
+  const revenueTotal = report.streams.reduce((sum, row) => sum + row.revenue, 0);
+
+  const change = (current: number, previous: number): { text: string; tone?: MetricCardTone } => {
+    const moved = changeOf(current, previous);
+    if (!moved) return { text: t("noBaseline") };
+    return {
+      text: t(moved.up ? "changeUp" : "changeDown", { value: formatChange(moved.share, locale) }),
+      tone: moved.up ? "success" : "danger",
+    };
+  };
+  const paidChange = change(summary.paidValue, report.previousSummary.paidValue);
 
   const when = (placedAt: string): string => {
     const day = cafeDayOf(new Date(placedAt));
@@ -84,8 +102,10 @@ export async function PaymentReportScreen({
       rangeQuery={rangeQuery}
       range={report.range}
       previousRange={report.previousRange}
+      refunds={report.refunds}
+      exports={PAYMENT_EXPORTS}
     >
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 print:grid-cols-3">
         <MetricCard
           label={t("payments.paid")}
           icon={CircleCheck}
@@ -93,9 +113,13 @@ export async function PaymentReportScreen({
           unit={unit}
           hint={
             revenue > 0
-              ? t("payments.paidShare", { percent: formatPercent(summary.paidValue / revenue, locale) })
-              : undefined
+              ? t("payments.paidHint", {
+                  share: t("payments.paidShare", { percent: formatPercent(summary.paidValue / revenue, locale) }),
+                  change: paidChange.text,
+                })
+              : paidChange.text
           }
+          hintTone={paidChange.tone}
         />
         <MetricCard
           label={t("payments.unpaid")}
@@ -113,11 +137,20 @@ export async function PaymentReportScreen({
           hintTone={summary.unpaidOrders > 0 ? "warning" : undefined}
           hintDot={summary.unpaidOrders > 0}
         />
+        <MetricCard
+          label={t("vat.collected")}
+          icon={Landmark}
+          value={formatNumber(vatTotal, locale)}
+          unit={unit}
+          hint={
+            revenueTotal > 0 ? t("vat.share", { percent: formatPercent(vatTotal / revenueTotal, locale) }) : undefined
+          }
+        />
       </div>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2 print:grid-cols-1">
         <ReportPanel title={t("payments.paidByHeading")} description={t("payments.paidByDescription")}>
-          {paidTotal === 0 ? (
+          {paidTotal <= 0 ? (
             <p className="text-body-default text-pretty text-muted-foreground sm:text-body-small">
               {t("payments.nothingPaid")}
             </p>
@@ -129,7 +162,10 @@ export async function PaymentReportScreen({
                   key: group.key,
                   label: t(`payments.method.${group.key}`),
                   valueLabel: `${formatMoney(value, locale)} · ${formatPercent(value / paidTotal, locale)}`,
-                  share: value / paidTotal,
+                  detail: t("payments.methodPrevious", {
+                    value: formatMoney(methodValue(group.methods, report.previousByMethod), locale),
+                  }),
+                  share: Math.max(0, value / paidTotal),
                   colorClassName: group.colorClassName,
                 };
               })}
@@ -193,6 +229,8 @@ export async function PaymentReportScreen({
           )}
         </ReportPanel>
       </div>
+
+      <VatSplitPanel streams={report.streams} />
     </ReportsFrame>
   );
 }

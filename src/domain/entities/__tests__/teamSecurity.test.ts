@@ -1,61 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { activityRetentionCutoff, validRetentionMonths } from "../TeamSettings";
-import { normalizeRecoveryCode, normalizeTotpCode, secondFactorGate, twoFactorStatus } from "../TwoFactor";
 import { describeUserAgent, isSessionActive, SESSION_MAX_AGE_MS } from "../UserSession";
-
-describe("normalizeTotpCode", () => {
-  it("takes six digits however they're typed — spaced, dashed, in Persian digits", () => {
-    expect(normalizeTotpCode("123456")).toBe("123456");
-    expect(normalizeTotpCode(" 123 456 ")).toBe("123456");
-    expect(normalizeTotpCode("123-456")).toBe("123456");
-    expect(normalizeTotpCode("۱۲۳۴۵۶")).toBe("123456");
-    expect(normalizeTotpCode("12345")).toBeNull();
-    expect(normalizeTotpCode("12345a")).toBeNull();
-  });
-});
-
-describe("normalizeRecoveryCode", () => {
-  it("ignores case and separators, and refuses anything not 16 base32 characters", () => {
-    expect(normalizeRecoveryCode("abcd-efgh-ijkl-mnop")).toBe("ABCDEFGHIJKLMNOP");
-    expect(normalizeRecoveryCode("ABCD EFGH IJKL MNOP")).toBe("ABCDEFGHIJKLMNOP");
-    expect(normalizeRecoveryCode("ABCD-EFGH")).toBeNull();
-    expect(normalizeRecoveryCode("ABCD-EFGH-IJKL-MNO1")).toBeNull();
-  });
-});
-
-describe("twoFactorStatus", () => {
-  const record = { userId: "u", sealedSecret: "s", lastUsedStep: null, recoveryCodeHashes: ["a", "b"] };
-
-  it("reads off, pending and on", () => {
-    expect(twoFactorStatus(null).state).toBe("off");
-    expect(twoFactorStatus({ ...record, enabledAt: null })).toMatchObject({ state: "pending", recoveryCodesLeft: 0 });
-    expect(twoFactorStatus({ ...record, enabledAt: new Date() })).toMatchObject({ state: "on", recoveryCodesLeft: 2 });
-  });
-});
-
-describe("secondFactorGate", () => {
-  const gate = (input: Partial<Parameters<typeof secondFactorGate>[0]>) =>
-    secondFactorGate({ state: "off", requiredByOwner: false, available: true, verifiedInThisSession: false, ...input });
-
-  it("lets through a browser that already passed, whatever else is true", () => {
-    expect(gate({ state: "on", verifiedInThisSession: true })).toBe("ok");
-    expect(gate({ requiredByOwner: true, verifiedInThisSession: true })).toBe("ok");
-  });
-
-  it("asks someone enrolled for a code — even when the key is missing (recovery codes still work)", () => {
-    expect(gate({ state: "on" })).toBe("verify");
-    expect(gate({ state: "on", available: false })).toBe("verify");
-  });
-
-  it("sends someone without an app to set one up only when required and possible", () => {
-    expect(gate({ requiredByOwner: true })).toBe("enroll");
-    expect(gate({ state: "pending", requiredByOwner: true })).toBe("enroll");
-    expect(gate({ requiredByOwner: true, available: false })).toBe("ok");
-    expect(gate({})).toBe("ok");
-    expect(gate({ state: "pending" })).toBe("ok");
-  });
-});
 
 describe("describeUserAgent", () => {
   it("names the browser and system, and the kind of device", () => {

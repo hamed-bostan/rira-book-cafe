@@ -4,21 +4,20 @@ import { getTranslations } from "next-intl/server";
 import { auth } from "@/auth";
 import { sessionAccess } from "@/src/lib/require-permission";
 import { SignInAgainNotice } from "@/src/presentation/auth/SignInAgainNotice";
-import { TwoFactorChallenge } from "@/src/presentation/auth/TwoFactorChallenge";
-import { securityServerApi } from "@/src/presentation/dashboard/security/security-server-api";
 import { noIndexMetadata } from "@/src/presentation/seo/noIndexMetadata";
 
 import type { Metadata } from "next";
+import type { ReactElement } from "react";
 
 // Where this browser stands is read per request.
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("dashSecurity");
-  return noIndexMetadata(t("challenge.pageTitle"));
+  return noIndexMetadata(t("signInAgain.title"));
 }
 
-type TwoFactorPageProps = {
+type SignInAgainPageProps = {
   searchParams: Promise<{ callbackUrl?: string }>;
 };
 
@@ -28,13 +27,12 @@ function safeCallback(value: string | undefined): string {
 }
 
 /**
- * `/login/two-factor` — the dashboard's door after the phone code, for a browser
- * that owes it something: the authenticator app's code, setting the app up (the
- * owner requires it), or a fresh sign-in (a session from before sessions were
- * recorded). A browser that owes nothing goes straight on; a signed-out one starts
- * at the phone.
+ * `/login/sign-in-again` — for a dashboard user whose browser was signed in before
+ * sessions were recorded: that session can't be signed out remotely, so it doesn't
+ * open the dashboard until they sign in once more. A browser that's fine goes
+ * straight on; a signed-out one starts at the phone.
  */
-export default async function TwoFactorPage({ searchParams }: TwoFactorPageProps) {
+export default async function SignInAgainPage({ searchParams }: SignInAgainPageProps): Promise<ReactElement> {
   const callbackUrl = safeCallback((await searchParams).callbackUrl);
   const session = await auth();
   if (!session?.user) redirect(`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
@@ -44,15 +42,7 @@ export default async function TwoFactorPage({ searchParams }: TwoFactorPageProps
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-col gap-6 py-6">
-      {gate === "signInAgain" ? (
-        <SignInAgainNotice callbackUrl={callbackUrl} />
-      ) : (
-        <TwoFactorChallenge
-          mode={gate}
-          available={(await securityServerApi.getTwoFactor()).available}
-          callbackUrl={callbackUrl}
-        />
-      )}
+      <SignInAgainNotice callbackUrl={callbackUrl} />
     </div>
   );
 }

@@ -36,8 +36,6 @@ async function requestUserAgent(): Promise<string | null> {
  * a session row and the token carries its id (`sid`). The `jwt` callback checks
  * that row on every read of the session: a revoked one ("sign out everywhere", a
  * member removed from the team) answers `null`, which Auth.js treats as signed out.
- * The row also says whether this browser passed the authenticator-app check, which
- * the dashboard's door reads (see `require-permission.ts`).
  *
  * A token minted before sessions were recorded has no `sid`. It still works on the
  * storefront — guests aren't signed out by this — but it can't open the dashboard,
@@ -83,7 +81,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       // Sign-in: record the session and carry its id from now on.
       if (user?.id) {
         const session = await new StartSession(sessionRepository).execute(user.id, await requestUserAgent());
-        return { ...token, sid: session.id, tfv: false };
+        return { ...token, sid: session.id };
       }
 
       // A token from before sessions were recorded: left as it was (see above).
@@ -91,16 +89,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
       const check = await checkSession(token.sid, token.sub);
       if (!check) return null;
-      return { ...token, tfv: check.twoFactorVerified };
+      return token;
     },
     // The user id rides on the standard `sub` claim (Auth.js sets it from
     // `user.id` on sign-in). Surface it on the session so guards (e.g.
     // requireAdmin) can read it — Auth.js v5 doesn't expose it by default. The
-    // session id and the second-factor state ride along for the dashboard's door.
+    // session id rides along for the dashboard's door.
     session({ session, token }) {
       if (token.sub) session.user.id = token.sub;
       if (typeof token.sid === "string") session.sessionId = token.sid;
-      session.twoFactorVerified = token.tfv === true;
       return session;
     },
   },

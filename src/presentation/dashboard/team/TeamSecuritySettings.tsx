@@ -9,7 +9,6 @@ import { useRouter } from "@/src/i18n/navigation";
 import { localizeApiError } from "@/src/lib/api/localizeApiError";
 import { DashboardField } from "@/src/presentation/dashboard/DashboardField";
 import { DashboardSection } from "@/src/presentation/dashboard/DashboardSection";
-import { DashboardSwitchField } from "@/src/presentation/dashboard/DashboardSwitchField";
 import { FormAlert } from "@/src/presentation/dashboard/FormAlert";
 import { Select } from "@/src/presentation/design-system/components/form/Select/Select";
 import { useToast } from "@/src/presentation/design-system/components/Toast/useToast";
@@ -26,11 +25,8 @@ type TeamSecuritySettingsProps = {
 const FOREVER = "forever";
 
 /**
- * The owner's team-wide settings, each saved as it's changed: require two-factor
- * for every dashboard user, and how long the activity log keeps entries. Both are
- * recorded in the log. Requiring two-factor waits until the server can do it (an
- * encryption key is configured) — and says so rather than offering a switch that
- * would lock everyone out.
+ * The owner's team-wide settings, saved as they're changed: how long the activity
+ * log keeps entries. The change is itself recorded in the log.
  */
 export function TeamSecuritySettings({ settings }: TeamSecuritySettingsProps) {
   const t = useTranslations("dashTeam");
@@ -58,23 +54,6 @@ export function TeamSecuritySettings({ settings }: TeamSecuritySettingsProps) {
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
-      <DashboardSection
-        title={t("securitySettings.twoFactorHeading")}
-        description={t("securitySettings.twoFactorDescription")}
-      >
-        <DashboardSwitchField
-          label={t("securitySettings.requireTwoFactor")}
-          hint={
-            settings.twoFactorAvailable
-              ? t("securitySettings.requireTwoFactorHint")
-              : t("securitySettings.twoFactorUnavailable")
-          }
-          checked={settings.requireTwoFactor}
-          disabled={pending || (!settings.twoFactorAvailable && !settings.requireTwoFactor)}
-          onCheckedChange={(requireTwoFactor) => save({ requireTwoFactor })}
-        />
-      </DashboardSection>
-
       <DashboardSection
         title={t("securitySettings.retentionHeading")}
         description={t("securitySettings.retentionDescription")}

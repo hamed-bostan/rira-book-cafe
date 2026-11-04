@@ -12,7 +12,7 @@ type TeamMemberPageProps = {
 };
 
 /**
- * `/dashboard/team/:id` — one team member's sessions and two-factor, for the owner.
+ * `/dashboard/team/:id` — one team member's signed-in sessions, for the owner.
  * Someone not on the team is a 404 (the owner manages the team's access, not every
  * guest's account).
  */

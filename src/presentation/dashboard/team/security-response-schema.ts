@@ -5,8 +5,8 @@ import { isCustomRoleKey, type CustomRoleKey, type GrantableBuiltInRole } from "
 
 /**
  * What the team-security endpoints promise, as the client receives them: roles,
- * the team's settings, signed-in sessions and a user's two-factor. Only the
- * frontend reads these shapes; the routes build them from the domain.
+ * the team's settings and signed-in sessions. Only the frontend reads these shapes;
+ * the routes build them from the domain.
  */
 
 const roleKey = z.custom<GrantableBuiltInRole | CustomRoleKey>(
@@ -31,10 +31,7 @@ export const roleListResponseSchema = z.array(roleResponseSchema);
 export type RoleWire = z.infer<typeof roleResponseSchema>;
 
 export const teamSettingsResponseSchema = z.object({
-  requireTwoFactor: z.boolean(),
   activityRetentionMonths: z.nullable(z.number()),
-  /** Whether the server has its encryption key, so two-factor can be used at all. */
-  twoFactorAvailable: z.boolean(),
 });
 
 export type TeamSettingsWire = z.infer<typeof teamSettingsResponseSchema>;
@@ -55,25 +52,3 @@ export const sessionListResponseSchema = z.array(sessionResponseSchema);
 
 /** One signed-in browser. */
 export type SessionWire = z.infer<typeof sessionResponseSchema>;
-
-export const twoFactorOverviewResponseSchema = z.object({
-  state: z.enum(["off", "pending", "on"]),
-  enabledAt: z.nullable(z.string()),
-  recoveryCodesLeft: z.number(),
-  available: z.boolean(),
-  required: z.boolean(),
-  /** Where this browser stands at the dashboard's door. */
-  gate: z.enum(["ok", "verify", "enroll"]),
-});
-
-export type TwoFactorOverviewWire = z.infer<typeof twoFactorOverviewResponseSchema>;
-
-export const twoFactorSetupResponseSchema = z.object({
-  secret: z.string(),
-  otpauthUri: z.string(),
-  qrCode: z.string(),
-});
-
-export type TwoFactorSetupWire = z.infer<typeof twoFactorSetupResponseSchema>;
-
-export const recoveryCodesResponseSchema = z.object({ recoveryCodes: z.array(z.string()) });

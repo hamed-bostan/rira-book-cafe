@@ -34,8 +34,8 @@ type TeamScreenProps = {
 /**
  * Who can reach the dashboard and what they may do, in three tabs: the members
  * (add someone, the list, the history of access), the roles (what each may do, and
- * the owner's own), and the team's security settings (require two-factor, how long
- * the activity log keeps entries). Presentational — the page fetches over the REST
+ * the owner's own), and the team's security settings (how long the activity log
+ * keeps entries). Presentational — the page fetches over the REST
  * API (BFF) during server render; every change `router.refresh()`es.
  */
 export function TeamScreen({ tab, members, roles, changes, settings }: TeamScreenProps) {

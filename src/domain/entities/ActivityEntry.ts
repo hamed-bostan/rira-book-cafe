@@ -214,16 +214,12 @@ export const ACTIVITY_ACTIONS = [
   "settings.tableRemoved",
   // Team security (entity type `user`, owner-only like the rest of the team's
   // access): a role's permissions or name set, a custom role made or deleted, the
-  // team's security settings changed, someone's sessions signed out by the owner,
-  // and a member's authenticator app turned on, off, or reset by the owner.
+  // team's security settings changed, and someone's sessions signed out by the owner.
   "user.roleCreated",
   "user.roleUpdated",
   "user.roleDeleted",
   "user.securitySettingsChanged",
   "user.sessionsRevoked",
-  "user.twoFactorEnabled",
-  "user.twoFactorDisabled",
-  "user.twoFactorReset",
   // Entries older than the owner's retention setting removed by the background
   // jobs (`SYSTEM_ACTOR`). The prune records itself, so the gap it leaves is on file.
   "activity.pruned",

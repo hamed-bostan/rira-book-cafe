@@ -3,19 +3,14 @@ import { ValidationError } from "../errors/ValidationError";
 /**
  * The owner's team-wide security settings.
  *
- * - `requireTwoFactor` — every dashboard user must use an authenticator app. Someone
- *   without one is sent to set it up the next time they open the dashboard. It only
- *   takes effect while two-factor is available on the server (an encryption key is
- *   configured); without one nobody could comply, so it can't be enforced.
  * - `activityRetentionMonths` — how long the activity log keeps entries; `null`
  *   keeps them forever, which is the default.
  */
 export type TeamSettings = {
-  requireTwoFactor: boolean;
   activityRetentionMonths: number | null;
 };
 
-export const DEFAULT_TEAM_SETTINGS: TeamSettings = { requireTwoFactor: false, activityRetentionMonths: null };
+export const DEFAULT_TEAM_SETTINGS: TeamSettings = { activityRetentionMonths: null };
 
 /**
  * The retention periods the setting offers, in months. Six months is the floor: an

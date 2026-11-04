@@ -88,7 +88,7 @@ export function TeamActivity({ changes, viewerId, roleNames }: TeamActivityProps
           </p>
         </div>
         {/* The card shows the latest access changes; every team change — roles, settings,
-            sign-outs, two-factor — is on the activity page, filtered to the team. */}
+            sign-outs — is on the activity page, filtered to the team. */}
         <Link
           href="/dashboard/activity?entityType=user"
           className={cn(TEXT_ACTION, "text-primary hover:text-primary-hover")}

@@ -86,11 +86,6 @@ export type ConflictCode =
   | "ROLE_IN_USE"
   | "ROLE_BUILT_IN"
   | "ROLE_NAME_TAKEN"
-  // Two-factor: setting it up again while it's on, or turning it off while the owner
-  // requires it, or with no encryption key on the server.
-  | "TWO_FACTOR_ALREADY_ON"
-  | "TWO_FACTOR_REQUIRED"
-  | "TWO_FACTOR_UNAVAILABLE"
   // Bank reconciliation.
   | "STATEMENT_OVERLAP"
   | "STATEMENT_RECONCILED"

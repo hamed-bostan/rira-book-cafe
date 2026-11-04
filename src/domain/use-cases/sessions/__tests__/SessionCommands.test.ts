@@ -17,12 +17,9 @@ function sessionsRepo() {
       userAgent: input.userAgent,
       createdAt: input.at,
       lastSeenAt: input.at,
-      twoFactorVerifiedAt: null,
       revokedAt: null,
     })),
-    check: vi.fn<ISessionRepository["check"]>(async (id) =>
-      id === "s1" ? { userId: "u1", twoFactorVerified: false } : null,
-    ),
+    check: vi.fn<ISessionRepository["check"]>(async (id) => (id === "s1" ? { userId: "u1" } : null)),
     listActive: vi.fn<ISessionRepository["listActive"]>(async () => [
       {
         id: "s1",
@@ -30,7 +27,6 @@ function sessionsRepo() {
         userAgent: CHROME,
         createdAt: NOW,
         lastSeenAt: NOW,
-        twoFactorVerifiedAt: null,
         revokedAt: null,
       },
       {
@@ -39,13 +35,11 @@ function sessionsRepo() {
         userAgent: null,
         createdAt: NOW,
         lastSeenAt: NOW,
-        twoFactorVerifiedAt: null,
         revokedAt: null,
       },
     ]),
     revoke: vi.fn<ISessionRepository["revoke"]>(async (_userId, sessionId) => sessionId === "s2"),
     revokeAll: vi.fn<ISessionRepository["revokeAll"]>(async () => 3),
-    markTwoFactorVerified: vi.fn<ISessionRepository["markTwoFactorVerified"]>(async () => {}),
     pruneInactive: vi.fn<ISessionRepository["pruneInactive"]>(async () => 0),
   } satisfies ISessionRepository;
 }
@@ -74,7 +68,7 @@ describe("StartSession", () => {
 describe("CheckSession", () => {
   it("answers only for the session's own user", async () => {
     const repo = sessionsRepo();
-    expect(await new CheckSession(repo).execute("s1", "u1", NOW)).toEqual({ userId: "u1", twoFactorVerified: false });
+    expect(await new CheckSession(repo).execute("s1", "u1", NOW)).toEqual({ userId: "u1" });
     expect(await new CheckSession(repo).execute("s1", "someone-else", NOW)).toBeNull();
     expect(await new CheckSession(repo).execute("gone", "u1", NOW)).toBeNull();
   });

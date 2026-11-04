@@ -83,28 +83,6 @@ const baseSchema = z.object({
   ZARINPAL_MERCHANT_ID: optionalString,
   ZARINPAL_SANDBOX: flag,
 
-  /**
-   * Encrypts dashboard users' authenticator-app secrets at rest: 32 random bytes as
-   * 64 hex characters or base64 (`openssl rand -base64 32`). Optional — without it
-   * two-factor is unavailable (the team pages say so) and the app runs as before.
-   * Changing it makes every stored secret unreadable: those users then sign in with
-   * a recovery code, or the owner resets their two-factor.
-   */
-  TWO_FACTOR_ENCRYPTION_KEY: z.pipe(
-    z.transform(emptyToUndefined),
-    z.optional(
-      z.string().check(
-        z.trim(),
-        z.refine(
-          (value) =>
-            /^[0-9a-fA-F]{64}$/.test(value) ||
-            (/^[A-Za-z0-9+/]{43}=?$/.test(value) && Buffer.from(value, "base64").length === 32),
-          "TWO_FACTOR_ENCRYPTION_KEY must be 32 bytes: 64 hex characters or base64 (`openssl rand -base64 32`).",
-        ),
-      ),
-    ),
-  ),
-
   /** Reverse proxies in front of the app whose `X-Forwarded-For` entry is trusted (the host nginx = 1). */
   TRUSTED_PROXY_HOPS: positiveIntOr(1),
 
@@ -182,9 +160,6 @@ export function envWarnings(env: Env): string[] {
   }
   if (!env.APP_URL) {
     warnings.push("APP_URL is not set: invitation links and the payment callback trust the request's Host header.");
-  }
-  if (!env.TWO_FACTOR_ENCRYPTION_KEY) {
-    warnings.push("TWO_FACTOR_ENCRYPTION_KEY is not set: dashboard users can't turn on authenticator-app two-factor.");
   }
   if (!env.ZARINPAL_MERCHANT_ID || env.ZARINPAL_SANDBOX) {
     warnings.push("Zarinpal is in sandbox mode: online payments don't move real money.");

@@ -39,16 +39,6 @@ export const RATE_LIMITS = {
     perIp: { limit: 60, windowMs: 15 * MINUTE },
     perSubject: { limit: 10, windowMs: 15 * MINUTE },
   },
-  /**
-   * An authenticator-app code (or a recovery code): six digits is a million
-   * guesses, so a handful per account per quarter-hour keeps brute force hopeless
-   * while leaving room for a mistyped code or two.
-   */
-  twoFactorVerify: {
-    name: "two-factor-verify",
-    perIp: { limit: 60, windowMs: 15 * MINUTE },
-    perSubject: { limit: 8, windowMs: 15 * MINUTE },
-  },
   orderPlacement: {
     name: "order-placement",
     perIp: { limit: 100, windowMs: 10 * MINUTE },

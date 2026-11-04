@@ -69,8 +69,6 @@ model UserSession {
   createdAt           DateTime  @default(now()) @map("created_at")
   // Touched at most every few minutes — "approximately when", not a request log.
   lastSeenAt          DateTime  @default(now()) @map("last_seen_at")
-  // When this browser passed the authenticator-app check; null until it has.
-  twoFactorVerifiedAt DateTime? @map("two_factor_verified_at")
   revokedAt           DateTime? @map("revoked_at")
 
   @@index([userId, lastSeenAt])
@@ -78,27 +76,9 @@ model UserSession {
   @@map("user_sessions")
 }
 
-// A dashboard user's authenticator app. The TOTP secret is encrypted at rest
-// (AES-256-GCM, key from TWO_FACTOR_ENCRYPTION_KEY); the recovery codes are stored
-// only as SHA-256 hashes and removed as they're used. `enabled_at` is null while
-// enrolment waits for its first code.
-model UserTwoFactor {
-  userId             String    @id @map("user_id")
-  sealedSecret       String    @map("sealed_secret")
-  enabledAt          DateTime? @map("enabled_at")
-  // The last 30-second step a code was accepted for — a code can't be replayed.
-  lastUsedStep       Int?      @map("last_used_step")
-  recoveryCodeHashes String[]  @map("recovery_code_hashes")
-  createdAt          DateTime  @default(now()) @map("created_at")
-  updatedAt          DateTime  @updatedAt @map("updated_at")
-
-  @@map("user_two_factor")
-}
-
 // Team-wide security settings, one row. Owner-only.
 model TeamSettings {
   id                      Int      @id @default(1)
-  requireTwoFactor        Boolean  @default(false) @map("require_two_factor")
   // Null keeps the activity log forever.
   activityRetentionMonths Int?     @map("activity_retention_months")
   updatedAt               DateTime @updatedAt @map("updated_at")

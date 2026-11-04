@@ -34,8 +34,8 @@ type TeamMemberActionsProps = {
 type MemberDialog = "role" | "owner" | "remove";
 
 /**
- * A member's commands behind "⋯": their sessions and two-factor (a page of its
- * own), then Change role, Make owner and Remove access, each through a dialog. Only
+ * A member's commands behind "⋯": their sessions (a page of its own), then
+ * Change role, Make owner and Remove access, each through a dialog. Only
  * what the server would allow is offered — never on your own row or the owner's,
  * and a role can't be changed for access that lives in the server config.
  */

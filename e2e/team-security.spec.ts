@@ -1,14 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
-import { base32Decode, hotp, timeStep } from "../src/infrastructure/two-factor/totp";
-
 import { storageStatePath } from "./fixtures/sessions";
-
-/** The current authenticator code for a key as the setup screen shows it ("ABCD EFGH …"). */
-function codeFor(key: string, offsetSeconds = 0): string {
-  const at = new Date(Date.now() + offsetSeconds * 1000);
-  return hotp(base32Decode(key.replace(/\s/g, "")), timeStep(at, 30), 6);
-}
 
 /** Sign in with the mock OTP (the code is shown on screen), landing on `callbackUrl`. */
 async function signIn(page: Page, phone: string, callbackUrl: string): Promise<void> {
@@ -22,7 +14,7 @@ async function signIn(page: Page, phone: string, callbackUrl: string): Promise<v
   await page.getByRole("button", { name: "Verify Code" }).click();
 }
 
-// Numbers this spec grants, so the shared test users' sessions and two-factor stay untouched.
+// Numbers this spec grants, so the shared test users' sessions stay untouched.
 const MEMBER_PHONE = "09120000555";
 
 test.describe.configure({ mode: "serial" });
@@ -86,7 +78,7 @@ test.describe("the owner's team page", () => {
 });
 
 test.describe("a team member's own security", () => {
-  test("sets up an authenticator app, is asked for it at the next sign-in, and is reset by the owner", async ({
+  test("signs in with the phone code alone, signs other browsers out, and is signed out by the owner", async ({
     browser,
   }) => {
     const member = await browser.newPage();
@@ -94,22 +86,9 @@ test.describe("a team member's own security", () => {
     await expect(member.getByRole("heading", { name: "Sign-in & security" })).toBeVisible();
     await expect(member.getByText("This browser")).toBeVisible();
 
-    // Set up the app: read the key off the screen as a person would type it.
-    await member.getByRole("button", { name: "Set up authenticator app" }).click();
-    await expect(member.getByRole("img", { name: "QR code for your authenticator app" })).toBeVisible();
-    const key = (await member.locator("code").textContent()) ?? "";
-    await member.getByLabel("Code from your app").fill(codeFor(key));
-    await member.getByRole("button", { name: "Turn on" }).click();
-    await expect(member.getByRole("heading", { name: "Save your recovery codes" })).toBeVisible();
-    await member.getByRole("button", { name: "I’ve saved them" }).click();
-    await expect(member.getByText(/recovery codes left/)).toBeVisible();
-
-    // A second browser: the phone code alone no longer opens the dashboard.
+    // A second browser: the phone code is all the dashboard asks for.
     const second = await browser.newPage();
     await signIn(second, MEMBER_PHONE, "/dashboard");
-    await expect(second).toHaveURL(/\/login\/two-factor/);
-    await second.getByLabel("Code from your app").fill(codeFor(key, 30));
-    await second.getByRole("button", { name: "Continue" }).click();
     await expect(second).toHaveURL(/\/dashboard$/);
 
     // The first browser signs the second out.
@@ -121,13 +100,13 @@ test.describe("a team member's own security", () => {
     await second.goto("/dashboard");
     await expect(second).toHaveURL(/\/login\?callbackUrl/);
 
-    // The owner resets the member's two-factor from the member's page, signing them out too.
+    // The owner ends the member's remaining session from the member's page.
     const owner = await browser.newPage({ storageState: storageStatePath("owner") });
     await owner.goto("/dashboard/team/09120000555");
-    await expect(owner.getByText("On", { exact: true })).toBeVisible();
-    await owner.getByRole("button", { name: "Reset two-factor" }).click();
-    await owner.getByRole("dialog").getByRole("button", { name: "Reset two-factor" }).click();
-    await expect(owner.getByText("Off", { exact: true })).toBeVisible();
+    await expect(owner.getByRole("list", { name: "Signed-in sessions" }).getByRole("listitem")).toHaveCount(1);
+    await owner.getByRole("button", { name: "Sign out everywhere" }).click();
+    await owner.getByRole("dialog").getByRole("button", { name: "Sign out" }).click();
+    await expect(owner.getByText("No active sessions.")).toBeVisible();
 
     await member.goto("/dashboard/security");
     await expect(member).toHaveURL(/\/login\?callbackUrl/);

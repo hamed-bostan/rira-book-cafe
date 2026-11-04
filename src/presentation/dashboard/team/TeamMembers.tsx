@@ -110,9 +110,6 @@ export function TeamMembers({ members, roleNames, roleOptions }: TeamMembersProp
                 <Badge variant={roleBadgeVariant(member.role)} appearance="outline" size="compact" dot>
                   {roleLabel(member.role)}
                 </Badge>
-                {member.twoFactor === "on" ? (
-                  <span className="text-body-small text-muted-foreground sm:text-body-caption">{t("twoFactorOn")}</span>
-                ) : null}
                 {member.breakGlass ? (
                   <span className="text-body-small text-muted-foreground sm:text-body-caption">
                     {t("managedInEnv")}

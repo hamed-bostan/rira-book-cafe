@@ -4,8 +4,8 @@ import { NotFoundError } from "../../errors/NotFoundError";
 import type { IUserRepository } from "../../repositories/IUserRepository";
 
 /**
- * One member of the team, for the owner's per-member screens (their sessions,
- * their two-factor). Someone who isn't on the team is a `NotFoundError`: the owner
+ * One member of the team, for the owner's per-member screens (their sessions).
+ * Someone who isn't on the team is a `NotFoundError`: the owner
  * manages the team's access, not every guest's account. Break-glass ids count as
  * team, as they do on the team list — the domain can't read the environment, so the
  * caller says whether the id is one.

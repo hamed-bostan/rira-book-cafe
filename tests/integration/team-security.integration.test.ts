@@ -5,28 +5,21 @@ import { GET as readActivity } from "@/app/api/admin/activity/route";
 import { GET as readShifts, POST as openShift } from "@/app/api/admin/cash-shifts/route";
 import { GET as readMe } from "@/app/api/admin/me/route";
 import { DELETE as revokeOtherSessions, GET as mySessions } from "@/app/api/admin/me/sessions/route";
-import { POST as disableTwoFactor } from "@/app/api/admin/me/two-factor/disable/route";
-import { POST as enableTwoFactor } from "@/app/api/admin/me/two-factor/enable/route";
-import { GET as myTwoFactor } from "@/app/api/admin/me/two-factor/route";
-import { POST as startSetup } from "@/app/api/admin/me/two-factor/setup/route";
-import { POST as verifyTwoFactor } from "@/app/api/admin/me/two-factor/verify/route";
 import { DELETE as deleteRole, PUT as updateRole } from "@/app/api/admin/roles/[key]/route";
 import { GET as listRoles, POST as createRole } from "@/app/api/admin/roles/route";
 import { POST as createSupplier } from "@/app/api/admin/suppliers/route";
 import { DELETE as revokeAccess, PUT as changeRole } from "@/app/api/admin/team/[id]/route";
 import { DELETE as revokeMemberSessions, GET as memberSessions } from "@/app/api/admin/team/[id]/sessions/route";
-import { DELETE as resetTwoFactor } from "@/app/api/admin/team/[id]/two-factor/route";
 import { POST as grantAccess } from "@/app/api/admin/team/route";
-import { PUT as updateSettings } from "@/app/api/admin/team-settings/route";
+import { GET as readSettings, PUT as updateSettings } from "@/app/api/admin/team-settings/route";
 import { PruneActivityLog } from "@/src/domain/use-cases/jobs/PruneActivityLog";
 import { activityLog, teamSettingsRepository } from "@/src/infrastructure/container";
 import { prisma } from "@/src/infrastructure/prisma/client";
-import { base32Decode, hotp, timeStep } from "@/src/infrastructure/two-factor/totp";
 
 import { TEST_USERS, testSessionId } from "../fixtures/users";
 
 import { getRequest, jsonRequest, readError, readJson, routeParams } from "./helpers/http";
-import { markTwoFactorVerified, signInAs, signInAsUser } from "./helpers/session";
+import { signInAs, signInAsUser } from "./helpers/session";
 
 // The grant's invitation link is built from the request host; a direct call has none.
 vi.mock("next/headers", () => ({ headers: async () => new Headers({ host: "cafe.test" }) }));
@@ -36,11 +29,6 @@ type RoleBody = { key: string; builtIn: boolean; permissions: string[]; memberCo
 async function newRole(permissions: string[], nameEn = "Barista", nameFa = "باریستا"): Promise<Response> {
   signInAs("owner");
   return createRole(jsonRequest("POST", "/api/admin/roles", { nameEn, nameFa, permissions }));
-}
-
-/** The current code for a base32 secret, as an authenticator app would show it. */
-function codeFor(secret: string, at = new Date()): string {
-  return hotp(base32Decode(secret), timeStep(at, 30), 6);
 }
 
 describe("roles", () => {
@@ -196,90 +184,20 @@ describe("sessions", () => {
   });
 });
 
-describe("two-factor", () => {
-  async function enrol(): Promise<{ secret: string; codes: string[] }> {
-    const { secret } = await readJson<{ secret: string }>(await startSetup(jsonRequest("POST", "/x", {})));
-    const enabled = await enableTwoFactor(jsonRequest("POST", "/x", { code: codeFor(secret) }));
-    expect(enabled.status).toBe(200);
-    return { secret, codes: (await readJson<{ recoveryCodes: string[] }>(enabled)).recoveryCodes };
-  }
+describe("team settings", () => {
+  it("are the owner's alone, and record a change of retention", async () => {
+    signInAs("admin");
+    expect((await readSettings()).status).toBe(401);
 
-  it("enrols with a confirmed code, keeps the secret encrypted and the recovery codes hashed", async () => {
-    signInAs("staff");
-    const { secret, codes } = await enrol();
-    expect(codes).toHaveLength(10);
-    const row = await prisma.userTwoFactor.findUnique({ where: { userId: TEST_USERS.staff.id } });
-    expect(row?.sealedSecret).not.toContain(secret);
-    expect(row?.recoveryCodeHashes).toHaveLength(10);
-    expect(row?.recoveryCodeHashes).not.toContain(codes[0]);
-    // The enrolling browser counts as verified.
-    expect(
-      (await prisma.userSession.findUnique({ where: { id: testSessionId("staff") } }))?.twoFactorVerifiedAt,
-    ).not.toBeNull();
-    expect(await prisma.activityEntry.count({ where: { action: "user.twoFactorEnabled" } })).toBe(1);
-  });
-
-  it("keeps the dashboard shut until this browser passes the check, by code or recovery code", async () => {
-    signInAs("staff");
-    const { codes } = await enrol();
-
-    // A browser that hasn't passed the check holds no dashboard permission…
-    markTwoFactorVerified(false);
-    expect((await readMe()).status).toBe(401);
-    // …but can see what it owes.
-    expect(await readJson<{ gate: string }>(await myTwoFactor())).toMatchObject({ gate: "verify", state: "on" });
-
-    const wrong = await verifyTwoFactor(jsonRequest("POST", "/x", { code: "000000" }));
-    expect(wrong.status).toBe(400);
-
-    const recovered = await verifyTwoFactor(jsonRequest("POST", "/x", { recoveryCode: codes[0].toLowerCase() }));
-    expect(recovered.status).toBe(204);
-    // A recovery code works once.
-    const again = await verifyTwoFactor(jsonRequest("POST", "/x", { recoveryCode: codes[0] }));
-    expect(again.status).toBe(400);
-
-    markTwoFactorVerified(true);
-    expect((await readMe()).status).toBe(200);
-  });
-
-  it("is turned off with a code, and reset by the owner — both recorded", async () => {
-    signInAs("staff");
-    const { secret } = await enrol();
-    // The code the enrolment used can't be used again; the next one can.
-    const next = codeFor(secret, new Date(Date.now() + 30_000));
-    markTwoFactorVerified(true);
-    expect((await disableTwoFactor(jsonRequest("POST", "/x", { code: next }))).status).toBe(204);
-    expect(await prisma.userTwoFactor.count()).toBe(0);
-
-    signInAs("staff");
-    await enrol();
     signInAs("owner");
-    expect((await resetTwoFactor(new Request("http://x"), routeParams({ id: TEST_USERS.staff.id }))).status).toBe(204);
-    expect(await prisma.userTwoFactor.count()).toBe(0);
-    expect((await prisma.userSession.findUnique({ where: { id: testSessionId("staff") } }))?.revokedAt).not.toBeNull();
-    expect(
-      await prisma.activityEntry.findMany({
-        where: { action: { startsWith: "user.twoFactor" } },
-        select: { action: true },
-      }),
-    ).toEqual(expect.arrayContaining([{ action: "user.twoFactorDisabled" }, { action: "user.twoFactorReset" }]));
-  });
-
-  it("when the owner requires it, sends members without an app to set one up", async () => {
-    signInAs("owner");
-    expect((await updateSettings(jsonRequest("PUT", "/x", { requireTwoFactor: true }))).status).toBe(200);
+    expect(await readJson(await readSettings())).toEqual({ activityRetentionMonths: null });
+    const saved = await updateSettings(jsonRequest("PUT", "/x", { activityRetentionMonths: 24 }));
+    expect(await readJson(saved)).toEqual({ activityRetentionMonths: 24 });
     expect(await prisma.activityEntry.count({ where: { action: "user.securitySettingsChanged" } })).toBe(1);
 
-    signInAs("staff");
-    expect((await readMe()).status).toBe(401);
-    expect(await readJson<{ gate: string }>(await myTwoFactor())).toMatchObject({ gate: "enroll", required: true });
-    await enrol();
-    markTwoFactorVerified(true);
-    expect((await readMe()).status).toBe(200);
-
-    // Guests are untouched.
-    signInAs("customer");
-    expect((await readMe()).status).toBe(401);
+    // Saving what's already set records nothing.
+    await updateSettings(jsonRequest("PUT", "/x", { activityRetentionMonths: 24 }));
+    expect(await prisma.activityEntry.count({ where: { action: "user.securitySettingsChanged" } })).toBe(1);
   });
 });
 
@@ -317,6 +235,27 @@ describe("activity log", () => {
     expect(staffCsv).not.toContain("Lamiz Roastery");
     expect(staffCsv).not.toContain("Greeter");
     expect(staffCsv.split("\r\n")[0]).toContain("زمان (تهران)");
+  });
+
+  it("still reads entries whose action this version no longer records", async () => {
+    // A removed feature's entries stay in the log; they read as `unknown` rather
+    // than failing the page.
+    await prisma.activityEntry.create({
+      data: {
+        actorId: TEST_USERS.owner.id,
+        actorName: TEST_USERS.owner.name,
+        action: "user.someRetiredAction",
+        entityType: "user",
+        entityId: TEST_USERS.staff.id,
+        changes: [{ field: "retiredField", before: "on", after: "off" }],
+        changedFields: ["retiredField"],
+      },
+    });
+    signInAs("owner");
+    const response = await readActivity(getRequest("/api/admin/activity?entityType=user"));
+    expect(response.status).toBe(200);
+    const page = await readJson<{ items: { action: string; entityType: string }[] }>(response);
+    expect(page.items).toEqual([expect.objectContaining({ action: "unknown", entityType: "user" })]);
   });
 
   it("logs till shifts opening", async () => {

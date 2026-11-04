@@ -8,7 +8,7 @@ import type { IActivityLog } from "../../../repositories/IActivityLog";
 
 const NOW = new Date("2026-11-04T10:00:00Z");
 const settings = (activityRetentionMonths: number | null) => ({
-  get: async () => ({ requireTwoFactor: false, activityRetentionMonths }),
+  get: async () => ({ activityRetentionMonths }),
 });
 
 describe("PruneActivityLog", () => {

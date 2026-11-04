@@ -5,16 +5,8 @@ import { cache } from "react";
 import { auth } from "@/auth";
 import type { Permission } from "@/src/domain/entities/Permission";
 import type { RolePolicy } from "@/src/domain/entities/Role";
-import type { SecondFactorGate } from "@/src/domain/entities/TwoFactor";
 import { isDashboardRole, type UserRole } from "@/src/domain/entities/User";
-import { GetSecondFactorGate } from "@/src/domain/use-cases/two-factor/TwoFactorCommands";
-import {
-  roleRepository,
-  teamSettingsRepository,
-  twoFactorCrypto,
-  twoFactorRepository,
-  userRepository,
-} from "@/src/infrastructure/container";
+import { roleRepository, userRepository } from "@/src/infrastructure/container";
 import { getEnv } from "@/src/lib/env";
 
 import type { Session } from "next-auth";
@@ -36,12 +28,11 @@ import type { Session } from "next-auth";
  * instead of whenever their token happens to expire. Within one server render the
  * lookups are shared (`cache`), so the layout, the page and every guard ask once.
  *
- * Two more things stand between a dashboard role and the dashboard, both per
- * browser rather than per person: the session must be a recorded one (see
- * `auth.ts`), and it must have passed the authenticator-app check when the user has
- * one, or when the owner requires one. Until then the session holds no dashboard
- * permission at all — the storefront still works, and dashboard pages send the
- * browser to the check (`/login/two-factor`).
+ * One more thing stands between a dashboard role and the dashboard, per browser
+ * rather than per person: the session must be a recorded one (see `auth.ts`), so it
+ * can be signed out remotely. Until then the session holds no dashboard permission
+ * at all — the storefront still works, and dashboard pages send the browser to sign
+ * in again (`/login/sign-in-again`).
  */
 
 /**
@@ -76,9 +67,8 @@ export function breakGlassAdminIds(): string[] {
  * - `ok` — through; the role's permissions apply.
  * - `signInAgain` — a token minted before sessions were recorded: it can't be
  *   revoked, so it doesn't open the dashboard. Signing in again fixes it.
- * - `verify` / `enroll` — the authenticator-app check is owed (see `SecondFactorGate`).
  */
-export type DashboardGate = "ok" | "signInAgain" | Exclude<SecondFactorGate, "ok">;
+export type DashboardGate = "ok" | "signInAgain";
 
 /** The role a session's user holds, and whether this browser may use it. */
 export type SessionAccess = {
@@ -101,20 +91,12 @@ const storedRole = cache(async (userId: string): Promise<UserRole | null> => {
 /** The role policy, once per render (and cached across requests by the repository). */
 const currentPolicy = cache((): Promise<RolePolicy> => roleRepository.policy());
 
-const secondFactorGate = cache((userId: string, verified: boolean): Promise<SecondFactorGate> =>
-  new GetSecondFactorGate({
-    twoFactor: twoFactorRepository,
-    crypto: twoFactorCrypto,
-    settings: teamSettingsRepository,
-  }).execute(userId, verified),
-);
-
 /**
  * The role behind a session and whether this browser may use it on the dashboard.
  *
  * Break-glass ids resolve to `owner`: the allowlist exists to bootstrap the first
  * owner and to recover a lost one, so it has to be the *most* privileged answer or
- * it can't do either job. They pass through the same per-browser checks as anyone.
+ * it can't do either job. They pass through the same per-browser check as anyone.
  */
 export async function sessionAccess(session: Session | null): Promise<SessionAccess> {
   const userId = session?.user?.id;
@@ -123,13 +105,12 @@ export async function sessionAccess(session: Session | null): Promise<SessionAcc
   if (role === null || !isDashboardRole(role)) return { role, gate: "ok" };
 
   if (!session?.sessionId) return { role, gate: "signInAgain" };
-  const gate = await secondFactorGate(userId, session.twoFactorVerified === true);
-  return { role, gate };
+  return { role, gate: "ok" };
 }
 
 /**
  * The effective role of a session for the dashboard, or `null` when signed out. A
- * dashboard user whose browser hasn't passed the door's checks reads as `customer`
+ * dashboard user whose browser hasn't passed the door's check reads as `customer`
  * until it has — signed in, but holding nothing here.
  */
 export async function sessionRole(session: Session | null): Promise<UserRole | null> {
@@ -166,26 +147,13 @@ export async function getSessionWithAny(permissions: readonly Permission[]): Pro
 }
 
 /**
- * For the endpoints a dashboard user needs *before* passing the second factor —
- * entering their code, setting up the app the owner requires. Returns the session
- * of a signed-in dashboard user on a recorded session, whatever the gate says; the
- * use-cases behind those endpoints enforce what each state may do.
- */
-export async function getDashboardSessionAtDoor(): Promise<{ session: Session; gate: DashboardGate } | null> {
-  const session = await auth();
-  const { role, gate } = await sessionAccess(session);
-  if (!session || role === null || !isDashboardRole(role) || gate === "signInAgain") return null;
-  return { session, gate };
-}
-
-/**
  * Server-side guard for a dashboard *page*. Returns the session when it carries
  * `permission`. Anonymous visitors go to `/login` (with a `callbackUrl`); a
- * dashboard user whose browser owes the second factor (or a fresh sign-in) goes to
- * `/login/two-factor`; signed-in users without the permission are sent somewhere
- * they belong rather than shown a 404 or a 401 — the dashboard's existence isn't
- * leaked to a customer, and a staff member who wandered onto the promo-codes page
- * is bounced to the dashboard root instead of into an error boundary.
+ * dashboard user whose browser owes a fresh sign-in goes to `/login/sign-in-again`;
+ * signed-in users without the permission are sent somewhere they belong rather than
+ * shown a 404 or a 401 — the dashboard's existence isn't leaked to a customer, and a
+ * staff member who wandered onto the promo-codes page is bounced to the dashboard
+ * root instead of into an error boundary.
  */
 export async function requirePermission(permission: Permission): Promise<Session> {
   const session = await auth();
@@ -197,7 +165,7 @@ export async function requirePermission(permission: Permission): Promise<Session
 
   const access = await sessionAccess(session);
   if (access.gate !== "ok") {
-    redirect(`/login/two-factor?callbackUrl=${encodeURIComponent(await pathname())}`);
+    redirect(`/login/sign-in-again?callbackUrl=${encodeURIComponent(await pathname())}`);
   }
 
   if (!(await sessionHas(session, permission))) {

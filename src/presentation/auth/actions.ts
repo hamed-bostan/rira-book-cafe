@@ -78,8 +78,7 @@ export async function logout() {
 /**
  * Sign out and start signing in again, coming back to `callbackUrl` — for a
  * browser whose session can't open the dashboard as it is (one from before
- * sessions were recorded, or someone at the two-factor check without their phone
- * who wants to start over). Same-origin paths only.
+ * sessions were recorded). Same-origin paths only.
  */
 export async function signInAgain(callbackUrl: string) {
   const target = callbackUrl.startsWith("/") && !callbackUrl.startsWith("//") ? callbackUrl : "/dashboard";

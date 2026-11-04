@@ -19,7 +19,6 @@ export function signInAs(user: TestUserKey | null): void {
   current = {
     user: { id, name },
     sessionId: testSessionId(user),
-    twoFactorVerified: false,
     expires: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
   };
 }
@@ -29,17 +28,8 @@ export function signInAsUser(user: { id: string; name: string }): void {
   current = {
     user: { id: user.id, name: user.name },
     sessionId: `test-session-${user.id}`,
-    twoFactorVerified: false,
     expires: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
   };
-}
-
-/**
- * What the real `jwt` callback would read off the session row after a passed
- * two-factor check (the mock has no row to read).
- */
-export function markTwoFactorVerified(verified = true): void {
-  if (current) current = { ...current, twoFactorVerified: verified };
 }
 
 export function currentSession(): Session | null {

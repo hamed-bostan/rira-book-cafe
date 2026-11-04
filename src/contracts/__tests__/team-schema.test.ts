@@ -87,7 +87,6 @@ describe("teamMemberResponseSchema", () => {
     phone: "09123456789",
     avatarUrl: null,
     role: "owner",
-    twoFactor: "off",
     isSelf: true,
     breakGlass: false,
     transferable: false,

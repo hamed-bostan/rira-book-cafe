@@ -82,9 +82,6 @@ type ApiErrorKey =
   | "roleInUse"
   | "roleBuiltIn"
   | "roleNameTaken"
-  | "twoFactorAlreadyOn"
-  | "twoFactorRequired"
-  | "twoFactorUnavailable"
   | "unitLocked"
   | "stockOnHand"
   | "ingredientInRecipe"
@@ -171,13 +168,10 @@ const CODE_KEYS: Readonly<Record<string, ApiErrorKey>> = {
   SHIFT_ALREADY_OPEN: "shiftAlreadyOpen",
   NO_OPEN_SHIFT: "noOpenShift",
   ALREADY_ON_TEAM: "alreadyOnTeam",
-  // Roles and two-factor.
+  // Roles.
   ROLE_IN_USE: "roleInUse",
   ROLE_BUILT_IN: "roleBuiltIn",
   ROLE_NAME_TAKEN: "roleNameTaken",
-  TWO_FACTOR_ALREADY_ON: "twoFactorAlreadyOn",
-  TWO_FACTOR_REQUIRED: "twoFactorRequired",
-  TWO_FACTOR_UNAVAILABLE: "twoFactorUnavailable",
   // Stock items.
   UNIT_LOCKED: "unitLocked",
   STOCK_ON_HAND: "stockOnHand",

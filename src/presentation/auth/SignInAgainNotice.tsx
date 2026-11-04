@@ -20,12 +20,12 @@ export function SignInAgainNotice({ callbackUrl }: SignInAgainNoticeProps) {
   return (
     <div className="flex flex-col gap-4 rounded-card-lg border border-border bg-background p-5 shadow-xs">
       <div className="flex flex-col gap-1">
-        <h1 className="text-heading-subsection text-foreground">{t("challenge.signInAgainTitle")}</h1>
-        <p className="text-body-default text-pretty text-muted-foreground">{t("challenge.signInAgainMessage")}</p>
+        <h1 className="text-heading-subsection text-foreground">{t("signInAgain.title")}</h1>
+        <p className="text-body-default text-pretty text-muted-foreground">{t("signInAgain.message")}</p>
       </div>
       <form action={() => signInAgain(callbackUrl)}>
         <Button type="submit" size="lg" className="w-full">
-          {t("challenge.signInAgain")}
+          {t("signInAgain.action")}
         </Button>
       </form>
     </div>

@@ -232,8 +232,6 @@
     "roleNameTooLong": "That name is too long.",
     "roleInvalid": "Choose a role.",
     "retentionInvalid": "Choose one of the offered periods.",
-    "twoFactorCodeRequired": "Enter the code.",
-    "twoFactorCodeInvalid": "That code didn’t work.",
     "adjustmentDirection": "That reason can't move stock that way: found stock comes in; breakage, staff meals and tastings go out.",
     "adjustmentNoteRequired": "Say what happened — a note is needed for “Other”.",
     "vatOverCredit": "The VAT can't be more than the credit.",
@@ -331,9 +329,6 @@
     "roleInUse": "Someone still has this role. Move them to another role first.",
     "roleBuiltIn": "Built-in roles can’t be deleted.",
     "roleNameTaken": "Another role already has that name.",
-    "twoFactorAlreadyOn": "Two-factor is already on.",
-    "twoFactorRequired": "The owner requires two-factor for the dashboard.",
-    "twoFactorUnavailable": "Two-factor isn’t available on this server.",
     "returnExceedsStock": "There isn't that much on hand to send back.",
     "deliveryHasReturns": "Some of this delivery was sent back to the supplier, so it can't be voided."
   },
@@ -499,7 +494,6 @@
     },
     "granted": "Access granted to {phone}",
     "customRoleFallback": "Custom role",
-    "twoFactorOn": "Two-factor on",
     "tabsLabel": "Team sections",
     "tab": {
       "members": "Members",
@@ -511,21 +505,7 @@
       "menu": "Sessions & security",
       "back": "Team",
       "title": "{name}’s sessions and security",
-      "summary": "Where they’re signed in, and their authenticator app.",
-      "twoFactorHeading": "Two-factor sign-in",
-      "twoFactorState": {
-        "on": "On",
-        "pending": "Being set up",
-        "off": "Off"
-      },
-      "ownTwoFactor": "Your own two-factor is managed from your sign-in & security page.",
-      "resetHint": "If they’ve lost their phone, reset their authenticator app. They’re signed out everywhere and set it up again at their next sign-in.",
-      "twoFactorOffHint": "They don’t use an authenticator app.",
-      "reset": "Reset two-factor",
-      "resetTitle": "Reset {name}’s two-factor?",
-      "resetMessage": "Their authenticator app and recovery codes stop working, and they’re signed out on every device.",
-      "resetDone": "{name}’s two-factor was reset",
-      "resetError": "Couldn’t reset two-factor. Please try again."
+      "summary": "Where they’re signed in."
     },
     "roles": {
       "heading": "Roles",
@@ -676,11 +656,6 @@
       }
     },
     "securitySettings": {
-      "twoFactorHeading": "Two-factor sign-in",
-      "twoFactorDescription": "A code from an authenticator app, asked for after the phone code when someone opens the dashboard.",
-      "requireTwoFactor": "Require two-factor for everyone on the team",
-      "requireTwoFactorHint": "Anyone without an authenticator app is asked to set one up the next time they open the dashboard.",
-      "twoFactorUnavailable": "Not available yet: the server has no TWO_FACTOR_ENCRYPTION_KEY set.",
       "retentionHeading": "Activity log",
       "retentionDescription": "How long the activity log keeps what happened.",
       "retentionLabel": "Keep activity for",
@@ -1489,10 +1464,7 @@
         "roleUpdated": "<b>{actor}</b> changed the role {entity}",
         "roleDeleted": "<b>{actor}</b> deleted the role {entity}",
         "securitySettingsChanged": "<b>{actor}</b> changed the team’s security settings",
-        "sessionsRevoked": "<b>{actor}</b> signed {entity} out",
-        "twoFactorEnabled": "<b>{actor}</b> turned on two-factor sign-in",
-        "twoFactorDisabled": "<b>{actor}</b> turned off two-factor sign-in",
-        "twoFactorReset": "<b>{actor}</b> reset {entity}’s two-factor sign-in"
+        "sessionsRevoked": "<b>{actor}</b> signed {entity} out"
       },
       "activity": {
         "pruned": "<b>{actor}</b> removed activity older than the retention period"
@@ -1662,10 +1634,8 @@
       "author": "Guest",
       "nameEn": "English name",
       "permissions": "Permissions",
-      "requireTwoFactor": "Two-factor required",
       "activityRetentionMonths": "Keep activity (months)",
       "sessionsSignedOut": "Sessions signed out",
-      "twoFactor": "Two-factor",
       "entriesRemoved": "Entries removed",
       "olderThan": "Older than",
       "retentionMonths": "Retention (months)",
@@ -1716,11 +1686,6 @@
       "item": "Item",
       "changes": "Changes"
     },
-    "twoFactorState": {
-      "on": "On",
-      "pending": "Being set up",
-      "off": "Off"
-    },
     "actionName": {
       "product": {
         "created": "Item created",
@@ -1762,10 +1727,7 @@
         "roleUpdated": "Role changed",
         "roleDeleted": "Role deleted",
         "securitySettingsChanged": "Security settings changed",
-        "sessionsRevoked": "Signed out by the owner",
-        "twoFactorEnabled": "Two-factor turned on",
-        "twoFactorDisabled": "Two-factor turned off",
-        "twoFactorReset": "Two-factor reset"
+        "sessionsRevoked": "Signed out by the owner"
       },
       "guest": {
         "profileCreated": "Profile created"
@@ -4925,7 +4887,7 @@
   },
   "dashSecurity": {
     "heading": "Sign-in & security",
-    "summary": "Your authenticator app, and where you’re signed in to the dashboard.",
+    "summary": "Where you’re signed in to the dashboard.",
     "sessions": {
       "heading": "Signed-in sessions",
       "descriptionSelf": "Browsers signed in to your account. Sign out any you don’t recognise.",
@@ -4950,58 +4912,10 @@
       "empty": "No active sessions.",
       "error": "Couldn’t sign out. Please try again."
     },
-    "twoFactor": {
-      "heading": "Authenticator app",
-      "description": "After the phone code, the dashboard asks for a code from an app like Google Authenticator or Microsoft Authenticator.",
-      "stateOn": "On",
-      "stateOff": "Off",
-      "onSince": "On since {date}.",
-      "codesLeft": "{count, plural, =0 {No recovery codes left.} one {# recovery code left.} other {# recovery codes left.}}",
-      "requiredNote": "The owner requires two-factor, so it can’t be turned off.",
-      "unavailable": "Two-factor isn’t available on this server yet.",
-      "requiredIntro": "The owner requires two-factor for the dashboard. Set up an authenticator app to keep using it.",
-      "offIntro": "Add a second step to your dashboard sign-in, so a phone code alone isn’t enough.",
-      "setUp": "Set up authenticator app",
-      "setupError": "Couldn’t set up two-factor. Please try again.",
-      "stepInstall": "Install an authenticator app on your phone.",
-      "stepScan": "Scan this QR code with it, or type in the key.",
-      "stepConfirm": "Enter the 6-digit code the app shows.",
-      "qrAlt": "QR code for your authenticator app",
-      "manualKey": "Key",
-      "confirm": "Turn on",
-      "wrongCode": "That code didn’t work. Check the time on your phone and try the newest code.",
-      "codeLabel": "Code from your app",
-      "codeHint": "6 digits; a new one every 30 seconds.",
-      "recoveryLabel": "Recovery code",
-      "recoveryHint": "One of the codes you saved when you set up two-factor. Each works once.",
-      "useRecovery": "Use a recovery code instead",
-      "useApp": "Use the app’s code instead",
-      "codesHeading": "Save your recovery codes",
-      "codesMessage": "If you lose your phone, each of these gets you in once. They won’t be shown again — keep them somewhere safe.",
-      "copyCodes": "Copy codes",
-      "codesCopied": "Recovery codes copied",
-      "codesCopyFailed": "Couldn’t copy. Select the codes and copy them by hand.",
-      "done": "I’ve saved them",
-      "turnOff": "Turn off",
-      "turnOffTitle": "Turn off two-factor?",
-      "turnOffMessage": "Enter a code from your app, or a recovery code, to confirm.",
-      "turnedOff": "Two-factor turned off",
-      "turnOffError": "Couldn’t turn off two-factor. Please try again."
-    },
-    "challenge": {
-      "pageTitle": "Two-factor sign-in",
-      "verifyTitle": "Enter your authenticator code",
-      "verifyMessage": "Open your authenticator app and enter the code for Rira Book Cafe.",
-      "verifyRecoveryOnly": "App codes can’t be checked right now. Enter one of your recovery codes.",
-      "enrollTitle": "Set up two-factor sign-in",
-      "enrollMessage": "The owner requires an authenticator app for the dashboard. It takes a minute.",
-      "continue": "Continue",
-      "continueToDashboard": "Continue to the dashboard",
-      "error": "Couldn’t check the code. Please try again.",
-      "signOut": "Sign out",
-      "signInAgainTitle": "Please sign in again",
-      "signInAgainMessage": "Dashboard sign-ins are now tracked so they can be signed out remotely. Sign in once more to continue.",
-      "signInAgain": "Sign in again"
+    "signInAgain": {
+      "title": "Please sign in again",
+      "message": "Dashboard sign-ins are now tracked so they can be signed out remotely. Sign in once more to continue.",
+      "action": "Sign in again"
     }
   }
 }

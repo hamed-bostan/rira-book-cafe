@@ -2,12 +2,10 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { toTeamRole, type TeamMember } from "@/src/contracts/team-response-schema";
 import { grantAdminSchema } from "@/src/contracts/team-schema";
-import type { TwoFactorState } from "@/src/domain/entities/TwoFactor";
 import type { User } from "@/src/domain/entities/User";
 import { GrantAdmin } from "@/src/domain/use-cases/team/GrantAdmin";
 import { ListTeam } from "@/src/domain/use-cases/team/ListTeam";
-import { GetTwoFactorStates } from "@/src/domain/use-cases/two-factor/TwoFactorCommands";
-import { roleRepository, teamNotifier, twoFactorRepository, userRepository } from "@/src/infrastructure/container";
+import { roleRepository, teamNotifier, userRepository } from "@/src/infrastructure/container";
 import { enforceRateLimit, RATE_LIMITS } from "@/src/lib/api/rate-limit";
 import {
   errorResponse,
@@ -31,11 +29,7 @@ export const dynamic = "force-dynamic";
  * would reject. `transferable` likewise marks who could take ownership: anyone on
  * the team who isn't already the owner and isn't you.
  */
-function toTeamMembers(
-  members: User[],
-  viewerId: string,
-  twoFactor: Record<string, TwoFactorState> = {},
-): TeamMember[] {
+function toTeamMembers(members: User[], viewerId: string): TeamMember[] {
   return members.map((user) => {
     const breakGlass = isBreakGlassAdmin(user.id);
     const isSelf = user.id === viewerId;
@@ -58,7 +52,6 @@ function toTeamMembers(
       // A break-glass account may hold no role in the database at all; what its
       // environment access gives it is admin, so that's the role it shows.
       role: toTeamRole(user.role) ?? ("admin" as const),
-      twoFactor: twoFactor[user.id] ?? "off",
       isSelf,
       breakGlass,
       revokeBlocked,
@@ -84,8 +77,7 @@ export async function GET(): Promise<NextResponse> {
 
   try {
     const members = await new ListTeam(userRepository).execute(breakGlassAdminIds());
-    const twoFactor = await new GetTwoFactorStates(twoFactorRepository).execute(members.map((member) => member.id));
-    return NextResponse.json(toTeamMembers(members, session.user.id, twoFactor));
+    return NextResponse.json(toTeamMembers(members, session.user.id));
   } catch (error) {
     return errorResponseFromException(error, "GET /api/admin/team failed");
   }

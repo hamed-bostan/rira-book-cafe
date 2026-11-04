@@ -2,9 +2,8 @@ import type { AuditHook } from "./AuditHook";
 import type { TeamSettings } from "../entities/TeamSettings";
 
 /**
- * The owner's team-wide settings. Read on every dashboard request (does this
- * cafe require two-factor?), so implementations cache it and drop the cache on
- * every write.
+ * The owner's team-wide settings. Implementations may cache them, and drop the
+ * cache on every write.
  */
 export type ITeamSettingsRepository = {
   get(): Promise<TeamSettings>;

@@ -5,7 +5,6 @@ import { SYSTEM_ACTOR, type ActivityChange } from "@/src/domain/entities/Activit
 import { isCafeDay } from "@/src/domain/entities/CafeTime";
 import { isPermission } from "@/src/domain/entities/Permission";
 import { ROLE_CHANGE_FIELD, roleChangeKind, roleMove } from "@/src/domain/entities/RoleChange";
-import type { TwoFactorState } from "@/src/domain/entities/TwoFactor";
 import { isBuiltInRole, toUserRole, type UserRole } from "@/src/domain/entities/User";
 import { Link } from "@/src/i18n/navigation";
 import { formatCafeDayMedium } from "@/src/lib/formatCafeDay";
@@ -178,7 +177,6 @@ export async function ActivityEntryRow({
               .map((permission) => (isPermission(permission) ? tTeam(`permission.${permission}.label`) : permission))
               .join(locale === "fa" ? "، " : ", ");
           }
-          if (field === "twoFactor" && isTwoFactorState(value)) return t(`twoFactorState.${value}`);
           if (field === "sessionsSignedOut" && value === "all") return t("value.all");
           if (field === "olderThan" && isCafeDay(value)) return formatCafeDayMedium(value, locale);
           if (NUMERIC_FIELDS.has(field) && NUMBER.test(value)) return formatNumberTrimmed(Number(value), locale, 3);
@@ -315,9 +313,4 @@ type LooseTranslator = {
 function fieldLabel(t: LooseTranslator, field: string): string {
   const key = `field.${field}`;
   return t.has(key) ? t(key) : field;
-}
-
-/** Whether a stored value is a two-factor state, so it can be named rather than shown raw. */
-function isTwoFactorState(value: string): value is TwoFactorState {
-  return value === "on" || value === "off" || value === "pending";
 }

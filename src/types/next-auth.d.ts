@@ -17,7 +17,5 @@ declare module "next-auth" {
      * token minted before sessions were. Absent on such an old token.
      */
     sessionId?: string;
-    /** Whether this browser passed the authenticator-app check (read from the session row). */
-    twoFactorVerified?: boolean;
   }
 }

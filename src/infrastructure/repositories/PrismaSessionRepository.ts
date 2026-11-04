@@ -26,7 +26,7 @@ export class PrismaSessionRepository implements ISessionRepository {
   async check(id: string, now: Date): Promise<SessionCheck | null> {
     const row = await prisma.userSession.findUnique({
       where: { id },
-      select: { userId: true, lastSeenAt: true, revokedAt: true, twoFactorVerifiedAt: true },
+      select: { userId: true, lastSeenAt: true, revokedAt: true },
     });
     if (!row || row.revokedAt) return null;
     const idle = now.getTime() - row.lastSeenAt.getTime();
@@ -39,7 +39,7 @@ export class PrismaSessionRepository implements ISessionRepository {
         data: { lastSeenAt: now },
       });
     }
-    return { userId: row.userId, twoFactorVerified: row.twoFactorVerifiedAt !== null };
+    return { userId: row.userId };
   }
 
   async listActive(userId: string, now: Date): Promise<UserSession[]> {
@@ -69,13 +69,6 @@ export class PrismaSessionRepository implements ISessionRepository {
       // Nothing was signed out, so there's nothing to record.
       if (count > 0 && options.entry) await tx.activityEntry.create({ data: toActivityRow(options.entry) });
       return count;
-    });
-  }
-
-  async markTwoFactorVerified(sessionId: string, at: Date): Promise<void> {
-    await prisma.userSession.updateMany({
-      where: { id: sessionId, revokedAt: null },
-      data: { twoFactorVerifiedAt: at },
     });
   }
 

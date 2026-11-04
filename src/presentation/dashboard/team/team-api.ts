@@ -44,11 +44,6 @@ export const teamApi = {
   revokeMemberSession(id: string, sessionId: string): Promise<void> {
     return apiDelete(`/admin/team/${encodeURIComponent(id)}/sessions/${encodeURIComponent(sessionId)}`);
   },
-
-  /** Clear a member's authenticator app (a lost phone); they're signed out everywhere too. */
-  resetTwoFactor(id: string): Promise<void> {
-    return apiDelete(`/admin/team/${encodeURIComponent(id)}/two-factor`);
-  },
 };
 
 /** The owner's role editor. */

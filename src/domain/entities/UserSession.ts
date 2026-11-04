@@ -5,7 +5,7 @@
  * back before it expires. So each sign-in also writes a row here and the token
  * carries the row's id; every request checks the row, and revoking it signs that
  * browser out on its next request. The row is also what the "where you're signed
- * in" list reads, and where the authenticator-app check is recorded per browser.
+ * in" list reads.
  */
 export type UserSession = {
   id: string;
@@ -15,8 +15,6 @@ export type UserSession = {
   createdAt: Date;
   /** Approximate: refreshed at most every {@link SESSION_TOUCH_INTERVAL_MS}. */
   lastSeenAt: Date;
-  /** When this browser passed the authenticator-app check, if it has. */
-  twoFactorVerifiedAt: Date | null;
   revokedAt: Date | null;
 };
 
@@ -41,7 +39,6 @@ export function isSessionActive(session: Pick<UserSession, "revokedAt" | "lastSe
 /** The result of checking a session on a request. */
 export type SessionCheck = {
   userId: string;
-  twoFactorVerified: boolean;
 };
 
 export type DeviceKind = "mobile" | "tablet" | "desktop" | "unknown";

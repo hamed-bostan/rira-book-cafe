@@ -34,8 +34,6 @@ export const teamMemberResponseSchema = z.object({
    * database reads as `admin`, which is what its environment access gives it.
    */
   role: z.custom<TeamRole>((value) => typeof value === "string" && toTeamRole(value) !== null),
-  /** Their authenticator-app two-factor: off, set up but unconfirmed, or on. */
-  twoFactor: z.enum(["off", "pending", "on"]),
   /** True when this member is the admin currently viewing the page. */
   isSelf: z.boolean(),
   /** True when access comes from the env allowlist and can't be revoked in the UI. */

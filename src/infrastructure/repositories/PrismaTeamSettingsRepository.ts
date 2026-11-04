@@ -22,9 +22,7 @@ export class PrismaTeamSettingsRepository implements ITeamSettingsRepository {
     if (cached && this.clock() - cached.loadedAt < SETTINGS_TTL_MS) return cached.settings;
     const loadedAt = this.clock();
     const row = await prisma.teamSettings.findUnique({ where: { id: 1 } });
-    const settings = row
-      ? { requireTwoFactor: row.requireTwoFactor, activityRetentionMonths: row.activityRetentionMonths }
-      : DEFAULT_TEAM_SETTINGS;
+    const settings = row ? { activityRetentionMonths: row.activityRetentionMonths } : DEFAULT_TEAM_SETTINGS;
     settingsCache.value = { settings, loadedAt };
     return settings;
   }
@@ -36,8 +34,8 @@ export class PrismaTeamSettingsRepository implements ITeamSettingsRepository {
     try {
       return await prisma.$transaction(async (tx) => {
         // Row-locked read: two owners' tabs saving at once can't both diff against the same "before".
-        const locked = await tx.$queryRaw<{ requireTwoFactor: boolean; activityRetentionMonths: number | null }[]>`
-          SELECT "require_two_factor" AS "requireTwoFactor", "activity_retention_months" AS "activityRetentionMonths"
+        const locked = await tx.$queryRaw<{ activityRetentionMonths: number | null }[]>`
+          SELECT "activity_retention_months" AS "activityRetentionMonths"
           FROM "team_settings" WHERE "id" = 1 FOR UPDATE`;
         const before: TeamSettings = locked[0] ?? DEFAULT_TEAM_SETTINGS;
         const after: TeamSettings = { ...before, ...changes };

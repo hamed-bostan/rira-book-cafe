@@ -10,8 +10,8 @@ export type ISessionRepository = {
   start(input: { userId: string; userAgent: string | null; at: Date }): Promise<UserSession>;
   /**
    * Check a session on a request: `null` when it's revoked, expired or gone (the
-   * token must stop working), otherwise who it belongs to and whether it passed the
-   * second factor. Refreshes last-seen when it's gone stale.
+   * token must stop working), otherwise who it belongs to. Refreshes last-seen when
+   * it's gone stale.
    */
   check(id: string, now: Date): Promise<SessionCheck | null>;
   /** The user's sessions that can still be used, most recently seen first. */
@@ -24,8 +24,6 @@ export type ISessionRepository = {
   revoke(userId: string, sessionId: string, entry?: NewActivityEntry): Promise<boolean>;
   /** Revoke every active session of the user except `exceptId`; resolves how many. */
   revokeAll(userId: string, options?: { exceptId?: string; entry?: NewActivityEntry }): Promise<number>;
-  /** Mark that this session passed the authenticator-app check. */
-  markTwoFactorVerified(sessionId: string, at: Date): Promise<void>;
   /** Delete revoked rows and rows unseen since `before`, in batches; resolves how many went. */
   pruneInactive(before: Date, batchSize: number): Promise<number>;
 };

@@ -162,3 +162,15 @@ New coverage:
 Still covered only by API tests: ownership transfer and single-session sign-out in the browser (both would sign seeded accounts out of the shared e2e database), Mark paid from the payments report (same route as the orders pages; the report's unpaid list shows the oldest orders, so a test's new one may not be there).
 
 Gate: typecheck pass; lint 0 errors; integration 559 passed; e2e (Chrome) — the 7 Insights / Store / team / reports / accessibility specs, 207 passed. The full e2e suite runs again in Phase 8.
+
+### Phase 7 — Cross-checks: a business day, roles, languages (2026-11-05)
+
+No app bugs found. Three checks that span the modules:
+
+- **A business day** (`tests/integration/business-day.integration.test.ts`): a till shift opened with a float; a cash sale and a card sale; part of the cash sale refunded in cash; a bill paid from the drawer; income taken in cash; the shift counted and closed. Then, checked module against module: the drawer's expected cash equals the float plus that day's cash worked out by hand, a balanced drawer posts no over/short, and the cash account moved by exactly the drawer's takings; the sales report's revenue streams (net of VAT, read from orders and income) equal the P&L's revenue (read from the journal); the payments report's card total and paid-order count match the sales; the trial balance and balance sheet balance; stock is worth exactly what the Inventory account says.
+- **Every page, every role** (`e2e/role-sweep.spec.ts`): the sidebar's sections and the main sub-pages (42 pages), read from the code, opened as owner, admin and staff. A page the role may use renders without the error boundary (so nothing it loads needs more than the page asks for); a page it may not use sends it away without an error. 126 checks. Also checked statically: every sidebar item's permission matches its page's guard.
+- **Both languages** (same spec): all 42 pages as the owner in English and Persian — `lang` set, no error boundary, no raw message key on screen. 84 checks.
+
+Test fix: Phase 4's shift test sent the leftover shift's count as a string (the API takes numbers); that cleanup only runs on a kept database, so it hadn't failed yet.
+
+Not covered: the support role and custom roles have no sign-in in the e2e setup (the role sweep uses owner, admin and staff); the API side of every permission is covered by each suite's 401 tests.

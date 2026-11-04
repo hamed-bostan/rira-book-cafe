@@ -39,7 +39,7 @@ test("a cash shift is opened with a float and closed short", async ({ page }) =>
   if (current) {
     await jsonOf(
       await api.post(`/api/admin/cash-shifts/${current.id}/close`, {
-        data: { countedCash: String(current.expectedCash ?? 0), note: "" },
+        data: { countedCash: current.expectedCash ?? 0, note: "" },
       }),
     );
   }

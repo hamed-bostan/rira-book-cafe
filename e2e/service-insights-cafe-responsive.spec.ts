@@ -269,6 +269,20 @@ const PAGES: Record<string, MeasuredPage> = {
   "reports for 90 days": { path: () => "/dashboard/reports?range=90d", tabs: true },
   "payment report": { path: () => "/dashboard/reports/payments", tabs: true },
   "guest report": { path: () => "/dashboard/reports/guests", tabs: true },
+  "reports for this month, refunds on their day": {
+    path: () => "/dashboard/reports?range=month&refunds=refundDay",
+    tabs: true,
+  },
+  "report date picker": {
+    path: () => "/dashboard/reports",
+    dialog: true,
+    prepare: dialogFrom(/^(Pick dates|انتخاب تاریخ)$/),
+  },
+  "report export menu": {
+    path: () => "/dashboard/reports/payments",
+    menu: true,
+    prepare: menuFrom(/^(Export CSV|خروجی CSV)$/),
+  },
 
   activity: { path: () => "/dashboard/activity" },
   "activity for orders": { path: () => "/dashboard/activity?entity=order" },

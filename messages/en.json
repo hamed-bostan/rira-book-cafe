@@ -1583,7 +1583,7 @@
       "markedUnpaid": "Order #{number} is unpaid again",
       "markPaidError": "Couldn't mark the order paid.",
       "paidHint": "{share} · {change}",
-      "methodValue": "{value} · {share} · before: {previous}"
+      "methodPrevious": "Period before: {value}"
     },
     "guests": {
       "guests": "Guests",
@@ -1612,14 +1612,18 @@
       "apply": "Show these dates"
     },
     "refunds": {
-      "label": "Count refunds",
+      "label": "Count refunds on",
       "option": {
-        "orderDay": "On the order's day",
-        "refundDay": "On the refund's day"
+        "orderDay": "Order's day",
+        "refundDay": "Refund's day"
       },
       "hint": {
         "orderDay": "A refund comes off the day its order was placed, so each day shows what its orders finally came to. Earlier periods change when an old order is refunded.",
         "refundDay": "A refund counts on the day the money went back, as the books and the till see it. Past periods stay as they were reported."
+      },
+      "printed": {
+        "orderDay": "refunds on the order's day",
+        "refundDay": "refunds on the refund's day"
       }
     },
     "export": {

@@ -5,6 +5,8 @@ export type ShareBarRow = {
   label: string;
   /** "1,840,000 Toman · 64%" — the amount and its share, formatted by the caller. */
   valueLabel: string;
+  /** A quieter line under the bar — the same row for the period before. */
+  detail?: string;
   /** The share of the whole, 0–1. */
   share: number;
   /** The bar's fill, one hue per row: `bg-primary`, `bg-info-foreground`, … */
@@ -27,6 +29,11 @@ export function ShareBars({ rows }: { rows: readonly ShareBarRow[] }) {
           <div aria-hidden className="h-2 overflow-hidden rounded-full bg-muted">
             <div className={cn("h-full rounded-full", row.colorClassName)} style={{ width: `${row.share * 100}%` }} />
           </div>
+          {row.detail ? (
+            <span className="text-body-small text-muted-foreground tabular-nums sm:text-body-caption">
+              {row.detail}
+            </span>
+          ) : null}
         </li>
       ))}
     </ul>

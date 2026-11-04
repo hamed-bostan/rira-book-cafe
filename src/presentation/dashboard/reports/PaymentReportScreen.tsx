@@ -161,10 +161,9 @@ export async function PaymentReportScreen({
                 return {
                   key: group.key,
                   label: t(`payments.method.${group.key}`),
-                  valueLabel: t("payments.methodValue", {
-                    value: formatMoney(value, locale),
-                    share: formatPercent(value / paidTotal, locale),
-                    previous: formatMoney(methodValue(group.methods, report.previousByMethod), locale),
+                  valueLabel: `${formatMoney(value, locale)} · ${formatPercent(value / paidTotal, locale)}`,
+                  detail: t("payments.methodPrevious", {
+                    value: formatMoney(methodValue(group.methods, report.previousByMethod), locale),
                   }),
                   share: Math.max(0, value / paidTotal),
                   colorClassName: group.colorClassName,

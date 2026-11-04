@@ -28,7 +28,7 @@ describe("report tables as CSV", () => {
     );
     expect(rows[0]).toEqual(["Sales by day"]);
     expect(rows[1]).toEqual(["Period", "2026-10-15", "2026-10-21"]);
-    expect(rows[2]).toEqual(["Refunds counted", "On the refund's day"]);
+    expect(rows[2]).toEqual(["Refunds counted", "Refund's day"]);
     expect(rows.at(-1)).toEqual(["2026-10-15", 2, 190000, 0, 0]);
   });
 

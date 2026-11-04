@@ -144,7 +144,7 @@ export async function ReportsFrame({
         </div>
         <p className="text-body-small text-muted-foreground sm:text-body-caption print:text-body-small print:text-foreground">
           {compared ? `${shown} · ${compared}` : shown}
-          {refunds ? <span className="hidden print:inline"> · {t(`refunds.option.${refunds}`)}</span> : null}
+          {refunds ? <span className="hidden print:inline"> · {t(`refunds.printed.${refunds}`)}</span> : null}
         </p>
         {refunds ? (
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2 print:hidden">

@@ -48,7 +48,7 @@ export class PrismaCafeSettingsRepository implements ICafeSettingsRepository {
   updateHours(hours: OpeningHours, audit?: AuditHook<CafeSettings>): Promise<CafeSettings> {
     return this.write(
       {
-        weeklyHours: hours.weekly ? (hours.weekly) : Prisma.DbNull,
+        weeklyHours: hours.weekly ? hours.weekly : Prisma.DbNull,
         hoursExceptions: hours.exceptions,
       },
       audit,

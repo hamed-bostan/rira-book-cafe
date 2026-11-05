@@ -1,3 +1,5 @@
+import { randomBytes } from "node:crypto";
+
 import { expect, request, test, type APIRequestContext, type Page } from "@playwright/test";
 
 import { cafeDayOf } from "../src/domain/entities/CafeTime";
@@ -16,10 +18,8 @@ import { storageStatePath } from "./fixtures/sessions";
 test.use({ storageState: storageStatePath("admin") });
 
 const today = cafeDayOf(new Date());
-const TAG = `E2E Fa ${Math.random()
-  .toString(36)
-  .replace(/[^a-z]/g, "")
-  .slice(0, 6)}`;
+/** Six random letters, so this run's records are told apart from earlier runs'. */
+const TAG = `E2E Fa ${Array.from(randomBytes(6), (byte) => String.fromCharCode(97 + (byte % 26))).join("")}`;
 
 type Shift = { id: string; number: number; status: string; expectedCash?: number; countedCash?: number };
 
